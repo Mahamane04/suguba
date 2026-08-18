@@ -91,14 +91,37 @@ export default function OrderSuccessPage({ params }: { params: Promise<{ orderNu
             </div>
           </div>
 
-          {/* Home Link */}
-          <Link
-            href="/"
-            className="w-full bg-slate-900 hover:bg-black text-white font-bold py-3.5 px-4 rounded-2xl text-xs flex items-center justify-center space-x-2 transition-colors"
-          >
-            <Home className="w-4 h-4" />
-            <span>Retour à l&apos;accueil Suguba</span>
-          </Link>
+          {/* Action Links */}
+          <div className="space-y-2 pt-2">
+            <a
+              href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
+                `🎉 *SUGUBA.ML — Reçu Commande #${order.orderNumber}*\n\nProduit : ${order.productName}\nTotal : ${order.totalAmount.toLocaleString('fr-FR')} FCFA\n🔑 Mon Code OTP : ${order.deliveryOtp}\n📍 Repère : ${order.landmark} (${order.neighborhood})`
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold py-3.5 px-4 rounded-2xl text-xs flex items-center justify-center space-x-2 shadow-xs"
+            >
+              <span>📲 Sauvegarder mon Reçu & Code sur WhatsApp</span>
+            </a>
+
+            <div className="grid grid-cols-2 gap-2">
+              <Link
+                href={`/track/${order.orderNumber}`}
+                className="py-3 px-3 bg-blue-50 hover:bg-blue-100 text-blue-900 font-bold border border-blue-200 rounded-2xl text-xs flex items-center justify-center space-x-1.5"
+              >
+                <Truck className="w-4 h-4 text-blue-700" />
+                <span>Suivre ma course</span>
+              </Link>
+
+              <Link
+                href="/"
+                className="py-3 px-3 bg-slate-900 hover:bg-black text-white font-bold rounded-2xl text-xs flex items-center justify-center space-x-1.5"
+              >
+                <Home className="w-4 h-4" />
+                <span>Accueil</span>
+              </Link>
+            </div>
+          </div>
 
         </div>
 
