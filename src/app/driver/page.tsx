@@ -4,17 +4,20 @@ import React, { useState } from 'react';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import OtpValidationModal from '@/components/driver/OtpValidationModal';
+import DeliveryMapModal from '@/components/driver/DeliveryMapModal';
 import { useSugubaStore, sugubaStore } from '@/lib/store';
 import { Order } from '@/types';
 import { 
   Truck, Phone, MapPin, KeyRound, CheckCircle2, 
-  Banknote, Package, Navigation, AlertCircle, ArrowRight
+  Banknote, Package, Navigation, AlertCircle, ArrowRight,
+  Compass, MessageCircle
 } from 'lucide-react';
 import Image from 'next/image';
 
 export default function DriverDashboardPage() {
   const state = useSugubaStore();
   const [selectedOrderForOtp, setSelectedOrderForOtp] = useState<Order | null>(null);
+  const [selectedOrderForMap, setSelectedOrderForMap] = useState<Order | null>(null);
 
   const currentUser = state.currentUser;
   const driver = state.drivers.find(d => d.userId === currentUser.id) || state.drivers[0];
@@ -144,21 +147,29 @@ export default function DriverDashboardPage() {
                     </div>
 
                     {/* Actions */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
+                      <button
+                        onClick={() => setSelectedOrderForMap(order)}
+                        className="py-3 px-3 bg-blue-50 hover:bg-blue-100 text-blue-900 font-bold border border-blue-200 rounded-2xl text-xs flex items-center justify-center space-x-1.5 transition-colors"
+                      >
+                        <Compass className="w-4 h-4 text-blue-700" />
+                        <span>Itinéraire & GPS</span>
+                      </button>
+
                       <a
                         href={`tel:${order.customerPhone}`}
-                        className="py-3 px-4 bg-slate-900 hover:bg-black text-white font-bold rounded-2xl text-xs flex items-center justify-center space-x-2 transition-colors"
+                        className="py-3 px-3 bg-slate-900 hover:bg-black text-white font-bold rounded-2xl text-xs flex items-center justify-center space-x-1.5 transition-colors"
                       >
                         <Phone className="w-4 h-4" />
-                        <span>Appeler le client ({order.customerPhone})</span>
+                        <span>Appeler Client</span>
                       </a>
 
                       <button
                         onClick={() => setSelectedOrderForOtp(order)}
-                        className="py-3 px-4 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-2xl text-xs shadow-md shadow-amber-600/20 flex items-center justify-center space-x-2 transition-transform active:scale-95"
+                        className="py-3 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-2xl text-xs shadow-md shadow-amber-600/20 flex items-center justify-center space-x-1.5 transition-transform active:scale-95"
                       >
                         <KeyRound className="w-4 h-4 stroke-[2.5]" />
-                        <span>Valider la Livraison (Code OTP)</span>
+                        <span>Valider OTP</span>
                       </button>
                     </div>
 
@@ -200,6 +211,15 @@ export default function DriverDashboardPage() {
         </div>
 
       </main>
+
+      {/* Map & GPS Navigation Modal */}
+      {selectedOrderForMap && (
+        <DeliveryMapModal
+          order={selectedOrderForMap}
+          isOpen={!!selectedOrderForMap}
+          onClose={() => setSelectedOrderForMap(null)}
+        />
+      )}
 
       {/* OTP Modal */}
       {selectedOrderForOtp && (
