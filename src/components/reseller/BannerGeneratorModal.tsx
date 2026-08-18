@@ -44,7 +44,7 @@ export default function BannerGeneratorModal({
 🛡️ *Garantie :* ${selectedProduct.warrantyMonths || 6} mois de service certifié
 
 👉 *Commandez directement via mon lien vérifié :*
-${typeof window !== 'undefined' ? window.location.origin : 'https://sugubaml.com'}/p/${selectedProduct.slug}?ref=${reseller.referralCode}
+${typeof window !== 'undefined' ? window.location.origin : 'https://app.sugubaml.com'}/p/${selectedProduct.slug}?ref=${reseller.referralCode}
 
 Ou contactez-moi par WhatsApp : *${currentUser.phone}*`;
 
@@ -54,7 +54,7 @@ Ou contactez-moi par WhatsApp : *${currentUser.phone}*`;
 🛡️ *Garantie :* Kalo ${selectedProduct.warrantyMonths || 6} kɔnɔ
 
 👉 *I ka commande kɛ nin lien in na :*
-${typeof window !== 'undefined' ? window.location.origin : 'https://sugubaml.com'}/p/${selectedProduct.slug}?ref=${reseller.referralCode}
+${typeof window !== 'undefined' ? window.location.origin : 'https://app.sugubaml.com'}/p/${selectedProduct.slug}?ref=${reseller.referralCode}
 
 Walima i k'an wele WhatsApp kan : *${currentUser.phone}*`;
 

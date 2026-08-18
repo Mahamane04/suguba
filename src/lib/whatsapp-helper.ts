@@ -7,7 +7,7 @@ export const whatsappHelper = {
   /**
    * 1. Lien WhatsApp pour le client : Recevoir les alertes et le reçu de commande
    */
-  getCustomerReceiptLink(order: Order, appUrl: string = 'https://sugubaml.com'): string {
+  getCustomerReceiptLink(order: Order, appUrl: string = 'https://app.sugubaml.com'): string {
     const cleanPhone = order.customerPhone.replace(/\D/g, '');
     const trackingUrl = `${appUrl}/track/${order.orderNumber}`;
     
