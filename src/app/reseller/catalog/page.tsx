@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import ShareModal from '@/components/reseller/ShareModal';
@@ -34,16 +35,26 @@ export default function ResellerCatalogPage() {
     <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
       <Header />
 
-      <main className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 py-6 w-full space-y-5">
+      <main className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
         
-        {/* Header Title */}
-        <div className="space-y-1">
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900">
-            Catalogue Produits & Commissions
-          </h1>
-          <p className="text-xs text-slate-500">
-            Sélectionnez un produit, copiez le kit marketing et partagez-le sur WhatsApp ou TikTok.
-          </p>
+        {/* Header Title & Studio Banner */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-1">
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900">
+              Catalogue Produits Rémunérés
+            </h1>
+            <p className="text-xs text-slate-500">
+              Partagez sur WhatsApp et gagnez des commissions garanties sur chaque vente livrée.
+            </p>
+          </div>
+
+          <Link
+            href="/reseller/marketing"
+            className="flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-black rounded-2xl text-xs shadow-md shadow-emerald-600/20 active:scale-95 transition-all self-start sm:self-auto"
+          >
+            <Sparkles className="w-4 h-4 text-amber-300" />
+            <span>Studio Affiches WhatsApp</span>
+          </Link>
         </div>
 
         {/* Search & Filter Bar */}

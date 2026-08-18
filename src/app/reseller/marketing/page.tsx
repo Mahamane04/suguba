@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
+import BannerGeneratorModal from '@/components/reseller/BannerGeneratorModal';
 import { useSugubaStore } from '@/lib/store';
 import { 
   Sparkles, MessageCircle, Copy, Check, Video, 
@@ -12,6 +13,7 @@ import {
 export default function ResellerMarketingPage() {
   const state = useSugubaStore();
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isStudioOpen, setIsStudioOpen] = useState(false);
 
   const reseller = state.resellers.find(r => r.userId === state.currentUser.id) || state.resellers[0];
 
@@ -62,14 +64,24 @@ Kit Solaire complet prêt à l'emploi : 4 ampoules lumineuses + recharge de tous
 
       <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
         
-        {/* Page Title */}
-        <div className="space-y-1">
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900">
-            Centre Marketing & Kits de Vente
-          </h1>
-          <p className="text-xs text-slate-500">
-            Boostez vos ventes sur WhatsApp, Facebook et TikTok grâce à nos accroches testées et validées.
-          </p>
+        {/* Page Title & Studio CTA */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="space-y-1">
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900">
+              Centre Marketing & Kits de Vente
+            </h1>
+            <p className="text-xs text-slate-500">
+              Boostez vos ventes sur WhatsApp, Facebook et TikTok grâce à nos accroches testées et validées.
+            </p>
+          </div>
+
+          <button
+            onClick={() => setIsStudioOpen(true)}
+            className="flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-black rounded-2xl text-xs shadow-lg shadow-emerald-600/20 active:scale-95 transition-all self-start sm:self-auto"
+          >
+            <Sparkles className="w-4 h-4 text-amber-300" />
+            <span>Studio Affiches WhatsApp</span>
+          </button>
         </div>
 
         {/* Reseller Tips Card */}
@@ -130,6 +142,17 @@ Kit Solaire complet prêt à l'emploi : 4 ampoules lumineuses + recharge de tous
         </div>
 
       </main>
+
+      {/* Banner Studio Modal */}
+      {isStudioOpen && (
+        <BannerGeneratorModal
+          products={state.products.filter(p => p.status === 'approved')}
+          reseller={reseller}
+          currentUser={state.currentUser}
+          isOpen={isStudioOpen}
+          onClose={() => setIsStudioOpen(false)}
+        />
+      )}
 
       <BottomNav />
     </div>
