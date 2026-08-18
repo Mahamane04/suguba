@@ -158,10 +158,10 @@ export default function OtpValidationModal({ order, isOpen, onClose, onSuccess }
                     ⛔ COMMANDE BLOQUÉE : 3 tentatives erronées.
                   </div>
                   <a
-                    href="tel:+22370000001"
+                    href="tel:+22389460000"
                     className="w-full py-3 bg-slate-900 hover:bg-black text-white font-bold rounded-2xl text-xs flex items-center justify-center space-x-2"
                   >
-                    <span>Appeler le Support Suguba Ops</span>
+                    <span>Appeler le Support Suguba (+223 89 46 00 00)</span>
                   </a>
                 </div>
               ) : (

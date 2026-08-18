@@ -71,7 +71,7 @@ export default function WarrantyPage() {
                 En cas de dysfonctionnement pendant la période de garantie :
               </p>
               <ol className="list-decimal pl-5 space-y-1">
-                <li>Le client contacte l&apos;assistance Suguba (+223 70 00 00 01) en précisant son numéro de commande.</li>
+                <li>Le client contacte l&apos;assistance Suguba (+223 89 46 00 00) en précisant son numéro de commande.</li>
                 <li>Suguba organise le diagnostic et la liaison avec l&apos;atelier technique du fournisseur agréé.</li>
                 <li>Le produit est réparé ou remplacé par un produit neuf sous 72 heures ouvrées.</li>
               </ol>

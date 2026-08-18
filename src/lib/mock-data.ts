@@ -3,7 +3,7 @@ import { User, SupplierProfile, ResellerProfile, DriverProfile, Product, Order, 
 export const INITIAL_USERS: User[] = [
   {
     id: 'usr-admin-1',
-    phone: '+223 70 00 00 01',
+    phone: '+223 89 46 00 00',
     fullName: 'Directeur Opérations Suguba',
     role: 'admin',
     city: 'Bamako',

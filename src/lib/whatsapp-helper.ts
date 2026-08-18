@@ -25,10 +25,10 @@ export const whatsappHelper = {
   },
 
   /**
-   * 2. Lien WhatsApp pour contacter le support client Suguba Ops (+223 70 00 00 01)
+   * 2. Lien WhatsApp pour contacter le support client Suguba Ops (+223 89 46 00 00)
    */
   getSupportChatLink(orderNumber?: string): string {
-    const supportPhone = '22370000001';
+    const supportPhone = '22389460000';
     const text = orderNumber
       ? `Bonjour Suguba Support, j'ai une question concernant ma commande #${orderNumber}.`
       : `Bonjour Suguba Support, j'ai besoin d'une assistance.`;
