@@ -132,6 +132,38 @@ export const INITIAL_DRIVERS: DriverProfile[] = [
 
 export const INITIAL_PRODUCTS: Product[] = [
   {
+    id: 'prd-robot-petrin',
+    supplierId: 'sup-1',
+    supplierName: 'Diarra Électronique',
+    name: 'Robot Pétrin & Mixeur Pâtissier Multifonction Inox (6.5L - 1000W)',
+    slug: 'robot-petrin-mixeur-patissier-inox',
+    category: 'Électroménager',
+    description: 'Robot professionnel tout-en-un avec grand bol en acier inoxydable de 6.5L, fouet métallique, crochet pétrisseur pour pâte à pain/beignets et hachoir à viande. Moteur puissant 1000W à 6 vitesses avec fonction Pulse. Idéal pour familles et traiteurs à Bamako.',
+    images: [
+      'https://images.unsplash.com/photo-1578643463396-0997cb5328c1?w=800&q=80',
+      'https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=800&q=80'
+    ],
+    supplierPrice: 45000,
+    publicPrice: 65000,
+    resellerCommission: 7000,
+    sugubaMargin: 13000,
+    stockQuantity: 20,
+    warrantyMonths: 12,
+    preparationDelayHours: 1,
+    stockLocationType: 'suguba_hub',
+    stockLocationAddress: 'Hub Suguba ACI 2000',
+    status: 'approved',
+    isFeatured: true,
+    marketingPitch: `🎂 LE ROBOT PÂTISSIER & PÉTRIN INOX INDISPENSABLE À BAMAKO !
+Préparez vos gâteaux, pains, pâtes et jus comme un chef avec ce Robot Pétrin 6.5L 1000W.
+✅ Bol inox XXL 6.5L & 3 accessoires professionnels
+✅ Moteur cuivre garanti 12 mois
+💰 Prix promo : 65 000 FCFA
+🛵 Livraison à domicile partout à Bamako - Payez à la réception !
+Commandez directement ici : `,
+    createdAt: '2026-02-15T08:00:00Z',
+  },
+  {
     id: 'prd-1',
     supplierId: 'sup-1',
     supplierName: 'Diarra Électronique',
