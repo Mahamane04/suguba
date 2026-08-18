@@ -51,6 +51,14 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="flex items-center space-x-2">
+            <Link
+              href="/admin/analytics"
+              className="flex items-center space-x-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition-all active:scale-95"
+            >
+              <TrendingUp className="w-3.5 h-3.5" />
+              <span>Analytics & Trésorerie</span>
+            </Link>
+
             <button
               onClick={() => sugubaStore.resetDemoData()}
               className="px-3.5 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-xs font-bold transition-colors"

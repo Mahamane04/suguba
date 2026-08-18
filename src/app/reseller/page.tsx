@@ -12,7 +12,7 @@ import { Product } from '@/types';
 import { 
   Wallet, TrendingUp, ShoppingBag, Clock, CheckCircle2, 
   ArrowUpRight, MessageCircle, Copy, Check, Plus, 
-  Share2, Shield, AlertCircle, Sparkles, ChevronRight, Award
+  Share2, Shield, AlertCircle, Sparkles, ChevronRight, Award, Trophy
 } from 'lucide-react';
 
 export default function ResellerDashboardPage() {
@@ -54,21 +54,29 @@ export default function ResellerDashboardPage() {
             </p>
           </div>
 
-          <div className="relative z-10 flex items-center space-x-2">
+          <div className="relative z-10 flex flex-wrap items-center gap-2">
             <button
               onClick={handleCopyRefCode}
               className="flex items-center space-x-1.5 px-3 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-xs font-bold transition-colors"
             >
               {copiedRef ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copiedRef ? 'Code copié' : 'Copier mon code'}</span>
+              <span>{copiedRef ? 'Code copié' : 'Copier code'}</span>
             </button>
+
+            <Link
+              href="/reseller/challenges"
+              className="flex items-center space-x-1.5 px-3.5 py-2 bg-white/20 hover:bg-white/30 text-white rounded-xl text-xs font-black shadow-xs transition-all active:scale-95"
+            >
+              <Trophy className="w-3.5 h-3.5 text-amber-300" />
+              <span>Défis & Primes</span>
+            </Link>
 
             <Link
               href="/reseller/payouts"
               className="flex items-center space-x-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl text-xs font-black shadow-md transition-all active:scale-95"
             >
               <Wallet className="w-4 h-4" />
-              <span>Retirer mes gains</span>
+              <span>Retirer gains</span>
             </Link>
           </div>
         </div>
