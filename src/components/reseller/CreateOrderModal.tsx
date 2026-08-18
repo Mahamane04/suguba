@@ -54,6 +54,19 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
         resellerCode: currentReseller?.referralCode,
       });
 
+      // Déclenchement de l'envoi du SMS OTP
+      fetch('/api/sms/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          toPhone: customerPhone,
+          orderNumber: order.orderNumber,
+          productName: product.name,
+          deliveryOtp: order.deliveryOtp,
+          totalAmount: order.totalAmount,
+        }),
+      }).catch((err) => console.warn('Notification SMS différée:', err));
+
       setCreatedOrder(order);
       if (onSuccess) onSuccess(order.orderNumber);
     } catch (err: any) {

@@ -58,6 +58,19 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
         resellerCode: refCode || undefined,
       });
 
+      // Déclenchement de l'envoi du SMS OTP en tâche de fond
+      fetch('/api/sms/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          toPhone: customerPhone,
+          orderNumber: order.orderNumber,
+          productName: product.name,
+          deliveryOtp: order.deliveryOtp,
+          totalAmount: order.totalAmount,
+        }),
+      }).catch((err) => console.warn('Notification SMS différée:', err));
+
       router.push(`/order-success/${order.orderNumber}`);
     } catch (err: any) {
       alert(err.message || 'Erreur lors de la validation');
