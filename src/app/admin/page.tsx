@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
+import CloudSyncBadge from '@/components/common/CloudSyncBadge';
 import ProductPricingModal from '@/components/admin/ProductPricingModal';
 import { useSugubaStore, sugubaStore } from '@/lib/store';
 import { whatsappHelper } from '@/lib/whatsapp-helper';
@@ -38,10 +39,13 @@ export default function AdminDashboardPage() {
         
         {/* Admin Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 text-white p-5 sm:p-6 rounded-3xl shadow-lg">
-          <div className="space-y-1">
-            <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-purple-800 text-purple-200 text-[11px] font-bold">
-              <ShieldCheck className="w-3.5 h-3.5 text-purple-300" />
-              <span>Tour de Contrôle Opérationnelle</span>
+          <div className="space-y-1.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-purple-800 text-purple-200 text-[11px] font-bold">
+                <ShieldCheck className="w-3.5 h-3.5 text-purple-300" />
+                <span>Tour de Contrôle Opérationnelle</span>
+              </div>
+              <CloudSyncBadge />
             </div>
             <h1 className="text-xl sm:text-2xl font-black">
               Suguba Master Ops Desk

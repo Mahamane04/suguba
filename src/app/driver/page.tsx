@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
+import CloudSyncBadge from '@/components/common/CloudSyncBadge';
 import OtpValidationModal from '@/components/driver/OtpValidationModal';
 import DeliveryMapModal from '@/components/driver/DeliveryMapModal';
 import PrintableReceiptModal from '@/components/common/PrintableReceiptModal';
@@ -44,10 +45,13 @@ export default function DriverDashboardPage() {
         
         {/* Driver Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-r from-amber-700 to-orange-800 text-white p-5 sm:p-6 rounded-3xl shadow-lg">
-          <div className="space-y-1">
-            <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-amber-600/80 text-amber-100 text-[11px] font-bold">
-              <Truck className="w-3.5 h-3.5" />
-              <span>Livreur Terrain Partenaire</span>
+          <div className="space-y-1.5">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-amber-600/80 text-amber-100 text-[11px] font-bold">
+                <Truck className="w-3.5 h-3.5" />
+                <span>Livreur Terrain Partenaire</span>
+              </div>
+              <CloudSyncBadge />
             </div>
             <h1 className="text-xl sm:text-2xl font-black">
               {currentUser.fullName}
