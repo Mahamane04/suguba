@@ -663,6 +663,38 @@ export const sugubaStore = {
     notify();
   },
 
+  // Mise à jour rapide du stock fournisseur
+  updateProductStock: (productId: string, newStockQuantity: number) => {
+    globalState = {
+      ...globalState,
+      products: globalState.products.map(p => {
+        if (p.id === productId) {
+          return {
+            ...p,
+            stockQuantity: Math.max(0, newStockQuantity),
+          };
+        }
+        return p;
+      })
+    };
+    notify();
+  },
+
+  // Ajout de nouveau produit fournisseur
+  addProduct: (productData: Omit<Product, 'id' | 'createdAt'>) => {
+    const newProduct: Product = {
+      ...productData,
+      id: `prd-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+    };
+    globalState = {
+      ...globalState,
+      products: [newProduct, ...globalState.products]
+    };
+    notify();
+    return newProduct;
+  },
+
   // Réinitialiser les données de démo
   resetDemoData: () => {
     globalState = {

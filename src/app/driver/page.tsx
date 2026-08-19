@@ -5,12 +5,13 @@ import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import OtpValidationModal from '@/components/driver/OtpValidationModal';
 import DeliveryMapModal from '@/components/driver/DeliveryMapModal';
+import PrintableReceiptModal from '@/components/common/PrintableReceiptModal';
 import { useSugubaStore, sugubaStore } from '@/lib/store';
 import { Order } from '@/types';
 import { 
   Truck, Phone, MapPin, KeyRound, CheckCircle2, 
   Banknote, Package, Navigation, AlertCircle, ArrowRight,
-  Compass, MessageCircle
+  Compass, MessageCircle, Printer
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -18,6 +19,7 @@ export default function DriverDashboardPage() {
   const state = useSugubaStore();
   const [selectedOrderForOtp, setSelectedOrderForOtp] = useState<Order | null>(null);
   const [selectedOrderForMap, setSelectedOrderForMap] = useState<Order | null>(null);
+  const [selectedOrderForReceipt, setSelectedOrderForReceipt] = useState<Order | null>(null);
 
   const currentUser = state.currentUser;
   const driver = state.drivers.find(d => d.userId === currentUser.id) || state.drivers[0];
@@ -147,29 +149,37 @@ export default function DriverDashboardPage() {
                     </div>
 
                     {/* Actions */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
                       <button
                         onClick={() => setSelectedOrderForMap(order)}
-                        className="py-3 px-3 bg-blue-50 hover:bg-blue-100 text-blue-900 font-bold border border-blue-200 rounded-2xl text-xs flex items-center justify-center space-x-1.5 transition-colors"
+                        className="py-3 px-2 bg-blue-50 hover:bg-blue-100 text-blue-900 font-bold border border-blue-200 rounded-2xl text-[11px] flex items-center justify-center space-x-1 transition-colors"
                       >
-                        <Compass className="w-4 h-4 text-blue-700" />
-                        <span>Itinéraire & GPS</span>
+                        <Compass className="w-3.5 h-3.5 text-blue-700" />
+                        <span>GPS</span>
+                      </button>
+
+                      <button
+                        onClick={() => setSelectedOrderForReceipt(order)}
+                        className="py-3 px-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold border border-slate-200 rounded-2xl text-[11px] flex items-center justify-center space-x-1 transition-colors"
+                      >
+                        <Printer className="w-3.5 h-3.5 text-slate-600" />
+                        <span>Reçu</span>
                       </button>
 
                       <a
                         href={`tel:${order.customerPhone}`}
-                        className="py-3 px-3 bg-slate-900 hover:bg-black text-white font-bold rounded-2xl text-xs flex items-center justify-center space-x-1.5 transition-colors"
+                        className="py-3 px-2 bg-slate-900 hover:bg-black text-white font-bold rounded-2xl text-[11px] flex items-center justify-center space-x-1 transition-colors"
                       >
-                        <Phone className="w-4 h-4" />
-                        <span>Appeler Client</span>
+                        <Phone className="w-3.5 h-3.5" />
+                        <span>Appel</span>
                       </a>
 
                       <button
                         onClick={() => setSelectedOrderForOtp(order)}
-                        className="py-3 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-2xl text-xs shadow-md shadow-amber-600/20 flex items-center justify-center space-x-1.5 transition-transform active:scale-95"
+                        className="py-3 px-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-2xl text-[11px] shadow-md shadow-amber-600/20 flex items-center justify-center space-x-1 transition-transform active:scale-95"
                       >
-                        <KeyRound className="w-4 h-4 stroke-[2.5]" />
-                        <span>Valider OTP</span>
+                        <KeyRound className="w-3.5 h-3.5 stroke-[2.5]" />
+                        <span>OTP</span>
                       </button>
                     </div>
 
@@ -197,13 +207,22 @@ export default function DriverDashboardPage() {
                     {order.neighborhood} • {order.productName}
                   </p>
                 </div>
-                <div className="text-right">
-                  <span className="text-xs font-black text-emerald-700 block">
-                    {order.totalAmount.toLocaleString('fr-FR')} F
-                  </span>
-                  <span className="text-[10px] text-emerald-600 font-bold">
-                    ✅ OTP Validé
-                  </span>
+                <div className="flex items-center space-x-3">
+                  <button
+                    onClick={() => setSelectedOrderForReceipt(order)}
+                    className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center space-x-1"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    <span>Reçu</span>
+                  </button>
+                  <div className="text-right">
+                    <span className="text-xs font-black text-emerald-700 block">
+                      {order.totalAmount.toLocaleString('fr-FR')} F
+                    </span>
+                    <span className="text-[10px] text-emerald-600 font-bold">
+                      ✅ OTP Validé
+                    </span>
+                  </div>
                 </div>
               </div>
             ))}
@@ -211,6 +230,15 @@ export default function DriverDashboardPage() {
         </div>
 
       </main>
+
+      {/* Printable Receipt Modal */}
+      {selectedOrderForReceipt && (
+        <PrintableReceiptModal
+          order={selectedOrderForReceipt}
+          isOpen={!!selectedOrderForReceipt}
+          onClose={() => setSelectedOrderForReceipt(null)}
+        />
+      )}
 
       {/* Map & GPS Navigation Modal */}
       {selectedOrderForMap && (

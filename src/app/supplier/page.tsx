@@ -8,7 +8,7 @@ import BottomNav from '@/components/common/BottomNav';
 import { useSugubaStore } from '@/lib/store';
 import { 
   ShoppingBag, Plus, PackageCheck, AlertTriangle, 
-  Clock, ShieldCheck, ArrowRight, DollarSign, Store
+  Clock, ShieldCheck, ArrowRight, DollarSign, Store, Package
 } from 'lucide-react';
 
 export default function SupplierDashboardPage() {
@@ -38,7 +38,15 @@ export default function SupplierDashboardPage() {
             </p>
           </div>
 
-          <div>
+          <div className="flex items-center space-x-2">
+            <Link
+              href="/supplier/inventory"
+              className="flex items-center space-x-1.5 px-3.5 py-2.5 bg-white/20 hover:bg-white/30 text-white rounded-2xl text-xs font-bold transition-all active:scale-95"
+            >
+              <Package className="w-4 h-4" />
+              <span>Gérer les Stocks</span>
+            </Link>
+
             <Link
               href="/supplier/products/new"
               className="flex items-center space-x-2 px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 rounded-2xl text-xs font-black shadow-md transition-all active:scale-95"
