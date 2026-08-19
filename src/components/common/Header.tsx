@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSugubaStore, sugubaStore } from '@/lib/store';
 import { UserRole } from '@/types';
 import { 
   ShoppingBag, Shield, Truck, Store, UserCheck, 
-  ChevronDown, RefreshCw, Smartphone, Menu, X, ArrowUpRight
+  ChevronDown, RefreshCw, Smartphone, Menu, X, ArrowUpRight,
+  Moon, Sun, BatteryCharging
 } from 'lucide-react';
 
 export default function Header() {
@@ -15,6 +16,31 @@ export default function Header() {
   const pathname = usePathname();
   const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedTheme = localStorage.getItem('suguba_theme');
+      if (savedTheme === 'dark') {
+        setIsDarkMode(true);
+        document.documentElement.classList.add('dark');
+      }
+    }
+  }, []);
+
+  const toggleDarkMode = () => {
+    const next = !isDarkMode;
+    setIsDarkMode(next);
+    if (typeof window !== 'undefined') {
+      if (next) {
+        document.documentElement.classList.add('dark');
+        localStorage.setItem('suguba_theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        localStorage.setItem('suguba_theme', 'light');
+      }
+    }
+  };
 
   const currentUser = state.currentUser;
 
@@ -85,24 +111,37 @@ export default function Header() {
             </Link>
           </div>
 
-          {/* Role Switcher & Live Profile Selector (Crucial for Pairing & SaaS Multi-Persona) */}
-          <div className="relative">
+          {/* Right Actions: Dark Mode & Role Switcher */}
+          <div className="flex items-center space-x-2">
+            
+            {/* Dark Mode / Battery Saver Toggle */}
             <button
-              onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
-              className={`flex items-center space-x-2 px-3 py-1.5 rounded-full border text-xs font-semibold shadow-xs transition-all ${
-                roleConfig[currentUser.role]?.bg || 'bg-slate-100 border-slate-300'
-              }`}
+              onClick={toggleDarkMode}
+              className="w-9 h-9 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-700 transition-colors"
+              title="Mode Sombre & Économie Batterie"
+              aria-label="Basculer le mode sombre"
             >
-              <CurrentRoleIcon className={`w-3.5 h-3.5 ${roleConfig[currentUser.role]?.color}`} />
-              <span className={roleConfig[currentUser.role]?.color}>
-                {roleConfig[currentUser.role]?.label}
-              </span>
-              <span className="text-slate-400">|</span>
-              <span className="font-bold text-slate-800 max-w-[100px] sm:max-w-none truncate">
-                {currentUser.fullName.split(' ')[0]}
-              </span>
-              <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
+              {isDarkMode ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-slate-700" />}
             </button>
+
+            {/* Role Switcher & Live Profile Selector */}
+            <div className="relative">
+              <button
+                onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
+                className={`flex items-center space-x-2 px-3 py-1.5 rounded-full border text-xs font-semibold shadow-xs transition-all ${
+                  roleConfig[currentUser.role]?.bg || 'bg-slate-100 border-slate-300'
+                }`}
+              >
+                <CurrentRoleIcon className={`w-3.5 h-3.5 ${roleConfig[currentUser.role]?.color}`} />
+                <span className={roleConfig[currentUser.role]?.color}>
+                  {roleConfig[currentUser.role]?.label}
+                </span>
+                <span className="text-slate-400">|</span>
+                <span className="font-bold text-slate-800 max-w-[100px] sm:max-w-none truncate">
+                  {currentUser.fullName.split(' ')[0]}
+                </span>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-500" />
+              </button>
 
             {/* Dropdown Menu */}
             {roleDropdownOpen && (
@@ -164,6 +203,7 @@ export default function Header() {
               </div>
             )}
           </div>
+        </div>
 
           {/* Quick Portals Links (Desktop) */}
           <nav className="hidden md:flex items-center space-x-1 text-sm font-medium">
