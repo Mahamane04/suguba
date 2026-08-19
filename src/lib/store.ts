@@ -651,11 +651,11 @@ export const sugubaStore = {
     notify();
   },
 
-  // 9. Revendeur : Demander un retrait Mobile Money
+  // 9. Revendeur : Demander un retrait Mobile Money ou en Agence
   requestWithdrawal: (data: {
     resellerId: string;
     amount: number;
-    payoutProvider: 'Orange Money' | 'Wave' | 'Moov Money';
+    payoutProvider: 'Orange Money' | 'Wave' | 'Moov Money' | 'Agence Suguba';
     payoutPhone: string;
   }) => {
     const reseller = globalState.resellers.find(r => r.id === data.resellerId);
@@ -670,6 +670,10 @@ export const sugubaStore = {
     }
 
     const resellerUser = globalState.users.find(u => u.id === reseller.userId);
+    const isAgency = data.payoutProvider === 'Agence Suguba';
+    const pickupCode = isAgency ? `SUG-${Math.floor(1000 + Math.random() * 9000)}` : undefined;
+    const agencyLocation = isAgency ? 'Agence Centrale Suguba — Hamdallaye ACI 2000, Bamako' : undefined;
+
     const newWithdrawal: Withdrawal = {
       id: `wth-${Date.now()}`,
       withdrawalCode: `WTH-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -678,6 +682,8 @@ export const sugubaStore = {
       amount: data.amount,
       payoutProvider: data.payoutProvider,
       payoutPhone: data.payoutPhone,
+      pickupCode,
+      agencyLocation,
       status: 'pending',
       createdAt: new Date().toISOString(),
     };
@@ -702,7 +708,9 @@ export const sugubaStore = {
           action: 'REQUEST_WITHDRAWAL',
           entityType: 'withdrawal',
           entityId: newWithdrawal.id,
-          details: `Demande de retrait de ${data.amount} FCFA vers ${data.payoutProvider} (${data.payoutPhone}).`,
+          details: isAgency
+            ? `Demande de retrait espèces en agence de ${data.amount} FCFA. Code Guichet généré : ${pickupCode}.`
+            : `Demande de retrait de ${data.amount} FCFA vers ${data.payoutProvider} (${data.payoutPhone}).`,
           createdAt: new Date().toISOString(),
         },
         ...globalState.auditLogs
@@ -724,7 +732,7 @@ export const sugubaStore = {
     return newWithdrawal;
   },
 
-  // 10. Admin : Valider le virement Mobile Money effectué
+  // 10. Admin : Valider le virement Mobile Money ou décaissement Guichet
   processWithdrawal: (withdrawalId: string, transactionRef: string, adminName: string) => {
     const withdrawal = globalState.withdrawals.find(w => w.id === withdrawalId);
     if (!withdrawal) return;
@@ -750,7 +758,7 @@ export const sugubaStore = {
           action: 'PROCESS_WITHDRAWAL_PAID',
           entityType: 'withdrawal',
           entityId: withdrawalId,
-          details: `Virement de ${withdrawal.amount} FCFA validé vers ${withdrawal.payoutProvider} (${withdrawal.payoutPhone}). Réf: ${transactionRef}.`,
+          details: `Virement/Décaissement de ${withdrawal.amount} FCFA validé vers ${withdrawal.payoutProvider} (${withdrawal.payoutPhone}). Réf: ${transactionRef}.`,
           createdAt: new Date().toISOString(),
         },
         ...globalState.auditLogs
@@ -760,6 +768,31 @@ export const sugubaStore = {
       cloudSyncService.updatePayoutInCloud(withdrawalId, 'completed', transactionRef).catch(() => {});
     }
     notify();
+  },
+
+  // 11. Admin / Guichetier : Valider un retrait par Code en Agence (Espèces)
+  processAgencyPickupCode: (pickupCodeInput: string, adminName: string): { success: boolean; message: string; withdrawal?: Withdrawal } => {
+    const cleanCode = pickupCodeInput.trim().toUpperCase();
+    const withdrawal = globalState.withdrawals.find(
+      w => (w.pickupCode && w.pickupCode.toUpperCase() === cleanCode) || w.withdrawalCode.toUpperCase() === cleanCode
+    );
+
+    if (!withdrawal) {
+      return { success: false, message: `Code de retrait "${cleanCode}" introuvable.` };
+    }
+
+    if (withdrawal.status === 'completed') {
+      return { success: false, message: `Ce code a déjà été utilisé et payé le ${new Date(withdrawal.processedAt || '').toLocaleDateString('fr-FR')}.` };
+    }
+
+    const ref = `GUICHET-CASH-${Math.floor(1000 + Math.random() * 9000)}`;
+    sugubaStore.processWithdrawal(withdrawal.id, ref, adminName);
+
+    return {
+      success: true,
+      message: `Retrait validé avec succès ! Remettez ${withdrawal.amount.toLocaleString('fr-FR')} FCFA en espèces à ${withdrawal.resellerName}.`,
+      withdrawal: { ...withdrawal, status: 'completed', transactionReference: ref },
+    };
   },
 
   // Mise à jour rapide du stock fournisseur

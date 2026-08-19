@@ -159,8 +159,10 @@ export interface Withdrawal {
   resellerId: string;
   resellerName: string;
   amount: number;
-  payoutProvider: 'Orange Money' | 'Wave' | 'Moov Money' | 'Virement';
+  payoutProvider: 'Orange Money' | 'Wave' | 'Moov Money' | 'Virement' | 'Agence Suguba';
   payoutPhone: string;
+  pickupCode?: string;         // Code secret à 6 chiffres pour retrait espèces au guichet
+  agencyLocation?: string;     // Nom / Adresse du Hub Suguba (ex: Hamdallaye ACI 2000)
   status: WithdrawalStatus;
   transactionReference?: string;
   processedAt?: string;

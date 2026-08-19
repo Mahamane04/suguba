@@ -13,12 +13,15 @@ import { Product, Order } from '@/types';
 import { 
   ShieldCheck, PhoneCall, Truck, Wallet, ShoppingBag, 
   Clock, CheckCircle2, TrendingUp, AlertCircle, ArrowRight,
-  ExternalLink, UserCheck, ShieldAlert, MessageCircle, BarChart3, Radio
+  ExternalLink, UserCheck, ShieldAlert, MessageCircle, BarChart3, Radio,
+  Building2, QrCode
 } from 'lucide-react';
 
 export default function AdminDashboardPage() {
   const state = useSugubaStore();
   const [selectedProductForPricing, setSelectedProductForPricing] = useState<Product | null>(null);
+  const [agencyCodeInput, setAgencyCodeInput] = useState('');
+  const [agencyCodeFeedback, setAgencyCodeFeedback] = useState<{ success: boolean; message: string } | null>(null);
 
   const pendingProducts = state.products.filter(p => p.status === 'submitted');
   const pendingCallOrders = state.orders.filter(o => o.status === 'pending_call');
@@ -353,13 +356,52 @@ export default function AdminDashboardPage() {
                 <Wallet className="w-4 h-4" />
               </div>
               <div>
-                <h2 className="font-black text-sm text-slate-900">Validation des Retraits Mobile Money</h2>
-                <p className="text-[10px] text-slate-500">Exécuter les virements Orange Money / Wave des revendeurs</p>
+                <h2 className="font-black text-sm text-slate-900">Validation des Retraits Mobile Money & Guichet Agence</h2>
+                <p className="text-[10px] text-slate-500">Exécuter les virements Orange Money / Wave ou décaisser les espèces au Guichet</p>
               </div>
             </div>
             <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-black">
               {pendingPayouts.length} en attente
             </span>
+          </div>
+
+          {/* Guichet Express Code Validation Box */}
+          <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-2xl space-y-2.5">
+            <div className="flex items-center gap-2 text-emerald-900 font-bold text-xs">
+              <Building2 className="w-4 h-4 text-emerald-700" />
+              <span>Guichet Express : Validation Retrait Espèces par Code (Agence Bamako)</span>
+            </div>
+            
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (!agencyCodeInput.trim()) return;
+                const res = sugubaStore.processAgencyPickupCode(agencyCodeInput, state.currentUser.fullName);
+                setAgencyCodeFeedback(res);
+                if (res.success) setAgencyCodeInput('');
+              }}
+              className="flex flex-col sm:flex-row gap-2"
+            >
+              <input
+                type="text"
+                placeholder="Entrez le Code Guichet (ex: SUG-8492)..."
+                value={agencyCodeInput}
+                onChange={(e) => setAgencyCodeInput(e.target.value)}
+                className="flex-1 px-3.5 py-2.5 bg-white border border-emerald-300 rounded-xl text-xs font-mono font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+              />
+              <button
+                type="submit"
+                className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-black shadow-xs whitespace-nowrap active:scale-95 transition-transform"
+              >
+                Valider & Décaisser Espèces
+              </button>
+            </form>
+
+            {agencyCodeFeedback && (
+              <div className={`p-3 rounded-xl text-xs font-bold ${agencyCodeFeedback.success ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-rose-100 text-rose-800 border border-rose-200'}`}>
+                {agencyCodeFeedback.message}
+              </div>
+            )}
           </div>
 
           {pendingPayouts.length === 0 ? (
@@ -371,22 +413,29 @@ export default function AdminDashboardPage() {
               {pendingPayouts.map((wth) => (
                 <div key={wth.id} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <p className="font-bold text-xs text-slate-900">
-                      {wth.amount.toLocaleString('fr-FR')} FCFA pour <strong>{wth.resellerName}</strong>
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-bold text-xs text-slate-900">
+                        {wth.amount.toLocaleString('fr-FR')} FCFA pour <strong>{wth.resellerName}</strong>
+                      </p>
+                      {wth.pickupCode && (
+                        <span className="font-mono text-[10px] font-black px-2 py-0.5 bg-emerald-100 text-emerald-900 rounded-md">
+                          Guichet: {wth.pickupCode}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[11px] text-slate-500">
-                      Destination : <strong className="text-slate-800">{wth.payoutProvider}</strong> ({wth.payoutPhone}) • Code : {wth.withdrawalCode}
+                      Mode : <strong className="text-slate-800">{wth.payoutProvider}</strong> ({wth.payoutPhone}) • Réf : {wth.withdrawalCode}
                     </p>
                   </div>
 
                   <button
                     onClick={() => {
-                      const ref = prompt('Entrez la référence de transaction Mobile Money (ou laissez vide pour auto-générer) :');
+                      const ref = prompt('Entrez la référence de transaction Mobile Money ou Quittance Guichet :');
                       sugubaStore.processWithdrawal(wth.id, ref || '', state.currentUser.fullName);
                     }}
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs"
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs whitespace-nowrap"
                   >
-                    Valider le virement effectué
+                    Valider le virement/paiement
                   </button>
                 </div>
               ))}
