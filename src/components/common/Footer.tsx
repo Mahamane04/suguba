@@ -20,8 +20,11 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Legal links */}
+        {/* Legal & B2B links */}
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] font-semibold text-slate-300">
+          <Link href="/b2b/quote" className="text-emerald-400 hover:underline font-bold">
+            🏢 Devis & Proforma B2B
+          </Link>
           <Link href="/legal/terms" className="hover:text-emerald-400 transition-colors">
             Conditions Générales
           </Link>
