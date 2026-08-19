@@ -30,12 +30,15 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   const [neighborhood, setNeighborhood] = useState('');
   const [landmark, setLandmark] = useState('');
   const [quantity, setQuantity] = useState(1);
+  const [paymentOption, setPaymentOption] = useState<'full_cod' | 'deposit_momo'>('full_cod');
   const [deliveryNotes, setDeliveryNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const unitPrice = product.publicPrice || product.supplierPrice;
   const deliveryFee = 1500;
   const totalAmount = (unitPrice * quantity) + deliveryFee;
+  const depositAmount = totalAmount >= 30000 ? 3000 : 0;
+  const remainingAtDelivery = paymentOption === 'deposit_momo' ? totalAmount - depositAmount : totalAmount;
 
   const handleOrderSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -285,6 +288,47 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 </div>
               </div>
 
+              {/* Mode de règlement & Option d'Acompte */}
+              {depositAmount > 0 && (
+                <div className="space-y-2 pt-1">
+                  <label className="block text-xs font-bold text-slate-700">
+                    Option de Livraison & Règlement :
+                  </label>
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentOption('full_cod')}
+                      className={`p-3 rounded-2xl border text-left transition-all ${
+                        paymentOption === 'full_cod' 
+                          ? 'bg-slate-900 text-white border-slate-900 shadow-xs' 
+                          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                      }`}
+                    >
+                      <span className="block font-black text-xs">💵 100% à la Livraison</span>
+                      <span className={`text-[10px] block ${paymentOption === 'full_cod' ? 'text-slate-300' : 'text-slate-500'}`}>
+                        Payez la totalité au livreur
+                      </span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPaymentOption('deposit_momo')}
+                      className={`p-3 rounded-2xl border text-left transition-all ${
+                        paymentOption === 'deposit_momo' 
+                          ? 'bg-emerald-800 text-white border-emerald-800 shadow-xs' 
+                          : 'bg-emerald-50/50 text-emerald-950 border-emerald-200 hover:bg-emerald-100/50'
+                      }`}
+                    >
+                      <span className="block font-black text-xs">⚡ Prioritaire (Acompte 3 000 F)</span>
+                      <span className={`text-[10px] block ${paymentOption === 'deposit_momo' ? 'text-emerald-200' : 'text-emerald-700'}`}>
+                        Bloqué par Wave/Orange Money
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Price summary */}
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1.5">
                 <div className="flex justify-between text-xs text-slate-600">
@@ -292,12 +336,20 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                   <span className="font-semibold">{(unitPrice * quantity).toLocaleString('fr-FR')} FCFA</span>
                 </div>
                 <div className="flex justify-between text-xs text-slate-600">
-                  <span>Livraison à domicile :</span>
+                  <span>Livraison à domicile Bamako :</span>
                   <span className="font-semibold">1 500 FCFA</span>
                 </div>
+
+                {paymentOption === 'deposit_momo' && (
+                  <div className="flex justify-between text-xs font-bold text-emerald-700 bg-emerald-100/50 p-1.5 rounded-lg">
+                    <span>Acompte de réservation :</span>
+                    <span>- {depositAmount.toLocaleString('fr-FR')} FCFA</span>
+                  </div>
+                )}
+
                 <div className="flex justify-between text-sm font-black text-slate-900 pt-1.5 border-t border-slate-200">
-                  <span>Total à payer à la livraison :</span>
-                  <span className="text-emerald-700">{totalAmount.toLocaleString('fr-FR')} FCFA</span>
+                  <span>Reste à payer au livreur :</span>
+                  <span className="text-emerald-700">{remainingAtDelivery.toLocaleString('fr-FR')} FCFA</span>
                 </div>
               </div>
 

@@ -12,7 +12,7 @@ import { Product, Order } from '@/types';
 import { 
   ShieldCheck, PhoneCall, Truck, Wallet, ShoppingBag, 
   Clock, CheckCircle2, TrendingUp, AlertCircle, ArrowRight,
-  ExternalLink, UserCheck, ShieldAlert, MessageCircle
+  ExternalLink, UserCheck, ShieldAlert, MessageCircle, BarChart3
 } from 'lucide-react';
 
 export default function AdminDashboardPage() {
@@ -52,6 +52,14 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/admin/reports/daily"
+              className="flex items-center space-x-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md transition-all active:scale-95"
+            >
+              <BarChart3 className="w-3.5 h-3.5" />
+              <span>Rapport Flash Soir</span>
+            </Link>
+
             <Link
               href="/admin/sav"
               className="flex items-center space-x-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-md transition-all active:scale-95"
