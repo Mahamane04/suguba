@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useSugubaStore, sugubaStore } from '@/lib/store';
 import { UserRole } from '@/types';
@@ -142,11 +143,14 @@ export default function Header() {
 
           {/* ── Logo ── */}
           <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-lg shadow-brand-sm group-hover:shadow-brand-md transition-shadow"
-              style={{ background: 'linear-gradient(135deg, #09b500 0%, #16a34a 100%)' }}
-            >
-              S
+            <div className="relative w-9 h-9 rounded-xl overflow-hidden shadow-brand-sm group-hover:shadow-brand-md transition-shadow shrink-0">
+              <Image 
+                src="/images/logo.png" 
+                alt="Logo Suguba" 
+                fill 
+                className="object-contain"
+                priority
+              />
             </div>
             <div className="leading-none">
               <span className="text-lg font-black tracking-tight text-gray-900">

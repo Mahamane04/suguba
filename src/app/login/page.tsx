@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { sugubaStore, useSugubaStore } from '@/lib/store';
 import { authService } from '@/lib/auth-service';
 import { UserRole } from '@/types';
@@ -96,11 +97,14 @@ export default function LoginPage() {
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-4 sm:px-6">
         <Link href="/" className="flex items-center gap-2">
-          <div
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-lg"
-            style={{ background: 'linear-gradient(135deg, #09b500 0%, #16a34a 100%)' }}
-          >
-            S
+          <div className="relative w-9 h-9 rounded-xl overflow-hidden shrink-0">
+            <Image 
+              src="/images/logo.png" 
+              alt="Logo Suguba" 
+              fill 
+              className="object-contain"
+              priority
+            />
           </div>
           <span className="font-black text-gray-900 text-lg tracking-tight">
             SUGUBA<span className="text-suguba-brand">.ML</span>

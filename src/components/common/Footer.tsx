@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { ShieldCheck, Globe, Handshake, FileText, Phone } from 'lucide-react';
 
 const legalLinks = [
@@ -50,14 +51,17 @@ export default function Footer() {
           {/* Brand */}
           <div className="space-y-3">
             <div className="flex items-center gap-2.5">
-              <div
-                className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-lg"
-                style={{ background: 'linear-gradient(135deg, #09b500 0%, #16a34a 100%)' }}
-              >
-                S
+              <div className="relative w-9 h-9 rounded-xl overflow-hidden shrink-0">
+                <Image 
+                  src="/images/logo.png" 
+                  alt="Logo Suguba" 
+                  fill 
+                  className="object-contain"
+                />
               </div>
               <div>
                 <span className="text-white font-black text-lg tracking-tight">SUGUBA<span className="text-suguba-brand">.ML</span></span>
+                <p className="text-[10px] text-gray-500 font-semibold tracking-wider uppercase">Plateforme SaaS B2B2C Mali</p>
               </div>
             </div>
             <p className="text-xs text-gray-500 leading-relaxed max-w-xs">
