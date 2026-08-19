@@ -3,6 +3,7 @@ import './globals.css';
 import OfflineStatus from '@/components/common/OfflineStatus';
 import PwaInstallPrompt from '@/components/common/PwaInstallPrompt';
 import ServiceWorkerRegister from '@/components/common/ServiceWorkerRegister';
+import WhatsAppFloatingButton from '@/components/common/WhatsAppFloatingButton';
 
 export const metadata: Metadata = {
   title: 'SUGUBA — Vendez Sans Stock au Mali | Social Commerce & Commissions Mobile Money',
@@ -33,6 +34,7 @@ export default function RootLayout({
         <OfflineStatus />
         <PwaInstallPrompt />
         {children}
+        <WhatsAppFloatingButton />
       </body>
     </html>
   );

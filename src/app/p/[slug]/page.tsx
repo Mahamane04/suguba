@@ -35,7 +35,15 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const unitPrice = product.publicPrice || product.supplierPrice;
-  const deliveryFee = 1500;
+  const deliveryFeeByCity: Record<string, number> = {
+    'Bamako': 1500,
+    'Kati': 2500,
+    'Sikasso': 3500,
+    'Ségou': 3500,
+    'Kayes': 5000,
+    'Mopti': 5000,
+  };
+  const deliveryFee = deliveryFeeByCity[city] || 1500;
   const totalAmount = (unitPrice * quantity) + deliveryFee;
   const depositAmount = totalAmount >= 30000 ? 3000 : 0;
   const remainingAtDelivery = paymentOption === 'deposit_momo' ? totalAmount - depositAmount : totalAmount;
@@ -252,9 +260,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                     onChange={(e) => setCity(e.target.value)}
                     className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:bg-white"
                   >
-                    <option value="Bamako">Bamako</option>
-                    <option value="Kati">Kati</option>
-                    <option value="Sikasso">Sikasso</option>
+                    <option value="Bamako">Bamako (1 500 F)</option>
+                    <option value="Kati">Kati (2 500 F)</option>
+                    <option value="Sikasso">Sikasso - Gare SONEF (3 500 F)</option>
+                    <option value="Ségou">Ségou - Gare BTM (3 500 F)</option>
+                    <option value="Kayes">Kayes - Gare SONEF (5 000 F)</option>
+                    <option value="Mopti">Mopti / Sévaré - Gare (5 000 F)</option>
                   </select>
                 </div>
                 <div>
