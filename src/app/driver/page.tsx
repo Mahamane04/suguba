@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import OtpValidationModal from '@/components/driver/OtpValidationModal';
@@ -11,9 +13,8 @@ import { Order } from '@/types';
 import { 
   Truck, Phone, MapPin, KeyRound, CheckCircle2, 
   Banknote, Package, Navigation, AlertCircle, ArrowRight,
-  Compass, MessageCircle, Printer
+  Compass, MessageCircle, Printer, Wallet
 } from 'lucide-react';
-import Image from 'next/image';
 
 export default function DriverDashboardPage() {
   const state = useSugubaStore();
@@ -56,9 +57,19 @@ export default function DriverDashboardPage() {
             </p>
           </div>
 
-          <div className="bg-white/10 backdrop-blur-xs border border-white/20 px-4 py-2 rounded-2xl text-right">
-            <span className="text-[10px] uppercase font-bold text-amber-200 block">Total Encaissé Aujourd&apos;hui</span>
-            <span className="text-lg font-black text-white">{totalCollectedCash.toLocaleString('fr-FR')} FCFA</span>
+          <div className="flex items-center space-x-2">
+            <Link
+              href="/driver/earnings"
+              className="flex items-center space-x-1.5 px-3.5 py-2 bg-white text-slate-950 hover:bg-amber-100 rounded-xl text-xs font-black shadow-md transition-all active:scale-95"
+            >
+              <Wallet className="w-3.5 h-3.5 text-amber-600" />
+              <span>Mon Portefeuille</span>
+            </Link>
+
+            <div className="bg-white/10 backdrop-blur-xs border border-white/20 px-3.5 py-2 rounded-xl text-right">
+              <span className="text-[9px] uppercase font-bold text-amber-200 block">Total Encaissé</span>
+              <span className="text-sm font-black text-white">{totalCollectedCash.toLocaleString('fr-FR')} F</span>
+            </div>
           </div>
         </div>
 
