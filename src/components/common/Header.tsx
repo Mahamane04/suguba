@@ -8,7 +8,7 @@ import { UserRole } from '@/types';
 import {
   ShoppingBag, Shield, Truck, Store, UserCheck,
   ChevronDown, RefreshCw, Menu, X, Globe,
-  Moon, Sun, Zap
+  Moon, Sun, Zap, Bell
 } from 'lucide-react';
 
 const roleConfig: Record<UserRole, {
@@ -204,21 +204,16 @@ export default function Header() {
               }
             </button>
 
-            {/* Role switcher */}
+            {/* Role badge pill */}
             <div className="relative" data-role-dropdown>
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all hover:shadow-sm ${conf.badge}`}
+                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 transition-colors"
                 aria-expanded={dropdownOpen}
               >
-                <span className={`w-1.5 h-1.5 rounded-full ${conf.dotColor} shrink-0`} />
-                <CurrentIcon className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline max-w-[80px] truncate">{conf.label}</span>
-                <span className="hidden sm:inline text-current opacity-40">|</span>
-                <span className="hidden sm:inline font-bold max-w-[80px] truncate">
-                  {currentUser.fullName.split(' ')[0]}
-                </span>
-                <ChevronDown className={`w-3.5 h-3.5 opacity-60 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+                <Shield className="w-3.5 h-3.5 text-emerald-600" />
+                <span>{conf.label}</span>
+                <ChevronDown className={`w-3 h-3 text-emerald-600 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {/* Dropdown */}
@@ -280,6 +275,30 @@ export default function Header() {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Notification Bell */}
+            <div className="relative">
+              <button 
+                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 transition-colors"
+                aria-label="Notifications"
+              >
+                <Bell className="w-4 h-4" />
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center shadow-xs">
+                  3
+                </span>
+              </button>
+            </div>
+
+            {/* User Profile avatar */}
+            <div className="hidden sm:flex items-center gap-2 pl-1">
+              <div className="w-8 h-8 rounded-full bg-slate-900 text-white font-black text-xs flex items-center justify-center border-2 border-emerald-500">
+                {currentUser.fullName.charAt(0)}
+              </div>
+              <div className="leading-none text-left">
+                <p className="text-xs font-bold text-gray-900">{currentUser.fullName.split(' ')[0]}</p>
+                <p className="text-[10px] text-gray-400 capitalize">{conf.label}</p>
+              </div>
             </div>
 
             {/* Mobile menu toggle */}
