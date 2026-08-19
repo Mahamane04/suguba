@@ -64,6 +64,14 @@ export default function ResellerDashboardPage() {
             </button>
 
             <Link
+              href="/reseller/story-generator"
+              className="flex items-center space-x-1.5 px-3.5 py-2 bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white rounded-xl text-xs font-black shadow-md transition-all active:scale-95"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span>Studio Stories 9:16</span>
+            </Link>
+
+            <Link
               href="/reseller/badge"
               className="flex items-center space-x-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black shadow-md transition-all active:scale-95"
             >

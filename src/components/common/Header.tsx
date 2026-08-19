@@ -247,6 +247,16 @@ export default function Header() {
             >
               Admin Ops
             </Link>
+            <Link
+              href="/diaspora"
+              className={`px-3 py-1.5 rounded-lg font-bold transition-colors ${
+                pathname.startsWith('/diaspora')
+                  ? 'bg-indigo-600 text-white'
+                  : 'text-indigo-600 hover:text-indigo-800 bg-indigo-50'
+              }`}
+            >
+              🌍 Diaspora
+            </Link>
           </nav>
 
         </div>

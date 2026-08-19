@@ -22,6 +22,9 @@ export default function Footer() {
 
         {/* Legal & B2B links */}
         <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] font-semibold text-slate-300">
+          <Link href="/diaspora" className="text-indigo-400 hover:underline font-bold">
+            🌍 Espace Diaspora (Cadeaux Famille)
+          </Link>
           <Link href="/b2b/partner" className="text-amber-400 hover:underline font-bold">
             🤝 Devenir Partenaire Entreprise
           </Link>
