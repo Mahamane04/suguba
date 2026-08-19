@@ -27,6 +27,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   // Checkout form states
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
+  const [fulfillmentMethod, setFulfillmentMethod] = useState<'home_delivery' | 'pickup_point'>('home_delivery');
+  const [selectedPickupPoint, setSelectedPickupPoint] = useState<string>('Hub Central Suguba — Hamdallaye ACI 2000 (Gratuit)');
   const [city, setCity] = useState('Bamako');
   const [neighborhood, setNeighborhood] = useState('');
   const [landmark, setLandmark] = useState('');
@@ -65,6 +67,15 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
     }
   };
 
+  const PICKUP_POINTS = [
+    { id: 'hub-aci', name: 'Hub Central Suguba — Hamdallaye ACI 2000 (Derrière Clinique Pasteur)', fee: 0, hours: '08h - 19h30' },
+    { id: 'relais-badala', name: 'Point Relais Badalabougou — Station Total Pont Fahd', fee: 500, hours: '07h - 21h00' },
+    { id: 'relais-marche', name: 'Point Relais Grand Marché — Carrefour Vox Daoula', fee: 500, hours: '08h - 18h30' },
+    { id: 'relais-faladie', name: 'Point Relais Faladié — Tour d\'Afrique / Rond-Point', fee: 500, hours: '07h30 - 20h30' },
+    { id: 'relais-kalaban', name: 'Point Relais Kalaban-Coro — Face Mairie', fee: 500, hours: '08h - 20h00' },
+    { id: 'relais-yirimadio', name: 'Point Relais Yirimadio — Près du Stade du 26 Mars', fee: 500, hours: '08h - 20h00' },
+  ];
+
   const unitPrice = product.publicPrice || product.supplierPrice;
   const deliveryFeeByCity: Record<string, number> = {
     'Bamako': 1500,
@@ -74,7 +85,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
     'Kayes': 5000,
     'Mopti': 5000,
   };
-  const deliveryFee = deliveryFeeByCity[city] || 1500;
+
+  const activePickup = PICKUP_POINTS.find(p => p.name === selectedPickupPoint) || PICKUP_POINTS[0];
+  const deliveryFee = fulfillmentMethod === 'pickup_point' ? activePickup.fee : (deliveryFeeByCity[city] || 1500);
   const discountAmount = appliedPromo ? appliedPromo.discount : 0;
   const totalAmount = Math.max(0, (unitPrice * quantity) + deliveryFee - discountAmount);
   const depositAmount = totalAmount >= 30000 ? 3000 : 0;
@@ -82,10 +95,18 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
 
   const handleOrderSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!customerName || !customerPhone || !neighborhood || !landmark) {
-      alert('Veuillez renseigner votre nom, numéro de téléphone, quartier et repère visuel.');
+    if (!customerName || !customerPhone) {
+      alert('Veuillez renseigner votre nom et votre numéro de téléphone.');
       return;
     }
+
+    if (fulfillmentMethod === 'home_delivery' && (!neighborhood || !landmark)) {
+      alert('Veuillez renseigner votre quartier et votre repère visuel pour la livraison à domicile.');
+      return;
+    }
+
+    const finalNeighborhood = fulfillmentMethod === 'pickup_point' ? 'Point Relais Partenaire' : neighborhood;
+    const finalLandmark = fulfillmentMethod === 'pickup_point' ? selectedPickupPoint : landmark;
 
     setIsSubmitting(true);
     try {
@@ -94,10 +115,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
         quantity,
         customerName,
         customerPhone,
-        city,
-        neighborhood,
-        landmark,
-        deliveryNotes,
+        city: fulfillmentMethod === 'pickup_point' ? 'Bamako' : city,
+        neighborhood: finalNeighborhood,
+        landmark: finalLandmark,
+        deliveryNotes: fulfillmentMethod === 'pickup_point' ? `Retrait en Point Relais : ${selectedPickupPoint}` : deliveryNotes,
         resellerCode: refCode || undefined,
       });
 
@@ -283,53 +304,116 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 </div>
               </div>
 
-              {/* Ville & Quartier */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Ville *</label>
-                  <select
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:bg-white"
+              {/* Choix du mode de livraison */}
+              <div className="space-y-2 pt-1">
+                <label className="block text-xs font-bold text-slate-700">
+                  Mode de Réception du Colis :
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFulfillmentMethod('home_delivery')}
+                    className={`p-3 rounded-2xl border text-left transition-all ${
+                      fulfillmentMethod === 'home_delivery'
+                        ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
+                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                    }`}
                   >
-                    <option value="Bamako">Bamako (1 500 F)</option>
-                    <option value="Kati">Kati (2 500 F)</option>
-                    <option value="Sikasso">Sikasso - Gare SONEF (3 500 F)</option>
-                    <option value="Ségou">Ségou - Gare BTM (3 500 F)</option>
-                    <option value="Kayes">Kayes - Gare SONEF (5 000 F)</option>
-                    <option value="Mopti">Mopti / Sévaré - Gare (5 000 F)</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Quartier *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Ex: Hamdallaye ACI"
-                    value={neighborhood}
-                    onChange={(e) => setNeighborhood(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:bg-white"
-                  />
+                    <span className="block font-black text-xs">🛵 À Domicile</span>
+                    <span className={`text-[10px] block ${fulfillmentMethod === 'home_delivery' ? 'text-slate-300' : 'text-slate-500'}`}>
+                      Livré devant votre porte
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFulfillmentMethod('pickup_point')}
+                    className={`p-3 rounded-2xl border text-left transition-all ${
+                      fulfillmentMethod === 'pickup_point'
+                        ? 'bg-emerald-800 text-white border-emerald-800 shadow-xs'
+                        : 'bg-emerald-50/50 text-emerald-950 border-emerald-200 hover:bg-emerald-100/50'
+                    }`}
+                  >
+                    <span className="block font-black text-xs">🏪 Point Relais</span>
+                    <span className={`text-[10px] block ${fulfillmentMethod === 'pickup_point' ? 'text-emerald-200' : 'text-emerald-700'}`}>
+                      Gratuit ou 500 F à Bamako
+                    </span>
+                  </button>
                 </div>
               </div>
 
-              {/* Repère visuel (Indispensable) */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Repère Visuel Précis (Pharmacie, École, Station...) *
-                </label>
-                <div className="relative">
-                  <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                  <input
-                    type="text"
-                    required
-                    placeholder="Ex: En face de la boulangerie de l'ACI, portail blanc"
-                    value={landmark}
-                    onChange={(e) => setLandmark(e.target.value)}
-                    className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:bg-white"
-                  />
+              {/* Si Point Relais Partenaire sélectionné */}
+              {fulfillmentMethod === 'pickup_point' ? (
+                <div className="space-y-2 bg-emerald-50/40 p-3.5 rounded-2xl border border-emerald-200">
+                  <label className="block text-xs font-bold text-emerald-950">
+                    Sélectionner le Point Relais Partenaire à Bamako :
+                  </label>
+                  <select
+                    value={selectedPickupPoint}
+                    onChange={(e) => setSelectedPickupPoint(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-white border border-emerald-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-emerald-600"
+                  >
+                    {PICKUP_POINTS.map(point => (
+                      <option key={point.id} value={point.name}>
+                        {point.name} — {point.fee === 0 ? 'GRATUIT' : `${point.fee} F`} ({point.hours})
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-[10px] text-emerald-800">
+                    💡 Votre colis sera déposé sous 24h. Vous recevrez un SMS avec votre code de retrait OTP.
+                  </p>
                 </div>
-              </div>
+              ) : (
+                <>
+                  {/* Ville & Quartier pour Livraison à Domicile */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Ville *</label>
+                      <select
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                        className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:bg-white"
+                      >
+                        <option value="Bamako">Bamako (1 500 F)</option>
+                        <option value="Kati">Kati (2 500 F)</option>
+                        <option value="Sikasso">Sikasso - Gare SONEF (3 500 F)</option>
+                        <option value="Ségou">Ségou - Gare BTM (3 500 F)</option>
+                        <option value="Kayes">Kayes - Gare SONEF (5 000 F)</option>
+                        <option value="Mopti">Mopti / Sévaré - Gare (5 000 F)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1">Quartier *</label>
+                      <input
+                        type="text"
+                        required={fulfillmentMethod === 'home_delivery'}
+                        placeholder="Ex: Hamdallaye ACI"
+                        value={neighborhood}
+                        onChange={(e) => setNeighborhood(e.target.value)}
+                        className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Repère visuel (Indispensable) */}
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">
+                      Repère Visuel Précis (Pharmacie, École, Station...) *
+                    </label>
+                    <div className="relative">
+                      <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                      <input
+                        type="text"
+                        required={fulfillmentMethod === 'home_delivery'}
+                        placeholder="Ex: En face de la boulangerie de l'ACI, portail blanc"
+                        value={landmark}
+                        onChange={(e) => setLandmark(e.target.value)}
+                        className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:bg-white"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
 
               {/* Mode de règlement & Option d'Acompte */}
               {depositAmount > 0 && (
