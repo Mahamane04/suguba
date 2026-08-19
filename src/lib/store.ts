@@ -10,6 +10,7 @@ import {
   INITIAL_PRODUCTS, INITIAL_ORDERS, INITIAL_COMMISSIONS, INITIAL_WITHDRAWALS,
   INITIAL_AUDIT_LOGS, INITIAL_SAV_TICKETS 
 } from './mock-data';
+import { cloudSyncService } from './cloud-sync';
 
 const STORAGE_KEY = 'suguba_platform_state_v1';
 
@@ -292,6 +293,12 @@ export const sugubaStore = {
         ...globalState.auditLogs
       ]
     };
+    // Sync order to Supabase PostgreSQL Cloud in background
+    if (typeof window !== 'undefined') {
+      cloudSyncService.pushOrderToCloud(newOrder).catch((err) => {
+        console.warn('Background Supabase cloud push non-blocking error:', err);
+      });
+    }
     notify();
     return newOrder;
   },
