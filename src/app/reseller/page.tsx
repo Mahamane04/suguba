@@ -64,6 +64,14 @@ export default function ResellerDashboardPage() {
             </button>
 
             <Link
+              href="/reseller/badge"
+              className="flex items-center space-x-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black shadow-md transition-all active:scale-95"
+            >
+              <Award className="w-3.5 h-3.5 text-amber-300" />
+              <span>Ma Carte Pro & QR</span>
+            </Link>
+
+            <Link
               href="/reseller/calculator"
               className="flex items-center space-x-1.5 px-3.5 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-slate-950 rounded-xl text-xs font-black shadow-md transition-all active:scale-95"
             >
