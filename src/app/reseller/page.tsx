@@ -64,6 +64,14 @@ export default function ResellerDashboardPage() {
             </button>
 
             <Link
+              href="/reseller/academy"
+              className="flex items-center space-x-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black shadow-md transition-all active:scale-95"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+              <span>Académie & Recrutement</span>
+            </Link>
+
+            <Link
               href="/reseller/referrals"
               className="flex items-center space-x-1.5 px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-black shadow-md transition-all active:scale-95"
             >
