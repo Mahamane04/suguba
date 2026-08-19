@@ -14,7 +14,7 @@ import {
   ShieldCheck, PhoneCall, Truck, Wallet, ShoppingBag, 
   Clock, CheckCircle2, TrendingUp, AlertCircle, ArrowRight,
   ExternalLink, UserCheck, ShieldAlert, MessageCircle, BarChart3, Radio,
-  Building2, QrCode
+  Building2, QrCode, Settings, Trash2, UserCog, RotateCcw, Sparkles, X, Check
 } from 'lucide-react';
 
 export default function AdminDashboardPage() {
@@ -22,6 +22,13 @@ export default function AdminDashboardPage() {
   const [selectedProductForPricing, setSelectedProductForPricing] = useState<Product | null>(null);
   const [agencyCodeInput, setAgencyCodeInput] = useState('');
   const [agencyCodeFeedback, setAgencyCodeFeedback] = useState<{ success: boolean; message: string } | null>(null);
+
+  // Admin Config & Data Purge State
+  const [showConfigModal, setShowConfigModal] = useState(false);
+  const [adminNameInput, setAdminNameInput] = useState(state.currentUser.fullName || 'Directeur Opérations Suguba');
+  const [adminPhoneInput, setAdminPhoneInput] = useState(state.currentUser.phone || '+223 89 46 00 00');
+  const [adminCityInput, setAdminCityInput] = useState(state.currentUser.city || 'Bamako (Hamdallaye ACI 2000)');
+  const [actionFeedback, setActionFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
   const pendingProducts = state.products.filter(p => p.status === 'submitted');
   const pendingCallOrders = state.orders.filter(o => o.status === 'pending_call');
@@ -100,13 +107,34 @@ export default function AdminDashboardPage() {
             </Link>
 
             <button
-              onClick={() => sugubaStore.resetDemoData()}
-              className="px-3.5 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-xl text-xs font-bold transition-colors"
+              onClick={() => setShowConfigModal(true)}
+              className="flex items-center space-x-1.5 px-3.5 py-2 bg-amber-400 hover:bg-amber-500 text-slate-950 rounded-xl text-xs font-black shadow-md transition-all active:scale-95"
             >
-              Réinitialiser Démo
+              <Settings className="w-3.5 h-3.5" />
+              <span>Compte Admin & Nettoyage</span>
             </button>
           </div>
         </div>
+
+        {/* Action Feedback Banner */}
+        {actionFeedback && (
+          <div className={`p-4 rounded-2xl flex items-center justify-between gap-3 text-xs font-bold ${
+            actionFeedback.type === 'success' 
+              ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' 
+              : 'bg-rose-100 text-rose-900 border border-rose-300'
+          }`}>
+            <div className="flex items-center gap-2">
+              {actionFeedback.type === 'success' ? <CheckCircle2 className="w-4 h-4 text-emerald-700" /> : <AlertCircle className="w-4 h-4 text-rose-700" />}
+              <span>{actionFeedback.message}</span>
+            </div>
+            <button 
+              onClick={() => setActionFeedback(null)}
+              className="p-1 hover:bg-black/10 rounded-lg"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         {/* Global Financial Metrics */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -500,6 +528,158 @@ export default function AdminDashboardPage() {
           isOpen={!!selectedProductForPricing}
           onClose={() => setSelectedProductForPricing(null)}
         />
+      )}
+
+      {/* Admin Config & Ghost Data Purge Modal */}
+      {showConfigModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded-3xl p-6 sm:p-7 max-w-lg w-full shadow-2xl border border-gray-100 space-y-6 max-h-[90vh] overflow-y-auto">
+            
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-gray-100 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-amber-100 text-amber-900 flex items-center justify-center">
+                  <UserCog className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-black text-base text-gray-900">Compte Admin & Nettoyage Données</h3>
+                  <p className="text-xs text-gray-500">Paramétrer vos accès et purger les données fantômes</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowConfigModal(false)}
+                className="p-1.5 rounded-full hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Section 1: Coordonnées Administrateur */}
+            <div className="space-y-3.5 bg-slate-50 p-4 rounded-2xl border border-slate-200">
+              <h4 className="font-black text-xs text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <span>1. Vos Coordonnées Super Admin</span>
+              </h4>
+
+              <div className="space-y-2">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Nom Complet de l&apos;Administrateur :</label>
+                  <input
+                    type="text"
+                    value={adminNameInput}
+                    onChange={(e) => setAdminNameInput(e.target.value)}
+                    placeholder="Ex: Mahamane Haidara..."
+                    className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Numéro de Téléphone (SMS / WhatsApp Ops) :</label>
+                  <input
+                    type="tel"
+                    value={adminPhoneInput}
+                    onChange={(e) => setAdminPhoneInput(e.target.value)}
+                    placeholder="Ex: +223 89 46 00 00 ou +223 76 12 34 56..."
+                    className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Ville & Emplacement du Hub Central :</label>
+                  <input
+                    type="text"
+                    value={adminCityInput}
+                    onChange={(e) => setAdminCityInput(e.target.value)}
+                    placeholder="Ex: Bamako (Hamdallaye ACI 2000)..."
+                    className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    sugubaStore.updateAdminProfile(adminNameInput, adminPhoneInput, adminCityInput);
+                    setActionFeedback({
+                      type: 'success',
+                      message: `✅ Profil Super Admin mis à jour avec succès : ${adminNameInput} (${adminPhoneInput}) !`
+                    });
+                    setShowConfigModal(false);
+                  }}
+                  className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-xs transition-colors mt-2"
+                >
+                  Enregistrer les Coordonnées Super Admin
+                </button>
+              </div>
+            </div>
+
+            {/* Section 2: Purge des Données Fantômes */}
+            <div className="space-y-3.5 bg-rose-50/70 p-4 rounded-2xl border border-rose-200">
+              <div className="flex items-center gap-1.5 text-rose-900 font-black text-xs uppercase tracking-wider">
+                <Trash2 className="w-4 h-4 text-rose-600" />
+                <span>2. Nettoyage & Purge des Données Fantômes</span>
+              </div>
+              <p className="text-[11px] text-rose-800 leading-relaxed">
+                Remet à <strong>0</strong> toutes les commandes factices, faux retraits, et fausses commissions pour vous permettre de réaliser des tests réels de A à Z.
+              </p>
+
+              <div className="space-y-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm('Confirmez-vous la suppression de toutes les fausses commandes, faux retraits et fausses commissions ? (Les vrais produits du catalogue seront conservés)')) {
+                      sugubaStore.purgeAllGhostData({ keepProducts: true });
+                      setActionFeedback({
+                        type: 'success',
+                        message: '🗑️ Données fantômes purgées avec succès ! Commandes, retraits et commissions réinitialisés à 0. Prêt pour vos tests réels.'
+                      });
+                      setShowConfigModal(false);
+                    }
+                  }}
+                  className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black shadow-xs transition-transform active:scale-95 flex items-center justify-center gap-1.5"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Purger les Données Fantômes (Garder les Produits)</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm('ATTENTION : Voulez-vous tout réinitialiser à vide (y compris supprimer tous les produits du catalogue pour repartir de zéro absolu) ?')) {
+                      sugubaStore.purgeAllGhostData({ keepProducts: false });
+                      setActionFeedback({
+                        type: 'success',
+                        message: '💥 Base de données 100% vierge ! Vous pouvez maintenant ajouter vos premiers vrais produits fournisseurs.'
+                      });
+                      setShowConfigModal(false);
+                    }
+                  }}
+                  className="w-full py-2 bg-white hover:bg-rose-100 text-rose-700 border border-rose-300 rounded-xl text-xs font-bold transition-colors"
+                >
+                  Tout Vider (Base 100% Vierge sans Produits)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm('Voulez-vous recharger le jeu complet de données de démonstration initial ?')) {
+                      sugubaStore.resetDemoData();
+                      setActionFeedback({
+                        type: 'success',
+                        message: '🔄 Jeu de données de démonstration rechargé avec succès !'
+                      });
+                      setShowConfigModal(false);
+                    }
+                  }}
+                  className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  <span>Recharger le Jeu de Démo</span>
+                </button>
+              </div>
+            </div>
+
+          </div>
+        </div>
       )}
 
       <BottomNav />

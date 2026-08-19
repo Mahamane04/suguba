@@ -918,6 +918,76 @@ export const sugubaStore = {
       savTickets: INITIAL_SAV_TICKETS,
     };
     notify();
+  },
+
+  // ── Mode Production / Purge des données fantômes pour tests réels ──
+  purgeAllGhostData: (options?: { keepProducts?: boolean }) => {
+    const keepProducts = options?.keepProducts ?? true;
+    
+    globalState = {
+      ...globalState,
+      // Réinitialiser toutes les commandes à zéro
+      orders: [],
+      // Réinitialiser les commissions à zéro
+      commissions: [],
+      // Réinitialiser les retraits à zéro
+      withdrawals: [],
+      // Réinitialiser les tickets SAV
+      savTickets: [],
+      // Conserver ou vider les produits selon option
+      products: keepProducts ? globalState.products : [],
+      // Réinitialiser les soldes des revendeurs à 0 FCFA
+      resellers: globalState.resellers.map(r => ({
+        ...r,
+        availableBalance: 0,
+        pendingBalance: 0,
+        totalEarned: 0,
+        successfulOrdersCount: 0,
+      })),
+      // Journal d'audit avec l'action de purge
+      auditLogs: [
+        {
+          id: `log-purge-${Date.now()}`,
+          actorName: globalState.currentUser.fullName || 'Super Admin',
+          role: 'admin',
+          action: 'production_database_purged',
+          entityType: 'database',
+          entityId: 'global_state',
+          details: 'Purge intégrale des données fantômes (commandes, retraits, commissions réinitialisés à 0) pour démarrage en conditions réelles.',
+          createdAt: new Date().toISOString(),
+        }
+      ],
+    };
+
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(globalState));
+    }
+    notify();
+  },
+
+  // ── Configuration du compte Super Admin ──
+  updateAdminProfile: (fullName: string, phone: string, city: string = 'Bamako') => {
+    globalState = {
+      ...globalState,
+      users: globalState.users.map(u => {
+        if (u.role === 'admin' || u.id === 'usr-admin-1') {
+          return {
+            ...u,
+            fullName: fullName.trim() || u.fullName,
+            phone: phone.trim() || u.phone,
+            city: city.trim() || u.city,
+          };
+        }
+        return u;
+      }),
+      currentUser: globalState.currentUser.role === 'admin' ? {
+        ...globalState.currentUser,
+        fullName: fullName.trim() || globalState.currentUser.fullName,
+        phone: phone.trim() || globalState.currentUser.phone,
+        city: city.trim() || globalState.currentUser.city,
+      } : globalState.currentUser,
+    };
+    notify();
   }
 };
 
