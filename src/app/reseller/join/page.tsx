@@ -7,6 +7,7 @@ import Image from 'next/image';
 import Header from '@/components/common/Header';
 import Footer from '@/components/common/Footer';
 import BottomNav from '@/components/common/BottomNav';
+import EarningsCalculator from '@/components/reseller/EarningsCalculator';
 import { 
   Sparkles, CheckCircle2, ShieldCheck, Wallet, 
   ArrowRight, Users, Phone, MapPin, Award
@@ -156,6 +157,11 @@ function JoinContent() {
           </form>
         )}
 
+      </div>
+
+      {/* Embedded Live Earnings Calculator */}
+      <div className="pt-4">
+        <EarningsCalculator showCta={false} />
       </div>
 
     </div>
