@@ -24,9 +24,21 @@ export default function ResellerDashboardPage() {
   const [copiedRef, setCopiedRef] = useState(false);
 
   const currentUser = state.currentUser;
-  const reseller = state.resellers.find(r => r.userId === currentUser.id) || state.resellers[0];
-  const myOrders = state.orders.filter(o => o.resellerId === reseller?.id);
-  const myCommissions = state.commissions.filter(c => c.resellerId === reseller?.id);
+  const reseller = state.resellers.find(r => r.userId === currentUser.id) || state.resellers[0] || {
+    id: 'res-default',
+    userId: currentUser.id,
+    referralCode: 'SUGUBA100',
+    tier: 'new',
+    pendingBalance: 0,
+    availableBalance: 0,
+    totalEarned: 0,
+    successfulOrdersCount: 0,
+    momoNumber: currentUser.phone,
+    momoProvider: 'Orange Money',
+  };
+  
+  const myOrders = state.orders.filter(o => o.resellerId === reseller.id);
+  const myCommissions = state.commissions.filter(c => c.resellerId === reseller.id);
   const approvedProducts = state.products.filter(p => p.status === 'approved');
 
   const handleCopyRefCode = () => {
@@ -37,10 +49,11 @@ export default function ResellerDashboardPage() {
     }
   };
 
-  // Mock progress calculation based on image (29/30 sales)
-  const targetSales = reseller.tier === 'vip' ? 30 : reseller.tier === 'verified' ? 30 : 10;
-  const currentSales = Math.max(reseller.successfulOrdersCount, 29);
-  const progressPercent = Math.min(100, Math.round((currentSales / targetSales) * 100));
+  // Real dynamic calculation
+  const targetSales = reseller.tier === 'vip' ? 100 : reseller.tier === 'verified' ? 30 : 10;
+  const currentSales = reseller.successfulOrdersCount || myOrders.filter(o => o.status === 'delivered').length;
+  const progressPercent = targetSales > 0 ? Math.min(100, Math.round((currentSales / targetSales) * 100)) : 0;
+  const remainingSales = Math.max(0, targetSales - currentSales);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f5f8f5] pb-20 md:pb-10 font-sans">
@@ -59,7 +72,7 @@ export default function ResellerDashboardPage() {
             <div className="lg:col-span-4 space-y-3">
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-emerald-200 text-xs font-bold">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-300" />
-                <span>Revendeur {reseller.tier === 'vip' ? 'VIP' : reseller.tier === 'verified' ? 'Certifié' : 'Nouveau'}</span>
+                <span>Revendeur {reseller.tier === 'vip' ? 'VIP Élite' : reseller.tier === 'verified' ? 'Certifié' : 'Nouveau'}</span>
               </div>
 
               <div>
@@ -227,10 +240,16 @@ export default function ResellerDashboardPage() {
               </div>
               <div>
                 <h2 className="font-black text-xs sm:text-sm text-gray-900">
-                  Statut Revendeur Vérifié : Vos commissions se débloquent à J+7 !
+                  {reseller.tier === 'vip' 
+                    ? 'Statut VIP Élite : Vos commissions se débloquent à J+3 !'
+                    : reseller.tier === 'verified'
+                      ? 'Statut Revendeur Vérifié : Vos commissions se débloquent à J+7 !'
+                      : 'Statut Nouveau Revendeur : Commissions débloquées à J+14 !'}
                 </h2>
                 <p className="text-[11px] text-gray-500">
-                  Plus que 1 vente(s) pour débloquer le paiement VIP à J+3 !
+                  {remainingSales > 0 
+                    ? `Plus que ${remainingSales} vente(s) pour débloquer le palier supérieur !` 
+                    : 'Félicitations, vous êtes au palier de déblocage maximal !'}
                 </p>
               </div>
             </div>
@@ -240,7 +259,7 @@ export default function ResellerDashboardPage() {
             </span>
           </div>
 
-          {/* Progress Bar with 97% */}
+          {/* Progress Bar */}
           <div className="flex items-center gap-3 pt-1">
             <div className="flex-1 bg-gray-100 rounded-full h-2 overflow-hidden">
               <div 

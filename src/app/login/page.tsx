@@ -299,8 +299,18 @@ export default function LoginPage() {
               </form>
             )}
 
+            {/* Register CTA */}
+            <div className="mt-4 pt-4 border-t border-gray-100 text-center">
+              <p className="text-xs text-gray-500">
+                Pas encore de compte ?{' '}
+                <Link href="/register" className="font-bold text-suguba-brand hover:underline">
+                  Créer un compte pro &rarr;
+                </Link>
+              </p>
+            </div>
+
             {/* Trust badges */}
-            <div className="flex items-center justify-center gap-3 mt-5 pt-5 border-t border-gray-50">
+            <div className="flex items-center justify-center gap-3 mt-4 pt-4 border-t border-gray-50">
               <div className="flex items-center gap-1 text-[10px] text-gray-400">
                 <ShieldCheck className="w-3 h-3 text-suguba-brand" />
                 OTP sécurisé

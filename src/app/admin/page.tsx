@@ -30,11 +30,16 @@ export default function AdminDashboardPage() {
   const [adminCityInput, setAdminCityInput] = useState(state.currentUser.city || 'Bamako (Hamdallaye ACI 2000)');
   const [actionFeedback, setActionFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
 
+  // Onboarding Desk Tab
+  const [onboardingTab, setOnboardingTab] = useState<'suppliers' | 'drivers' | 'resellers' | 'diaspora'>('suppliers');
+
   const pendingProducts = state.products.filter(p => p.status === 'submitted');
   const pendingCallOrders = state.orders.filter(o => o.status === 'pending_call');
   const confirmedOrders = state.orders.filter(o => o.status === 'confirmed');
   const inTransitOrders = state.orders.filter(o => o.status === 'in_transit');
   const pendingPayouts = state.withdrawals.filter(w => w.status === 'pending');
+  const pendingSuppliers = state.suppliers.filter(s => s.status === 'pending_approval');
+  const pendingDrivers = state.drivers.filter(d => d.status === 'pending_approval');
 
   const totalGMV = state.orders.reduce((acc, o) => acc + o.totalAmount, 0);
   const totalCommissionsPaid = state.commissions
@@ -517,6 +522,286 @@ export default function AdminDashboardPage() {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Desk 6: Validation des Inscriptions & Onboarding Partenaires (Fournisseurs, Livreurs, Revendeurs & Diaspora) */}
+        <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
+                <UserCheck className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 className="font-black text-sm text-slate-900">Validation des Inscriptions & Onboarding</h2>
+                <p className="text-[10px] text-slate-500">Valider les nouveaux Fournisseurs, Livreurs et gérer les paliers Revendeurs & Diaspora</p>
+              </div>
+            </div>
+
+            {/* Sub-tabs */}
+            <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+              <button
+                onClick={() => setOnboardingTab('suppliers')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
+                  onboardingTab === 'suppliers' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                Fournisseurs {pendingSuppliers.length > 0 && `(${pendingSuppliers.length})`}
+              </button>
+              <button
+                onClick={() => setOnboardingTab('drivers')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
+                  onboardingTab === 'drivers' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                Livreurs {pendingDrivers.length > 0 && `(${pendingDrivers.length})`}
+              </button>
+              <button
+                onClick={() => setOnboardingTab('resellers')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
+                  onboardingTab === 'resellers' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                Revendeurs ({state.resellers.length})
+              </button>
+              <button
+                onClick={() => setOnboardingTab('diaspora')}
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
+                  onboardingTab === 'diaspora' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                Diaspora ({(state.diasporaProfiles || []).length})
+              </button>
+            </div>
+          </div>
+
+          {/* TAB 1: Fournisseurs */}
+          {onboardingTab === 'suppliers' && (
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                Fournisseurs en Attente de Validation :
+              </h3>
+              {pendingSuppliers.length === 0 ? (
+                <p className="text-xs text-slate-400 py-3">✅ Aucun nouveau dossier fournisseur en attente de validation.</p>
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {pendingSuppliers.map((sup) => (
+                    <div key={sup.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <p className="font-bold text-xs text-slate-900">
+                          {sup.companyName} — Gérant : {sup.managerName || 'Non spécifié'}
+                        </p>
+                        <p className="text-[11px] text-slate-500">
+                          Contact : <strong className="text-slate-800">{sup.contactPhone}</strong> • Entrepôt : {sup.warehouseNeighborhood} ({sup.warehouseAddress})
+                        </p>
+                        <span className="text-[10px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded font-bold">
+                          Catégorie : {sup.category || 'Général'} {sup.rccmOrNif && `• NIF: ${sup.rccmOrNif}`}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            sugubaStore.approveSupplier(sup.id, state.currentUser.fullName);
+                            setActionFeedback({
+                              type: 'success',
+                              message: `✅ Fournisseur ${sup.companyName} validé avec succès !`
+                            });
+                          }}
+                          className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs whitespace-nowrap"
+                        >
+                          Valider Fournisseur
+                        </button>
+                        <button
+                          onClick={() => {
+                            const reason = prompt('Motif du rejet du dossier fournisseur :');
+                            if (reason) {
+                              sugubaStore.rejectSupplier(sup.id, reason, state.currentUser.fullName);
+                              setActionFeedback({
+                                type: 'error',
+                                message: `❌ Dossier fournisseur ${sup.companyName} rejeté.`
+                              });
+                            }
+                          }}
+                          className="px-3 py-2 bg-slate-100 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-bold transition-colors"
+                        >
+                          Rejeter
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 2: Livreurs */}
+          {onboardingTab === 'drivers' && (
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                Livreurs en Attente d&apos;Activation :
+              </h3>
+              {pendingDrivers.length === 0 ? (
+                <p className="text-xs text-slate-400 py-3">✅ Tous les livreurs inscrits sont actifs et validés.</p>
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {pendingDrivers.map((drv) => {
+                    const driverUser = state.users.find(u => u.id === drv.userId);
+                    return (
+                      <div key={drv.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                          <p className="font-bold text-xs text-slate-900">
+                            {driverUser?.fullName || 'Livreur'} — {drv.vehicleType}
+                          </p>
+                          <p className="text-[11px] text-slate-500">
+                            Téléphone : <strong className="text-slate-800">{driverUser?.phone}</strong> • Immatriculation : {drv.licensePlate}
+                          </p>
+                          <span className="text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded font-bold">
+                            Zone d&apos;intervention : {drv.zone || 'Bamako'}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              sugubaStore.approveDriver(drv.id, state.currentUser.fullName);
+                              setActionFeedback({
+                                type: 'success',
+                                message: `✅ Livreur ${driverUser?.fullName} activé avec succès !`
+                              });
+                            }}
+                            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs whitespace-nowrap"
+                          >
+                            Activer Livreur
+                          </button>
+                          <button
+                            onClick={() => {
+                              const reason = prompt('Motif du refus du livreur :');
+                              if (reason) {
+                                sugubaStore.rejectDriver(drv.id, reason, state.currentUser.fullName);
+                                setActionFeedback({
+                                  type: 'error',
+                                  message: `❌ Candidature livreur rejetée.`
+                                });
+                              }
+                            }}
+                            className="px-3 py-2 bg-slate-100 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-bold transition-colors"
+                          >
+                            Rejeter
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 3: Revendeurs */}
+          {onboardingTab === 'resellers' && (
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                Gestion des Paliers Revendeurs :
+              </h3>
+              <div className="divide-y divide-slate-100">
+                {state.resellers.map((res) => {
+                  const resUser = state.users.find(u => u.id === res.userId);
+                  return (
+                    <div key={res.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-xs text-slate-900">{resUser?.fullName || 'Revendeur'}</p>
+                          <span className="font-mono text-[10px] bg-emerald-100 text-emerald-900 font-bold px-2 py-0.5 rounded">
+                            {res.referralCode}
+                          </span>
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                            res.tier === 'vip' ? 'bg-amber-100 text-amber-800' : res.tier === 'verified' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'
+                          }`}>
+                            Palier: {res.tier.toUpperCase()}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Tél : {resUser?.phone} • Ventes : {res.successfulOrdersCount} • Solde dispo : {res.availableBalance.toLocaleString('fr-FR')} FCFA
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => {
+                            sugubaStore.updateResellerTier(res.id, 'vip', state.currentUser.fullName);
+                            setActionFeedback({
+                              type: 'success',
+                              message: `👑 Revendeur ${resUser?.fullName} promu au statut VIP (Déblocage à J+3) !`
+                            });
+                          }}
+                          className="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl text-xs font-black"
+                          title="Accorder le statut VIP pour déblocage J+3"
+                        >
+                          👑 Promouvoir VIP (J+3)
+                        </button>
+                        <button
+                          onClick={() => {
+                            sugubaStore.updateResellerTier(res.id, 'verified', state.currentUser.fullName);
+                            setActionFeedback({
+                              type: 'success',
+                              message: `⭐ Revendeur ${resUser?.fullName} passé au statut Vérifié (J+7) !`
+                            });
+                          }}
+                          className="px-2.5 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 rounded-xl text-xs font-bold"
+                        >
+                          ⭐ Vérifié (J+7)
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: Diaspora */}
+          {onboardingTab === 'diaspora' && (
+            <div className="space-y-3">
+              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
+                Membres Diaspora Inscrits :
+              </h3>
+              {(state.diasporaProfiles || []).length === 0 ? (
+                <p className="text-xs text-slate-400 py-3">Aucun membre diaspora inscrit pour le moment.</p>
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {(state.diasporaProfiles || []).map((dia) => (
+                    <div key={dia.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-xs text-slate-900">{dia.fullName}</p>
+                          <span className="text-[10px] bg-purple-100 text-purple-900 font-bold px-2 py-0.5 rounded">
+                            {dia.countryOfResidence}
+                          </span>
+                          <span className="text-[10px] bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded">
+                            Devise : {dia.currency}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          WhatsApp : {dia.phone} • Bénéficiaire au Mali : <strong className="text-slate-800">{dia.beneficiaryNameInMali}</strong> ({dia.beneficiaryPhoneInMali}, {dia.beneficiaryNeighborhoodInMali})
+                        </p>
+                      </div>
+
+                      <a
+                        href={`https://wa.me/${dia.phone.replace(/[^\d]/g, '')}?text=Bonjour%20${encodeURIComponent(dia.fullName)}%20bienvenue%20sur%20Suguba%20Diaspora%20!`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-3 py-1.5 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl text-xs font-bold flex items-center gap-1 self-start sm:self-auto"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5 fill-current" />
+                        <span>Contacter WhatsApp</span>
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
         </div>
 
       </main>

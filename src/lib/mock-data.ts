@@ -1,4 +1,4 @@
-import { User, SupplierProfile, ResellerProfile, DriverProfile, Product, Order, Commission, Withdrawal, AuditLog, SavTicket } from '@/types';
+import { User, SupplierProfile, ResellerProfile, DriverProfile, DiasporaProfile, Product, Order, Commission, Withdrawal, AuditLog, SavTicket } from '@/types';
 
 export const INITIAL_USERS: User[] = [
   {
@@ -64,9 +64,12 @@ export const INITIAL_SUPPLIERS: SupplierProfile[] = [
     id: 'sup-1',
     userId: 'usr-supplier-1',
     companyName: 'Diarra Électronique Bamako',
+    managerName: 'Ibrahim Diarra',
     warehouseAddress: 'Grand Marché, Rue 24, Porte 12',
     warehouseNeighborhood: 'Grand Marché',
     contactPhone: '+223 76 12 34 56',
+    category: 'Électronique & Énergie',
+    status: 'approved',
     totalProducts: 14,
     totalRevenue: 2450000,
   },
@@ -74,9 +77,12 @@ export const INITIAL_SUPPLIERS: SupplierProfile[] = [
     id: 'sup-2',
     userId: 'usr-supplier-2',
     companyName: 'Koné Import Solaire & Maison',
+    managerName: 'Oumar Koné',
     warehouseAddress: 'Zone Industrielle Sotuba, Hangar 4',
     warehouseNeighborhood: 'Sotuba',
     contactPhone: '+223 65 98 76 54',
+    category: 'Solaire & Équipements',
+    status: 'approved',
     totalProducts: 8,
     totalRevenue: 1890000,
   }
@@ -94,6 +100,8 @@ export const INITIAL_RESELLERS: ResellerProfile[] = [
     successfulOrdersCount: 28,
     momoNumber: '+223 79 11 22 33',
     momoProvider: 'Orange Money',
+    status: 'active',
+    neighborhood: 'Hamdallaye ACI 2000',
   },
   {
     id: 'res-2',
@@ -106,6 +114,8 @@ export const INITIAL_RESELLERS: ResellerProfile[] = [
     successfulOrdersCount: 7,
     momoNumber: '+223 66 44 55 66',
     momoProvider: 'Wave',
+    status: 'active',
+    neighborhood: 'Badalabougou',
   }
 ];
 
@@ -115,6 +125,8 @@ export const INITIAL_DRIVERS: DriverProfile[] = [
     userId: 'usr-driver-1',
     vehicleType: 'Moto Sanili 125',
     licensePlate: 'BA-4821-MD',
+    zone: 'Communes IV, V, VI',
+    status: 'approved',
     activeStatus: true,
     totalDeliveries: 142,
     rating: 4.9,
@@ -124,9 +136,28 @@ export const INITIAL_DRIVERS: DriverProfile[] = [
     userId: 'usr-driver-2',
     vehicleType: 'Moto Jakarta Express',
     licensePlate: 'BA-9912-MD',
+    zone: 'Communes I, II, III',
+    status: 'approved',
     activeStatus: true,
     totalDeliveries: 88,
     rating: 4.8,
+  }
+];
+
+export const INITIAL_DIASPORA: DiasporaProfile[] = [
+  {
+    id: 'dia-1',
+    userId: 'usr-diaspora-1',
+    fullName: 'Sekou Traoré',
+    phone: '+33 6 12 34 56 78',
+    countryOfResidence: 'France 🇫🇷 (Paris)',
+    currency: 'EUR',
+    beneficiaryNameInMali: 'Fatoumata Traoré (Mère)',
+    beneficiaryPhoneInMali: '+223 76 99 88 77',
+    beneficiaryNeighborhoodInMali: 'Kalaban Coura',
+    totalOrdersSent: 3,
+    status: 'active',
+    createdAt: '2026-02-01T12:00:00Z',
   }
 ];
 

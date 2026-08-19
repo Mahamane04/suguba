@@ -1,4 +1,6 @@
-export type UserRole = 'admin' | 'supplier' | 'reseller' | 'driver' | 'customer';
+export type UserRole = 'admin' | 'supplier' | 'reseller' | 'driver' | 'customer' | 'diaspora';
+
+export type UserStatus = 'pending_approval' | 'active' | 'suspended' | 'rejected';
 
 export type ResellerTier = 'new' | 'verified' | 'vip';
 
@@ -32,6 +34,8 @@ export interface User {
   fullName: string;
   role: UserRole;
   city: string;
+  country?: string;
+  status?: UserStatus;
   avatarUrl?: string;
   createdAt: string;
 }
@@ -40,11 +44,17 @@ export interface SupplierProfile {
   id: string;
   userId: string;
   companyName: string;
+  managerName?: string;
   warehouseAddress: string;
   warehouseNeighborhood: string;
   contactPhone: string;
+  category?: string;
+  rccmOrNif?: string;
+  status: 'pending_approval' | 'approved' | 'rejected';
   totalProducts: number;
   totalRevenue: number;
+  submittedAt?: string;
+  approvedAt?: string;
 }
 
 export interface ResellerProfile {
@@ -58,6 +68,9 @@ export interface ResellerProfile {
   successfulOrdersCount: number;
   momoNumber?: string;
   momoProvider?: 'Orange Money' | 'Wave' | 'Moov Money';
+  status?: 'active' | 'pending_verification' | 'suspended';
+  neighborhood?: string;
+  joinedAt?: string;
 }
 
 export interface DriverProfile {
@@ -65,9 +78,29 @@ export interface DriverProfile {
   userId: string;
   vehicleType: string;
   licensePlate: string;
+  zone?: string;
+  idDocumentNumber?: string;
+  status: 'pending_approval' | 'approved' | 'rejected';
   activeStatus: boolean;
   totalDeliveries: number;
   rating: number;
+  submittedAt?: string;
+  approvedAt?: string;
+}
+
+export interface DiasporaProfile {
+  id: string;
+  userId: string;
+  fullName: string;
+  phone: string;
+  countryOfResidence: string;
+  currency: 'EUR' | 'USD' | 'CAD' | 'GBP';
+  beneficiaryNameInMali: string;
+  beneficiaryPhoneInMali: string;
+  beneficiaryNeighborhoodInMali: string;
+  totalOrdersSent: number;
+  status: 'active' | 'pending_verification';
+  createdAt: string;
 }
 
 export interface Category {

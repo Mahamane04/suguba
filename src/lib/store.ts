@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react';
 import { 
   User, Product, Order, Commission, Withdrawal, AuditLog, 
-  ResellerProfile, SupplierProfile, DriverProfile, UserRole, SavTicket, OrderStatus 
+  ResellerProfile, SupplierProfile, DriverProfile, DiasporaProfile, UserRole, SavTicket, OrderStatus, ResellerTier 
 } from '@/types';
 import { 
-  INITIAL_USERS, INITIAL_SUPPLIERS, INITIAL_RESELLERS, INITIAL_DRIVERS,
+  INITIAL_USERS, INITIAL_SUPPLIERS, INITIAL_RESELLERS, INITIAL_DRIVERS, INITIAL_DIASPORA,
   INITIAL_PRODUCTS, INITIAL_ORDERS, INITIAL_COMMISSIONS, INITIAL_WITHDRAWALS,
   INITIAL_AUDIT_LOGS, INITIAL_SAV_TICKETS 
 } from './mock-data';
@@ -20,6 +20,7 @@ export interface SugubaState {
   suppliers: SupplierProfile[];
   resellers: ResellerProfile[];
   drivers: DriverProfile[];
+  diasporaProfiles: DiasporaProfile[];
   products: Product[];
   orders: Order[];
   commissions: Commission[];
@@ -36,6 +37,7 @@ const getInitialState = (): SugubaState => {
         const parsed = JSON.parse(saved);
         return {
           ...parsed,
+          diasporaProfiles: parsed.diasporaProfiles || INITIAL_DIASPORA,
           savTickets: parsed.savTickets || INITIAL_SAV_TICKETS,
         };
       } catch (e) {
@@ -49,6 +51,7 @@ const getInitialState = (): SugubaState => {
     suppliers: INITIAL_SUPPLIERS,
     resellers: INITIAL_RESELLERS,
     drivers: INITIAL_DRIVERS,
+    diasporaProfiles: INITIAL_DIASPORA,
     products: INITIAL_PRODUCTS,
     orders: INITIAL_ORDERS,
     commissions: INITIAL_COMMISSIONS,
@@ -910,6 +913,7 @@ export const sugubaStore = {
       suppliers: INITIAL_SUPPLIERS,
       resellers: INITIAL_RESELLERS,
       drivers: INITIAL_DRIVERS,
+      diasporaProfiles: INITIAL_DIASPORA,
       products: INITIAL_PRODUCTS,
       orders: INITIAL_ORDERS,
       commissions: INITIAL_COMMISSIONS,
@@ -986,6 +990,397 @@ export const sugubaStore = {
         phone: phone.trim() || globalState.currentUser.phone,
         city: city.trim() || globalState.currentUser.city,
       } : globalState.currentUser,
+    };
+    notify();
+  },
+
+  // ── Inscription Revendeur (Vente sans stock & Mobile Money) ──
+  registerReseller: (data: {
+    fullName: string;
+    phone: string;
+    city?: string;
+    neighborhood?: string;
+    momoProvider?: 'Orange Money' | 'Wave' | 'Moov Money';
+    momoNumber?: string;
+    referralSponsorCode?: string;
+  }) => {
+    const userId = `usr-reseller-${Date.now()}`;
+    const resellerId = `res-${Date.now()}`;
+    const cleanName = data.fullName.trim().split(' ')[0].toUpperCase().replace(/[^A-Z]/g, '') || 'SUGUBA';
+    const randomDigits = Math.floor(100 + Math.random() * 900);
+    const referralCode = `${cleanName}${randomDigits}`;
+
+    const newUser: User = {
+      id: userId,
+      phone: data.phone.trim(),
+      fullName: data.fullName.trim(),
+      role: 'reseller',
+      city: data.city?.trim() || 'Bamako',
+      status: 'active',
+      createdAt: new Date().toISOString(),
+    };
+
+    const newReseller: ResellerProfile = {
+      id: resellerId,
+      userId: userId,
+      referralCode: referralCode,
+      tier: 'new',
+      pendingBalance: 0,
+      availableBalance: 0,
+      totalEarned: 0,
+      successfulOrdersCount: 0,
+      momoNumber: data.momoNumber?.trim() || data.phone.trim(),
+      momoProvider: data.momoProvider || 'Orange Money',
+      neighborhood: data.neighborhood?.trim() || 'Hamdallaye ACI 2000',
+      status: 'active',
+      joinedAt: new Date().toISOString(),
+    };
+
+    const auditLog: AuditLog = {
+      id: `log-reg-reseller-${Date.now()}`,
+      actorName: data.fullName.trim(),
+      role: 'reseller',
+      action: 'reseller_registered',
+      entityType: 'reseller_profile',
+      entityId: resellerId,
+      details: `Nouveau revendeur inscrit : ${data.fullName} (${data.phone}) avec code affilié ${referralCode}.`,
+      createdAt: new Date().toISOString(),
+    };
+
+    globalState = {
+      ...globalState,
+      users: [newUser, ...globalState.users],
+      resellers: [newReseller, ...globalState.resellers],
+      currentUser: newUser,
+      auditLogs: [auditLog, ...globalState.auditLogs],
+    };
+    notify();
+    return { user: newUser, reseller: newReseller };
+  },
+
+  // ── Inscription Fournisseur (Dépôt produits & Stock) ──
+  registerSupplier: (data: {
+    companyName: string;
+    managerName: string;
+    phone: string;
+    city?: string;
+    warehouseAddress: string;
+    warehouseNeighborhood: string;
+    category?: string;
+    rccmOrNif?: string;
+  }) => {
+    const userId = `usr-supplier-${Date.now()}`;
+    const supplierId = `sup-${Date.now()}`;
+
+    const newUser: User = {
+      id: userId,
+      phone: data.phone.trim(),
+      fullName: `${data.managerName.trim()} (${data.companyName.trim()})`,
+      role: 'supplier',
+      city: data.city?.trim() || 'Bamako',
+      status: 'pending_approval',
+      createdAt: new Date().toISOString(),
+    };
+
+    const newSupplier: SupplierProfile = {
+      id: supplierId,
+      userId: userId,
+      companyName: data.companyName.trim(),
+      managerName: data.managerName.trim(),
+      warehouseAddress: data.warehouseAddress.trim(),
+      warehouseNeighborhood: data.warehouseNeighborhood.trim(),
+      contactPhone: data.phone.trim(),
+      category: data.category?.trim() || 'Général & Import',
+      rccmOrNif: data.rccmOrNif?.trim() || undefined,
+      status: 'pending_approval',
+      totalProducts: 0,
+      totalRevenue: 0,
+      submittedAt: new Date().toISOString(),
+    };
+
+    const auditLog: AuditLog = {
+      id: `log-reg-supplier-${Date.now()}`,
+      actorName: data.managerName.trim(),
+      role: 'supplier',
+      action: 'supplier_onboarding_submitted',
+      entityType: 'supplier_profile',
+      entityId: supplierId,
+      details: `Dépôt de candidature Fournisseur : ${data.companyName} (${data.managerName}, ${data.phone}) - En attente de validation admin.`,
+      createdAt: new Date().toISOString(),
+    };
+
+    globalState = {
+      ...globalState,
+      users: [newUser, ...globalState.users],
+      suppliers: [newSupplier, ...globalState.suppliers],
+      currentUser: newUser,
+      auditLogs: [auditLog, ...globalState.auditLogs],
+    };
+    notify();
+    return { user: newUser, supplier: newSupplier };
+  },
+
+  // ── Inscription Livreur (Courses & OTP) ──
+  registerDriver: (data: {
+    fullName: string;
+    phone: string;
+    city?: string;
+    vehicleType: string;
+    licensePlate: string;
+    zone: string;
+    idDocumentNumber?: string;
+  }) => {
+    const userId = `usr-driver-${Date.now()}`;
+    const driverId = `drv-${Date.now()}`;
+
+    const newUser: User = {
+      id: userId,
+      phone: data.phone.trim(),
+      fullName: data.fullName.trim(),
+      role: 'driver',
+      city: data.city?.trim() || 'Bamako',
+      status: 'pending_approval',
+      createdAt: new Date().toISOString(),
+    };
+
+    const newDriver: DriverProfile = {
+      id: driverId,
+      userId: userId,
+      vehicleType: data.vehicleType.trim() || 'Moto Jakarta',
+      licensePlate: data.licensePlate.trim() || 'En cours d\'immatriculation',
+      zone: data.zone.trim() || 'Communes de Bamako',
+      idDocumentNumber: data.idDocumentNumber?.trim() || undefined,
+      status: 'pending_approval',
+      activeStatus: false,
+      totalDeliveries: 0,
+      rating: 5.0,
+      submittedAt: new Date().toISOString(),
+    };
+
+    const auditLog: AuditLog = {
+      id: `log-reg-driver-${Date.now()}`,
+      actorName: data.fullName.trim(),
+      role: 'driver',
+      action: 'driver_onboarding_submitted',
+      entityType: 'driver_profile',
+      entityId: driverId,
+      details: `Candidature Livreur déposée : ${data.fullName} (${data.phone}, ${data.vehicleType}) - En attente de validation admin.`,
+      createdAt: new Date().toISOString(),
+    };
+
+    globalState = {
+      ...globalState,
+      users: [newUser, ...globalState.users],
+      drivers: [newDriver, ...globalState.drivers],
+      currentUser: newUser,
+      auditLogs: [auditLog, ...globalState.auditLogs],
+    };
+    notify();
+    return { user: newUser, driver: newDriver };
+  },
+
+  // ── Inscription Espace Diaspora (Achat pour proches au Mali) ──
+  registerDiaspora: (data: {
+    fullName: string;
+    phone: string;
+    countryOfResidence: string;
+    currency: 'EUR' | 'USD' | 'CAD' | 'GBP';
+    beneficiaryNameInMali: string;
+    beneficiaryPhoneInMali: string;
+    beneficiaryNeighborhoodInMali: string;
+  }) => {
+    const userId = `usr-diaspora-${Date.now()}`;
+    const diasporaId = `dia-${Date.now()}`;
+
+    const newUser: User = {
+      id: userId,
+      phone: data.phone.trim(),
+      fullName: data.fullName.trim(),
+      role: 'diaspora',
+      city: data.countryOfResidence.trim(),
+      country: data.countryOfResidence.trim(),
+      status: 'active',
+      createdAt: new Date().toISOString(),
+    };
+
+    const newDiaspora: DiasporaProfile = {
+      id: diasporaId,
+      userId: userId,
+      fullName: data.fullName.trim(),
+      phone: data.phone.trim(),
+      countryOfResidence: data.countryOfResidence.trim(),
+      currency: data.currency || 'EUR',
+      beneficiaryNameInMali: data.beneficiaryNameInMali.trim(),
+      beneficiaryPhoneInMali: data.beneficiaryPhoneInMali.trim(),
+      beneficiaryNeighborhoodInMali: data.beneficiaryNeighborhoodInMali.trim(),
+      totalOrdersSent: 0,
+      status: 'active',
+      createdAt: new Date().toISOString(),
+    };
+
+    const auditLog: AuditLog = {
+      id: `log-reg-diaspora-${Date.now()}`,
+      actorName: data.fullName.trim(),
+      role: 'diaspora',
+      action: 'diaspora_account_created',
+      entityType: 'diaspora_profile',
+      entityId: diasporaId,
+      details: `Compte Diaspora créé : ${data.fullName} (${data.countryOfResidence}) -> Bénéficiaire : ${data.beneficiaryNameInMali} (${data.beneficiaryPhoneInMali}, Bamako).`,
+      createdAt: new Date().toISOString(),
+    };
+
+    globalState = {
+      ...globalState,
+      users: [newUser, ...globalState.users],
+      diasporaProfiles: [newDiaspora, ...(globalState.diasporaProfiles || [])],
+      currentUser: newUser,
+      auditLogs: [auditLog, ...globalState.auditLogs],
+    };
+    notify();
+    return { user: newUser, diaspora: newDiaspora };
+  },
+
+  // ── Approbation & Modération Admin des Profils ──
+  approveSupplier: (supplierId: string, adminName: string = 'Super Admin') => {
+    const supplier = globalState.suppliers.find(s => s.id === supplierId);
+    if (!supplier) return;
+
+    globalState = {
+      ...globalState,
+      suppliers: globalState.suppliers.map(s => {
+        if (s.id === supplierId) {
+          return { ...s, status: 'approved', approvedAt: new Date().toISOString() };
+        }
+        return s;
+      }),
+      users: globalState.users.map(u => {
+        if (u.id === supplier.userId) {
+          return { ...u, status: 'active' };
+        }
+        return u;
+      }),
+      auditLogs: [
+        {
+          id: `log-app-sup-${Date.now()}`,
+          actorName: adminName,
+          role: 'admin',
+          action: 'supplier_approved',
+          entityType: 'supplier_profile',
+          entityId: supplierId,
+          details: `Fournisseur ${supplier.companyName} (${supplier.contactPhone}) validé et autorisé à publier des stocks.`,
+          createdAt: new Date().toISOString(),
+        },
+        ...globalState.auditLogs
+      ]
+    };
+    notify();
+  },
+
+  rejectSupplier: (supplierId: string, reason: string = 'Non conforme', adminName: string = 'Super Admin') => {
+    globalState = {
+      ...globalState,
+      suppliers: globalState.suppliers.map(s => {
+        if (s.id === supplierId) return { ...s, status: 'rejected' };
+        return s;
+      }),
+      auditLogs: [
+        {
+          id: `log-rej-sup-${Date.now()}`,
+          actorName: adminName,
+          role: 'admin',
+          action: 'supplier_rejected',
+          entityType: 'supplier_profile',
+          entityId: supplierId,
+          details: `Fournisseur rejeté. Motif : ${reason}`,
+          createdAt: new Date().toISOString(),
+        },
+        ...globalState.auditLogs
+      ]
+    };
+    notify();
+  },
+
+  approveDriver: (driverId: string, adminName: string = 'Super Admin') => {
+    const driver = globalState.drivers.find(d => d.id === driverId);
+    if (!driver) return;
+
+    globalState = {
+      ...globalState,
+      drivers: globalState.drivers.map(d => {
+        if (d.id === driverId) {
+          return { ...d, status: 'approved', activeStatus: true, approvedAt: new Date().toISOString() };
+        }
+        return d;
+      }),
+      users: globalState.users.map(u => {
+        if (u.id === driver.userId) {
+          return { ...u, status: 'active' };
+        }
+        return u;
+      }),
+      auditLogs: [
+        {
+          id: `log-app-drv-${Date.now()}`,
+          actorName: adminName,
+          role: 'admin',
+          action: 'driver_approved',
+          entityType: 'driver_profile',
+          entityId: driverId,
+          details: `Livreur validé et activé pour les courses à Bamako.`,
+          createdAt: new Date().toISOString(),
+        },
+        ...globalState.auditLogs
+      ]
+    };
+    notify();
+  },
+
+  rejectDriver: (driverId: string, reason: string = 'Non conforme', adminName: string = 'Super Admin') => {
+    globalState = {
+      ...globalState,
+      drivers: globalState.drivers.map(d => {
+        if (d.id === driverId) return { ...d, status: 'rejected', activeStatus: false };
+        return d;
+      }),
+      auditLogs: [
+        {
+          id: `log-rej-drv-${Date.now()}`,
+          actorName: adminName,
+          role: 'admin',
+          action: 'driver_rejected',
+          entityType: 'driver_profile',
+          entityId: driverId,
+          details: `Livreur rejeté. Motif : ${reason}`,
+          createdAt: new Date().toISOString(),
+        },
+        ...globalState.auditLogs
+      ]
+    };
+    notify();
+  },
+
+  updateResellerTier: (resellerId: string, tier: ResellerTier, adminName: string = 'Super Admin') => {
+    globalState = {
+      ...globalState,
+      resellers: globalState.resellers.map(r => {
+        if (r.id === resellerId) {
+          return { ...r, tier };
+        }
+        return r;
+      }),
+      auditLogs: [
+        {
+          id: `log-tier-res-${Date.now()}`,
+          actorName: adminName,
+          role: 'admin',
+          action: 'reseller_tier_updated',
+          entityType: 'reseller_profile',
+          entityId: resellerId,
+          details: `Palier revendeur mis à jour : Statut passé à ${tier.toUpperCase()}.`,
+          createdAt: new Date().toISOString(),
+        },
+        ...globalState.auditLogs
+      ]
     };
     notify();
   }

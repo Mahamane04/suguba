@@ -66,6 +66,15 @@ const roleConfig: Record<UserRole, {
     accentText: 'text-slate-700',
     dotColor: 'bg-slate-500',
   },
+  diaspora: {
+    label: 'Diaspora',
+    badge: 'bg-purple-100 text-purple-800 border border-purple-200',
+    icon: Globe,
+    path: '/diaspora',
+    accentBg: 'bg-purple-50',
+    accentText: 'text-purple-700',
+    dotColor: 'bg-purple-500',
+  },
 };
 
 const navLinks = [
@@ -190,6 +199,17 @@ export default function Header() {
             >
               <Globe className="w-3.5 h-3.5" />
               Diaspora
+            </Link>
+            <Link
+              href="/register"
+              className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 ${
+                pathname.startsWith('/register')
+                  ? 'bg-slate-900 text-white'
+                  : 'text-slate-700 hover:bg-slate-100'
+              }`}
+            >
+              <UserCheck className="w-3.5 h-3.5 text-suguba-brand" />
+              Inscription
             </Link>
           </nav>
 
@@ -347,6 +367,14 @@ export default function Header() {
           >
             <Globe className="w-4 h-4" />
             Espace Diaspora
+          </Link>
+          <Link
+            href="/register"
+            onClick={() => setMobileOpen(false)}
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-emerald-600 text-white font-bold"
+          >
+            <UserCheck className="w-4 h-4" />
+            Créer un compte Pro
           </Link>
         </div>
       )}

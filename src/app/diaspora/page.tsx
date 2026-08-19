@@ -6,7 +6,7 @@ import Image from 'next/image';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
-import { useSugubaStore } from '@/lib/store';
+import { useSugubaStore, sugubaStore } from '@/lib/store';
 import { 
   Globe2, CreditCard, HeartHandshake, ShieldCheck, 
   Truck, ArrowRight, CheckCircle2, Phone, MapPin, Sparkles, Star, Camera, Lock
@@ -41,12 +41,34 @@ export default function DiasporaPortalPage() {
 
   const handleDiasporaCheckout = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!beneficiaryName.trim() || !beneficiaryPhone.trim()) {
+      alert('Veuillez renseigner le nom et numéro du bénéficiaire à Bamako.');
+      return;
+    }
     setIsProcessing(true);
+
+    try {
+      const prod = selectedProduct || state.products[0];
+      if (prod) {
+        sugubaStore.createOrder({
+          productId: prod.id,
+          quantity: 1,
+          customerName: beneficiaryName.trim(),
+          customerPhone: beneficiaryPhone.trim(),
+          city: 'Bamako',
+          neighborhood: beneficiaryNeighborhood.trim() || 'Hamdallaye ACI 2000',
+          landmark: `Commande Diaspora [${buyerCountry}] - Bénéficiaire : ${beneficiaryName}`,
+          deliveryNotes: `Paiement en ligne Diaspora (${currency}). Email acheteur : ${buyerEmail || 'Non spécifié'}`,
+        });
+      }
+    } catch (err) {
+      console.error(err);
+    }
 
     setTimeout(() => {
       setIsProcessing(false);
       setOrderComplete(true);
-    }, 1200);
+    }, 800);
   };
 
   const diasporaPacks = [

@@ -238,7 +238,12 @@ export default function HomePage() {
         <section className="py-6 px-4 sm:px-6">
           <div className="max-w-4xl mx-auto">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              {stats.map(({ label, value, icon: Icon }) => (
+              {[
+                { label: 'Revendeurs inscrits', value: `${state.resellers.length}`, icon: Users },
+                { label: 'Commandes livrées', value: `${state.orders.filter(o => o.status === 'delivered').length}`, icon: Package },
+                { label: 'Articles vérifiés', value: `${approvedProducts.length}`, icon: Star },
+                { label: 'Commissions générées', value: `${state.commissions.filter(c => c.status === 'available' || c.status === 'paid' || c.status === 'locked').reduce((a, b) => a + b.amount, 0).toLocaleString('fr-FR')} F`, icon: Wallet },
+              ].map(({ label, value, icon: Icon }) => (
                 <div key={label} className="bg-white rounded-2xl p-4 border border-gray-100 shadow-card text-center">
                   <Icon className="w-4 h-4 text-suguba-brand mx-auto mb-1.5" />
                   <p className="font-black text-gray-900 text-lg leading-none">{value}</p>
