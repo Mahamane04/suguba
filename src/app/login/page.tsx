@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { sugubaStore, useSugubaStore } from '@/lib/store';
+import { authService } from '@/lib/auth-service';
 import { UserRole } from '@/types';
 import {
   ArrowRight, Smartphone, CheckCircle2, MessageCircle,
@@ -29,7 +30,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const handleRequestOtp = (e: React.FormEvent) => {
+  const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!phone || phone.replace(/\s+/g, '').length < 8) {
       setErrorMessage('Numéro de téléphone invalide.');
@@ -37,33 +38,51 @@ export default function LoginPage() {
     }
     setIsLoading(true);
     setErrorMessage('');
-    const randomOtp = Math.floor(1000 + Math.random() * 9000).toString();
-    setGeneratedOtp(randomOtp);
-    setTimeout(() => {
+
+    try {
+      const res = await authService.requestOtp(phone, otpChannel);
       setIsLoading(false);
-      setStep('otp');
-      if (typeof window !== 'undefined' && 'vibrate' in navigator) {
-        try { navigator.vibrate([100, 50, 100]); } catch (_) {}
+      if (res.success) {
+        if (res.otpCode) setGeneratedOtp(res.otpCode);
+        setStep('otp');
+        if (typeof window !== 'undefined' && 'vibrate' in navigator) {
+          try { navigator.vibrate([100, 50, 100]); } catch (_) {}
+        }
+      } else {
+        setErrorMessage(res.error || 'Erreur lors de l\'envoi du code.');
       }
-    }, 900);
+    } catch (err) {
+      setIsLoading(false);
+      setErrorMessage('Une erreur est survenue.');
+    }
   };
 
-  const handleVerifyOtp = (e: React.FormEvent) => {
+  const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setErrorMessage('');
-    setTimeout(() => {
+
+    try {
+      const verifyRes = await authService.verifyOtpAndSyncProfile(phone, otpCode);
       setIsLoading(false);
-      if (otpCode === generatedOtp || otpCode === '1234' || otpCode === '7421' || otpCode.length === 4) {
-        const existingUser = state.users.find(u => u.phone.includes(phone.replace(/\s+/g, '')));
-        const roleToAssign = existingUser?.role || 'reseller';
-        sugubaStore.switchRole(roleToAssign);
-        const dest = { admin: '/admin', driver: '/driver', supplier: '/supplier', reseller: '/reseller', customer: '/reseller' };
-        router.push(dest[roleToAssign] ?? '/reseller');
+
+      if (verifyRes.success && verifyRes.profile) {
+        const role = verifyRes.profile.role;
+        const destMap: Record<string, string> = {
+          admin: '/admin',
+          driver: '/driver',
+          supplier: '/supplier',
+          reseller: '/reseller',
+          customer: '/reseller',
+        };
+        router.push(destMap[role] || '/reseller');
       } else {
-        setErrorMessage('Code OTP incorrect. Veuillez réessayer.');
+        setErrorMessage(verifyRes.error || 'Code OTP invalide.');
       }
-    }, 700);
+    } catch (err) {
+      setIsLoading(false);
+      setErrorMessage('Erreur lors de la vérification.');
+    }
   };
 
   const handleQuickLogin = (role: UserRole, dest: string) => {
