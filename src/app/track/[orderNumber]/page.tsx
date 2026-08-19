@@ -7,6 +7,7 @@ import Image from 'next/image';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
+import MobileMoneyPaymentDesk from '@/components/common/MobileMoneyPaymentDesk';
 import { useSugubaStore } from '@/lib/store';
 import { whatsappHelper } from '@/lib/whatsapp-helper';
 import { 
@@ -169,6 +170,14 @@ export default function OrderTrackingPage() {
               ))}
             </div>
           </div>
+
+          {/* Instant 1-Click Mobile Money Desk */}
+          {order.status !== 'delivered' && (
+            <MobileMoneyPaymentDesk
+              amount={order.totalAmount}
+              orderNumber={order.orderNumber}
+            />
+          )}
 
           {/* WhatsApp Support & Share Actions */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-3 border-t border-slate-100">

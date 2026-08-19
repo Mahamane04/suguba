@@ -4,6 +4,7 @@ import React, { use } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/common/Header';
+import MobileMoneyPaymentDesk from '@/components/common/MobileMoneyPaymentDesk';
 import { useSugubaStore } from '@/lib/store';
 import { 
   CheckCircle2, KeyRound, ShieldCheck, MapPin, 
@@ -90,6 +91,12 @@ export default function OrderSuccessPage({ params }: { params: Promise<{ orderNu
               <span className="text-emerald-700">{order.totalAmount.toLocaleString('fr-FR')} FCFA</span>
             </div>
           </div>
+
+          {/* Instant 1-Click Mobile Money Desk */}
+          <MobileMoneyPaymentDesk
+            amount={order.totalAmount}
+            orderNumber={order.orderNumber}
+          />
 
           {/* Action Links */}
           <div className="space-y-2 pt-2">
