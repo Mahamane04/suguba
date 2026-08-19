@@ -1,15 +1,32 @@
-const CACHE_NAME = 'suguba-pwa-v1';
+const CACHE_NAME = 'suguba-pwa-v2';
 const STATIC_ASSETS = [
   '/',
   '/manifest.json',
   '/favicon.ico',
   '/reseller',
   '/reseller/catalog',
+  '/reseller/badge',
+  '/reseller/calculator',
+  '/reseller/channels',
+  '/reseller/academy',
+  '/reseller/story-generator',
   '/reseller/orders',
   '/reseller/payouts',
+  '/reseller/referrals',
   '/driver',
+  '/driver/earnings',
   '/supplier',
+  '/supplier/ambassadors',
+  '/supplier/inventory',
   '/admin',
+  '/admin/broadcast',
+  '/admin/reports/daily',
+  '/admin/sav',
+  '/admin/launch-checklist',
+  '/diaspora',
+  '/b2b/partner',
+  '/b2b/quote',
+  '/login',
 ];
 
 // Install Event: Pre-cache core shell
@@ -38,7 +55,7 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// Fetch Event: Network-first with Cache fallback for reliable 3G/4G in Bamako
+// Fetch Event: Network-first with Cache fallback for reliable 2G/3G/4G in Bamako & Regions
 self.addEventListener('fetch', (event) => {
   // Only handle GET requests
   if (event.request.method !== 'GET') return;
@@ -49,8 +66,11 @@ self.addEventListener('fetch', (event) => {
   if (
     url.pathname.startsWith('/_next/static/') ||
     url.hostname.includes('unsplash.com') ||
+    url.hostname.includes('quickchart.io') ||
     url.pathname.endsWith('.png') ||
     url.pathname.endsWith('.jpg') ||
+    url.pathname.endsWith('.jpeg') ||
+    url.pathname.endsWith('.webp') ||
     url.pathname.endsWith('.svg')
   ) {
     event.respondWith(
