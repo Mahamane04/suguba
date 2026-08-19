@@ -1,5 +1,5 @@
 product_name: "Suguba"
-version: "1.0.0"
+version: "1.2.0"
 product_mode: "MODE_PWA" # Mobile-first Progressive Web App + Responsive Web SaaS
 target_region: "Mali (UEMOA / Bamako)"
 currency: "FCFA (XOF)"
@@ -23,19 +23,23 @@ gates:
 
 milestones_completed:
   - M0_SCOPING_AND_ARCHITECTURE
-  - M1_CORE_APPLICATION_PWA
+  - M1_CORE_APPLICATION_PWA_41_ROUTES
   - M2_SUPPLIER_CATALOG_MODERATION
-  - M3_RESELLER_WHATSAPP_KITS
-  - M4_CUSTOMER_ONE_STEP_CHECKOUT
-  - M5_LOGISTICS_CALL_DESK_OTP
+  - M3_RESELLER_WHATSAPP_KITS_AND_916_STUDIO
+  - M4_CUSTOMER_ONE_STEP_CHECKOUT_AND_DIASPORA
+  - M5_LOGISTICS_CALL_DESK_OTP_LOCKED
   - M6_COMMISSIONS_STATE_MACHINE_PAYOUTS
   - M7_ANTI_FRAUD_SECURITY_REPUTATION_TIERS
   - M8_LEGAL_COMPLIANCE_UEMOA_AGREEMENTS
-  - M9_PWA_OFFLINE_CACHE_SERVICE_WORKER
+  - M9_PWA_OFFLINE_CACHE_SERVICE_WORKER_V2
   - M10_MOBILE_MONEY_GATEWAYS_AND_WEBHOOKS
+  - M11_SUGUBA_BUSINESS_BRAND_CHANNELS
+  - M12_CLOUD_REALTIME_SYNC_AND_TEST_SUITE
 
 integrations_ready:
   - Wave Business API (Direct Payouts & Checkout)
   - Orange Money (via CinetPay / Hub2 Gateway)
   - Moov Money (via CinetPay / Hub2 Gateway)
+  - Supabase PostgreSQL Realtime Engine
   - Automated Webhook Handler (/api/webhooks/momo)
+  - 2-Step Phone & SMS/WhatsApp OTP Auth
