@@ -250,11 +250,135 @@ Cliquez pour commander : `,
     isFeatured: true,
     marketingPitch: `☀️ FINI LES COUPURES D'ÉLECTRICITÉ À LA MAISON !
 Kit Solaire complet prêt à l'emploi : 4 ampoules lumineuses + recharge de tous vos téléphones.
-✅ Autonomie 10h garantie
+✅ Autonomie 10 heures garantie
 💰 Prix : 65 000 FCFA
-🛵 Livraison rapide à domicile partout à Bamako.
-Lien direct : `,
+🛵 Livraison express partout à Bamako - Paiement à la réception !
+Commandez directement : `,
     createdAt: '2026-02-10T15:00:00Z',
+  },
+  {
+    id: 'prd-boubou-bazin',
+    supplierId: 'sup-1',
+    supplierName: 'Atelier Couture Bamako & Bazin',
+    name: 'Ensemble Boubou Bazin Riche Getzner Brodé avec Voile Soie',
+    slug: 'ensemble-boubou-bazin-riche-brode',
+    category: 'Mode & Textile',
+    description: 'Magnifique ensemble boubou traditionnel malien en véritable Bazin Riche Getzner 100% coton teinté à la main à Bamako. Broderie royale de haute précision au col et aux manches, livré avec son voile en soie assorti. Idéal pour cérémonies, mariages et fêtes religieuses.',
+    images: [
+      'https://images.unsplash.com/photo-1590736969955-71cc94801759?w=800&q=80',
+      'https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=800&q=80'
+    ],
+    supplierPrice: 25000,
+    publicPrice: 39000,
+    resellerCommission: 5000,
+    sugubaMargin: 9000,
+    stockQuantity: 15,
+    warrantyMonths: 3,
+    preparationDelayHours: 1,
+    stockLocationType: 'supplier',
+    stockLocationAddress: 'Marché Rose de Bamako',
+    status: 'approved',
+    isFeatured: true,
+    marketingPitch: `✨ L'ÉLÉGANCE MALIENNE PAR EXCELLENCE !
+Ensemble Boubou Bazin Riche Getzner Brodé Prestige.
+✅ Bazin 100% pur coton brillant & broderie soignée
+💰 Prix spécial : 39 000 FCFA
+🛵 Livraison à domicile partout à Bamako - Payez quand vous recevez !
+Commandez vite ici : `,
+    createdAt: '2026-02-16T09:00:00Z',
+  },
+  {
+    id: 'prd-pack-chebe-karite',
+    supplierId: 'sup-2',
+    supplierName: 'Nature & Beauté Sahel',
+    name: 'Pack Soin Capillaire Bio Chébé & Beurre de Karité Pur du Mali (4 Produits)',
+    slug: 'pack-soin-capillaire-chebe-karite-mali',
+    category: 'Beauté & Cosmétique',
+    description: 'Coffret complet de soins naturels fortifiants contre la casse et pour la pousse rapide des cheveux crépus et bouclés : Huile de Chébé pure de 250ml, Baume au Beurre de Karité vierge non raffiné 200g, Shampoing doux aux plantes et Sérum antichute.',
+    images: [
+      'https://images.unsplash.com/photo-1608248597359-54859f9c7333?w=800&q=80',
+      'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&q=80'
+    ],
+    supplierPrice: 10000,
+    publicPrice: 17500,
+    resellerCommission: 2500,
+    sugubaMargin: 5000,
+    stockQuantity: 50,
+    warrantyMonths: 6,
+    preparationDelayHours: 1,
+    stockLocationType: 'suguba_hub',
+    stockLocationAddress: 'Hub Suguba ACI 2000',
+    status: 'approved',
+    isFeatured: true,
+    marketingPitch: `🌿 LE SECRET DES CHEVEUX LONGS ET FORTS !
+Pack Bio 100% Naturel Chébé & Karité du Mali.
+✅ Fini la casse, stimule la repousse rapide
+💰 Prix Promo : 17 500 FCFA
+🛵 Livraison à Bamako - Paiement à la réception !
+Cliquez ici pour commander : `,
+    createdAt: '2026-02-16T11:00:00Z',
+  },
+  {
+    id: 'prd-ventilateur-rechargeable',
+    supplierId: 'sup-2',
+    supplierName: 'Koné Import Solaire',
+    name: 'Ventilateur Solaire Rechargeable Silencieux 16" avec Lampe LED & Télécommande',
+    slug: 'ventilateur-solaire-rechargeable-silencieux',
+    category: 'Maison & Confort',
+    description: 'Ventilateur sur pied 16 pouces ultra-puissant et silencieux avec batterie lithium rechargeable intégrée (autonomie 8 heures en vitesse moyenne). Port USB pour recharger smartphones et torche LED intégrée en cas de coupure de courant nocturne.',
+    images: [
+      'https://images.unsplash.com/photo-1618944847823-289eb6e2808c?w=800&q=80',
+      'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=800&q=80'
+    ],
+    supplierPrice: 28000,
+    publicPrice: 42000,
+    resellerCommission: 4500,
+    sugubaMargin: 9500,
+    stockQuantity: 25,
+    warrantyMonths: 12,
+    preparationDelayHours: 1,
+    stockLocationType: 'suguba_hub',
+    stockLocationAddress: 'Hub Suguba ACI 2000',
+    status: 'approved',
+    isFeatured: true,
+    marketingPitch: `💨 DORMEZ AU FRAIS MÊME PENDANT LES COUPURES DE COURANT !
+Ventilateur Rechargeable Solaire 16" avec télécommande et lumière LED.
+✅ Autonomie 8 heures • Recharge solaire et secteur
+💰 Prix Spécial : 42 000 FCFA
+🛵 Livraison rapide partout à Bamako - Payez à la réception !
+Commandez votre ventilateur ici : `,
+    createdAt: '2026-02-16T14:00:00Z',
+  },
+  {
+    id: 'prd-powerbank-ecouteurs',
+    supplierId: 'sup-1',
+    supplierName: 'Diarra Électronique',
+    name: 'Pack High-Tech : Écouteurs Sans Fil Bluetooth 5.3 + Powerbank 20 000mAh',
+    slug: 'pack-hightech-ecouteurs-sansfil-powerbank',
+    category: 'High-Tech & Accessoires',
+    description: 'Duo indispensable pour smartphone : Écouteurs sans fil avec réduction de bruit et boîtier indicateur LED de batterie + Powerbank compact haute capacité 20 000mAh capable de recharger 4 à 5 fois n\'importe quel téléphone Android ou iPhone avec charge rapide 22.5W.',
+    images: [
+      'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=800&q=80',
+      'https://images.unsplash.com/photo-1609081219090-a6d8173087ec?w=800&q=80'
+    ],
+    supplierPrice: 12000,
+    publicPrice: 19900,
+    resellerCommission: 3000,
+    sugubaMargin: 4900,
+    stockQuantity: 35,
+    warrantyMonths: 6,
+    preparationDelayHours: 1,
+    stockLocationType: 'suguba_hub',
+    stockLocationAddress: 'Hub Suguba ACI 2000',
+    status: 'approved',
+    isFeatured: true,
+    marketingPitch: `🔋 NE TOMBEZ PLUS JAMAIS EN PANNE DE BATTERIE !
+Pack Écouteurs Sans Fil Bluetooth + Powerbank 20 000 mAh Charge Rapide.
+✅ Son stéréo haute fidélité & Charge 5 fois votre téléphone
+💰 Prix Choc : 19 900 FCFA
+🛵 Livraison express Bamako - Paiement à la réception !
+Commandez maintenant : `,
+    createdAt: '2026-02-16T16:00:00Z',
   },
   {
     id: 'prd-4',
