@@ -7,11 +7,12 @@ import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import ProductPricingModal from '@/components/admin/ProductPricingModal';
 import { useSugubaStore, sugubaStore } from '@/lib/store';
+import { whatsappHelper } from '@/lib/whatsapp-helper';
 import { Product, Order } from '@/types';
 import { 
   ShieldCheck, PhoneCall, Truck, Wallet, ShoppingBag, 
   Clock, CheckCircle2, TrendingUp, AlertCircle, ArrowRight,
-  ExternalLink, UserCheck, ShieldAlert
+  ExternalLink, UserCheck, ShieldAlert, MessageCircle
 } from 'lucide-react';
 
 export default function AdminDashboardPage() {
@@ -146,20 +147,41 @@ export default function AdminDashboardPage() {
                       <span className="font-mono text-[10px] font-bold text-slate-400">#{order.orderNumber}</span>
                     </div>
 
-                    <div className="flex items-center space-x-2 pt-1">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-1">
                       <a
                         href={`tel:${order.customerPhone}`}
-                        className="flex-1 py-1.5 px-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-[11px] font-bold flex items-center justify-center space-x-1.5 shadow-2xs"
+                        className="py-2 px-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-[10px] font-bold flex items-center justify-center space-x-1 shadow-2xs"
                       >
-                        <PhoneCall className="w-3.5 h-3.5" />
-                        <span>Appeler Client</span>
+                        <PhoneCall className="w-3 h-3" />
+                        <span>Appeler</span>
                       </a>
+
+                      <a
+                        href={whatsappHelper.getUnreachableFollowUpLink(order)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="py-2 px-2 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl text-[10px] font-bold flex items-center justify-center space-x-1 shadow-2xs"
+                      >
+                        <MessageCircle className="w-3 h-3 fill-current" />
+                        <span>Relance FR</span>
+                      </a>
+
+                      <a
+                        href={whatsappHelper.getBambaraFollowUpLink(order)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="py-2 px-2 bg-[#128C7E] hover:bg-[#0e7064] text-white rounded-xl text-[10px] font-bold flex items-center justify-center space-x-1 shadow-2xs"
+                      >
+                        <MessageCircle className="w-3 h-3 fill-current" />
+                        <span>Bambara</span>
+                      </a>
+
                       <button
                         onClick={() => sugubaStore.confirmOrderCall(order.id, state.currentUser.fullName)}
-                        className="py-1.5 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[11px] font-bold flex items-center justify-center space-x-1 shadow-2xs"
+                        className="py-2 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black flex items-center justify-center space-x-1 shadow-2xs"
                       >
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Valider Appel</span>
+                        <CheckCircle2 className="w-3 h-3" />
+                        <span>Valider</span>
                       </button>
                     </div>
                   </div>
