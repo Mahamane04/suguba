@@ -53,6 +53,14 @@ export default function AdminDashboardPage() {
 
           <div className="flex flex-wrap items-center gap-2">
             <Link
+              href="/admin/launch-checklist"
+              className="flex items-center space-x-1.5 px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 rounded-xl text-xs font-black shadow-md transition-all active:scale-95"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span>Checklist & Audit 100%</span>
+            </Link>
+
+            <Link
               href="/admin/reports/daily"
               className="flex items-center space-x-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md transition-all active:scale-95"
             >
