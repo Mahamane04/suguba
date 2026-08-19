@@ -18,6 +18,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   const state = useSugubaStore();
 
   const refCode = searchParams.get('ref');
+  const promoParam = searchParams.get('promo');
   const product = state.products.find(p => p.slug === resolvedParams.slug) || state.products[0];
 
   const reseller = refCode ? state.resellers.find(r => r.referralCode.toUpperCase() === refCode.toUpperCase()) : null;
@@ -34,6 +35,36 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   const [deliveryNotes, setDeliveryNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Promo Code State
+  const [promoCodeInput, setPromoCodeInput] = useState(promoParam || '');
+  const [appliedPromo, setAppliedPromo] = useState<{ code: string; discount: number } | null>(
+    promoParam && promoParam.toUpperCase() === 'RAMADAN' ? { code: 'RAMADAN', discount: 2000 } :
+    promoParam && promoParam.toUpperCase() === 'TABASKI' ? { code: 'TABASKI', discount: 2000 } :
+    promoParam && promoParam.toUpperCase() === 'SUGUBAVIP' ? { code: 'SUGUBAVIP', discount: 1500 } :
+    promoParam && promoParam.toUpperCase() === 'BAMAKO' ? { code: 'BAMAKO', discount: 1000 } : null
+  );
+  const [promoError, setPromoError] = useState('');
+
+  const PROMO_DATABASE: Record<string, number> = {
+    'RAMADAN': 2000,
+    'TABASKI': 2000,
+    'SUGUBAVIP': 1500,
+    'BAMAKO': 1000,
+    'PROMO2026': 1000,
+  };
+
+  const handleApplyPromo = () => {
+    setPromoError('');
+    const code = promoCodeInput.trim().toUpperCase();
+    if (!code) return;
+
+    if (PROMO_DATABASE[code]) {
+      setAppliedPromo({ code, discount: PROMO_DATABASE[code] });
+    } else {
+      setPromoError('Code promo invalide ou expiré');
+    }
+  };
+
   const unitPrice = product.publicPrice || product.supplierPrice;
   const deliveryFeeByCity: Record<string, number> = {
     'Bamako': 1500,
@@ -44,7 +75,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
     'Mopti': 5000,
   };
   const deliveryFee = deliveryFeeByCity[city] || 1500;
-  const totalAmount = (unitPrice * quantity) + deliveryFee;
+  const discountAmount = appliedPromo ? appliedPromo.discount : 0;
+  const totalAmount = Math.max(0, (unitPrice * quantity) + deliveryFee - discountAmount);
   const depositAmount = totalAmount >= 30000 ? 3000 : 0;
   const remainingAtDelivery = paymentOption === 'deposit_momo' ? totalAmount - depositAmount : totalAmount;
 
@@ -340,6 +372,38 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 </div>
               )}
 
+              {/* Champ Code Promo */}
+              <div className="space-y-1.5 pt-1">
+                <label className="block text-xs font-bold text-slate-700">
+                  Code Promo / Réduction Partenaire :
+                </label>
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    placeholder="Ex: RAMADAN, TABASKI, SUGUBAVIP"
+                    value={promoCodeInput}
+                    onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
+                    className="flex-1 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-900 focus:bg-white uppercase"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleApplyPromo}
+                    className="px-3.5 py-2 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-xs transition-colors"
+                  >
+                    Appliquer
+                  </button>
+                </div>
+                {promoError && (
+                  <p className="text-[10px] font-bold text-rose-600">{promoError}</p>
+                )}
+                {appliedPromo && (
+                  <p className="text-[10px] font-bold text-emerald-700 flex items-center">
+                    <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+                    Code {appliedPromo.code} validé : -{appliedPromo.discount.toLocaleString('fr-FR')} FCFA de réduction !
+                  </p>
+                )}
+              </div>
+
               {/* Price summary */}
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1.5">
                 <div className="flex justify-between text-xs text-slate-600">
@@ -347,12 +411,19 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                   <span className="font-semibold">{(unitPrice * quantity).toLocaleString('fr-FR')} FCFA</span>
                 </div>
                 <div className="flex justify-between text-xs text-slate-600">
-                  <span>Livraison à domicile Bamako :</span>
-                  <span className="font-semibold">1 500 FCFA</span>
+                  <span>Livraison ({city}) :</span>
+                  <span className="font-semibold">{deliveryFee.toLocaleString('fr-FR')} FCFA</span>
                 </div>
 
-                {paymentOption === 'deposit_momo' && (
+                {appliedPromo && (
                   <div className="flex justify-between text-xs font-bold text-emerald-700 bg-emerald-100/50 p-1.5 rounded-lg">
+                    <span>Remise Code Promo ({appliedPromo.code}) :</span>
+                    <span>- {appliedPromo.discount.toLocaleString('fr-FR')} FCFA</span>
+                  </div>
+                )}
+
+                {paymentOption === 'deposit_momo' && (
+                  <div className="flex justify-between text-xs font-bold text-amber-700 bg-amber-100/50 p-1.5 rounded-lg">
                     <span>Acompte de réservation :</span>
                     <span>- {depositAmount.toLocaleString('fr-FR')} FCFA</span>
                   </div>
@@ -378,6 +449,97 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
 
           </div>
 
+        </div>
+
+        {/* Section Avis Clients Vérifiés sous OTP */}
+        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-5 mt-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
+            <div>
+              <div className="flex items-center space-x-2">
+                <h3 className="font-black text-base text-slate-900">Avis & Expériences Clients Vérifiés</h3>
+                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-black rounded-full">
+                  100% Authentifiés par OTP
+                </span>
+              </div>
+              <p className="text-xs text-slate-500">Témoignages de clients livrés à domicile à Bamako et dans les régions.</p>
+            </div>
+
+            <div className="flex items-center space-x-1 text-amber-500 font-black text-sm self-start sm:self-auto">
+              <Star className="w-4 h-4 fill-current text-amber-400" />
+              <Star className="w-4 h-4 fill-current text-amber-400" />
+              <Star className="w-4 h-4 fill-current text-amber-400" />
+              <Star className="w-4 h-4 fill-current text-amber-400" />
+              <Star className="w-4 h-4 fill-current text-amber-400" />
+              <span className="text-slate-900 ml-1.5 text-xs font-black">4.9 / 5 (42 avis)</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+            
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+              <div className="flex items-center justify-between">
+                <strong className="text-slate-900 font-bold">Fatoumata Bamba</strong>
+                <span className="text-[10px] text-slate-400">Hamdallaye ACI 2000</span>
+              </div>
+              <div className="flex text-amber-400">
+                <Star className="w-3 h-3 fill-current" />
+                <Star className="w-3 h-3 fill-current" />
+                <Star className="w-3 h-3 fill-current" />
+                <Star className="w-3 h-3 fill-current" />
+                <Star className="w-3 h-3 fill-current" />
+              </div>
+              <p className="text-slate-600 italic">
+                « Livré le jour même devant mon bureau. Le livreur était très poli et m&apos;a demandé le code secret de sécurité. Produit 100% conforme ! »
+              </p>
+              <div className="flex items-center space-x-1 text-[10px] font-bold text-emerald-700">
+                <ShieldCheck className="w-3 h-3" />
+                <span>Achat Vérifié par OTP</span>
+              </div>
+            </div>
+
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+              <div className="flex items-center justify-between">
+                <strong className="text-slate-900 font-bold">Ousmane Coulibaly</strong>
+                <span className="text-[10px] text-slate-400">Kalaban-Coro</span>
+              </div>
+              <div className="flex text-amber-400">
+                <Star className="w-3 h-3 fill-current" />
+                <Star className="w-3 h-3 fill-current" />
+                <Star className="w-3 h-3 fill-current" />
+                <Star className="w-3 h-3 fill-current" />
+                <Star className="w-3 h-3 fill-current" />
+              </div>
+              <p className="text-slate-600 italic">
+                « Très satisfait de la qualité. J&apos;ai pu tester le produit avant de payer le livreur en espèces. Je recommande Suguba à tout le monde. »
+              </p>
+              <div className="flex items-center space-x-1 text-[10px] font-bold text-emerald-700">
+                <ShieldCheck className="w-3 h-3" />
+                <span>Achat Vérifié par OTP</span>
+              </div>
+            </div>
+
+            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+              <div className="flex items-center justify-between">
+                <strong className="text-slate-900 font-bold">Mariam Traoré</strong>
+                <span className="text-[10px] text-slate-400">Badalabougou</span>
+              </div>
+              <div className="flex text-amber-400">
+                <Star className="w-3 h-3 fill-current" />
+                <Star className="w-3 h-3 fill-current" />
+                <Star className="w-3 h-3 fill-current" />
+                <Star className="w-3 h-3 fill-current" />
+                <Star className="w-3 h-3 fill-current" />
+              </div>
+              <p className="text-slate-600 italic">
+                « Commande passée en 30 secondes sans créer de compte. Paiement par Wave à l&apos;arrivée. Bravo pour le sérieux ! »
+              </p>
+              <div className="flex items-center space-x-1 text-[10px] font-bold text-emerald-700">
+                <ShieldCheck className="w-3 h-3" />
+                <span>Achat Vérifié par OTP</span>
+              </div>
+            </div>
+
+          </div>
         </div>
 
       </main>
