@@ -12,7 +12,7 @@ import { Product } from '@/types';
 import { 
   Wallet, TrendingUp, ShoppingBag, Clock, CheckCircle2, 
   ArrowUpRight, MessageCircle, Copy, Check, Plus, 
-  Share2, Shield, AlertCircle, Sparkles, ChevronRight, Award, Trophy, Users
+  Share2, Shield, AlertCircle, Sparkles, ChevronRight, Award, Trophy, Users, Building2
 } from 'lucide-react';
 
 export default function ResellerDashboardPage() {
@@ -62,6 +62,14 @@ export default function ResellerDashboardPage() {
               {copiedRef ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copiedRef ? 'Code copié' : 'Copier code'}</span>
             </button>
+
+            <Link
+              href="/reseller/channels"
+              className="flex items-center space-x-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-md transition-all active:scale-95"
+            >
+              <Building2 className="w-3.5 h-3.5 text-emerald-200" />
+              <span>Canaux de Marques</span>
+            </Link>
 
             <Link
               href="/reseller/academy"
