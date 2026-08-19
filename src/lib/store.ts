@@ -708,6 +708,18 @@ export const sugubaStore = {
         ...globalState.auditLogs
       ]
     };
+    if (typeof window !== 'undefined') {
+      cloudSyncService.pushPayoutToCloud({
+        id: newWithdrawal.id,
+        resellerId: newWithdrawal.resellerId,
+        resellerName: newWithdrawal.resellerName,
+        amount: newWithdrawal.amount,
+        payoutProvider: newWithdrawal.payoutProvider,
+        payoutPhone: newWithdrawal.payoutPhone,
+        status: 'pending',
+        createdAt: newWithdrawal.createdAt,
+      }).catch(() => {});
+    }
     notify();
     return newWithdrawal;
   },
@@ -744,6 +756,9 @@ export const sugubaStore = {
         ...globalState.auditLogs
       ]
     };
+    if (typeof window !== 'undefined') {
+      cloudSyncService.updatePayoutInCloud(withdrawalId, 'completed', transactionRef).catch(() => {});
+    }
     notify();
   },
 

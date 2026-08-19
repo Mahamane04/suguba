@@ -253,6 +253,74 @@ class CloudSyncService {
     }
   }
 
+  // 6. Push d'une demande de retrait vers Supabase
+  public async pushPayoutToCloud(withdrawal: {
+    id: string;
+    resellerId: string;
+    resellerName: string;
+    amount: number;
+    payoutProvider: string;
+    payoutPhone: string;
+    status: string;
+    createdAt: string;
+  }): Promise<boolean> {
+    if (!this.isCloudActive() || !supabase) return false;
+
+    try {
+      const providerMap: Record<string, string> = {
+        'Wave': 'wave',
+        'Orange Money': 'orange_money',
+        'Moov Money': 'moov',
+      };
+
+      const { error } = await supabase.from('payouts').upsert({
+        id: withdrawal.id,
+        reseller_id: withdrawal.resellerId,
+        reseller_name: withdrawal.resellerName,
+        amount: withdrawal.amount,
+        payment_method: providerMap[withdrawal.payoutProvider] || 'orange_money',
+        phone_number: withdrawal.payoutPhone,
+        status: 'pending',
+        created_at: withdrawal.createdAt,
+      });
+
+      if (error) {
+        console.warn('Erreur push retrait Supabase:', error.message);
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.warn('Exception push retrait:', err);
+      return false;
+    }
+  }
+
+  // 7. Mettre à jour le statut du virement dans Supabase
+  public async updatePayoutInCloud(
+    withdrawalId: string,
+    status: 'completed' | 'processing' | 'rejected',
+    transactionRef?: string
+  ): Promise<boolean> {
+    if (!this.isCloudActive() || !supabase) return false;
+
+    try {
+      const { error } = await supabase.from('payouts').update({
+        status,
+        transaction_ref: transactionRef,
+        processed_at: new Date().toISOString(),
+      }).eq('id', withdrawalId);
+
+      if (error) {
+        console.warn('Erreur update statut retrait Supabase:', error.message);
+        return false;
+      }
+      return true;
+    } catch (err) {
+      console.warn('Exception update retrait:', err);
+      return false;
+    }
+  }
+
   // Synchronisation interne depuis les événements Realtime
   private syncOrderFromCloud(cloudOrder: any): void {
     const localState = sugubaStore.getState();
