@@ -1,4 +1,4 @@
-import { User, SupplierProfile, ResellerProfile, DriverProfile, Product, Order, Commission, Withdrawal, AuditLog } from '@/types';
+import { User, SupplierProfile, ResellerProfile, DriverProfile, Product, Order, Commission, Withdrawal, AuditLog, SavTicket } from '@/types';
 
 export const INITIAL_USERS: User[] = [
   {
@@ -642,3 +642,26 @@ export const INITIAL_AUDIT_LOGS: AuditLog[] = [
     createdAt: '2026-02-17T15:45:00Z',
   }
 ];
+
+export const INITIAL_SAV_TICKETS: SavTicket[] = [
+  {
+    id: 'sav-1',
+    ticketNumber: 'SAV-8021',
+    orderId: 'ord-10427',
+    orderNumber: 'SG-10427',
+    customerName: 'Ousmane Sangaré',
+    customerPhone: '+223 75 12 34 56',
+    productName: 'Mixeur Blender Multifonction 2-en-1 Puissant 600W',
+    supplierName: 'Diarra Électronique',
+    issueDescription: 'Le petit bol moulin à épices présente une fissure au niveau du joint de serrage.',
+    resolutionType: 'swap_new',
+    status: 'courier_dispatched',
+    driverId: 'drv-1',
+    driverName: 'Amadou Traoré',
+    driverPhone: '+223 74 88 99 00',
+    swapOtp: '4892',
+    notes: 'Échange sous garantie 6 mois. Nouveau bol remis au coursier pour remplacement chez le client à Kalaban-Coro.',
+    createdAt: '2026-02-18T11:00:00Z',
+  }
+];
+

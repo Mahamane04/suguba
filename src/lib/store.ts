@@ -3,12 +3,12 @@
 import { useState, useEffect } from 'react';
 import { 
   User, Product, Order, Commission, Withdrawal, AuditLog, 
-  ResellerProfile, SupplierProfile, DriverProfile, UserRole 
+  ResellerProfile, SupplierProfile, DriverProfile, UserRole, SavTicket 
 } from '@/types';
 import { 
   INITIAL_USERS, INITIAL_SUPPLIERS, INITIAL_RESELLERS, INITIAL_DRIVERS,
   INITIAL_PRODUCTS, INITIAL_ORDERS, INITIAL_COMMISSIONS, INITIAL_WITHDRAWALS,
-  INITIAL_AUDIT_LOGS 
+  INITIAL_AUDIT_LOGS, INITIAL_SAV_TICKETS 
 } from './mock-data';
 
 const STORAGE_KEY = 'suguba_platform_state_v1';
@@ -24,6 +24,7 @@ export interface SugubaState {
   commissions: Commission[];
   withdrawals: Withdrawal[];
   auditLogs: AuditLog[];
+  savTickets: SavTicket[];
 }
 
 const getInitialState = (): SugubaState => {
@@ -31,7 +32,11 @@ const getInitialState = (): SugubaState => {
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        return {
+          ...parsed,
+          savTickets: parsed.savTickets || INITIAL_SAV_TICKETS,
+        };
       } catch (e) {
         console.error('Failed to parse saved state', e);
       }
@@ -48,6 +53,7 @@ const getInitialState = (): SugubaState => {
     commissions: INITIAL_COMMISSIONS,
     withdrawals: INITIAL_WITHDRAWALS,
     auditLogs: INITIAL_AUDIT_LOGS,
+    savTickets: INITIAL_SAV_TICKETS,
   };
 };
 
@@ -695,6 +701,81 @@ export const sugubaStore = {
     return newProduct;
   },
 
+  // Créer un ticket de réclamation SAV / Garantie
+  createSavTicket: (data: Omit<SavTicket, 'id' | 'ticketNumber' | 'createdAt' | 'status'>) => {
+    const newTicket: SavTicket = {
+      ...data,
+      id: `sav-${Date.now()}`,
+      ticketNumber: `SAV-${Math.floor(1000 + Math.random() * 9000)}`,
+      status: 'open',
+      createdAt: new Date().toISOString(),
+    };
+
+    globalState = {
+      ...globalState,
+      savTickets: [newTicket, ...globalState.savTickets],
+      auditLogs: [
+        {
+          id: `log-${Date.now()}`,
+          actorName: 'Desk SAV Suguba',
+          role: 'admin',
+          action: 'CREATE_SAV_TICKET',
+          entityType: 'order',
+          entityId: data.orderId,
+          details: `Ticket SAV #${newTicket.ticketNumber} ouvert pour la commande #${data.orderNumber} (${data.customerName}). Motif : ${data.issueDescription}.`,
+          createdAt: new Date().toISOString(),
+        },
+        ...globalState.auditLogs
+      ]
+    };
+    notify();
+    return newTicket;
+  },
+
+  // Assigner un livreur pour l'échange de produit défectueux
+  dispatchSavCourier: (ticketId: string, driverId: string) => {
+    const driver = globalState.drivers.find(d => d.id === driverId);
+    const driverUser = globalState.users.find(u => u.id === driver?.userId);
+    const swapOtp = Math.floor(1000 + Math.random() * 9000).toString();
+
+    globalState = {
+      ...globalState,
+      savTickets: globalState.savTickets.map(t => {
+        if (t.id === ticketId) {
+          return {
+            ...t,
+            status: 'courier_dispatched',
+            driverId,
+            driverName: driverUser?.fullName || 'Livreur Moto',
+            driverPhone: driverUser?.phone || '+223 70 00 00 00',
+            swapOtp,
+          };
+        }
+        return t;
+      })
+    };
+    notify();
+  },
+
+  // Clôturer un ticket SAV (Échange validé ou réparation effectuée)
+  resolveSavTicket: (ticketId: string, notes?: string) => {
+    globalState = {
+      ...globalState,
+      savTickets: globalState.savTickets.map(t => {
+        if (t.id === ticketId) {
+          return {
+            ...t,
+            status: 'resolved',
+            notes: notes || t.notes,
+            resolvedAt: new Date().toISOString(),
+          };
+        }
+        return t;
+      })
+    };
+    notify();
+  },
+
   // Réinitialiser les données de démo
   resetDemoData: () => {
     globalState = {
@@ -708,6 +789,7 @@ export const sugubaStore = {
       commissions: INITIAL_COMMISSIONS,
       withdrawals: INITIAL_WITHDRAWALS,
       auditLogs: INITIAL_AUDIT_LOGS,
+      savTickets: INITIAL_SAV_TICKETS,
     };
     notify();
   }

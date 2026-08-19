@@ -177,3 +177,28 @@ export interface AuditLog {
   details: string;
   createdAt: string;
 }
+
+export type SavResolutionType = 'swap_new' | 'repair' | 'refund';
+export type SavTicketStatus = 'open' | 'courier_dispatched' | 'swapped' | 'resolved' | 'rejected';
+
+export interface SavTicket {
+  id: string;
+  ticketNumber: string;
+  orderId: string;
+  orderNumber: string;
+  customerName: string;
+  customerPhone: string;
+  productName: string;
+  supplierName: string;
+  issueDescription: string;
+  resolutionType: SavResolutionType;
+  status: SavTicketStatus;
+  driverId?: string;
+  driverName?: string;
+  driverPhone?: string;
+  swapOtp?: string;
+  notes?: string;
+  createdAt: string;
+  resolvedAt?: string;
+}
+

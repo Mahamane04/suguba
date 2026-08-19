@@ -51,7 +51,15 @@ export default function AdminDashboardPage() {
             </p>
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href="/admin/sav"
+              className="flex items-center space-x-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-md transition-all active:scale-95"
+            >
+              <ShieldAlert className="w-3.5 h-3.5" />
+              <span>Desk SAV & Retours</span>
+            </Link>
+
             <Link
               href="/admin/analytics"
               className="flex items-center space-x-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition-all active:scale-95"
