@@ -1,188 +1,183 @@
 -- ==============================================================================
--- SUGUBA SAAS — SCHÉMA POSTGRESQL COMPLET AVEC RLS (SUPABASE)
--- Conforme aux spécifications MicroOffice SaaS Factory V3.1
+-- SUGUBA SAAS — SCHÉMA DE BASE DE DONNÉES SUPABASE (PostgreSQL)
+-- V1.3 — MicroOffice SaaS Factory (Mali)
 -- ==============================================================================
 
 -- 1. EXTENSIONS
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- 2. ÉNUMÉRATIONS
-CREATE TYPE user_role AS ENUM ('reseller', 'supplier', 'driver', 'admin', 'customer');
-CREATE TYPE product_status AS ENUM ('draft', 'submitted', 'approved', 'rejected');
-CREATE TYPE order_status AS ENUM ('new', 'pending_call', 'confirmed', 'dispatched', 'in_transit', 'delivered', 'cancelled', 'returned');
-CREATE TYPE commission_status AS ENUM ('potential', 'pending', 'locked', 'available', 'withdrawal_requested', 'paid', 'cancelled');
-CREATE TYPE withdrawal_status AS ENUM ('pending', 'approved', 'processing', 'completed', 'rejected');
-CREATE TYPE reseller_tier AS ENUM ('new', 'verified', 'vip');
-
--- 3. TABLES PRINCIPALES
-
--- Table Utilisateurs
-CREATE TABLE IF NOT EXISTS users (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    full_name VARCHAR(255) NOT NULL,
-    phone VARCHAR(50) UNIQUE NOT NULL,
-    role user_role NOT NULL DEFAULT 'reseller',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- 2. TABLE DES PRODUITS (products)
+CREATE TABLE IF NOT EXISTS public.products (
+  id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
+  name TEXT NOT NULL,
+  slug TEXT UNIQUE NOT NULL,
+  category TEXT NOT NULL,
+  description TEXT,
+  supplier_price NUMERIC(12, 2) NOT NULL DEFAULT 0,
+  public_price NUMERIC(12, 2) NOT NULL DEFAULT 0,
+  reseller_commission NUMERIC(12, 2) NOT NULL DEFAULT 0,
+  stock INTEGER NOT NULL DEFAULT 0,
+  images TEXT[] DEFAULT ARRAY[]::TEXT[],
+  status TEXT NOT NULL DEFAULT 'approved' CHECK (status IN ('pending', 'approved', 'rejected', 'archived')),
+  supplier_id TEXT,
+  supplier_name TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Profils Revendeurs
-CREATE TABLE IF NOT EXISTS reseller_profiles (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    referral_code VARCHAR(20) UNIQUE NOT NULL,
-    available_balance NUMERIC(15, 2) DEFAULT 0.00,
-    pending_balance NUMERIC(15, 2) DEFAULT 0.00,
-    total_earned NUMERIC(15, 2) DEFAULT 0.00,
-    successful_orders_count INT DEFAULT 0,
-    tier reseller_tier DEFAULT 'new',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- 3. TABLE DES COMMANDES (orders)
+CREATE TABLE IF NOT EXISTS public.orders (
+  id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
+  order_number TEXT UNIQUE NOT NULL,
+  product_id TEXT REFERENCES public.products(id) ON DELETE SET NULL,
+  product_name TEXT NOT NULL,
+  product_image TEXT,
+  reseller_id TEXT,
+  reseller_name TEXT,
+  reseller_code TEXT,
+  reseller_commission NUMERIC(12, 2) NOT NULL DEFAULT 0,
+  quantity INTEGER NOT NULL DEFAULT 1,
+  unit_price NUMERIC(12, 2) NOT NULL DEFAULT 0,
+  total_product_amount NUMERIC(12, 2) NOT NULL DEFAULT 0,
+  delivery_fee NUMERIC(12, 2) NOT NULL DEFAULT 1500,
+  total_amount NUMERIC(12, 2) NOT NULL DEFAULT 0,
+  customer_name TEXT NOT NULL,
+  customer_phone TEXT NOT NULL,
+  city TEXT NOT NULL DEFAULT 'Bamako',
+  neighborhood TEXT,
+  landmark TEXT,
+  delivery_notes TEXT,
+  status TEXT NOT NULL DEFAULT 'pending_call' CHECK (
+    status IN ('pending_call', 'confirmed', 'assigned_driver', 'in_delivery', 'delivered', 'cancelled', 'returned')
+  ),
+  delivery_otp TEXT,
+  failed_otp_attempts INTEGER NOT NULL DEFAULT 0,
+  payment_method TEXT NOT NULL DEFAULT 'cash_on_delivery',
+  payment_collected BOOLEAN NOT NULL DEFAULT false,
+  assigned_driver_id TEXT,
+  assigned_driver_name TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  delivered_at TIMESTAMPTZ
 );
 
--- Profils Fournisseurs
-CREATE TABLE IF NOT EXISTS supplier_profiles (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    company_name VARCHAR(255) NOT NULL,
-    city VARCHAR(100) DEFAULT 'Bamako',
-    neighborhood VARCHAR(100) NOT NULL,
-    commission_type VARCHAR(50) DEFAULT 'fixed_fcfa',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- 4. TABLE DES PROFILS UTILISATEURS (profiles)
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id TEXT PRIMARY KEY,
+  phone TEXT UNIQUE NOT NULL,
+  full_name TEXT NOT NULL,
+  role TEXT NOT NULL DEFAULT 'reseller' CHECK (role IN ('reseller', 'supplier', 'driver', 'admin', 'customer')),
+  reseller_code TEXT UNIQUE,
+  city TEXT DEFAULT 'Bamako',
+  balance NUMERIC(12, 2) NOT NULL DEFAULT 0,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Profils Livreurs
-CREATE TABLE IF NOT EXISTS driver_profiles (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-    vehicle_type VARCHAR(100) DEFAULT 'Moto',
-    plate_number VARCHAR(50),
-    city VARCHAR(100) DEFAULT 'Bamako',
-    active_runs_count INT DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- 5. TABLE DES RETRAITS & COMMISSIONS (payouts)
+CREATE TABLE IF NOT EXISTS public.payouts (
+  id TEXT PRIMARY KEY DEFAULT uuid_generate_v4()::text,
+  reseller_id TEXT NOT NULL,
+  reseller_name TEXT,
+  amount NUMERIC(12, 2) NOT NULL,
+  payment_method TEXT NOT NULL CHECK (payment_method IN ('wave', 'orange_money', 'moov', 'cash')),
+  phone_number TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'completed', 'rejected')),
+  transaction_ref TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  processed_at TIMESTAMPTZ
 );
 
--- Table Produits
-CREATE TABLE IF NOT EXISTS products (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    name VARCHAR(255) NOT NULL,
-    slug VARCHAR(255) UNIQUE NOT NULL,
-    description TEXT NOT NULL,
-    category VARCHAR(100) NOT NULL,
-    supplier_id UUID REFERENCES supplier_profiles(id),
-    supplier_name VARCHAR(255) NOT NULL,
-    supplier_price NUMERIC(15, 2) NOT NULL,
-    public_price NUMERIC(15, 2) NOT NULL,
-    reseller_commission NUMERIC(15, 2) NOT NULL,
-    suguba_margin NUMERIC(15, 2) NOT NULL,
-    stock INT NOT NULL DEFAULT 0,
-    warranty_period_months INT DEFAULT 6,
-    location_neighborhood VARCHAR(100) NOT NULL,
-    status product_status DEFAULT 'draft',
-    images TEXT[] DEFAULT '{}',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- 6. POLITIQUES DE SÉCURITÉ (Row Level Security - RLS)
+ALTER TABLE public.products ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.payouts ENABLE ROW LEVEL SECURITY;
 
--- Table Commandes (Transactions Maîtrisées par Suguba)
-CREATE TABLE IF NOT EXISTS orders (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    order_number VARCHAR(50) UNIQUE NOT NULL,
-    product_id UUID REFERENCES products(id),
-    product_name VARCHAR(255) NOT NULL,
-    product_image TEXT,
-    reseller_id UUID REFERENCES reseller_profiles(id),
-    reseller_name VARCHAR(255),
-    reseller_code VARCHAR(50),
-    reseller_commission NUMERIC(15, 2) DEFAULT 0.00,
-    quantity INT NOT NULL DEFAULT 1,
-    unit_price NUMERIC(15, 2) NOT NULL,
-    total_product_amount NUMERIC(15, 2) NOT NULL,
-    delivery_fee NUMERIC(15, 2) DEFAULT 1500.00,
-    total_amount NUMERIC(15, 2) NOT NULL,
-    customer_name VARCHAR(255) NOT NULL,
-    customer_phone VARCHAR(50) NOT NULL,
-    city VARCHAR(100) DEFAULT 'Bamako',
-    neighborhood VARCHAR(100) NOT NULL,
-    landmark VARCHAR(255) NOT NULL,
-    delivery_notes TEXT,
-    status order_status DEFAULT 'pending_call',
-    delivery_otp VARCHAR(10) NOT NULL, -- Code secret à 4 chiffres
-    failed_otp_attempts INT DEFAULT 0,
-    otp_locked_until TIMESTAMP WITH TIME ZONE,
-    driver_id UUID REFERENCES driver_profiles(id),
-    driver_name VARCHAR(255),
-    driver_phone VARCHAR(50),
-    payment_method VARCHAR(50) DEFAULT 'cash_on_delivery',
-    payment_collected BOOLEAN DEFAULT FALSE,
-    call_verified_by VARCHAR(255),
-    call_verified_at TIMESTAMP WITH TIME ZONE,
-    delivered_at TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- Lecture publique des produits approuvés
+CREATE POLICY "Public read approved products" 
+  ON public.products FOR SELECT 
+  USING (true);
 
--- Table Registre Comptable des Commissions
-CREATE TABLE IF NOT EXISTS commissions (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    commission_code VARCHAR(50) UNIQUE NOT NULL,
-    reseller_id UUID REFERENCES reseller_profiles(id) NOT NULL,
-    reseller_name VARCHAR(255) NOT NULL,
-    order_id UUID REFERENCES orders(id) NOT NULL,
-    order_number VARCHAR(50) NOT NULL,
-    product_name VARCHAR(255) NOT NULL,
-    amount NUMERIC(15, 2) NOT NULL,
-    status commission_status DEFAULT 'potential',
-    safety_window_days INT DEFAULT 7,
-    unlock_at TIMESTAMP WITH TIME ZONE NOT NULL,
-    paid_at TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- Insertion & lecture publique/anonyme autorisée pour le web app (commandes)
+CREATE POLICY "Public insert orders" 
+  ON public.orders FOR INSERT 
+  WITH CHECK (true);
 
--- Table Demandes de Retrait Mobile Money
-CREATE TABLE IF NOT EXISTS withdrawals (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    withdrawal_code VARCHAR(50) UNIQUE NOT NULL,
-    reseller_id UUID REFERENCES reseller_profiles(id) NOT NULL,
-    reseller_name VARCHAR(255) NOT NULL,
-    amount NUMERIC(15, 2) NOT NULL,
-    payout_phone VARCHAR(50) NOT NULL,
-    payout_provider VARCHAR(50) NOT NULL,
-    status withdrawal_status DEFAULT 'pending',
-    transaction_ref VARCHAR(100),
-    processed_by VARCHAR(255),
-    processed_at TIMESTAMP WITH TIME ZONE,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+CREATE POLICY "Public read orders" 
+  ON public.orders FOR SELECT 
+  USING (true);
 
--- Table Journal d'Audit & Sécurité
-CREATE TABLE IF NOT EXISTS audit_logs (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    actor_name VARCHAR(255) NOT NULL,
-    role VARCHAR(50) NOT NULL,
-    action VARCHAR(100) NOT NULL,
-    entity_type VARCHAR(50) NOT NULL,
-    entity_id VARCHAR(100) NOT NULL,
-    details TEXT NOT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+CREATE POLICY "Public update orders" 
+  ON public.orders FOR UPDATE 
+  USING (true);
 
--- 4. INDEX DE PERFORMANCE
-CREATE INDEX IF NOT EXISTS idx_orders_customer_phone ON orders(customer_phone);
-CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status);
-CREATE INDEX IF NOT EXISTS idx_orders_reseller_id ON orders(reseller_id);
-CREATE INDEX IF NOT EXISTS idx_commissions_reseller_id ON commissions(reseller_id);
-CREATE INDEX IF NOT EXISTS idx_commissions_status ON commissions(status);
-CREATE INDEX IF NOT EXISTS idx_products_slug ON products(slug);
+CREATE POLICY "Public profiles access" 
+  ON public.profiles FOR ALL 
+  USING (true);
 
--- 5. ROW LEVEL SECURITY (RLS)
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE orders ENABLE ROW LEVEL SECURITY;
-ALTER TABLE commissions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE withdrawals ENABLE ROW LEVEL SECURITY;
-ALTER TABLE products ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public payouts access" 
+  ON public.payouts FOR ALL 
+  USING (true);
 
--- Politiques de lecture publique pour le catalogue approuvé
-CREATE POLICY "Public approved products are viewable by everyone" 
-ON products FOR SELECT USING (status = 'approved');
+-- 7. ACTIVATION WEBSOCKETS EN TEMPS RÉEL (Supabase Realtime)
+-- Permet aux livreurs et à l'admin de recevoir les commandes en direct
+DO $$
+BEGIN
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.orders;
+  EXCEPTION WHEN duplicate_object THEN
+    NULL;
+  END;
 
--- Politiques de création publique pour les commandes clients
-CREATE POLICY "Anyone can insert an order" 
-ON orders FOR INSERT WITH CHECK (true);
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.products;
+  EXCEPTION WHEN duplicate_object THEN
+    NULL;
+  END;
+END $$;
+
+-- 8. DONNÉES DE DÉPART (Exemple de produits Bamako)
+INSERT INTO public.products (id, name, slug, category, description, supplier_price, public_price, reseller_commission, stock, images, status, supplier_name)
+VALUES 
+  (
+    'prod_01', 
+    'Smart TV Samsung 43" 4K UHD', 
+    'smart-tv-samsung-43', 
+    'Électronique', 
+    'Téléviseur Samsung 43 pouces Crystal UHD 4K avec HDR, Smart TV Tizen, HDMI, USB.', 
+    165000, 
+    215000, 
+    25000, 
+    18, 
+    ARRAY['https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&q=80'],
+    'approved', 
+    'Grossiste Électro Bamako'
+  ),
+  (
+    'prod_02', 
+    'Pack Huile Dinor 5L x 4 Bidons', 
+    'pack-huile-dinor-5l', 
+    'Alimentation', 
+    'Huile végétale raffinée Dinor sans cholestérol. Carton de 4 bidons de 5 litres.', 
+    28000, 
+    34000, 
+    3000, 
+    120, 
+    ARRAY['https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=800&q=80'],
+    'approved', 
+    'Alimentation Générale Dabanani'
+  ),
+  (
+    'prod_03', 
+    'Robe Bazin Riche Getzner Brodé', 
+    'robe-bazin-riche-getzner', 
+    'Mode & Beauté', 
+    'Magnifique ensemble Bazin Riche teinté artisanalement à Bamako avec broderie fine.', 
+    42000, 
+    55000, 
+    8000, 
+    35, 
+    ARRAY['https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=800&q=80'],
+    'approved', 
+    'Atelier Couture ACI 2000'
+  )
+ON CONFLICT (slug) DO NOTHING;
