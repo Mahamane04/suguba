@@ -1,10 +1,19 @@
 import type { Metadata, Viewport } from 'next';
+import { Inter } from 'next/font/google';
 import './globals.css';
 import OfflineStatus from '@/components/common/OfflineStatus';
 import PwaInstallPrompt from '@/components/common/PwaInstallPrompt';
 import ServiceWorkerRegister from '@/components/common/ServiceWorkerRegister';
 import WhatsAppFloatingButton from '@/components/common/WhatsAppFloatingButton';
 import PushNotificationManager from '@/components/common/PushNotificationManager';
+
+/* ── Inter Variable Font — Police officielle Suguba V1.3 ── */
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+  weight: ['300', '400', '500', '600', '700', '800', '900'],
+});
 
 export const metadata: Metadata = {
   title: 'SUGUBA — Vendez Sans Stock au Mali | Social Commerce & Commissions Mobile Money',
@@ -20,7 +29,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: '#16a34a',
+  themeColor: '#09b500',
 };
 
 export default function RootLayout({
@@ -29,8 +38,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="fr" className="h-full bg-slate-50">
-      <body className="h-full flex flex-col antialiased text-slate-900 selection:bg-emerald-500 selection:text-white">
+    <html lang="fr" className={`h-full ${inter.variable}`}>
+      <body className="h-full flex flex-col antialiased font-sans selection:bg-suguba-brand selection:text-white">
         <ServiceWorkerRegister />
         <OfflineStatus />
         <PwaInstallPrompt />

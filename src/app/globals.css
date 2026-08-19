@@ -2,41 +2,304 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════════════════════
+   SUGUBA Design System V1.3 — Inter + Vert Mali + Fintech Modern
+   Inspiré de : Wave, Jumia, PalmPay + sugubaml.com
+   Police : Inter (Google Fonts) — import dans layout.tsx
+   ═══════════════════════════════════════════════════════════════ */
+
 :root {
-  --primary: #16a34a;
-  --primary-dark: #15803d;
-  --accent: #ff6b00;
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  /* Palette Suguba — Vert Mali identitaire */
+  --brand-green:       #09b500;   /* Couleur exacte du footer sugubaml.com */
+  --brand-green-dark:  #078000;
+  --brand-green-light: #e6fee6;   /* Fond vert clair du landing page */
+  --brand-green-mid:   #16a34a;
+
+  /* Accent Gold — Commissions & Trust */
+  --accent-gold:       #f59e0b;
+  --accent-gold-light: #fef3c7;
+
+  /* Neutrals */
+  --bg-page:      #f5f8f5;        /* Arrière-plan principal (identique au landing page) */
+  --bg-card:      #ffffff;
+  --fg-primary:   #111827;
+  --fg-secondary: #4b5563;
+  --fg-muted:     #9ca3af;
+  --border:       #e5e7eb;
+  --border-light: #f3f4f6;
+
+  /* Semantic */
+  --success: #09b500;
+  --warning: #f59e0b;
+  --error:   #ef4444;
+  --info:    #3b82f6;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+  --shadow-md: 0 4px 16px -2px rgb(9 181 0 / 0.08), 0 2px 8px -2px rgb(0 0 0 / 0.06);
+  --shadow-lg: 0 8px 32px -4px rgb(9 181 0 / 0.12), 0 4px 16px -4px rgb(0 0 0 / 0.08);
+
+  /* Border Radius */
+  --radius-sm:  8px;
+  --radius-md:  12px;
+  --radius-lg:  16px;
+  --radius-xl:  20px;
+  --radius-2xl: 24px;
+  --radius-pill: 9999px;
+}
+
+/* ═══════════════════════ BASE ═══════════════════════ */
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: var(--fg-primary);
+  background: var(--bg-page);
   -webkit-tap-highlight-color: transparent;
+  text-rendering: optimizeLegibility;
 }
 
-/* Mobile-First touch styling */
+/* ═══════════════════════ TYPOGRAPHY ═══════════════════════ */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Inter', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.text-display {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.text-balance {
+  text-wrap: balance;
+}
+
+/* ═══════════════════════ COMPONENTS ═══════════════════════ */
+
+/* Cards */
+.card {
+  background: var(--bg-card);
+  border-radius: var(--radius-2xl);
+  border: 1px solid var(--border-light);
+  box-shadow: var(--shadow-xs);
+}
+
+.card-elevated {
+  background: var(--bg-card);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-md);
+}
+
+/* Buttons */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--brand-green);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 0.875rem;
+  border-radius: var(--radius-pill);
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 12px rgb(9 181 0 / 0.25);
+}
+.btn-primary:hover {
+  background: var(--brand-green-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgb(9 181 0 / 0.35);
+}
+.btn-primary:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: transparent;
+  color: var(--brand-green);
+  font-weight: 600;
+  font-size: 0.875rem;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--brand-green);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-ghost:hover {
+  background: var(--brand-green-light);
+}
+
+/* Badges */
+.badge-green {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  background: var(--brand-green-light);
+  color: var(--brand-green-dark);
+  font-weight: 700;
+  font-size: 0.6875rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid #bbf7d0;
+}
+
+.badge-gold {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.625rem;
+  background: var(--accent-gold-light);
+  color: #92400e;
+  font-weight: 700;
+  font-size: 0.6875rem;
+  border-radius: var(--radius-pill);
+}
+
+/* ═══════════════════════ TOUCH — Mobile First ═══════════════════════ */
 .touch-card {
   transition: transform 0.15s ease, box-shadow 0.15s ease;
+  cursor: pointer;
 }
 .touch-card:active {
-  transform: scale(0.98);
+  transform: scale(0.97);
+  box-shadow: var(--shadow-xs);
 }
 
-/* Custom scrollbar */
+/* ═══════════════════════ LAYOUT UTILITIES ═══════════════════════ */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.section-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* ═══════════════════════ ANIMATIONS ═══════════════════════ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+@keyframes pulseGreen {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(9 181 0 / 0.35); }
+  50%       { box-shadow: 0 0 0 8px rgb(9 181 0 / 0); }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.4s ease forwards;
+}
+
+.animate-pulse-green {
+  animation: pulseGreen 2s infinite;
+}
+
+/* Skeleton loading */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e8e8e8 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-md);
+}
+
+/* ═══════════════════════ GLASS EFFECT ═══════════════════════ */
+.glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.glass-dark {
+  background: rgba(17, 24, 39, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ═══════════════════════ GRADIENT UTILITIES ═══════════════════════ */
+.bg-brand-gradient {
+  background: linear-gradient(135deg, #09b500 0%, #16a34a 50%, #065f46 100%);
+}
+
+.bg-hero-gradient {
+  background: linear-gradient(160deg, #064e3b 0%, #065f46 30%, #0f172a 100%);
+}
+
+.text-gradient-green {
+  background: linear-gradient(135deg, #09b500, #16a34a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ═══════════════════════ CUSTOM SCROLLBAR ═══════════════════════ */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
 }
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #d1d5db;
   border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #9ca3af;
+}
+
+/* ═══════════════════════ SCROLLBAR HIDE ═══════════════════════ */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* ═══════════════════════ ACCESSIBILITY ═══════════════════════ */
+:focus-visible {
+  outline: 2.5px solid var(--brand-green);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ═══════════════════════ DARK MODE BASE ═══════════════════════ */
+.dark body {
+  --bg-page:      #0b0f0b;
+  --bg-card:      #111811;
+  --fg-primary:   #f0fdf4;
+  --fg-secondary: #a7f3d0;
+  --border:       #1f2d1f;
+  --border-light: #162016;
+  color: var(--fg-primary);
+  background: var(--bg-page);
 }
