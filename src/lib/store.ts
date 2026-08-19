@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { 
   User, Product, Order, Commission, Withdrawal, AuditLog, 
-  ResellerProfile, SupplierProfile, DriverProfile, UserRole, SavTicket 
+  ResellerProfile, SupplierProfile, DriverProfile, UserRole, SavTicket, OrderStatus 
 } from '@/types';
 import { 
   INITIAL_USERS, INITIAL_SUPPLIERS, INITIAL_RESELLERS, INITIAL_DRIVERS,
@@ -93,6 +93,69 @@ export const sugubaStore = {
     }
   },
 
+  // ── Cloud Sync Ingestion Handlers ──
+  setProductsFromCloud: (cloudProducts: Product[]) => {
+    if (!cloudProducts || cloudProducts.length === 0) return;
+    // Fusionner les produits du cloud en évitant les doublons
+    const existingMap = new Map(globalState.products.map(p => [p.slug, p]));
+    cloudProducts.forEach(p => existingMap.set(p.slug, p));
+    globalState = {
+      ...globalState,
+      products: Array.from(existingMap.values()),
+    };
+    notify();
+  },
+
+  setOrdersFromCloud: (cloudOrders: Order[]) => {
+    if (!cloudOrders || cloudOrders.length === 0) return;
+    const existingMap = new Map(globalState.orders.map(o => [o.orderNumber, o]));
+    cloudOrders.forEach(o => existingMap.set(o.orderNumber, o));
+    globalState = {
+      ...globalState,
+      orders: Array.from(existingMap.values()),
+    };
+    notify();
+  },
+
+  addProductFromCloud: (product: Product) => {
+    const exists = globalState.products.some(p => p.id === product.id || p.slug === product.slug);
+    if (!exists) {
+      globalState = {
+        ...globalState,
+        products: [product, ...globalState.products],
+      };
+      notify();
+    }
+  },
+
+  addOrderFromCloud: (order: Order) => {
+    const exists = globalState.orders.some(o => o.id === order.id || o.orderNumber === order.orderNumber);
+    if (!exists) {
+      globalState = {
+        ...globalState,
+        orders: [order, ...globalState.orders],
+      };
+      notify();
+    }
+  },
+
+  updateOrderStatusFromCloud: (orderIdOrNumber: string, status: OrderStatus, paymentCollected?: boolean) => {
+    globalState = {
+      ...globalState,
+      orders: globalState.orders.map(o => {
+        if (o.id === orderIdOrNumber || o.orderNumber === orderIdOrNumber) {
+          return {
+            ...o,
+            status,
+            paymentCollected: paymentCollected !== undefined ? paymentCollected : o.paymentCollected,
+          };
+        }
+        return o;
+      }),
+    };
+    notify();
+  },
+
   // 1. Fournisseur : Ajouter Produit
   addSupplierProduct: (data: {
     supplierId: string;
@@ -148,6 +211,9 @@ export const sugubaStore = {
         ...globalState.auditLogs
       ]
     };
+    if (typeof window !== 'undefined') {
+      cloudSyncService.pushProductToCloud(newProduct).catch(() => {});
+    }
     notify();
     return newProduct;
   },
@@ -160,17 +226,19 @@ export const sugubaStore = {
     sugubaMargin: number,
     adminName: string
   ) => {
+    let approvedProduct: Product | undefined;
     globalState = {
       ...globalState,
       products: globalState.products.map(p => {
         if (p.id === productId) {
-          return {
+          approvedProduct = {
             ...p,
             publicPrice: Number(publicPrice),
             resellerCommission: Number(resellerCommission),
             sugubaMargin: Number(sugubaMargin),
             status: 'approved',
           };
+          return approvedProduct;
         }
         return p;
       }),
@@ -188,6 +256,9 @@ export const sugubaStore = {
         ...globalState.auditLogs
       ]
     };
+    if (approvedProduct && typeof window !== 'undefined') {
+      cloudSyncService.pushProductToCloud(approvedProduct).catch(() => {});
+    }
     notify();
   },
 
