@@ -3,98 +3,61 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
-import { useSugubaStore, sugubaStore } from '@/lib/store';
+import { useRouter, usePathname } from 'next/navigation';
 import { UserRole } from '@/types';
 import {
   ShoppingBag, Shield, Truck, Store, UserCheck,
-  ChevronDown, RefreshCw, Menu, X, Globe,
-  Moon, Sun, Zap, Bell
+  ChevronDown, LogOut, Menu, X, Globe,
+  Moon, Sun, Bell, LogIn
 } from 'lucide-react';
 
 const roleConfig: Record<UserRole, {
   label: string;
-  badge: string;
   icon: React.ElementType;
   path: string;
   accentBg: string;
   accentText: string;
-  dotColor: string;
 }> = {
-  reseller: {
-    label: 'Revendeur',
-    badge: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
-    icon: Store,
-    path: '/reseller',
-    accentBg: 'bg-emerald-50',
-    accentText: 'text-emerald-700',
-    dotColor: 'bg-emerald-500',
-  },
-  supplier: {
-    label: 'Fournisseur',
-    badge: 'bg-blue-100 text-blue-800 border border-blue-200',
-    icon: ShoppingBag,
-    path: '/supplier',
-    accentBg: 'bg-blue-50',
-    accentText: 'text-blue-700',
-    dotColor: 'bg-blue-500',
-  },
-  driver: {
-    label: 'Livreur',
-    badge: 'bg-amber-100 text-amber-800 border border-amber-200',
-    icon: Truck,
-    path: '/driver',
-    accentBg: 'bg-amber-50',
-    accentText: 'text-amber-700',
-    dotColor: 'bg-amber-500',
-  },
-  admin: {
-    label: 'Admin Ops',
-    badge: 'bg-purple-100 text-purple-800 border border-purple-200',
-    icon: Shield,
-    path: '/admin',
-    accentBg: 'bg-purple-50',
-    accentText: 'text-purple-700',
-    dotColor: 'bg-purple-500',
-  },
-  customer: {
-    label: 'Client',
-    badge: 'bg-slate-100 text-slate-800 border border-slate-200',
-    icon: UserCheck,
-    path: '/p/smart-tv-samsung-43',
-    accentBg: 'bg-slate-50',
-    accentText: 'text-slate-700',
-    dotColor: 'bg-slate-500',
-  },
-  diaspora: {
-    label: 'Diaspora',
-    badge: 'bg-purple-100 text-purple-800 border border-purple-200',
-    icon: Globe,
-    path: '/diaspora',
-    accentBg: 'bg-purple-50',
-    accentText: 'text-purple-700',
-    dotColor: 'bg-purple-500',
-  },
+  reseller: { label: 'Revendeur', icon: Store, path: '/reseller', accentBg: 'bg-emerald-50', accentText: 'text-emerald-700' },
+  supplier: { label: 'Fournisseur', icon: ShoppingBag, path: '/supplier', accentBg: 'bg-blue-50', accentText: 'text-blue-700' },
+  driver: { label: 'Livreur', icon: Truck, path: '/driver', accentBg: 'bg-amber-50', accentText: 'text-amber-700' },
+  admin: { label: 'Admin Ops', icon: Shield, path: '/admin', accentBg: 'bg-purple-50', accentText: 'text-purple-700' },
+  customer: { label: 'Client', icon: UserCheck, path: '/', accentBg: 'bg-slate-50', accentText: 'text-slate-700' },
+  diaspora: { label: 'Diaspora', icon: Globe, path: '/diaspora', accentBg: 'bg-purple-50', accentText: 'text-purple-700' },
 };
 
-const navLinks = [
-  { href: '/reseller',  label: 'Revendeurs',   role: 'reseller' as UserRole },
-  { href: '/supplier',  label: 'Fournisseurs',  role: 'supplier' as UserRole },
-  { href: '/driver',    label: 'Livreurs',       role: 'driver'   as UserRole },
-  { href: '/admin',     label: 'Admin',          role: 'admin'    as UserRole },
-];
+interface AuthState {
+  authenticated: boolean;
+  role?: UserRole;
+  phone?: string;
+  status?: string;
+}
 
+/**
+ * Corrige un problème de confiance signalé par un visiteur réel : le header
+ * affichait un compte "Moussa Revendeur" et des liens vers les 5 tableaux
+ * de bord (Revendeurs/Fournisseurs/Livreurs/Admin/Diaspora) à n'importe qui,
+ * sans la moindre connexion — un reliquat du store de démo local
+ * (sugubaStore.currentUser), sans rapport avec la vraie session. Un
+ * visiteur anonyme ne voit plus désormais qu'un bouton "Se connecter" ; un
+ * compte authentifié ne voit que SON espace, avec sa vraie identité (voir
+ * /api/auth/me).
+ */
 export default function Header() {
-  const state = useSugubaStore();
+  const router = useRouter();
   const pathname = usePathname();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isDark, setIsDark] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [auth, setAuth] = useState<AuthState | null>(null);
 
-  const currentUser = state.currentUser;
-  const conf = roleConfig[currentUser.role] ?? roleConfig.reseller;
-  const CurrentIcon = conf.icon;
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((res) => (res.ok ? res.json() : { authenticated: false }))
+      .then(setAuth)
+      .catch(() => setAuth({ authenticated: false }));
+  }, [pathname]);
 
   /* Scroll shadow effect */
   useEffect(() => {
@@ -121,11 +84,13 @@ export default function Header() {
     localStorage.setItem('suguba_theme', next ? 'dark' : 'light');
   }, [isDark]);
 
-  const handleRoleChange = useCallback((role: UserRole) => {
-    sugubaStore.switchRole(role);
+  const handleLogout = useCallback(async () => {
     setDropdownOpen(false);
     setMobileOpen(false);
-  }, []);
+    await fetch('/api/auth/logout', { method: 'POST' });
+    setAuth({ authenticated: false });
+    router.push('/');
+  }, [router]);
 
   /* Close dropdown on outside click */
   useEffect(() => {
@@ -138,6 +103,10 @@ export default function Header() {
     document.addEventListener('click', handler);
     return () => document.removeEventListener('click', handler);
   }, [dropdownOpen]);
+
+  const isAuthenticated = Boolean(auth?.authenticated && auth.role);
+  const conf = isAuthenticated ? roleConfig[auth!.role as UserRole] : null;
+  const CurrentIcon = conf?.icon;
 
   return (
     <header
@@ -153,10 +122,10 @@ export default function Header() {
           {/* ── Logo ── */}
           <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
             <div className="relative w-9 h-9 rounded-xl overflow-hidden shadow-brand-sm group-hover:shadow-brand-md transition-shadow shrink-0">
-              <Image 
-                src="/images/logo.png" 
-                alt="Logo Suguba" 
-                fill 
+              <Image
+                src="/images/logo.png"
+                alt="Logo Suguba"
+                fill
                 className="object-contain"
                 priority
               />
@@ -171,46 +140,34 @@ export default function Header() {
             </div>
           </Link>
 
-          {/* ── Desktop Nav ── */}
+          {/* ── Desktop Nav — uniquement l'espace du compte connecté, jamais tous les tableaux de bord ── */}
           <nav className="hidden md:flex items-center gap-0.5 text-sm font-medium ml-4">
-            {navLinks.map(({ href, label }) => {
-              const isActive = pathname.startsWith(href);
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`px-3 py-1.5 rounded-lg transition-colors ${
-                    isActive
-                      ? 'bg-gray-100 text-gray-900 font-semibold'
-                      : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
-                >
-                  {label}
-                </Link>
-              );
-            })}
-            <Link
-              href="/diaspora"
-              className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 ${
-                pathname.startsWith('/diaspora')
-                  ? 'bg-suguba-brand text-white shadow-brand-sm'
-                  : 'text-suguba-brand hover:bg-suguba-100 border border-suguba-200'
-              }`}
-            >
-              <Globe className="w-3.5 h-3.5" />
-              Diaspora
-            </Link>
-            <Link
-              href="/register"
-              className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 ${
-                pathname.startsWith('/register')
-                  ? 'bg-slate-900 text-white'
-                  : 'text-slate-700 hover:bg-slate-100'
-              }`}
-            >
-              <UserCheck className="w-3.5 h-3.5 text-suguba-brand" />
-              Inscription
-            </Link>
+            {isAuthenticated && conf && CurrentIcon && (
+              <Link
+                href={conf.path}
+                className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 ${
+                  pathname.startsWith(conf.path)
+                    ? `${conf.accentBg} ${conf.accentText}`
+                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                <CurrentIcon className="w-3.5 h-3.5" />
+                Mon espace {conf.label}
+              </Link>
+            )}
+            {!isAuthenticated && (
+              <Link
+                href="/register"
+                className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 ${
+                  pathname.startsWith('/register')
+                    ? 'bg-slate-900 text-white'
+                    : 'text-slate-700 hover:bg-slate-100'
+                }`}
+              >
+                <UserCheck className="w-3.5 h-3.5 text-suguba-brand" />
+                Devenir Revendeur / Fournisseur / Livreur
+              </Link>
+            )}
           </nav>
 
           {/* ── Right Actions ── */}
@@ -228,102 +185,63 @@ export default function Header() {
               }
             </button>
 
-            {/* Role badge pill */}
-            <div className="relative" data-role-dropdown>
-              <button
-                onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 hover:bg-emerald-100 transition-colors"
-                aria-expanded={dropdownOpen}
+            {!isAuthenticated ? (
+              /* ── Visiteur anonyme : juste "Se connecter" ── */
+              <Link
+                href="/login"
+                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-suguba-brand text-white hover:bg-suguba-brand-dark transition-colors shrink-0"
               >
-                <Shield className="w-3.5 h-3.5 text-emerald-600" />
-                <span>{conf.label}</span>
-                <ChevronDown className={`w-3 h-3 text-emerald-600 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
-              </button>
-
-              {/* Dropdown */}
-              {dropdownOpen && (
-                <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-float border border-gray-100 py-1.5 z-50 animate-slide-down overflow-hidden">
-                  <div className="px-4 py-2.5 border-b border-gray-50">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                      Changer d&apos;espace
-                    </p>
-                  </div>
-
-                  <div className="p-1.5 space-y-0.5">
-                    {(['reseller', 'supplier', 'driver', 'admin'] as UserRole[]).map((role) => {
-                      const c = roleConfig[role];
-                      const Icon = c.icon;
-                      const isActive = currentUser.role === role;
-                      return (
-                        <button
-                          key={role}
-                          onClick={() => handleRoleChange(role)}
-                          className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition-colors ${
-                            isActive
-                              ? `${c.accentBg} ${c.accentText} font-bold`
-                              : 'hover:bg-gray-50 text-gray-700'
-                          }`}
-                        >
-                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                            isActive ? `bg-white shadow-xs` : 'bg-gray-100'
-                          }`}>
-                            <Icon className={`w-4 h-4 ${isActive ? c.accentText : 'text-gray-500'}`} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className={`text-sm font-semibold ${isActive ? c.accentText : 'text-gray-900'}`}>
-                              {c.label}
-                            </p>
-                            <p className="text-[10px] text-gray-400 truncate">
-                              {role === 'reseller' && 'Gains, WhatsApp & Retraits'}
-                              {role === 'supplier' && 'Dépôt produits & Stock'}
-                              {role === 'driver'   && 'Courses & OTP Livraison'}
-                              {role === 'admin'    && 'Modération & Opérations'}
-                            </p>
-                          </div>
-                          {isActive && (
-                            <span className={`w-2 h-2 rounded-full ${c.dotColor} shrink-0`} />
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <div className="px-4 py-2.5 border-t border-gray-50">
-                    <button
-                      onClick={() => { sugubaStore.resetDemoData(); setDropdownOpen(false); }}
-                      className="flex items-center gap-2 text-[11px] text-gray-400 hover:text-gray-700 transition-colors"
-                    >
-                      <RefreshCw className="w-3 h-3" />
-                      Réinitialiser la démo
-                    </button>
-                  </div>
+                <LogIn className="w-3.5 h-3.5" />
+                Se connecter
+              </Link>
+            ) : (
+              <>
+                {/* Notification Bell — seulement pour un compte réel */}
+                <div className="relative">
+                  <button
+                    className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 transition-colors"
+                    aria-label="Notifications"
+                  >
+                    <Bell className="w-4 h-4" />
+                  </button>
                 </div>
-              )}
-            </div>
 
-            {/* Notification Bell */}
-            <div className="relative">
-              <button 
-                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 transition-colors"
-                aria-label="Notifications"
-              >
-                <Bell className="w-4 h-4" />
-                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[9px] font-black flex items-center justify-center shadow-xs">
-                  3
-                </span>
-              </button>
-            </div>
+                {/* Identité + menu compte */}
+                <div className="relative" data-role-dropdown>
+                  <button
+                    onClick={() => setDropdownOpen(!dropdownOpen)}
+                    className="hidden sm:flex items-center gap-2 pl-1 pr-2 py-1 rounded-full hover:bg-gray-50 transition-colors"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-slate-900 text-white font-black text-xs flex items-center justify-center border-2 border-emerald-500 shrink-0">
+                      {CurrentIcon && <CurrentIcon className="w-3.5 h-3.5" />}
+                    </div>
+                    <div className="leading-none text-left">
+                      <p className="text-xs font-bold text-gray-900">{auth?.phone}</p>
+                      <p className="text-[10px] text-gray-400">{conf?.label}</p>
+                    </div>
+                    <ChevronDown className={`w-3 h-3 text-gray-400 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+                  </button>
 
-            {/* User Profile avatar */}
-            <div className="hidden sm:flex items-center gap-2 pl-1">
-              <div className="w-8 h-8 rounded-full bg-slate-900 text-white font-black text-xs flex items-center justify-center border-2 border-emerald-500">
-                {currentUser.fullName.charAt(0)}
-              </div>
-              <div className="leading-none text-left">
-                <p className="text-xs font-bold text-gray-900">{currentUser.fullName.split(' ')[0]}</p>
-                <p className="text-[10px] text-gray-400 capitalize">{conf.label}</p>
-              </div>
-            </div>
+                  {dropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-float border border-gray-100 py-1.5 z-50 animate-slide-down overflow-hidden">
+                      <div className="px-4 py-2.5 border-b border-gray-50">
+                        <p className="text-xs font-bold text-gray-900">{auth?.phone}</p>
+                        <p className="text-[10px] text-gray-400">{conf?.label}</p>
+                      </div>
+                      <div className="p-1.5">
+                        <button
+                          onClick={handleLogout}
+                          className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+                        >
+                          <LogOut className="w-4 h-4 text-gray-400" />
+                          Se déconnecter
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
 
             {/* Mobile menu toggle */}
             <button
@@ -340,42 +258,44 @@ export default function Header() {
       {/* ── Mobile Menu ── */}
       {mobileOpen && (
         <div className="md:hidden border-t border-gray-100 bg-white px-4 py-3 space-y-1 animate-slide-down">
-          {navLinks.map(({ href, label, role }) => {
-            const c = roleConfig[role];
-            const Icon = c.icon;
-            const isActive = pathname.startsWith(href);
-            return (
+          {isAuthenticated && conf && CurrentIcon ? (
+            <>
               <Link
-                key={href}
-                href={href}
+                href={conf.path}
                 onClick={() => setMobileOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
-                  isActive
-                    ? `${c.accentBg} ${c.accentText} font-semibold`
-                    : 'text-gray-600 hover:bg-gray-50'
-                }`}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${conf.accentBg} ${conf.accentText} font-semibold`}
               >
-                <Icon className="w-4 h-4" />
-                {label}
+                <CurrentIcon className="w-4 h-4" />
+                Mon espace {conf.label}
               </Link>
-            );
-          })}
-          <Link
-            href="/diaspora"
-            onClick={() => setMobileOpen(false)}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-suguba-50 text-suguba-brand font-semibold"
-          >
-            <Globe className="w-4 h-4" />
-            Espace Diaspora
-          </Link>
-          <Link
-            href="/register"
-            onClick={() => setMobileOpen(false)}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-emerald-600 text-white font-bold"
-          >
-            <UserCheck className="w-4 h-4" />
-            Créer un compte Pro
-          </Link>
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-600 hover:bg-gray-50"
+              >
+                <LogOut className="w-4 h-4" />
+                Se déconnecter ({auth?.phone})
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-suguba-brand text-white font-bold"
+              >
+                <LogIn className="w-4 h-4" />
+                Se connecter
+              </Link>
+              <Link
+                href="/register"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-slate-100 text-slate-700 font-semibold"
+              >
+                <UserCheck className="w-4 h-4" />
+                Devenir Revendeur / Fournisseur / Livreur
+              </Link>
+            </>
+          )}
         </div>
       )}
     </header>

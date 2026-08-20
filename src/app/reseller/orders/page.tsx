@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import Image from 'next/image';
+import ProductImage from '@/components/common/ProductImage';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import { useSugubaStore } from '@/lib/store';
@@ -126,7 +126,7 @@ export default function ResellerOrdersPage() {
                     {/* Product info */}
                     <div className="flex items-center space-x-3 min-w-0">
                       <div className="relative w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 shrink-0">
-                        <Image src={order.productImage} alt={order.productName} fill className="object-cover" />
+                        <ProductImage src={order.productImage} alt={order.productName} fill className="object-cover" />
                       </div>
                       <div className="min-w-0 space-y-0.5">
                         <h4 className="font-bold text-xs text-slate-900 truncate">{order.productName}</h4>

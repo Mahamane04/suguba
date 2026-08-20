@@ -29,21 +29,13 @@ class CloudSyncService {
     this.isListening = true;
 
     try {
-      // Écouteur en temps réel sur les Commandes
-      supabase
-        .channel('suguba_realtime_orders')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'orders' },
-          (payload) => {
-            if (payload.eventType === 'INSERT') {
-              this.syncOrderFromCloud(payload.new);
-            } else if (payload.eventType === 'UPDATE') {
-              this.syncOrderUpdateFromCloud(payload.new);
-            }
-          }
-        )
-        .subscribe();
+      // Pas d'abonnement Realtime anon-key sur `orders` : le schéma corrigé
+      // (BUG-006) ne donne plus aucun accès public en lecture à cette table
+      // (noms/téléphones/adresses clients), donc Supabase Realtime ne
+      // pousserait de toute façon rien à un abonné anonyme. Les pages
+      // admin/livreur rafraîchissent via fetchOrdersFromCloud() (route
+      // /api/orders/feed, authentifiée) — voir CloudSyncBadge / pages
+      // concernées pour un polling périodique si besoin d'un quasi-live.
 
       // Écouteur en temps réel sur les Produits
       supabase
@@ -91,7 +83,7 @@ class CloudSyncService {
           slug: p.slug,
           category: p.category || 'Général',
           description: p.description || '',
-          images: Array.isArray(p.images) && p.images.length > 0 ? p.images : ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80'],
+          images: Array.isArray(p.images) ? p.images : [], // BUG-011 : plus de repli Unsplash — voir ProductImage
           supplierPrice: Number(p.supplier_price || 0),
           publicPrice: Number(p.public_price || 0),
           resellerCommission: Number(p.reseller_commission || 0),
@@ -116,20 +108,20 @@ class CloudSyncService {
     }
   }
 
-  // 3. Récupérer toutes les commandes depuis Supabase
+  // 3. Récupérer toutes les commandes — via /api/orders/feed (authentifié
+  // admin/livreur), plus via un SELECT anon direct depuis BUG-006 : cette
+  // table contient des données personnelles clients, la clé publique
+  // anon n'y a plus accès (voir supabase/schema.sql).
   public async fetchOrdersFromCloud(): Promise<Order[]> {
-    if (!this.isCloudActive() || !supabase) return [];
-
     try {
-      const { data, error } = await supabase
-        .from('orders')
-        .select('*')
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.warn('Erreur chargement commandes Supabase:', error.message);
+      const res = await fetch('/api/orders/feed');
+      if (!res.ok) {
+        // 401 attendu tant qu'aucune session admin/livreur n'est active —
+        // pas une erreur, juste "rien à afficher pour ce visiteur".
         return [];
       }
+      const json = await res.json();
+      const data = json.orders as any[];
 
       if (data && data.length > 0) {
         const cloudOrders: Order[] = data.map((o) => ({
@@ -137,7 +129,7 @@ class CloudSyncService {
           orderNumber: o.order_number,
           productId: o.product_id || '',
           productName: o.product_name,
-          productImage: o.product_image || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80',
+          productImage: o.product_image || '', // BUG-011 : plus de repli Unsplash — voir ProductImage
           resellerId: o.reseller_id,
           resellerName: o.reseller_name,
           resellerCode: o.reseller_code,
@@ -174,151 +166,87 @@ class CloudSyncService {
     }
   }
 
-  // 4. Push d'un produit vers Supabase
+  // 4. Push d'un produit — via /api/products/sync (authentifié
+  // fournisseur/admin). Écrire directement dans `products` avec la clé anon
+  // n'est plus possible depuis le correctif BUG-006 : seule la lecture des
+  // fiches approuvées reste publique.
   public async pushProductToCloud(product: Product): Promise<boolean> {
-    if (!this.isCloudActive() || !supabase) return false;
-
     try {
-      const { error } = await supabase.from('products').upsert({
-        id: product.id,
-        name: product.name,
-        slug: product.slug,
-        category: product.category,
-        description: product.description,
-        supplier_price: product.supplierPrice,
-        public_price: product.publicPrice,
-        reseller_commission: product.resellerCommission,
-        stock: product.stockQuantity,
-        images: product.images,
-        status: product.status,
-        supplier_id: product.supplierId,
-        supplier_name: product.supplierName,
-        created_at: product.createdAt,
+      const res = await fetch('/api/products/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product }),
       });
-
-      if (error) {
-        console.warn('Erreur push produit Supabase:', error.message);
-        return false;
-      }
-      return true;
+      return res.ok;
     } catch (err) {
       console.warn('Exception push produit:', err);
       return false;
     }
   }
 
-  // 5. Push d'une commande vers Supabase
+  // 5. Push d'une commande — via /api/orders/sync. La création reste
+  // publique (client sans compte), la mise à jour de statut exige une
+  // session admin/livreur (voir la route pour le détail).
   public async pushOrderToCloud(order: Order): Promise<boolean> {
-    if (!this.isCloudActive() || !supabase) return false;
-
     try {
-      const { error } = await supabase.from('orders').upsert({
-        id: order.id,
-        order_number: order.orderNumber,
-        product_id: order.productId,
-        product_name: order.productName,
-        product_image: order.productImage,
-        reseller_id: order.resellerId,
-        reseller_name: order.resellerName,
-        reseller_code: order.resellerCode,
-        reseller_commission: order.resellerCommission,
-        quantity: order.quantity,
-        unit_price: order.unitPrice,
-        total_product_amount: order.totalProductAmount,
-        delivery_fee: order.deliveryFee,
-        total_amount: order.totalAmount,
-        customer_name: order.customerName,
-        customer_phone: order.customerPhone,
-        city: order.city,
-        neighborhood: order.neighborhood,
-        landmark: order.landmark,
-        delivery_notes: order.deliveryNotes,
-        status: order.status,
-        delivery_otp: order.deliveryOtp,
-        payment_method: order.paymentMethod,
-        payment_collected: order.paymentCollected,
-        assigned_driver_id: order.driverId,
-        assigned_driver_name: order.driverName,
-        created_at: order.createdAt,
+      const res = await fetch('/api/orders/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order }),
       });
-
-      if (error) {
-        console.warn('Erreur push commande Supabase:', error.message);
-        return false;
-      }
-      return true;
+      return res.ok;
     } catch (err) {
       console.warn('Exception push commande:', err);
       return false;
     }
   }
 
-  // 6. Push d'une demande de retrait vers Supabase
+  // 6. Créer une demande de retrait — via /api/payouts/create
+  // (authentifié, session revendeur active obligatoire). Corrige BUG-006 :
+  // cette méthode écrivait auparavant directement dans `payouts` avec la
+  // clé anon ; le schéma corrigé ne donne plus aucun accès public à cette
+  // table. `resellerId` n'est plus transmis : la route serveur identifie
+  // toujours le revendeur via sa session signée, jamais via le corps de la
+  // requête (un revendeur ne doit jamais pouvoir créer un retrait au nom
+  // d'un autre).
   public async pushPayoutToCloud(withdrawal: {
     id: string;
-    resellerId: string;
+    withdrawalCode: string;
     resellerName: string;
     amount: number;
     payoutProvider: string;
     payoutPhone: string;
-    status: string;
-    createdAt: string;
   }): Promise<boolean> {
-    if (!this.isCloudActive() || !supabase) return false;
-
     try {
-      const providerMap: Record<string, string> = {
-        'Wave': 'wave',
-        'Orange Money': 'orange_money',
-        'Moov Money': 'moov',
-      };
-
-      const { error } = await supabase.from('payouts').upsert({
-        id: withdrawal.id,
-        reseller_id: withdrawal.resellerId,
-        reseller_name: withdrawal.resellerName,
-        amount: withdrawal.amount,
-        payment_method: providerMap[withdrawal.payoutProvider] || 'orange_money',
-        phone_number: withdrawal.payoutPhone,
-        status: 'pending',
-        created_at: withdrawal.createdAt,
+      const res = await fetch('/api/payouts/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          withdrawalCode: withdrawal.withdrawalCode,
+          resellerName: withdrawal.resellerName,
+          amount: withdrawal.amount,
+          payoutProvider: withdrawal.payoutProvider,
+          payoutPhone: withdrawal.payoutPhone,
+        }),
       });
-
-      if (error) {
-        console.warn('Erreur push retrait Supabase:', error.message);
-        return false;
-      }
-      return true;
+      return res.ok;
     } catch (err) {
       console.warn('Exception push retrait:', err);
       return false;
     }
   }
 
-  // 7. Mettre à jour le statut du virement dans Supabase
+  // 7. Mettre à jour le statut du virement — réservé à l'admin, via
+  // /api/payouts/initiate (déclenchement réel) ou le webhook Mobile Money
+  // (/api/webhooks/momo). Un revendeur ne doit jamais pouvoir changer le
+  // statut de son propre retrait depuis le navigateur.
   public async updatePayoutInCloud(
-    withdrawalId: string,
-    status: 'completed' | 'processing' | 'rejected',
-    transactionRef?: string
+    _withdrawalId: string,
+    _status: 'completed' | 'processing' | 'rejected',
+    _transactionRef?: string
   ): Promise<boolean> {
-    if (!this.isCloudActive() || !supabase) return false;
-
-    try {
-      const { error } = await supabase.from('payouts').update({
-        status,
-        transaction_ref: transactionRef,
-        processed_at: new Date().toISOString(),
-      }).eq('id', withdrawalId);
-
-      if (error) {
-        console.warn('Erreur update statut retrait Supabase:', error.message);
-        return false;
-      }
-      return true;
-    } catch (err) {
-      console.warn('Exception update retrait:', err);
-      return false;
-    }
+    console.warn('[SECURITY] updatePayoutInCloud désactivé côté client — la mise à jour de statut passe par /api/payouts/initiate ou le webhook (BUG-006).');
+    return false;
   }
 
   // Synchronisation interne depuis les événements Realtime
@@ -332,7 +260,7 @@ class CloudSyncService {
         orderNumber: cloudOrder.order_number,
         productId: cloudOrder.product_id,
         productName: cloudOrder.product_name,
-        productImage: cloudOrder.product_image || 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80',
+        productImage: cloudOrder.product_image || '', // BUG-011 : plus de repli Unsplash — voir ProductImage
         resellerId: cloudOrder.reseller_id,
         resellerName: cloudOrder.reseller_name || '',
         resellerCode: cloudOrder.reseller_code || '',
@@ -377,7 +305,7 @@ class CloudSyncService {
       slug: cloudProduct.slug,
       category: cloudProduct.category || 'Général',
       description: cloudProduct.description || '',
-      images: Array.isArray(cloudProduct.images) ? cloudProduct.images : ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80'],
+      images: Array.isArray(cloudProduct.images) ? cloudProduct.images : [], // BUG-011 : plus de repli Unsplash — voir ProductImage
       supplierPrice: Number(cloudProduct.supplier_price || 0),
       publicPrice: Number(cloudProduct.public_price || 0),
       resellerCommission: Number(cloudProduct.reseller_commission || 0),

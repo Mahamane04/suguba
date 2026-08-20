@@ -171,8 +171,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     category: 'Électroménager',
     description: 'Robot professionnel tout-en-un avec grand bol en acier inoxydable de 6.5L, fouet métallique, crochet pétrisseur pour pâte à pain/beignets et hachoir à viande. Moteur puissant 1000W à 6 vitesses avec fonction Pulse. Idéal pour familles et traiteurs à Bamako.',
     images: [
-      'https://images.unsplash.com/photo-1578643463396-0997cb5328c1?w=800&q=80',
-      'https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=800&q=80'
+      'https://jwbryyaysptokzmfwijo.supabase.co/storage/v1/object/public/product-images/seed/1578643463396-0997cb5328c1.jpg',
+      'https://jwbryyaysptokzmfwijo.supabase.co/storage/v1/object/public/product-images/seed/1584269600464-37b1b58a9fe7.jpg'
     ],
     supplierPrice: 45000,
     publicPrice: 65000,
@@ -203,8 +203,8 @@ Commandez directement ici : `,
     category: 'Électronique & TV',
     description: 'Téléviseur intelligent Samsung 43 pouces Full HD avec applications intégrées (YouTube, Netflix, Prime). Écran ultra-lumineux avec récepteur intégré et ports HDMI/USB.',
     images: [
-      'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&q=80',
-      'https://images.unsplash.com/photo-1577979749830-f1d742b96791?w=800&q=80'
+      'https://jwbryyaysptokzmfwijo.supabase.co/storage/v1/object/public/product-images/seed/1593359677879-a4bb92f829d1.jpg',
+      'https://jwbryyaysptokzmfwijo.supabase.co/storage/v1/object/public/product-images/seed/1577979749830-f1d742b96791.jpg'
     ],
     supplierPrice: 110000,
     publicPrice: 145000,
@@ -234,8 +234,8 @@ Commandez vite ici : `,
     category: 'Électroménager',
     description: 'Blender puissant idéal pour les sauces locales, jus de fruits frais, épices et glaces. Lames en acier inoxydable et bol incassable haute résistance.',
     images: [
-      'https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=800&q=80',
-      'https://images.unsplash.com/photo-1570222094114-d054a817e56b?w=800&q=80'
+      'https://jwbryyaysptokzmfwijo.supabase.co/storage/v1/object/public/product-images/seed/1584269600464-37b1b58a9fe7.jpg',
+      'https://jwbryyaysptokzmfwijo.supabase.co/storage/v1/object/public/product-images/seed/1570222094114-d054a817e56b.jpg'
     ],
     supplierPrice: 30000,
     publicPrice: 40000,
@@ -265,8 +265,11 @@ Cliquez pour commander : `,
     category: 'Énergie Solaire',
     description: 'Solution anti-délestage complète avec panneau solaire photovoltaïque, batterie lithium longue autonomie 10 heures, 4 ampoules LED basse consommation et sorties USB universelles.',
     images: [
-      'https://images.unsplash.com/photo-1508873696983-2df5293cb32f?w=800&q=80',
-      'https://images.unsplash.com/photo-1509391365360-2e959784a276?w=800&q=80'
+      // BUG-011 : les 2 URLs Unsplash d'origine renvoyaient 404 (vérifié le
+      // 19/08/2026, curl -o /dev/null -w "%{http_code}") — remplacées par
+      // des IDs Unsplash confirmés actifs à la même date.
+      'https://jwbryyaysptokzmfwijo.supabase.co/storage/v1/object/public/product-images/seed/1497440001374-f26997328c1b.jpg',
+      'https://jwbryyaysptokzmfwijo.supabase.co/storage/v1/object/public/product-images/seed/1509391366360-2e959784a276.jpg'
     ],
     supplierPrice: 45000,
     publicPrice: 65000,
@@ -296,8 +299,8 @@ Commandez directement : `,
     category: 'Mode & Textile',
     description: 'Magnifique ensemble boubou traditionnel malien en véritable Bazin Riche Getzner 100% coton teinté à la main à Bamako. Broderie royale de haute précision au col et aux manches, livré avec son voile en soie assorti. Idéal pour cérémonies, mariages et fêtes religieuses.',
     images: [
-      'https://images.unsplash.com/photo-1590736969955-71cc94801759?w=800&q=80',
-      'https://images.unsplash.com/photo-1566737236500-c8ac43014a67?w=800&q=80'
+      'https://jwbryyaysptokzmfwijo.supabase.co/storage/v1/object/public/product-images/seed/1590736969955-71cc94801759.jpg',
+      'https://jwbryyaysptokzmfwijo.supabase.co/storage/v1/object/public/product-images/seed/1566737236500-c8ac43014a67.jpg'
     ],
     supplierPrice: 25000,
     publicPrice: 39000,
@@ -327,8 +330,9 @@ Commandez vite ici : `,
     category: 'Beauté & Cosmétique',
     description: 'Coffret complet de soins naturels fortifiants contre la casse et pour la pousse rapide des cheveux crépus et bouclés : Huile de Chébé pure de 250ml, Baume au Beurre de Karité vierge non raffiné 200g, Shampoing doux aux plantes et Sérum antichute.',
     images: [
-      'https://images.unsplash.com/photo-1608248597359-54859f9c7333?w=800&q=80',
-      'https://images.unsplash.com/photo-1556228720-195a672e8a03?w=800&q=80'
+      // BUG-011 : URL Unsplash morte (404) remplacée — voir commentaire plus haut.
+      'https://jwbryyaysptokzmfwijo.supabase.co/storage/v1/object/public/product-images/seed/1631679706909-1844bbd07221.jpg',
+      'https://jwbryyaysptokzmfwijo.supabase.co/storage/v1/object/public/product-images/seed/1556228720-195a672e8a03.jpg'
     ],
     supplierPrice: 10000,
     publicPrice: 17500,
@@ -358,8 +362,9 @@ Cliquez ici pour commander : `,
     category: 'Maison & Confort',
     description: 'Ventilateur sur pied 16 pouces ultra-puissant et silencieux avec batterie lithium rechargeable intégrée (autonomie 8 heures en vitesse moyenne). Port USB pour recharger smartphones et torche LED intégrée en cas de coupure de courant nocturne.',
     images: [
-      'https://images.unsplash.com/photo-1618944847823-289eb6e2808c?w=800&q=80',
-      'https://images.unsplash.com/photo-1585771724684-38269d6639fd?w=800&q=80'
+      // BUG-011 : URL Unsplash morte (404) remplacée — voir commentaire plus haut.
+      'https://jwbryyaysptokzmfwijo.supabase.co/storage/v1/object/public/product-images/seed/1621274790572-7c32596bc67f.jpg',
+      'https://jwbryyaysptokzmfwijo.supabase.co/storage/v1/object/public/product-images/seed/1585771724684-38269d6639fd.jpg'
     ],
     supplierPrice: 28000,
     publicPrice: 42000,
@@ -389,8 +394,9 @@ Commandez votre ventilateur ici : `,
     category: 'High-Tech & Accessoires',
     description: 'Duo indispensable pour smartphone : Écouteurs sans fil avec réduction de bruit et boîtier indicateur LED de batterie + Powerbank compact haute capacité 20 000mAh capable de recharger 4 à 5 fois n\'importe quel téléphone Android ou iPhone avec charge rapide 22.5W.',
     images: [
-      'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=800&q=80',
-      'https://images.unsplash.com/photo-1609081219090-a6d8173087ec?w=800&q=80'
+      'https://jwbryyaysptokzmfwijo.supabase.co/storage/v1/object/public/product-images/seed/1590658268037-6bf12165a8df.jpg',
+      // BUG-011 : URL Unsplash morte (404) remplacée.
+      'https://jwbryyaysptokzmfwijo.supabase.co/storage/v1/object/public/product-images/seed/1608043152269-423dbba4e7e1.jpg'
     ],
     supplierPrice: 12000,
     publicPrice: 19900,
@@ -420,8 +426,8 @@ Commandez maintenant : `,
     category: 'Téléphones & Tablettes',
     description: 'Smartphone performant avec 128Go de stockage, 4Go RAM, batterie 5000 mAh longue autonomie, quadruple capteur photo haute définition.',
     images: [
-      'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&q=80',
-      'https://images.unsplash.com/photo-1580910051074-3eb694886505?w=800&q=80'
+      'https://jwbryyaysptokzmfwijo.supabase.co/storage/v1/object/public/product-images/seed/1511707171634-5f897ff02aa9.jpg',
+      'https://jwbryyaysptokzmfwijo.supabase.co/storage/v1/object/public/product-images/seed/1580910051074-3eb694886505.jpg'
     ],
     supplierPrice: 65000,
     publicPrice: 85000,
@@ -451,7 +457,7 @@ Commander sans tarder : `,
     category: 'Électroménager',
     description: 'Grand ventilateur silencieux haute puissance avec batterie rechargeable intégrée et panneau solaire. Autonomie jusqu à 8 heures en vitesse continue.',
     images: [
-      'https://images.unsplash.com/photo-1618944847828-82e943c3bdb7?w=800&q=80'
+      'https://jwbryyaysptokzmfwijo.supabase.co/storage/v1/object/public/product-images/seed/1618944847828-82e943c3bdb7.jpg'
     ],
     supplierPrice: 35000,
     publicPrice: 48000,
@@ -478,7 +484,7 @@ export const INITIAL_ORDERS: Order[] = [
     orderNumber: 'SG-10428',
     productId: 'prd-1',
     productName: 'Smart TV Samsung 43" Full HD Cristal',
-    productImage: 'https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=800&q=80',
+    productImage: 'https://jwbryyaysptokzmfwijo.supabase.co/storage/v1/object/public/product-images/seed/1593359677879-a4bb92f829d1.jpg',
     resellerId: 'res-1',
     resellerName: 'Moussa Coulibaly',
     resellerCode: 'MOUSSA123',
@@ -510,7 +516,7 @@ export const INITIAL_ORDERS: Order[] = [
     orderNumber: 'SG-10427',
     productId: 'prd-2',
     productName: 'Mixeur Blender Multifonction 2-en-1 Puissant 600W',
-    productImage: 'https://images.unsplash.com/photo-1584269600464-37b1b58a9fe7?w=800&q=80',
+    productImage: 'https://jwbryyaysptokzmfwijo.supabase.co/storage/v1/object/public/product-images/seed/1584269600464-37b1b58a9fe7.jpg',
     resellerId: 'res-1',
     resellerName: 'Moussa Coulibaly',
     resellerCode: 'MOUSSA123',
@@ -542,7 +548,7 @@ export const INITIAL_ORDERS: Order[] = [
     orderNumber: 'SG-10426',
     productId: 'prd-3',
     productName: 'Kit Solaire Domestique Autonome 4 Lampes',
-    productImage: 'https://images.unsplash.com/photo-1508873696983-2df5293cb32f?w=800&q=80',
+    productImage: 'https://jwbryyaysptokzmfwijo.supabase.co/storage/v1/object/public/product-images/seed/1497440001374-f26997328c1b.jpg', // BUG-011 : URL morte remplacée
     resellerId: 'res-2',
     resellerName: 'Awa Diakité',
     resellerCode: 'AWA_BKO',

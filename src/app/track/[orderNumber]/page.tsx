@@ -3,7 +3,7 @@
 import React from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import Image from 'next/image';
+import ProductImage from '@/components/common/ProductImage';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
@@ -121,7 +121,7 @@ export default function OrderTrackingPage() {
           {/* Product Summary */}
           <div className="flex items-center space-x-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
             <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-slate-200 shrink-0">
-              <Image src={order.productImage} alt={order.productName} fill className="object-cover" />
+              <ProductImage src={order.productImage} alt={order.productName} fill className="object-cover" />
             </div>
             <div className="min-w-0 flex-1">
               <h3 className="font-bold text-xs text-slate-900 truncate">{order.productName}</h3>

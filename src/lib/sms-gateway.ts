@@ -39,7 +39,23 @@ export const smsGateway = {
   async sendDeliveryOtpSms(payload: SmsPayload): Promise<SmsResponse> {
     const formattedPhone = this.formatMaliPhone(payload.toPhone);
     const smsText = `Suguba: Votre commande #${payload.orderNumber} (${payload.productName}) est enregistree. Montant a payer: ${payload.totalAmount.toLocaleString('fr-FR')} FCFA. Votre CODE SECRET DE LIVRAISON est: ${payload.deliveryOtp}. A donner UNIQUEMENT au livreur a la remise du colis.`;
+    return this.sendPlainSms(formattedPhone, smsText);
+  },
 
+  /**
+   * Envoi d'un code de connexion (OTP compte). Ne jamais logger ni retourner
+   * le code en clair côté appelant en production — voir /api/auth/request-otp.
+   */
+  async sendLoginOtpSms(toPhone: string, code: string): Promise<SmsResponse> {
+    const formattedPhone = this.formatMaliPhone(toPhone);
+    const smsText = `Suguba: Votre code de connexion est ${code}. Ne le partagez avec personne, y compris avec Suguba. Valable 5 minutes.`;
+    return this.sendPlainSms(formattedPhone, smsText);
+  },
+
+  /**
+   * Dispatch générique vers le premier fournisseur SMS configuré.
+   */
+  async sendPlainSms(formattedPhone: string, smsText: string): Promise<SmsResponse> {
     // 1. Détection du fournisseur SMS configuré
     const orangeClientId = process.env.ORANGE_SMS_CLIENT_ID;
     const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -126,7 +142,7 @@ export const smsGateway = {
       success: true,
       messageId: `SANDBOX-SMS-${Date.now()}`,
       provider: 'SANDBOX',
-      message: `[Sandbox] SMS simulé envoyé avec succès au ${formattedPhone}. Code OTP: ${payload.deliveryOtp}`,
+      message: `[Sandbox] SMS simulé envoyé avec succès au ${formattedPhone}.`,
     };
   }
 };

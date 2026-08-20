@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import ProductImage from '@/components/common/ProductImage';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
@@ -371,7 +371,7 @@ export default function HomePage() {
                 >
                   {/* Image */}
                   <div className="relative h-48 bg-gray-50 overflow-hidden">
-                    <Image
+                    <ProductImage
                       src={product.images[0]}
                       alt={product.name}
                       fill

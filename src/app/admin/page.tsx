@@ -7,6 +7,7 @@ import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import CloudSyncBadge from '@/components/common/CloudSyncBadge';
 import ProductPricingModal from '@/components/admin/ProductPricingModal';
+import PendingProfilesPanel from '@/components/admin/PendingProfilesPanel';
 import { useSugubaStore, sugubaStore } from '@/lib/store';
 import { whatsappHelper } from '@/lib/whatsapp-helper';
 import { Product, Order } from '@/types';
@@ -29,6 +30,8 @@ export default function AdminDashboardPage() {
   const [adminPhoneInput, setAdminPhoneInput] = useState(state.currentUser.phone || '+223 89 46 00 00');
   const [adminCityInput, setAdminCityInput] = useState(state.currentUser.city || 'Bamako (Hamdallaye ACI 2000)');
   const [actionFeedback, setActionFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [promotePhoneInput, setPromotePhoneInput] = useState('');
+  const [promoteBusy, setPromoteBusy] = useState(false);
 
   // Onboarding Desk Tab
   const [onboardingTab, setOnboardingTab] = useState<'suppliers' | 'drivers' | 'resellers' | 'diaspora'>('suppliers');
@@ -178,7 +181,9 @@ export default function AdminDashboardPage() {
 
         {/* Operational Queues & Priority Action Desks */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          
+
+          <PendingProfilesPanel />
+
           {/* Desk 1: Call Confirmation Queue (Anti-fausses commandes) */}
           <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -893,6 +898,55 @@ export default function AdminDashboardPage() {
                   className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-xs transition-colors mt-2"
                 >
                   Enregistrer les Coordonnées Super Admin
+                </button>
+              </div>
+            </div>
+
+            {/* Section 1bis: Promouvoir un nouvel Admin (accès réel, pas la démo) */}
+            <div className="space-y-3.5 bg-purple-50/70 p-4 rounded-2xl border border-purple-200">
+              <h4 className="font-black text-xs text-purple-900 uppercase tracking-wider flex items-center gap-1.5">
+                <UserCog className="w-4 h-4 text-purple-700" />
+                <span>1bis. Promouvoir un compte Admin</span>
+              </h4>
+              <p className="text-[11px] text-purple-800">
+                Donne le rôle admin (accès immédiat, sans validation) à un numéro déjà inscrit sur Suguba.
+                Le tout premier compte admin, lui, se crée uniquement en ligne de commande — voir <code className="font-mono">scripts/create-admin.js</code>.
+              </p>
+              <div className="flex gap-2">
+                <input
+                  type="tel"
+                  value={promotePhoneInput}
+                  onChange={(e) => setPromotePhoneInput(e.target.value)}
+                  placeholder="+223 70 00 00 00"
+                  className="flex-1 px-3.5 py-2 bg-white border border-purple-300 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+                <button
+                  type="button"
+                  disabled={promoteBusy || !promotePhoneInput}
+                  onClick={async () => {
+                    setPromoteBusy(true);
+                    try {
+                      const res = await fetch('/api/admin/promote', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ phone: promotePhoneInput }),
+                      });
+                      const json = await res.json();
+                      setActionFeedback(
+                        res.ok
+                          ? { type: 'success', message: `✅ ${json.phone} promu admin et activé.` }
+                          : { type: 'error', message: json.error || 'Échec de la promotion.' }
+                      );
+                      if (res.ok) setPromotePhoneInput('');
+                    } catch (_) {
+                      setActionFeedback({ type: 'error', message: 'Erreur réseau.' });
+                    } finally {
+                      setPromoteBusy(false);
+                    }
+                  }}
+                  className="px-4 py-2 bg-purple-700 hover:bg-purple-800 disabled:opacity-50 text-white rounded-xl text-xs font-black shadow-xs transition-colors whitespace-nowrap"
+                >
+                  {promoteBusy ? '...' : 'Promouvoir'}
                 </button>
               </div>
             </div>

@@ -1,16 +1,37 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { sugubaStore, useSugubaStore } from '@/lib/store';
 import { authService } from '@/lib/auth-service';
+import { supabase } from '@/lib/supabase';
 import { UserRole } from '@/types';
 import {
   ArrowRight, Smartphone, CheckCircle2, MessageCircle,
-  ShieldCheck, Zap, Store, ShoppingBag, Truck, Shield
+  ShieldCheck, Zap, Store, ShoppingBag, Truck, Shield, Mail
 } from 'lucide-react';
+
+const DEST_BY_ROLE: Record<string, string> = {
+  admin: '/admin',
+  driver: '/driver',
+  supplier: '/supplier',
+  reseller: '/reseller',
+  customer: '/reseller',
+  diaspora: '/diaspora',
+};
+
+function GoogleIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47a5.53 5.53 0 0 1-2.4 3.63v3h3.88c2.27-2.09 3.57-5.17 3.57-8.82Z" />
+      <path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.95-2.91l-3.88-3a7.4 7.4 0 0 1-11-3.89H1.08v3.09A12 12 0 0 0 12 24Z" />
+      <path fill="#FBBC05" d="M5.07 14.2a7.2 7.2 0 0 1 0-4.4V6.71H1.08a12 12 0 0 0 0 10.58l3.99-3.09Z" />
+      <path fill="#EA4335" d="M12 4.75c1.76 0 3.34.6 4.59 1.79l3.44-3.44C17.95 1.19 15.24 0 12 0A12 12 0 0 0 1.08 6.71l3.99 3.09A7.16 7.16 0 0 1 12 4.75Z" />
+    </svg>
+  );
+}
 
 const quickRoles = [
   { role: 'reseller' as UserRole,  label: 'Revendeur',   icon: Store,       color: 'bg-emerald-50 text-emerald-700 border-emerald-200',  dest: '/reseller'  },
@@ -19,17 +40,31 @@ const quickRoles = [
   { role: 'admin' as UserRole,     label: 'Admin',       icon: Shield,      color: 'bg-purple-50 text-purple-700 border-purple-200',      dest: '/admin'     },
 ];
 
+// Corrige BUG-003 : la "connexion rapide" n'existe plus qu'en développement
+// local, contrôlée par une variable SERVEUR (SUGUBA_DEMO_MODE), jamais par
+// ce flag client qui ne fait que masquer/afficher le bloc — le blocage réel
+// se fait dans /api/auth/demo-login, non falsifiable depuis le navigateur.
+const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
+
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const state = useSugubaStore();
+  const deniedRole = searchParams.get('denied');
 
+  // Trois méthodes de connexion : téléphone (OTP maison, existant), email
+  // (code à 6 chiffres via Supabase Auth) et Google (OAuth via Supabase
+  // Auth) — voir /api/auth/supabase-exchange pour les deux dernières.
+  const [method, setMethod] = useState<'phone' | 'email'>('phone');
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [phone, setPhone] = useState('+223 76 12 34 56');
   const [otpCode, setOtpCode] = useState('');
-  const [generatedOtp, setGeneratedOtp] = useState('7421');
   const [otpChannel, setOtpChannel] = useState<'sms' | 'whatsapp'>('whatsapp');
+  const [email, setEmail] = useState('');
+  const [emailLinkSent, setEmailLinkSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [infoMessage, setInfoMessage] = useState('');
 
   const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +79,7 @@ export default function LoginPage() {
       const res = await authService.requestOtp(phone, otpChannel);
       setIsLoading(false);
       if (res.success) {
-        if (res.otpCode) setGeneratedOtp(res.otpCode);
+        setInfoMessage(res.message || `Code envoyé au ${phone}`);
         setStep('otp');
         if (typeof window !== 'undefined' && 'vibrate' in navigator) {
           try { navigator.vibrate([100, 50, 100]); } catch (_) {}
@@ -58,6 +93,12 @@ export default function LoginPage() {
     }
   };
 
+  const handleResendOtp = async () => {
+    setErrorMessage('');
+    const res = await authService.requestOtp(phone, otpChannel);
+    setInfoMessage(res.success ? (res.message || 'Nouveau code envoyé.') : (res.error || 'Échec du renvoi.'));
+  };
+
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
@@ -68,7 +109,11 @@ export default function LoginPage() {
       setIsLoading(false);
 
       if (verifyRes.success && verifyRes.profile) {
-        const role = verifyRes.profile.role;
+        const { role, status } = verifyRes.profile;
+        if (status !== 'active') {
+          router.push('/pending-approval');
+          return;
+        }
         const destMap: Record<string, string> = {
           admin: '/admin',
           driver: '/driver',
@@ -86,9 +131,88 @@ export default function LoginPage() {
     }
   };
 
-  const handleQuickLogin = (role: UserRole, dest: string) => {
-    sugubaStore.switchRole(role);
-    router.push(dest);
+  const handleQuickLogin = async (role: UserRole, dest: string) => {
+    setErrorMessage('');
+    try {
+      const res = await fetch('/api/auth/demo-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        setErrorMessage(data.error || 'Connexion rapide indisponible sur cet environnement.');
+        return;
+      }
+      sugubaStore.switchRole(role);
+      router.push(dest);
+    } catch (_) {
+      setErrorMessage('Connexion rapide indisponible.');
+    }
+  };
+
+  const exchangeSupabaseSession = async (): Promise<void> => {
+    if (!supabase) {
+      setErrorMessage('Connexion email/Google indisponible sur cet environnement.');
+      return;
+    }
+    const { data } = await supabase.auth.getSession();
+    if (!data.session) {
+      setErrorMessage('Session invalide, réessayez.');
+      return;
+    }
+    const res = await fetch('/api/auth/supabase-exchange', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${data.session.access_token}` },
+      body: JSON.stringify({}),
+    });
+    const json = await res.json();
+    if (!res.ok || !json.success) {
+      setErrorMessage(json.error || 'Erreur lors de la connexion.');
+      return;
+    }
+    if (json.status !== 'active') {
+      router.push('/pending-approval');
+      return;
+    }
+    router.push(DEST_BY_ROLE[json.role] || '/reseller');
+  };
+
+  // Lien magique plutôt que code à taper : le template email par défaut de
+  // Supabase (gratuit, aucune personnalisation nécessaire) contient déjà un
+  // lien cliquable qui embarque le jeton — cliquer dessus renvoie vers
+  // /auth/callback, exactement le même point de sortie que Google
+  // ci-dessous. Pas besoin d'un second écran "entrez le code" pour l'email.
+  const handleRequestEmailOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supabase) {
+      setErrorMessage('Connexion email indisponible sur cet environnement.');
+      return;
+    }
+    setIsLoading(true);
+    setErrorMessage('');
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: true, emailRedirectTo: `${window.location.origin}/auth/callback` },
+    });
+    setIsLoading(false);
+    if (error) {
+      setErrorMessage(error.message);
+      return;
+    }
+    setEmailLinkSent(true);
+  };
+
+  const handleGoogleLogin = async () => {
+    if (!supabase) {
+      setErrorMessage('Connexion Google indisponible sur cet environnement.');
+      return;
+    }
+    setErrorMessage('');
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
   };
 
   return (
@@ -135,8 +259,10 @@ export default function LoginPage() {
               </h1>
               <p className="text-xs text-gray-400 mt-1">
                 {step === 'phone'
-                  ? 'Entrez votre numéro pour recevoir un code de connexion'
-                  : `Code envoyé au ${phone}`}
+                  ? 'Choisissez votre méthode de connexion'
+                  : method === 'phone'
+                  ? `Code envoyé au ${phone}`
+                  : `Code envoyé à ${email}`}
               </p>
             </div>
 
@@ -146,8 +272,58 @@ export default function LoginPage() {
               <div className={`h-1 flex-1 rounded-full transition-all ${step === 'otp' ? 'bg-suguba-brand' : 'bg-gray-100'}`} />
             </div>
 
-            {/* STEP 1 — Phone */}
+            {deniedRole && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-100 rounded-2xl text-xs font-semibold text-red-600 text-center">
+                Connexion requise avec un compte « {deniedRole} » pour accéder à cette page.
+              </div>
+            )}
+
             {step === 'phone' && (
+              <>
+                {/* Google — chemin le plus rapide, toujours en premier */}
+                <button
+                  type="button"
+                  onClick={handleGoogleLogin}
+                  className="w-full py-3 mb-4 bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 font-bold rounded-2xl text-sm flex items-center justify-center gap-2.5 transition-all active:scale-[0.98]"
+                >
+                  <GoogleIcon className="w-4 h-4" />
+                  Continuer avec Google
+                </button>
+
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="h-px flex-1 bg-gray-100" />
+                  <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">ou</span>
+                  <div className="h-px flex-1 bg-gray-100" />
+                </div>
+
+                {/* Onglets Téléphone / Email */}
+                <div className="grid grid-cols-2 gap-1.5 p-1 bg-gray-50 rounded-2xl mb-4">
+                  <button
+                    type="button"
+                    onClick={() => { setMethod('phone'); setErrorMessage(''); }}
+                    className={`py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                      method === 'phone' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400'
+                    }`}
+                  >
+                    <Smartphone className="w-3.5 h-3.5" />
+                    Téléphone
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { setMethod('email'); setErrorMessage(''); }}
+                    className={`py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
+                      method === 'email' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400'
+                    }`}
+                  >
+                    <Mail className="w-3.5 h-3.5" />
+                    Email
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* STEP 1 — Phone */}
+            {step === 'phone' && method === 'phone' && (
               <form onSubmit={handleRequestOtp} className="space-y-4">
                 <div className="space-y-1.5">
                   <label className="block text-xs font-semibold text-gray-700">
@@ -225,19 +401,83 @@ export default function LoginPage() {
               </form>
             )}
 
-            {/* STEP 2 — OTP */}
+            {/* STEP 1 — Email */}
+            {step === 'phone' && method === 'email' && (
+              emailLinkSent ? (
+                <div className="text-center space-y-3 animate-fade-up">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
+                    <Mail className="w-6 h-6" />
+                  </div>
+                  <p className="text-sm font-semibold text-gray-900">Vérifiez votre boîte mail</p>
+                  <p className="text-xs text-gray-500">
+                    Un lien de connexion a été envoyé à <b>{email}</b>. Ouvrez-le depuis ce même appareil pour continuer.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setEmailLinkSent(false)}
+                    className="text-xs text-suguba-brand hover:underline font-semibold"
+                  >
+                    Utiliser une autre adresse
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleRequestEmailOtp} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="block text-xs font-semibold text-gray-700">
+                      Adresse email
+                    </label>
+                    <div className="relative">
+                      <Mail className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
+                      <input
+                        type="email"
+                        required
+                        placeholder="vous@exemple.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-suguba-brand/30 focus:border-suguba-brand transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  {errorMessage && (
+                    <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-xs font-semibold text-red-600">
+                      {errorMessage}
+                    </div>
+                  )}
+
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="w-full py-3.5 bg-suguba-brand hover:bg-suguba-brand-dark text-white font-bold rounded-2xl text-sm flex items-center justify-center gap-2 shadow-brand-md hover:shadow-brand-lg transition-all active:scale-[0.98] disabled:opacity-60"
+                  >
+                    {isLoading ? (
+                      <span className="flex items-center gap-2">
+                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Envoi du lien...
+                      </span>
+                    ) : (
+                      <>
+                        Recevoir mon lien de connexion
+                        <ArrowRight className="w-4 h-4" />
+                      </>
+                    )}
+                  </button>
+                </form>
+              )
+            )}
+
+            {/* STEP 2 — OTP téléphone uniquement (l'email utilise un lien
+                cliquable, pas ce second écran — voir ci-dessus) */}
             {step === 'otp' && (
               <form onSubmit={handleVerifyOtp} className="space-y-4 animate-fade-up">
 
-                {/* OTP Demo Banner */}
-                <div className="p-3 bg-amber-50 border border-amber-100 rounded-2xl text-center">
-                  <p className="text-[10px] font-bold text-amber-700 uppercase tracking-widest mb-1">
-                    Code de démonstration
-                  </p>
-                  <p className="font-mono text-3xl font-black text-gray-900 tracking-[0.4em]">
-                    {generatedOtp}
-                  </p>
-                </div>
+                {/* Le code n'est plus jamais affiché ici : il part uniquement
+                    par SMS/email, vérifié côté serveur (corrige BUG-002). */}
+                {infoMessage && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-2xl text-center">
+                    <p className="text-xs font-semibold text-emerald-700">{infoMessage}</p>
+                  </div>
+                )}
 
                 <div className="space-y-1.5">
                   <label className="block text-xs font-semibold text-gray-700 text-center">
@@ -290,7 +530,7 @@ export default function LoginPage() {
                   </button>
                   <button
                     type="button"
-                    onClick={() => setGeneratedOtp(Math.floor(1000 + Math.random() * 9000).toString())}
+                    onClick={handleResendOtp}
                     className="text-suguba-brand hover:underline font-semibold"
                   >
                     Renvoyer le code
@@ -323,24 +563,38 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Quick Demo Access */}
-          <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-card">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 text-center mb-3">
-              Accès démo rapide
-            </p>
-            <div className="grid grid-cols-4 gap-1.5">
-              {quickRoles.map(({ role, label, icon: Icon, color, dest }) => (
-                <button
-                  key={role}
-                  onClick={() => handleQuickLogin(role, dest)}
-                  className={`p-2 rounded-xl text-center border transition-all hover:shadow-sm active:scale-95 ${color}`}
-                >
-                  <Icon className="w-4 h-4 mx-auto mb-0.5" />
-                  <span className="text-[9px] font-bold leading-none block">{label}</span>
-                </button>
-              ))}
+          {/* Quick Demo Access — masqué hors développement (corrige BUG-003).
+              Le blocage réel est côté serveur : même affiché par erreur,
+              /api/auth/demo-login refuse tant que SUGUBA_DEMO_MODE n'est pas
+              positionné explicitement sur le serveur. */}
+          {DEMO_MODE && (
+            <div className="bg-white rounded-2xl p-4 border border-amber-200 shadow-card">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600 text-center mb-1">
+                ⚠️ Accès démo — désactivé en production
+              </p>
+              <p className="text-[9px] text-gray-400 text-center mb-3">
+                Ne saute aucune vérification réelle : réservé aux environnements de développement.
+              </p>
+              {/* Corrige BUG-015 : en grid-cols-4 sur mobile, la 4e carte
+                  (Admin) tombait exactement sous le bouton flottant
+                  WhatsApp (fixed bottom-20 right-4), la rendant difficile à
+                  atteindre au tactile. 2 colonnes sur mobile évite toute
+                  superposition ; 4 colonnes réapparaissent dès qu'il y a
+                  assez de largeur (sm:) pour ne plus croiser le bouton. */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                {quickRoles.map(({ role, label, icon: Icon, color, dest }) => (
+                  <button
+                    key={role}
+                    onClick={() => handleQuickLogin(role, dest)}
+                    className={`p-2 rounded-xl text-center border transition-all hover:shadow-sm active:scale-95 ${color}`}
+                  >
+                    <Icon className="w-4 h-4 mx-auto mb-0.5" />
+                    <span className="text-[9px] font-bold leading-none block">{label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
         </div>
       </main>

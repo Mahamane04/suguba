@@ -3,6 +3,8 @@
  * Supporte : Wave Mali, Orange Money (via CinetPay / Hub2 / Paydunya), Moov Money
  */
 
+import { createHmac, timingSafeEqual } from 'node:crypto';
+
 export interface PaymentRequest {
   orderId: string;
   orderNumber: string;
@@ -151,10 +153,38 @@ export const momoGateway = {
 
   /**
    * 3. Vérification de la signature HMAC du Webhook
+   *
+   * Corrige BUG-004 : l'ancienne implémentation ne calculait aucun HMAC et
+   * acceptait toute signature non vide (et TOUT en l'absence de clé). Elle
+   * "vérifiait" en réalité rien, ce qui permettait de falsifier des
+   * confirmations de paiement/retrait avec une simple requête HTTP.
+   *
+   * Cette version calcule un HMAC-SHA256 réel sur le corps brut de la
+   * requête et compare en temps constant. Sans clé secrète configurée, elle
+   * REFUSE désormais systématiquement (fail closed) au lieu d'accepter.
+   *
+   * ⚠️ L'algorithme exact (quel champ est signé, quel encodage) diffère
+   * selon la passerelle réelle (CinetPay/Wave/Hub2) — à ajuster précisément
+   * sur la documentation du fournisseur une fois les clés de production
+   * obtenues. Cette implémentation pose le bon principe (fail closed +
+   * comparaison en temps constant) ; l'algorithme précis reste à confirmer.
    */
   verifyWebhookSignature(payload: string, signature: string, secretKey: string): boolean {
-    if (!secretKey) return true; // En mode sandbox, accepte
-    // Contrôle de signature HMAC SHA256 standard
-    return signature.length > 0;
+    if (!secretKey) {
+      console.error('[GATEWAY SECURITY] Webhook reçu sans secret configuré — rejeté par défaut.');
+      return false;
+    }
+    if (!signature) return false;
+
+    try {
+      const expected = createHmac('sha256', secretKey).update(payload).digest('hex');
+      const expectedBuf = Buffer.from(expected, 'utf8');
+      const signatureBuf = Buffer.from(signature, 'utf8');
+      if (expectedBuf.length !== signatureBuf.length) return false;
+      return timingSafeEqual(expectedBuf, signatureBuf);
+    } catch (err) {
+      console.error('[GATEWAY SECURITY] Erreur de vérification de signature:', err);
+      return false;
+    }
   }
 };

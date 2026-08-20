@@ -2,9 +2,9 @@
 
 import React, { useState, use } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import Image from 'next/image';
 import Link from 'next/link';
 import Header from '@/components/common/Header';
+import ProductImage from '@/components/common/ProductImage';
 import { useSugubaStore, sugubaStore } from '@/lib/store';
 import { 
   ShieldCheck, Truck, Clock, MapPin, Phone, 
@@ -19,7 +19,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
 
   const refCode = searchParams.get('ref');
   const promoParam = searchParams.get('promo');
-  const product = state.products.find(p => p.slug === resolvedParams.slug) || state.products[0];
+  // Corrige BUG-009 : un slug inexistant/mal recopié retombait silencieusement
+  // sur state.products[0], affichant un article différent comme s'il était
+  // légitime — grave puisque le modèle repose entièrement sur des liens
+  // partagés sur WhatsApp. On distingue maintenant "pas encore trouvé" (le
+  // catalogue vient peut-être de se charger) de "vraiment introuvable".
+  const product = state.products.find(p => p.slug === resolvedParams.slug);
 
   const reseller = refCode ? state.resellers.find(r => r.referralCode.toUpperCase() === refCode.toUpperCase()) : null;
   const resellerUser = reseller ? state.users.find(u => u.id === reseller.userId) : null;
@@ -46,6 +51,31 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
     promoParam && promoParam.toUpperCase() === 'BAMAKO' ? { code: 'BAMAKO', discount: 1000 } : null
   );
   const [promoError, setPromoError] = useState('');
+
+  if (!product) {
+    return (
+      <div className="min-h-screen flex flex-col bg-slate-50">
+        <Header />
+        <main className="flex-1 flex items-center justify-center px-4 py-16">
+          <div className="max-w-md w-full text-center bg-white rounded-3xl border border-slate-200 shadow-sm p-8 space-y-4">
+            <div className="w-14 h-14 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center mx-auto text-2xl font-black">
+              !
+            </div>
+            <h1 className="text-lg font-black text-slate-900">Produit introuvable</h1>
+            <p className="text-sm text-slate-500">
+              Ce lien ne correspond à aucun produit disponible sur Suguba — il a peut-être expiré ou été mal recopié.
+            </p>
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center w-full py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm transition-colors"
+            >
+              Voir le catalogue Suguba
+            </Link>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   const PROMO_DATABASE: Record<string, number> = {
     'RAMADAN': 2000,
@@ -176,7 +206,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
           {/* Left: Product Images & Quality Guarantees */}
           <div className="space-y-4">
             <div className="relative h-72 sm:h-96 rounded-3xl overflow-hidden bg-white border border-slate-200 shadow-sm">
-              <Image src={product.images[0]} alt={product.name} fill className="object-cover" priority />
+              <ProductImage src={product.images[0]} alt={product.name} fill className="object-cover" priority />
               <div className="absolute top-3 left-3">
                 <span className="px-3 py-1 rounded-full bg-slate-900/80 backdrop-blur-xs text-white text-xs font-bold">
                   {product.category}

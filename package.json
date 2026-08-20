@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "node scripts/verify-invariants.js"
+    "test": "node scripts/verify-invariants.js",
+    "create-admin": "node scripts/create-admin.js",
+    "setup-storage": "node scripts/setup-storage.js",
+    "migrate-images": "node scripts/migrate-product-images.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",

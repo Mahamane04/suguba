@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import ProductImage from '@/components/common/ProductImage';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import CloudSyncBadge from '@/components/common/CloudSyncBadge';
@@ -122,7 +122,7 @@ export default function DriverDashboardPage() {
                     {/* Product item */}
                     <div className="flex items-center space-x-3 bg-slate-50 p-3 rounded-2xl border border-slate-200">
                       <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-slate-200 shrink-0">
-                        <Image src={order.productImage} alt={order.productName} fill className="object-cover" />
+                        <ProductImage src={order.productImage} alt={order.productName} fill className="object-cover" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <h4 className="font-bold text-xs text-slate-900 truncate">{order.productName}</h4>

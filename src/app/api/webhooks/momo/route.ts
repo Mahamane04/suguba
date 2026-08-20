@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { momoGateway } from '@/lib/momo-gateway';
 import { sugubaStore } from '@/lib/store';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
 export async function POST(req: NextRequest) {
   try {
@@ -29,12 +30,34 @@ export async function POST(req: NextRequest) {
 
     console.log(`[WEBHOOK MOMO REÇU] Transaction: ${txId} • Statut: ${isSuccess ? 'SUCCÈS' : 'ÉCHEC'}`);
 
-    // Si la transaction concerne un retrait revendeur
-    if (txId && txId.startsWith('WTH-')) {
-      const state = sugubaStore.getState();
-      const withdrawal = state.withdrawals.find(w => w.withdrawalCode === txId);
-      if (withdrawal && isSuccess) {
-        sugubaStore.processWithdrawal(withdrawal.id, `MOMO-AUTO-${Date.now()}`, 'Webhook Mobile Money Automatique');
+    // Si la transaction concerne un retrait revendeur — Supabase d'abord
+    // (retraits créés via /api/payouts/create), repli sur le store local
+    // pour les données de démo (voir /api/payouts/initiate, même logique).
+    if (txId && txId.startsWith('WTH-') && isSuccess) {
+      const admin = getSupabaseAdmin();
+      let handledInCloud = false;
+
+      if (admin) {
+        const { data: withdrawal } = await admin.from('payouts').select('id, status').eq('id', txId).maybeSingle();
+        if (withdrawal) {
+          handledInCloud = true;
+          if (withdrawal.status === 'pending') {
+            await admin.from('payouts').update({
+              status: 'completed',
+              transaction_ref: `MOMO-AUTO-${Date.now()}`,
+              processed_at: new Date().toISOString(),
+            }).eq('id', txId);
+            await admin.rpc('settle_commissions_for_withdrawal', { p_withdrawal_id: txId });
+          }
+        }
+      }
+
+      if (!handledInCloud) {
+        const state = sugubaStore.getState();
+        const withdrawal = state.withdrawals.find(w => w.withdrawalCode === txId);
+        if (withdrawal) {
+          sugubaStore.processWithdrawal(withdrawal.id, `MOMO-AUTO-${Date.now()}`, 'Webhook Mobile Money Automatique');
+        }
       }
     }
 

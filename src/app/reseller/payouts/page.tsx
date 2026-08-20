@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
@@ -48,6 +48,23 @@ export default function ResellerPayoutsPage() {
 
   const reseller = state.resellers.find(r => r.userId === state.currentUser.id) || state.resellers[0];
   const myWithdrawals = state.withdrawals.filter(w => w.resellerId === reseller?.id);
+
+  // Remplace le solde de démo par le vrai solde du grand-livre serveur dès
+  // qu'il est connu, pour que le formulaire (montant max, bouton "Tout
+  // retirer", garde-fou de soumission) reflète l'argent réellement gagné —
+  // voir sugubaStore.syncResellerBalance et /api/reseller/balance.
+  useEffect(() => {
+    if (!reseller) return;
+    fetch('/api/reseller/balance')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.cloud) {
+          sugubaStore.syncResellerBalance(reseller.id, data.availableBalance, data.pendingBalance);
+        }
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reseller?.id]);
 
   const handleWithdrawalSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -108,12 +125,12 @@ export default function ResellerPayoutsPage() {
           <div className="bg-white p-5 rounded-3xl border border-amber-200 shadow-card space-y-1">
             <span className="text-xs font-bold text-amber-700 uppercase tracking-wider flex items-center gap-1">
               <Clock className="w-3.5 h-3.5" />
-              Sécurisé en Attente (J+7)
+              En attente de livraison
             </span>
             <p className="text-2xl sm:text-3xl font-black text-amber-600">
               {reseller.pendingBalance.toLocaleString('fr-FR')} <span className="text-sm font-normal text-gray-400">FCFA</span>
             </p>
-            <p className="text-[11px] text-gray-400">Période de garantie anti-retour</p>
+            <p className="text-[11px] text-gray-400">Devient disponible dès la livraison confirmée</p>
           </div>
 
           <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-card space-y-1">
@@ -121,9 +138,7 @@ export default function ResellerPayoutsPage() {
               Total Déjà Retiré & Reçu
             </span>
             <p className="text-2xl sm:text-3xl font-black text-gray-900">
-              {(reseller.totalEarned - reseller.availableBalance - reseller.pendingBalance > 0 
-                ? reseller.totalEarned - reseller.availableBalance - reseller.pendingBalance 
-                : 20000).toLocaleString('fr-FR')} <span className="text-sm font-normal text-gray-400">FCFA</span>
+              {Math.max(0, reseller.totalEarned - reseller.availableBalance - reseller.pendingBalance).toLocaleString('fr-FR')} <span className="text-sm font-normal text-gray-400">FCFA</span>
             </p>
             <p className="text-[11px] text-gray-400">Vers Mobile Money ou Guichet</p>
           </div>

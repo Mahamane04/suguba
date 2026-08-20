@@ -1,14 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import ProductImage from '@/components/common/ProductImage';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
 import ShareModal from '@/components/reseller/ShareModal';
 import CreateOrderModal from '@/components/reseller/CreateOrderModal';
-import { useSugubaStore } from '@/lib/store';
+import { useSugubaStore, sugubaStore } from '@/lib/store';
 import { Product } from '@/types';
 import { 
   Wallet, TrendingUp, ShoppingBag, Clock, CheckCircle2, 
@@ -40,6 +40,22 @@ export default function ResellerDashboardPage() {
   const myOrders = state.orders.filter(o => o.resellerId === reseller.id);
   const myCommissions = state.commissions.filter(c => c.resellerId === reseller.id);
   const approvedProducts = state.products.filter(p => p.status === 'approved');
+
+  // Remplace le solde de démo par le vrai solde du grand-livre serveur dès
+  // qu'il est connu (voir sugubaStore.syncResellerBalance et
+  // /api/reseller/balance) — même mécanisme que /reseller/payouts, pour que
+  // les deux pages restent cohérentes entre elles.
+  useEffect(() => {
+    fetch('/api/reseller/balance')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.cloud) {
+          sugubaStore.syncResellerBalance(reseller.id, data.availableBalance, data.pendingBalance);
+        }
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reseller.id]);
 
   const handleCopyRefCode = () => {
     if (typeof navigator !== 'undefined') {
@@ -298,7 +314,7 @@ export default function ResellerDashboardPage() {
               <Clock className="w-5 h-5" />
             </div>
             <div>
-              <p className="text-xs text-gray-500 font-medium">En attente (J+7)</p>
+              <p className="text-xs text-gray-500 font-medium">En attente</p>
               <p className="text-xl sm:text-2xl font-black text-gray-900 tracking-tight">
                 {reseller.pendingBalance.toLocaleString('fr-FR')} <span className="text-xs font-semibold text-gray-500">FCFA</span>
               </p>
@@ -452,7 +468,7 @@ export default function ResellerDashboardPage() {
                 {/* Top: Thumbnail & Info */}
                 <div className="flex gap-3">
                   <div className="relative w-16 h-16 rounded-xl overflow-hidden bg-gray-50 shrink-0 border border-gray-100">
-                    <Image src={product.images[0]} alt={product.name} fill className="object-cover" />
+                    <ProductImage src={product.images[0]} alt={product.name} fill className="object-cover" />
                   </div>
                   <div className="flex-1 min-w-0 space-y-0.5">
                     <h3 className="font-bold text-xs text-gray-900 truncate">{product.name}</h3>
@@ -529,7 +545,7 @@ export default function ResellerDashboardPage() {
                         <td className="py-3 pr-2">
                           <div className="flex items-center gap-2 min-w-[130px]">
                             <div className="relative w-8 h-8 rounded-lg overflow-hidden bg-gray-100 shrink-0">
-                              <Image src={order.productImage} alt={order.productName} fill className="object-cover" />
+                              <ProductImage src={order.productImage} alt={order.productName} fill className="object-cover" />
                             </div>
                             <span className="font-bold text-gray-900 truncate max-w-[100px]">{order.productName}</span>
                           </div>

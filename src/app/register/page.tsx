@@ -7,19 +7,38 @@ import Image from 'next/image';
 import Header from '@/components/common/Header';
 import Footer from '@/components/common/Footer';
 import BottomNav from '@/components/common/BottomNav';
-import { sugubaStore } from '@/lib/store';
 import { UserRole } from '@/types';
 import {
   Store, ShoppingBag, Truck, Globe, CheckCircle2,
   ArrowRight, ShieldCheck, Sparkles, Building2, MapPin,
-  Smartphone, Wallet, FileText, UserPlus, Info, Check
+  Smartphone, Wallet, FileText, UserPlus, Info, Check, ShieldAlert
 } from 'lucide-react';
+
+function formatPhoneForOtp(raw: string): string {
+  const cleaned = raw.replace(/[^\d+]/g, '');
+  if (cleaned.startsWith('+')) return cleaned;
+  if (cleaned.startsWith('00223')) return '+' + cleaned.slice(2);
+  if (cleaned.startsWith('223')) return '+' + cleaned;
+  return '+223' + cleaned;
+}
 
 export default function RegisterPage() {
   const router = useRouter();
   const [selectedRole, setSelectedRole] = useState<'reseller' | 'supplier' | 'driver' | 'diaspora'>('reseller');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [registerError, setRegisterError] = useState<string | null>(null);
+
+  // Corrige l'absence totale de vérification à l'inscription (numéro
+  // jamais prouvé, profil actif instantanément) : avant de créer quoi que
+  // ce soit, le numéro saisi doit être confirmé par OTP réel
+  // (/api/auth/request-otp puis /api/auth/verify-otp), et le compte créé
+  // naît "pending_approval" — voir /pending-approval et
+  // /api/admin/review-profile pour la suite du parcours.
+  const [otpPhase, setOtpPhase] = useState<'idle' | 'code-sent' | 'verifying'>('idle');
+  const [otpPhone, setOtpPhone] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [otpError, setOtpError] = useState('');
 
   // ── Form States ──
   // Revendeur
@@ -64,84 +83,147 @@ export default function RegisterPage() {
     beneficiaryNeighborhoodInMali: 'Kalaban Coura (Bamako)',
   });
 
-  const handleRegister = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    try {
-      if (selectedRole === 'reseller') {
-        if (!resellerForm.fullName || !resellerForm.phone) {
-          alert('Veuillez renseigner votre nom complet et votre numéro de téléphone.');
-          setIsSubmitting(false);
-          return;
-        }
-        const res = sugubaStore.registerReseller({
-          fullName: resellerForm.fullName,
-          phone: resellerForm.phone,
+  // Regroupe les champs propres au rôle sélectionné : nom à afficher,
+  // téléphone à vérifier, et le reste en metadata pour complete-profile.
+  const getActiveFormData = (): { fullName: string; phone: string; metadata: Record<string, unknown> } | null => {
+    if (selectedRole === 'reseller') {
+      if (!resellerForm.fullName || !resellerForm.phone) return null;
+      return {
+        fullName: resellerForm.fullName,
+        phone: resellerForm.phone,
+        metadata: {
           neighborhood: resellerForm.neighborhood,
           momoProvider: resellerForm.momoProvider,
           momoNumber: resellerForm.momoNumber || resellerForm.phone,
           referralSponsorCode: resellerForm.referralSponsorCode,
-        });
-        setSuccessMessage(`Compte Revendeur activé avec succès ! Votre code affilié : ${res.reseller.referralCode}`);
-        setTimeout(() => router.push('/reseller'), 1500);
-
-      } else if (selectedRole === 'supplier') {
-        if (!supplierForm.companyName || !supplierForm.managerName || !supplierForm.phone) {
-          alert('Veuillez renseigner le nom de l\'entreprise, le nom du gérant et le numéro de contact.');
-          setIsSubmitting(false);
-          return;
-        }
-        sugubaStore.registerSupplier({
+        },
+      };
+    }
+    if (selectedRole === 'supplier') {
+      if (!supplierForm.companyName || !supplierForm.managerName || !supplierForm.phone) return null;
+      return {
+        fullName: supplierForm.managerName,
+        phone: supplierForm.phone,
+        metadata: {
           companyName: supplierForm.companyName,
-          managerName: supplierForm.managerName,
-          phone: supplierForm.phone,
           warehouseAddress: supplierForm.warehouseAddress || 'Bamako',
           warehouseNeighborhood: supplierForm.warehouseNeighborhood,
           category: supplierForm.category,
           rccmOrNif: supplierForm.rccmOrNif,
-        });
-        setSuccessMessage('Dossier Fournisseur déposé avec succès ! En cours de validation par l\'équipe Suguba.');
-        setTimeout(() => router.push('/supplier'), 1800);
-
-      } else if (selectedRole === 'driver') {
-        if (!driverForm.fullName || !driverForm.phone) {
-          alert('Veuillez renseigner votre nom et votre numéro de téléphone.');
-          setIsSubmitting(false);
-          return;
-        }
-        sugubaStore.registerDriver({
-          fullName: driverForm.fullName,
-          phone: driverForm.phone,
+        },
+      };
+    }
+    if (selectedRole === 'driver') {
+      if (!driverForm.fullName || !driverForm.phone) return null;
+      return {
+        fullName: driverForm.fullName,
+        phone: driverForm.phone,
+        metadata: {
           vehicleType: driverForm.vehicleType,
           licensePlate: driverForm.licensePlate,
           zone: driverForm.zone,
           idDocumentNumber: driverForm.idDocumentNumber,
-        });
-        setSuccessMessage('Candidature Livreur enregistrée avec succès ! En attente d\'activation par le Super Admin.');
-        setTimeout(() => router.push('/driver'), 1800);
-
-      } else if (selectedRole === 'diaspora') {
-        if (!diasporaForm.fullName || !diasporaForm.phone || !diasporaForm.beneficiaryNameInMali) {
-          alert('Veuillez renseigner vos coordonnées et celles de votre bénéficiaire au Mali.');
-          setIsSubmitting(false);
-          return;
-        }
-        sugubaStore.registerDiaspora({
-          fullName: diasporaForm.fullName,
-          phone: diasporaForm.phone,
+        },
+      };
+    }
+    if (selectedRole === 'diaspora') {
+      if (!diasporaForm.fullName || !diasporaForm.phone || !diasporaForm.beneficiaryNameInMali) return null;
+      return {
+        fullName: diasporaForm.fullName,
+        phone: diasporaForm.phone,
+        metadata: {
           countryOfResidence: diasporaForm.countryOfResidence,
           currency: diasporaForm.currency,
           beneficiaryNameInMali: diasporaForm.beneficiaryNameInMali,
           beneficiaryPhoneInMali: diasporaForm.beneficiaryPhoneInMali,
           beneficiaryNeighborhoodInMali: diasporaForm.beneficiaryNeighborhoodInMali,
-        });
-        setSuccessMessage('Compte Diaspora créé avec succès ! Accès direct au catalogue sécurisé.');
-        setTimeout(() => router.push('/diaspora'), 1500);
+        },
+      };
+    }
+    return null;
+  };
+
+  // Étape 1 : valider les champs du formulaire puis envoyer le code OTP —
+  // rien n'est encore créé côté serveur à ce stade.
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRegisterError(null);
+
+    const data = getActiveFormData();
+    if (!data) {
+      alert('Veuillez renseigner tous les champs obligatoires.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    const phone = formatPhoneForOtp(data.phone);
+    try {
+      const res = await fetch('/api/auth/request-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone }),
+      });
+      const json = await res.json();
+      setIsSubmitting(false);
+      if (!res.ok || !json.success) {
+        setRegisterError(json.error || "Erreur lors de l'envoi du code de vérification.");
+        return;
       }
+      setOtpPhone(phone);
+      setOtpPhase('code-sent');
     } catch (err) {
       console.error(err);
       setIsSubmitting(false);
+      setRegisterError('Erreur réseau lors de l\'envoi du code.');
+    }
+  };
+
+  // Étape 2 : le numéro est prouvé (OTP correct) → créer le compte
+  // (pending_approval) puis compléter le profil avec les champs du
+  // formulaire. Rien de tout ceci n'est actif avant validation admin.
+  const handleConfirmOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const data = getActiveFormData();
+    if (!data) return;
+
+    setOtpPhase('verifying');
+    setOtpError('');
+    try {
+      const verifyRes = await fetch('/api/auth/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: otpPhone, code: otpCode, intendedRole: selectedRole }),
+      });
+      const verifyJson = await verifyRes.json();
+      if (!verifyRes.ok || !verifyJson.success) {
+        setOtpError(verifyJson.error || 'Code invalide.');
+        setOtpPhase('code-sent');
+        return;
+      }
+
+      const completeRes = await fetch('/api/auth/complete-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fullName: data.fullName, metadata: data.metadata }),
+      });
+      if (!completeRes.ok) {
+        console.warn('Profil créé mais le complément de dossier a échoué — à corriger plus tard depuis le tableau de bord.');
+      }
+
+      setSuccessMessage(
+        selectedRole === 'reseller'
+          ? 'Numéro vérifié ! Votre dossier revendeur est enregistré et en cours de validation par Suguba.'
+          : selectedRole === 'supplier'
+          ? 'Numéro vérifié ! Dossier Fournisseur déposé, en cours de validation par l\'équipe Suguba.'
+          : selectedRole === 'driver'
+          ? 'Numéro vérifié ! Candidature Livreur enregistrée, en attente d\'activation par le Super Admin.'
+          : 'Numéro vérifié ! Votre dossier Diaspora est en cours de validation.'
+      );
+      setTimeout(() => router.push('/pending-approval'), 1800);
+    } catch (err) {
+      console.error(err);
+      setOtpError('Erreur réseau lors de la vérification.');
+      setOtpPhase('code-sent');
     }
   };
 
@@ -254,10 +336,69 @@ export default function RegisterPage() {
           </div>
         )}
 
+        {registerError && (
+          <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold flex items-center gap-2 animate-fade-in">
+            <ShieldAlert className="w-5 h-5 text-red-500 shrink-0" />
+            <span>{registerError}</span>
+          </div>
+        )}
+
         {/* Registration Form Card */}
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-card">
+          {otpPhase !== 'idle' ? (
+            <form onSubmit={handleConfirmOtp} className="space-y-5">
+              <div className="text-center space-y-2">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center mx-auto">
+                  <ShieldCheck className="w-6 h-6" />
+                </div>
+                <h2 className="font-black text-gray-900">Vérifiez votre numéro</h2>
+                <p className="text-xs text-gray-500">
+                  Un code a été envoyé par SMS/WhatsApp au <b>{otpPhone}</b>. Cette étape prouve que ce numéro vous appartient avant toute création de compte.
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-gray-700 text-center">Code à 6 chiffres</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  required
+                  autoFocus
+                  placeholder="• • • • • •"
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
+                  className="w-full py-4 bg-gray-50 border border-gray-200 rounded-2xl text-center text-2xl font-mono font-black tracking-[0.4em] text-gray-900 focus:outline-none focus:ring-2 focus:ring-suguba-brand/30"
+                />
+              </div>
+
+              {otpError && (
+                <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-xs font-semibold text-red-600 text-center">
+                  {otpError}
+                </div>
+              )}
+
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => { setOtpPhase('idle'); setOtpCode(''); setOtpError(''); }}
+                  className="text-xs text-gray-400 hover:text-gray-600 font-semibold"
+                >
+                  ← Modifier mes informations
+                </button>
+                <button
+                  type="submit"
+                  disabled={otpPhase === 'verifying' || otpCode.length < 4}
+                  className="w-full sm:w-auto px-7 py-3 bg-[#09b500] hover:bg-[#078000] disabled:opacity-50 text-white rounded-xl text-xs font-black shadow-brand-md transition-all active:scale-95 flex items-center justify-center gap-2"
+                >
+                  <span>{otpPhase === 'verifying' ? 'Vérification...' : 'Confirmer & Créer mon Compte'}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
+            </form>
+          ) : (
           <form onSubmit={handleRegister} className="space-y-5">
-            
+
             {/* ── FORM 1: REVENDEUR ── */}
             {selectedRole === 'reseller' && (
               <div className="space-y-4">
@@ -598,12 +739,13 @@ export default function RegisterPage() {
                 disabled={isSubmitting}
                 className="w-full sm:w-auto px-7 py-3 bg-[#09b500] hover:bg-[#078000] text-white rounded-xl text-xs font-black shadow-brand-md transition-all active:scale-95 flex items-center justify-center gap-2"
               >
-                <span>{isSubmitting ? 'Traitement en cours...' : 'Valider & Créer mon Compte'}</span>
+                <span>{isSubmitting ? 'Envoi du code...' : 'Vérifier mon numéro'}</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
 
           </form>
+          )}
         </div>
 
         {/* Bottom Login Link */}

@@ -29,39 +29,32 @@ export interface SugubaState {
   savTickets: SavTicket[];
 }
 
-const getInitialState = (): SugubaState => {
-  if (typeof window !== 'undefined') {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        return {
-          ...parsed,
-          diasporaProfiles: parsed.diasporaProfiles || INITIAL_DIASPORA,
-          savTickets: parsed.savTickets || INITIAL_SAV_TICKETS,
-        };
-      } catch (e) {
-        console.error('Failed to parse saved state', e);
-      }
-    }
-  }
-  return {
-    currentUser: INITIAL_USERS[3], // Default to Moussa Coulibaly (Revendeur)
-    users: INITIAL_USERS,
-    suppliers: INITIAL_SUPPLIERS,
-    resellers: INITIAL_RESELLERS,
-    drivers: INITIAL_DRIVERS,
-    diasporaProfiles: INITIAL_DIASPORA,
-    products: INITIAL_PRODUCTS,
-    orders: INITIAL_ORDERS,
-    commissions: INITIAL_COMMISSIONS,
-    withdrawals: INITIAL_WITHDRAWALS,
-    auditLogs: INITIAL_AUDIT_LOGS,
-    savTickets: INITIAL_SAV_TICKETS,
-  };
-};
+// Corrige BUG-010 : cette fonction lisait `localStorage` pendant le calcul
+// de l'état initial. Sur le serveur, `window` n'existe pas, donc le premier
+// rendu SSR utilise toujours l'état par défaut ; mais dans le bundle
+// navigateur, ce module est réévalué et `getDefaultState` s'exécutait AVANT
+// le premier rendu React, donc le tout premier rendu client reflétait déjà
+// le localStorage — différent du HTML envoyé par le serveur. React déclare
+// alors un mismatch d'hydratation. La donnée persistée n'est désormais lue
+// qu'après le montage (`hydrateFromLocalStorage`, appelée dans le
+// `useEffect` de `useSugubaStore`), jamais pendant le rendu initial.
+const getDefaultState = (): SugubaState => ({
+  currentUser: INITIAL_USERS[3], // Default to Moussa Coulibaly (Revendeur)
+  users: INITIAL_USERS,
+  suppliers: INITIAL_SUPPLIERS,
+  resellers: INITIAL_RESELLERS,
+  drivers: INITIAL_DRIVERS,
+  diasporaProfiles: INITIAL_DIASPORA,
+  products: INITIAL_PRODUCTS,
+  orders: INITIAL_ORDERS,
+  commissions: INITIAL_COMMISSIONS,
+  withdrawals: INITIAL_WITHDRAWALS,
+  auditLogs: INITIAL_AUDIT_LOGS,
+  savTickets: INITIAL_SAV_TICKETS,
+});
 
-let globalState = getInitialState();
+let globalState = getDefaultState();
+let hasHydratedFromStorage = false;
 const listeners = new Set<() => void>();
 
 function notify() {
@@ -77,6 +70,45 @@ export const sugubaStore = {
   subscribe: (listener: () => void) => {
     listeners.add(listener);
     return () => listeners.delete(listener);
+  },
+
+  // À appeler une seule fois, côté client, après le montage — jamais
+  // pendant le rendu (voir le commentaire sur getDefaultState ci-dessus).
+  hydrateFromLocalStorage: () => {
+    if (typeof window === 'undefined' || hasHydratedFromStorage) return;
+    hasHydratedFromStorage = true;
+
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return;
+
+    try {
+      const parsed = JSON.parse(saved);
+      globalState = {
+        ...globalState,
+        ...parsed,
+        diasporaProfiles: parsed.diasporaProfiles || INITIAL_DIASPORA,
+        savTickets: parsed.savTickets || INITIAL_SAV_TICKETS,
+      };
+      listeners.forEach((listener) => listener());
+    } catch (e) {
+      console.error('Failed to parse saved state', e);
+    }
+  },
+
+  // Synchronise le solde de démo local avec le vrai solde calculé côté
+  // serveur (voir /api/reseller/balance et le grand-livre de commissions
+  // dans supabase/schema.sql). Ne fait rien d'autre que remplacer ces deux
+  // chiffres — le reste du profil revendeur (code de parrainage, palier,
+  // etc.) reste celui des données de démo tant que ce n'est pas aussi
+  // branché sur Supabase.
+  syncResellerBalance: (resellerId: string, availableBalance: number, pendingBalance: number) => {
+    globalState = {
+      ...globalState,
+      resellers: globalState.resellers.map(r =>
+        r.id === resellerId ? { ...r, availableBalance, pendingBalance } : r
+      ),
+    };
+    notify();
   },
 
   // Auth / Role Switcher
@@ -182,7 +214,7 @@ export const sugubaStore = {
       slug: data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
       category: data.category,
       description: data.description,
-      images: data.images.length > 0 ? data.images : ['https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&q=80'],
+      images: data.images, // BUG-011 : plus de repli Unsplash — voir ProductImage
       supplierPrice: Number(data.supplierPrice),
       publicPrice: Number(data.supplierPrice) * 1.3, // Prix suggéré temporaire
       resellerCommission: Math.round(Number(data.supplierPrice) * 0.1),
@@ -722,13 +754,11 @@ export const sugubaStore = {
     if (typeof window !== 'undefined') {
       cloudSyncService.pushPayoutToCloud({
         id: newWithdrawal.id,
-        resellerId: newWithdrawal.resellerId,
+        withdrawalCode: newWithdrawal.withdrawalCode,
         resellerName: newWithdrawal.resellerName,
         amount: newWithdrawal.amount,
         payoutProvider: newWithdrawal.payoutProvider,
         payoutPhone: newWithdrawal.payoutPhone,
-        status: 'pending',
-        createdAt: newWithdrawal.createdAt,
       }).catch(() => {});
     }
     notify();
@@ -1391,10 +1421,14 @@ export function useSugubaStore() {
   const [state, setState] = useState<SugubaState>(sugubaStore.getState());
 
   useEffect(() => {
-    setState(sugubaStore.getState());
     const unsubscribe = sugubaStore.subscribe(() => {
       setState(sugubaStore.getState());
     });
+    // Lit localStorage seulement après le montage (post-hydratation) pour
+    // que le tout premier rendu client corresponde exactement au HTML
+    // rendu par le serveur — voir le commentaire sur getDefaultState.
+    sugubaStore.hydrateFromLocalStorage();
+    setState(sugubaStore.getState());
     return () => {
       unsubscribe();
     };
