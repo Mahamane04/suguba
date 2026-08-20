@@ -7,6 +7,9 @@ import Image from 'next/image';
 import Header from '@/components/common/Header';
 import Footer from '@/components/common/Footer';
 import BottomNav from '@/components/common/BottomNav';
+import DialCodePicker from '@/components/common/DialCodePicker';
+import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
+import { supabase } from '@/lib/supabase';
 import { UserRole } from '@/types';
 import {
   Store, ShoppingBag, Truck, Globe, CheckCircle2,
@@ -14,12 +17,15 @@ import {
   Smartphone, Wallet, FileText, UserPlus, Info, Check, ShieldAlert
 } from 'lucide-react';
 
-function formatPhoneForOtp(raw: string): string {
-  const cleaned = raw.replace(/[^\d+]/g, '');
-  if (cleaned.startsWith('+')) return cleaned;
-  if (cleaned.startsWith('00223')) return '+' + cleaned.slice(2);
-  if (cleaned.startsWith('223')) return '+' + cleaned;
-  return '+223' + cleaned;
+function GoogleIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47a5.53 5.53 0 0 1-2.4 3.63v3h3.88c2.27-2.09 3.57-5.17 3.57-8.82Z" />
+      <path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.95-2.91l-3.88-3a7.4 7.4 0 0 1-11-3.89H1.08v3.09A12 12 0 0 0 12 24Z" />
+      <path fill="#FBBC05" d="M5.07 14.2a7.2 7.2 0 0 1 0-4.4V6.71H1.08a12 12 0 0 0 0 10.58l3.99-3.09Z" />
+      <path fill="#EA4335" d="M12 4.75c1.76 0 3.34.6 4.59 1.79l3.44-3.44C17.95 1.19 15.24 0 12 0A12 12 0 0 0 1.08 6.71l3.99 3.09A7.16 7.16 0 0 1 12 4.75Z" />
+    </svg>
+  );
 }
 
 export default function RegisterPage() {
@@ -44,6 +50,7 @@ export default function RegisterPage() {
   // Revendeur
   const [resellerForm, setResellerForm] = useState({
     fullName: '',
+    dialCode: '+223',
     phone: '',
     neighborhood: 'Hamdallaye ACI 2000',
     momoProvider: 'Orange Money' as 'Orange Money' | 'Wave' | 'Moov Money',
@@ -55,6 +62,7 @@ export default function RegisterPage() {
   const [supplierForm, setSupplierForm] = useState({
     companyName: '',
     managerName: '',
+    dialCode: '+223',
     phone: '',
     warehouseAddress: '',
     warehouseNeighborhood: 'Grand Marché',
@@ -65,6 +73,7 @@ export default function RegisterPage() {
   // Livreur
   const [driverForm, setDriverForm] = useState({
     fullName: '',
+    dialCode: '+223',
     phone: '',
     vehicleType: 'Moto Jakarta Express',
     licensePlate: '',
@@ -72,38 +81,46 @@ export default function RegisterPage() {
     idDocumentNumber: '',
   });
 
-  // Diaspora
+  // Diaspora — indicatif France par défaut (profil type de la diaspora
+  // malienne visée par ce formulaire), modifiable via le sélecteur.
   const [diasporaForm, setDiasporaForm] = useState({
     fullName: '',
+    dialCode: '+33',
     phone: '',
     countryOfResidence: 'France 🇫🇷',
     currency: 'EUR' as 'EUR' | 'USD' | 'CAD' | 'GBP',
     beneficiaryNameInMali: '',
     beneficiaryPhoneInMali: '',
-    beneficiaryNeighborhoodInMali: 'Kalaban Coura (Bamako)',
+    beneficiaryNeighborhoodInMali: 'Kalaban-Coura',
   });
+
+  // Compose l'indicatif choisi via DialCodePicker et le numéro local en un
+  // E.164 propre pour /api/auth/request-otp — plus besoin de taper "+223"
+  // à la main dans le champ numéro.
+  const composePhone = (dialCode: string, local: string) => `${dialCode}${local.replace(/\D/g, '')}`;
 
   // Regroupe les champs propres au rôle sélectionné : nom à afficher,
   // téléphone à vérifier, et le reste en metadata pour complete-profile.
   const getActiveFormData = (): { fullName: string; phone: string; metadata: Record<string, unknown> } | null => {
     if (selectedRole === 'reseller') {
-      if (!resellerForm.fullName || !resellerForm.phone) return null;
+      if (!resellerForm.fullName || resellerForm.phone.replace(/\D/g, '').length < 6) return null;
+      const phone = composePhone(resellerForm.dialCode, resellerForm.phone);
       return {
         fullName: resellerForm.fullName,
-        phone: resellerForm.phone,
+        phone,
         metadata: {
           neighborhood: resellerForm.neighborhood,
           momoProvider: resellerForm.momoProvider,
-          momoNumber: resellerForm.momoNumber || resellerForm.phone,
+          momoNumber: resellerForm.momoNumber || phone,
           referralSponsorCode: resellerForm.referralSponsorCode,
         },
       };
     }
     if (selectedRole === 'supplier') {
-      if (!supplierForm.companyName || !supplierForm.managerName || !supplierForm.phone) return null;
+      if (!supplierForm.companyName || !supplierForm.managerName || supplierForm.phone.replace(/\D/g, '').length < 6) return null;
       return {
         fullName: supplierForm.managerName,
-        phone: supplierForm.phone,
+        phone: composePhone(supplierForm.dialCode, supplierForm.phone),
         metadata: {
           companyName: supplierForm.companyName,
           warehouseAddress: supplierForm.warehouseAddress || 'Bamako',
@@ -114,10 +131,10 @@ export default function RegisterPage() {
       };
     }
     if (selectedRole === 'driver') {
-      if (!driverForm.fullName || !driverForm.phone) return null;
+      if (!driverForm.fullName || driverForm.phone.replace(/\D/g, '').length < 6) return null;
       return {
         fullName: driverForm.fullName,
-        phone: driverForm.phone,
+        phone: composePhone(driverForm.dialCode, driverForm.phone),
         metadata: {
           vehicleType: driverForm.vehicleType,
           licensePlate: driverForm.licensePlate,
@@ -127,10 +144,10 @@ export default function RegisterPage() {
       };
     }
     if (selectedRole === 'diaspora') {
-      if (!diasporaForm.fullName || !diasporaForm.phone || !diasporaForm.beneficiaryNameInMali) return null;
+      if (!diasporaForm.fullName || diasporaForm.phone.replace(/\D/g, '').length < 6 || !diasporaForm.beneficiaryNameInMali) return null;
       return {
         fullName: diasporaForm.fullName,
-        phone: diasporaForm.phone,
+        phone: composePhone(diasporaForm.dialCode, diasporaForm.phone),
         metadata: {
           countryOfResidence: diasporaForm.countryOfResidence,
           currency: diasporaForm.currency,
@@ -156,7 +173,7 @@ export default function RegisterPage() {
     }
 
     setIsSubmitting(true);
-    const phone = formatPhoneForOtp(data.phone);
+    const phone = data.phone;
     try {
       const res = await fetch('/api/auth/request-otp', {
         method: 'POST',
@@ -225,6 +242,25 @@ export default function RegisterPage() {
       setOtpError('Erreur réseau lors de la vérification.');
       setOtpPhase('code-sent');
     }
+  };
+
+  // Inscription via Google : identité déjà vérifiée par Google (email +
+  // nom), donc pas d'étape OTP à faire ici — /api/auth/supabase-exchange
+  // crée directement le profil en pending_approval avec le rôle choisi sur
+  // cette page (passé en query param à travers la redirection OAuth,
+  // relu par /auth/callback). Les champs propres au métier (quartier,
+  // opérateur Mobile Money, véhicule...) restent à compléter au premier
+  // passage sur le tableau de bord — Google ne les connaît pas.
+  const handleGoogleRegister = async () => {
+    setRegisterError(null);
+    if (!supabase) {
+      setRegisterError('Inscription Google indisponible sur cet environnement.');
+      return;
+    }
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/auth/callback?intendedRole=${selectedRole}` },
+    });
   };
 
   return (
@@ -328,6 +364,26 @@ export default function RegisterPage() {
 
         </div>
 
+        {/* Inscription Google — mise en avant, chemin le plus rapide :
+            l'identité est déjà vérifiée par Google, aucun OTP à taper. */}
+        {otpPhase === 'idle' && (
+          <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-card space-y-3">
+            <button
+              type="button"
+              onClick={handleGoogleRegister}
+              className="w-full py-3.5 bg-white border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-800 font-bold rounded-2xl text-sm flex items-center justify-center gap-2.5 transition-all active:scale-[0.98]"
+            >
+              <GoogleIcon className="w-5 h-5" />
+              S&apos;inscrire avec Google — Sans code, sans mot de passe
+            </button>
+            <div className="flex items-center gap-3">
+              <div className="h-px flex-1 bg-gray-100" />
+              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">ou avec votre numéro</span>
+              <div className="h-px flex-1 bg-gray-100" />
+            </div>
+          </div>
+        )}
+
         {/* Success Alert Banner */}
         {successMessage && (
           <div className="p-4 rounded-2xl bg-emerald-100 border border-emerald-300 text-emerald-900 text-xs font-bold flex items-center gap-2 animate-fade-in">
@@ -425,24 +481,27 @@ export default function RegisterPage() {
 
                   <div>
                     <label className="block text-xs font-bold text-gray-700 mb-1">Numéro WhatsApp (Ventes & OTP) :</label>
-                    <input
-                      type="tel"
-                      required
-                      placeholder="Ex: +223 76 12 34 56"
-                      value={resellerForm.phone}
-                      onChange={(e) => setResellerForm({ ...resellerForm, phone: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
+                    <div className="flex gap-2">
+                      <DialCodePicker
+                        value={resellerForm.dialCode}
+                        onChange={(dialCode) => setResellerForm({ ...resellerForm, dialCode })}
+                      />
+                      <input
+                        type="tel"
+                        required
+                        placeholder="76 12 34 56"
+                        value={resellerForm.phone}
+                        onChange={(e) => setResellerForm({ ...resellerForm, phone: e.target.value })}
+                        className="flex-1 min-w-0 px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      />
+                    </div>
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold text-gray-700 mb-1">Quartier de Résidence à Bamako :</label>
-                    <input
-                      type="text"
-                      placeholder="Ex: Hamdallaye ACI 2000, Badalabougou..."
+                    <NeighborhoodPicker
                       value={resellerForm.neighborhood}
-                      onChange={(e) => setResellerForm({ ...resellerForm, neighborhood: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      onChange={(neighborhood) => setResellerForm({ ...resellerForm, neighborhood })}
                     />
                   </div>
 
@@ -512,14 +571,20 @@ export default function RegisterPage() {
 
                   <div>
                     <label className="block text-xs font-bold text-gray-700 mb-1">Téléphone de Contact Principal :</label>
-                    <input
-                      type="tel"
-                      required
-                      placeholder="Ex: +223 76 12 34 56"
-                      value={supplierForm.phone}
-                      onChange={(e) => setSupplierForm({ ...supplierForm, phone: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                    <div className="flex gap-2">
+                      <DialCodePicker
+                        value={supplierForm.dialCode}
+                        onChange={(dialCode) => setSupplierForm({ ...supplierForm, dialCode })}
+                      />
+                      <input
+                        type="tel"
+                        required
+                        placeholder="76 12 34 56"
+                        value={supplierForm.phone}
+                        onChange={(e) => setSupplierForm({ ...supplierForm, phone: e.target.value })}
+                        className="flex-1 min-w-0 px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
                   </div>
 
                   <div>
@@ -539,12 +604,9 @@ export default function RegisterPage() {
 
                   <div>
                     <label className="block text-xs font-bold text-gray-700 mb-1">Quartier de l&apos;Entrepôt / Magasin :</label>
-                    <input
-                      type="text"
-                      placeholder="Ex: Grand Marché, Sotuba, ACI 2000..."
+                    <NeighborhoodPicker
                       value={supplierForm.warehouseNeighborhood}
-                      onChange={(e) => setSupplierForm({ ...supplierForm, warehouseNeighborhood: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      onChange={(warehouseNeighborhood) => setSupplierForm({ ...supplierForm, warehouseNeighborhood })}
                     />
                   </div>
 
@@ -588,14 +650,20 @@ export default function RegisterPage() {
 
                   <div>
                     <label className="block text-xs font-bold text-gray-700 mb-1">Numéro de Téléphone :</label>
-                    <input
-                      type="tel"
-                      required
-                      placeholder="Ex: +223 74 88 99 00"
-                      value={driverForm.phone}
-                      onChange={(e) => setDriverForm({ ...driverForm, phone: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    />
+                    <div className="flex gap-2">
+                      <DialCodePicker
+                        value={driverForm.dialCode}
+                        onChange={(dialCode) => setDriverForm({ ...driverForm, dialCode })}
+                      />
+                      <input
+                        type="tel"
+                        required
+                        placeholder="74 88 99 00"
+                        value={driverForm.phone}
+                        onChange={(e) => setDriverForm({ ...driverForm, phone: e.target.value })}
+                        className="flex-1 min-w-0 px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      />
+                    </div>
                   </div>
 
                   <div>
@@ -662,14 +730,20 @@ export default function RegisterPage() {
 
                   <div>
                     <label className="block text-xs font-bold text-gray-700 mb-1">Votre Numéro International (WhatsApp) :</label>
-                    <input
-                      type="tel"
-                      required
-                      placeholder="Ex: +33 6 12 34 56 78"
-                      value={diasporaForm.phone}
-                      onChange={(e) => setDiasporaForm({ ...diasporaForm, phone: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                    />
+                    <div className="flex gap-2">
+                      <DialCodePicker
+                        value={diasporaForm.dialCode}
+                        onChange={(dialCode) => setDiasporaForm({ ...diasporaForm, dialCode })}
+                      />
+                      <input
+                        type="tel"
+                        required
+                        placeholder="6 12 34 56 78"
+                        value={diasporaForm.phone}
+                        onChange={(e) => setDiasporaForm({ ...diasporaForm, phone: e.target.value })}
+                        className="flex-1 min-w-0 px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      />
+                    </div>
                   </div>
 
                   <div>

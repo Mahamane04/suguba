@@ -8,12 +8,26 @@ import Header from '@/components/common/Header';
 import Footer from '@/components/common/Footer';
 import BottomNav from '@/components/common/BottomNav';
 import EarningsCalculator from '@/components/reseller/EarningsCalculator';
-import { DIAL_CODES, DEFAULT_DIAL_CODE } from '@/lib/dial-codes';
-import { BAMAKO_NEIGHBORHOODS, DEFAULT_NEIGHBORHOOD } from '@/lib/bamako-neighborhoods';
+import DialCodePicker from '@/components/common/DialCodePicker';
+import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
+import { supabase } from '@/lib/supabase';
+import { DEFAULT_DIAL_CODE } from '@/lib/dial-codes';
+import { DEFAULT_NEIGHBORHOOD } from '@/lib/bamako-neighborhoods';
 import {
   Sparkles, CheckCircle2, ShieldCheck, Wallet,
   ArrowRight, Users, Phone, MapPin, Award
 } from 'lucide-react';
+
+function GoogleIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#4285F4" d="M23.52 12.27c0-.85-.08-1.67-.22-2.45H12v4.64h6.47a5.53 5.53 0 0 1-2.4 3.63v3h3.88c2.27-2.09 3.57-5.17 3.57-8.82Z" />
+      <path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.95-2.91l-3.88-3a7.4 7.4 0 0 1-11-3.89H1.08v3.09A12 12 0 0 0 12 24Z" />
+      <path fill="#FBBC05" d="M5.07 14.2a7.2 7.2 0 0 1 0-4.4V6.71H1.08a12 12 0 0 0 0 10.58l3.99-3.09Z" />
+      <path fill="#EA4335" d="M12 4.75c1.76 0 3.34.6 4.59 1.79l3.44-3.44C17.95 1.19 15.24 0 12 0A12 12 0 0 0 1.08 6.71l3.99 3.09A7.16 7.16 0 0 1 12 4.75Z" />
+    </svg>
+  );
+}
 
 function JoinContent() {
   const searchParams = useSearchParams();
@@ -107,6 +121,21 @@ function JoinContent() {
     }
   };
 
+  // Chemin le plus rapide : identité déjà vérifiée par Google, pas d'OTP à
+  // taper. Le code de parrainage survit à l'aller-retour OAuth via le
+  // paramètre "ref" de la redirection, relu par /auth/callback.
+  const handleGoogleJoin = async () => {
+    setFormError('');
+    if (!supabase) {
+      setFormError('Inscription Google indisponible sur cet environnement.');
+      return;
+    }
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/auth/callback?intendedRole=reseller&ref=${encodeURIComponent(refCode)}` },
+    });
+  };
+
   return (
     <div className="max-w-xl mx-auto px-4 sm:px-6 py-8 w-full space-y-6">
       
@@ -171,7 +200,21 @@ function JoinContent() {
             </p>
           </div>
         ) : step === 'form' ? (
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <>
+            <button
+              type="button"
+              onClick={handleGoogleJoin}
+              className="w-full py-3.5 bg-white border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-800 font-bold rounded-2xl text-xs flex items-center justify-center gap-2.5 transition-all active:scale-[0.98]"
+            >
+              <GoogleIcon className="w-4 h-4" />
+              S&apos;inscrire avec Google — Sans code, sans mot de passe
+            </button>
+            <div className="flex items-center gap-3">
+              <div className="h-px flex-1 bg-slate-100" />
+              <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">ou avec votre numéro</span>
+              <div className="h-px flex-1 bg-slate-100" />
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">
                 Votre Nom Complet :
@@ -191,18 +234,7 @@ function JoinContent() {
                 Numéro WhatsApp (pour recevoir vos commissions Wave/Orange) :
               </label>
               <div className="flex gap-2">
-                <select
-                  value={dialCode}
-                  onChange={(e) => setDialCode(e.target.value)}
-                  aria-label="Indicatif du pays"
-                  className="shrink-0 w-[104px] bg-slate-50 border border-slate-200 rounded-2xl px-2 py-3 text-xs font-bold text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
-                >
-                  {DIAL_CODES.map((d) => (
-                    <option key={d.code + d.country} value={d.code}>
-                      {d.flag} {d.code}
-                    </option>
-                  ))}
-                </select>
+                <DialCodePicker value={dialCode} onChange={setDialCode} />
                 <input
                   type="tel"
                   required
@@ -218,20 +250,7 @@ function JoinContent() {
               <label className="block text-xs font-bold text-slate-700 mb-1">
                 Votre Quartier à Bamako :
               </label>
-              <select
-                value={neighborhood}
-                onChange={(e) => setNeighborhood(e.target.value)}
-                className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-xs font-bold text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
-              >
-                {BAMAKO_NEIGHBORHOODS.map((group) => (
-                  <optgroup key={group.commune} label={group.commune}>
-                    {group.quartiers.map((q) => (
-                      <option key={q} value={q}>{q}</option>
-                    ))}
-                  </optgroup>
-                ))}
-                <option value="Autre quartier">Autre quartier</option>
-              </select>
+              <NeighborhoodPicker value={neighborhood} onChange={setNeighborhood} />
             </div>
 
             {formError && (
@@ -248,7 +267,8 @@ function JoinContent() {
               <span>{isSubmitting ? 'Envoi du code...' : 'Recevoir mon code de vérification'}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
-          </form>
+            </form>
+          </>
         ) : (
           <form onSubmit={handleVerifyOtp} className="space-y-4">
             <p className="text-xs text-slate-600 text-center">

@@ -45,19 +45,39 @@ export default function AuthCallbackPage() {
       }
 
       try {
+        // Lu directement depuis l'URL plutôt que via useSearchParams (qui
+        // exigerait un Suspense boundary) : le rôle choisi sur /register
+        // avant de cliquer "S'inscrire avec Google" (voir handleGoogleRegister)
+        // survit à l'aller-retour OAuth via ce paramètre de redirectTo.
+        const intendedRole = new URLSearchParams(window.location.search).get('intendedRole') || undefined;
+
         const res = await fetch('/api/auth/supabase-exchange', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${data.session.access_token}`,
           },
-          body: JSON.stringify({}),
+          body: JSON.stringify({ intendedRole }),
         });
         const json = await res.json();
         if (!res.ok || !json.success) {
           setError(json.error || 'Erreur lors de la connexion.');
           return;
         }
+
+        // Code de parrainage porté par un lien /reseller/join?ref=... — voir
+        // handleGoogleJoin. Uniquement pertinent pour un profil fraîchement
+        // créé (status pending_approval), jamais pour reconnecter un compte
+        // existant qui aurait déjà ses propres métadonnées.
+        const refCode = new URLSearchParams(window.location.search).get('ref');
+        if (refCode && json.status !== 'active') {
+          await fetch('/api/auth/complete-profile', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ metadata: { referralSponsorCode: refCode } }),
+          }).catch(() => {});
+        }
+
         if (json.status !== 'active') {
           router.push('/pending-approval');
           return;

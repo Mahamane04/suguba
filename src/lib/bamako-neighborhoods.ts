@@ -18,8 +18,9 @@ export const BAMAKO_NEIGHBORHOODS: NeighborhoodGroup[] = [
   {
     commune: 'Commune II',
     quartiers: [
-      'Bagadadji', 'Bozola', 'Hippodrome', 'Médina-Coura', 'Missira',
-      "N'Tomikorobougou", 'Niaréla', 'Quinzambougou', 'TSF', 'Zone Industrielle',
+      'Bagadadji', 'Bozola', 'Grand Marché', 'Hippodrome', 'Médina-Coura',
+      'Missira', "N'Tomikorobougou", 'Niaréla', 'Quinzambougou', 'TSF',
+      'Zone Industrielle',
     ],
   },
   {
