@@ -87,7 +87,11 @@ export async function POST(req: NextRequest) {
     }
 
     const token = await createSessionToken({ uid, phone: profile?.phone || email, role, status });
-    const res = NextResponse.json({ success: true, uid, role, status, fullName });
+    // hasPhone permet au client (voir /auth/callback) de distinguer un
+    // profil Google fraîchement créé (jamais de numéro ni de quartier —
+    // Google ne connaît ni l'un ni l'autre) d'un profil déjà complet, pour
+    // savoir s'il faut router vers /register/complete avant /pending-approval.
+    const res = NextResponse.json({ success: true, uid, role, status, fullName, hasPhone: Boolean(profile?.phone) });
     res.cookies.set(SESSION_COOKIE_NAME, token, SESSION_COOKIE_OPTIONS);
     return res;
   } catch (error: any) {

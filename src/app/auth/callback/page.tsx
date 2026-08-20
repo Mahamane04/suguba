@@ -65,17 +65,17 @@ export default function AuthCallbackPage() {
           return;
         }
 
-        // Code de parrainage porté par un lien /reseller/join?ref=... — voir
-        // handleGoogleJoin. Uniquement pertinent pour un profil fraîchement
-        // créé (status pending_approval), jamais pour reconnecter un compte
-        // existant qui aurait déjà ses propres métadonnées.
-        const refCode = new URLSearchParams(window.location.search).get('ref');
-        if (refCode && json.status !== 'active') {
-          await fetch('/api/auth/complete-profile', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ metadata: { referralSponsorCode: refCode } }),
-          }).catch(() => {});
+        // Un compte Google fraîchement créé (jamais de numéro — voir
+        // hasPhone dans supabase-exchange) doit d'abord passer par
+        // /register/complete pour renseigner téléphone/quartier avant de
+        // rejoindre /pending-approval. Un compte déjà complet (reconnexion,
+        // ou autre rôle non couvert par cette étape) suit le chemin habituel.
+        const refCode = new URLSearchParams(window.location.search).get('ref') || '';
+        if (json.status !== 'active' && json.role === 'reseller' && !json.hasPhone) {
+          const params = new URLSearchParams({ fullName: json.fullName || '' });
+          if (refCode) params.set('ref', refCode);
+          router.push(`/register/complete?${params.toString()}`);
+          return;
         }
 
         if (json.status !== 'active') {

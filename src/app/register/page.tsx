@@ -376,11 +376,16 @@ export default function RegisterPage() {
               <GoogleIcon className="w-5 h-5" />
               S&apos;inscrire avec Google — Sans code, sans mot de passe
             </button>
-            <div className="flex items-center gap-3">
-              <div className="h-px flex-1 bg-gray-100" />
-              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">ou avec votre numéro</span>
-              <div className="h-px flex-1 bg-gray-100" />
-            </div>
+            {/* Revendeur : Google seulement — téléphone/quartier/parrainage
+                se recueillent juste après (/register/complete), pas besoin
+                d'un second chemin par OTP qui duplique les mêmes champs. */}
+            {selectedRole !== 'reseller' && (
+              <div className="flex items-center gap-3">
+                <div className="h-px flex-1 bg-gray-100" />
+                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">ou avec votre numéro</span>
+                <div className="h-px flex-1 bg-gray-100" />
+              </div>
+            )}
           </div>
         )}
 
@@ -399,7 +404,9 @@ export default function RegisterPage() {
           </div>
         )}
 
-        {/* Registration Form Card */}
+        {/* Registration Form Card — masqué pour Revendeur (Google seulement,
+            voir plus haut) */}
+        {selectedRole !== 'reseller' && (
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-card">
           {otpPhase !== 'idle' ? (
             <form onSubmit={handleConfirmOtp} className="space-y-5">
@@ -455,83 +462,11 @@ export default function RegisterPage() {
           ) : (
           <form onSubmit={handleRegister} className="space-y-5">
 
-            {/* ── FORM 1: REVENDEUR ── */}
-            {selectedRole === 'reseller' && (
-              <div className="space-y-4">
-                <div className="border-b border-gray-100 pb-3">
-                  <h2 className="font-black text-base text-gray-900 flex items-center gap-2">
-                    <Store className="w-4 h-4 text-emerald-600" />
-                    <span>Informations Revendeur Indépendant</span>
-                  </h2>
-                  <p className="text-xs text-gray-500">Gagnez jusqu&apos;à 14% de commission par vente sans investir dans le stock.</p>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">Nom Complet :</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="Ex: Moussa Coulibaly"
-                      value={resellerForm.fullName}
-                      onChange={(e) => setResellerForm({ ...resellerForm, fullName: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">Numéro WhatsApp (Ventes & OTP) :</label>
-                    <div className="flex gap-2">
-                      <DialCodePicker
-                        value={resellerForm.dialCode}
-                        onChange={(dialCode) => setResellerForm({ ...resellerForm, dialCode })}
-                      />
-                      <input
-                        type="tel"
-                        required
-                        placeholder="76 12 34 56"
-                        value={resellerForm.phone}
-                        onChange={(e) => setResellerForm({ ...resellerForm, phone: e.target.value })}
-                        className="flex-1 min-w-0 px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">Quartier de Résidence à Bamako :</label>
-                    <NeighborhoodPicker
-                      value={resellerForm.neighborhood}
-                      onChange={(neighborhood) => setResellerForm({ ...resellerForm, neighborhood })}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">Opérateur de Retrait des Commissions :</label>
-                    <select
-                      value={resellerForm.momoProvider}
-                      onChange={(e) => setResellerForm({ ...resellerForm, momoProvider: e.target.value as any })}
-                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    >
-                      <option value="Orange Money">Orange Money Mali (0% frais)</option>
-                      <option value="Wave">Wave Mali (0% frais)</option>
-                      <option value="Moov Money">Moov Money Mali</option>
-                    </select>
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className="block text-xs font-bold text-gray-700 mb-1">Code de Parrainage (Optionnel) :</label>
-                    <input
-                      type="text"
-                      placeholder="Ex: PARRAIN100"
-                      value={resellerForm.referralSponsorCode}
-                      onChange={(e) => setResellerForm({ ...resellerForm, referralSponsorCode: e.target.value })}
-                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 uppercase"
-                    />
-                    <p className="text-[10px] text-gray-400 mt-1">Si vous avez été invité par un ambassadeur Suguba.</p>
-                  </div>
-                </div>
-              </div>
-            )}
+            {/* FORM 1 (Revendeur) supprimée : ce rôle passe désormais
+                uniquement par Google (voir plus haut) — ce bloc n'est plus
+                jamais atteignable, selectedRole ne peut pas valoir
+                'reseller' ici (voir la garde {selectedRole !== 'reseller'}
+                sur la carte englobante). */}
 
             {/* ── FORM 2: FOURNISSEUR ── */}
             {selectedRole === 'supplier' && (
@@ -821,6 +756,7 @@ export default function RegisterPage() {
           </form>
           )}
         </div>
+        )}
 
         {/* Bottom Login Link */}
         <div className="text-center text-xs text-gray-500">

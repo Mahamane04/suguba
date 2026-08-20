@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
+import { verifySessionToken, createSessionToken, SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
 /**
@@ -17,9 +17,10 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { fullName, city, metadata } = body as {
+    const { fullName, city, phone, metadata } = body as {
       fullName?: string;
       city?: string;
+      phone?: string;
       metadata?: Record<string, unknown>;
     };
 
@@ -33,6 +34,12 @@ export async function POST(req: NextRequest) {
     const update: Record<string, unknown> = {};
     if (fullName) update.full_name = fullName;
     if (city) update.city = city;
+    // Un compte créé via Google n'a jamais de numéro (Google ne le
+    // connaît pas) — voir /register/complete, l'étape qui le recueille
+    // juste après l'inscription. Non vérifié par OTP à ce stade : c'est
+    // l'examen manuel par un admin (status pending_approval) qui filtre un
+    // numéro fantaisiste, pas cette route.
+    if (phone) update.phone = phone;
     if (metadata && typeof metadata === 'object') update.metadata = metadata;
 
     const { error } = await admin.from('profiles').update(update).eq('id', session.uid);
@@ -40,7 +47,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, cloud: true });
+    // Réémet la session avec le vrai numéro (jusqu'ici, un profil Google
+    // portait l'email en guise de "phone" dans le jeton — voir
+    // supabase-exchange) : le Header et le reste de l'app doivent
+    // désormais afficher/utiliser le numéro réel.
+    const res = NextResponse.json({ success: true, cloud: true });
+    if (phone) {
+      const token = await createSessionToken({ uid: session.uid, phone, role: session.role, status: session.status });
+      res.cookies.set(SESSION_COOKIE_NAME, token, SESSION_COOKIE_OPTIONS);
+    }
+    return res;
   } catch (error: any) {
     console.error('[API complete-profile ERROR]', error);
     return NextResponse.json({ error: error.message || 'Erreur serveur.' }, { status: 500 });
