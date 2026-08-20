@@ -481,15 +481,15 @@ export default function LoginPage() {
 
                 <div className="space-y-1.5">
                   <label className="block text-xs font-semibold text-gray-700 text-center">
-                    Saisir le code à 4 chiffres
+                    Saisir le code à 6 chiffres
                   </label>
                   <input
                     type="text"
                     inputMode="numeric"
-                    maxLength={4}
+                    maxLength={6}
                     required
                     autoFocus
-                    placeholder="• • • •"
+                    placeholder="• • • • • •"
                     value={otpCode}
                     onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
                     className="w-full py-4 bg-gray-50 border border-gray-200 rounded-2xl text-center text-3xl font-mono font-black tracking-[0.6em] text-gray-900 focus:outline-none focus:ring-2 focus:ring-suguba-brand/30 focus:border-suguba-brand transition-all"

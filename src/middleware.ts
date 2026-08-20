@@ -26,8 +26,20 @@ const ROLE_BY_PREFIX: { prefix: string; role: string }[] = [
   { prefix: '/reseller', role: 'reseller' },
 ];
 
+// Sous-pages publiques d'onboarding : accessibles à quiconque n'a PAS
+// encore de compte (formulaire d'inscription avec vérification OTP réelle,
+// voir /reseller/join/page.tsx). Sans cette liste, le garde-fou par rôle
+// ci-dessous les bloquait entièrement — un lien de parrainage renvoyait
+// systématiquement vers /login au lieu du formulaire d'adhésion.
+const PUBLIC_SUBPATHS = ['/reseller/join'];
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  if (PUBLIC_SUBPATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+    return NextResponse.next();
+  }
+
   const token = req.cookies.get(SESSION_COOKIE_NAME)?.value;
   const session = await verifySessionToken(token);
 
