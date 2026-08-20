@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -46,7 +46,13 @@ const quickRoles = [
 // se fait dans /api/auth/demo-login, non falsifiable depuis le navigateur.
 const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 
-export default function LoginPage() {
+// useSearchParams() force Next.js à bailer sur le rendu client — sans
+// Suspense, `next build` échoue sur cette page avec "useSearchParams()
+// should be wrapped in a suspense boundary" (jamais visible en `next dev`,
+// qui n'applique pas cette contrainte, d'où le trou entre "ça marche en
+// local" et le build de prod qui plantait silencieusement à chaque déploi
+// Vercel). Voir LoginPage plus bas pour le vrai export par défaut.
+function LoginPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const state = useSugubaStore();
@@ -613,5 +619,13 @@ export default function LoginPage() {
         </p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#f5f8f5]" />}>
+      <LoginPageContent />
+    </Suspense>
   );
 }
