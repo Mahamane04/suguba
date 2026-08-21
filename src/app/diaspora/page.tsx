@@ -256,9 +256,21 @@ export default function DiasporaPortalPage() {
                 📸 La photo de remise du colis vous sera envoyée sur WhatsApp dès la livraison effectuée !
               </div>
             </div>
+          ) : !selectedProduct ? (
+            /* Catalogue vide : depuis le retrait des produits de démo
+               (mock-data.ts), state.products peut légitimement être vide tant
+               qu'aucun fournisseur n'a référencé d'article. Sans ce garde-fou,
+               selectedProduct est undefined et la page plante au build. */
+            <div className="p-8 text-center space-y-2">
+              <p className="text-sm font-black text-slate-900">Catalogue en cours de constitution</p>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                Aucun article n&apos;est disponible à la commande pour le moment. Revenez très
+                bientôt — nos fournisseurs partenaires référencent leurs produits.
+              </p>
+            </div>
           ) : (
             <form onSubmit={handleDiasporaCheckout} className="space-y-6">
-              
+
               {/* Product recap */}
               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
                 <div className="flex items-center space-x-3">

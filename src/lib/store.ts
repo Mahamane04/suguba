@@ -12,7 +12,13 @@ import {
 } from './mock-data';
 import { cloudSyncService } from './cloud-sync';
 
-const STORAGE_KEY = 'suguba_platform_state_v1';
+// Passé de _v1 à _v2 le 2026-08-21, en même temps que le retrait du catalogue
+// de démo (mock-data.ts). hydrateFromLocalStorage écrase les valeurs par
+// défaut par le contenu du cache : sans changer cette clé, tout visiteur déjà
+// venu aurait conservé indéfiniment les 22 produits fictifs, même purgés du
+// code et de la base. Changer la clé rend les anciens caches inertes.
+// À rebumper à chaque suppression de données que le cache pourrait ressusciter.
+const STORAGE_KEY = 'suguba_platform_state_v2';
 
 export interface SugubaState {
   currentUser: User;

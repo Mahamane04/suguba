@@ -22,6 +22,28 @@ export default function StoryGeneratorPage() {
   const [customTagline, setCustomTagline] = useState('🔥 Promo Spéciale Bamako • Livraison 24h & Paiement à la réception !');
   const [copiedLink, setCopiedLink] = useState(false);
 
+  // Catalogue vide : depuis le retrait des produits de démo (mock-data.ts),
+  // state.products peut légitimement être vide tant qu'aucun fournisseur n'a
+  // référencé d'article. Sortie anticipée AVANT le calcul de productUrl, qui
+  // déréférence selectedProduct.slug et faisait planter le build.
+  // Tous les hooks sont déclarés au-dessus : leur ordre reste constant.
+  if (!selectedProduct) {
+    return (
+      <div className="min-h-screen flex flex-col bg-slate-950">
+        <Header />
+        <main className="flex-1 flex items-center justify-center p-6">
+          <div className="max-w-sm text-center space-y-2">
+            <p className="text-sm font-black text-white">Aucun produit à promouvoir</p>
+            <p className="text-xs text-slate-400">
+              Le catalogue Suguba est en cours de constitution. Dès qu&apos;un article sera
+              disponible, vous pourrez générer vos visuels de story ici.
+            </p>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   const productUrl = typeof window !== 'undefined'
     ? `${window.location.origin}/p/${selectedProduct.slug}?ref=${reseller.referralCode}`
     : `https://app.sugubaml.com/p/${selectedProduct.slug}?ref=${reseller.referralCode}`;

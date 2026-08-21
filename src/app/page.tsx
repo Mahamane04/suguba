@@ -362,6 +362,20 @@ export default function HomePage() {
               </div>
             </div>
 
+            {/* Catalogue vide — depuis le retrait des produits de démo, cette
+                grille peut légitimement ne rien contenir. Sans ce message, la
+                section n'affichait qu'un grand blanc, ce qui donne l'impression
+                d'une page cassée plutôt que d'un catalogue en construction. */}
+            {filteredProducts.length === 0 && (
+              <div className="bg-white rounded-3xl border border-gray-100 shadow-card p-10 text-center space-y-2">
+                <p className="text-sm font-black text-gray-900">Catalogue en cours de constitution</p>
+                <p className="text-xs text-gray-500 max-w-sm mx-auto">
+                  Nos fournisseurs partenaires référencent actuellement leurs produits.
+                  Revenez très bientôt pour découvrir les premiers articles.
+                </p>
+              </div>
+            )}
+
             {/* Product Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {filteredProducts.map((product) => (
