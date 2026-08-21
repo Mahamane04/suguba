@@ -34,7 +34,7 @@ export default function Footer() {
           Prêt à vendre sans stock ?
         </p>
         <p className="text-green-100 text-sm mb-5">
-          Rejoignez +142 revendeurs actifs à Bamako et gagnez vos commissions par Mobile Money.
+          Rejoignez le réseau Suguba à Bamako et gagnez vos commissions par Mobile Money.
         </p>
         <Link
           href="/login"

@@ -565,96 +565,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
 
         </div>
 
-        {/* Section Avis Clients Vérifiés sous OTP */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-5 mt-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-4">
-            <div>
-              <div className="flex items-center space-x-2">
-                <h3 className="font-black text-base text-slate-900">Avis & Expériences Clients Vérifiés</h3>
-                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-black rounded-full">
-                  100% Authentifiés par OTP
-                </span>
-              </div>
-              <p className="text-xs text-slate-500">Témoignages de clients livrés à domicile à Bamako et dans les régions.</p>
-            </div>
-
-            <div className="flex items-center space-x-1 text-amber-500 font-black text-sm self-start sm:self-auto">
-              <Star className="w-4 h-4 fill-current text-amber-400" />
-              <Star className="w-4 h-4 fill-current text-amber-400" />
-              <Star className="w-4 h-4 fill-current text-amber-400" />
-              <Star className="w-4 h-4 fill-current text-amber-400" />
-              <Star className="w-4 h-4 fill-current text-amber-400" />
-              <span className="text-slate-900 ml-1.5 text-xs font-black">4.9 / 5 (42 avis)</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
-            
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
-              <div className="flex items-center justify-between">
-                <strong className="text-slate-900 font-bold">Fatoumata Bamba</strong>
-                <span className="text-[10px] text-slate-400">Hamdallaye ACI 2000</span>
-              </div>
-              <div className="flex text-amber-400">
-                <Star className="w-3 h-3 fill-current" />
-                <Star className="w-3 h-3 fill-current" />
-                <Star className="w-3 h-3 fill-current" />
-                <Star className="w-3 h-3 fill-current" />
-                <Star className="w-3 h-3 fill-current" />
-              </div>
-              <p className="text-slate-600 italic">
-                « Livré le jour même devant mon bureau. Le livreur était très poli et m&apos;a demandé le code secret de sécurité. Produit 100% conforme ! »
-              </p>
-              <div className="flex items-center space-x-1 text-[10px] font-bold text-emerald-700">
-                <ShieldCheck className="w-3 h-3" />
-                <span>Achat Vérifié par OTP</span>
-              </div>
-            </div>
-
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
-              <div className="flex items-center justify-between">
-                <strong className="text-slate-900 font-bold">Ousmane Coulibaly</strong>
-                <span className="text-[10px] text-slate-400">Kalaban-Coro</span>
-              </div>
-              <div className="flex text-amber-400">
-                <Star className="w-3 h-3 fill-current" />
-                <Star className="w-3 h-3 fill-current" />
-                <Star className="w-3 h-3 fill-current" />
-                <Star className="w-3 h-3 fill-current" />
-                <Star className="w-3 h-3 fill-current" />
-              </div>
-              <p className="text-slate-600 italic">
-                « Très satisfait de la qualité. J&apos;ai pu tester le produit avant de payer le livreur en espèces. Je recommande Suguba à tout le monde. »
-              </p>
-              <div className="flex items-center space-x-1 text-[10px] font-bold text-emerald-700">
-                <ShieldCheck className="w-3 h-3" />
-                <span>Achat Vérifié par OTP</span>
-              </div>
-            </div>
-
-            <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
-              <div className="flex items-center justify-between">
-                <strong className="text-slate-900 font-bold">Mariam Traoré</strong>
-                <span className="text-[10px] text-slate-400">Badalabougou</span>
-              </div>
-              <div className="flex text-amber-400">
-                <Star className="w-3 h-3 fill-current" />
-                <Star className="w-3 h-3 fill-current" />
-                <Star className="w-3 h-3 fill-current" />
-                <Star className="w-3 h-3 fill-current" />
-                <Star className="w-3 h-3 fill-current" />
-              </div>
-              <p className="text-slate-600 italic">
-                « Commande passée en 30 secondes sans créer de compte. Paiement par Wave à l&apos;arrivée. Bravo pour le sérieux ! »
-              </p>
-              <div className="flex items-center space-x-1 text-[10px] font-bold text-emerald-700">
-                <ShieldCheck className="w-3 h-3" />
-                <span>Achat Vérifié par OTP</span>
-              </div>
-            </div>
-
-          </div>
-        </div>
+        {/* Les avis clients ont été retirés le 2026-08-21 : cette section
+            affichait trois témoignages entièrement inventés (noms, quartiers,
+            citations) sous un label « 100% Authentifiés par OTP » et une note
+            « 4.9/5 (42 avis) » tout aussi fictive, alors qu'aucun avis n'a
+            jamais été collecté. Présenter de la fausse preuve sociale comme
+            vérifiée à des clients qui paient réellement est trompeur.
+            À réintroduire uniquement branché sur de vrais avis, collectés
+            après livraison confirmée par OTP — jamais en dur. */}
 
       </main>
     </div>

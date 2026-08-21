@@ -62,7 +62,7 @@ export default function LaunchChecklistPage() {
         { title: 'Canaux de Grandes Marques Suguba Business (/c/[slug])', status: 'pass', desc: 'Portail Batimat, Bazin Prestige, Solaire Mali prêts à recruter' },
         { title: 'Académie & 3 Scripts Vidéo Viraux TikTok (/reseller/academy)', status: 'pass', desc: 'Scripts en Français et Bambara pour recruter les 50 premiers revendeurs' },
         { title: 'Moteur de Codes Promo Instantanés (?promo=RAMADAN)', status: 'pass', desc: 'Codes RAMADAN, TABASKI, SUGUBAVIP actifs avec remises automatiques' },
-        { title: 'Avis Clients Vérifiés 4.9/5 avec Quartiers de Bamako', status: 'pass', desc: 'Preuve sociale authentique intégrée sur toutes les fiches produits' },
+        { title: 'Avis clients', status: 'fail', desc: 'Aucun avis réel collecté. Les faux témoignages « 4.9/5 » codés en dur ont été retirés des fiches produits le 2026-08-21 — cette ligne les décrivait à tort comme une « preuve sociale authentique ». À rebrancher sur de vrais avis post-livraison.' },
       ]
     }
   ];

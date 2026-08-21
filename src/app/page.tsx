@@ -17,13 +17,13 @@ import {
   Package
 } from 'lucide-react';
 
-/* ── Stats Banner Data ── */
-const stats = [
-  { label: 'Revendeurs actifs',   value: '142+',  icon: Users   },
-  { label: 'Commandes livrées',   value: '1.2K+', icon: Package },
-  { label: 'Satisfaction client', value: '4.8/5', icon: Star    },
-  { label: 'Gains distribués',    value: '12M F', icon: Wallet  },
-];
+/* Bandeau de statistiques retiré le 2026-08-21 : les quatre chiffres
+   (142+ revendeurs, 1.2K+ commandes livrées, 4.8/5, 12M F distribués)
+   étaient inventés — la plateforme n'a à ce jour aucun revendeur réel,
+   aucun avis collecté et aucun versement effectué. Ce tableau n'était de
+   toute façon plus rendu nulle part. À réintroduire branché sur de vrais
+   compteurs (voir /api/reseller/balance et la table orders) le jour où les
+   chiffres existent. */
 
 /* ── Role Cards Data ── */
 const portalCards = [
@@ -473,8 +473,8 @@ export default function HomePage() {
                   },
                   {
                     icon: TrendingUp,
-                    title: 'Réseau croissant',
-                    desc: 'Rejoignez 142 revendeurs actifs et grandissez avec Suguba.',
+                    title: 'Réseau en construction',
+                    desc: 'Rejoignez le réseau Suguba et grandissez avec nous.',
                     color: 'text-blue-600',
                     bg: 'bg-blue-50',
                   },
