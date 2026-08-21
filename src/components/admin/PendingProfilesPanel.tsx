@@ -55,12 +55,30 @@ export default function PendingProfilesPanel() {
   const review = async (profileId: string, decision: 'approve' | 'reject') => {
     setBusyId(profileId);
     try {
+      const cible = profiles.find((p) => p.id === profileId);
       await fetch('/api/admin/review-profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profileId, decision }),
+        // `role` valide CE rôle précisément, sans toucher aux autres rôles
+        // du compte (voir supabase/migration-multi-role.sql).
+        body: JSON.stringify({ profileId, decision, role: cible?.role }),
       });
       setProfiles((prev) => prev.filter((p) => p.id !== profileId));
+
+      // Aucune passerelle SMS n'est branchée : la validation ne prévient
+      // personne, et l'intéressé n'a aucun moyen de savoir qu'il est accepté
+      // s'il a fermé la page d'attente. Tant qu'un envoi automatique n'existe
+      // pas, on ouvre WhatsApp pré-rempli pour que l'admin le prévienne en un
+      // geste — mieux qu'un silence, et honnête sur ce que le système sait
+      // faire aujourd'hui.
+      if (decision === 'approve' && cible?.phone) {
+        const numero = cible.phone.replace(/\D/g, '');
+        const message = encodeURIComponent(
+          `Bonjour ${cible.full_name || ''}, votre compte Suguba (${ROLE_LABEL[cible.role] || cible.role}) vient d'être validé. ` +
+          `Vous pouvez vous connecter dès maintenant : https://app.sugubaml.com/login`
+        );
+        window.open(`https://wa.me/${numero}?text=${message}`, '_blank', 'noopener');
+      }
     } finally {
       setBusyId(null);
     }
