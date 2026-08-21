@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createSessionToken, SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS, SugubaSession, ProfileStatus } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { chargerRoles, choisirRoleActif } from '@/lib/profile-roles';
 
 // Même règle que pour le téléphone (voir /api/auth/verify-otp) : aucun rôle
 // ne peut s'auto-attribuer admin à la création, quel que soit le chemin de
@@ -84,14 +85,39 @@ export async function POST(req: NextRequest) {
         console.error('[AUTH] Échec création profil (Supabase Auth):', insertErr);
         return NextResponse.json({ error: 'Erreur lors de la création du compte.' }, { status: 500 });
       }
+
+      // Voir /api/auth/verify-otp : profile_roles est la source de vérité des
+      // rôles, un compte créé sans ligne ici serait bloqué par le middleware.
+      const { error: roleErr } = await admin.from('profile_roles').insert({
+        profile_id: uid,
+        role,
+        status,
+        approved_at: status === 'active' ? new Date().toISOString() : null,
+      });
+      if (roleErr) console.warn('[AUTH] profile_roles non renseigné:', roleErr.message);
     }
 
-    const token = await createSessionToken({ uid, phone: profile?.phone || email, role, status });
+    const carteRoles = await chargerRoles(uid, role, status);
+    const actif = choisirRoleActif(carteRoles, role);
+
+    const token = await createSessionToken({
+      uid,
+      phone: profile?.phone || email,
+      role: actif.role,
+      status: actif.status,
+      roles: carteRoles,
+    });
     // hasPhone permet au client (voir /auth/callback) de distinguer un
     // profil Google fraîchement créé (jamais de numéro ni de quartier —
     // Google ne connaît ni l'un ni l'autre) d'un profil déjà complet, pour
     // savoir s'il faut router vers /register/complete avant /pending-approval.
-    const res = NextResponse.json({ success: true, uid, role, status, fullName, hasPhone: Boolean(profile?.phone) });
+    const res = NextResponse.json({
+      success: true, uid, fullName,
+      role: actif.role,
+      status: actif.status,
+      roles: carteRoles,
+      hasPhone: Boolean(profile?.phone),
+    });
     res.cookies.set(SESSION_COOKIE_NAME, token, SESSION_COOKIE_OPTIONS);
     return res;
   } catch (error: any) {

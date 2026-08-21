@@ -1,5 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
+import {
+  verifySessionToken,
+  createSessionToken,
+  rolesDeLaSession,
+  SESSION_COOKIE_NAME,
+  SESSION_COOKIE_OPTIONS,
+  type SugubaRole,
+} from '@/lib/session';
 
 /**
  * Corrige BUG-001 / BUG-007 : jusqu'ici, /admin, /supplier, /driver (et
@@ -52,14 +59,46 @@ export async function middleware(req: NextRequest) {
 
   const match = ROLE_BY_PREFIX.find(r => pathname.startsWith(r.prefix));
   if (match) {
-    if (!session || session.role !== match.role) {
+    if (!session) {
       const loginUrl = new URL('/login', req.url);
       loginUrl.searchParams.set('denied', match.role);
       loginUrl.searchParams.set('next', pathname);
       return NextResponse.redirect(loginUrl);
     }
-    if (session.status !== 'active' && pathname !== '/pending-approval') {
+
+    // Test d'APPARTENANCE, plus d'égalité stricte : un compte peut détenir
+    // plusieurs rôles (voir supabase/migration-multi-role.sql). L'ancien
+    // `session.role !== match.role` interdisait à un revendeur-livreur
+    // d'ouvrir son second espace.
+    const roles = rolesDeLaSession(session);
+    const statutDuRole = roles[match.role as SugubaRole];
+
+    if (!statutDuRole) {
+      const loginUrl = new URL('/login', req.url);
+      loginUrl.searchParams.set('denied', match.role);
+      loginUrl.searchParams.set('next', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    if (statutDuRole !== 'active' && pathname !== '/pending-approval') {
       return NextResponse.redirect(new URL('/pending-approval', req.url));
+    }
+
+    // Le rôle actif suit l'espace visité : entrer dans /driver fait agir en
+    // livreur. Sans cette bascule, un revendeur-livreur resterait « revendeur »
+    // aux yeux des routes API tout en naviguant dans l'espace livreur, et les
+    // contrôles `session.role === 'driver'` refuseraient ses propres données.
+    if (session.role !== match.role) {
+      const res = NextResponse.next();
+      const nouveauJeton = await createSessionToken({
+        uid: session.uid,
+        phone: session.phone,
+        role: match.role as SugubaRole,
+        status: statutDuRole,
+        roles,
+      });
+      res.cookies.set(SESSION_COOKIE_NAME, nouveauJeton, SESSION_COOKIE_OPTIONS);
+      return res;
     }
   }
 

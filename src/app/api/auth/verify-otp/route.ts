@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyOtpChallenge } from '@/lib/otp-store';
 import { createSessionToken, SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS, SugubaSession, ProfileStatus } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { chargerRoles, choisirRoleActif } from '@/lib/profile-roles';
 
 function formatPhone(raw: string): string {
   const cleaned = raw.replace(/[^\d+]/g, '');
@@ -73,6 +74,23 @@ export async function POST(req: NextRequest) {
           console.error('[AUTH] Échec création profil:', insertErr);
           return NextResponse.json({ success: false, error: 'Erreur lors de la création du compte.' }, { status: 500 });
         }
+
+        // Le rôle doit aussi exister dans profile_roles, désormais source de
+        // vérité (voir supabase/migration-multi-role.sql). Sans cette ligne, un
+        // compte tout neuf n'aurait aucun rôle et resterait bloqué au premier
+        // contrôle du middleware.
+        const { error: roleErr } = await admin.from('profile_roles').insert({
+          profile_id: uid,
+          role: requestedRole,
+          status,
+          approved_at: status === 'active' ? new Date().toISOString() : null,
+        });
+        if (roleErr) {
+          // Non bloquant : si la migration n'est pas encore appliquée sur cet
+          // environnement, chargerRoles retombera sur le rôle du profil.
+          console.warn('[AUTH] profile_roles non renseigné:', roleErr.message);
+        }
+
         role = requestedRole;
       }
     } else {
@@ -82,9 +100,25 @@ export async function POST(req: NextRequest) {
       uid = `local-${phone}`;
     }
 
-    const token = await createSessionToken({ uid, phone, role, status });
+    // Multi-rôle : la session transporte tous les rôles détenus, et s'ouvre
+    // sur un rôle utilisable plutôt que sur le rôle principal s'il est encore
+    // en attente de validation.
+    const carteRoles = await chargerRoles(uid, role, status);
+    const actif = choisirRoleActif(carteRoles, role);
 
-    const res = NextResponse.json({ success: true, uid, role, status, fullName });
+    const token = await createSessionToken({
+      uid, phone,
+      role: actif.role,
+      status: actif.status,
+      roles: carteRoles,
+    });
+
+    const res = NextResponse.json({
+      success: true, uid, fullName,
+      role: actif.role,
+      status: actif.status,
+      roles: carteRoles,
+    });
     res.cookies.set(SESSION_COOKIE_NAME, token, SESSION_COOKIE_OPTIONS);
     return res;
   } catch (error: any) {

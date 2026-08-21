@@ -11,13 +11,45 @@
 
 export type ProfileStatus = 'pending_approval' | 'active' | 'suspended' | 'rejected';
 
+export type SugubaRole = 'admin' | 'supplier' | 'reseller' | 'driver' | 'customer' | 'diaspora';
+
 export interface SugubaSession {
   uid: string;
   phone: string;
-  role: 'admin' | 'supplier' | 'reseller' | 'driver' | 'customer' | 'diaspora';
+  /**
+   * Rôle ACTIF, celui sous lequel l'utilisateur agit en ce moment — pas la
+   * liste de ce qu'il peut être. Conserver ce champ garde valides les
+   * contrôles existants du type `session.role === 'admin'` : ils testent
+   * désormais « agit-il en admin ? » plutôt que « est-il admin ? », ce qui
+   * est plus sûr. Un admin passé dans son espace revendeur n'a plus les
+   * droits admin tant qu'il n'y revient pas.
+   */
+  role: SugubaRole;
+  /** Statut du rôle ACTIF (voir profile_roles.status). */
   status: ProfileStatus;
+  /**
+   * Rôles détenus, avec leur statut propre. Absent des sessions émises avant
+   * la migration multi-rôle : toujours lire via `rolesDeLaSession()`, jamais
+   * directement, sous peine de casser les sessions encore en circulation.
+   */
+  roles?: Partial<Record<SugubaRole, ProfileStatus>>;
   iat: number;
   exp: number;
+}
+
+/**
+ * Rôles détenus par la session, avec repli sur le rôle actif pour les jetons
+ * émis avant la migration. Un cookie a 7 jours de validité : sans ce repli,
+ * la mise en production déconnecterait tout le monde.
+ */
+export function rolesDeLaSession(session: SugubaSession): Partial<Record<SugubaRole, ProfileStatus>> {
+  if (session.roles && Object.keys(session.roles).length > 0) return session.roles;
+  return { [session.role]: session.status } as Partial<Record<SugubaRole, ProfileStatus>>;
+}
+
+/** Le compte détient-il ce rôle, et ce rôle est-il actif ? */
+export function possedeRoleActif(session: SugubaSession, role: SugubaRole): boolean {
+  return rolesDeLaSession(session)[role] === 'active';
 }
 
 export const SESSION_COOKIE_NAME = 'suguba_session';
@@ -60,14 +92,21 @@ async function hmacSign(data: string, secret: string): Promise<string> {
   return base64UrlEncode(new Uint8Array(signature));
 }
 
-/** Construit et signe un jeton de session. Ne contient jamais rien de plus que uid/phone/role/status. */
-export async function createSessionToken(params: { uid: string; phone: string; role: SugubaSession['role']; status: ProfileStatus }): Promise<string> {
+/** Construit et signe un jeton de session. Ne contient jamais rien de plus que uid/phone/rôles. */
+export async function createSessionToken(params: {
+  uid: string;
+  phone: string;
+  role: SugubaRole;
+  status: ProfileStatus;
+  roles?: Partial<Record<SugubaRole, ProfileStatus>>;
+}): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const payload: SugubaSession = {
     uid: params.uid,
     phone: params.phone,
     role: params.role,
     status: params.status,
+    ...(params.roles && Object.keys(params.roles).length > 0 ? { roles: params.roles } : {}),
     iat: now,
     exp: now + SESSION_TTL_SECONDS,
   };
