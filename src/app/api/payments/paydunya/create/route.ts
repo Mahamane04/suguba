@@ -66,7 +66,15 @@ export async function POST(req: NextRequest) {
     });
 
     if (!resultat.ok) {
-      return NextResponse.json({ error: resultat.erreur }, { status: 502 });
+      // Le détail (noms de variables manquantes, message brut de PayDunya)
+      // reste dans les journaux serveur : l'acheteur n'a pas à lire
+      // « PAYDUNYA_MASTER_KEY », et exposer la configuration interne à un
+      // visiteur n'aide personne.
+      console.error('[PAYDUNYA create] Échec pour', commande.order_number, ':', resultat.erreur);
+      return NextResponse.json(
+        { error: 'Le paiement en ligne est momentanément indisponible. Réessayez dans quelques minutes.' },
+        { status: 502 }
+      );
     }
 
     return NextResponse.json({

@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
 import { useSugubaStore, sugubaStore } from '@/lib/store';
+import { cloudSyncService } from '@/lib/cloud-sync';
 import { 
   Globe2, CreditCard, HeartHandshake, ShieldCheck, 
   Truck, ArrowRight, CheckCircle2, Phone, MapPin, Sparkles, Star, Camera, Lock
@@ -24,6 +25,17 @@ export default function DiasporaPortalPage() {
   const [buyerCountry, setBuyerCountry] = useState('France (Europe)');
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderComplete, setOrderComplete] = useState(false);
+  const [erreurPaiement, setErreurPaiement] = useState('');
+
+  // Les produits arrivent de Supabase APRÈS le montage : selectedProduct,
+  // initialisé à products[0] alors que la liste était encore vide, restait
+  // indéfiniment undefined et la page annonçait un catalogue vide même quand
+  // des articles existaient. On le renseigne dès que la liste se remplit.
+  useEffect(() => {
+    if (!selectedProduct && state.products.length > 0) {
+      setSelectedProduct(state.products[0]);
+    }
+  }, [state.products, selectedProduct]);
 
   // Conversion rates
   const eurRate = 655.957; // Taux fixe officiel BCEAO
@@ -39,36 +51,70 @@ export default function DiasporaPortalPage() {
     return `${xofPrice.toLocaleString('fr-FR')} FCFA`;
   };
 
-  const handleDiasporaCheckout = (e: React.FormEvent) => {
+  /**
+   * Encaissement réel par carte via PayDunya.
+   *
+   * L'ancienne version ne faisait qu'un `setTimeout` avant d'afficher l'écran
+   * de succès : la commande était créée mais aucun paiement n'était jamais
+   * demandé, et l'acheteur repartait convaincu d'avoir payé. On crée
+   * désormais la commande, on s'assure qu'elle existe en base, puis on
+   * redirige vers la facture PayDunya. L'écran de succès n'est plus atteint
+   * ici : c'est le retour de PayDunya (return_url) qui y mène, une fois le
+   * paiement réellement encaissé et l'IPN reçu.
+   */
+  const handleDiasporaCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErreurPaiement('');
+
     if (!beneficiaryName.trim() || !beneficiaryPhone.trim()) {
-      alert('Veuillez renseigner le nom et numéro du bénéficiaire à Bamako.');
+      setErreurPaiement('Veuillez renseigner le nom et le numéro du bénéficiaire à Bamako.');
       return;
     }
-    setIsProcessing(true);
-
-    try {
-      const prod = selectedProduct || state.products[0];
-      if (prod) {
-        sugubaStore.createOrder({
-          productId: prod.id,
-          quantity: 1,
-          customerName: beneficiaryName.trim(),
-          customerPhone: beneficiaryPhone.trim(),
-          city: 'Bamako',
-          neighborhood: beneficiaryNeighborhood.trim() || 'Hamdallaye ACI 2000',
-          landmark: `Commande Diaspora [${buyerCountry}] - Bénéficiaire : ${beneficiaryName}`,
-          deliveryNotes: `Paiement en ligne Diaspora (${currency}). Email acheteur : ${buyerEmail || 'Non spécifié'}`,
-        });
-      }
-    } catch (err) {
-      console.error(err);
+    if (!selectedProduct) {
+      setErreurPaiement('Aucun article sélectionné.');
+      return;
     }
 
-    setTimeout(() => {
+    setIsProcessing(true);
+    try {
+      const commande = sugubaStore.createOrder({
+        productId: selectedProduct.id,
+        quantity: 1,
+        customerName: beneficiaryName.trim(),
+        customerPhone: beneficiaryPhone.trim(),
+        city: 'Bamako',
+        neighborhood: beneficiaryNeighborhood.trim() || 'Hamdallaye ACI 2000',
+        landmark: `Commande Diaspora [${buyerCountry}] - Bénéficiaire : ${beneficiaryName}`,
+        deliveryNotes: `Paiement en ligne Diaspora (${currency}). Email acheteur : ${buyerEmail || 'Non spécifié'}`,
+      });
+
+      // createOrder pousse vers Supabase en arrière-plan sans attendre : sans
+      // cette synchro explicite, la facture pourrait être demandée avant que
+      // la commande existe en base, et l'API répondrait « introuvable ». La
+      // route de synchro est idempotente, ce second envoi est donc sans risque.
+      await cloudSyncService.pushOrderToCloud(commande);
+
+      const res = await fetch('/api/payments/paydunya/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // Seul le numéro de commande est transmis : le montant est relu en
+        // base côté serveur, jamais accepté depuis le navigateur.
+        body: JSON.stringify({ orderNumber: commande.orderNumber }),
+      });
+      const json = await res.json();
+
+      if (!res.ok || !json.success || !json.urlPaiement) {
+        setIsProcessing(false);
+        setErreurPaiement(json.error || 'Impossible de démarrer le paiement. Réessayez.');
+        return;
+      }
+
+      window.location.href = json.urlPaiement;
+    } catch (err) {
+      console.error(err);
       setIsProcessing(false);
-      setOrderComplete(true);
-    }, 800);
+      setErreurPaiement('Erreur réseau lors du démarrage du paiement.');
+    }
   };
 
   const diasporaPacks = [
@@ -367,11 +413,17 @@ export default function DiasporaPortalPage() {
                 >
                   <Lock className="w-4 h-4" />
                   <span>
-                    {isProcessing 
-                      ? 'Paiement sécurisé en cours...' 
+                    {isProcessing
+                      ? 'Redirection vers le paiement sécurisé...'
                       : `Régler ${formatPrice(selectedProduct.publicPrice)} par Carte Bancaire / Visa / Mastercard`}
                   </span>
                 </button>
+
+                {erreurPaiement && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-700 text-center">
+                    {erreurPaiement}
+                  </div>
+                )}
 
                 <p className="text-[11px] text-slate-400 text-center">
                   🔒 Transaction 3D-Secure 256-bit cryptée • Aucune donnée bancaire n&apos;est conservée

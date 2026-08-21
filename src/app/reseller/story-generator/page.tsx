@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/common/Header';
@@ -21,6 +21,16 @@ export default function StoryGeneratorPage() {
   const [theme, setTheme] = useState<'emerald' | 'dark' | 'gold' | 'orange'>('emerald');
   const [customTagline, setCustomTagline] = useState('🔥 Promo Spéciale Bamako • Livraison 24h & Paiement à la réception !');
   const [copiedLink, setCopiedLink] = useState(false);
+
+  // Même correctif que sur /diaspora : les produits arrivent de Supabase après
+  // le montage, or selectedProduct est initialisé à products[0] quand la liste
+  // est encore vide. Sans cette resynchronisation, la page resterait bloquée
+  // sur « aucun produit » alors que le catalogue est rempli.
+  useEffect(() => {
+    if (!selectedProduct && state.products.length > 0) {
+      setSelectedProduct(state.products[0]);
+    }
+  }, [state.products, selectedProduct]);
 
   // Catalogue vide : depuis le retrait des produits de démo (mock-data.ts),
   // state.products peut légitimement être vide tant qu'aucun fournisseur n'a
