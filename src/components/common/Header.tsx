@@ -136,10 +136,18 @@ export default function Header() {
               />
             </div>
             <div className="leading-none min-w-0">
-              <span className="block text-lg font-black tracking-tight text-gray-900 truncate">
-                SUGUBA<span className="text-suguba-brand">.ML</span>
+              {/* Le suffixe de domaine « .ML » tombe sous 640px : il coûtait
+                  21px de plus que la place disponible et faisait rogner le nom
+                  en « SUGUBA.M ». Masquer le domaine se lit comme un choix,
+                  une marque coupée se lit comme un bug. */}
+              <span className="block text-lg font-black tracking-tight text-gray-900 whitespace-nowrap">
+                SUGUBA<span className="hidden sm:inline text-suguba-brand">.ML</span>
               </span>
-              <span className="block text-[9px] font-semibold text-gray-400 uppercase tracking-widest mt-0.5 truncate">
+              {/* Baseline masquée sous 640px : elle réclame 113px à elle seule
+                  (mesuré), soit plus que le nom de marque, et forçait la
+                  troncature du logo en « SUGU… » sur iPhone. Purement
+                  décorative, elle revient dès qu'il y a la place. */}
+              <span className="hidden sm:block text-[9px] font-semibold text-gray-400 uppercase tracking-widest mt-0.5 truncate">
                 Vendre sans stock
               </span>
             </div>
@@ -198,9 +206,9 @@ export default function Header() {
               /* ── Visiteur anonyme : juste "Se connecter" ── */
               <Link
                 href="/login"
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-suguba-brand text-white hover:bg-suguba-brand-dark transition-colors shrink-0"
+                className="flex items-center gap-1.5 px-2.5 sm:px-3.5 py-2 rounded-full text-xs font-bold bg-suguba-brand text-white hover:bg-suguba-brand-dark transition-colors shrink-0"
               >
-                <LogIn className="w-3.5 h-3.5" />
+                <LogIn className="w-3.5 h-3.5 shrink-0" />
                 Se connecter
               </Link>
             ) : (

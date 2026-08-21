@@ -1,13 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Home, Grid3X3, ShoppingCart, Wallet, TrendingUp,
   PackagePlus, ListOrdered, ShieldCheck, Truck
 } from 'lucide-react';
-import { useSugubaStore } from '@/lib/store';
 
 type NavItem = { label: string; href: string; icon: React.ElementType };
 
@@ -45,10 +44,29 @@ function getNavItems(role: string): NavItem[] {
   }
 }
 
+/**
+ * La barre se basait sur `sugubaStore.currentUser`, c'est-à-dire le store de
+ * démo local, dont le rôle par défaut est « reseller » : un visiteur anonyme
+ * voyait donc une navigation Revendeur (Ventes, Gains, Marketing) menant à des
+ * pages que le middleware renvoie aussitôt vers /login. Même reliquat que
+ * celui déjà corrigé sur le Header — la source de vérité est /api/auth/me.
+ */
 export default function BottomNav() {
   const pathname = usePathname();
-  const { currentUser } = useSugubaStore();
-  const navItems = getNavItems(currentUser.role);
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    let annule = false;
+    fetch('/api/auth/me')
+      .then((res) => (res.ok ? res.json() : { authenticated: false }))
+      .then((data) => {
+        if (!annule) setRole(data.authenticated ? data.role : null);
+      })
+      .catch(() => { if (!annule) setRole(null); });
+    return () => { annule = true; };
+  }, [pathname]);
+
+  const navItems = role ? getNavItems(role) : [];
 
   if (navItems.length === 0) return null;
 
