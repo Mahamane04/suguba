@@ -52,6 +52,11 @@
 html {
   scroll-behavior: smooth;
   -webkit-text-size-adjust: 100%;
+  /* Toutes les pages débordaient de 1px en largeur sur iPhone (375px), ce qui
+     autorisait un léger balancement latéral du contenu. On coupe le
+     débordement horizontal au niveau racine plutôt que de traquer l'élément
+     fautif page par page ; le défilement vertical n'est pas affecté. */
+  overflow-x: hidden;
 }
 
 body {
@@ -302,4 +307,52 @@ h1, h2, h3, h4, h5, h6 {
   --border-light: #162016;
   color: var(--fg-primary);
   background: var(--bg-page);
+}
+
+/* ═══════════════ CURSEURS (input[type=range]) — ZONE TACTILE ═══════════════
+   Les curseurs du simulateur de revenus mesuraient 8px de haut : c'était toute
+   la zone de préhension, quasi impossible à saisir au doigt (WCAG 2.5.8 exige
+   24px minimum, 44px confortable). On garde la piste fine visuellement, mais
+   l'élément lui-même fait maintenant 44px de haut, transparent, avec la piste
+   dessinée par ::-*-track. */
+.suguba-range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 44px;
+  background: transparent;
+  cursor: pointer;
+  width: 100%;
+}
+.suguba-range::-webkit-slider-runnable-track {
+  height: 8px;
+  border-radius: 9999px;
+  background: #e2e8f0;
+}
+.suguba-range::-moz-range-track {
+  height: 8px;
+  border-radius: 9999px;
+  background: #e2e8f0;
+}
+.suguba-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 24px;
+  height: 24px;
+  margin-top: -8px; /* recentre le pouce sur la piste de 8px */
+  border-radius: 9999px;
+  background: currentColor;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
+}
+.suguba-range::-moz-range-thumb {
+  width: 24px;
+  height: 24px;
+  border-radius: 9999px;
+  background: currentColor;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.3);
+}
+.suguba-range:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
 }

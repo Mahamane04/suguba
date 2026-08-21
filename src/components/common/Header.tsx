@@ -119,8 +119,13 @@ export default function Header() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16 gap-3">
 
-          {/* ── Logo ── */}
-          <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
+          {/* ── Logo ──
+              Le bloc portait shrink-0 : combiné à des boutons d'action eux
+              aussi incompressibles, la rangée dépassait la largeur d'un iPhone
+              (375px) et poussait le bouton Menu hors de l'écran. C'est le
+              libellé de marque qui cède désormais (min-w-0 + truncate) plutôt
+              que les commandes, qui doivent rester atteignables. */}
+          <Link href="/" className="flex items-center gap-2.5 min-w-0 group">
             <div className="relative w-9 h-9 rounded-xl overflow-hidden shadow-brand-sm group-hover:shadow-brand-md transition-shadow shrink-0">
               <Image
                 src="/images/logo.png"
@@ -130,11 +135,11 @@ export default function Header() {
                 priority
               />
             </div>
-            <div className="leading-none">
-              <span className="text-lg font-black tracking-tight text-gray-900">
+            <div className="leading-none min-w-0">
+              <span className="block text-lg font-black tracking-tight text-gray-900 truncate">
                 SUGUBA<span className="text-suguba-brand">.ML</span>
               </span>
-              <span className="block text-[9px] font-semibold text-gray-400 uppercase tracking-widest mt-0.5">
+              <span className="block text-[9px] font-semibold text-gray-400 uppercase tracking-widest mt-0.5 truncate">
                 Vendre sans stock
               </span>
             </div>
@@ -170,8 +175,12 @@ export default function Header() {
             )}
           </nav>
 
-          {/* ── Right Actions ── */}
-          <div className="flex items-center gap-2 ml-auto">
+          {/* ── Right Actions ──
+              shrink-0 : ce bloc était comprimé sous la largeur de son contenu,
+              si bien que le bouton Menu débordait de l'écran sur iPhone. Ce
+              sont les commandes qui doivent garder leur taille ; c'est le
+              libellé de marque à gauche qui se tronque (voir le bloc Logo). */}
+          <div className="flex items-center gap-2 ml-auto shrink-0">
 
             {/* Dark mode */}
             <button
@@ -243,9 +252,12 @@ export default function Header() {
               </>
             )}
 
-            {/* Mobile menu toggle */}
+            {/* Mobile menu toggle — shrink-0 indispensable : sans lui le flex
+                comprimait ce bouton à 16px de large sur iPhone (mesuré), sous
+                le minimum de 24px de WCAG 2.5.8, alors que w-8 en promet 32.
+                Les autres boutons ronds de ce header le portent déjà. */}
             <button
-              className="md:hidden w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 transition-colors"
+              className="md:hidden w-8 h-8 shrink-0 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-600 transition-colors"
               onClick={() => setMobileOpen(!mobileOpen)}
               aria-label="Menu"
             >

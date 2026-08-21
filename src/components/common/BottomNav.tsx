@@ -53,6 +53,20 @@ export default function BottomNav() {
   if (navItems.length === 0) return null;
 
   return (
+    <>
+      {/* Réserve dans le flux la place occupée par la barre fixe ci-dessous.
+          Sans cela, le dernier contenu de chaque page passait sous la barre et
+          restait inaccessible même défilement au maximum (constaté sur /,
+          /register, /reseller/join, /diaspora, /legal/terms — WCAG 2.4.11).
+          Les pages réservaient chacune leur propre marge (pb-16, pb-20...),
+          toutes insuffisantes et divergentes ; la hauteur est désormais tenue
+          au même endroit que la barre, donc les deux ne peuvent plus se
+          désynchroniser. h-16 (64px) + mb-2 (8px) + la zone sûre iOS. */}
+      <div
+        aria-hidden="true"
+        className="md:hidden shrink-0"
+        style={{ height: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}
+      />
     <nav
       className="fixed bottom-0 left-0 right-0 z-40 md:hidden"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
@@ -108,5 +122,6 @@ export default function BottomNav() {
         </div>
       </div>
     </nav>
+    </>
   );
 }

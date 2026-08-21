@@ -90,7 +90,8 @@ export default function EarningsCalculator({ showCta = true }: EarningsCalculato
             step={1}
             value={salesPerDay}
             onChange={(e) => setSalesPerDay(Number(e.target.value))}
-            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-emerald-600"
+            aria-label="Nombre de ventes réalisées par jour"
+            className="suguba-range text-emerald-600"
           />
           <div className="flex justify-between text-[10px] text-slate-400 font-semibold">
             <span>1 / jour (Débutant)</span>
@@ -117,7 +118,8 @@ export default function EarningsCalculator({ showCta = true }: EarningsCalculato
             step={500}
             value={avgCommission}
             onChange={(e) => setAvgCommission(Number(e.target.value))}
-            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-amber-500"
+            aria-label="Commission moyenne par produit, en FCFA"
+            className="suguba-range text-amber-500"
           />
           <div className="flex justify-between text-[10px] text-slate-400 font-semibold">
             <span>2 000 F (Accessoires)</span>
@@ -144,7 +146,8 @@ export default function EarningsCalculator({ showCta = true }: EarningsCalculato
             step={1}
             value={referralsCount}
             onChange={(e) => setReferralsCount(Number(e.target.value))}
-            className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
+            aria-label="Nombre d'amis parrainés dans votre équipe"
+            className="suguba-range text-purple-600"
           />
           <div className="flex justify-between text-[10px] text-slate-400 font-semibold">
             <span>0 filleul</span>
