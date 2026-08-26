@@ -52,7 +52,7 @@ SELECT
   p.id,
   p.role,
   p.status,
-  CASE WHEN p.status = 'active' THEN COALESCE(p.updated_at, p.created_at, NOW()) END
+  CASE WHEN p.status = 'active' THEN COALESCE(p.created_at, NOW()) END
 FROM public.profiles p
 ON CONFLICT (profile_id, role) DO NOTHING;
 

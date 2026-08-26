@@ -36,6 +36,7 @@ export default function NewSupplierProductPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -66,7 +67,7 @@ export default function NewSupplierProductPage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !description || !supplierPrice || !stockQuantity) {
       alert('Veuillez remplir tous les champs obligatoires.');
@@ -78,12 +79,13 @@ export default function NewSupplierProductPage() {
     }
 
     setIsSubmitting(true);
+    setSubmitError('');
 
     // Repli neutre géré par ProductImage (icône + "Photo indisponible") si
     // aucune photo n'a été envoyée — plus jamais un lien Unsplash par défaut.
     const images = imageUrl ? [imageUrl] : [];
 
-    sugubaStore.addSupplierProduct({
+    const { cloud } = await sugubaStore.addSupplierProduct({
       supplierId: supplier.id,
       supplierName: supplier.companyName,
       name,
@@ -98,6 +100,16 @@ export default function NewSupplierProductPage() {
     });
 
     setIsSubmitting(false);
+
+    // Sans cette vérification, un échec réseau ou de session afficherait
+    // quand même "Produit soumis avec succès" alors que l'admin (qui modère
+    // via Supabase, jamais le localStorage du fournisseur) ne verrait jamais
+    // rien — panne silencieuse, exactement le piège déjà rencontré côté n8n.
+    if (!cloud) {
+      setSubmitError('Le produit n\'a pas pu être envoyé au serveur Suguba (session expirée ou connexion instable). Rien n\'a été soumis à la modération — réessayez.');
+      return;
+    }
+
     setIsSuccess(true);
   };
 
@@ -136,6 +148,12 @@ export default function NewSupplierProductPage() {
             Brouillon $\rightarrow$ Soumis $\rightarrow$ Vérification Suguba (Qualité & Marge) $\rightarrow$ Approuvé & Publié.
           </p>
         </div>
+
+        {submitError && (
+          <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold">
+            {submitError}
+          </div>
+        )}
 
         {isSuccess ? (
           <div className="bg-white rounded-3xl p-8 border border-slate-200 text-center space-y-4 shadow-sm">

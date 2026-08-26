@@ -118,8 +118,23 @@ export default function PendingProfilesPanel() {
           {profiles.map((p) => (
             <div key={p.id} className="p-3 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="font-bold text-xs text-slate-900 truncate">{p.full_name || 'Sans nom'}</p>
+                <p className="font-bold text-xs text-slate-900 truncate">
+                  {p.role === 'supplier' && p.metadata?.companyName ? String(p.metadata.companyName) : (p.full_name || 'Sans nom')}
+                </p>
                 <p className="text-[10px] text-slate-500">{p.phone} · {ROLE_LABEL[p.role] || p.role}</p>
+                {p.role === 'supplier' && (
+                  <p className="text-[10px] text-slate-400 truncate">
+                    Gérant : {p.full_name || 'Non spécifié'}
+                    {p.metadata?.warehouseNeighborhood ? ` · Entrepôt : ${p.metadata.warehouseNeighborhood}` : ''}
+                    {p.metadata?.category ? ` · ${p.metadata.category}` : ''}
+                  </p>
+                )}
+                {p.role === 'driver' && Boolean(p.metadata?.vehicleType || p.metadata?.zone) && (
+                  <p className="text-[10px] text-slate-400 truncate">
+                    {p.metadata?.vehicleType ? String(p.metadata.vehicleType) : ''}
+                    {p.metadata?.zone ? ` · Zone : ${p.metadata.zone}` : ''}
+                  </p>
+                )}
               </div>
               <div className="flex items-center gap-1.5 shrink-0">
                 <button

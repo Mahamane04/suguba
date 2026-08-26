@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/common/Header';
@@ -36,12 +36,28 @@ export default function AdminDashboardPage() {
   // Onboarding Desk Tab
   const [onboardingTab, setOnboardingTab] = useState<'suppliers' | 'drivers' | 'resellers' | 'diaspora'>('suppliers');
 
+  // Les produits "submitted" par un fournisseur sur un autre appareil sont
+  // invisibles à la clé anon (RLS ne lit que status='approved', voir
+  // supabase/schema.sql) — donc invisibles à state.products tant qu'on ne va
+  // pas les chercher explicitement via cette route service_role. Sans ce
+  // fetch, "Modération Catalogue & Marges" ne montrerait que les dépôts
+  // faits depuis le navigateur de l'admin lui-même.
+  useEffect(() => {
+    fetch('/api/admin/products/pending')
+      .then((res) => res.json())
+      .then((json) => {
+        if (Array.isArray(json.products) && json.products.length > 0) {
+          sugubaStore.setProductsFromCloud(json.products);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
   const pendingProducts = state.products.filter(p => p.status === 'submitted');
   const pendingCallOrders = state.orders.filter(o => o.status === 'pending_call');
   const confirmedOrders = state.orders.filter(o => o.status === 'confirmed');
   const inTransitOrders = state.orders.filter(o => o.status === 'in_transit');
   const pendingPayouts = state.withdrawals.filter(w => w.status === 'pending');
-  const pendingSuppliers = state.suppliers.filter(s => s.status === 'pending_approval');
   const pendingDrivers = state.drivers.filter(d => d.status === 'pending_approval');
 
   const totalGMV = state.orders.reduce((acc, o) => acc + o.totalAmount, 0);
@@ -550,7 +566,7 @@ export default function AdminDashboardPage() {
                   onboardingTab === 'suppliers' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
-                Fournisseurs {pendingSuppliers.length > 0 && `(${pendingSuppliers.length})`}
+                Fournisseurs
               </button>
               <button
                 onClick={() => setOnboardingTab('drivers')}
@@ -579,63 +595,22 @@ export default function AdminDashboardPage() {
             </div>
           </div>
 
-          {/* TAB 1: Fournisseurs */}
+          {/* TAB 1: Fournisseurs — la validation des dossiers se fait dans
+              le panneau "Comptes en attente de validation" plus haut (lit
+              directement Supabase). Ce qui suivait ici lisait state.suppliers
+              (données de démo locales, jamais persistées) et n'avait donc
+              aucun effet réel — retiré pour ne pas laisser un bouton qui
+              semble valider un fournisseur sans rien faire. */}
           {onboardingTab === 'suppliers' && (
             <div className="space-y-3">
               <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                Fournisseurs en Attente de Validation :
+                Fournisseurs
               </h3>
-              {pendingSuppliers.length === 0 ? (
-                <p className="text-xs text-slate-400 py-3">✅ Aucun nouveau dossier fournisseur en attente de validation.</p>
-              ) : (
-                <div className="divide-y divide-slate-100">
-                  {pendingSuppliers.map((sup) => (
-                    <div key={sup.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div>
-                        <p className="font-bold text-xs text-slate-900">
-                          {sup.companyName} — Gérant : {sup.managerName || 'Non spécifié'}
-                        </p>
-                        <p className="text-[11px] text-slate-500">
-                          Contact : <strong className="text-slate-800">{sup.contactPhone}</strong> • Entrepôt : {sup.warehouseNeighborhood} ({sup.warehouseAddress})
-                        </p>
-                        <span className="text-[10px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded font-bold">
-                          Catégorie : {sup.category || 'Général'} {sup.rccmOrNif && `• NIF: ${sup.rccmOrNif}`}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => {
-                            sugubaStore.approveSupplier(sup.id, state.currentUser.fullName);
-                            setActionFeedback({
-                              type: 'success',
-                              message: `✅ Fournisseur ${sup.companyName} validé avec succès !`
-                            });
-                          }}
-                          className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs whitespace-nowrap"
-                        >
-                          Valider Fournisseur
-                        </button>
-                        <button
-                          onClick={() => {
-                            const reason = prompt('Motif du rejet du dossier fournisseur :');
-                            if (reason) {
-                              sugubaStore.rejectSupplier(sup.id, reason, state.currentUser.fullName);
-                              setActionFeedback({
-                                type: 'error',
-                                message: `❌ Dossier fournisseur ${sup.companyName} rejeté.`
-                              });
-                            }
-                          }}
-                          className="px-3 py-2 bg-slate-100 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-bold transition-colors"
-                        >
-                          Rejeter
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <p className="text-xs text-slate-500">
+                Les nouveaux dossiers fournisseurs (Google ou téléphone) apparaissent dans le panneau
+                <strong className="text-slate-700"> « Comptes en attente de validation » </strong>
+                en haut de cette page — c&apos;est là qu&apos;approuver ou rejeter, pas ici.
+              </p>
             </div>
           )}
 

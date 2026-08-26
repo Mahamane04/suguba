@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySessionToken, createSessionToken, SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { chargerRoles } from '@/lib/profile-roles';
 
 /**
  * Deuxième étape de l'inscription — remplit les champs propres au rôle
@@ -47,13 +48,41 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    // Rôle Fournisseur : les champs métier (entreprise, entrepôt, catégorie,
+    // RCCM/NIF) vont dans `suppliers`, pas dans profiles.metadata — sinon
+    // l'admin (voir /api/admin/suppliers/pending) et le tableau de bord
+    // fournisseur n'auraient nulle part où lire une donnée structurée.
+    // `suppliers` n'a pas de statut propre : celui-ci reste dans
+    // profile_roles (voir supabase/migration-suppliers.sql).
+    if (session.role === 'supplier' && metadata) {
+      const m = metadata as Record<string, unknown>;
+      const { error: supplierErr } = await admin.from('suppliers').upsert({
+        profile_id: session.uid,
+        company_name: String(m.companyName || fullName || 'Fournisseur'),
+        manager_name: fullName || null,
+        contact_phone: phone || null,
+        warehouse_address: m.warehouseAddress ? String(m.warehouseAddress) : null,
+        warehouse_neighborhood: m.warehouseNeighborhood ? String(m.warehouseNeighborhood) : null,
+        category: m.category ? String(m.category) : null,
+        rccm_or_nif: m.rccmOrNif ? String(m.rccmOrNif) : null,
+      });
+      if (supplierErr) {
+        console.error('[AUTH complete-profile] Échec écriture suppliers:', supplierErr.message);
+      }
+    }
+
     // Réémet la session avec le vrai numéro (jusqu'ici, un profil Google
     // portait l'email en guise de "phone" dans le jeton — voir
     // supabase-exchange) : le Header et le reste de l'app doivent
-    // désormais afficher/utiliser le numéro réel.
+    // désormais afficher/utiliser le numéro réel. La carte des rôles doit
+    // être reconduite ici aussi, sinon un compte multi-rôle perdrait son
+    // sélecteur de rôle dès qu'il complète son profil.
     const res = NextResponse.json({ success: true, cloud: true });
     if (phone) {
-      const token = await createSessionToken({ uid: session.uid, phone, role: session.role, status: session.status });
+      const carteRoles = await chargerRoles(session.uid, session.role, session.status);
+      const token = await createSessionToken({
+        uid: session.uid, phone, role: session.role, status: session.status, roles: carteRoles,
+      });
       res.cookies.set(SESSION_COOKIE_NAME, token, SESSION_COOKIE_OPTIONS);
     }
     return res;

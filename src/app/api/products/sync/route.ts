@@ -26,6 +26,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Produit invalide.' }, { status: 400 });
     }
 
+    // Un fournisseur ne peut jamais attribuer son dépôt à un autre
+    // supplier_id que le sien — le client n'est pas digne de confiance sur
+    // ce champ (voir la fiche fournisseur dans `suppliers`, la source
+    // fiable du nom d'entreprise). Un admin, lui, peut légitimement créer ou
+    // corriger une fiche au nom d'un fournisseur donné.
+    let supplierId = product.supplierId;
+    let supplierName = product.supplierName;
+    if (session.role === 'supplier') {
+      supplierId = session.uid;
+      const { data: ownSupplier } = await admin
+        .from('suppliers')
+        .select('company_name')
+        .eq('profile_id', session.uid)
+        .maybeSingle();
+      supplierName = ownSupplier?.company_name || supplierName;
+    }
+
     const { error } = await admin.from('products').upsert({
       id: product.id,
       name: product.name,
@@ -38,8 +55,8 @@ export async function POST(req: NextRequest) {
       stock: product.stockQuantity,
       images: product.images,
       status: product.status,
-      supplier_id: product.supplierId,
-      supplier_name: product.supplierName,
+      supplier_id: supplierId,
+      supplier_name: supplierName,
       created_at: product.createdAt,
     });
 

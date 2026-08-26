@@ -198,7 +198,13 @@ export const sugubaStore = {
   },
 
   // 1. Fournisseur : Ajouter Produit
-  addSupplierProduct: (data: {
+  //
+  // Retourne `cloud: false` si la synchro Supabase échoue (session expirée,
+  // réseau) — sans ça, un appelant qui ignore le résultat afficherait "produit
+  // soumis avec succès" alors que rien n'est arrivé en base, invisible pour
+  // l'admin (qui modère via /api/admin/products/pending, jamais le
+  // localStorage du fournisseur). Voir src/app/supplier/products/new/page.tsx.
+  addSupplierProduct: async (data: {
     supplierId: string;
     supplierName: string;
     name: string;
@@ -211,7 +217,7 @@ export const sugubaStore = {
     preparationDelayHours: number;
     stockLocationAddress: string;
     marketingPitch?: string;
-  }) => {
+  }): Promise<{ product: Product; cloud: boolean }> => {
     const newProduct: Product = {
       id: `prd-${Date.now()}`,
       supplierId: data.supplierId,
@@ -252,11 +258,12 @@ export const sugubaStore = {
         ...globalState.auditLogs
       ]
     };
+    let cloud = false;
     if (typeof window !== 'undefined') {
-      cloudSyncService.pushProductToCloud(newProduct).catch(() => {});
+      cloud = await cloudSyncService.pushProductToCloud(newProduct);
     }
     notify();
-    return newProduct;
+    return { product: newProduct, cloud };
   },
 
   // 2. Admin : Modérer & Fixer l'économie du Produit (Suguba contrôle le modèle)
