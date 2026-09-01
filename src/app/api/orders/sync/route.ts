@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Commande invalide.' }, { status: 400 });
     }
 
-    const { data: existing } = await admin.from('orders').select('id, status').eq('id', order.id).maybeSingle();
+    const { data: existing } = await admin.from('orders').select('id, status, assigned_driver_id').eq('id', order.id).maybeSingle();
 
     // Le lien commande → revendeur ne doit jamais reposer sur le
     // `resellerId` envoyé par le client (identifiant local de démo, pas un
@@ -105,6 +105,22 @@ export async function POST(req: NextRequest) {
     const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
     if (!session || !['admin', 'driver', 'supplier'].includes(session.role)) {
       return NextResponse.json({ error: 'Authentification requise pour modifier une commande.' }, { status: 401 });
+    }
+
+    // Un livreur ne peut modifier que ses propres courses assignées — sans
+    // ce contrôle, n'importe quel compte livreur pouvait auparavant écrire
+    // n'importe quel champ (statut, paiement encaissé, montant, commission)
+    // sur N'IMPORTE QUELLE commande, y compris celles d'un autre livreur.
+    if (session.role === 'driver' && existing.assigned_driver_id !== session.uid) {
+      return NextResponse.json({ error: 'Cette commande ne vous est pas assignée.' }, { status: 403 });
+    }
+
+    // Le passage à "delivered" ne peut se faire que via la vérification OTP
+    // serveur (/api/driver/verify-delivery-otp) — jamais en écrivant
+    // directement ce statut ici, qui contournerait entièrement le code
+    // secret de livraison.
+    if (session.role === 'driver' && order.status === 'delivered' && existing.status !== 'delivered') {
+      return NextResponse.json({ error: 'Le statut "livré" ne peut être posé que via la validation OTP.' }, { status: 403 });
     }
 
     const { error } = await admin.from('orders').update(row).eq('id', order.id);

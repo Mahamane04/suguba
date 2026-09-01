@@ -18,13 +18,9 @@ export default function DriverEarningsPage() {
   const [selectedOrderForReceipt, setSelectedOrderForReceipt] = useState<Order | null>(null);
   const [declaredRemittance, setDeclaredRemittance] = useState(false);
 
-  const currentUser = state.currentUser;
-  const driver = state.drivers.find(d => d.userId === currentUser.id) || state.drivers[0];
-
-  // Livraisons réalisées par ce livreur
-  const myDeliveredOrders = state.orders.filter(
-    o => o.driverId === driver?.id && o.status === 'delivered'
-  );
+  // /api/orders/feed ne renvoie déjà que les courses de CE livreur — voir
+  // le commentaire équivalent dans /driver/page.tsx.
+  const myDeliveredOrders = state.orders.filter(o => o.status === 'delivered');
 
   // Calculs financiers
   const courierFeePerDelivery = 1000; // 1 000 FCFA net par livraison pour le coursier

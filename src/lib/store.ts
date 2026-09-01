@@ -461,21 +461,28 @@ export const sugubaStore = {
   },
 
   // 5. Admin : Assigner un Livreur
-  assignDriver: (orderId: string, driverId: string, adminName: string) => {
-    const driver = globalState.drivers.find(d => d.id === driverId);
-    const driverUser = driver ? globalState.users.find(u => u.id === driver.userId) : undefined;
+  //
+  // Prend directement l'identité du livreur (fournie par l'appelant depuis
+  // une vraie liste, voir /api/admin/drivers/active) plutôt que de la
+  // chercher dans state.drivers — ce tableau ne contient que des livreurs
+  // fictifs (mock-data.ts), jamais les vrais comptes livreur. Pousse aussi
+  // vers Supabase (l'ancienne version ne faisait que notify() local : un
+  // dispatch n'atteignait jamais l'appareil du vrai livreur assigné).
+  assignDriver: (orderId: string, driverId: string, driverName: string, driverPhone: string | undefined, adminName: string) => {
+    let updatedOrder: typeof globalState.orders[number] | undefined;
 
     globalState = {
       ...globalState,
       orders: globalState.orders.map(o => {
         if (o.id === orderId) {
-          return {
+          updatedOrder = {
             ...o,
             driverId,
-            driverName: driverUser?.fullName || 'Livreur Suguba',
-            driverPhone: driverUser?.phone,
+            driverName,
+            driverPhone,
             status: 'dispatched',
           };
+          return updatedOrder;
         }
         return o;
       }),
@@ -487,12 +494,15 @@ export const sugubaStore = {
           action: 'ASSIGN_DRIVER',
           entityType: 'order',
           entityId: orderId,
-          details: `Livreur assigné : ${driverUser?.fullName} (${driverUser?.phone}) pour la commande ${orderId}.`,
+          details: `Livreur assigné : ${driverName} (${driverPhone || 'téléphone non renseigné'}) pour la commande ${orderId}.`,
           createdAt: new Date().toISOString(),
         },
         ...globalState.auditLogs
       ]
     };
+    if (updatedOrder && typeof window !== 'undefined') {
+      cloudSyncService.pushOrderToCloud(updatedOrder).catch(() => {});
+    }
     notify();
   },
 

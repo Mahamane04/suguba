@@ -50,10 +50,10 @@ export async function POST(req: NextRequest) {
 
     // Rôle Fournisseur : les champs métier (entreprise, entrepôt, catégorie,
     // RCCM/NIF) vont dans `suppliers`, pas dans profiles.metadata — sinon
-    // l'admin (voir /api/admin/suppliers/pending) et le tableau de bord
-    // fournisseur n'auraient nulle part où lire une donnée structurée.
-    // `suppliers` n'a pas de statut propre : celui-ci reste dans
-    // profile_roles (voir supabase/migration-suppliers.sql).
+    // l'admin (voir PendingProfilesPanel) et le tableau de bord fournisseur
+    // n'auraient nulle part où lire une donnée structurée. `suppliers` n'a
+    // pas de statut propre : celui-ci reste dans profile_roles (voir
+    // supabase/migration-suppliers.sql).
     if (session.role === 'supplier' && metadata) {
       const m = metadata as Record<string, unknown>;
       const { error: supplierErr } = await admin.from('suppliers').upsert({
@@ -68,6 +68,21 @@ export async function POST(req: NextRequest) {
       });
       if (supplierErr) {
         console.error('[AUTH complete-profile] Échec écriture suppliers:', supplierErr.message);
+      }
+    }
+
+    // Rôle Livreur : même principe, voir supabase/migration-drivers.sql.
+    if (session.role === 'driver' && metadata) {
+      const m = metadata as Record<string, unknown>;
+      const { error: driverErr } = await admin.from('drivers').upsert({
+        profile_id: session.uid,
+        vehicle_type: m.vehicleType ? String(m.vehicleType) : null,
+        license_plate: m.licensePlate ? String(m.licensePlate) : null,
+        zone: m.zone ? String(m.zone) : null,
+        id_document_number: m.idDocumentNumber ? String(m.idDocumentNumber) : null,
+      });
+      if (driverErr) {
+        console.error('[AUTH complete-profile] Échec écriture drivers:', driverErr.message);
       }
     }
 

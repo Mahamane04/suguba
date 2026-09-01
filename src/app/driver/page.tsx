@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import ProductImage from '@/components/common/ProductImage';
 import Header from '@/components/common/Header';
@@ -10,6 +10,7 @@ import OtpValidationModal from '@/components/driver/OtpValidationModal';
 import DeliveryMapModal from '@/components/driver/DeliveryMapModal';
 import PrintableReceiptModal from '@/components/common/PrintableReceiptModal';
 import { useSugubaStore, sugubaStore } from '@/lib/store';
+import { cloudSyncService } from '@/lib/cloud-sync';
 import { Order } from '@/types';
 import { 
   Truck, Phone, MapPin, KeyRound, CheckCircle2, 
@@ -24,16 +25,25 @@ export default function DriverDashboardPage() {
   const [selectedOrderForReceipt, setSelectedOrderForReceipt] = useState<Order | null>(null);
 
   const currentUser = state.currentUser;
-  const driver = state.drivers.find(d => d.userId === currentUser.id) || state.drivers[0];
+  const [driver, setDriver] = useState<{ vehicleType: string | null; licensePlate: string | null } | null>(null);
 
-  // Courses assignées au livreur actif
+  useEffect(() => {
+    fetch('/api/driver/me')
+      .then((res) => (res.ok ? res.json() : { driver: null }))
+      .then((json) => setDriver(json.driver || null))
+      .catch(() => setDriver(null));
+  }, []);
+
+  // /api/orders/feed ne renvoie déjà que les courses assignées à CE livreur
+  // (voir ce fichier — corrigé le 2026-08-26, il renvoyait auparavant TOUTES
+  // les commandes à n'importe quel livreur connecté). Filtrer ici par un
+  // `driverId` de mock n'aurait plus aucun sens : state.orders EST déjà le
+  // périmètre du livreur, seul le statut reste à trier côté client.
   const myAssignedOrders = state.orders.filter(
-    o => o.driverId === driver?.id && (o.status === 'dispatched' || o.status === 'in_transit')
+    o => o.status === 'dispatched' || o.status === 'in_transit'
   );
 
-  const myDeliveredOrders = state.orders.filter(
-    o => o.driverId === driver?.id && o.status === 'delivered'
-  );
+  const myDeliveredOrders = state.orders.filter(o => o.status === 'delivered');
 
   const totalCollectedCash = myDeliveredOrders.reduce((acc, o) => acc + o.totalAmount, 0);
 
@@ -57,7 +67,9 @@ export default function DriverDashboardPage() {
               {currentUser.fullName}
             </h1>
             <p className="text-xs text-amber-100">
-              Véhicule : <strong>{driver.vehicleType}</strong> ({driver.licensePlate}) • Note : ⭐ {driver.rating}/5
+              {driver?.vehicleType
+                ? <>Véhicule : <strong>{driver.vehicleType}</strong> {driver.licensePlate ? `(${driver.licensePlate})` : ''}</>
+                : 'Dossier livreur incomplet — voir /register/complete'}
             </p>
           </div>
 
@@ -270,6 +282,10 @@ export default function DriverDashboardPage() {
           order={selectedOrderForOtp}
           isOpen={!!selectedOrderForOtp}
           onClose={() => setSelectedOrderForOtp(null)}
+          // La validation se fait désormais côté serveur (voir le
+          // composant) : sans ce rafraîchissement, la commande resterait
+          // affichée "en cours" jusqu'au prochain rechargement de page.
+          onSuccess={() => { cloudSyncService.fetchOrdersFromCloud(); }}
         />
       )}
 

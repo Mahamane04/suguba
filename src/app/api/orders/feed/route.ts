@@ -10,11 +10,17 @@ import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
  * lecture sur `orders` ; cette route l'expose uniquement aux comptes admin
  * et livreur authentifiés (session signée), via service_role.
  *
- * Limite connue : sans un vrai système d'identifiants livreur persistés
- * (hors périmètre de ce correctif), un livreur voit ici l'ensemble des
- * commandes plutôt que ses seules courses assignées — à restreindre par
- * `assigned_driver_id = session.uid` dès que les comptes livreur seront
- * réellement liés à des lignes `profiles`.
+ * Corrigé le 2026-08-26, maintenant que les comptes livreur sont de vraies
+ * lignes `profiles` (voir migration-drivers.sql) : un livreur ne voit plus
+ * que ses propres courses assignées (`assigned_driver_id = session.uid`),
+ * jamais l'ensemble des commandes — la limite documentait auparavant
+ * l'inverse. Sans cette restriction, n'importe quel livreur pouvait lire
+ * les noms/téléphones/adresses de TOUS les clients, plus le code secret de
+ * livraison de commandes qui ne lui étaient pas assignées.
+ *
+ * `delivery_otp` n'est de toute façon plus jamais renvoyé ici : la
+ * vérification se fait désormais côté serveur (voir
+ * /api/driver/verify-delivery-otp), le livreur n'a plus besoin de le lire.
  */
 export async function GET(req: NextRequest) {
   const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
@@ -27,10 +33,23 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ orders: [], cloud: false });
   }
 
-  const { data, error } = await admin.from('orders').select('*').order('created_at', { ascending: false });
+  let query = admin.from('orders').select('*').order('created_at', { ascending: false });
+  if (session.role === 'driver') {
+    query = query.eq('assigned_driver_id', session.uid);
+  }
+
+  const { data, error } = await query;
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ orders: data || [], cloud: true });
+  const orders = (data || []).map((o) => {
+    if (session.role === 'driver') {
+      const { delivery_otp, ...sansOtp } = o;
+      return sansOtp;
+    }
+    return o;
+  });
+
+  return NextResponse.json({ orders, cloud: true });
 }

@@ -36,6 +36,10 @@ export default function AdminDashboardPage() {
   // Onboarding Desk Tab
   const [onboardingTab, setOnboardingTab] = useState<'suppliers' | 'drivers' | 'resellers' | 'diaspora'>('suppliers');
 
+  // Vrais livreurs actifs pour le dispatch — state.drivers ne contient que
+  // des fiches fictives (mock-data.ts), jamais les vrais comptes.
+  const [activeDrivers, setActiveDrivers] = useState<Array<{ id: string; fullName: string; phone: string | null; vehicleType: string | null }>>([]);
+
   // Les produits "submitted" par un fournisseur sur un autre appareil sont
   // invisibles à la clé anon (RLS ne lit que status='approved', voir
   // supabase/schema.sql) — donc invisibles à state.products tant qu'on ne va
@@ -51,6 +55,11 @@ export default function AdminDashboardPage() {
         }
       })
       .catch(() => {});
+
+    fetch('/api/admin/drivers/active')
+      .then((res) => res.json())
+      .then((json) => setActiveDrivers(Array.isArray(json.drivers) ? json.drivers : []))
+      .catch(() => {});
   }, []);
 
   const pendingProducts = state.products.filter(p => p.status === 'submitted');
@@ -58,7 +67,6 @@ export default function AdminDashboardPage() {
   const confirmedOrders = state.orders.filter(o => o.status === 'confirmed');
   const inTransitOrders = state.orders.filter(o => o.status === 'in_transit');
   const pendingPayouts = state.withdrawals.filter(w => w.status === 'pending');
-  const pendingDrivers = state.drivers.filter(d => d.status === 'pending_approval');
 
   const totalGMV = state.orders.reduce((acc, o) => acc + o.totalAmount, 0);
   const totalCommissionsPaid = state.commissions
@@ -370,31 +378,35 @@ export default function AdminDashboardPage() {
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    <select
-                      id={`driver-select-${order.id}`}
-                      className="flex-1 bg-white border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-900"
-                    >
-                      {state.drivers.map((d) => {
-                        const user = state.users.find(u => u.id === d.userId);
-                        return (
-                          <option key={d.id} value={d.id}>
-                            {user?.fullName} ({d.vehicleType})
-                          </option>
-                        );
-                      })}
-                    </select>
+                    {activeDrivers.length === 0 ? (
+                      <p className="flex-1 text-[11px] text-slate-400 italic">Aucun livreur actif pour l&apos;instant.</p>
+                    ) : (
+                      <>
+                        <select
+                          id={`driver-select-${order.id}`}
+                          className="flex-1 bg-white border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-900"
+                        >
+                          {activeDrivers.map((d) => (
+                            <option key={d.id} value={d.id}>
+                              {d.fullName} {d.vehicleType ? `(${d.vehicleType})` : ''}
+                            </option>
+                          ))}
+                        </select>
 
-                    <button
-                      onClick={() => {
-                        const select = document.getElementById(`driver-select-${order.id}`) as HTMLSelectElement;
-                        if (select) {
-                          sugubaStore.assignDriver(order.id, select.value, state.currentUser.fullName);
-                        }
-                      }}
-                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs"
-                    >
-                      Assigner
-                    </button>
+                        <button
+                          onClick={() => {
+                            const select = document.getElementById(`driver-select-${order.id}`) as HTMLSelectElement;
+                            const chosen = activeDrivers.find(d => d.id === select?.value);
+                            if (chosen) {
+                              sugubaStore.assignDriver(order.id, chosen.id, chosen.fullName, chosen.phone || undefined, state.currentUser.fullName);
+                            }
+                          }}
+                          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs"
+                        >
+                          Assigner
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}
@@ -574,7 +586,7 @@ export default function AdminDashboardPage() {
                   onboardingTab === 'drivers' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
-                Livreurs {pendingDrivers.length > 0 && `(${pendingDrivers.length})`}
+                Livreurs
               </button>
               <button
                 onClick={() => setOnboardingTab('resellers')}
@@ -614,64 +626,28 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-          {/* TAB 2: Livreurs */}
+          {/* TAB 2: Livreurs — même principe que Fournisseurs ci-dessus :
+              lisait state.drivers (démo locale) sans aucun effet réel. */}
           {onboardingTab === 'drivers' && (
             <div className="space-y-3">
               <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                Livreurs en Attente d&apos;Activation :
+                Livreurs
               </h3>
-              {pendingDrivers.length === 0 ? (
-                <p className="text-xs text-slate-400 py-3">✅ Tous les livreurs inscrits sont actifs et validés.</p>
-              ) : (
-                <div className="divide-y divide-slate-100">
-                  {pendingDrivers.map((drv) => {
-                    const driverUser = state.users.find(u => u.id === drv.userId);
-                    return (
-                      <div key={drv.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                        <div>
-                          <p className="font-bold text-xs text-slate-900">
-                            {driverUser?.fullName || 'Livreur'} — {drv.vehicleType}
-                          </p>
-                          <p className="text-[11px] text-slate-500">
-                            Téléphone : <strong className="text-slate-800">{driverUser?.phone}</strong> • Immatriculation : {drv.licensePlate}
-                          </p>
-                          <span className="text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded font-bold">
-                            Zone d&apos;intervention : {drv.zone || 'Bamako'}
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => {
-                              sugubaStore.approveDriver(drv.id, state.currentUser.fullName);
-                              setActionFeedback({
-                                type: 'success',
-                                message: `✅ Livreur ${driverUser?.fullName} activé avec succès !`
-                              });
-                            }}
-                            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs whitespace-nowrap"
-                          >
-                            Activer Livreur
-                          </button>
-                          <button
-                            onClick={() => {
-                              const reason = prompt('Motif du refus du livreur :');
-                              if (reason) {
-                                sugubaStore.rejectDriver(drv.id, reason, state.currentUser.fullName);
-                                setActionFeedback({
-                                  type: 'error',
-                                  message: `❌ Candidature livreur rejetée.`
-                                });
-                              }
-                            }}
-                            className="px-3 py-2 bg-slate-100 hover:bg-rose-100 text-rose-700 rounded-xl text-xs font-bold transition-colors"
-                          >
-                            Rejeter
-                          </button>
-                        </div>
+              <p className="text-xs text-slate-500">
+                Les nouvelles candidatures livreur apparaissent dans le panneau
+                <strong className="text-slate-700"> « Comptes en attente de validation » </strong>
+                en haut de cette page — c&apos;est là qu&apos;approuver ou rejeter, pas ici.
+              </p>
+              {activeDrivers.length > 0 && (
+                <div className="pt-2 border-t border-slate-100">
+                  <p className="text-[11px] font-bold text-slate-500 uppercase mb-2">Livreurs actifs ({activeDrivers.length})</p>
+                  <div className="divide-y divide-slate-100">
+                    {activeDrivers.map((d) => (
+                      <div key={d.id} className="py-2 text-xs text-slate-700">
+                        <strong className="text-slate-900">{d.fullName}</strong> — {d.vehicleType || 'Véhicule non renseigné'} • {d.phone}
                       </div>
-                    );
-                  })}
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
