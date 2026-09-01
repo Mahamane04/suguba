@@ -67,11 +67,13 @@ export default function AuthCallbackPage() {
 
         // Un compte Google fraîchement créé (jamais de numéro — voir
         // hasPhone dans supabase-exchange) doit d'abord passer par
-        // /register/complete pour renseigner téléphone/quartier avant de
-        // rejoindre /pending-approval. Un compte déjà complet (reconnexion,
-        // ou autre rôle non couvert par cette étape) suit le chemin habituel.
+        // /register/complete pour renseigner les champs propres à son rôle
+        // (téléphone pour tous, plus entreprise/véhicule/bénéficiaire selon
+        // le cas — voir ce fichier, désormais commun aux 4 rôles depuis que
+        // le téléphone/OTP maison a été retiré de l'inscription). Un compte
+        // déjà complet (reconnexion) suit le chemin habituel.
         const refCode = new URLSearchParams(window.location.search).get('ref') || '';
-        if (json.status !== 'active' && json.role === 'reseller' && !json.hasPhone) {
+        if (json.status !== 'active' && !json.hasPhone) {
           const params = new URLSearchParams({ fullName: json.fullName || '' });
           if (refCode) params.set('ref', refCode);
           router.push(`/register/complete?${params.toString()}`);

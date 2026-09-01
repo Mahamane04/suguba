@@ -23,7 +23,7 @@ const ROLE_LABEL: Record<string, string> = {
 /**
  * Ferme la boucle ouverte par la demande de validation d'inscription
  * (2026-08-19) : un numéro vérifié par OTP ne suffit plus à activer un
- * compte (voir /api/auth/verify-otp et middleware.ts) — il faut qu'un
+ * compte (voir /api/auth/supabase-exchange et middleware.ts) — il faut qu'un
  * admin approuve ou rejette ici. Sans ce panneau, les comptes resteraient
  * bloqués en pending_approval indéfiniment, personne ne pouvant les
  * débloquer depuis l'interface.

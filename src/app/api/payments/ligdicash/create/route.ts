@@ -1,17 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { creerFacture } from '@/lib/paydunya';
+import { creerFacture } from '@/lib/ligdicash';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
 /**
- * Crée une facture PayDunya pour une commande existante et renvoie l'URL de
+ * Crée une facture LigdiCash pour une commande existante et renvoie l'URL de
  * paiement.
  *
  * ⚠️ Le montant n'est JAMAIS lu depuis la requête : il est relu en base à
  * partir du seul numéro de commande. Accepter un montant fourni par le
- * navigateur laisserait n'importe qui régler 100 F une commande de 216 500 F —
- * la facture serait payée, l'IPN authentique, et la commande passerait en
- * « confirmée ». Même principe que la résolution du revendeur dans
- * /api/orders/sync.
+ * navigateur laisserait n'importe qui régler 100 F une commande de 216 500 F.
+ * Même principe que la résolution du revendeur dans /api/orders/sync.
  */
 export async function POST(req: NextRequest) {
   try {
@@ -27,7 +25,7 @@ export async function POST(req: NextRequest) {
 
     const { data: commande } = await admin
       .from('orders')
-      .select('order_number, product_name, quantity, total_amount, status, payment_collected')
+      .select('order_number, product_name, quantity, total_amount, status, payment_collected, customer_name')
       .eq('order_number', orderNumber.trim())
       .maybeSingle();
 
@@ -50,6 +48,7 @@ export async function POST(req: NextRequest) {
     }
 
     const quantite = Number(commande.quantity) || 1;
+    const [prenom, ...resteNom] = (commande.customer_name || '').trim().split(/\s+/);
     const resultat = await creerFacture({
       type: 'order',
       reference: commande.order_number,
@@ -63,19 +62,26 @@ export async function POST(req: NextRequest) {
       }],
       urlRetour: `https://app.sugubaml.com/order-success/${commande.order_number}`,
       urlAnnulation: `https://app.sugubaml.com/p`,
+      clientPrenom: prenom || undefined,
+      clientNom: resteNom.join(' ') || undefined,
     });
 
     if (!resultat.ok) {
-      // Le détail (noms de variables manquantes, message brut de PayDunya)
+      // Le détail (noms de variables manquantes, message brut de LigdiCash)
       // reste dans les journaux serveur : l'acheteur n'a pas à lire
-      // « PAYDUNYA_MASTER_KEY », et exposer la configuration interne à un
+      // « LIGDICASH_API_KEY », et exposer la configuration interne à un
       // visiteur n'aide personne.
-      console.error('[PAYDUNYA create] Échec pour', commande.order_number, ':', resultat.erreur);
+      console.error('[LIGDICASH create] Échec pour', commande.order_number, ':', resultat.erreur);
       return NextResponse.json(
         { error: 'Le paiement en ligne est momentanément indisponible. Réessayez dans quelques minutes.' },
         { status: 502 }
       );
     }
+
+    // Indispensable pour la vérification côté webhook : voir le commentaire
+    // en tête de src/lib/ligdicash.ts. Sans cette écriture, le webhook
+    // n'aurait aucun jeton de confiance à rappeler.
+    await admin.from('orders').update({ payment_invoice_token: resultat.jeton }).eq('order_number', commande.order_number);
 
     return NextResponse.json({
       success: true,
@@ -83,7 +89,7 @@ export async function POST(req: NextRequest) {
       jeton: resultat.jeton,
     });
   } catch (error: any) {
-    console.error('[PAYDUNYA create] Erreur:', error);
+    console.error('[LIGDICASH create] Erreur:', error);
     return NextResponse.json({ error: error.message || 'Erreur serveur.' }, { status: 500 });
   }
 }

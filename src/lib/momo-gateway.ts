@@ -1,6 +1,6 @@
 /**
  * Passerelle d'Intégration Mobile Money Unifiée — Suguba SaaS
- * Supporte : Wave Mali, Orange Money (via CinetPay / Hub2 / Paydunya), Moov Money
+ * Supporte : Wave Mali, Orange Money (via CinetPay / Hub2 / LigdiCash), Moov Money
  */
 
 import { createHmac, timingSafeEqual } from 'node:crypto';

@@ -1,26 +1,16 @@
 'use client';
 
 import React, { useState, Suspense } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { sugubaStore, useSugubaStore } from '@/lib/store';
-import { authService } from '@/lib/auth-service';
 import { supabase } from '@/lib/supabase';
 import { UserRole } from '@/types';
 import {
-  ArrowRight, Smartphone, CheckCircle2, MessageCircle,
+  ArrowRight,
   ShieldCheck, Zap, Store, ShoppingBag, Truck, Shield, Mail
 } from 'lucide-react';
-
-const DEST_BY_ROLE: Record<string, string> = {
-  admin: '/admin',
-  driver: '/driver',
-  supplier: '/supplier',
-  reseller: '/reseller',
-  customer: '/reseller',
-  diaspora: '/diaspora',
-};
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -53,89 +43,18 @@ const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 // local" et le build de prod qui plantait silencieusement à chaque déploi
 // Vercel). Voir LoginPage plus bas pour le vrai export par défaut.
 function LoginPageContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const state = useSugubaStore();
   const deniedRole = searchParams.get('denied');
 
-  // Trois méthodes de connexion : téléphone (OTP maison, existant), email
-  // (code à 6 chiffres via Supabase Auth) et Google (OAuth via Supabase
-  // Auth) — voir /api/auth/supabase-exchange pour les deux dernières.
-  const [method, setMethod] = useState<'phone' | 'email'>('phone');
-  const [step, setStep] = useState<'phone' | 'otp'>('phone');
-  const [phone, setPhone] = useState('+223 76 12 34 56');
-  const [otpCode, setOtpCode] = useState('');
-  const [otpChannel, setOtpChannel] = useState<'sms' | 'whatsapp'>('whatsapp');
+  // Téléphone/OTP maison retiré (2026-08-26) : aucune passerelle SMS réelle
+  // n'était branchée (voir CLAUDE.md / REPRISE.md), donc ce chemin ne
+  // livrait jamais de code à un vrai utilisateur. Seuls Google et l'email
+  // (lien magique Supabase Auth) restent — les deux prouvent réellement
+  // l'identité de la personne qui se connecte.
   const [email, setEmail] = useState('');
   const [emailLinkSent, setEmailLinkSent] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const [infoMessage, setInfoMessage] = useState('');
-
-  const handleRequestOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!phone || phone.replace(/\s+/g, '').length < 8) {
-      setErrorMessage('Numéro de téléphone invalide.');
-      return;
-    }
-    setIsLoading(true);
-    setErrorMessage('');
-
-    try {
-      const res = await authService.requestOtp(phone, otpChannel);
-      setIsLoading(false);
-      if (res.success) {
-        setInfoMessage(res.message || `Code envoyé au ${phone}`);
-        setStep('otp');
-        if (typeof window !== 'undefined' && 'vibrate' in navigator) {
-          try { navigator.vibrate([100, 50, 100]); } catch (_) {}
-        }
-      } else {
-        setErrorMessage(res.error || 'Erreur lors de l\'envoi du code.');
-      }
-    } catch (err) {
-      setIsLoading(false);
-      setErrorMessage('Une erreur est survenue.');
-    }
-  };
-
-  const handleResendOtp = async () => {
-    setErrorMessage('');
-    const res = await authService.requestOtp(phone, otpChannel);
-    setInfoMessage(res.success ? (res.message || 'Nouveau code envoyé.') : (res.error || 'Échec du renvoi.'));
-  };
-
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setErrorMessage('');
-
-    try {
-      const verifyRes = await authService.verifyOtpAndSyncProfile(phone, otpCode);
-      setIsLoading(false);
-
-      if (verifyRes.success && verifyRes.profile) {
-        const { role, status } = verifyRes.profile;
-        if (status !== 'active') {
-          router.push('/pending-approval');
-          return;
-        }
-        const destMap: Record<string, string> = {
-          admin: '/admin',
-          driver: '/driver',
-          supplier: '/supplier',
-          reseller: '/reseller',
-          customer: '/reseller',
-        };
-        router.push(destMap[role] || '/reseller');
-      } else {
-        setErrorMessage(verifyRes.error || 'Code OTP invalide.');
-      }
-    } catch (err) {
-      setIsLoading(false);
-      setErrorMessage('Erreur lors de la vérification.');
-    }
-  };
 
   const handleQuickLogin = async (role: UserRole, dest: string) => {
     setErrorMessage('');
@@ -151,37 +70,10 @@ function LoginPageContent() {
         return;
       }
       sugubaStore.switchRole(role);
-      router.push(dest);
+      window.location.href = dest;
     } catch (_) {
       setErrorMessage('Connexion rapide indisponible.');
     }
-  };
-
-  const exchangeSupabaseSession = async (): Promise<void> => {
-    if (!supabase) {
-      setErrorMessage('Connexion email/Google indisponible sur cet environnement.');
-      return;
-    }
-    const { data } = await supabase.auth.getSession();
-    if (!data.session) {
-      setErrorMessage('Session invalide, réessayez.');
-      return;
-    }
-    const res = await fetch('/api/auth/supabase-exchange', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${data.session.access_token}` },
-      body: JSON.stringify({}),
-    });
-    const json = await res.json();
-    if (!res.ok || !json.success) {
-      setErrorMessage(json.error || 'Erreur lors de la connexion.');
-      return;
-    }
-    if (json.status !== 'active') {
-      router.push('/pending-approval');
-      return;
-    }
-    router.push(DEST_BY_ROLE[json.role] || '/reseller');
   };
 
   // Lien magique plutôt que code à taper : le template email par défaut de
@@ -228,10 +120,10 @@ function LoginPageContent() {
       <div className="flex items-center justify-between px-4 py-4 sm:px-6">
         <Link href="/" className="flex items-center gap-2">
           <div className="relative w-9 h-9 rounded-xl overflow-hidden shrink-0">
-            <Image 
-              src="/images/logo.png" 
-              alt="Logo Suguba" 
-              fill 
+            <Image
+              src="/images/logo.png"
+              alt="Logo Suguba"
+              fill
               className="object-contain"
               priority
             />
@@ -261,21 +153,11 @@ function LoginPageContent() {
                 S
               </div>
               <h1 className="text-xl font-black text-gray-900">
-                {step === 'phone' ? 'Connexion Suguba' : 'Vérification'}
+                Connexion Suguba
               </h1>
               <p className="text-xs text-gray-400 mt-1">
-                {step === 'phone'
-                  ? 'Choisissez votre méthode de connexion'
-                  : method === 'phone'
-                  ? `Code envoyé au ${phone}`
-                  : `Code envoyé à ${email}`}
+                Sans mot de passe, avec Google ou par email
               </p>
-            </div>
-
-            {/* Step indicator */}
-            <div className="flex items-center gap-2 mb-6">
-              <div className={`h-1 flex-1 rounded-full transition-all ${step === 'phone' || step === 'otp' ? 'bg-suguba-brand' : 'bg-gray-100'}`} />
-              <div className={`h-1 flex-1 rounded-full transition-all ${step === 'otp' ? 'bg-suguba-brand' : 'bg-gray-100'}`} />
             </div>
 
             {deniedRole && (
@@ -284,100 +166,55 @@ function LoginPageContent() {
               </div>
             )}
 
-            {step === 'phone' && (
-              <>
-                {/* Google — chemin le plus rapide, toujours en premier */}
+            {/* Google — chemin le plus rapide, toujours en premier */}
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              className="w-full py-3 mb-4 bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 font-bold rounded-2xl text-sm flex items-center justify-center gap-2.5 transition-all active:scale-[0.98]"
+            >
+              <GoogleIcon className="w-4 h-4" />
+              Continuer avec Google
+            </button>
+
+            <div className="flex items-center gap-3 mb-4">
+              <div className="h-px flex-1 bg-gray-100" />
+              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">ou</span>
+              <div className="h-px flex-1 bg-gray-100" />
+            </div>
+
+            {emailLinkSent ? (
+              <div className="text-center space-y-3 animate-fade-up">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
+                  <Mail className="w-6 h-6" />
+                </div>
+                <p className="text-sm font-semibold text-gray-900">Vérifiez votre boîte mail</p>
+                <p className="text-xs text-gray-500">
+                  Un lien de connexion a été envoyé à <b>{email}</b>. Ouvrez-le depuis ce même appareil pour continuer.
+                </p>
                 <button
                   type="button"
-                  onClick={handleGoogleLogin}
-                  className="w-full py-3 mb-4 bg-white border border-gray-200 hover:bg-gray-50 text-gray-800 font-bold rounded-2xl text-sm flex items-center justify-center gap-2.5 transition-all active:scale-[0.98]"
+                  onClick={() => setEmailLinkSent(false)}
+                  className="text-xs text-suguba-brand hover:underline font-semibold"
                 >
-                  <GoogleIcon className="w-4 h-4" />
-                  Continuer avec Google
+                  Utiliser une autre adresse
                 </button>
-
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="h-px flex-1 bg-gray-100" />
-                  <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">ou</span>
-                  <div className="h-px flex-1 bg-gray-100" />
-                </div>
-
-                {/* Onglets Téléphone / Email */}
-                <div className="grid grid-cols-2 gap-1.5 p-1 bg-gray-50 rounded-2xl mb-4">
-                  <button
-                    type="button"
-                    onClick={() => { setMethod('phone'); setErrorMessage(''); }}
-                    className={`py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
-                      method === 'phone' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400'
-                    }`}
-                  >
-                    <Smartphone className="w-3.5 h-3.5" />
-                    Téléphone
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => { setMethod('email'); setErrorMessage(''); }}
-                    className={`py-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
-                      method === 'email' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400'
-                    }`}
-                  >
-                    <Mail className="w-3.5 h-3.5" />
-                    Email
-                  </button>
-                </div>
-              </>
-            )}
-
-            {/* STEP 1 — Phone */}
-            {step === 'phone' && method === 'phone' && (
-              <form onSubmit={handleRequestOtp} className="space-y-4">
+              </div>
+            ) : (
+              <form onSubmit={handleRequestEmailOtp} className="space-y-4">
                 <div className="space-y-1.5">
                   <label className="block text-xs font-semibold text-gray-700">
-                    Numéro de téléphone
+                    Adresse email
                   </label>
                   <div className="relative">
-                    <Smartphone className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
+                    <Mail className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
                     <input
-                      type="tel"
+                      type="email"
                       required
-                      placeholder="+223 70 00 00 00"
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      placeholder="vous@exemple.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-suguba-brand/30 focus:border-suguba-brand transition-all"
                     />
-                  </div>
-                </div>
-
-                {/* Channel selector */}
-                <div className="space-y-2">
-                  <label className="block text-xs font-semibold text-gray-500">
-                    Recevoir le code via
-                  </label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setOtpChannel('whatsapp')}
-                      className={`py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition-all ${
-                        otpChannel === 'whatsapp'
-                          ? 'bg-[#25D366] text-white border-[#25D366] shadow-sm'
-                          : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
-                      }`}
-                    >
-                      <MessageCircle className="w-3.5 h-3.5" />
-                      WhatsApp
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setOtpChannel('sms')}
-                      className={`py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 border transition-all ${
-                        otpChannel === 'sms'
-                          ? 'bg-gray-900 text-white border-gray-900 shadow-sm'
-                          : 'bg-gray-50 text-gray-600 border-gray-200 hover:bg-gray-100'
-                      }`}
-                    >
-                      <Smartphone className="w-3.5 h-3.5" />
-                      SMS
-                    </button>
                   </div>
                 </div>
 
@@ -395,153 +232,15 @@ function LoginPageContent() {
                   {isLoading ? (
                     <span className="flex items-center gap-2">
                       <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Envoi du code...
+                      Envoi du lien...
                     </span>
                   ) : (
                     <>
-                      Recevoir mon code
+                      Recevoir mon lien de connexion
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
                 </button>
-              </form>
-            )}
-
-            {/* STEP 1 — Email */}
-            {step === 'phone' && method === 'email' && (
-              emailLinkSent ? (
-                <div className="text-center space-y-3 animate-fade-up">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
-                    <Mail className="w-6 h-6" />
-                  </div>
-                  <p className="text-sm font-semibold text-gray-900">Vérifiez votre boîte mail</p>
-                  <p className="text-xs text-gray-500">
-                    Un lien de connexion a été envoyé à <b>{email}</b>. Ouvrez-le depuis ce même appareil pour continuer.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={() => setEmailLinkSent(false)}
-                    className="text-xs text-suguba-brand hover:underline font-semibold"
-                  >
-                    Utiliser une autre adresse
-                  </button>
-                </div>
-              ) : (
-                <form onSubmit={handleRequestEmailOtp} className="space-y-4">
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-semibold text-gray-700">
-                      Adresse email
-                    </label>
-                    <div className="relative">
-                      <Mail className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
-                      <input
-                        type="email"
-                        required
-                        placeholder="vous@exemple.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-suguba-brand/30 focus:border-suguba-brand transition-all"
-                      />
-                    </div>
-                  </div>
-
-                  {errorMessage && (
-                    <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-xs font-semibold text-red-600">
-                      {errorMessage}
-                    </div>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={isLoading}
-                    className="w-full py-3.5 bg-suguba-brand hover:bg-suguba-brand-dark text-white font-bold rounded-2xl text-sm flex items-center justify-center gap-2 shadow-brand-md hover:shadow-brand-lg transition-all active:scale-[0.98] disabled:opacity-60"
-                  >
-                    {isLoading ? (
-                      <span className="flex items-center gap-2">
-                        <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Envoi du lien...
-                      </span>
-                    ) : (
-                      <>
-                        Recevoir mon lien de connexion
-                        <ArrowRight className="w-4 h-4" />
-                      </>
-                    )}
-                  </button>
-                </form>
-              )
-            )}
-
-            {/* STEP 2 — OTP téléphone uniquement (l'email utilise un lien
-                cliquable, pas ce second écran — voir ci-dessus) */}
-            {step === 'otp' && (
-              <form onSubmit={handleVerifyOtp} className="space-y-4 animate-fade-up">
-
-                {/* Le code n'est plus jamais affiché ici : il part uniquement
-                    par SMS/email, vérifié côté serveur (corrige BUG-002). */}
-                {infoMessage && (
-                  <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-2xl text-center">
-                    <p className="text-xs font-semibold text-emerald-700">{infoMessage}</p>
-                  </div>
-                )}
-
-                <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-gray-700 text-center">
-                    Saisir le code à 6 chiffres
-                  </label>
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={6}
-                    required
-                    autoFocus
-                    placeholder="• • • • • •"
-                    value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ''))}
-                    className="w-full py-4 bg-gray-50 border border-gray-200 rounded-2xl text-center text-3xl font-mono font-black tracking-[0.6em] text-gray-900 focus:outline-none focus:ring-2 focus:ring-suguba-brand/30 focus:border-suguba-brand transition-all"
-                  />
-                </div>
-
-                {errorMessage && (
-                  <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-xs font-semibold text-red-600 text-center">
-                    {errorMessage}
-                  </div>
-                )}
-
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full py-3.5 bg-suguba-brand hover:bg-suguba-brand-dark text-white font-bold rounded-2xl text-sm flex items-center justify-center gap-2 shadow-brand-md transition-all active:scale-[0.98] disabled:opacity-60"
-                >
-                  {isLoading ? (
-                    <span className="flex items-center gap-2">
-                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Vérification...
-                    </span>
-                  ) : (
-                    <>
-                      <CheckCircle2 className="w-4 h-4" />
-                      Valider & Accéder
-                    </>
-                  )}
-                </button>
-
-                <div className="flex items-center justify-between text-xs">
-                  <button
-                    type="button"
-                    onClick={() => { setStep('phone'); setOtpCode(''); setErrorMessage(''); }}
-                    className="text-gray-400 hover:text-gray-600 transition-colors font-medium"
-                  >
-                    Modifier le numéro
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleResendOtp}
-                    className="text-suguba-brand hover:underline font-semibold"
-                  >
-                    Renvoyer le code
-                  </button>
-                </div>
               </form>
             )}
 
@@ -559,7 +258,7 @@ function LoginPageContent() {
             <div className="flex items-center justify-center gap-3 mt-4 pt-4 border-t border-gray-50">
               <div className="flex items-center gap-1 text-[10px] text-gray-400">
                 <ShieldCheck className="w-3 h-3 text-suguba-brand" />
-                OTP sécurisé
+                Connexion sécurisée
               </div>
               <div className="w-px h-3 bg-gray-200" />
               <div className="flex items-center gap-1 text-[10px] text-gray-400">

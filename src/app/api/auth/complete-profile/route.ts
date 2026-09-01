@@ -6,7 +6,7 @@ import { chargerRoles } from '@/lib/profile-roles';
 /**
  * Deuxième étape de l'inscription — remplit les champs propres au rôle
  * (entreprise, véhicule, bénéficiaire diaspora...) sur un profil déjà
- * authentifié par OTP (voir /api/auth/verify-otp). N'accepte jamais de
+ * authentifié via Google (voir /api/auth/supabase-exchange). N'accepte jamais de
  * modifier le rôle ou le statut depuis le client : l'un vient de la session
  * signée, l'autre reste piloté par /api/admin/review-profile.
  */

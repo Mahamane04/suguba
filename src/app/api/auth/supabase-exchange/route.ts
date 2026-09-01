@@ -3,7 +3,7 @@ import { createSessionToken, SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS, Suguba
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { chargerRoles, choisirRoleActif } from '@/lib/profile-roles';
 
-// Même règle que pour le téléphone (voir /api/auth/verify-otp) : aucun rôle
+// Même règle qu'à la connexion : aucun rôle
 // ne peut s'auto-attribuer admin à la création, quel que soit le chemin de
 // connexion.
 const SELF_SERVE_ROLES: SugubaSession['role'][] = ['reseller', 'supplier', 'driver', 'diaspora', 'customer'];
@@ -86,8 +86,8 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Erreur lors de la création du compte.' }, { status: 500 });
       }
 
-      // Voir /api/auth/verify-otp : profile_roles est la source de vérité des
-      // rôles, un compte créé sans ligne ici serait bloqué par le middleware.
+      // profile_roles est la source de vérité des rôles — un compte créé
+      // sans ligne ici serait bloqué par le middleware.
       const { error: roleErr } = await admin.from('profile_roles').insert({
         profile_id: uid,
         role,

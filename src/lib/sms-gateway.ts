@@ -43,16 +43,6 @@ export const smsGateway = {
   },
 
   /**
-   * Envoi d'un code de connexion (OTP compte). Ne jamais logger ni retourner
-   * le code en clair côté appelant en production — voir /api/auth/request-otp.
-   */
-  async sendLoginOtpSms(toPhone: string, code: string): Promise<SmsResponse> {
-    const formattedPhone = this.formatMaliPhone(toPhone);
-    const smsText = `Suguba: Votre code de connexion est ${code}. Ne le partagez avec personne, y compris avec Suguba. Valable 5 minutes.`;
-    return this.sendPlainSms(formattedPhone, smsText);
-  },
-
-  /**
    * Dispatch générique vers le premier fournisseur SMS configuré.
    */
   async sendPlainSms(formattedPhone: string, smsText: string): Promise<SmsResponse> {

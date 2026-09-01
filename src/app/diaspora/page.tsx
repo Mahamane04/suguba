@@ -52,15 +52,15 @@ export default function DiasporaPortalPage() {
   };
 
   /**
-   * Encaissement réel par carte via PayDunya.
+   * Encaissement réel par mobile money via LigdiCash.
    *
    * L'ancienne version ne faisait qu'un `setTimeout` avant d'afficher l'écran
    * de succès : la commande était créée mais aucun paiement n'était jamais
    * demandé, et l'acheteur repartait convaincu d'avoir payé. On crée
    * désormais la commande, on s'assure qu'elle existe en base, puis on
-   * redirige vers la facture PayDunya. L'écran de succès n'est plus atteint
-   * ici : c'est le retour de PayDunya (return_url) qui y mène, une fois le
-   * paiement réellement encaissé et l'IPN reçu.
+   * redirige vers la facture LigdiCash. L'écran de succès n'est plus atteint
+   * ici : c'est le retour de LigdiCash (return_url) qui y mène, une fois le
+   * paiement réellement encaissé et vérifié côté serveur.
    */
   const handleDiasporaCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,7 +94,7 @@ export default function DiasporaPortalPage() {
       // route de synchro est idempotente, ce second envoi est donc sans risque.
       await cloudSyncService.pushOrderToCloud(commande);
 
-      const res = await fetch('/api/payments/paydunya/create', {
+      const res = await fetch('/api/payments/ligdicash/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         // Seul le numéro de commande est transmis : le montant est relu en
