@@ -7,6 +7,7 @@ import ServiceWorkerRegister from '@/components/common/ServiceWorkerRegister';
 import WhatsAppFloatingButton from '@/components/common/WhatsAppFloatingButton';
 import PushNotificationManager from '@/components/common/PushNotificationManager';
 import CloudSyncInitializer from '@/components/common/CloudSyncInitializer';
+import AuthHashCatcher from '@/components/common/AuthHashCatcher';
 
 /* ── Inter Variable Font — Police officielle Suguba V1.3 ── */
 const inter = Inter({
@@ -41,6 +42,7 @@ export default function RootLayout({
   return (
     <html lang="fr" className={`h-full ${inter.variable}`}>
       <body className="h-full flex flex-col antialiased font-sans selection:bg-suguba-brand selection:text-white">
+        <AuthHashCatcher />
         <CloudSyncInitializer />
         <ServiceWorkerRegister />
         <OfflineStatus />
