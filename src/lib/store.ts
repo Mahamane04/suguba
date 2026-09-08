@@ -325,14 +325,19 @@ export const sugubaStore = {
     const product = globalState.products.find(p => p.id === data.productId);
     if (!product) throw new Error('Produit introuvable');
 
-    let reseller = data.resellerCode 
+    // Uniquement le code explicitement fourni par l'appelant — jamais de
+    // repli sur globalState.currentUser. Ce repli existait pour la commande
+    // manuelle du dashboard revendeur (CreateOrderModal), mais ce composant
+    // passe déjà son propre resellerCode explicitement ; le repli était donc
+    // mort pour cet usage et actif uniquement sur le parcours public
+    // anonyme (/p/[slug]) — où currentUser vaut toujours le revendeur
+    // fictif de démo par défaut. Conséquence réelle : toute commande passée
+    // sans lien de parrainage attribuait quand même une commission (sur le
+    // champ orders.reseller_commission) à ce faux revendeur. Découvert le
+    // 2026-09-08 en testant le parcours visiteur sans compte.
+    const reseller = data.resellerCode
       ? globalState.resellers.find(r => r.referralCode.toUpperCase() === data.resellerCode?.toUpperCase())
       : undefined;
-
-    // Si le client n'a pas de code mais que la session actuelle est un revendeur créant une commande manuelle
-    if (!reseller && globalState.currentUser.role === 'reseller') {
-      reseller = globalState.resellers.find(r => r.userId === globalState.currentUser.id);
-    }
 
     const resellerUser = reseller ? globalState.users.find(u => u.id === reseller?.userId) : undefined;
     const orderNumber = `SG-${Math.floor(10000 + Math.random() * 90000)}`;
