@@ -81,23 +81,33 @@ export default function OrderSuccessPage({ params }: { params: Promise<{ orderNu
               <span className="font-bold text-slate-900">{order.neighborhood} — {order.landmark}</span>
             </div>
 
+            {/* Annoncer « à payer au livreur » puis proposer juste en dessous
+                de payer maintenant disait deux choses contradictoires au
+                client. Les deux lignes suivent désormais l'état réel du
+                paiement. */}
             <div className="flex justify-between text-slate-600">
               <span>Mode de règlement :</span>
-              <span className="font-bold text-slate-900">À la livraison (Espèces ou Mobile Money)</span>
+              <span className="font-bold text-slate-900">
+                {order.paymentCollected ? 'Payé en ligne (Mobile Money)' : 'À la livraison, ou en ligne dès maintenant'}
+              </span>
             </div>
 
             <div className="flex justify-between text-sm font-black text-slate-900 pt-2 border-t border-slate-200">
-              <span>Total à payer au livreur :</span>
+              <span>{order.paymentCollected ? 'Total réglé :' : 'Total à payer :'}</span>
               <span className="text-emerald-700">{order.totalAmount.toLocaleString('fr-FR')} FCFA</span>
             </div>
           </div>
 
-          {/* Encaissement mobile money via SasPay */}
-          <SasPayPaymentDesk
-            amount={order.totalAmount}
-            orderNumber={order.orderNumber}
-            defaultPhone={order.customerPhone}
-          />
+          {/* Encaissement mobile money via SasPay. Masqué une fois la commande
+              réglée : le desk affiche alors son propre écran de confirmation,
+              et le rappeler ici ferait doublon. */}
+          {!order.paymentCollected && (
+            <SasPayPaymentDesk
+              amount={order.totalAmount}
+              orderNumber={order.orderNumber}
+              defaultPhone={order.customerPhone}
+            />
+          )}
 
           {/* Action Links */}
           <div className="space-y-2 pt-2">

@@ -15,7 +15,7 @@ import { Order } from '@/types';
 import { 
   Truck, Phone, MapPin, KeyRound, CheckCircle2, 
   Banknote, Package, Navigation, AlertCircle, ArrowRight,
-  Compass, MessageCircle, Printer, Wallet
+  Compass, MessageCircle, Printer, Wallet, ShieldCheck
 } from 'lucide-react';
 
 export default function DriverDashboardPage() {
@@ -124,11 +124,19 @@ export default function DriverDashboardPage() {
                         </span>
                       </div>
 
-                      {/* Cash to collect badge */}
-                      <div className="px-3 py-1 bg-amber-100 border border-amber-300 rounded-full text-amber-900 font-black text-xs flex items-center space-x-1">
-                        <Banknote className="w-3.5 h-3.5 text-amber-700" />
-                        <span>À encaisser : {order.totalAmount.toLocaleString('fr-FR')} F</span>
-                      </div>
+                      {/* Un badge « à encaisser » inconditionnel ferait réclamer
+                          au client une somme qu'il a déjà réglée en ligne. */}
+                      {order.paymentCollected ? (
+                        <div className="px-3 py-1 bg-emerald-100 border border-emerald-300 rounded-full text-emerald-900 font-black text-xs flex items-center space-x-1">
+                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
+                          <span>Déjà payé — ne rien encaisser</span>
+                        </div>
+                      ) : (
+                        <div className="px-3 py-1 bg-amber-100 border border-amber-300 rounded-full text-amber-900 font-black text-xs flex items-center space-x-1">
+                          <Banknote className="w-3.5 h-3.5 text-amber-700" />
+                          <span>À encaisser : {order.totalAmount.toLocaleString('fr-FR')} F</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Product item */}

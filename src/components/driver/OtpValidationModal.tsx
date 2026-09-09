@@ -118,21 +118,43 @@ export default function OtpValidationModal({ order, isOpen, onClose, onSuccess }
           ) : (
             <form onSubmit={handleValidate} className="space-y-4">
 
-              {/* Cash Collection Alert */}
-              <div className="bg-amber-50 border border-amber-300/80 rounded-2xl p-4 flex items-start space-x-3">
-                <Banknote className="w-6 h-6 text-amber-700 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-amber-800">
-                    Montant total à encaisser au client :
-                  </p>
-                  <p className="text-xl font-black text-slate-900 mt-0.5">
-                    {order.totalAmount.toLocaleString('fr-FR')} FCFA
-                  </p>
-                  <p className="text-[10px] text-slate-600 mt-0.5">
-                    Client : {order.customerName} ({order.customerPhone})
-                  </p>
+              {/* Ce que le livreur doit encaisser — ou surtout ne pas encaisser.
+                  Depuis que le client peut régler en ligne par Mobile Money, un
+                  bloc « à encaisser » inconditionnel ferait payer deux fois une
+                  commande déjà réglée. Le fond vert et l'absence de montant
+                  doivent rendre la situation évidente en un coup d'œil, y
+                  compris en plein soleil sur le pas d'une porte. */}
+              {order.paymentCollected ? (
+                <div className="bg-emerald-50 border border-emerald-300/80 rounded-2xl p-4 flex items-start space-x-3">
+                  <ShieldCheck className="w-6 h-6 text-emerald-700 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">
+                      Déjà payé en ligne
+                    </p>
+                    <p className="text-xl font-black text-emerald-900 mt-0.5">
+                      Ne rien encaisser
+                    </p>
+                    <p className="text-[10px] text-slate-600 mt-0.5">
+                      Remettez simplement le colis à {order.customerName} ({order.customerPhone}).
+                    </p>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="bg-amber-50 border border-amber-300/80 rounded-2xl p-4 flex items-start space-x-3">
+                  <Banknote className="w-6 h-6 text-amber-700 shrink-0 mt-0.5" />
+                  <div>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-amber-800">
+                      Montant total à encaisser au client :
+                    </p>
+                    <p className="text-xl font-black text-slate-900 mt-0.5">
+                      {order.totalAmount.toLocaleString('fr-FR')} FCFA
+                    </p>
+                    <p className="text-[10px] text-slate-600 mt-0.5">
+                      Client : {order.customerName} ({order.customerPhone})
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* OTP Input Instruction */}
               <div>
@@ -188,10 +210,20 @@ export default function OtpValidationModal({ order, isOpen, onClose, onSuccess }
                 <button
                   type="submit"
                   disabled={otpInput.length < 4 || isSubmitting}
-                  className="w-full bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white font-bold py-3.5 px-4 rounded-2xl text-xs shadow-lg shadow-amber-600/20 flex items-center justify-center space-x-2 transition-transform active:scale-[0.98]"
+                  className={`w-full disabled:opacity-50 text-white font-bold py-3.5 px-4 rounded-2xl text-xs shadow-lg flex items-center justify-center space-x-2 transition-transform active:scale-[0.98] ${
+                    order.paymentCollected
+                      ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20'
+                      : 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/20'
+                  }`}
                 >
                   <ShieldCheck className="w-4 h-4" />
-                  <span>{isSubmitting ? 'Vérification...' : 'Valider le Code & Encaisser'}</span>
+                  <span>
+                    {isSubmitting
+                      ? 'Vérification...'
+                      : order.paymentCollected
+                        ? 'Valider le Code & Remettre le colis'
+                        : 'Valider le Code & Encaisser'}
+                  </span>
                 </button>
               )}
 
