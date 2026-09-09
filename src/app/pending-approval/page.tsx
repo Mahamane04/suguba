@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import EtapesInscription from '@/components/common/EtapesInscription';
 import { Clock, ShieldCheck, LogOut, CheckCircle2 } from 'lucide-react';
 
 const DEST_PAR_ROLE: Record<string, string> = {
@@ -21,9 +22,28 @@ const DEST_PAR_ROLE: Record<string, string> = {
  * fraîchement inscrit accédait directement au tableau de bord sans aucun
  * contrôle (voir la demande de validation d'inscription du 2026-08-19).
  */
+const LIBELLE_ROLE: Record<string, string> = {
+  reseller: 'Revendeur',
+  supplier: 'Fournisseur',
+  driver: 'Livreur',
+  diaspora: 'Diaspora',
+};
+
 export default function PendingApprovalPage() {
   const router = useRouter();
   const [valide, setValide] = useState(false);
+  // Récapitulatif de ce qui a été soumis : sans lui, cette page ne disait pas
+  // à l'utilisateur ce que Suguba est en train d'examiner.
+  const [dossier, setDossier] = useState<{ role: string; phone: string } | null>(null);
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.authenticated) setDossier({ role: data.role, phone: data.phone });
+      })
+      .catch(() => {});
+  }, []);
 
   /**
    * Le statut vit dans un cookie signé de 7 jours : une validation par un
@@ -80,19 +100,38 @@ export default function PendingApprovalPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f5f8f5] p-4">
-      <div className="max-w-sm w-full bg-white rounded-3xl border border-gray-100 shadow-float p-7 text-center space-y-4">
-        <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
-          <Clock className="w-7 h-7" />
+      <div className="max-w-sm w-full bg-white rounded-3xl border border-gray-100 shadow-float p-7 space-y-4">
+        <EtapesInscription etapeActuelle={3} />
+
+        <div className="text-center space-y-3 pt-2">
+          <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
+            <Clock className="w-7 h-7" />
+          </div>
+          <h1 className="text-lg font-black text-gray-900">Dossier envoyé, en cours d&apos;examen</h1>
+          {/* La version précédente promettait « vous recevrez un SMS » : aucune
+              passerelle SMS n'est branchée, ce message ne pouvait donc pas être
+              tenu. On annonce ce qui se passe réellement — la page se met à jour
+              d'elle-même. */}
+          <p className="text-sm text-gray-500">
+            L&apos;équipe Suguba examine votre dossier, généralement sous 24h.
+            Vous n&apos;avez rien d&apos;autre à faire.
+          </p>
         </div>
-        <h1 className="text-lg font-black text-gray-900">Dossier en cours de validation</h1>
-        {/* La version précédente promettait « vous recevrez un SMS » : aucune
-            passerelle SMS n'est branchée, ce message ne pouvait donc pas être
-            tenu. On annonce ce qui se passe réellement — la page se met à jour
-            d'elle-même. */}
-        <p className="text-sm text-gray-500">
-          Votre numéro est vérifié. Votre dossier est maintenant examiné par l&apos;équipe Suguba,
-          généralement sous 24h.
-        </p>
+
+        {/* Récapitulatif de ce qui est examiné */}
+        {dossier && (
+          <div className="bg-gray-50 border border-gray-100 rounded-2xl p-3 text-left space-y-1">
+            <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">
+              Ce que Suguba examine
+            </p>
+            <p className="text-xs text-gray-700">
+              Dossier <strong>{LIBELLE_ROLE[dossier.role] || dossier.role}</strong>
+            </p>
+            {dossier.phone && (
+              <p className="text-xs text-gray-500">Contact : {dossier.phone}</p>
+            )}
+          </div>
+        )}
         <div className="flex items-center justify-center gap-2 text-[11px] text-emerald-700 bg-emerald-50 rounded-xl py-2 px-3">
           <ShieldCheck className="w-3.5 h-3.5" />
           <span>Gardez cette page ouverte : elle s&apos;ouvrira toute seule dès validation.</span>

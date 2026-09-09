@@ -8,6 +8,7 @@ import DialCodePicker from '@/components/common/DialCodePicker';
 import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
 import { DEFAULT_DIAL_CODE } from '@/lib/dial-codes';
 import { DEFAULT_NEIGHBORHOOD } from '@/lib/bamako-neighborhoods';
+import EtapesInscription from '@/components/common/EtapesInscription';
 import { ShieldCheck, ArrowRight, Gift } from 'lucide-react';
 
 type Role = 'reseller' | 'supplier' | 'driver' | 'diaspora' | string;
@@ -156,14 +157,19 @@ function CompleteProfileForm() {
 
   return (
     <div className="max-w-lg mx-auto px-4 sm:px-6 py-10 w-full">
+      <div className="mb-6">
+        <EtapesInscription etapeActuelle={2} />
+      </div>
+
       <div className="text-center space-y-2 mb-6">
         <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center mx-auto">
           <ShieldCheck className="w-6 h-6" />
         </div>
-        <h1 className="text-xl font-black text-gray-900">Dernière étape avant l&apos;activation</h1>
+        <h1 className="text-xl font-black text-gray-900">Votre dossier {roleLabel[role || ''] || ''}</h1>
         <p className="text-xs text-gray-500 max-w-sm mx-auto">
-          Votre compte Google est vérifié. Il ne manque plus que ces informations pour que
-          l&apos;équipe Suguba puisse examiner et activer votre dossier {roleLabel[role || ''] || ''}.
+          Votre compte Google est vérifié. Ces informations sont celles dont l&apos;équipe Suguba
+          a besoin pour examiner votre dossier — <strong>deux minutes</strong>. Le reste se
+          règle plus tard, depuis votre espace.
         </p>
       </div>
 
@@ -214,19 +220,10 @@ function CompleteProfileForm() {
               </div>
             )}
 
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Opérateur de Retrait des Commissions (Optionnel) :</label>
-              <select
-                value={momoProvider}
-                onChange={(e) => setMomoProvider(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              >
-                <option value="">À renseigner plus tard</option>
-                <option value="Orange Money">Orange Money Mali (0% frais)</option>
-                <option value="Wave">Wave Mali (0% frais)</option>
-                <option value="Moov Money">Moov Money Mali</option>
-              </select>
-            </div>
+            {/* L'opérateur Mobile Money n'est plus demandé ici : il ne sert
+                pas à valider le dossier, et il est de toute façon choisi au
+                moment du premier retrait, sur /reseller/payouts. Une question
+                de moins entre le clic Google et l'envoi du dossier. */}
           </>
         )}
 
@@ -262,16 +259,9 @@ function CompleteProfileForm() {
               <label className="block text-xs font-bold text-gray-700 mb-1">Quartier de l&apos;Entrepôt / Magasin :</label>
               <NeighborhoodPicker value={warehouseNeighborhood} onChange={setWarehouseNeighborhood} />
             </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Adresse précise de l&apos;entrepôt :</label>
-              <input
-                type="text"
-                placeholder="Ex: Rue 12, Porte 45"
-                value={warehouseAddress}
-                onChange={(e) => setWarehouseAddress(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
+            {/* L'adresse précise de l'entrepôt attend le premier passage dans
+                l'espace fournisseur : le quartier suffit à l'admin pour
+                décider, la rue et la porte servent au livreur, plus tard. */}
             <div>
               <label className="block text-xs font-bold text-gray-700 mb-1">N° RCCM / NIF (Optionnel) :</label>
               <input
