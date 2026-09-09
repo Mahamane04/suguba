@@ -6,9 +6,10 @@ import Header from '@/components/common/Header';
 import Footer from '@/components/common/Footer';
 import BottomNav from '@/components/common/BottomNav';
 import { supabase } from '@/lib/supabase';
+import { useSugubaStore } from '@/lib/store';
 import {
   Store, ShoppingBag, Truck, Globe,
-  ArrowLeft, ShieldAlert, Wallet, Package, MapPin, Heart
+  ArrowLeft, ShieldAlert, Check, Heart
 } from 'lucide-react';
 
 function GoogleIcon({ className }: { className?: string }) {
@@ -25,103 +26,69 @@ function GoogleIcon({ className }: { className?: string }) {
 type RoleKey = 'reseller' | 'supplier' | 'driver' | 'diaspora';
 
 /**
- * Page d'explication des rôles, créée le 2026-09-09 en même temps que le
- * passage de l'accueil en vitrine produit. Tout le discours de recrutement
- * qui occupait auparavant la page d'accueil (hero, cartes de rôles,
- * « comment ça marche en 4 étapes ») vit désormais ici, mais raconté
- * autrement : une procédure numérotée par rôle, du premier clic jusqu'au
- * premier gain, plutôt qu'un argumentaire général où personne ne savait par
- * quoi commencer.
+ * Refondue le 2026-09-09. La version précédente parlait d'argent sans jamais
+ * donner un chiffre : quatre paragraphes de prose abstraite, une grille 2×2
+ * qui mangeait un écran entier avant la moindre information, et le bouton
+ * d'inscription à deux écrans de défilement.
  *
- * Le bouton d'inscription déclenche directement Google avec le bon rôle —
- * sans repasser par /register où il faudrait resélectionner ce rôle.
+ * Trois principes maintenant : un montant RÉEL en tête (calculé sur le vrai
+ * catalogue, jamais inventé — c'est ce qui rend la promesse crédible), un
+ * exemple chiffré plutôt qu'une affirmation, et le bouton atteignable sans
+ * défiler. Le détail passe après, pour ceux qui veulent lire.
  */
 
 const ROLES: Record<RoleKey, {
-  label: string;
-  tagline: string;
-  icon: typeof Store;
-  accent: string;
-  ring: string;
-  chipBg: string;
+  label: string; tagline: string; icon: typeof Store;
+  accent: string; bord: string; puce: string; fond: string;
   quoiFaire: string;
-  gain: { titre: string; detail: string };
-  etapes: { titre: string; detail: string }[];
+  etapes: string[];
   cta: string;
 }> = {
   reseller: {
-    label: 'Revendeur',
-    tagline: 'Vendez sans acheter de stock',
-    icon: Store,
-    accent: 'text-emerald-700',
-    ring: 'ring-emerald-500 border-emerald-500 bg-emerald-50',
-    chipBg: 'bg-emerald-100 text-emerald-800',
-    quoiFaire: "Vous partagez des produits du catalogue à votre réseau WhatsApp. Vous n'achetez rien, vous ne stockez rien, vous n'avancez pas un franc. Suguba livre et encaisse à votre place.",
-    gain: {
-      titre: 'Une commission fixe par vente livrée',
-      detail: "Le montant est écrit sur chaque produit, avant même que vous partagiez. Il vous est versé par Orange Money ou Wave.",
-    },
+    label: 'Revendeur', tagline: 'Sans acheter de stock', icon: Store,
+    accent: 'text-emerald-700', bord: 'ring-emerald-500 border-emerald-500 bg-emerald-50',
+    puce: 'bg-emerald-100 text-emerald-800', fond: 'from-emerald-600 to-green-700',
+    quoiFaire: "Vous partagez un produit à votre réseau WhatsApp. Vous n'achetez rien, vous n'avancez rien : Suguba livre et encaisse, vous touchez votre commission.",
     etapes: [
-      { titre: 'Créez votre compte avec Google', detail: "Puis complétez votre dossier : nom, numéro WhatsApp et quartier. Deux minutes." },
-      { titre: 'Attendez la validation de Suguba', detail: "Notre équipe examine votre dossier. Vous recevez l'accès à votre espace revendeur une fois validé." },
-      { titre: 'Partagez et encaissez', detail: "Chaque produit a un bouton de partage qui génère votre lien personnel. Quand le client est livré et a payé, votre commission devient retirable." },
+      'Compte Google + votre numéro et quartier',
+      'Suguba valide votre dossier (24-48h)',
+      'Vous partagez, le client est livré, vous êtes payé',
     ],
     cta: 'Devenir revendeur',
   },
   supplier: {
-    label: 'Fournisseur',
-    tagline: 'Faites distribuer votre stock',
-    icon: ShoppingBag,
-    accent: 'text-blue-700',
-    ring: 'ring-blue-500 border-blue-500 bg-blue-50',
-    chipBg: 'bg-blue-100 text-blue-800',
-    quoiFaire: "Vous déposez vos produits sur la plateforme. Le réseau de revendeurs Suguba les diffuse à sa place, et nos livreurs s'occupent de la remise au client.",
-    gain: {
-      titre: 'Votre prix fournisseur, garanti',
-      detail: "Vous fixez le montant que vous voulez toucher. Suguba ajoute par-dessus la commission du revendeur et sa marge — votre prix n'est jamais rogné.",
-    },
+    label: 'Fournisseur', tagline: 'Faites distribuer votre stock', icon: ShoppingBag,
+    accent: 'text-blue-700', bord: 'ring-blue-500 border-blue-500 bg-blue-50',
+    puce: 'bg-blue-100 text-blue-800', fond: 'from-blue-600 to-indigo-700',
+    quoiFaire: "Vous déposez vos produits. Le réseau de revendeurs les diffuse, nos livreurs les remettent au client. Vous ne gérez ni la vente ni la livraison.",
     etapes: [
-      { titre: 'Créez votre compte avec Google', detail: "Puis renseignez votre dossier entreprise : nom de la boutique, quartier de l'entrepôt, catégorie de produits." },
-      { titre: 'Attendez la validation de Suguba', detail: "Notre équipe vérifie le dossier avant de vous ouvrir l'espace fournisseur." },
-      { titre: 'Déposez un produit', detail: "Photo, description, prix fournisseur et stock. Suguba fixe le prix public et la commission, puis publie le produit dans le réseau." },
+      'Compte Google + votre entreprise et quartier d\'entrepôt',
+      'Suguba valide votre dossier (24-48h)',
+      'Vous déposez un produit, il part dans le réseau',
     ],
     cta: 'Devenir fournisseur',
   },
   driver: {
-    label: 'Livreur',
-    tagline: 'Des courses rémunérées à Bamako',
-    icon: Truck,
-    accent: 'text-amber-700',
-    ring: 'ring-amber-500 border-amber-500 bg-amber-50',
-    chipBg: 'bg-amber-100 text-amber-800',
-    quoiFaire: "Vous récupérez les colis chez le fournisseur et vous les livrez au client, avec votre moto ou votre véhicule. Vous encaissez le paiement à la remise.",
-    gain: {
-      titre: 'Une rémunération par course',
-      detail: "Vous voyez le montant à encaisser avant de partir, et votre portefeuille récapitule ce que vous devez reverser au hub en fin de journée.",
-    },
+    label: 'Livreur', tagline: 'Courses rémunérées', icon: Truck,
+    accent: 'text-amber-700', bord: 'ring-amber-500 border-amber-500 bg-amber-50',
+    puce: 'bg-amber-100 text-amber-800', fond: 'from-amber-600 to-orange-700',
+    quoiFaire: "Vous récupérez les colis et vous les livrez à Bamako, avec votre moto ou votre véhicule. Vous encaissez le paiement à la remise.",
     etapes: [
-      { titre: 'Créez votre compte avec Google', detail: "Puis renseignez votre véhicule, votre immatriculation et vos zones d'intervention." },
-      { titre: 'Attendez la validation de Suguba', detail: "Notre équipe vérifie votre dossier avant de vous assigner la moindre course." },
-      { titre: 'Livrez et validez par code', detail: "Vous voyez uniquement vos courses. À la remise, le client vous donne son code secret : vous le saisissez, la course est clôturée." },
+      'Compte Google + véhicule, immatriculation et zone',
+      'Suguba valide votre dossier (24-48h)',
+      'Vous recevez vos courses, vous livrez, vous êtes payé',
     ],
     cta: 'Devenir livreur',
   },
   diaspora: {
-    label: 'Diaspora',
-    tagline: 'Équipez votre famille depuis l\'étranger',
-    icon: Globe,
-    accent: 'text-purple-700',
-    ring: 'ring-purple-500 border-purple-500 bg-purple-50',
-    chipBg: 'bg-purple-100 text-purple-800',
-    quoiFaire: "Vous vivez hors du Mali et vous voulez faire livrer un proche à Bamako. Vous choisissez, vous payez, nous livrons — vous n'avez personne à déranger sur place.",
-    gain: {
-      titre: 'Vos proches équipés, sans intermédiaire',
-      detail: "Vous suivez la commande jusqu'à la remise, et le bénéficiaire n'a rien à avancer.",
-    },
+    label: 'Diaspora', tagline: 'Depuis l\'étranger', icon: Globe,
+    accent: 'text-purple-700', bord: 'ring-purple-500 border-purple-500 bg-purple-50',
+    puce: 'bg-purple-100 text-purple-800', fond: 'from-purple-600 to-violet-700',
+    quoiFaire: "Vous vivez hors du Mali et vous voulez équiper un proche à Bamako. Vous choisissez, vous payez, nous livrons — personne à déranger sur place.",
     etapes: [
-      { titre: 'Choisissez un produit', detail: "Les prix sont affichés en euros ou en dollars selon votre pays, au taux officiel." },
-      { titre: 'Indiquez le bénéficiaire à Bamako', detail: "Son nom, son téléphone et son quartier — c'est tout ce dont le livreur a besoin." },
-      { titre: 'Payez et suivez la livraison', detail: "Vous réglez la commande, Suguba livre à Bamako sous 24h et vous confirme la remise." },
+      'Choisissez un produit (prix affichés en € ou $)',
+      'Indiquez le bénéficiaire à Bamako',
+      'Suguba livre sous 24h et vous confirme la remise',
     ],
     cta: 'Commander pour ma famille',
   },
@@ -130,11 +97,22 @@ const ROLES: Record<RoleKey, {
 const ORDRE: RoleKey[] = ['reseller', 'supplier', 'driver', 'diaspora'];
 
 export default function RejoindrePage() {
+  const state = useSugubaStore();
   const [role, setRole] = useState<RoleKey>('reseller');
   const [erreur, setErreur] = useState<string | null>(null);
 
   const actif = ROLES[role];
   const Icon = actif.icon;
+
+  // Chiffres tirés du VRAI catalogue. Rien n'est inventé : si le catalogue est
+  // vide, on n'affiche aucun montant plutôt qu'un chiffre de façade — c'est la
+  // même règle que celle appliquée aux faux avis et aux fausses statistiques
+  // retirés du site.
+  const produits = state.products.filter((p) => p.status === 'approved' && p.resellerCommission > 0);
+  const meilleur = produits.length
+    ? produits.reduce((a, b) => (b.resellerCommission > a.resellerCommission ? b : a))
+    : null;
+  const commissionMax = meilleur?.resellerCommission ?? 0;
 
   const handleGoogleJoin = async () => {
     setErreur(null);
@@ -148,32 +126,103 @@ export default function RejoindrePage() {
     });
   };
 
+  /** Le bandeau chiffré, différent par rôle — c'est l'argument, pas la prose. */
+  const argumentChiffre = () => {
+    if (role === 'reseller') {
+      return meilleur ? (
+        <>
+          <p className="text-3xl sm:text-4xl font-black leading-none">
+            +{commissionMax.toLocaleString('fr-FR')} F
+          </p>
+          <p className="text-sm text-white/80 mt-1.5">
+            par vente, sur le produit le mieux commissionné du catalogue
+          </p>
+          <p className="text-xs text-white/60 mt-2 leading-relaxed">
+            Exemple réel : {meilleur.name.replace(/^\[DÉMO\]\s*/, '')} — le client paie{' '}
+            {meilleur.publicPrice.toLocaleString('fr-FR')} F, vous touchez{' '}
+            {meilleur.resellerCommission.toLocaleString('fr-FR')} F.
+          </p>
+        </>
+      ) : (
+        <>
+          <p className="text-2xl font-black leading-tight">Une commission fixe par vente</p>
+          <p className="text-sm text-white/80 mt-1.5">
+            Le montant est écrit sur chaque produit, avant même que vous partagiez.
+          </p>
+        </>
+      );
+    }
+
+    if (role === 'supplier') {
+      return (
+        <>
+          <p className="text-2xl sm:text-3xl font-black leading-tight">Votre prix, jamais rogné</p>
+          <p className="text-sm text-white/80 mt-1.5">
+            Vous fixez ce que vous touchez. Suguba ajoute par-dessus.
+          </p>
+          {meilleur && (
+            <div className="mt-3 flex items-center gap-1.5 text-xs font-bold flex-wrap">
+              <span className="px-2 py-1 rounded-lg bg-white/20">
+                Vous : {meilleur.supplierPrice.toLocaleString('fr-FR')} F
+              </span>
+              <span className="text-white/50">+</span>
+              <span className="px-2 py-1 rounded-lg bg-white/10 text-white/80">
+                revendeur {meilleur.resellerCommission.toLocaleString('fr-FR')} F
+              </span>
+              <span className="text-white/50">+</span>
+              <span className="px-2 py-1 rounded-lg bg-white/10 text-white/80">
+                Suguba {Math.max(0, meilleur.publicPrice - meilleur.supplierPrice - meilleur.resellerCommission).toLocaleString('fr-FR')} F
+              </span>
+              <span className="text-white/50">=</span>
+              <span className="px-2 py-1 rounded-lg bg-white/20">
+                client {meilleur.publicPrice.toLocaleString('fr-FR')} F
+              </span>
+            </div>
+          )}
+        </>
+      );
+    }
+
+    if (role === 'driver') {
+      return (
+        <>
+          <p className="text-2xl sm:text-3xl font-black leading-tight">Payé à la course</p>
+          <p className="text-sm text-white/80 mt-1.5">
+            Vous voyez le montant à encaisser avant de partir, et votre portefeuille
+            récapitule ce que vous reversez au hub en fin de journée.
+          </p>
+        </>
+      );
+    }
+
+    return (
+      <>
+        <p className="text-2xl sm:text-3xl font-black leading-tight">Livré à Bamako sous 24h</p>
+        <p className="text-sm text-white/80 mt-1.5">
+          Vous payez depuis l&apos;étranger, votre proche n&apos;avance rien.
+        </p>
+      </>
+    );
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-[#f5f8f5] pb-20 md:pb-10">
+    <div className="min-h-screen flex flex-col bg-[#f5f8f5]">
       <Header />
 
-      <main className="flex-1 max-w-3xl mx-auto px-4 sm:px-6 py-6 w-full space-y-5">
+      <main className="flex-1 max-w-2xl mx-auto px-4 sm:px-6 py-5 w-full space-y-4">
 
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-gray-900"
-        >
+        <Link href="/" className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-gray-900">
           <ArrowLeft className="w-4 h-4" />
           Retour au catalogue
         </Link>
 
-        <div className="space-y-1">
-          <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
-            Gagner de l&apos;argent avec Suguba
-          </h1>
-          <p className="text-sm text-gray-500">
-            Quatre façons de travailler avec nous. Choisissez la vôtre — chacune est expliquée
-            de la première étape jusqu&apos;au premier gain.
-          </p>
-        </div>
+        <h1 className="text-2xl font-black text-gray-900 tracking-tight">
+          Gagner de l&apos;argent avec Suguba
+        </h1>
 
-        {/* Sélecteur de rôle */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        {/* Sélecteur compact : une ligne défilante au lieu d'une grille 2×2 qui
+            occupait un écran entier avant la moindre information. */}
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
           {ORDRE.map((cle) => {
             const r = ROLES[cle];
             const RIcon = r.icon;
@@ -183,114 +232,98 @@ export default function RejoindrePage() {
                 key={cle}
                 type="button"
                 onClick={() => setRole(cle)}
-                className={`p-3.5 rounded-2xl border text-left transition-all space-y-2 ${
-                  estActif ? `ring-2 ${r.ring}` : 'bg-white border-gray-200 hover:border-gray-300'
+                className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full border text-xs font-bold transition-all ${
+                  estActif ? `ring-2 ${r.bord}` : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
                 }`}
               >
-                <RIcon className={`w-5 h-5 ${estActif ? r.accent : 'text-gray-400'}`} />
-                <div>
-                  <p className="font-bold text-xs text-gray-900">{r.label}</p>
-                  <p className="text-[10px] text-gray-500 leading-snug mt-0.5">{r.tagline}</p>
-                </div>
+                <RIcon className={`w-4 h-4 ${estActif ? r.accent : 'text-gray-400'}`} />
+                {r.label}
               </button>
             );
           })}
         </div>
 
-        {/* Détail du rôle sélectionné */}
-        <div className="bg-white rounded-3xl border border-gray-100 shadow-card p-5 sm:p-7 space-y-6">
-
-          <div className="flex items-start gap-3">
-            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 ${actif.chipBg}`}>
-              <Icon className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="font-black text-lg text-gray-900">{actif.label}</h2>
-              <p className="text-sm text-gray-600 leading-relaxed mt-1">{actif.quoiFaire}</p>
-            </div>
+        {/* L'argument chiffré + le bouton, tous deux au-dessus de la ligne de
+            flottaison : c'est ce que la version précédente enterrait sous
+            deux écrans de prose. */}
+        <div className={`rounded-3xl p-5 sm:p-6 text-white bg-gradient-to-br ${actif.fond} shadow-lg`}>
+          <div className="flex items-center gap-2 mb-3">
+            <Icon className="w-5 h-5 text-white/80" />
+            <span className="text-xs font-black uppercase tracking-wider text-white/80">
+              {actif.label} · {actif.tagline}
+            </span>
           </div>
 
-          {/* Ce que ça rapporte */}
-          <div className="p-4 rounded-2xl bg-gray-50 border border-gray-100 flex gap-3 items-start">
-            <Wallet className={`w-4 h-4 shrink-0 mt-0.5 ${actif.accent}`} />
-            <div>
-              <p className="font-bold text-sm text-gray-900">{actif.gain.titre}</p>
-              <p className="text-xs text-gray-500 leading-relaxed mt-0.5">{actif.gain.detail}</p>
-            </div>
-          </div>
-
-          {/* Procédure */}
-          <div className="space-y-4">
-            <p className="text-[11px] font-black uppercase tracking-wider text-gray-400">
-              Comment démarrer
-            </p>
-            {actif.etapes.map((etape, i) => (
-              <div key={etape.titre} className="flex gap-3.5">
-                <div className="flex flex-col items-center shrink-0">
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center font-black text-xs ${actif.chipBg}`}>
-                    {i + 1}
-                  </div>
-                  {i < actif.etapes.length - 1 && <div className="w-px flex-1 bg-gray-200 mt-1" />}
-                </div>
-                <div className="pb-1">
-                  <p className="font-bold text-sm text-gray-900">{etape.titre}</p>
-                  <p className="text-xs text-gray-500 leading-relaxed mt-0.5">{etape.detail}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+          {argumentChiffre()}
 
           {erreur && (
-            <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold flex items-center gap-2">
+            <div className="mt-4 p-3 rounded-2xl bg-black/20 text-white text-xs font-bold flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 shrink-0" />
               {erreur}
             </div>
           )}
 
-          {/* Action */}
-          {role === 'diaspora' ? (
-            <Link
-              href="/diaspora"
-              className="w-full py-3.5 px-6 bg-[#09b500] hover:bg-[#078000] text-white font-bold rounded-2xl text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-            >
-              <Heart className="w-4 h-4" />
-              {actif.cta}
-            </Link>
-          ) : (
-            <div className="space-y-2">
-              <button
-                type="button"
-                onClick={handleGoogleJoin}
-                className="w-full py-3.5 px-6 bg-white border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-800 font-bold rounded-2xl text-sm flex items-center justify-center gap-2.5 transition-all active:scale-[0.98]"
+          <div className="mt-5">
+            {role === 'diaspora' ? (
+              <Link
+                href="/diaspora"
+                className="w-full py-3.5 px-6 bg-white text-purple-700 font-black rounded-2xl text-sm flex items-center justify-center gap-2 transition-transform active:scale-[0.98]"
               >
-                <GoogleIcon className="w-5 h-5" />
-                {actif.cta} avec Google
-              </button>
-              <p className="text-[11px] text-gray-400 text-center">
-                Sans mot de passe. Vous compléterez votre dossier juste après.
-              </p>
-            </div>
-          )}
+                <Heart className="w-4 h-4" />
+                {actif.cta}
+              </Link>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={handleGoogleJoin}
+                  className="w-full py-3.5 px-6 bg-white hover:bg-gray-50 text-gray-900 font-black rounded-2xl text-sm flex items-center justify-center gap-2.5 transition-transform active:scale-[0.98]"
+                >
+                  <GoogleIcon className="w-5 h-5" />
+                  {actif.cta}
+                </button>
+                <p className="text-[11px] text-white/70 text-center mt-2">
+                  Sans mot de passe · dossier en 2 minutes
+                </p>
+              </>
+            )}
+          </div>
         </div>
 
-        {/* Repères pratiques */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {[
-            { icon: Package, titre: 'Aucun stock à acheter', detail: 'Revendeurs : zéro investissement de départ.' },
-            { icon: MapPin, titre: 'Bamako et régions', detail: 'Livraison assurée par le réseau Suguba.' },
-            { icon: Wallet, titre: 'Paiement Mobile Money', detail: 'Orange Money, Wave ou Moov Money.' },
-          ].map(({ icon: I, titre, detail }) => (
-            <div key={titre} className="bg-white rounded-2xl border border-gray-100 p-4 flex gap-3 items-start">
-              <I className="w-4 h-4 text-gray-400 shrink-0 mt-0.5" />
-              <div>
-                <p className="font-bold text-xs text-gray-900">{titre}</p>
-                <p className="text-[11px] text-gray-500 mt-0.5 leading-relaxed">{detail}</p>
+        {/* Le détail, pour qui veut lire — après l'argument, pas avant. */}
+        <div className="bg-white rounded-3xl border border-gray-100 shadow-card p-5 space-y-4">
+          <p className="text-sm text-gray-600 leading-relaxed">{actif.quoiFaire}</p>
+
+          <div className="pt-1 space-y-2.5">
+            <p className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+              Comment démarrer
+            </p>
+            {actif.etapes.map((etape, i) => (
+              <div key={etape} className="flex items-start gap-2.5">
+                <span className={`w-5 h-5 shrink-0 rounded-full flex items-center justify-center text-[10px] font-black ${actif.puce}`}>
+                  {i + 1}
+                </span>
+                <span className="text-xs text-gray-700 leading-relaxed">{etape}</span>
               </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Réassurance, en une ligne chacune */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+          {[
+            'Aucun stock à acheter',
+            'Paiement Orange Money ou Wave',
+            'Livraison assurée par Suguba',
+          ].map((texte) => (
+            <div key={texte} className="bg-white rounded-2xl border border-gray-100 px-3 py-2.5 flex items-center gap-2">
+              <Check className="w-3.5 h-3.5 text-suguba-brand shrink-0 stroke-[3]" />
+              <span className="text-[11px] font-semibold text-gray-700">{texte}</span>
             </div>
           ))}
         </div>
 
-        <p className="text-center text-xs text-gray-500">
+        <p className="text-center text-xs text-gray-500 pb-2">
           Vous avez déjà un compte ?{' '}
           <Link href="/login" className="font-bold text-suguba-brand hover:underline">
             Se connecter
