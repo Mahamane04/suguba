@@ -1,3 +1,37 @@
+/**
+ * ═══════════════════════════════════════════════════════════════════════
+ *  RÈGLES DE DESIGN SUGUBA — à respecter dans tout nouvel écran
+ * ═══════════════════════════════════════════════════════════════════════
+ *
+ *  Ces jetons existaient déjà mais n'étaient presque pas utilisés : audit du
+ *  2026-09-09 — 15 usages de `suguba-brand` contre ~160 boutons peints en
+ *  `emerald-500/600/700` ou en `#09b500` écrit en dur, deux échelles de gris
+ *  mélangées (slate 1477× / gray 397×), 7 rayons et 12 tailles de texte.
+ *  D'où ces règles, et surtout le composant qui les applique.
+ *
+ *  1. COULEUR D'ACTION — un seul vert : `suguba-brand` (#09b500).
+ *     `emerald-*` est réservé aux fonds et badges, JAMAIS à un bouton.
+ *     Ne jamais écrire #09b500 en dur : le jeton existe.
+ *
+ *  2. NEUTRES — une seule échelle : `slate`. Ne pas introduire `gray`.
+ *
+ *  3. RAYONS — trois seulement :
+ *       rounded-xl   champs, badges, petites pastilles
+ *       rounded-2xl  boutons et cartes internes
+ *       rounded-3xl  cartes de page
+ *
+ *  4. TEXTE — rien sous 11px : illisible sur un téléphone en plein soleil.
+ *     Pas de nouveaux `text-[9px]` / `text-[7px]`.
+ *
+ *  5. BOUTONS — passer par <Button> (src/components/ui/Button.tsx), pas par
+ *     des classes à la main. C'est lui qui tient les règles ci-dessus.
+ *
+ *  Adoption : tout nouvel écran suit ces règles ; un écran modifié pour
+ *  autre chose est converti au passage. Pas de refonte en bloc — 75 pages
+ *  converties d'un coup, c'est du risque visuel pour zéro gain fonctionnel.
+ * ═══════════════════════════════════════════════════════════════════════
+ */
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [

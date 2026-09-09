@@ -176,11 +176,10 @@ export default function SupplierPublicShowroomPage({ params }: { params: Promise
 
                     <div className="pt-2 flex items-baseline justify-between">
                       <div>
-                        <span className="text-lg font-black text-emerald-600">
+                        {/* Prix barré inventé (`publicPrice * 1.2`) retiré le
+                            2026-09-09 — voir /p/[slug] pour le détail. */}
+                        <span className="text-lg font-black text-suguba-brand">
                           {product.publicPrice.toLocaleString('fr-FR')} FCFA
-                        </span>
-                        <span className="text-[11px] text-slate-400 line-through block -mt-1">
-                          {(product.publicPrice * 1.2).toLocaleString('fr-FR')} FCFA
                         </span>
                       </div>
                       <span className="text-[11px] font-bold text-slate-600">

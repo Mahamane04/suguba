@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { sugubaStore, useSugubaStore } from '@/lib/store';
 import { supabase } from '@/lib/supabase';
+import Button from '@/components/ui/Button';
 import { UserRole } from '@/types';
 import {
   ArrowRight,
@@ -224,11 +225,7 @@ function LoginPageContent() {
                   </div>
                 )}
 
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full py-3.5 bg-suguba-brand hover:bg-suguba-brand-dark text-white font-bold rounded-2xl text-sm flex items-center justify-center gap-2 shadow-brand-md hover:shadow-brand-lg transition-all active:scale-[0.98] disabled:opacity-60"
-                >
+                <Button type="submit" disabled={isLoading} size="lg" fullWidth>
                   {isLoading ? (
                     <span className="flex items-center gap-2">
                       <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -240,7 +237,7 @@ function LoginPageContent() {
                       <ArrowRight className="w-4 h-4" />
                     </>
                   )}
-                </button>
+                </Button>
               </form>
             )}
 

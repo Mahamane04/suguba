@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Header from '@/components/common/Header';
 import ProductImage from '@/components/common/ProductImage';
 import { useSugubaStore, sugubaStore } from '@/lib/store';
+import Button from '@/components/ui/Button';
 import { 
   ShieldCheck, Truck, Clock, MapPin, Phone, 
   User, CheckCircle2, ArrowRight, ArrowLeft, Star, Sparkles
@@ -254,12 +255,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 {product.name}
               </h1>
               
+              {/* Le prix barré affiché ici valait `unitPrice * 1.2` : un prix
+                  de référence inventé en code, jamais pratiqué. Retiré le
+                  2026-09-09 — même famille que les faux avis et le « N°1 au
+                  Mali » déjà supprimés, mais plus grave : afficher un prix
+                  barré fictif est une pratique commerciale trompeuse. */}
               <div className="flex items-baseline space-x-2 mt-2">
-                <span className="text-2xl sm:text-3xl font-black text-emerald-600">
+                <span className="text-2xl sm:text-3xl font-black text-suguba-brand">
                   {unitPrice.toLocaleString('fr-FR')} FCFA
-                </span>
-                <span className="text-xs text-slate-400 line-through">
-                  {(unitPrice * 1.2).toLocaleString('fr-FR')} FCFA
                 </span>
               </div>
             </div>
@@ -549,15 +552,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 </div>
               </div>
 
-              {/* Submit CTA */}
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-black py-4 px-4 rounded-2xl text-sm shadow-xl shadow-emerald-600/30 flex items-center justify-center space-x-2 transition-transform active:scale-[0.98]"
-              >
+              {/* Submit CTA — l'action principale de toute l'application.
+                  Elle était en `emerald-600`, pas au vert de marque : le
+                  bouton le plus important du parcours n'était pas à la
+                  couleur de Suguba. */}
+              <Button type="submit" disabled={isSubmitting} size="lg" fullWidth>
                 <span>Confirmer Ma Commande ({totalAmount.toLocaleString('fr-FR')} F)</span>
                 <ArrowRight className="w-4 h-4" />
-              </button>
+              </Button>
 
             </form>
 

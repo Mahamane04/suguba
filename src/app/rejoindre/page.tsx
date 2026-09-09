@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Header from '@/components/common/Header';
 import Footer from '@/components/common/Footer';
 import BottomNav from '@/components/common/BottomNav';
+import Button from '@/components/ui/Button';
 import { supabase } from '@/lib/supabase';
 import {
   Store, ShoppingBag, Truck, Globe,
@@ -178,7 +179,7 @@ export default function RejoindrePage() {
 
       <main className="flex-1 max-w-2xl mx-auto px-4 sm:px-6 py-5 w-full space-y-4">
 
-        <Link href="/" className="inline-flex items-center gap-1.5 text-xs font-bold text-gray-500 hover:text-gray-900">
+        <Link href="/" className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-900">
           <ArrowLeft className="w-4 h-4" />
           Retour au catalogue
         </Link>
@@ -231,24 +232,27 @@ export default function RejoindrePage() {
           )}
 
           <div className="mt-5">
+            {/* `ghost` sans bordure : le bouton est posé sur un aplat coloré,
+                où un liseré slate jurerait. Le reste (rayon, hauteur, états)
+                vient du composant. */}
             {role === 'diaspora' ? (
-              <Link
-                href="/diaspora"
-                className="w-full py-3.5 px-6 bg-white text-purple-700 font-black rounded-2xl text-sm flex items-center justify-center gap-2 transition-transform active:scale-[0.98]"
-              >
+              <Button href="/diaspora" variant="ghost" size="lg" fullWidth className="border-transparent">
                 <Heart className="w-4 h-4" />
                 {actif.cta}
-              </Link>
+              </Button>
             ) : (
               <>
-                <button
+                <Button
                   type="button"
                   onClick={handleGoogleJoin}
-                  className="w-full py-3.5 px-6 bg-white hover:bg-gray-50 text-gray-900 font-black rounded-2xl text-sm flex items-center justify-center gap-2.5 transition-transform active:scale-[0.98]"
+                  variant="ghost"
+                  size="lg"
+                  fullWidth
+                  className="border-transparent"
                 >
                   <GoogleIcon className="w-5 h-5" />
                   {actif.cta}
-                </button>
+                </Button>
                 <p className="text-[11px] text-white/70 text-center mt-2">
                   Sans mot de passe · dossier en 2 minutes
                 </p>

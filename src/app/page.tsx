@@ -7,6 +7,7 @@ import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
 import ShareModal from '@/components/reseller/ShareModal';
+import Button from '@/components/ui/Button';
 import CreateOrderModal from '@/components/reseller/CreateOrderModal';
 import { useSugubaStore } from '@/lib/store';
 import { Product } from '@/types';
@@ -132,12 +133,14 @@ export default function HomePage() {
                 <p className="text-xs text-gray-500">
                   Essayez un autre mot, ou parcourez toutes les catégories.
                 </p>
-                <button
+                <Button
+                  variant="secondary"
+                  size="md"
+                  className="mt-2"
                   onClick={() => { setSearch(''); setSelectedCategory('all'); }}
-                  className="mt-2 px-4 py-2 rounded-full bg-gray-900 text-white text-xs font-bold"
                 >
                   Voir tout le catalogue
-                </button>
+                </Button>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -199,13 +202,10 @@ export default function HomePage() {
                         </p>
                       </div>
 
-                      <Link
-                        href={`/p/${product.slug}`}
-                        className="flex items-center justify-center gap-1.5 py-3 px-3 bg-gray-900 hover:bg-black text-white rounded-xl text-xs font-bold transition-all active:scale-95"
-                      >
+                      <Button href={`/p/${product.slug}`} variant="secondary" size="md" fullWidth>
                         Acheter
                         <ArrowRight className="w-3.5 h-3.5" />
-                      </Link>
+                      </Button>
                     </div>
                   </div>
                 ))}
