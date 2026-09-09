@@ -57,8 +57,13 @@ restée figée alors que le projet a beaucoup avancé depuis.
      `completed` **en consommant les commissions du revendeur, sans qu'un centime bouge**.
      La nouvelle route n'a aucun mode dégradé : sans clé elle échoue, et un retrait ne passe
      `completed` qu'à la confirmation du webhook (`processing` en attendant).
-   - ⏳ **Reste à faire pour la mise en service** : clés dans `.env.local` + Vercel, migration
-     SQL appliquée, webhook déclaré dans le tableau de bord SasPay. Voir ci-dessous.
+   - ✅ **Mis en service le 2026-09-09** et vérifié en production : clé `sk_live_`
+     authentifiée, réseaux Mali actifs, portefeuilles `ML/XOF` et `XX/USD` ouverts,
+     migration appliquée, code déployé (commit `e802fb1`), webhook `9e74305b` actif et
+     abonné aux 4 events `transaction.*`. Test signé de bout en bout : **200**. Rejets
+     confirmés en 403 sur signature forgée, rejeu hors tolérance et corps modifié.
+   - ⚠️ **Aucun paiement réel n'a encore été encaissé** : le solde `ML/XOF` est à 0. Le
+     premier vrai client reste le seul test qui vaille.
 
 ---
 
@@ -77,17 +82,19 @@ session précédente, mais à reconfirmer avant de considérer le sujet clos) :
 Vérification rapide (lecture seule, service_role) : tenter un `select` sur les colonnes/tables
 attendues (`suppliers`, `drivers`, `orders.payment_invoice_token`, etc.) plutôt que de supposer.
 
-**Mise en service SasPay** — trois étapes, dans cet ordre :
-1. Appliquer `supabase/migration-saspay.sql`.
-2. `SASPAY_API_KEY` (scope **BOTH** : PAYIN pour encaisser, PAYOUT pour verser) et
-   `SASPAY_WEBHOOK_SECRET` dans `.env.local` **et** dans Vercel. Rappel : Vercel ne relit
-   pas les variables sans un nouveau déploiement explicite.
-3. Déclarer le webhook dans le tableau de bord SasPay (impossible par API) :
-   URL `https://app.sugubaml.com/api/webhooks/saspay`, events `transaction.created`,
-   `transaction.success`, `transaction.failed`, `transaction.cancelled`. Le
-   `signing_secret` **n'est affiché qu'une seule fois** — le copier immédiatement.
+**SasPay est en service** (2026-09-09, tout vérifié en production). Ce qui reste à
+surveiller : le solde `ML/XOF` est à **0**, et c'est de ce solde que partent les versements
+de commissions. Un `POST /payouts/initialize/` sur un wallet vide échoue en `422` — la route
+remet alors le retrait en `pending` et rend son solde au revendeur, donc rien n'est perdu,
+mais le virement ne part pas. **Encaisser avant de verser, ou approvisionner le wallet.**
 
-Puis tester avec `sk_test_...` avant de passer en `sk_live_...`.
+Commande de contrôle de l'intégration (lecture seule, aucune transaction) :
+
+```bash
+KEY=$(grep '^SASPAY_API_KEY=' .env.local | cut -d= -f2- | tr -d '"')
+curl -s -H "Authorization: Bearer $KEY" https://api.saspay.me/api/v1/merchant-webhook-subscriptions/
+curl -s -H "Authorization: Bearer $KEY" https://api.saspay.me/api/v1/merchant-balances/
+```
 
 ---
 
@@ -158,6 +165,15 @@ Puis tester avec `sk_test_...` avant de passer en `sk_live_...`.
   secret). Il n'est jamais renvoyé en lecture par l'API.
 - **Créer ou modifier un webhook SasPay se fait uniquement au tableau de bord**, pas par API
   (la clé ne donne accès qu'à la consultation et à l'historique de livraison).
+- **Deux sens du mot « retrait » chez SasPay, à ne pas confondre.** Le versement d'une
+  commission (Suguba → revendeur) est un **payout**, et il produit un event
+  `transaction.*` — pas un `settlement.*`. Les events `settlement.*` (pastilles « Retrait
+  demandé/approuvé/réussi… » du dashboard) concernent le retrait de ton propre solde SasPay
+  vers ta banque : aucun rapport avec les commissions, et la doc précise que la forme de
+  leur `data` n'est pas garantie. Ne pas s'y abonner.
+- **Le modèle d'abonnement webhook n'a pas de champ `is_active`.** Un script qui le lit
+  obtient `None` et pourrait conclure à tort que l'abonnement est inactif. Sa seule
+  existence suffit.
 - **`payouts.status` n'accepte que `pending`/`processing`/`completed`/`rejected`** (contrainte
   CHECK). Écrire `failed` ferait échouer la mise à jour — même famille de piège que
   l'incohérence de statut des commandes corrigée en août. Un versement raté s'écrit
