@@ -46,6 +46,25 @@ export async function chargerRoles(
   for (const ligne of data) {
     carte[ligne.role as SugubaRole] = ligne.status as ProfileStatus;
   }
+
+  // Le rôle principal du profil est réinjecté s'il n'a pas de ligne à lui.
+  //
+  // Sans cela, le repli ci-dessus avait un effet de falaise : il ne jouait
+  // que tant que `profile_roles` était VIDE. Un compte promu admin par
+  // /api/admin/promote ou scripts/create-admin.js — qui n'écrivent que
+  // `profiles.role` — perdait donc son rôle admin à la seconde où une
+  // première ligne apparaissait dans profile_roles, par exemple en demandant
+  // un rôle revendeur via /api/auth/request-role. La carte se serait alors
+  // construite exclusivement à partir de cette ligne, et l'admin se serait
+  // retrouvé simple revendeur en attente, sans aucune trace d'erreur.
+  //
+  // On n'écrase JAMAIS une ligne existante : si le rôle a sa propre ligne
+  // (approuvée, rejetée, suspendue), elle fait foi. On ne fait que combler
+  // une absence, exactement comme le repli d'origine.
+  if (!carte[roleParDefaut]) {
+    carte[roleParDefaut] = statutParDefaut;
+  }
+
   return carte;
 }
 

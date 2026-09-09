@@ -165,6 +165,16 @@ curl -s -H "Authorization: Bearer $KEY" https://api.saspay.me/api/v1/merchant-ba
   secret). Il n'est jamais renvoyé en lecture par l'API.
 - **Créer ou modifier un webhook SasPay se fait uniquement au tableau de bord**, pas par API
   (la clé ne donne accès qu'à la consultation et à l'historique de livraison).
+- **Deux sources de vérité pour les rôles, écrites de façon incohérente.** `profile_roles`
+  est la source de vérité du multi-rôle, mais `/api/admin/promote` et
+  `scripts/create-admin.js` n'écrivaient que `profiles.role`. Le repli de `chargerRoles()`
+  masquait le problème — mais il ne jouait que tant que `profile_roles` était **vide** pour
+  ce compte. Dès qu'une première ligne y apparaissait (une demande de rôle revendeur, par
+  exemple), la carte se reconstruisait exclusivement à partir de la table et **le rôle admin
+  disparaissait en silence** : l'administrateur devenait un simple revendeur en attente, sans
+  message d'erreur. Corrigé le 2026-09-09 aux deux bouts — `chargerRoles()` réinjecte le
+  rôle principal du profil quand il n'a pas de ligne à lui (sans jamais écraser une ligne
+  existante), et les deux points de promotion écrivent désormais `profile_roles`.
 - **Le `matcher` du middleware ne couvrait qu'une seule route API** (`/api/payouts/initiate`).
   Toutes les autres se défendaient elles-mêmes — ce qui marche tant que chaque auteur y
   pense, mais une nouvelle route écrite sans son contrôle serait restée ouverte sans que

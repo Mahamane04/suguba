@@ -73,7 +73,9 @@ async function main() {
     process.exit(1);
   }
 
+  let profileId;
   if (existing) {
+    profileId = existing.id;
     const { error: updateErr } = await supabase.from('profiles').update({ role: 'admin', status: 'active' }).eq('id', existing.id);
     if (updateErr) {
       console.error('❌ Erreur de mise à jour:', updateErr.message);
@@ -81,8 +83,9 @@ async function main() {
     }
     console.log(`✅ Profil existant (${phone}) promu admin et activé.`);
   } else {
+    profileId = crypto.randomUUID();
     const { error: insertErr } = await supabase.from('profiles').insert({
-      id: crypto.randomUUID(),
+      id: profileId,
       phone,
       full_name: fullName,
       role: 'admin',
@@ -97,7 +100,23 @@ async function main() {
     console.log(`✅ Compte admin créé pour ${fullName} (${phone}).`);
   }
 
-  console.log('→ Ce numéro peut désormais se connecter via /login (OTP réel) et accéder à /admin.');
+  // profile_roles est la source de vérité du multi-rôle. Ce script n'écrivait
+  // que `profiles.role` : le compte fonctionnait tant que profile_roles restait
+  // vide pour lui, puis perdait silencieusement son rôle admin dès qu'une autre
+  // ligne y apparaissait (voir chargerRoles dans src/lib/profile-roles.ts).
+  const { error: roleErr } = await supabase
+    .from('profile_roles')
+    .upsert(
+      { profile_id: profileId, role: 'admin', status: 'active', approved_at: new Date().toISOString() },
+      { onConflict: 'profile_id,role' }
+    );
+  if (roleErr) {
+    console.error('⚠️  profile_roles non renseigné:', roleErr.message);
+    console.error('   Le compte fonctionne, mais corrige-le avant d\'ajouter un second rôle à cet admin.');
+  }
+
+  console.log('→ Ce compte peut se connecter via /login (Google ou lien email) et accéder à /admin.');
+  console.log('   Relie d\'abord son adresse Google : node scripts/link-admin-google.js "' + phone + '" "<email>"');
 }
 
 main().catch((err) => {
