@@ -428,17 +428,25 @@ export const sugubaStore = {
   },
 
   // 4. Admin : Valider l'appel téléphonique de confirmation
+  // Pousse vers Supabase : sans cela, l'admin voyait la commande passer en
+  // « confirmée » et rejoindre la file de dispatch dans SON navigateur, alors
+  // qu'en base elle restait indéfiniment en `pending_call`. Sur un autre
+  // appareil — ou après un simple rechargement — la commande retombait dans la
+  // file d'appels, et aucun livreur ne pouvait jamais lui être assigné.
   confirmOrderCall: (orderId: string, adminName: string) => {
+    let commandeConfirmee: typeof globalState.orders[number] | undefined;
+
     globalState = {
       ...globalState,
       orders: globalState.orders.map(o => {
         if (o.id === orderId) {
-          return {
+          commandeConfirmee = {
             ...o,
             status: 'confirmed',
             callVerifiedBy: adminName,
             callVerifiedAt: new Date().toISOString(),
           };
+          return commandeConfirmee;
         }
         return o;
       }),
@@ -462,6 +470,9 @@ export const sugubaStore = {
         ...globalState.auditLogs
       ]
     };
+    if (commandeConfirmee && typeof window !== 'undefined') {
+      cloudSyncService.pushOrderToCloud(commandeConfirmee).catch(() => {});
+    }
     notify();
   },
 
@@ -857,19 +868,29 @@ export const sugubaStore = {
   },
 
   // Mise à jour rapide du stock fournisseur
+  // Pousse vers Supabase : le fournisseur ajustait son stock dans son propre
+  // navigateur pendant que la base gardait l'ancienne quantité — un article
+  // épuisé restait donc commandable par les clients, et un réapprovisionnement
+  // n'était jamais visible.
   updateProductStock: (productId: string, newStockQuantity: number) => {
+    let produitMisAJour: Product | undefined;
+
     globalState = {
       ...globalState,
       products: globalState.products.map(p => {
         if (p.id === productId) {
-          return {
+          produitMisAJour = {
             ...p,
             stockQuantity: Math.max(0, newStockQuantity),
           };
+          return produitMisAJour;
         }
         return p;
       })
     };
+    if (produitMisAJour && typeof window !== 'undefined') {
+      cloudSyncService.pushProductToCloud(produitMisAJour).catch(() => {});
+    }
     notify();
   },
 

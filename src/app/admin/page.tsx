@@ -914,21 +914,29 @@ export default function AdminDashboardPage() {
             <div className="space-y-3.5 bg-rose-50/70 p-4 rounded-2xl border border-rose-200">
               <div className="flex items-center gap-1.5 text-rose-900 font-black text-xs uppercase tracking-wider">
                 <Trash2 className="w-4 h-4 text-rose-600" />
-                <span>2. Nettoyage & Purge des Données Fantômes</span>
+                <span>2. Vider l&apos;affichage local de cet appareil</span>
               </div>
+              {/* Ces trois boutons annonçaient « Base de données 100% vierge ! »
+                  alors qu'ils ne touchent QUE le localStorage du navigateur —
+                  la base Supabase reste intacte. Un admin pouvait croire avoir
+                  purgé la production. Libellés corrigés le 2026-09-09 pour dire
+                  ce qu'ils font réellement. */}
               <p className="text-[11px] text-rose-800 leading-relaxed">
-                Remet à <strong>0</strong> toutes les commandes factices, faux retraits, et fausses commissions pour vous permettre de réaliser des tests réels de A à Z.
+                Efface les données de démonstration <strong>affichées sur cet appareil</strong>,
+                pour repartir d&apos;un écran propre. La base Supabase n&apos;est pas modifiée :
+                les vraies commandes, retraits et commissions restent intacts et
+                réapparaîtront au prochain chargement.
               </p>
 
               <div className="space-y-2 pt-1">
                 <button
                   type="button"
                   onClick={() => {
-                    if (confirm('Confirmez-vous la suppression de toutes les fausses commandes, faux retraits et fausses commissions ? (Les vrais produits du catalogue seront conservés)')) {
+                    if (confirm("Vider l'affichage local des commandes, retraits et commissions sur cet appareil ? (La base Supabase n'est pas touchée)")) {
                       sugubaStore.purgeAllGhostData({ keepProducts: true });
                       setActionFeedback({
                         type: 'success',
-                        message: '🗑️ Données fantômes purgées avec succès ! Commandes, retraits et commissions réinitialisés à 0. Prêt pour vos tests réels.'
+                        message: '🗑️ Affichage local vidé sur cet appareil. La base Supabase est inchangée.'
                       });
                       setShowConfigModal(false);
                     }
@@ -936,34 +944,34 @@ export default function AdminDashboardPage() {
                   className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black shadow-xs transition-transform active:scale-95 flex items-center justify-center gap-1.5"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  <span>Purger les Données Fantômes (Garder les Produits)</span>
+                  <span>Vider l&apos;affichage local (garder les produits)</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => {
-                    if (confirm('ATTENTION : Voulez-vous tout réinitialiser à vide (y compris supprimer tous les produits du catalogue pour repartir de zéro absolu) ?')) {
+                    if (confirm("Vider aussi l'affichage local du catalogue sur cet appareil ? (Les produits restent en base et réapparaîtront au rechargement)")) {
                       sugubaStore.purgeAllGhostData({ keepProducts: false });
                       setActionFeedback({
                         type: 'success',
-                        message: '💥 Base de données 100% vierge ! Vous pouvez maintenant ajouter vos premiers vrais produits fournisseurs.'
+                        message: '🧹 Affichage local entièrement vidé. Pour supprimer réellement des produits, passez par la modération du catalogue.'
                       });
                       setShowConfigModal(false);
                     }
                   }}
                   className="w-full py-2 bg-white hover:bg-rose-100 text-rose-700 border border-rose-300 rounded-xl text-xs font-bold transition-colors"
                 >
-                  Tout Vider (Base 100% Vierge sans Produits)
+                  Vider aussi l&apos;affichage du catalogue
                 </button>
 
                 <button
                   type="button"
                   onClick={() => {
-                    if (confirm('Voulez-vous recharger le jeu complet de données de démonstration initial ?')) {
+                    if (confirm("Recharger le jeu de données de démonstration dans l'affichage de cet appareil ? (Sans effet sur la base Supabase)")) {
                       sugubaStore.resetDemoData();
                       setActionFeedback({
                         type: 'success',
-                        message: '🔄 Jeu de données de démonstration rechargé avec succès !'
+                        message: '🔄 Données de démonstration rechargées dans l\'affichage local.'
                       });
                       setShowConfigModal(false);
                     }
@@ -971,7 +979,7 @@ export default function AdminDashboardPage() {
                   className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1"
                 >
                   <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Recharger le Jeu de Démo</span>
+                  <span>Recharger le jeu de démo (local)</span>
                 </button>
               </div>
             </div>
