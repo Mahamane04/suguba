@@ -1,11 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Product } from '@/types';
-import { useSugubaStore } from '@/lib/store';
-import { 
-  X, MessageCircle, Copy, Check, Download, 
-  Share2, ArrowRight, DollarSign, Sparkles, ExternalLink 
+import {
+  X, MessageCircle, Copy, Check, Download,
+  Share2, ArrowRight, DollarSign, Sparkles, ExternalLink
 } from 'lucide-react';
 import Image from 'next/image';
 
@@ -17,18 +16,34 @@ interface ShareModalProps {
 }
 
 export default function ShareModal({ product, isOpen, onClose, onCreateManualOrder }: ShareModalProps) {
-  const state = useSugubaStore();
   const [copiedLink, setCopiedLink] = useState(false);
   const [copiedText, setCopiedText] = useState(false);
+  const [refCode, setRefCode] = useState<string | null>(null);
+
+  // ⚠️ Le code venait du store de démo, avec `|| 'MOUSSA123'` en dernier
+  // recours : un vrai revendeur partageait donc des liens portant le code
+  // d'un revendeur fictif. La résolution serveur (/api/orders/sync cherche
+  // ce code dans profiles.reseller_code) ne trouvait rien, et il ne touchait
+  // AUCUNE commission sur les ventes qu'il générait. Le code vient désormais
+  // du serveur, et un visiteur qui n'est pas revendeur partage simplement un
+  // lien produit sans parrainage — au lieu d'en créditer quelqu'un d'autre.
+  useEffect(() => {
+    if (!isOpen) return;
+    let annule = false;
+    fetch('/api/reseller/me')
+      .then((res) => (res.ok ? res.json() : { reseller: null }))
+      .then((json) => { if (!annule) setRefCode(json.reseller?.referralCode || null); })
+      .catch(() => { if (!annule) setRefCode(null); });
+    return () => { annule = true; };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const currentReseller = state.resellers.find(r => r.userId === state.currentUser.id) || state.resellers[0];
-  const refCode = currentReseller?.referralCode || 'MOUSSA123';
-
   // Construction du lien affilié personnalisé
   const host = typeof window !== 'undefined' ? window.location.origin : 'https://sugubaml.com';
-  const referralUrl = `${host}/p/${product.slug}?ref=${refCode}`;
+  const referralUrl = refCode
+    ? `${host}/p/${product.slug}?ref=${refCode}`
+    : `${host}/p/${product.slug}`;
 
   const fullShareText = `${product.marketingPitch}
 
@@ -106,7 +121,15 @@ export default function ShareModal({ product, isOpen, onClose, onCreateManualOrd
               <span>Partager sur WhatsApp (Statut / Contact)</span>
             </button>
             <p className="text-center text-[11px] text-slate-500 mt-1.5">
-              Ton lien d&apos;affiliation <strong>{refCode}</strong> est automatiquement inclus.
+              {refCode ? (
+                <>Ton lien d&apos;affiliation <strong>{refCode}</strong> est automatiquement inclus.</>
+              ) : (
+                <>Lien produit simple, sans commission :{' '}
+                  <a href="/rejoindre" className="font-bold text-suguba-brand hover:underline">
+                    devenez revendeur
+                  </a>{' '}pour gagner sur chaque vente.
+                </>
+              )}
             </p>
           </div>
 

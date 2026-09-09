@@ -8,7 +8,7 @@ import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
 import ShareModal from '@/components/reseller/ShareModal';
 import CreateOrderModal from '@/components/reseller/CreateOrderModal';
-import { useSugubaStore, sugubaStore } from '@/lib/store';
+import { useSugubaStore } from '@/lib/store';
 import { Product } from '@/types';
 import { 
   Wallet, TrendingUp, ShoppingBag, Clock, CheckCircle2, 
@@ -24,38 +24,39 @@ export default function ResellerDashboardPage() {
   const [copiedRef, setCopiedRef] = useState(false);
 
   const currentUser = state.currentUser;
-  const reseller = state.resellers.find(r => r.userId === currentUser.id) || state.resellers[0] || {
-    id: 'res-default',
-    userId: currentUser.id,
-    referralCode: 'SUGUBA100',
-    tier: 'new',
-    pendingBalance: 0,
-    availableBalance: 0,
-    totalEarned: 0,
-    successfulOrdersCount: 0,
-    momoNumber: currentUser.phone,
-    momoProvider: 'Orange Money',
-  };
-  
-  const myOrders = state.orders.filter(o => o.resellerId === reseller.id);
-  const myCommissions = state.commissions.filter(c => c.resellerId === reseller.id);
-  const approvedProducts = state.products.filter(p => p.status === 'approved');
 
-  // Remplace le solde de démo par le vrai solde du grand-livre serveur dès
-  // qu'il est connu (voir sugubaStore.syncResellerBalance et
-  // /api/reseller/balance) — même mécanisme que /reseller/payouts, pour que
-  // les deux pages restent cohérentes entre elles.
+  // Fiche revendeur RÉELLE (voir /api/reseller/me) : code de parrainage,
+  // palier, soldes et ventes, tous calculés côté serveur. Cette page lisait
+  // auparavant `state.resellers` — un tableau de revendeurs fictifs — avec
+  // repli sur `state.resellers[0]`, donc un vrai revendeur voyait le code de
+  // parrainage de quelqu'un d'autre et partageait des liens qui ne lui
+  // rapportaient rien.
+  const [moi, setMoi] = useState<{
+    referralCode: string | null; tier: string; successfulOrdersCount: number;
+    availableBalance: number; pendingBalance: number; totalEarned: number;
+  } | null>(null);
+
   useEffect(() => {
-    fetch('/api/reseller/balance')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data?.cloud) {
-          sugubaStore.syncResellerBalance(reseller.id, data.availableBalance, data.pendingBalance);
-        }
-      })
+    let annule = false;
+    fetch('/api/reseller/me')
+      .then((res) => (res.ok ? res.json() : { reseller: null }))
+      .then((json) => { if (!annule) setMoi(json.reseller || null); })
       .catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reseller.id]);
+    return () => { annule = true; };
+  }, []);
+
+  const reseller = {
+    referralCode: moi?.referralCode || '—',
+    tier: moi?.tier || 'new',
+    successfulOrdersCount: moi?.successfulOrdersCount ?? 0,
+    availableBalance: moi?.availableBalance ?? 0,
+    pendingBalance: moi?.pendingBalance ?? 0,
+    totalEarned: moi?.totalEarned ?? 0,
+  };
+
+  // /api/orders/feed ne renvoie au revendeur que SES propres ventes.
+  const myOrders = state.orders;
+  const approvedProducts = state.products.filter(p => p.status === 'approved');
 
   const handleCopyRefCode = () => {
     if (typeof navigator !== 'undefined') {
