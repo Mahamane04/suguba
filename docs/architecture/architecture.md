@@ -12,15 +12,15 @@
 ┌────────────────────────────────────────────────────────────────────────┐
 │                     COUCHE APIS & SERVEUR (EDGE)                       │
 │  - Routes API Next.js : /api/sms/send-otp, /api/payouts, /api/webhooks │
-│  - Passerelle Webhooks Mobile Money (Wave, Orange, Moov)               │
+│  - Webhook SasPay signé (HMAC-SHA256, Orange/Moov/Mobi Cash + carte)   │
 └───────────────────────────────────┬────────────────────────────────────┘
                                     │
     ┌───────────────────────────────┴───────────────────────────────┐
     ▼                                                               ▼
 ┌──────────────────────────────────────┐  ┌───────────────────────────────┐
 │     POSTGRESQL CLOUD (SUPABASE)      │  │    PASSERELLES FINTECH MALI   │
-│  - Tables relationnelles avec RLS    │  │  - Wave Business Payouts API │
-│  - Websockets Realtime Subscriptions │  │  - CinetPay (Orange/Moov)     │
+│  - Tables relationnelles avec RLS    │  │  - SasPay Payouts API        │
+│  - Websockets Realtime Subscriptions │  │  - SasPay Softpay (payin)    │
 │  - Audit Logs & Sécurité Ledger      │  │  - Passerelle SMS OTP Malitel │
 └──────────────────────────────────────┘  └───────────────────────────────┘
 ```

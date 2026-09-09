@@ -7,7 +7,7 @@ import ProductImage from '@/components/common/ProductImage';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
-import MobileMoneyPaymentDesk from '@/components/common/MobileMoneyPaymentDesk';
+import SasPayPaymentDesk from '@/components/common/SasPayPaymentDesk';
 import { useSugubaStore } from '@/lib/store';
 import { whatsappHelper } from '@/lib/whatsapp-helper';
 import { 
@@ -171,11 +171,12 @@ export default function OrderTrackingPage() {
             </div>
           </div>
 
-          {/* Instant 1-Click Mobile Money Desk */}
+          {/* Encaissement mobile money via SasPay */}
           {order.status !== 'delivered' && (
-            <MobileMoneyPaymentDesk
+            <SasPayPaymentDesk
               amount={order.totalAmount}
               orderNumber={order.orderNumber}
+              defaultPhone={order.customerPhone}
             />
           )}
 

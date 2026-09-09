@@ -21,10 +21,10 @@ const ussdShortcuts = [
     color: 'bg-orange-50 text-orange-800 border-orange-200 hover:bg-orange-100',
   },
   {
-    provider: 'Wave Mali',
-    code: 'App Wave',
-    link: 'https://wave.com',
-    description: 'Ouvrir Wave Mali pour voir vos dépôts',
+    provider: 'Mobi Cash',
+    code: 'Mobi Cash',
+    link: 'tel:*888%23',
+    description: 'Consulter solde Mobi Cash',
     color: 'bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100',
   },
   {
@@ -39,7 +39,10 @@ const ussdShortcuts = [
 export default function ResellerPayoutsPage() {
   const state = useSugubaStore();
   const [amount, setAmount] = useState<number>(10000);
-  const [provider, setProvider] = useState<'Orange Money' | 'Wave' | 'Moov Money' | 'Agence Suguba'>('Orange Money');
+  // Wave n'est plus proposé : SasPay, seule passerelle depuis le 2026-09-09,
+  // ne couvre pas Wave au Mali. Laisser l'option aurait créé des retraits
+  // impossibles à virer, bloqués indéfiniment en attente.
+  const [provider, setProvider] = useState<'Orange Money' | 'Moov Money' | 'Mobi Cash' | 'Agence Suguba'>('Orange Money');
   const [phone, setPhone] = useState(state.currentUser.phone);
   const [lastWithdrawal, setLastWithdrawal] = useState<Withdrawal | null>(null);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -105,7 +108,7 @@ export default function ResellerPayoutsPage() {
             Mes Commissions & Retraits
           </h1>
           <p className="text-xs text-gray-500">
-            Recevez vos gains par Mobile Money (Orange Money, Wave, Moov) ou en espèces directement au Guichet Suguba Bamako.
+            Recevez vos gains par Mobile Money (Orange Money, Moov, Mobi Cash) ou en espèces directement au Guichet Suguba Bamako.
           </p>
         </div>
 
@@ -276,7 +279,7 @@ export default function ResellerPayoutsPage() {
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {[
                     { id: 'Orange Money', label: 'Orange Money', color: 'border-orange-500 bg-orange-50 text-orange-950', badge: 'OM' },
-                    { id: 'Wave', label: 'Wave Mali', color: 'border-blue-500 bg-blue-50 text-blue-950', badge: 'Wave' },
+                    { id: 'Mobi Cash', label: 'Mobi Cash', color: 'border-blue-500 bg-blue-50 text-blue-950', badge: 'Mobi' },
                     { id: 'Moov Money', label: 'Moov Money', color: 'border-cyan-500 bg-cyan-50 text-cyan-950', badge: 'Moov' },
                     { id: 'Agence Suguba', label: 'Agence (Espèces)', color: 'border-emerald-600 bg-emerald-50 text-emerald-950', badge: '0% Frais' },
                   ].map((item) => (

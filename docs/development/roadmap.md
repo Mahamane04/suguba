@@ -11,7 +11,7 @@
 - [x] **M7 : Sécurité Antifraude & Système de Réputation Revendeur** (Complété)
 - [x] **M8 : Conformité Juridique, CGU & Contrat Revendeur UEMOA** (Complété)
 - [x] **M9 : Optimisation PWA & Cache Hors-Ligne (3G/4G Bamako)** (Complété)
-- [x] **M10 : Intégrations API Réelles Mobile Money (CinetPay / Wave / Hub2)** (Complété)
+- [x] **M10 : Intégration API Réelle Mobile Money (SasPay)** (Code complété le 2026-09-09 ; en attente de clés et d'un premier paiement réel)
   - Passerelle unifiée `momoGateway` (`src/lib/momo-gateway.ts`).
   - Endpoint Webhook sécurisé HMAC (`/api/webhooks/momo`).
   - Endpoint de virement automatisé (`/api/payouts/initiate`).

@@ -527,7 +527,7 @@ export const sugubaStore = {
   requestWithdrawal: (data: {
     resellerId: string;
     amount: number;
-    payoutProvider: 'Orange Money' | 'Wave' | 'Moov Money' | 'Agence Suguba';
+    payoutProvider: 'Orange Money' | 'Moov Money' | 'Mobi Cash' | 'Agence Suguba';
     payoutPhone: string;
   }) => {
     const reseller = globalState.resellers.find(r => r.id === data.resellerId);

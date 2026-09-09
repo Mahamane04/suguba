@@ -4,10 +4,12 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { libererCommissionsEchues } from '@/lib/commissions';
 
 const MIN_WITHDRAWAL = 5000;
+// Wave a disparu de cette table : SasPay ne le couvre pas au Mali, un
+// retrait Wave ne pourrait donc jamais être viré (voir migration-saspay.sql).
 const PROVIDER_MAP: Record<string, string> = {
-  'Wave': 'wave',
   'Orange Money': 'orange_money',
   'Moov Money': 'moov',
+  'Mobi Cash': 'mobi_cash',
   'Agence Suguba': 'cash',
 };
 

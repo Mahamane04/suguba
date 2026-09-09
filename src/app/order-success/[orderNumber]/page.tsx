@@ -4,7 +4,7 @@ import React, { use } from 'react';
 import Link from 'next/link';
 import ProductImage from '@/components/common/ProductImage';
 import Header from '@/components/common/Header';
-import MobileMoneyPaymentDesk from '@/components/common/MobileMoneyPaymentDesk';
+import SasPayPaymentDesk from '@/components/common/SasPayPaymentDesk';
 import { useSugubaStore } from '@/lib/store';
 import { 
   CheckCircle2, KeyRound, ShieldCheck, MapPin, 
@@ -92,10 +92,11 @@ export default function OrderSuccessPage({ params }: { params: Promise<{ orderNu
             </div>
           </div>
 
-          {/* Instant 1-Click Mobile Money Desk */}
-          <MobileMoneyPaymentDesk
+          {/* Encaissement mobile money via SasPay */}
+          <SasPayPaymentDesk
             amount={order.totalAmount}
             orderNumber={order.orderNumber}
+            defaultPhone={order.customerPhone}
           />
 
           {/* Action Links */}

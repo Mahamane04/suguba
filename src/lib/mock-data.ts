@@ -113,7 +113,7 @@ export const INITIAL_RESELLERS: ResellerProfile[] = [
     totalEarned: 45000,
     successfulOrdersCount: 7,
     momoNumber: '+223 66 44 55 66',
-    momoProvider: 'Wave',
+    momoProvider: 'Moov Money',
     status: 'active',
     neighborhood: 'Badalabougou',
   }

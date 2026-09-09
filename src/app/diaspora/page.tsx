@@ -52,15 +52,21 @@ export default function DiasporaPortalPage() {
   };
 
   /**
-   * Encaissement réel par mobile money via LigdiCash.
+   * Encaissement réel par carte bancaire via SasPay.
    *
    * L'ancienne version ne faisait qu'un `setTimeout` avant d'afficher l'écran
    * de succès : la commande était créée mais aucun paiement n'était jamais
    * demandé, et l'acheteur repartait convaincu d'avoir payé. On crée
    * désormais la commande, on s'assure qu'elle existe en base, puis on
-   * redirige vers la facture LigdiCash. L'écran de succès n'est plus atteint
-   * ici : c'est le retour de LigdiCash (return_url) qui y mène, une fois le
+   * redirige vers la page de paiement SasPay. L'écran de succès n'est plus
+   * atteint ici : c'est le retour SasPay (return_url) qui y mène, une fois le
    * paiement réellement encaissé et vérifié côté serveur.
+   *
+   * Réseau `card` et non un mobile money malien : l'acheteur est à
+   * l'étranger et n'a pas de numéro Orange/Moov/Mobi Cash. `card` est un
+   * réseau global SasPay, facturé en USD — la conversion depuis le XOF de la
+   * commande se fait chez eux, au taux configuré sur le compte. Il n'a que la
+   * page hébergée, jamais de push : la redirection EST le paiement.
    */
   const handleDiasporaCheckout = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,22 +100,26 @@ export default function DiasporaPortalPage() {
       // route de synchro est idempotente, ce second envoi est donc sans risque.
       await cloudSyncService.pushOrderToCloud(commande);
 
-      const res = await fetch('/api/payments/ligdicash/create', {
+      const res = await fetch('/api/payments/saspay/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         // Seul le numéro de commande est transmis : le montant est relu en
         // base côté serveur, jamais accepté depuis le navigateur.
-        body: JSON.stringify({ orderNumber: commande.orderNumber }),
+        body: JSON.stringify({
+          orderNumber: commande.orderNumber,
+          network: 'card',
+          phone: beneficiaryPhone.trim(),
+        }),
       });
       const json = await res.json();
 
-      if (!res.ok || !json.success || !json.urlPaiement) {
+      if (!res.ok || !json.success || !json.urlCheckout) {
         setIsProcessing(false);
         setErreurPaiement(json.error || 'Impossible de démarrer le paiement. Réessayez.');
         return;
       }
 
-      window.location.href = json.urlPaiement;
+      window.location.href = json.urlCheckout;
     } catch (err) {
       console.error(err);
       setIsProcessing(false);

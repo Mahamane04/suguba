@@ -32,13 +32,13 @@ Pour connecter votre domaine personnalisé chez votre registraire (Namecheap, OV
 # URL Officielle de l'Application
 NEXT_PUBLIC_APP_URL="https://sugubaml.com"
 
-# Passerelles Mobile Money (CinetPay / Wave)
-CINETPAY_API_KEY="votre_cle_prod"
-CINETPAY_SITE_ID="votre_site_id_prod"
-CINETPAY_SECRET_KEY="votre_secret_hmac"
-CINETPAY_DISBURSEMENT_KEY="votre_cle_payouts"
-WAVE_API_KEY="votre_cle_wave_prod"
-WAVE_WEBHOOK_SECRET="votre_secret_webhook"
+# SasPay — seule passerelle (encaissement + versement)
+# Scope de clé requis : BOTH (PAYIN pour encaisser, PAYOUT pour verser).
+SASPAY_API_KEY="sk_live_..."
+SASPAY_WEBHOOK_SECRET="whsec_..."
+# Webhook à déclarer dans le tableau de bord SasPay (pas par API) :
+#   https://app.sugubaml.com/api/webhooks/saspay
+#   events : transaction.created / success / failed / cancelled
 
 # Base de Données (Supabase / Neon PostgreSQL si transition depuis mock)
 DATABASE_URL="postgresql://user:password@host:5432/suguba_prod"

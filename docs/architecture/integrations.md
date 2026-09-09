@@ -6,9 +6,8 @@ Suguba intègre une couche d'abstraction unifiée (`src/lib/momo-gateway.ts`) ca
 
 | Opérateur | Méthode d'Intégration | Usage Principal |
 | :--- | :--- | :--- |
-| **Wave Mali** | Wave Business Checkout & Payout API | Encaissements en 1-clic & Virements instantanés vers comptes Wave. |
-| **Orange Money Mali** | API Orange Money / Passerelle CinetPay / Hub2 | Encaissements & Virements automatisés de commissions vers les numéros Orange Money. |
-| **Moov Money Mali** | Passerelle CinetPay / Hub2 / Paydunya | Encaissements & Virements vers numéros Moov Money. |
+| **SasPay** | API unique payin (softpay) + payout, https://docs.saspay.me | Encaissements et virements de commissions. Réseaux Mali : `orange_ml`, `moov_ml`, `mobi_cash_ml`. ⚠️ Wave **non couvert** au Mali. |
+| **SasPay — carte** | Réseau global `card` (Stripe), facturé en USD | Portail Diaspora : l'acheteur est à l'étranger et n'a pas de numéro mobile money malien. Page hébergée uniquement, `return_url` obligatoire. |
 
 ---
 
@@ -18,16 +17,9 @@ Suguba intègre une couche d'abstraction unifiée (`src/lib/momo-gateway.ts`) ca
 # URL de l'Application
 NEXT_PUBLIC_APP_URL="https://sugubaml.com"
 
-# Passerelle CinetPay (Orange Money / Moov Money)
-CINETPAY_API_KEY="votre_cle_api_cinetpay"
-CINETPAY_SITE_ID="votre_site_id"
-CINETPAY_SECRET_KEY="votre_cle_secrete_hmac"
-CINETPAY_DISBURSEMENT_KEY="votre_cle_disbursement_retraits"
-
-# Passerelle Wave Mali
-WAVE_API_KEY="wave_ci_prod_..."
-WAVE_PAYOUT_KEY="wave_payout_prod_..."
-WAVE_WEBHOOK_SECRET="whsec_..."
+# SasPay — encaissement et versement, une seule clé
+SASPAY_API_KEY="sk_live_..."      # scope BOTH (PAYIN + PAYOUT)
+SASPAY_WEBHOOK_SECRET="whsec_..." # affiché une seule fois à la création du webhook
 ```
 
 *Note : En l'absence de clés de production, la passerelle bascule automatiquement en mode **Sandbox Sécurisé** pour le développement local et les démonstrations.*

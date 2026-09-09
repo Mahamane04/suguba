@@ -67,7 +67,7 @@ export interface ResellerProfile {
   totalEarned: number;
   successfulOrdersCount: number;
   momoNumber?: string;
-  momoProvider?: 'Orange Money' | 'Wave' | 'Moov Money';
+  momoProvider?: 'Orange Money' | 'Moov Money' | 'Mobi Cash';
   status?: 'active' | 'pending_verification' | 'suspended';
   neighborhood?: string;
   joinedAt?: string;
@@ -192,7 +192,9 @@ export interface Withdrawal {
   resellerId: string;
   resellerName: string;
   amount: number;
-  payoutProvider: 'Orange Money' | 'Wave' | 'Moov Money' | 'Virement' | 'Agence Suguba';
+  /** 'Wave' n'est plus proposable (SasPay ne le couvre pas au Mali) mais reste
+   * dans l'union : des retraits créés avant le 2026-09-09 la portent encore. */
+  payoutProvider: 'Orange Money' | 'Moov Money' | 'Mobi Cash' | 'Wave' | 'Virement' | 'Agence Suguba';
   payoutPhone: string;
   pickupCode?: string;         // Code secret à 6 chiffres pour retrait espèces au guichet
   agencyLocation?: string;     // Nom / Adresse du Hub Suguba (ex: Hamdallaye ACI 2000)

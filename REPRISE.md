@@ -1,4 +1,4 @@
-# Suguba — Fiche de reprise (8 septembre 2026)
+# Suguba — Fiche de reprise (9 septembre 2026)
 
 État réel du projet, basé sur l'historique git vérifié — remplace la version du 22 août,
 restée figée alors que le projet a beaucoup avancé depuis.
@@ -36,13 +36,29 @@ restée figée alors que le projet a beaucoup avancé depuis.
      vs `dispatched`/`in_transit` utilisé par tout le code applicatif) qui aurait fait
      échouer silencieusement toute vraie mise à jour de dispatch — corrigée
      (`migration-order-status.sql`).
-6. **PayDunya remplacé par LigdiCash** (2026-08-26) — code fait et déployé :
-   - `src/lib/ligdicash.ts`, `/api/payments/ligdicash/create`, `/api/webhooks/ligdicash`.
-   - LigdiCash ne signe pas ses webhooks (contrairement à PayDunya) : chaque notification
-     est re-vérifiée auprès de LigdiCash via un jeton stocké côté serveur à la création
-     (`migration-ligdicash.sql`, colonne `payment_invoice_token`).
-   - ⏳ **Bloqué sur les clés API** — en attente de `LIGDICASH_API_KEY` / `LIGDICASH_API_TOKEN`
-     de la part de l'équipe LigdiCash (documents envoyés, réponse en attente).
+6. **SasPay est désormais la seule passerelle de paiement** (2026-09-09) — encaissement
+   **et** versement, code fait, build vérifié :
+   - `src/lib/saspay.ts`, `/api/payments/saspay/create`, `/api/payments/saspay/status`,
+     `/api/webhooks/saspay`, `supabase/migration-saspay.sql`.
+   - **Supprimés** : LigdiCash (`src/lib/ligdicash.ts` + ses 2 routes), CinetPay/Wave
+     (`src/lib/momo-gateway.ts`, `/api/webhooks/momo`), et le desk de paiement manuel
+     `MobileMoneyPaymentDesk` (codes USSD à recopier + lien Wave vers le 89 46 00 00),
+     remplacé par `SasPayPaymentDesk`. `.env.example` nettoyé de PayDunya, CinetPay, Wave
+     et de la passerelle SMS (l'OTP maison ayant été retiré en août).
+   - Contrairement à LigdiCash, **SasPay signe ses webhooks** (HMAC-SHA256 sur
+     `timestamp.corps`, tolérance 5 min). Signature vérifiée en temps constant, 9 cas de
+     test passés (corps modifié, signature forgée, mauvais secret, rejeu, horodatage
+     rajeuni…). Une notification non signée est rejetée en **403**, pas ignorée.
+   - Le corps du webhook n'est jamais la source de vérité malgré la signature : chaque
+     notification déclenche une re-vérification `GET /payments/{id}/verify/`.
+   - **Bug d'argent corrigé au passage** : `momoGateway.createPayout` basculait en « mode
+     simulation » dès qu'aucune clé n'était configurée — il renvoyait `success: true` avec
+     un faux numéro de transaction, et `/api/payouts/initiate` marquait alors le retrait
+     `completed` **en consommant les commissions du revendeur, sans qu'un centime bouge**.
+     La nouvelle route n'a aucun mode dégradé : sans clé elle échoue, et un retrait ne passe
+     `completed` qu'à la confirmation du webhook (`processing` en attendant).
+   - ⏳ **Reste à faire pour la mise en service** : clés dans `.env.local` + Vercel, migration
+     SQL appliquée, webhook déclaré dans le tableau de bord SasPay. Voir ci-dessous.
 
 ---
 
@@ -54,14 +70,24 @@ session précédente, mais à reconfirmer avant de considérer le sujet clos) :
 - `migration-suppliers.sql`
 - `migration-drivers.sql`
 - `migration-order-status.sql`
-- `migration-ligdicash.sql`
+- `migration-saspay.sql` — **nouvelle, jamais appliquée**. Ajoute
+  `payment_transaction_id` + `payment_network` sur `orders` et `payouts`, avec index
+  UNIQUE partiels. Sans elle, aucun paiement SasPay ne peut être rattaché à une commande.
 
 Vérification rapide (lecture seule, service_role) : tenter un `select` sur les colonnes/tables
 attendues (`suppliers`, `drivers`, `orders.payment_invoice_token`, etc.) plutôt que de supposer.
 
-**Clés LigdiCash** — vérifier si reçues depuis la dernière session ; si oui, les ajouter dans
-Vercel (`LIGDICASH_API_KEY`, `LIGDICASH_API_TOKEN`) et tester un paiement réel avant qu'un
-vrai client s'en serve.
+**Mise en service SasPay** — trois étapes, dans cet ordre :
+1. Appliquer `supabase/migration-saspay.sql`.
+2. `SASPAY_API_KEY` (scope **BOTH** : PAYIN pour encaisser, PAYOUT pour verser) et
+   `SASPAY_WEBHOOK_SECRET` dans `.env.local` **et** dans Vercel. Rappel : Vercel ne relit
+   pas les variables sans un nouveau déploiement explicite.
+3. Déclarer le webhook dans le tableau de bord SasPay (impossible par API) :
+   URL `https://app.sugubaml.com/api/webhooks/saspay`, events `transaction.created`,
+   `transaction.success`, `transaction.failed`, `transaction.cancelled`. Le
+   `signing_secret` **n'est affiché qu'une seule fois** — le copier immédiatement.
+
+Puis tester avec `sk_test_...` avant de passer en `sk_live_...`.
 
 ---
 
@@ -78,7 +104,12 @@ vrai client s'en serve.
 6. **Scores calculés** (livreurs, boutiques) — décision explicite de ne PAS les simuler tant
    qu'il n'y a pas de vraies transactions. Ne jamais initialiser un score à une valeur par défaut.
 7. **Audit mobile des tableaux de bord authentifiés** (fait sur les pages publiques seulement).
-8. **Versement des commissions (Payout LigdiCash)** — non commencé.
+8. ~~**Versement des commissions**~~ — code fait le 2026-09-09 via SasPay Payouts. Reste à
+   valider avec de vraies clés : aucun virement réel n'a encore été déclenché.
+9. **Revendeurs payés en Wave** — `payouts.payment_method` accepte encore `wave`, que SasPay
+   ne couvre pas au Mali. La route de versement le refuse explicitement (422 avec un message
+   lisible) plutôt que d'échouer obscurément, mais ces revendeurs ne peuvent pas être payés
+   automatiquement : il faut leur demander un numéro Orange, Moov ou Mobi Cash.
 
 ---
 
@@ -101,8 +132,36 @@ vrai client s'en serve.
 - **Aucun environnement de test/sandbox séparé n'existe** — une seule base Supabase, un seul
   déploiement Vercel, utilisés en conditions réelles. Toute donnée de test doit être marquée
   clairement et nettoyée après usage.
-- **LigdiCash n'a pas de sandbox** — un compte réel temporaire est fourni pendant
-  l'intégration ; les tests se feront avec de vraies petites transactions.
+- **Le webhook SasPay ne transporte PAS nos `metadata`.** Son `data` ne contient que l'id de
+  transaction SasPay, sa référence interne, le statut et les montants — aucun numéro de
+  commande Suguba. Le mécanisme LigdiCash (`custom_data.reference` = notre `order_number`)
+  est donc **irreproductible**. D'où deux conséquences structurantes :
+  1. on stocke l'id SasPay sur la ligne **à l'initiation** (`payment_transaction_id`), et le
+     webhook retrouve la commande par cet id ;
+  2. on encaisse via `POST /payments/softpay/` (qui renvoie l'id tout de suite) et **non**
+     via `POST /checkout-sessions/`, dont le champ `transaction` vaut `null` à la création —
+     un webhook y serait impossible à rattacher. Ne pas « simplifier » vers checkout-sessions.
+- **Softpay ne pousse pas toujours sur le téléphone.** Si la réponse contient une
+  `checkout_url` non vide, **aucune demande n'arrivera sur le téléphone du client** : il faut
+  le rediriger, sinon le paiement n'a jamais lieu. C'est le comportement normal d'Orange
+  Money et des cartes, et un même réseau peut basculer d'un mode à l'autre sans préavis.
+  Toujours tester `checkout_url` avant de conclure au push.
+- **SasPay ne couvre pas Wave au Mali.** Réseaux disponibles : `orange_ml`, `moov_ml`,
+  `mobi_cash_ml`. Ne pas ajouter `wave_ml` « au cas où » — un code réseau inconnu fait un 422
+  `invalid_method`. (Wave existe chez SasPay en Côte d'Ivoire et au Sénégal, pas au Mali.)
+- **Le portail Diaspora utilise le réseau global `card`** — carte bancaire via Stripe,
+  **facturée en USD** quel que soit le `country` envoyé, avec conversion automatique depuis
+  le XOF au taux configuré sur le compte. `return_url` y est **obligatoire** (422 sinon), et
+  `customer.phone` reste exigé même s'il n'est jamais utilisé.
+- **Le `signing_secret` du webhook SasPay n'est affiché qu'une seule fois**, à la création
+  dans le tableau de bord. Perdu, il faut en générer un nouveau (Webhooks → Changer le
+  secret). Il n'est jamais renvoyé en lecture par l'API.
+- **Créer ou modifier un webhook SasPay se fait uniquement au tableau de bord**, pas par API
+  (la clé ne donne accès qu'à la consultation et à l'historique de livraison).
+- **`payouts.status` n'accepte que `pending`/`processing`/`completed`/`rejected`** (contrainte
+  CHECK). Écrire `failed` ferait échouer la mise à jour — même famille de piège que
+  l'incohérence de statut des commandes corrigée en août. Un versement raté s'écrit
+  `rejected`.
 - **RLS ne donne à la clé anon qu'un accès en LECTURE aux produits `approved`** — un dépôt
   fournisseur "submitted" est invisible à l'admin sans passer par une route service_role
   authentifiée (`/api/admin/products/pending`, même principe pour les commandes livreur).
