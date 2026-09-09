@@ -165,6 +165,14 @@ curl -s -H "Authorization: Bearer $KEY" https://api.saspay.me/api/v1/merchant-ba
   secret). Il n'est jamais renvoyé en lecture par l'API.
 - **Créer ou modifier un webhook SasPay se fait uniquement au tableau de bord**, pas par API
   (la clé ne donne accès qu'à la consultation et à l'historique de livraison).
+- **Le `matcher` du middleware ne couvrait qu'une seule route API** (`/api/payouts/initiate`).
+  Toutes les autres se défendaient elles-mêmes — ce qui marche tant que chaque auteur y
+  pense, mais une nouvelle route écrite sans son contrôle serait restée ouverte sans que
+  rien ne le signale. Étendu le 2026-09-09 à toutes les routes à rôle
+  (`/api/admin|driver|supplier|reseller/*`, `/api/payouts/*`) et à celles exigeant une
+  session. Les routes gardent leur propre contrôle : défense en profondeur, pas délégation.
+  ⚠️ `/api/payouts/` mélange deux rôles (`create` → revendeur, `initiate` → admin) : deux
+  entrées explicites, jamais un préfixe commun.
 - **Deux sens du mot « retrait » chez SasPay, à ne pas confondre.** Le versement d'une
   commission (Suguba → revendeur) est un **payout**, et il produit un event
   `transaction.*` — pas un `settlement.*`. Les events `settlement.*` (pastilles « Retrait

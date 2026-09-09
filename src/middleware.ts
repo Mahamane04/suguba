@@ -26,6 +26,60 @@ import {
  * vérifié par OTP ne suffit plus à lui seul, voir /api/admin/review-profile.
  */
 
+/**
+ * Routes API réservées à un rôle. Jusqu'ici seule /api/payouts/initiate était
+ * gardée ici : toutes les autres se défendaient elles-mêmes, ce qui marchait
+ * tant que chaque auteur y pensait. Une route écrite sans son contrôle serait
+ * restée ouverte, sans que rien ne le signale.
+ *
+ * Le contrôle exercé ici est exactement celui des routes concernées
+ * (`session.role !== <rôle>`), pas un contrôle d'appartenance plus permissif :
+ * la barrière double la vérification existante sans en changer la sémantique.
+ * Les routes gardent la leur — défense en profondeur, pas délégation.
+ *
+ * ⚠️ L'ordre compte : le premier préfixe qui correspond gagne. /api/payouts/
+ * mélange deux rôles (create → revendeur, initiate → admin), d'où deux
+ * entrées explicites plutôt qu'un préfixe commun qui casserait les retraits.
+ */
+const API_ROLE_BY_PREFIX: { prefix: string; role: SugubaRole }[] = [
+  { prefix: '/api/admin/', role: 'admin' },
+  { prefix: '/api/driver/', role: 'driver' },
+  { prefix: '/api/supplier/', role: 'supplier' },
+  { prefix: '/api/reseller/', role: 'reseller' },
+  { prefix: '/api/payouts/initiate', role: 'admin' },
+  { prefix: '/api/payouts/create', role: 'reseller' },
+];
+
+/**
+ * Routes API exigeant une session valide, quel que soit le rôle.
+ */
+const API_SESSION_REQUISE = [
+  '/api/auth/complete-profile',
+  '/api/auth/me',
+  '/api/auth/refresh-session',
+  '/api/auth/request-role',
+  '/api/orders/feed',
+  '/api/orders/sync',
+  '/api/products/sync',
+  '/api/products/upload-image',
+];
+
+/**
+ * Routes API publiques par nécessité, listées pour que leur ouverture soit un
+ * choix visible et non un oubli :
+ *   /api/auth/supabase-exchange  — c'est la connexion elle-même ; elle vérifie
+ *                                  le jeton Supabase côté serveur.
+ *   /api/auth/logout             — doit marcher même sur une session morte.
+ *   /api/auth/demo-login         — verrouillée par SUGUBA_DEMO_MODE côté serveur.
+ *   /api/webhooks/saspay         — appelée par SasPay, pas par un navigateur ;
+ *                                  gardée par signature HMAC.
+ *   /api/payments/saspay/*       — un client sans compte doit pouvoir payer et
+ *                                  suivre sa commande.
+ *   /api/sms/send-otp            — appelée après commande par un client sans
+ *                                  compte. ⚠️ Accepte encore un numéro et un
+ *                                  code arbitraires depuis le navigateur.
+ */
+
 const ROLE_BY_PREFIX: { prefix: string; role: string }[] = [
   { prefix: '/admin', role: 'admin' },
   { prefix: '/supplier', role: 'supplier' },
@@ -50,9 +104,31 @@ export async function middleware(req: NextRequest) {
   const token = req.cookies.get(SESSION_COOKIE_NAME)?.value;
   const session = await verifySessionToken(token);
 
-  if (pathname.startsWith('/api/payouts/initiate')) {
-    if (!session || session.role !== 'admin') {
-      return NextResponse.json({ error: 'Authentification admin requise.' }, { status: 401 });
+  // ── Barrière API ────────────────────────────────────────────────────────
+  // Une route API répond 401 en JSON, jamais par une redirection : un appel
+  // fetch qui reçoit une page de connexion en HTML échoue de façon obscure.
+  const apiRole = API_ROLE_BY_PREFIX.find((r) => pathname.startsWith(r.prefix));
+  if (apiRole) {
+    if (!session) {
+      return NextResponse.json({ error: 'Authentification requise.' }, { status: 401 });
+    }
+    if (session.role !== apiRole.role) {
+      return NextResponse.json(
+        { error: `Cette action demande d'agir en tant que ${apiRole.role}.` },
+        { status: 403 },
+      );
+    }
+    // Volontairement AUCUN contrôle de statut ici. Sur les quinze routes à
+    // rôle, une seule le vérifie (/api/payouts/create, qui garde le sien).
+    // L'ajouter globalement bloquerait un compte en attente d'approbation sur
+    // des lectures qui lui sont légitimes — /pending-approval a besoin de
+    // savoir où il en est. Ce durcissement se décide route par route, pas ici.
+    return NextResponse.next();
+  }
+
+  if (API_SESSION_REQUISE.some((p) => pathname === p || pathname.startsWith(`${p}/`))) {
+    if (!session) {
+      return NextResponse.json({ error: 'Authentification requise.' }, { status: 401 });
     }
     return NextResponse.next();
   }
@@ -106,5 +182,22 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/supplier/:path*', '/driver/:path*', '/reseller/:path*', '/api/payouts/initiate'],
+  matcher: [
+    '/admin/:path*',
+    '/supplier/:path*',
+    '/driver/:path*',
+    '/reseller/:path*',
+    // Toutes les routes API à rôle, plus celles qui exigent une session.
+    '/api/admin/:path*',
+    '/api/driver/:path*',
+    '/api/supplier/:path*',
+    '/api/reseller/:path*',
+    '/api/payouts/:path*',
+    '/api/auth/complete-profile',
+    '/api/auth/me',
+    '/api/auth/refresh-session',
+    '/api/auth/request-role',
+    '/api/orders/:path*',
+    '/api/products/:path*',
+  ],
 };
