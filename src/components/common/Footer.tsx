@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { ShieldCheck, Globe, Handshake, FileText, Phone } from 'lucide-react';
 
 const legalLinks = [
@@ -22,33 +23,22 @@ const featureLinks = [
 ];
 
 export default function Footer() {
-  return (
-    <>
-    {/* ── Bande légale mobile ──
-        Sur téléphone, l'app est une PWA avec une barre de navigation en bas :
-        un pied de page de dix liens y duplique la navigation et occupe plus
-        d'un écran entier entre le dernier produit et le vide. Aucune appli
-        native ne fait défiler un plan du site.
-        Il ne disparaît pas pour autant : mentions légales, identification de
-        l'entreprise et numéro de support doivent rester atteignables — la
-        quasi-totalité des utilisateurs sont sur mobile, et un agrégateur de
-        paiement vérifie précisément leur présence. D'où cette bande d'une
-        ligne, à la façon d'un « À propos » d'application. */}
-    <div className="md:hidden bg-gray-950 px-4 py-4 text-center space-y-2">
-      <div className="flex items-center justify-center gap-x-3 gap-y-1 flex-wrap text-[11px] text-gray-500">
-        <Link href="/legal/terms" className="hover:text-white transition-colors">Conditions</Link>
-        <span className="text-gray-700">·</span>
-        <Link href="/legal/privacy" className="hover:text-white transition-colors">Confidentialité</Link>
-        <span className="text-gray-700">·</span>
-        <Link href="/legal/warranty" className="hover:text-white transition-colors">Garantie & SAV</Link>
-        <span className="text-gray-700">·</span>
-        <a href="tel:+22389460000" className="hover:text-white transition-colors">+223 89 46 00 00</a>
-      </div>
-      <p className="text-[10px] text-gray-600 leading-relaxed">
-        Suguba Technologies Mali — NIF 086419208K · RCCM MA.BKO.2026.B.14820
-      </p>
-    </div>
+  const pathname = usePathname();
 
+  // Le pied de page est une pièce de site vitrine, pas d'application : il
+  // n'apparaît que sur la landing page, et seulement en desktop.
+  //
+  // Sur téléphone, l'app est une PWA avec sa barre de navigation en bas — un
+  // pied de page de dix liens y duplique la navigation et occupe plus d'un
+  // écran entier. Aucune application native ne fait défiler un plan du site.
+  // À l'intérieur de l'app (espaces revendeur, fournisseur, livreur, suivi de
+  // commande...), il n'a pas davantage sa place, quel que soit l'écran.
+  //
+  // Les liens légaux, eux, restent atteignables partout : ils vivent dans le
+  // menu du Header (voir Header.tsx), à la façon d'un « À propos ».
+  if (pathname !== '/') return null;
+
+  return (
     <footer className="hidden md:block bg-gray-950 text-gray-400">
 
       {/* ── CTA Band ── */}
@@ -163,6 +153,5 @@ export default function Footer() {
         </div>
       </div>
     </footer>
-    </>
   );
 }

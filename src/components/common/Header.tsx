@@ -316,6 +316,24 @@ export default function Header() {
               </Link>
             </>
           )}
+
+          {/* Liens légaux — leur seul chemin sur mobile depuis que le pied de
+              page est réservé à la landing page en desktop. Ils doivent rester
+              atteignables : la quasi-totalité des utilisateurs sont sur
+              téléphone, et un agrégateur de paiement vérifie leur présence.
+              C'est aussi la place qu'ils occupent dans une application native. */}
+          <div className="pt-3 mt-1 border-t border-slate-100">
+            <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1 px-3 text-[11px] text-slate-400">
+              <Link href="/legal/terms" onClick={() => setMobileOpen(false)} className="hover:text-slate-600">Conditions</Link>
+              <span className="text-slate-300">·</span>
+              <Link href="/legal/privacy" onClick={() => setMobileOpen(false)} className="hover:text-slate-600">Confidentialité</Link>
+              <span className="text-slate-300">·</span>
+              <Link href="/legal/warranty" onClick={() => setMobileOpen(false)} className="hover:text-slate-600">Garantie &amp; SAV</Link>
+            </div>
+            <p className="px-3 mt-1.5 text-[10px] text-slate-400">
+              Suguba Technologies Mali · <a href="tel:+22389460000" className="hover:text-slate-600">+223 89 46 00 00</a>
+            </p>
+          </div>
         </div>
       )}
     </header>
