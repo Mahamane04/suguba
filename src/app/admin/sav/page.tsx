@@ -1,37 +1,72 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
 import CreateSavTicketModal from '@/components/admin/CreateSavTicketModal';
-import { useSugubaStore, sugubaStore } from '@/lib/store';
+import { useSugubaStore } from '@/lib/store';
 import { SavTicket } from '@/types';
-import { 
-  ShieldAlert, ShieldCheck, RefreshCw, Truck, 
+import {
+  ShieldAlert, ShieldCheck, RefreshCw, Truck,
   Phone, MessageCircle, ArrowLeft, Plus, CheckCircle2, Clock, Wrench
 } from 'lucide-react';
 
+/**
+ * Les tickets viennent désormais de /api/admin/sav, plus du store local :
+ * une réclamation saisie ici était auparavant invisible à tout autre admin
+ * et perdue au vidage du cache. Voir supabase/migration-sav.sql.
+ */
 export default function AdminSavPage() {
   const state = useSugubaStore();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [selectedTicketForDispatch, setSelectedTicketForDispatch] = useState<SavTicket | null>(null);
+  const [tickets, setTickets] = useState<SavTicket[]>([]);
+  const [livreurs, setLivreurs] = useState<Array<{ id: string; fullName: string }>>([]);
 
   const deliveredOrders = state.orders.filter(o => o.status === 'delivered');
-  const tickets = state.savTickets || [];
+
+  const chargerTickets = useCallback(() => {
+    fetch('/api/admin/sav')
+      .then((res) => (res.ok ? res.json() : { tickets: [] }))
+      .then((json) => setTickets(json.tickets || []))
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    chargerTickets();
+    fetch('/api/admin/drivers/active')
+      .then((res) => (res.ok ? res.json() : { drivers: [] }))
+      .then((json) => setLivreurs(json.drivers || []))
+      .catch(() => {});
+  }, [chargerTickets]);
 
   const openTickets = tickets.filter(t => t.status === 'open');
   const inProgressTickets = tickets.filter(t => t.status === 'courier_dispatched');
   const resolvedTickets = tickets.filter(t => t.status === 'resolved');
 
-  const handleDispatchCourier = (ticketId: string, driverId: string) => {
-    sugubaStore.dispatchSavCourier(ticketId, driverId);
+  const handleDispatchCourier = async (ticketId: string, driverId: string) => {
+    await fetch('/api/admin/sav', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ticketId, action: 'dispatch', driverId }),
+    });
     setSelectedTicketForDispatch(null);
+    chargerTickets();
   };
 
-  const handleResolveTicket = (ticketId: string) => {
-    sugubaStore.resolveSavTicket(ticketId, 'Échange neuf remis au client et pièce défectueuse retournée au fournisseur.');
+  const handleResolveTicket = async (ticketId: string) => {
+    await fetch('/api/admin/sav', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ticketId,
+        action: 'resolve',
+        notes: 'Échange neuf remis au client et pièce défectueuse retournée au fournisseur.',
+      }),
+    });
+    chargerTickets();
   };
 
   return (
@@ -195,14 +230,36 @@ export default function AdminSavPage() {
                           <span>WhatsApp Suivi</span>
                         </a>
 
+                        {/* Le livreur est choisi parmi les vrais comptes actifs
+                            (/api/admin/drivers/active) : l'ancienne version
+                            envoyait `state.drivers[0]`, un livreur fictif. */}
                         {ticket.status === 'open' && (
-                          <button
-                            onClick={() => handleDispatchCourier(ticket.id, state.drivers[0]?.id || 'drv-1')}
-                            className="py-2 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl text-[11px] flex items-center space-x-1 shadow-xs"
-                          >
-                            <Truck className="w-3.5 h-3.5" />
-                            <span>Assigner Coursier pour Échange</span>
-                          </button>
+                          livreurs.length === 0 ? (
+                            <span className="py-2 px-3 text-[11px] text-slate-400 italic">
+                              Aucun livreur actif à assigner
+                            </span>
+                          ) : (
+                            <div className="flex items-center gap-1.5">
+                              <select
+                                id={`sav-driver-${ticket.id}`}
+                                className="bg-white border border-slate-300 rounded-xl px-2 py-1.5 text-[11px] font-bold text-slate-900"
+                              >
+                                {livreurs.map((d) => (
+                                  <option key={d.id} value={d.id}>{d.fullName}</option>
+                                ))}
+                              </select>
+                              <button
+                                onClick={() => {
+                                  const select = document.getElementById(`sav-driver-${ticket.id}`) as HTMLSelectElement;
+                                  if (select?.value) handleDispatchCourier(ticket.id, select.value);
+                                }}
+                                className="py-2 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl text-[11px] flex items-center space-x-1 shadow-xs"
+                              >
+                                <Truck className="w-3.5 h-3.5" />
+                                <span>Assigner</span>
+                              </button>
+                            </div>
+                          )
                         )}
 
                         {isDispatched && (
@@ -233,6 +290,7 @@ export default function AdminSavPage() {
           orders={deliveredOrders}
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
+          onCreated={chargerTickets}
         />
       )}
 

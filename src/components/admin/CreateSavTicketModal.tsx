@@ -2,45 +2,60 @@
 
 import React, { useState } from 'react';
 import { Order, SavResolutionType } from '@/types';
-import { sugubaStore } from '@/lib/store';
 import { X, ShieldAlert, CheckCircle2, ArrowRight, RefreshCw } from 'lucide-react';
 
 interface CreateSavTicketModalProps {
   orders: Order[];
   isOpen: boolean;
   onClose: () => void;
+  onCreated?: () => void;
 }
 
-export default function CreateSavTicketModal({ orders, isOpen, onClose }: CreateSavTicketModalProps) {
+export default function CreateSavTicketModal({ orders, isOpen, onClose, onCreated }: CreateSavTicketModalProps) {
   const [selectedOrderId, setSelectedOrderId] = useState<string>(orders[0]?.id || '');
   const [resolutionType, setResolutionType] = useState<SavResolutionType>('swap_new');
   const [issueDescription, setIssueDescription] = useState('');
   const [notes, setNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [erreur, setErreur] = useState('');
 
   if (!isOpen) return null;
 
   const selectedOrder = orders.find(o => o.id === selectedOrderId) || orders[0];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Le ticket part vers /api/admin/sav : il n'est plus enfermé dans le
+  // navigateur de l'admin qui l'ouvre. Seuls la commande, le motif et le type
+  // de résolution sont transmis — le serveur relit lui-même les informations
+  // client et produit sur la commande, et génère le numéro de ticket.
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedOrder) return;
     setIsSubmitting(true);
+    setErreur('');
 
-    sugubaStore.createSavTicket({
-      orderId: selectedOrder.id,
-      orderNumber: selectedOrder.orderNumber,
-      customerName: selectedOrder.customerName,
-      customerPhone: selectedOrder.customerPhone,
-      productName: selectedOrder.productName,
-      supplierName: 'Fournisseur Agréé Suguba',
-      issueDescription,
-      resolutionType,
-      notes,
-    });
+    try {
+      const res = await fetch('/api/admin/sav', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          orderId: selectedOrder.id,
+          issueDescription: `${issueDescription}${notes ? ` — ${notes}` : ''}`,
+          resolutionType,
+        }),
+      });
+      const json = await res.json();
+      setIsSubmitting(false);
 
-    setIsSubmitting(false);
-    onClose();
+      if (!res.ok || !json.success) {
+        setErreur(json.error || "Le ticket n'a pas pu être enregistré.");
+        return;
+      }
+      if (onCreated) onCreated();
+      onClose();
+    } catch (err) {
+      setIsSubmitting(false);
+      setErreur('Erreur réseau, réessayez.');
+    }
   };
 
   return (
@@ -160,6 +175,12 @@ export default function CreateSavTicketModal({ orders, isOpen, onClose }: Create
               className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-slate-900"
             />
           </div>
+
+          {erreur && (
+            <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs font-bold text-rose-700">
+              {erreur}
+            </div>
+          )}
 
           {/* Submit */}
           <button
