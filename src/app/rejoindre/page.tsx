@@ -6,10 +6,9 @@ import Header from '@/components/common/Header';
 import Footer from '@/components/common/Footer';
 import BottomNav from '@/components/common/BottomNav';
 import { supabase } from '@/lib/supabase';
-import { useSugubaStore } from '@/lib/store';
 import {
   Store, ShoppingBag, Truck, Globe,
-  ArrowLeft, ShieldAlert, Check, Heart
+  ArrowLeft, ArrowRight, ShieldAlert, Check, Heart
 } from 'lucide-react';
 
 function GoogleIcon({ className }: { className?: string }) {
@@ -31,10 +30,12 @@ type RoleKey = 'reseller' | 'supplier' | 'driver' | 'diaspora';
  * qui mangeait un écran entier avant la moindre information, et le bouton
  * d'inscription à deux écrans de défilement.
  *
- * Trois principes maintenant : un montant RÉEL en tête (calculé sur le vrai
- * catalogue, jamais inventé — c'est ce qui rend la promesse crédible), un
- * exemple chiffré plutôt qu'une affirmation, et le bouton atteignable sans
- * défiler. Le détail passe après, pour ceux qui veulent lire.
+ * Trois principes maintenant : le mécanisme montré plutôt qu'affirmé (comment
+ * l'argent circule, en trois temps), la hiérarchie visuelle portée par un
+ * bandeau coloré, et le bouton atteignable sans défiler. Le détail passe
+ * après, pour ceux qui veulent lire.
+ *
+ * Sans montants, délibérément — voir le commentaire sur `argument()`.
  */
 
 const ROLES: Record<RoleKey, {
@@ -97,22 +98,11 @@ const ROLES: Record<RoleKey, {
 const ORDRE: RoleKey[] = ['reseller', 'supplier', 'driver', 'diaspora'];
 
 export default function RejoindrePage() {
-  const state = useSugubaStore();
   const [role, setRole] = useState<RoleKey>('reseller');
   const [erreur, setErreur] = useState<string | null>(null);
 
   const actif = ROLES[role];
   const Icon = actif.icon;
-
-  // Chiffres tirés du VRAI catalogue. Rien n'est inventé : si le catalogue est
-  // vide, on n'affiche aucun montant plutôt qu'un chiffre de façade — c'est la
-  // même règle que celle appliquée aux faux avis et aux fausses statistiques
-  // retirés du site.
-  const produits = state.products.filter((p) => p.status === 'approved' && p.resellerCommission > 0);
-  const meilleur = produits.length
-    ? produits.reduce((a, b) => (b.resellerCommission > a.resellerCommission ? b : a))
-    : null;
-  const commissionMax = meilleur?.resellerCommission ?? 0;
 
   const handleGoogleJoin = async () => {
     setErreur(null);
@@ -126,81 +116,58 @@ export default function RejoindrePage() {
     });
   };
 
-  /** Le bandeau chiffré, différent par rôle — c'est l'argument, pas la prose. */
-  const argumentChiffre = () => {
-    if (role === 'reseller') {
-      return meilleur ? (
-        <>
-          <p className="text-3xl sm:text-4xl font-black leading-none">
-            +{commissionMax.toLocaleString('fr-FR')} F
-          </p>
-          <p className="text-sm text-white/80 mt-1.5">
-            par vente, sur le produit le mieux commissionné du catalogue
-          </p>
-          <p className="text-xs text-white/60 mt-2 leading-relaxed">
-            Exemple réel : {meilleur.name.replace(/^\[DÉMO\]\s*/, '')} — le client paie{' '}
-            {meilleur.publicPrice.toLocaleString('fr-FR')} F, vous touchez{' '}
-            {meilleur.resellerCommission.toLocaleString('fr-FR')} F.
-          </p>
-        </>
-      ) : (
-        <>
-          <p className="text-2xl font-black leading-tight">Une commission fixe par vente</p>
-          <p className="text-sm text-white/80 mt-1.5">
-            Le montant est écrit sur chaque produit, avant même que vous partagiez.
-          </p>
-        </>
-      );
-    }
+  /**
+   * L'argument du rôle : une promesse courte, puis le MÉCANISME en trois
+   * temps.
+   *
+   * Volontairement sans montant. La version précédente affichait la
+   * commission la plus élevée du catalogue — un chiffre exact, mais calculé
+   * sur des produits `[DÉMO]` : promettre un gain adossé à un produit qui
+   * n'existe pas revient à la fausse promesse qu'on a passé la session à
+   * retirer du site. Montrer comment l'argent circule convainc sans engager
+   * un montant.
+   */
+  const argument = () => {
+    const contenu: Record<RoleKey, { titre: string; sous: string; flux: string[] }> = {
+      reseller: {
+        titre: 'Vendez sans rien avancer',
+        sous: 'La commission est écrite sur chaque produit, avant même que vous partagiez.',
+        flux: ['Vous partagez', 'Suguba livre et encaisse', 'Vous touchez votre commission'],
+      },
+      supplier: {
+        titre: 'Votre prix, jamais rogné',
+        sous: 'Vous fixez ce que vous touchez. Suguba ajoute par-dessus, sans y toucher.',
+        flux: ['Votre prix', '+ commission revendeur', '+ marge Suguba'],
+      },
+      driver: {
+        titre: 'Payé à la course',
+        sous: 'Vous voyez ce qu\'il y a à encaisser avant de partir.',
+        flux: ['Vous recevez la course', 'Vous livrez', 'Vous encaissez'],
+      },
+      diaspora: {
+        titre: 'Livré à Bamako sous 24h',
+        sous: 'Vous payez depuis l\'étranger, votre proche n\'avance rien.',
+        flux: ['Vous choisissez', 'Vous payez', 'Suguba livre'],
+      },
+    };
 
-    if (role === 'supplier') {
-      return (
-        <>
-          <p className="text-2xl sm:text-3xl font-black leading-tight">Votre prix, jamais rogné</p>
-          <p className="text-sm text-white/80 mt-1.5">
-            Vous fixez ce que vous touchez. Suguba ajoute par-dessus.
-          </p>
-          {meilleur && (
-            <div className="mt-3 flex items-center gap-1.5 text-xs font-bold flex-wrap">
-              <span className="px-2 py-1 rounded-lg bg-white/20">
-                Vous : {meilleur.supplierPrice.toLocaleString('fr-FR')} F
-              </span>
-              <span className="text-white/50">+</span>
-              <span className="px-2 py-1 rounded-lg bg-white/10 text-white/80">
-                revendeur {meilleur.resellerCommission.toLocaleString('fr-FR')} F
-              </span>
-              <span className="text-white/50">+</span>
-              <span className="px-2 py-1 rounded-lg bg-white/10 text-white/80">
-                Suguba {Math.max(0, meilleur.publicPrice - meilleur.supplierPrice - meilleur.resellerCommission).toLocaleString('fr-FR')} F
-              </span>
-              <span className="text-white/50">=</span>
-              <span className="px-2 py-1 rounded-lg bg-white/20">
-                client {meilleur.publicPrice.toLocaleString('fr-FR')} F
-              </span>
-            </div>
-          )}
-        </>
-      );
-    }
-
-    if (role === 'driver') {
-      return (
-        <>
-          <p className="text-2xl sm:text-3xl font-black leading-tight">Payé à la course</p>
-          <p className="text-sm text-white/80 mt-1.5">
-            Vous voyez le montant à encaisser avant de partir, et votre portefeuille
-            récapitule ce que vous reversez au hub en fin de journée.
-          </p>
-        </>
-      );
-    }
+    const { titre, sous, flux } = contenu[role];
 
     return (
       <>
-        <p className="text-2xl sm:text-3xl font-black leading-tight">Livré à Bamako sous 24h</p>
-        <p className="text-sm text-white/80 mt-1.5">
-          Vous payez depuis l&apos;étranger, votre proche n&apos;avance rien.
-        </p>
+        <p className="text-2xl sm:text-3xl font-black leading-tight">{titre}</p>
+        <p className="text-sm text-white/80 mt-1.5 leading-relaxed">{sous}</p>
+
+        <div className="mt-4 flex items-center gap-1.5 flex-wrap">
+          {flux.map((etape, i) => (
+            <React.Fragment key={etape}>
+              {i > 0 && <ArrowRight className="w-3.5 h-3.5 text-white/40 shrink-0" />}
+              <span className="px-2.5 py-1.5 rounded-xl bg-white/15 text-[11px] font-bold">
+                {etape}
+              </span>
+            </React.Fragment>
+          ))}
+        </div>
       </>
     );
   };
@@ -254,7 +221,7 @@ export default function RejoindrePage() {
             </span>
           </div>
 
-          {argumentChiffre()}
+          {argument()}
 
           {erreur && (
             <div className="mt-4 p-3 rounded-2xl bg-black/20 text-white text-xs font-bold flex items-center gap-2">
