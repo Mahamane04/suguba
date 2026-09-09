@@ -14,7 +14,14 @@ export default function WhatsAppFloatingButton() {
   };
 
   return (
-    <div className="fixed bottom-20 md:bottom-6 right-4 z-40">
+    // `bottom-20` (80px) plaçait le bouton pile sur la barre de navigation du
+    // bas, qui occupe 5rem : il recouvrait en permanence le bouton de partage
+    // de la carte produit qui se trouvait dessous. Il démarre désormais
+    // au-dessus de la barre, zone sûre iOS comprise, et passe devant elle
+    // (z-50 contre z-40). La valeur reste une classe et non un style en ligne,
+    // sinon `md:bottom-6` ne pourrait plus reprendre la main sur desktop, où
+    // la barre du bas n'existe pas.
+    <div className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom,0px))] md:bottom-6 right-4 z-50">
       
       {/* Expanded Popup Menu */}
       {isOpen && (

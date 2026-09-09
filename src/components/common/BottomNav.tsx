@@ -5,12 +5,21 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
   Home, Grid3X3, ShoppingCart, Wallet, TrendingUp,
-  PackagePlus, ListOrdered, ShieldCheck, Truck
+  PackagePlus, ShieldCheck, Truck, Store, Users,
+  BarChart3, LifeBuoy, LogIn, PackageSearch, Boxes
 } from 'lucide-react';
 
 type NavItem = { label: string; href: string; icon: React.ElementType };
 
-function getNavItems(role: string): NavItem[] {
+/**
+ * ⚠️ Chaque href ci-dessous doit correspondre à une page réellement présente
+ * dans src/app. Six d'entre eux n'existaient pas (/supplier/products,
+ * /supplier/orders, /driver/history, /admin/products, /admin/orders,
+ * /admin/payouts) : la navigation principale de l'admin était cassée à 75 %,
+ * celle du fournisseur et du livreur à 50 %. Corrigé le 2026-09-09 en les
+ * pointant vers les pages qui rendent réellement ce service.
+ */
+function getNavItems(role: string | null): NavItem[] {
   switch (role) {
     case 'reseller':
       return [
@@ -23,24 +32,42 @@ function getNavItems(role: string): NavItem[] {
     case 'supplier':
       return [
         { label: 'Dashboard',   href: '/supplier',              icon: Home       },
-        { label: 'Produits',    href: '/supplier/products',     icon: Grid3X3    },
+        // Anciennement /supplier/products (inexistant) — la gestion du stock
+        // et du catalogue du fournisseur vit sur /supplier/inventory.
+        { label: 'Stocks',      href: '/supplier/inventory',    icon: Boxes      },
         { label: 'Ajouter',     href: '/supplier/products/new', icon: PackagePlus},
-        { label: 'Commandes',   href: '/supplier/orders',       icon: ListOrdered},
+        // Anciennement /supplier/orders (inexistant).
+        { label: 'Réseau',      href: '/supplier/ambassadors',  icon: Users      },
       ];
     case 'driver':
       return [
-        { label: 'Courses',     href: '/driver',         icon: Truck      },
-        { label: 'Historique',  href: '/driver/history', icon: ListOrdered},
+        { label: 'Courses',     href: '/driver',          icon: Truck  },
+        // Anciennement /driver/history (inexistant) — l'historique des
+        // livraisons est dans le portefeuille.
+        { label: 'Portefeuille',href: '/driver/earnings', icon: Wallet },
       ];
     case 'admin':
       return [
-        { label: 'Vue globale', href: '/admin',          icon: Home       },
-        { label: 'Modération',  href: '/admin/products', icon: ShieldCheck},
-        { label: 'Commandes',   href: '/admin/orders',   icon: ShoppingCart},
-        { label: 'Retraits',    href: '/admin/payouts',  icon: Wallet     },
+        { label: 'Vue globale', href: '/admin',              icon: Home       },
+        // La modération, les commandes et les retraits sont tous des blocs de
+        // /admin lui-même : les trois anciennes entrées menaient à des 404.
+        { label: 'Ajouter',     href: '/admin/products/new', icon: PackagePlus},
+        { label: 'Analyses',    href: '/admin/analytics',    icon: BarChart3  },
+        { label: 'SAV',         href: '/admin/sav',          icon: LifeBuoy   },
       ];
     default:
-      return [];
+      // Visiteur non connecté — c'est-à-dire le client, l'utilisateur le plus
+      // important d'une vitrine produit. Il n'avait jusqu'ici AUCUNE barre de
+      // navigation : la fonction renvoyait un tableau vide et le composant se
+      // retirait entièrement du rendu.
+      return [
+        // Libellés courts volontairement : la barre tronque à 56px, « Ma
+        // commande » s'affichait « Ma comm… ».
+        { label: 'Boutique',  href: '/',          icon: Store        },
+        { label: 'Suivi',     href: '/track',     icon: PackageSearch},
+        { label: 'Gagner',    href: '/rejoindre', icon: TrendingUp   },
+        { label: 'Connexion', href: '/login',     icon: LogIn        },
+      ];
   }
 }
 
@@ -66,9 +93,12 @@ export default function BottomNav() {
     return () => { annule = true; };
   }, [pathname]);
 
-  const navItems = role ? getNavItems(role) : [];
+  const navItems = getNavItems(role);
 
-  if (navItems.length === 0) return null;
+  // Racines d'espace : elles ne doivent s'allumer qu'en correspondance exacte.
+  // Sans « / » dans cette liste, `pathname.startsWith('/')` est toujours vrai
+  // et l'onglet Boutique resterait allumé sur toutes les pages du site.
+  const RACINES = ['/', '/reseller', '/supplier', '/driver', '/admin'];
 
   return (
     <>
@@ -96,11 +126,7 @@ export default function BottomNav() {
             const Icon = item.icon;
             const isActive =
               pathname === item.href ||
-              (item.href !== '/reseller' &&
-               item.href !== '/supplier' &&
-               item.href !== '/driver' &&
-               item.href !== '/admin' &&
-               pathname.startsWith(item.href));
+              (!RACINES.includes(item.href) && pathname.startsWith(item.href));
 
             return (
               <Link

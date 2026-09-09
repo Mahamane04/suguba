@@ -146,19 +146,34 @@ export default function HomePage() {
                     key={product.id}
                     className="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-card hover:shadow-card-hover transition-all hover:-translate-y-0.5 flex flex-col touch-card"
                   >
-                    <Link href={`/p/${product.slug}`} className="relative h-48 bg-gray-50 overflow-hidden block">
-                      <ProductImage
-                        src={product.images[0]}
-                        alt={product.name}
-                        fill
-                        className="object-cover transition-transform duration-300 hover:scale-105"
-                      />
+                    <div className="relative h-48 bg-gray-50 overflow-hidden">
+                      <Link href={`/p/${product.slug}`} className="block h-full">
+                        <ProductImage
+                          src={product.images[0]}
+                          alt={product.name}
+                          fill
+                          className="object-cover transition-transform duration-300 hover:scale-105"
+                        />
+                      </Link>
                       <div className="absolute top-3 left-3">
                         <span className="px-2.5 py-1 rounded-full bg-gray-900/70 backdrop-blur-sm text-white text-[10px] font-bold">
                           {product.category}
                         </span>
                       </div>
-                    </Link>
+                      {/* Le partage WhatsApp vit sur l'image, pas en bas de
+                          carte : en bas à droite il tombait sous le bouton
+                          flottant de support, qui le rendait intouchable sur
+                          mobile. C'est aussi une action de revendeur, elle n'a
+                          pas à concurrencer « Acheter » sur une vitrine
+                          d'abord destinée aux clients. */}
+                      <button
+                        onClick={() => setSelectedProductForShare(product)}
+                        aria-label={`Partager ${product.name} sur WhatsApp`}
+                        className="absolute top-2.5 right-2.5 w-9 h-9 rounded-full bg-[#25D366] hover:bg-[#1eb558] text-white flex items-center justify-center shadow-md transition-all active:scale-95"
+                      >
+                        <MessageCircle className="w-4 h-4 fill-current" />
+                      </button>
+                    </div>
 
                     <div className="p-4 flex-1 flex flex-col gap-3">
                       <div>
@@ -184,22 +199,13 @@ export default function HomePage() {
                         </p>
                       </div>
 
-                      <div className="grid grid-cols-[1fr_auto] gap-2">
-                        <Link
-                          href={`/p/${product.slug}`}
-                          className="flex items-center justify-center gap-1.5 py-2.5 px-3 bg-gray-900 hover:bg-black text-white rounded-xl text-xs font-bold transition-all active:scale-95"
-                        >
-                          Acheter
-                          <ArrowRight className="w-3.5 h-3.5" />
-                        </Link>
-                        <button
-                          onClick={() => setSelectedProductForShare(product)}
-                          aria-label="Partager sur WhatsApp"
-                          className="flex items-center justify-center py-2.5 px-3 bg-[#25D366] hover:bg-[#1eb558] text-white rounded-xl transition-all active:scale-95"
-                        >
-                          <MessageCircle className="w-4 h-4 fill-current" />
-                        </button>
-                      </div>
+                      <Link
+                        href={`/p/${product.slug}`}
+                        className="flex items-center justify-center gap-1.5 py-3 px-3 bg-gray-900 hover:bg-black text-white rounded-xl text-xs font-bold transition-all active:scale-95"
+                      >
+                        Acheter
+                        <ArrowRight className="w-3.5 h-3.5" />
+                      </Link>
                     </div>
                   </div>
                 ))}
