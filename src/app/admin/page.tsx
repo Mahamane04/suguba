@@ -552,11 +552,21 @@ export default function AdminDashboardPage() {
                     </div>
 
                     <button
-                      onClick={() => sugubaStore.unlockCommissionToAvailable(com.id)}
+                      onClick={async () => {
+                        const res = await fetch('/api/admin/unlock-commission', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ commissionId: com.id }),
+                        });
+                        const json = await res.json();
+                        setActionFeedback(res.ok && json.success
+                          ? { type: 'success', message: '✅ Commission débloquée : elle est désormais retirable par le revendeur.' }
+                          : { type: 'error', message: json.error || 'Déblocage impossible.' });
+                      }}
                       className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-2xs"
-                      title="Simuler l'écoulement des 7 jours de sécurité"
+                      title="Rendre la commission retirable avant la fin du délai de sécurité"
                     >
-                      Débloquer vers disponible (Fin J+{com.safetyWindowDays})
+                      Débloquer avant terme (J+{com.safetyWindowDays})
                     </button>
                   </div>
                 ))}

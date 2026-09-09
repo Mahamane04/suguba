@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
+import { verrouillerCommissionDeLivraison } from '@/lib/commissions';
 
 /**
  * Remplace l'ancien `pushOrderToCloud` qui écrivait directement dans
@@ -126,15 +127,12 @@ export async function POST(req: NextRequest) {
     const { error } = await admin.from('orders').update(row).eq('id', order.id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-    // Livraison confirmée pour la première fois : la commission associée
-    // devient réclamable. `existing.status !== 'delivered'` évite de la
-    // "redébloquer" si la même mise à jour est rejouée par erreur.
+    // Livraison confirmée pour la première fois : la commission passe en
+    // `locked` avec son délai de sécurité, pas directement en `available`
+    // (voir src/lib/commissions.ts). `existing.status !== 'delivered'` évite
+    // de relancer le délai si la même mise à jour est rejouée par erreur.
     if (order.status === 'delivered' && existing.status !== 'delivered') {
-      await admin
-        .from('commissions')
-        .update({ status: 'available', available_at: new Date().toISOString() })
-        .eq('order_id', order.id)
-        .eq('status', 'pending');
+      await verrouillerCommissionDeLivraison(admin, order.id, resolvedResellerId);
     }
 
     return NextResponse.json({ success: true, cloud: true, created: false });

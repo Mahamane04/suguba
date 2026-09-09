@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { libererCommissionsEchues } from '@/lib/commissions';
 
 const MIN_WITHDRAWAL = 5000;
 const PROVIDER_MAP: Record<string, string> = {
@@ -49,6 +50,13 @@ export async function POST(req: NextRequest) {
     if (!payoutPhone || !withdrawalCode) {
       return NextResponse.json({ error: 'Champs requis manquants.' }, { status: 400 });
     }
+
+    // Libère d'abord les commissions dont le délai de sécurité vient
+    // d'expirer : sans cela, un revendeur dont le délai est écoulé depuis
+    // quelques heures se verrait refuser un retrait pourtant légitime.
+    // Inversement, la réservation ne prend que du `available` — une
+    // commission encore `locked` reste hors de portée.
+    await libererCommissionsEchues(admin);
 
     const { data: reserved, error: reserveErr } = await admin.rpc('reserve_commissions_for_withdrawal', {
       p_reseller_id: session.uid,

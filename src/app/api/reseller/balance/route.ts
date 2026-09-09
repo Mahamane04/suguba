@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { libererCommissionsEchues } from '@/lib/commissions';
 
 /**
  * Solde réel du revendeur authentifié — somme des commissions au statut
@@ -20,11 +21,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ availableBalance: 0, pendingBalance: 0, cloud: false });
   }
 
+  // Libère d'abord les commissions dont le délai de sécurité est écoulé,
+  // sinon le solde affiché serait en retard sur ce qui est réellement
+  // retirable (voir src/lib/commissions.ts).
+  await libererCommissionsEchues(admin);
+
   const { data, error } = await admin
     .from('commissions')
     .select('amount, status')
     .eq('reseller_id', session.uid)
-    .in('status', ['pending', 'available', 'reserved']);
+    .in('status', ['pending', 'locked', 'available', 'reserved']);
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
@@ -33,8 +39,10 @@ export async function GET(req: NextRequest) {
   const availableBalance = (data || [])
     .filter((c) => c.status === 'available')
     .reduce((sum, c) => sum + Number(c.amount), 0);
+  // `locked` compte comme en attente du point de vue du revendeur : la vente
+  // est faite, l'argent est acquis, mais le délai de sécurité court encore.
   const pendingBalance = (data || [])
-    .filter((c) => c.status === 'pending')
+    .filter((c) => c.status === 'pending' || c.status === 'locked')
     .reduce((sum, c) => sum + Number(c.amount), 0);
   const reservedBalance = (data || [])
     .filter((c) => c.status === 'reserved')

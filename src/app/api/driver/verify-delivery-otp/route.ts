@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { verrouillerCommissionDeLivraison } from '@/lib/commissions';
 
 const MAX_ATTEMPTS = 3;
 
@@ -82,13 +83,12 @@ export async function POST(req: NextRequest) {
       delivered_at: now,
     }).eq('id', orderId);
 
-    // Même règle que /api/orders/sync : la commission ne devient réclamable
-    // qu'à la livraison effective, jamais avant.
-    await admin
-      .from('commissions')
-      .update({ status: 'available', available_at: now })
-      .eq('order_id', orderId)
-      .eq('status', 'pending');
+    // La commission passe en `locked` avec son délai de sécurité (14/7/3
+    // jours selon le palier), pas directement en `available` : le temps qu'un
+    // éventuel retour client se manifeste. Voir src/lib/commissions.ts.
+    const { data: commande } = await admin
+      .from('orders').select('reseller_id').eq('id', orderId).maybeSingle();
+    await verrouillerCommissionDeLivraison(admin, orderId, commande?.reseller_id || null);
 
     return NextResponse.json({ success: true, orderNumber: order.order_number });
   } catch (error: any) {

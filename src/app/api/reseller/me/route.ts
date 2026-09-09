@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { libererCommissionsEchues } from '@/lib/commissions';
 
 /**
  * Fiche revendeur réelle du compte connecté.
@@ -39,6 +40,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ reseller: null });
   }
 
+  // Les commissions dont le délai de sécurité est écoulé deviennent
+  // retirables ici, à la lecture — pas de tâche planifiée à maintenir, et
+  // aucun décalage entre le solde affiché et le solde réellement retirable.
+  await libererCommissionsEchues(admin);
+
   const [{ data: profil }, { data: commissions }, { count: ventesLivrees }] = await Promise.all([
     admin.from('profiles').select('reseller_code, full_name, phone, metadata').eq('id', session.uid).maybeSingle(),
     admin.from('commissions').select('amount, status').eq('reseller_id', session.uid),
@@ -61,7 +67,8 @@ export async function GET(req: NextRequest) {
       tier: paliers(ventes),
       successfulOrdersCount: ventes,
       availableBalance: somme('available'),
-      pendingBalance: somme('pending'),
+      // `locked` = vente acquise mais délai de sécurité en cours.
+      pendingBalance: somme('pending') + somme('locked'),
       reservedBalance: somme('reserved'),
       totalEarned: somme('paid'),
       momoNumber: metadata.momoNumber ? String(metadata.momoNumber) : null,
