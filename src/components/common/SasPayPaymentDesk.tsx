@@ -21,9 +21,11 @@ import { Smartphone, ShieldCheck, Loader2, CheckCircle2, AlertCircle, ArrowUpRig
  *    statut jusqu'à la validation.
  */
 
+// Libellés courts : « Orange Money » sur trois colonnes à 375 px passait à la
+// ligne et cassait l'alignement. Au Mali ces noms courts sont sans ambiguïté.
 const RESEAUX = [
-  { code: 'orange_ml', label: 'Orange Money', couleur: 'bg-orange-500' },
-  { code: 'moov_ml', label: 'Moov Money', couleur: 'bg-blue-600' },
+  { code: 'orange_ml', label: 'Orange', couleur: 'bg-orange-500' },
+  { code: 'moov_ml', label: 'Moov', couleur: 'bg-blue-600' },
   { code: 'mobi_cash_ml', label: 'Mobi Cash', couleur: 'bg-emerald-600' },
 ] as const;
 
@@ -120,15 +122,23 @@ export default function SasPayPaymentDesk({ amount, orderNumber, defaultPhone = 
 
   if (etape === 'paye') {
     return (
-      <div className="bg-emerald-50 rounded-3xl p-5 sm:p-6 border border-emerald-200 text-left">
-        <div className="flex items-center space-x-3">
-          <CheckCircle2 className="w-8 h-8 text-emerald-600 shrink-0" />
-          <div>
-            <h3 className="font-black text-sm text-emerald-900">Paiement reçu</h3>
-            <p className="text-[11px] text-emerald-700">
-              Commande #{orderNumber} réglée. Le livreur ne vous redemandera rien.
-            </p>
-          </div>
+      // Moment de plus forte réassurance du parcours : le client vient de se
+      // séparer d'une somme importante. Le montant réglé doit être aussi
+      // lisible ici qu'il l'était sur l'écran de paiement, sans quoi il n'a
+      // aucune confirmation chiffrée de ce qu'il a payé.
+      <div className="bg-emerald-50 rounded-3xl p-5 sm:p-6 border border-emerald-200 text-left space-y-3">
+        <div className="flex items-center space-x-2">
+          <CheckCircle2 className="w-7 h-7 text-emerald-600 shrink-0" />
+          <h3 className="font-black text-base text-emerald-900">Paiement reçu</h3>
+        </div>
+        <p className="text-[28px] leading-none font-black text-emerald-700 font-mono tracking-tight">
+          {amount.toLocaleString('fr-FR')} <span className="text-base align-top">FCFA</span>
+        </p>
+        <div className="space-y-1 pt-1">
+          <p className="text-[11px] font-bold text-emerald-800">Commande #{orderNumber} réglée.</p>
+          <p className="text-[11px] text-emerald-700">
+            Le livreur ne vous redemandera rien à la remise du colis.
+          </p>
         </div>
       </div>
     );
@@ -137,18 +147,20 @@ export default function SasPayPaymentDesk({ amount, orderNumber, defaultPhone = 
   return (
     <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm text-left space-y-5">
 
-      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
+      {/* Clarté monétaire immédiate : le montant est l'information la plus
+          importante de l'écran, il est donc traité en Display 1 (28px, 900)
+          et non noyé dans une ligne de métadonnées. */}
+      <div className="border-b border-slate-100 pb-4">
+        <div className="flex items-center space-x-2 mb-2">
+          <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
             <Smartphone className="w-4 h-4" />
           </div>
-          <div>
-            <h3 className="font-black text-sm text-slate-900">Payer maintenant par Mobile Money</h3>
-            <p className="text-[11px] text-slate-500">
-              Montant : <strong className="text-emerald-700 font-bold font-mono">{amount.toLocaleString('fr-FR')} FCFA</strong>
-            </p>
-          </div>
+          <h3 className="font-black text-sm text-slate-900">Payer maintenant par Mobile Money</h3>
         </div>
+        <p className="text-[28px] leading-none font-black text-emerald-700 font-mono tracking-tight">
+          {amount.toLocaleString('fr-FR')} <span className="text-base align-top">FCFA</span>
+        </p>
+        <p className="text-[11px] font-bold text-slate-400 mt-1.5">Commande #{orderNumber}</p>
       </div>
 
       {etape === 'attente' ? (
@@ -176,13 +188,13 @@ export default function SasPayPaymentDesk({ amount, orderNumber, defaultPhone = 
                   key={r.code}
                   type="button"
                   onClick={() => setReseau(r.code)}
-                  className={`py-2.5 px-2 rounded-2xl text-[11px] font-bold border transition-colors ${
+                  className={`h-12 px-2 rounded-2xl text-[11px] font-bold border transition-all active:scale-[0.98] flex items-center justify-center whitespace-nowrap ${
                     reseau === r.code
                       ? 'border-slate-900 bg-slate-900 text-white'
                       : 'border-slate-200 bg-white text-slate-700 hover:border-slate-400'
                   }`}
                 >
-                  <span className={`inline-block w-2 h-2 rounded-full mr-1.5 align-middle ${r.couleur}`} />
+                  <span className={`inline-block w-2 h-2 rounded-full mr-1.5 shrink-0 ${r.couleur}`} />
                   {r.label}
                 </button>
               ))}
@@ -200,7 +212,7 @@ export default function SasPayPaymentDesk({ amount, orderNumber, defaultPhone = 
               value={telephone}
               onChange={(e) => setTelephone(e.target.value)}
               placeholder="Ex : 70 00 00 00"
-              className="w-full px-4 py-3 rounded-2xl border border-slate-200 text-sm font-mono focus:outline-none focus:border-slate-900"
+              className="w-full h-12 px-4 rounded-2xl border border-slate-200 text-sm font-mono focus:outline-none focus:border-slate-900"
             />
           </div>
 
@@ -215,7 +227,9 @@ export default function SasPayPaymentDesk({ amount, orderNumber, defaultPhone = 
             type="button"
             onClick={payer}
             disabled={etape === 'envoi'}
-            className="w-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white font-black py-3.5 px-4 rounded-2xl text-xs flex items-center justify-center space-x-2 shadow-xs transition-colors"
+            // Zone du pouce : 52 px de haut, au-delà du minimum de 48 px du
+            // design system, avec retour tactile actif:scale-[0.98].
+            className="w-full h-[52px] bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] disabled:bg-slate-300 disabled:active:scale-100 text-white font-black px-4 rounded-2xl text-sm flex items-center justify-center space-x-2 shadow-xs transition-all"
           >
             {etape === 'envoi' ? (
               <>
