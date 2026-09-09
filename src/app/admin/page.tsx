@@ -303,9 +303,17 @@ export default function AdminDashboardPage() {
                   <p className="text-[10px] text-slate-500">Suguba fixe le prix public et la commission fixe</p>
                 </div>
               </div>
-              <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[11px] font-black">
-                {pendingProducts.length} soumis
-              </span>
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/admin/products/new"
+                  className="px-2.5 py-1 rounded-xl bg-blue-700 hover:bg-blue-800 text-white text-[11px] font-black whitespace-nowrap"
+                >
+                  + Ajouter
+                </Link>
+                <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[11px] font-black">
+                  {pendingProducts.length} soumis
+                </span>
+              </div>
             </div>
 
             {pendingProducts.length === 0 ? (
