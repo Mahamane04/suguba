@@ -171,8 +171,9 @@ export default function OrderTrackingPage() {
             </div>
           </div>
 
-          {/* Encaissement mobile money via SasPay */}
-          {order.status !== 'delivered' && (
+          {/* Encaissement mobile money via SasPay. Le composant vérifie
+              lui-même à l'ouverture si la commande est déjà réglée. */}
+          {order.status !== 'delivered' && !order.paymentCollected && (
             <SasPayPaymentDesk
               amount={order.totalAmount}
               orderNumber={order.orderNumber}

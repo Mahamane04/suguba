@@ -57,6 +57,26 @@ export default function SasPayPaymentDesk({ amount, orderNumber, defaultPhone = 
   // intervalle tourner indéfiniment contre l'API.
   useEffect(() => arreterSondage, [arreterSondage]);
 
+  // Vérification à l'ouverture : une commande déjà réglée ne doit jamais
+  // réafficher un formulaire de paiement. Le composant s'en assure lui-même
+  // plutôt que de compter sur chaque page appelante — la page de suivi ne
+  // masquait le desk que pour les commandes livrées, donc une commande payée
+  // mais pas encore remise proposait de la repayer.
+  useEffect(() => {
+    let annule = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/payments/saspay/status?orderNumber=${encodeURIComponent(orderNumber)}`);
+        const json = await res.json();
+        if (!annule && json.paye) setEtape('paye');
+      } catch {
+        // Hors ligne ou API indisponible : on laisse le formulaire. Au pire le
+        // client tente un paiement, que la route refusera en 409 « déjà payée ».
+      }
+    })();
+    return () => { annule = true; };
+  }, [orderNumber]);
+
   useEffect(() => {
     if (etape !== 'attente') return;
 
