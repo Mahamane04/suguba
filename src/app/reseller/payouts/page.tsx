@@ -20,13 +20,11 @@ const ussdShortcuts = [
     description: 'Consulter solde & transferts OM',
     color: 'bg-orange-50 text-orange-800 border-orange-200 hover:bg-orange-100',
   },
-  {
-    provider: 'Mobi Cash',
-    code: 'Mobi Cash',
-    link: 'tel:*888%23',
-    description: 'Consulter solde Mobi Cash',
-    color: 'bg-blue-50 text-blue-800 border-blue-200 hover:bg-blue-100',
-  },
+  // Mobi Cash est bien proposé comme moyen de réception (SasPay le couvre au
+  // Mali), mais il n'a pas de raccourci ici : son code USSD n'est pas connu
+  // avec certitude. Un raccourci qui composerait un mauvais code sur le
+  // téléphone d'un revendeur serait pire que pas de raccourci du tout.
+  // À rétablir dès que le code aura été vérifié auprès de l'opérateur.
   {
     provider: 'Moov Money',
     code: '#166#',
