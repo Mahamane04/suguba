@@ -283,6 +283,16 @@ curl -s -H "Authorization: Bearer $KEY" https://api.saspay.me/api/v1/merchant-ba
   Avec des comptes toujours actifs, un inscrit Google aurait filé vers son tableau de bord
   sans jamais donner numéro ni quartier. La condition ne porte plus que sur le téléphone.
   Leçon : changer une valeur par défaut oblige à relire toutes les conditions qui la testaient.
+- **Toute connexion d'une adresse inconnue créait un compte « revendeur » en silence**
+  (corrigé le 2026-09-10). `/login` n'envoie aucun rôle, et `supabase-exchange` retombait sur
+  `'reseller'` par défaut ; `/auth/callback` n'envoyait vers `/register/complete` que les
+  comptes non actifs — or tous naissent actifs. Résultat : ni rôle choisi, ni nom confirmé,
+  ni numéro, ni fiche fournisseur/livreur (0 ligne dans `suppliers` et `drivers`). Désormais :
+  sans rôle explicite, **rien n'est créé** (`needsRole`) ; `/register/complete` fait choisir le
+  profil puis crée le compte ; le rôle reste modifiable tant qu'aucun numéro n'est enregistré ;
+  le numéro est obligatoire ; le middleware renvoie vers le formulaire toute session dont le
+  « phone » est encore un email (admin exempté). Les 2 comptes créés en silence le 2026-09-10
+  seront invités à choisir leur profil à leur prochaine connexion.
 - **`payouts.status` n'accepte que `pending`/`processing`/`completed`/`rejected`** (contrainte
   CHECK). Écrire `failed` ferait échouer la mise à jour — même famille de piège que
   l'incohérence de statut des commandes corrigée en août. Un versement raté s'écrit

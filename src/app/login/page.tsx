@@ -159,6 +159,9 @@ function LoginPageContent() {
               <p className="text-xs text-gray-400 mt-1">
                 Sans mot de passe, avec Google ou par email
               </p>
+              <p className="text-[11px] text-gray-500 mt-2">
+                Nouveau sur Suguba ? Connectez-vous de la même façon : vous choisirez votre profil juste après.
+              </p>
             </div>
 
             {deniedRole && (

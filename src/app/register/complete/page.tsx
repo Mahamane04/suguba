@@ -1,63 +1,76 @@
 'use client';
 
 import React, { useEffect, useState, Suspense } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/common/Header';
-import Footer from '@/components/common/Footer';
 import DialCodePicker from '@/components/common/DialCodePicker';
 import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
+import EtapesInscription from '@/components/common/EtapesInscription';
+import Button from '@/components/ui/Button';
+import { supabase } from '@/lib/supabase';
 import { DEFAULT_DIAL_CODE } from '@/lib/dial-codes';
 import { DEFAULT_NEIGHBORHOOD } from '@/lib/bamako-neighborhoods';
-import EtapesInscription from '@/components/common/EtapesInscription';
-import { ShieldCheck, ArrowRight, Gift } from 'lucide-react';
+import { ArrowRight, Gift, Store, ShoppingBag, Truck, Globe, ShoppingCart, Check } from 'lucide-react';
 
-type Role = 'reseller' | 'supplier' | 'driver' | 'diaspora' | string;
+type Role = 'reseller' | 'supplier' | 'driver' | 'diaspora';
+
+const ROLES: { cle: Role; titre: string; detail: string; icone: React.ElementType }[] = [
+  { cle: 'reseller', titre: 'Revendeur', detail: 'Je partage des produits et je touche une commission', icone: Store },
+  { cle: 'supplier', titre: 'Fournisseur', detail: 'J\'ai un stock et je veux le vendre via Suguba', icone: ShoppingBag },
+  { cle: 'driver', titre: 'Livreur', detail: 'Je livre les commandes à Bamako', icone: Truck },
+  { cle: 'diaspora', titre: 'Diaspora', detail: 'Je commande depuis l\'étranger pour mes proches', icone: Globe },
+];
+
+const DESTINATION: Record<string, string> = {
+  reseller: '/reseller', supplier: '/supplier', driver: '/driver', diaspora: '/diaspora', admin: '/admin',
+};
+
+const estRole = (v: unknown): v is Role => ROLES.some((r) => r.cle === v);
 
 /**
- * Étape obligatoire après une inscription via Google (voir /register) :
- * Google prouve l'identité (email) mais ne connaît ni le numéro WhatsApp, ni
- * les informations propres au métier (entreprise, véhicule, bénéficiaire...).
- * Cette page les recueille avant le passage en /pending-approval. Le rôle
- * est déjà fixé (transmis à travers la redirection OAuth), donc rien à
- * choisir ici — seuls les champs affichés changent selon le rôle.
+ * Finalisation de l'inscription — étape obligatoire entre la preuve d'identité
+ * (Google ou lien email) et l'accès à l'espace.
  *
- * Devenue commune aux 4 rôles le 2026-08-26 quand le téléphone/OTP maison a
- * été retiré de l'inscription (aucune passerelle SMS réelle n'était
- * branchée) : Google est désormais le seul chemin d'inscription, donc cette
- * page est le seul endroit où un fournisseur/livreur/diaspora peut renseigner
- * son dossier, pas seulement le revendeur comme avant.
+ * Reconstruite le 2026-09-10. Deux défauts faisaient qu'on n'y passait plus :
+ *  - /login créait un compte « revendeur » par défaut pour toute adresse
+ *    inconnue, sans rien demander ;
+ *  - /auth/callback n'envoyait ici que les comptes « non actifs », alors que
+ *    tous naissent actifs.
+ *
+ * Deux cas d'arrivée :
+ *  - « nouveau » : identité prouvée, mais aucun compte Suguba (connexion depuis
+ *    /login). Le compte n'est créé qu'à l'envoi, avec le rôle choisi ici ;
+ *  - « existant » : compte créé mais jamais complété (aucun numéro). Le rôle
+ *    reste modifiable — le serveur ne l'accepte que tant qu'aucun numéro n'est
+ *    enregistré (voir /api/auth/complete-profile).
  */
-function CompleteProfileForm() {
+function FinaliserInscription() {
   const router = useRouter();
+  const [mode, setMode] = useState<'chargement' | 'nouveau' | 'existant'>('chargement');
   const [role, setRole] = useState<Role | null>(null);
   const [fullName, setFullName] = useState('');
   const [dialCode, setDialCode] = useState(DEFAULT_DIAL_CODE);
   const [phone, setPhone] = useState('');
-  const [checkingSession, setCheckingSession] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
 
-  // Champs Revendeur
+  // Revendeur
   const [neighborhood, setNeighborhood] = useState(DEFAULT_NEIGHBORHOOD);
-  const [momoProvider, setMomoProvider] = useState('');
   const [refCode, setRefCode] = useState('');
-
-  // Champs Fournisseur
+  // Fournisseur
   const [companyName, setCompanyName] = useState('');
-  const [warehouseAddress, setWarehouseAddress] = useState('');
   const [warehouseNeighborhood, setWarehouseNeighborhood] = useState(DEFAULT_NEIGHBORHOOD);
   const [category, setCategory] = useState('Électronique & Énergie');
   const [rccmOrNif, setRccmOrNif] = useState('');
-
-  // Champs Livreur
-  const [vehicleType, setVehicleType] = useState('Moto Jakarta Express');
+  // Livreur
+  const [vehicleType, setVehicleType] = useState('Moto Sanili / Jakarta 125');
   const [licensePlate, setLicensePlate] = useState('');
-  const [zone, setZone] = useState('Communes IV, V, VI (Bamako)');
+  const [zone, setZone] = useState('');
   const [idDocumentNumber, setIdDocumentNumber] = useState('');
-
-  // Champs Diaspora
-  const [countryOfResidence, setCountryOfResidence] = useState('France 🇫🇷');
-  const [currency, setCurrency] = useState<'EUR' | 'USD' | 'CAD' | 'GBP'>('EUR');
+  // Diaspora
+  const [countryOfResidence, setCountryOfResidence] = useState('France');
+  const [currency, setCurrency] = useState<'EUR' | 'USD' | 'CAD'>('EUR');
   const [beneficiaryNameInMali, setBeneficiaryNameInMali] = useState('');
   const [beneficiaryPhoneInMali, setBeneficiaryPhoneInMali] = useState('');
   const [beneficiaryNeighborhoodInMali, setBeneficiaryNeighborhoodInMali] = useState(DEFAULT_NEIGHBORHOOD);
@@ -66,350 +79,294 @@ function CompleteProfileForm() {
     const params = new URLSearchParams(window.location.search);
     setFullName(params.get('fullName') || '');
     setRefCode(params.get('ref') || '');
+    const roleUrl = params.get('intendedRole');
 
-    fetch('/api/auth/me')
-      .then((res) => (res.ok ? res.json() : { authenticated: false }))
-      .then((data) => {
-        if (!data.authenticated) {
-          router.replace('/register');
-          return;
-        }
-        setRole(data.role);
-        setCheckingSession(false);
-      })
-      .catch(() => router.replace('/register'));
+    (async () => {
+      const me = await fetch('/api/auth/me').then((r) => (r.ok ? r.json() : null)).catch(() => null);
+      if (me?.authenticated) {
+        if (me.role === 'admin') { router.replace('/admin'); return; }
+        setRole(estRole(me.role) ? me.role : null);
+        setMode('existant');
+        return;
+      }
+      // Pas de compte Suguba : il faut au moins une identité prouvée.
+      const { data } = (await supabase?.auth.getSession()) || { data: { session: null } };
+      if (!data.session) { router.replace('/register'); return; }
+      const meta = data.session.user.user_metadata || {};
+      setFullName((f) => f || meta.full_name || meta.name || '');
+      setRole(estRole(roleUrl) ? roleUrl : null);
+      setMode('nouveau');
+    })();
   }, [router]);
 
   const buildMetadata = (): Record<string, unknown> => {
     if (role === 'supplier') {
-      return {
-        companyName,
-        warehouseAddress: warehouseAddress || 'Bamako',
-        warehouseNeighborhood,
-        category,
-        rccmOrNif,
-      };
+      return { companyName, warehouseAddress: 'Bamako', warehouseNeighborhood, category, rccmOrNif };
     }
-    if (role === 'driver') {
-      return { vehicleType, licensePlate, zone, idDocumentNumber };
-    }
+    if (role === 'driver') return { vehicleType, licensePlate, zone, idDocumentNumber };
     if (role === 'diaspora') {
-      return {
-        countryOfResidence, currency,
-        beneficiaryNameInMali, beneficiaryPhoneInMali, beneficiaryNeighborhoodInMali,
-      };
+      return { countryOfResidence, currency, beneficiaryNameInMali, beneficiaryPhoneInMali, beneficiaryNeighborhoodInMali };
     }
-    return {
-      neighborhood,
-      ...(momoProvider ? { momoProvider, momoNumber: `${dialCode}${phone.replace(/\D/g, '')}` } : {}),
-      ...(refCode ? { referralSponsorCode: refCode } : {}),
-    };
+    return { neighborhood, ...(refCode ? { referralSponsorCode: refCode } : {}) };
   };
 
-  const missingRequired = (): boolean => {
-    if (!fullName.trim() || phone.replace(/\D/g, '').length < 6) return true;
-    if (role === 'supplier' && !companyName.trim()) return true;
-    if (role === 'diaspora' && !beneficiaryNameInMali.trim()) return true;
-    return false;
+  const champManquant = (): string | null => {
+    if (!role) return 'Choisissez votre profil.';
+    if (!fullName.trim()) return 'Indiquez votre nom.';
+    if (phone.replace(/\D/g, '').length < 8) return 'Indiquez un numéro WhatsApp valide.';
+    if (role === 'supplier' && !companyName.trim()) return 'Indiquez le nom de votre entreprise ou boutique.';
+    if (role === 'driver' && !zone.trim()) return 'Indiquez votre zone de livraison.';
+    if (role === 'diaspora' && (!beneficiaryNameInMali.trim() || !beneficiaryPhoneInMali.trim())) {
+      return 'Indiquez le nom et le numéro de votre proche au Mali.';
+    }
+    return null;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
-    if (missingRequired()) {
-      setFormError('Veuillez renseigner les champs obligatoires.');
-      return;
-    }
+    const manque = champManquant();
+    if (manque) { setFormError(manque); return; }
 
-    const composedPhone = `${dialCode}${phone.replace(/\D/g, '')}`;
     setIsSubmitting(true);
     try {
+      // Cas « nouveau » : le compte n'existe pas encore. On le crée maintenant,
+      // avec le rôle choisi — c'est cet appel qui pose la session Suguba.
+      if (mode === 'nouveau') {
+        const { data } = (await supabase?.auth.getSession()) || { data: { session: null } };
+        if (!data.session) { router.replace('/register'); return; }
+        const res = await fetch('/api/auth/supabase-exchange', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${data.session.access_token}` },
+          body: JSON.stringify({ intendedRole: role }),
+        });
+        const json = await res.json();
+        if (!res.ok || !json.success) {
+          setFormError(json.error || 'Impossible de créer votre compte. Réessayez.');
+          setIsSubmitting(false);
+          return;
+        }
+      }
+
       const res = await fetch('/api/auth/complete-profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fullName,
-          phone: composedPhone,
+          role,
+          fullName: fullName.trim(),
+          phone: `${dialCode}${phone.replace(/\D/g, '')}`,
           metadata: buildMetadata(),
         }),
       });
       const json = await res.json();
-      setIsSubmitting(false);
       if (!res.ok || !json.success) {
-        setFormError(json.error || "Erreur lors de l'enregistrement de votre dossier.");
+        setFormError(json.error || "Erreur lors de l'enregistrement.");
+        setIsSubmitting(false);
         return;
       }
-      router.push('/pending-approval');
-    } catch (err) {
-      console.error(err);
-      setIsSubmitting(false);
+      // Rechargement complet : le Header relit la nouvelle session.
+      window.location.href = DESTINATION[json.role] || '/';
+    } catch {
       setFormError('Erreur réseau, réessayez.');
+      setIsSubmitting(false);
     }
   };
 
-  if (checkingSession) {
-    return <div className="p-10 text-center text-xs text-gray-400">Chargement...</div>;
+  if (mode === 'chargement') {
+    return <div className="p-10 text-center text-sm text-slate-400">Chargement…</div>;
   }
 
-  const roleLabel: Record<string, string> = {
-    reseller: 'revendeur', supplier: 'fournisseur', driver: 'livreur', diaspora: 'diaspora',
-  };
-
   return (
-    <div className="max-w-lg mx-auto px-4 sm:px-6 py-10 w-full">
-      <div className="mb-6">
-        <EtapesInscription etapeActuelle={2} />
+    <div className="max-w-lg mx-auto px-4 sm:px-6 py-8 w-full space-y-6">
+      <EtapesInscription etapeActuelle={2} />
+
+      <div className="text-center space-y-1">
+        <h1 className="text-xl font-black text-slate-900">Finalisez votre inscription</h1>
+        <p className="text-sm text-slate-500">Votre identité est vérifiée. Encore une minute et vous êtes dans votre espace.</p>
       </div>
 
-      <div className="text-center space-y-2 mb-6">
-        <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center mx-auto">
-          <ShieldCheck className="w-6 h-6" />
-        </div>
-        <h1 className="text-xl font-black text-gray-900">Votre dossier {roleLabel[role || ''] || ''}</h1>
-        <p className="text-xs text-gray-500 max-w-sm mx-auto">
-          Votre compte Google est vérifié. Ces informations sont celles dont l&apos;équipe Suguba
-          a besoin pour examiner votre dossier — <strong>deux minutes</strong>. Le reste se
-          règle plus tard, depuis votre espace.
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-card space-y-4">
-        <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">Nom Complet :</label>
-          <input
-            type="text"
-            required
-            placeholder="Ex: Moussa Coulibaly"
-            value={fullName}
-            onChange={(e) => setFullName(e.target.value)}
-            className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-          />
-        </div>
-
-        <div>
-          <label className="block text-xs font-bold text-gray-700 mb-1">Numéro WhatsApp (contact) :</label>
-          <div className="flex gap-2">
-            <DialCodePicker value={dialCode} onChange={setDialCode} />
-            <input
-              type="tel"
-              required
-              placeholder="76 12 34 56"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="flex-1 min-w-0 px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            />
+      <form onSubmit={handleSubmit} className="space-y-5">
+        {/* 1. Qui êtes-vous ? */}
+        <section className="bg-white rounded-3xl p-5 border border-slate-200 space-y-3">
+          <h2 className="font-black text-sm text-slate-900">1. Vous êtes…</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {ROLES.map(({ cle, titre, detail, icone: Icone }) => {
+              const choisi = role === cle;
+              return (
+                <button
+                  key={cle}
+                  type="button"
+                  onClick={() => setRole(cle)}
+                  aria-pressed={choisi}
+                  className={`p-3 rounded-2xl border text-left flex items-start gap-3 transition-all ${
+                    choisi ? 'border-suguba-brand bg-suguba-brand/5 ring-2 ring-suguba-brand/30' : 'border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${choisi ? 'bg-suguba-brand text-white' : 'bg-slate-100 text-slate-600'}`}>
+                    {choisi ? <Check className="w-4 h-4" /> : <Icone className="w-4 h-4" />}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-bold text-sm text-slate-900">{titre}</p>
+                    <p className="text-[11px] text-slate-500 leading-snug">{detail}</p>
+                  </div>
+                </button>
+              );
+            })}
           </div>
-        </div>
+          <Link href="/" className="flex items-center gap-2 p-3 rounded-2xl bg-slate-50 text-[11px] text-slate-600 hover:bg-slate-100">
+            <ShoppingCart className="w-4 h-4 shrink-0" />
+            <span><strong>Vous voulez seulement acheter ?</strong> Pas besoin de compte : commandez directement depuis le catalogue.</span>
+          </Link>
+        </section>
 
-        {/* ── Revendeur ── */}
-        {role === 'reseller' && (
-          <>
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Quartier de Résidence à Bamako :</label>
-              <NeighborhoodPicker value={neighborhood} onChange={setNeighborhood} />
-            </div>
-
-            {refCode && (
-              <div>
-                <label className="block text-xs font-bold text-gray-700 mb-1">Code de Parrainage :</label>
-                <div className="flex items-center gap-2 px-3.5 py-2.5 bg-purple-50 border border-purple-200 rounded-xl">
-                  <Gift className="w-3.5 h-3.5 text-purple-600 shrink-0" />
-                  <span className="text-xs font-mono font-black text-purple-900">{refCode}</span>
-                  <span className="ml-auto text-[10px] text-purple-400 font-semibold">Détecté automatiquement</span>
-                </div>
+        {/* 2. Coordonnées */}
+        {role && (
+          <section className="bg-white rounded-3xl p-5 border border-slate-200 space-y-4">
+            <h2 className="font-black text-sm text-slate-900">2. Vos coordonnées</h2>
+            <Champ label="Nom complet">
+              <input type="text" required placeholder="Ex : Moussa Coulibaly" value={fullName}
+                onChange={(e) => setFullName(e.target.value)} className={INPUT} />
+            </Champ>
+            <Champ label="Numéro WhatsApp" aide="Pour vous prévenir de vos commandes et de vos gains.">
+              <div className="flex gap-2">
+                <DialCodePicker value={dialCode} onChange={setDialCode} />
+                <input type="tel" required placeholder="76 12 34 56" value={phone}
+                  onChange={(e) => setPhone(e.target.value)} className={`${INPUT} flex-1 min-w-0 font-mono`} />
               </div>
+            </Champ>
+
+            {role === 'reseller' && (
+              <>
+                <Champ label="Votre quartier à Bamako">
+                  <NeighborhoodPicker value={neighborhood} onChange={setNeighborhood} />
+                </Champ>
+                {refCode && (
+                  <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
+                    <Gift className="w-4 h-4 text-suguba-brand shrink-0" />
+                    <span>Invité par <strong className="font-mono">{refCode}</strong></span>
+                  </div>
+                )}
+              </>
             )}
 
-            {/* L'opérateur Mobile Money n'est plus demandé ici : il ne sert
-                pas à valider le dossier, et il est de toute façon choisi au
-                moment du premier retrait, sur /reseller/payouts. Une question
-                de moins entre le clic Google et l'envoi du dossier. */}
-          </>
-        )}
+            {role === 'supplier' && (
+              <>
+                <Champ label="Nom de l'entreprise ou de la boutique">
+                  <input type="text" required placeholder="Ex : Diarra Électronique" value={companyName}
+                    onChange={(e) => setCompanyName(e.target.value)} className={INPUT} />
+                </Champ>
+                <Champ label="Catégorie principale">
+                  <select value={category} onChange={(e) => setCategory(e.target.value)} className={INPUT}>
+                    <option>Électronique & Énergie</option>
+                    <option>Électroménager & Maison</option>
+                    <option>Solaire & Groupes</option>
+                    <option>Smartphones & Informatique</option>
+                    <option>Mode & Beauté</option>
+                  </select>
+                </Champ>
+                <Champ label="Quartier de l'entrepôt ou du magasin">
+                  <NeighborhoodPicker value={warehouseNeighborhood} onChange={setWarehouseNeighborhood} />
+                </Champ>
+                <Champ label="N° RCCM / NIF (facultatif)">
+                  <input type="text" value={rccmOrNif} onChange={(e) => setRccmOrNif(e.target.value)} className={INPUT} />
+                </Champ>
+              </>
+            )}
 
-        {/* ── Fournisseur ── */}
-        {role === 'supplier' && (
-          <>
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Nom de l&apos;Entreprise / Boutique :</label>
-              <input
-                type="text"
-                required
-                placeholder="Ex: Diarra Électronique Bamako"
-                value={companyName}
-                onChange={(e) => setCompanyName(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Catégorie Principale de Produits :</label>
-              <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="Électronique & Énergie">Électronique & Énergie</option>
-                <option value="Électroménager & Maison">Électroménager & Maison</option>
-                <option value="Solaire & Groupes">Solaire & Groupes Électrogènes</option>
-                <option value="Smartphones & Informatique">Smartphones & Informatique</option>
-                <option value="Mode & Beauté">Mode & Beauté</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Quartier de l&apos;Entrepôt / Magasin :</label>
-              <NeighborhoodPicker value={warehouseNeighborhood} onChange={setWarehouseNeighborhood} />
-            </div>
-            {/* L'adresse précise de l'entrepôt attend le premier passage dans
-                l'espace fournisseur : le quartier suffit à l'admin pour
-                décider, la rue et la porte servent au livreur, plus tard. */}
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">N° RCCM / NIF (Optionnel) :</label>
-              <input
-                type="text"
-                placeholder="Ex: MA.BKO.2024.A.1234"
-                value={rccmOrNif}
-                onChange={(e) => setRccmOrNif(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </>
-        )}
+            {role === 'driver' && (
+              <>
+                <Champ label="Véhicule">
+                  <select value={vehicleType} onChange={(e) => setVehicleType(e.target.value)} className={INPUT}>
+                    <option value="Moto Sanili / Jakarta 125">Moto (Sanili / Jakarta 125)</option>
+                    <option value="Tricycle Moto">Tricycle (gros colis)</option>
+                    <option value="Voiture / Camionnette">Voiture / camionnette</option>
+                  </select>
+                </Champ>
+                <Champ label="Zone de livraison">
+                  <input type="text" required placeholder="Ex : Communes IV, V, VI" value={zone}
+                    onChange={(e) => setZone(e.target.value)} className={INPUT} />
+                </Champ>
+                <Champ label="Immatriculation (facultatif)">
+                  <input type="text" placeholder="Ex : BA-4821-MD" value={licensePlate}
+                    onChange={(e) => setLicensePlate(e.target.value)} className={INPUT} />
+                </Champ>
+                <Champ label="N° de pièce d'identité (facultatif)">
+                  <input type="text" value={idDocumentNumber} onChange={(e) => setIdDocumentNumber(e.target.value)} className={INPUT} />
+                </Champ>
+                <p className="text-[11px] text-slate-500">
+                  Avant votre première course, un agent Suguba vérifie vos papiers et votre engin au guichet de Bamako.
+                </p>
+              </>
+            )}
 
-        {/* ── Livreur ── */}
-        {role === 'driver' && (
-          <>
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Type d&apos;Engin / Véhicule :</label>
-              <select
-                value={vehicleType}
-                onChange={(e) => setVehicleType(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
-              >
-                <option value="Moto Sanili / Jakarta 125">Moto Sanili / Jakarta 125cc</option>
-                <option value="Tricycle Moto">Tricycle Moto (Gros colis)</option>
-                <option value="Voiture / Camionnette">Voiture / Camionnette</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Numéro d&apos;Immatriculation :</label>
-              <input
-                type="text"
-                placeholder="Ex: BA-4821-MD"
-                value={licensePlate}
-                onChange={(e) => setLicensePlate(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Zone(s) Principale(s) d&apos;Intervention :</label>
-              <input
-                type="text"
-                placeholder="Ex: Communes IV, V, VI"
-                value={zone}
-                onChange={(e) => setZone(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">N° Pièce d&apos;identité (Optionnel) :</label>
-              <input
-                type="text"
-                value={idDocumentNumber}
-                onChange={(e) => setIdDocumentNumber(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
-              />
-            </div>
-          </>
-        )}
-
-        {/* ── Diaspora ── */}
-        {role === 'diaspora' && (
-          <>
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Pays de Résidence :</label>
-              <select
-                value={countryOfResidence}
-                onChange={(e) => setCountryOfResidence(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                <option value="France 🇫🇷">France 🇫🇷</option>
-                <option value="États-Unis 🇺🇸">États-Unis 🇺🇸</option>
-                <option value="Canada 🇨🇦">Canada 🇨🇦</option>
-                <option value="Côte d'Ivoire 🇨🇮">Côte d&apos;Ivoire 🇨🇮</option>
-                <option value="Sénégal 🇸🇳">Sénégal 🇸🇳</option>
-                <option value="Espagne 🇪🇸">Espagne 🇪🇸</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Devise de Facturation Préférée :</label>
-              <select
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value as any)}
-                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              >
-                <option value="EUR">Euros (€ EUR)</option>
-                <option value="USD">Dollars ($ USD)</option>
-                <option value="CAD">Dollars Canadiens ($ CAD)</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Nom du Bénéficiaire à Bamako :</label>
-              <input
-                type="text"
-                required
-                placeholder="Ex: Fatoumata Traoré (Mère)"
-                value={beneficiaryNameInMali}
-                onChange={(e) => setBeneficiaryNameInMali(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Téléphone Bénéficiaire à Bamako :</label>
-              <input
-                type="tel"
-                required
-                placeholder="Ex: +223 76 99 88 77"
-                value={beneficiaryPhoneInMali}
-                onChange={(e) => setBeneficiaryPhoneInMali(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Quartier du Bénéficiaire :</label>
-              <NeighborhoodPicker value={beneficiaryNeighborhoodInMali} onChange={setBeneficiaryNeighborhoodInMali} />
-            </div>
-          </>
+            {role === 'diaspora' && (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <Champ label="Pays de résidence">
+                    <select value={countryOfResidence} onChange={(e) => setCountryOfResidence(e.target.value)} className={INPUT}>
+                      {['France', 'États-Unis', 'Canada', 'Espagne', 'Côte d\'Ivoire', 'Sénégal', 'Autre'].map((p) => <option key={p}>{p}</option>)}
+                    </select>
+                  </Champ>
+                  <Champ label="Devise">
+                    <select value={currency} onChange={(e) => setCurrency(e.target.value as 'EUR' | 'USD' | 'CAD')} className={INPUT}>
+                      <option value="EUR">Euro (€)</option>
+                      <option value="USD">Dollar ($)</option>
+                      <option value="CAD">Dollar canadien</option>
+                    </select>
+                  </Champ>
+                </div>
+                <Champ label="Nom de votre proche au Mali">
+                  <input type="text" required placeholder="Ex : Fatoumata Traoré" value={beneficiaryNameInMali}
+                    onChange={(e) => setBeneficiaryNameInMali(e.target.value)} className={INPUT} />
+                </Champ>
+                <Champ label="Son numéro">
+                  <input type="tel" required placeholder="Ex : +223 76 99 88 77" value={beneficiaryPhoneInMali}
+                    onChange={(e) => setBeneficiaryPhoneInMali(e.target.value)} className={`${INPUT} font-mono`} />
+                </Champ>
+                <Champ label="Son quartier">
+                  <NeighborhoodPicker value={beneficiaryNeighborhoodInMali} onChange={setBeneficiaryNeighborhoodInMali} />
+                </Champ>
+              </>
+            )}
+          </section>
         )}
 
         {formError && (
-          <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-xs font-semibold text-red-600">
-            {formError}
-          </div>
+          <div className="p-3 bg-rose-50 border border-rose-100 rounded-2xl text-xs font-bold text-rose-700">{formError}</div>
         )}
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full py-3.5 bg-[#09b500] hover:bg-[#078000] disabled:opacity-50 text-white rounded-xl text-xs font-black shadow-brand-md transition-all active:scale-95 flex items-center justify-center gap-2"
-        >
-          <span>{isSubmitting ? 'Enregistrement...' : 'Envoyer mon dossier'}</span>
+        <Button type="submit" disabled={isSubmitting || !role} size="lg" fullWidth>
+          <span>{isSubmitting ? 'Création de votre espace…' : 'Accéder à mon espace'}</span>
           <ArrowRight className="w-4 h-4" />
-        </button>
+        </Button>
       </form>
+    </div>
+  );
+}
+
+const INPUT =
+  'w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 ' +
+  'focus:outline-none focus:ring-2 focus:ring-suguba-brand/30 focus:border-suguba-brand';
+
+function Champ({ label, aide, children }: { label: string; aide?: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1">
+      <label className="block text-xs font-bold text-slate-700">{label}</label>
+      {children}
+      {aide && <p className="text-[11px] text-slate-400">{aide}</p>}
     </div>
   );
 }
 
 export default function CompleteProfilePage() {
   return (
-    <div className="min-h-screen flex flex-col bg-[#f5f8f5] font-sans">
+    <div className="min-h-screen flex flex-col bg-slate-50">
       <Header />
       <main className="flex-1">
-        <Suspense fallback={<div className="p-10 text-center text-xs">Chargement...</div>}>
-          <CompleteProfileForm />
+        <Suspense fallback={<div className="p-10 text-center text-sm text-slate-400">Chargement…</div>}>
+          <FinaliserInscription />
         </Suspense>
       </main>
-      <Footer />
     </div>
   );
 }

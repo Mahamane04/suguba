@@ -1,15 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifySessionToken, createSessionToken, SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS } from '@/lib/session';
+import { verifySessionToken, createSessionToken, SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS, SugubaRole } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { chargerRoles } from '@/lib/profile-roles';
+import { chargerRoles, choisirRoleActif } from '@/lib/profile-roles';
 import { attribuerSlugFournisseur } from '@/lib/shop';
 
+// Rôles qu'une personne peut choisir elle-même en finalisant son inscription.
+const ROLES_INSCRIPTION: SugubaRole[] = ['reseller', 'supplier', 'driver', 'diaspora'];
+
 /**
- * Deuxième étape de l'inscription — remplit les champs propres au rôle
- * (entreprise, véhicule, bénéficiaire diaspora...) sur un profil déjà
- * authentifié via Google (voir /api/auth/supabase-exchange). N'accepte jamais de
- * modifier le rôle ou le statut depuis le client : l'un vient de la session
- * signée, l'autre reste piloté par /api/admin/review-profile.
+ * Deuxième étape de l'inscription — nom, numéro WhatsApp et champs propres au
+ * rôle (entreprise, véhicule, bénéficiaire diaspora...) sur un profil déjà
+ * authentifié via Google ou email (voir /api/auth/supabase-exchange).
+ *
+ * Le rôle peut être CHOISI ici, mais uniquement tant que le profil n'a jamais
+ * été complété (aucun numéro enregistré). Raison : jusqu'au 2026-09-10, une
+ * connexion depuis /login créait un compte « revendeur » par défaut, sans que
+ * la personne ait choisi — un futur fournisseur doit pouvoir corriger ça. Une
+ * fois le profil complété, le rôle ne se change plus ici : un rôle
+ * supplémentaire se demande depuis l'espace (/api/auth/request-role).
+ *
+ * Le numéro est désormais OBLIGATOIRE : c'est lui qui marque un profil comme
+ * complet, et le middleware renvoie ici tout profil qui ne l'a pas.
  */
 export async function POST(req: NextRequest) {
   const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
@@ -19,43 +30,88 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { fullName, city, phone, metadata } = body as {
+    const { fullName, city, phone, metadata, role: roleDemande } = body as {
       fullName?: string;
       city?: string;
       phone?: string;
       metadata?: Record<string, unknown>;
+      role?: SugubaRole;
     };
+
+    if (!fullName?.trim()) {
+      return NextResponse.json({ error: 'Votre nom est obligatoire.' }, { status: 400 });
+    }
+    if (!phone || phone.replace(/\D/g, '').length < 8) {
+      return NextResponse.json({ error: 'Un numéro WhatsApp valide est obligatoire.' }, { status: 400 });
+    }
 
     const admin = getSupabaseAdmin();
     if (!admin) {
-      // Mode local sans Supabase : rien à persister côté serveur, le
-      // formulaire retombe sur sugubaStore côté client (voir register/page.tsx).
-      return NextResponse.json({ success: true, cloud: false });
+      return NextResponse.json({ success: true, cloud: false, role: session.role });
     }
 
-    const update: Record<string, unknown> = {};
-    if (fullName) update.full_name = fullName;
+    const { data: profil, error: lectureErr } = await admin
+      .from('profiles')
+      .select('phone, role, reseller_code')
+      .eq('id', session.uid)
+      .single();
+    if (lectureErr || !profil) {
+      return NextResponse.json({ error: 'Profil introuvable. Reconnectez-vous.' }, { status: 404 });
+    }
+
+    // ── Choix (ou correction) du rôle ──────────────────────────────────────
+    let roleEffectif: SugubaRole = session.role;
+    if (roleDemande && roleDemande !== session.role) {
+      if (profil.phone) {
+        return NextResponse.json(
+          { error: 'Votre profil est déjà complété. Pour un autre rôle, faites la demande depuis votre espace.' },
+          { status: 409 },
+        );
+      }
+      if (session.role === 'admin' || !ROLES_INSCRIPTION.includes(roleDemande)) {
+        return NextResponse.json({ error: 'Rôle non disponible à l\'inscription.' }, { status: 400 });
+      }
+
+      const majProfil: Record<string, unknown> = { role: roleDemande };
+      if (roleDemande === 'reseller' && !profil.reseller_code) {
+        majProfil.reseller_code = `SG-${session.uid.replace(/-/g, '').slice(0, 6).toUpperCase()}`;
+      }
+      const { error: roleProfilErr } = await admin.from('profiles').update(majProfil).eq('id', session.uid);
+      if (roleProfilErr) {
+        return NextResponse.json({ error: roleProfilErr.message }, { status: 500 });
+      }
+
+      // Le rôle attribué par défaut n'a jamais été choisi : on le retire
+      // plutôt que de laisser un rôle fantôme dans le sélecteur d'espace.
+      await admin.from('profile_roles').delete().eq('profile_id', session.uid).eq('role', session.role);
+      const { error: ligneErr } = await admin.from('profile_roles').upsert(
+        { profile_id: session.uid, role: roleDemande, status: 'active', approved_at: new Date().toISOString() },
+        { onConflict: 'profile_id,role' },
+      );
+      if (ligneErr) {
+        return NextResponse.json({ error: ligneErr.message }, { status: 500 });
+      }
+      roleEffectif = roleDemande;
+    }
+
+    // ── Profil commun ──────────────────────────────────────────────────────
+    const update: Record<string, unknown> = { full_name: fullName.trim(), phone };
     if (city) update.city = city;
-    // Un compte créé via Google n'a jamais de numéro (Google ne le
-    // connaît pas) — voir /register/complete, l'étape qui le recueille
-    // juste après l'inscription. Non vérifié par OTP à ce stade : c'est
-    // l'examen manuel par un admin (status pending_approval) qui filtre un
-    // numéro fantaisiste, pas cette route.
-    if (phone) update.phone = phone;
     if (metadata && typeof metadata === 'object') update.metadata = metadata;
 
     const { error } = await admin.from('profiles').update(update).eq('id', session.uid);
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      // Colonne phone UNIQUE : un numéro déjà pris ne doit pas finir en 500 muet.
+      const dejaPris = /duplicate|unique/i.test(error.message);
+      return NextResponse.json(
+        { error: dejaPris ? 'Ce numéro est déjà utilisé par un autre compte.' : error.message },
+        { status: dejaPris ? 409 : 500 },
+      );
     }
 
-    // Rôle Fournisseur : les champs métier (entreprise, entrepôt, catégorie,
-    // RCCM/NIF) vont dans `suppliers`, pas dans profiles.metadata — sinon
-    // l'admin (voir PendingProfilesPanel) et le tableau de bord fournisseur
-    // n'auraient nulle part où lire une donnée structurée. `suppliers` n'a
-    // pas de statut propre : celui-ci reste dans profile_roles (voir
-    // supabase/migration-suppliers.sql).
-    if (session.role === 'supplier' && metadata) {
+    // Rôle Fournisseur : les champs métier vont dans `suppliers`, pas dans
+    // profiles.metadata (voir supabase/migration-suppliers.sql).
+    if (roleEffectif === 'supplier' && metadata) {
       const m = metadata as Record<string, unknown>;
       const { error: supplierErr } = await admin.from('suppliers').upsert({
         profile_id: session.uid,
@@ -77,7 +133,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Rôle Livreur : même principe, voir supabase/migration-drivers.sql.
-    if (session.role === 'driver' && metadata) {
+    if (roleEffectif === 'driver' && metadata) {
       const m = metadata as Record<string, unknown>;
       const { error: driverErr } = await admin.from('drivers').upsert({
         profile_id: session.uid,
@@ -91,20 +147,16 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Réémet la session avec le vrai numéro (jusqu'ici, un profil Google
-    // portait l'email en guise de "phone" dans le jeton — voir
-    // supabase-exchange) : le Header et le reste de l'app doivent
-    // désormais afficher/utiliser le numéro réel. La carte des rôles doit
-    // être reconduite ici aussi, sinon un compte multi-rôle perdrait son
-    // sélecteur de rôle dès qu'il complète son profil.
-    const res = NextResponse.json({ success: true, cloud: true });
-    if (phone) {
-      const carteRoles = await chargerRoles(session.uid, session.role, session.status);
-      const token = await createSessionToken({
-        uid: session.uid, phone, role: session.role, status: session.status, roles: carteRoles,
-      });
-      res.cookies.set(SESSION_COOKIE_NAME, token, SESSION_COOKIE_OPTIONS);
-    }
+    // Réémet toujours la session : avec le vrai numéro (jusqu'ici l'email en
+    // tenait lieu, et c'est ce qui signale au middleware un profil incomplet)
+    // et avec le rôle éventuellement choisi.
+    const carteRoles = await chargerRoles(session.uid, roleEffectif, 'active');
+    const actif = choisirRoleActif(carteRoles, roleEffectif);
+    const token = await createSessionToken({
+      uid: session.uid, phone, role: actif.role, status: actif.status, roles: carteRoles,
+    });
+    const res = NextResponse.json({ success: true, cloud: true, role: actif.role });
+    res.cookies.set(SESSION_COOKIE_NAME, token, SESSION_COOKIE_OPTIONS);
     return res;
   } catch (error: any) {
     console.error('[API complete-profile ERROR]', error);

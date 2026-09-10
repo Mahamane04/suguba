@@ -60,23 +60,34 @@ export default function AuthCallbackPage() {
           body: JSON.stringify({ intendedRole }),
         });
         const json = await res.json();
+        const refCode = new URLSearchParams(window.location.search).get('ref') || '';
+        const versCompletion = () => {
+          const params = new URLSearchParams({ fullName: json.fullName || '' });
+          if (intendedRole) params.set('intendedRole', intendedRole);
+          if (refCode) params.set('ref', refCode);
+          router.replace(`/register/complete?${params.toString()}`);
+        };
+
+        // Adresse inconnue et aucun rôle choisi (connexion depuis /login) :
+        // rien n'a été créé. La personne choisit son profil sur la page
+        // suivante, qui crée alors le compte avec le bon rôle.
+        if (json.needsRole) {
+          versCompletion();
+          return;
+        }
+
         if (!res.ok || !json.success) {
           setError(json.error || 'Erreur lors de la connexion.');
           return;
         }
 
-        // Un compte Google fraîchement créé (jamais de numéro — voir
-        // hasPhone dans supabase-exchange) doit d'abord passer par
-        // /register/complete pour renseigner les champs propres à son rôle
-        // (téléphone pour tous, plus entreprise/véhicule/bénéficiaire selon
-        // le cas — voir ce fichier, désormais commun aux 4 rôles depuis que
-        // le téléphone/OTP maison a été retiré de l'inscription). Un compte
-        // déjà complet (reconnexion) suit le chemin habituel.
-        const refCode = new URLSearchParams(window.location.search).get('ref') || '';
-        if (json.status !== 'active' && !json.hasPhone) {
-          const params = new URLSearchParams({ fullName: json.fullName || '' });
-          if (refCode) params.set('ref', refCode);
-          router.push(`/register/complete?${params.toString()}`);
+        // Profil jamais complété (aucun numéro) : on finit l'inscription avant
+        // tout. La condition portait aussi sur `status !== 'active'` — or tous
+        // les comptes naissent actifs depuis le 2026-09-10, si bien que plus
+        // personne ne passait par ce formulaire : ni nom confirmé, ni numéro,
+        // ni fiche fournisseur ou livreur. L'admin n'y est pas soumis.
+        if (!json.hasPhone && json.role !== 'admin') {
+          versCompletion();
           return;
         }
 

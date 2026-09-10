@@ -1,14 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import Header from '@/components/common/Header';
-import Footer from '@/components/common/Footer';
 import BottomNav from '@/components/common/BottomNav';
+import EtapesInscription from '@/components/common/EtapesInscription';
+import Button from '@/components/ui/Button';
 import { supabase } from '@/lib/supabase';
-import {
-  Store, ShoppingBag, Truck, Globe,
-  ShieldAlert, UserPlus
-} from 'lucide-react';
+import { Store, ShoppingBag, Truck, Globe, ShoppingCart, ShieldAlert, Mail, Check, ArrowRight } from 'lucide-react';
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -21,174 +20,171 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
+type Role = 'reseller' | 'supplier' | 'driver' | 'diaspora';
+
+const ROLES: { cle: Role; titre: string; detail: string; icone: React.ElementType }[] = [
+  { cle: 'reseller', titre: 'Revendeur', detail: 'Partagez des produits, touchez une commission', icone: Store },
+  { cle: 'supplier', titre: 'Fournisseur', detail: 'Vendez votre stock via Suguba', icone: ShoppingBag },
+  { cle: 'driver', titre: 'Livreur', detail: 'Livrez les commandes à Bamako', icone: Truck },
+  { cle: 'diaspora', titre: 'Diaspora', detail: 'Commandez pour vos proches au Mali', icone: Globe },
+];
+
 /**
- * Téléphone/OTP maison retiré de l'inscription (2026-08-26) : aucune
- * passerelle SMS réelle n'était branchée (voir CLAUDE.md), donc ce chemin ne
- * prouvait jamais rien pour un vrai utilisateur. Google reste le seul
- * chemin d'inscription pour les 4 rôles — il prouve une vraie identité
- * (email) sans dépendance à une infrastructure qu'on n'a pas. Les champs
- * métier propres à chaque rôle (entreprise, véhicule, bénéficiaire...) se
- * recueillent juste après, sur /register/complete — voir ce fichier.
+ * Inscription — étape 1 : choisir son profil, puis prouver son identité
+ * (Google ou lien email). Nom, numéro et informations du métier sont
+ * demandés juste après, sur /register/complete, avant toute entrée dans
+ * l'espace.
+ *
+ * Revue le 2026-09-10 : le lien email est proposé ici aussi (seul Google
+ * l'était), et « Client » apparaît enfin — pour dire honnêtement qu'un achat
+ * ne demande aucun compte, plutôt que de créer un compte qui ne mènerait nulle
+ * part.
  */
 export default function RegisterPage() {
-  const [selectedRole, setSelectedRole] = useState<'reseller' | 'supplier' | 'driver' | 'diaspora'>('reseller');
-  const [registerError, setRegisterError] = useState<string | null>(null);
+  const [role, setRole] = useState<Role>('reseller');
+  const [email, setEmail] = useState('');
+  const [lienEnvoye, setLienEnvoye] = useState(false);
+  const [envoi, setEnvoi] = useState(false);
+  const [erreur, setErreur] = useState<string | null>(null);
 
-  const handleGoogleRegister = async () => {
-    setRegisterError(null);
-    if (!supabase) {
-      setRegisterError('Inscription Google indisponible sur cet environnement.');
-      return;
-    }
-    await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback?intendedRole=${selectedRole}` },
-    });
+  // Le rôle survit à l'aller-retour Google / email via ce paramètre (lu par
+  // /auth/callback, puis transmis à /register/complete).
+  const retour = () => `${window.location.origin}/auth/callback?intendedRole=${role}`;
+
+  const inscriptionGoogle = async () => {
+    setErreur(null);
+    if (!supabase) { setErreur('Inscription indisponible sur cet environnement.'); return; }
+    await supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: retour() } });
   };
 
-  const roleLabels: Record<typeof selectedRole, string> = {
-    reseller: 'revendeur',
-    supplier: 'fournisseur',
-    driver: 'livreur',
-    diaspora: 'diaspora',
+  const inscriptionEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErreur(null);
+    if (!supabase) { setErreur('Inscription indisponible sur cet environnement.'); return; }
+    setEnvoi(true);
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: true, emailRedirectTo: retour() },
+    });
+    setEnvoi(false);
+    if (error) { setErreur(error.message); return; }
+    setLienEnvoye(true);
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f5f8f5] pb-20 md:pb-10 font-sans">
+    <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
       <Header />
 
-      <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 py-8 w-full space-y-6">
+      <main className="flex-1 max-w-2xl mx-auto px-4 sm:px-6 py-8 w-full space-y-6">
+        <EtapesInscription etapeActuelle={1} />
 
-        {/* Title Header */}
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
-            <UserPlus className="w-3.5 h-3.5" />
-            <span>Portail d&apos;Adhésion Officiel Suguba</span>
+        <div className="text-center space-y-1">
+          <h1 className="text-2xl font-black text-slate-900">Créer mon compte</h1>
+          <p className="text-sm text-slate-500">Choisissez votre profil, puis connectez-vous en un clic.</p>
+        </div>
+
+        <section className="space-y-2">
+          <h2 className="font-black text-sm text-slate-900">1. Vous êtes…</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            {ROLES.map(({ cle, titre, detail, icone: Icone }) => {
+              const choisi = role === cle;
+              return (
+                <button
+                  key={cle}
+                  type="button"
+                  onClick={() => setRole(cle)}
+                  aria-pressed={choisi}
+                  className={`p-3.5 rounded-2xl border bg-white text-left flex items-start gap-3 transition-all ${
+                    choisi ? 'border-suguba-brand ring-2 ring-suguba-brand/30' : 'border-slate-200 hover:border-slate-300'
+                  }`}
+                >
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${choisi ? 'bg-suguba-brand text-white' : 'bg-slate-100 text-slate-600'}`}>
+                    {choisi ? <Check className="w-4 h-4" /> : <Icone className="w-4 h-4" />}
+                  </div>
+                  <div>
+                    <p className="font-bold text-sm text-slate-900">{titre}</p>
+                    <p className="text-[11px] text-slate-500">{detail}</p>
+                  </div>
+                </button>
+              );
+            })}
           </div>
-          <h1 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
-            Créer votre compte professionnel
-          </h1>
-          <p className="text-xs sm:text-sm text-gray-500 max-w-xl mx-auto">
-            Rejoignez l&apos;écosystème de commerce n°1 au Mali. Choisissez votre profil pour démarrer immédiatement.
-          </p>
-        </div>
-
-        {/* Role Selector Tabs (4 Roles) */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-
-          <button
-            type="button"
-            onClick={() => setSelectedRole('reseller')}
-            className={`p-3.5 rounded-2xl border text-left transition-all flex flex-col justify-between space-y-2 ${
-              selectedRole === 'reseller'
-                ? 'bg-emerald-50 border-emerald-500 shadow-brand-sm ring-2 ring-emerald-500'
-                : 'bg-white border-gray-200 hover:border-gray-300'
-            }`}
-          >
-            <div className="w-9 h-9 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center">
-              <Store className="w-5 h-5" />
+          <Link href="/" className="flex items-center gap-3 p-3.5 rounded-2xl border border-dashed border-slate-300 bg-white hover:border-slate-400">
+            <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0">
+              <ShoppingCart className="w-4 h-4" />
             </div>
-            <div>
-              <p className="font-bold text-xs text-gray-900">Revendeur</p>
-              <p className="text-[10px] text-gray-500">Vendez sans stock & commissions</p>
+            <div className="flex-1">
+              <p className="font-bold text-sm text-slate-900">Client</p>
+              <p className="text-[11px] text-slate-500">Pas besoin de compte pour acheter : commandez directement, vous payez à la livraison.</p>
             </div>
-          </button>
+            <ArrowRight className="w-4 h-4 text-slate-400 shrink-0" />
+          </Link>
+        </section>
+
+        <section className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 space-y-4">
+          <h2 className="font-black text-sm text-slate-900">2. Vérifiez votre identité</h2>
 
           <button
             type="button"
-            onClick={() => setSelectedRole('supplier')}
-            className={`p-3.5 rounded-2xl border text-left transition-all flex flex-col justify-between space-y-2 ${
-              selectedRole === 'supplier'
-                ? 'bg-blue-50 border-blue-500 shadow-xs ring-2 ring-blue-500'
-                : 'bg-white border-gray-200 hover:border-gray-300'
-            }`}
-          >
-            <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-800 flex items-center justify-center">
-              <ShoppingBag className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="font-bold text-xs text-gray-900">Fournisseur</p>
-              <p className="text-[10px] text-gray-500">Déposez et distribuez votre stock</p>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSelectedRole('driver')}
-            className={`p-3.5 rounded-2xl border text-left transition-all flex flex-col justify-between space-y-2 ${
-              selectedRole === 'driver'
-                ? 'bg-amber-50 border-amber-500 shadow-xs ring-2 ring-amber-500'
-                : 'bg-white border-gray-200 hover:border-gray-300'
-            }`}
-          >
-            <div className="w-9 h-9 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center">
-              <Truck className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="font-bold text-xs text-gray-900">Livreur</p>
-              <p className="text-[10px] text-gray-500">Courses rémunérées</p>
-            </div>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setSelectedRole('diaspora')}
-            className={`p-3.5 rounded-2xl border text-left transition-all flex flex-col justify-between space-y-2 ${
-              selectedRole === 'diaspora'
-                ? 'bg-purple-50 border-purple-500 shadow-xs ring-2 ring-purple-500'
-                : 'bg-white border-gray-200 hover:border-gray-300'
-            }`}
-          >
-            <div className="w-9 h-9 rounded-xl bg-purple-100 text-purple-800 flex items-center justify-center">
-              <Globe className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="font-bold text-xs text-gray-900">Diaspora</p>
-              <p className="text-[10px] text-gray-500">Commander pour vos proches</p>
-            </div>
-          </button>
-
-        </div>
-
-        <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-100 shadow-card space-y-4 text-center">
-          <p className="text-xs text-gray-500 max-w-sm mx-auto">
-            Google prouve votre identité en un clic — les informations propres au profil {roleLabels[selectedRole]}
-            (entreprise, véhicule, bénéficiaire...) seront demandées juste après.
-          </p>
-
-          <button
-            type="button"
-            onClick={handleGoogleRegister}
-            className="w-full sm:w-auto mx-auto py-3.5 px-8 bg-white border-2 border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-800 font-bold rounded-2xl text-sm flex items-center justify-center gap-2.5 transition-all active:scale-[0.98]"
+            onClick={inscriptionGoogle}
+            className="w-full py-3 bg-white border border-slate-200 hover:bg-slate-50 text-slate-800 font-bold rounded-2xl text-sm flex items-center justify-center gap-2.5 transition-all active:scale-[0.98]"
           >
             <GoogleIcon className="w-5 h-5" />
-            S&apos;inscrire avec Google
+            Continuer avec Google
           </button>
 
-          {registerError && (
-            <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold flex items-center gap-2 justify-center">
-              <ShieldAlert className="w-5 h-5 text-red-500 shrink-0" />
-              <span>{registerError}</span>
+          <div className="flex items-center gap-3">
+            <div className="h-px flex-1 bg-slate-100" />
+            <span className="text-[11px] font-bold text-slate-400 uppercase">ou</span>
+            <div className="h-px flex-1 bg-slate-100" />
+          </div>
+
+          {lienEnvoye ? (
+            <div className="text-center space-y-2 py-2">
+              <Mail className="w-6 h-6 text-suguba-brand mx-auto" />
+              <p className="text-sm font-bold text-slate-900">Vérifiez votre boîte mail</p>
+              <p className="text-xs text-slate-500">
+                Un lien a été envoyé à <strong>{email}</strong>. Ouvrez-le depuis ce même appareil.
+              </p>
+              <button type="button" onClick={() => setLienEnvoye(false)} className="text-xs font-bold text-suguba-brand hover:underline">
+                Utiliser une autre adresse
+              </button>
+            </div>
+          ) : (
+            <form onSubmit={inscriptionEmail} className="flex flex-col sm:flex-row gap-2">
+              <input
+                type="email"
+                required
+                placeholder="vous@exemple.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="flex-1 min-w-0 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-suguba-brand/30 focus:border-suguba-brand"
+              />
+              <Button type="submit" disabled={envoi}>
+                {envoi ? 'Envoi…' : 'Recevoir un lien'}
+              </Button>
+            </form>
+          )}
+
+          {erreur && (
+            <div className="p-3 rounded-2xl bg-rose-50 border border-rose-100 text-rose-700 text-xs font-bold flex items-center gap-2">
+              <ShieldAlert className="w-4 h-4 shrink-0" />
+              <span>{erreur}</span>
             </div>
           )}
 
-          <p className="text-[11px] text-gray-400">
+          <p className="text-[11px] text-slate-400 text-center">
             En créant un compte, vous acceptez les{' '}
-            <a href="/legal/terms" className="text-suguba-brand underline">Conditions Générales</a> Suguba.
+            <Link href="/legal/terms" className="text-suguba-brand underline">conditions générales</Link>.
           </p>
-        </div>
+        </section>
 
-        {/* Bottom Login Link */}
-        <div className="text-center text-xs text-gray-500">
+        <p className="text-center text-xs text-slate-500">
           Vous avez déjà un compte ?{' '}
-          <a href="/login" className="font-bold text-suguba-brand hover:underline">
-            Se connecter
-          </a>
-        </div>
-
+          <Link href="/login" className="font-bold text-suguba-brand hover:underline">Se connecter</Link>
+        </p>
       </main>
 
-      <Footer />
       <BottomNav />
     </div>
   );

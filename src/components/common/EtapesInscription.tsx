@@ -13,10 +13,12 @@ import { Check } from 'lucide-react';
  * rien. C'est ce silence qui perdait les gens, plus que l'ordre des étapes.
  */
 
+// « Validation Suguba » a disparu le 2026-09-10 avec la validation manuelle
+// des comptes : l'étape 3 est désormais l'arrivée dans son espace.
 const ETAPES = [
-  { numero: 1, titre: 'Compte créé' },
-  { numero: 2, titre: 'Votre dossier' },
-  { numero: 3, titre: 'Validation Suguba' },
+  { numero: 1, titre: 'Connexion' },
+  { numero: 2, titre: 'Votre profil' },
+  { numero: 3, titre: 'Votre espace' },
 ];
 
 export default function EtapesInscription({ etapeActuelle }: { etapeActuelle: 1 | 2 | 3 }) {

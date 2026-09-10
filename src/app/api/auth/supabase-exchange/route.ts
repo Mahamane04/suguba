@@ -6,7 +6,10 @@ import { chargerRoles, choisirRoleActif } from '@/lib/profile-roles';
 // Même règle qu'à la connexion : aucun rôle
 // ne peut s'auto-attribuer admin à la création, quel que soit le chemin de
 // connexion.
-const SELF_SERVE_ROLES: SugubaSession['role'][] = ['reseller', 'supplier', 'driver', 'diaspora', 'customer'];
+// `customer` n'y figure plus : un client achète sans compte (commande invité,
+// suivi par numéro) et aucun espace client n'existe — un compte « client »
+// atterrissait sur /reseller, qui le refusait.
+const SELF_SERVE_ROLES: SugubaSession['role'][] = ['reseller', 'supplier', 'driver', 'diaspora'];
 
 /**
  * Point d'entrée unique pour les connexions email et Google : le client a
@@ -40,7 +43,12 @@ export async function POST(req: NextRequest) {
     const authUserId = authUser.user.id;
 
     const body = await req.json().catch(() => ({}));
-    const requestedRole = SELF_SERVE_ROLES.includes(body.intendedRole) ? body.intendedRole : 'reseller';
+    // Plus de rôle par défaut. Jusqu'au 2026-09-10, toute connexion Google ou
+    // email d'une adresse inconnue — y compris depuis /login, qui n'envoie
+    // aucun rôle — créait en silence un compte « revendeur », sans que la
+    // personne ait choisi quoi que ce soit. Sans rôle explicite, on ne crée
+    // rien : le client est renvoyé vers le choix du profil (needsRole).
+    const requestedRole = SELF_SERVE_ROLES.includes(body.intendedRole) ? body.intendedRole : null;
 
     // Cherche d'abord par auth_user_id (ancre stable), puis par email (cas
     // d'un compte créé autrement mais avec le même email).
@@ -64,6 +72,17 @@ export async function POST(req: NextRequest) {
         await admin.from('profiles').update({ auth_user_id: authUserId }).eq('id', profile.id);
       }
     } else {
+      if (!requestedRole) {
+        // Aucune session émise, aucun profil créé : l'identité est prouvée
+        // (jeton Supabase valide), mais la personne n'a pas encore dit qui
+        // elle est. /register/complete lui fait choisir, puis rappelle cette
+        // route avec le rôle choisi.
+        return NextResponse.json({
+          success: false,
+          needsRole: true,
+          fullName: authUser.user.user_metadata?.full_name || authUser.user.user_metadata?.name || '',
+        });
+      }
       uid = crypto.randomUUID();
       role = requestedRole;
       // Tous les rôles naissent ACTIFS. L'ancienne validation manuelle ne

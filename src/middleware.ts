@@ -173,6 +173,15 @@ export async function middleware(req: NextRequest) {
       return NextResponse.redirect(new URL('/pending-approval', req.url));
     }
 
+    // Profil jamais complété : tant qu'aucun numéro n'est enregistré, la
+    // session porte l'email à sa place (voir supabase-exchange). Sans cette
+    // barrière, taper /reseller ou /supplier dans la barre d'adresse sautait
+    // le formulaire d'inscription — un fournisseur se retrouvait sans fiche,
+    // un livreur sans véhicule. L'admin n'y est pas soumis.
+    if (match.role !== 'admin' && session.phone.includes('@')) {
+      return NextResponse.redirect(new URL('/register/complete', req.url));
+    }
+
     // Le rôle actif suit l'espace visité : entrer dans /driver fait agir en
     // livreur. Sans cette bascule, un revendeur-livreur resterait « revendeur »
     // aux yeux des routes API tout en naviguant dans l'espace livreur, et les
