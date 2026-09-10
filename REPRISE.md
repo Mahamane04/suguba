@@ -218,6 +218,14 @@ curl -s -H "Authorization: Bearer $KEY" https://api.saspay.me/api/v1/merchant-ba
   alphabet de 30 symboles sans ambiguïté visuelle (6,5 × 10¹¹ combinaisons), et tout échec
   de synchronisation est désormais journalisé en `console.error` avec le numéro concerné.
   Le SMS n'est plus envoyé si la commande n'a pas atteint la base.
+- **La base refusait le statut « submitted » des produits** (découvert le 2026-09-10). La
+  contrainte de `schema.sql` n'autorisait que `pending / approved / rejected / archived`,
+  alors que toute l'application utilise `submitted` pour un dépôt en attente de modération.
+  **Chaque dépôt de produit par un fournisseur échouait donc en base** : il voyait son article
+  dans son navigateur, l'admin ne le recevait jamais. Cause la plus probable du « catalogue
+  vide » signalé depuis août. Corrigé dans `migration-tarification.sql` (section 4). Même
+  famille que la contrainte des statuts de commande : vérifier les CHECK contre le code avant
+  de chercher ailleurs.
 - **Les montants d'une commande venaient du navigateur** (corrigé le 2026-09-10).
   `/api/orders/sync` enregistrait tels quels prix, total, commission et statut, sur une route
   publique : commission de 500 000 F sur son propre code, commande créée « livrée »

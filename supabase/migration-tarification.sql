@@ -59,3 +59,20 @@ COMMENT ON COLUMN public.orders.platform_margin IS
   'Marge brute Suguba de la commande (prix − fournisseur − commission), figée à la création.';
 COMMENT ON COLUMN public.orders.pricing_snapshot IS
   'Décomposition complète du tarif et réglages en vigueur au moment de la commande.';
+
+-- ── 4. Statuts de produit : la base refusait « submitted » ─────────────────
+-- La contrainte posée dans schema.sql n'autorisait que pending / approved /
+-- rejected / archived, alors que TOUTE l'application utilise « submitted »
+-- pour un produit déposé en attente de modération (store, écran admin,
+-- /api/products/sync). Résultat : chaque dépôt de produit par un fournisseur
+-- échouait en base (« violates check constraint products_status_check »).
+-- Le fournisseur voyait son article dans son navigateur, l'admin ne le voyait
+-- jamais. C'est la cause la plus probable du catalogue resté vide.
+--
+-- Même famille de piège que la contrainte des statuts de commande
+-- (migration-order-status.sql) : c'est la contrainte qui était en tort, pas
+-- l'application. Les valeurs déjà autorisées sont conservées pour ne rendre
+-- invalide aucune ligne existante.
+ALTER TABLE public.products DROP CONSTRAINT IF EXISTS products_status_check;
+ALTER TABLE public.products ADD  CONSTRAINT products_status_check
+  CHECK (status IN ('approved', 'archived', 'draft', 'pending', 'rejected', 'submitted'));
