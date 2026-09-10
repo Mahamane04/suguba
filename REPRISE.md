@@ -65,6 +65,24 @@ restée figée alors que le projet a beaucoup avancé depuis.
    - ⚠️ **Aucun paiement réel n'a encore été encaissé** : le solde `ML/XOF` est à 0. Le
      premier vrai client reste le seul test qui vaille.
 
+
+7. **Plus aucune validation manuelle des inscriptions** (2026-09-10) — tous les comptes naissent
+   **actifs**. L'ancienne approbation admin ne vérifiait rien : l'admin ne voyait que des
+   données saisies par le candidat (nom, téléphone, numéro de pièce tapé au clavier). Elle
+   ajoutait un délai, pas de la sécurité. Le contrôle se déplace là où il y a de la valeur :
+   - revendeur → délai de sécurité des commissions, puis le retrait ;
+   - fournisseur → modération des produits (`products.status`) ;
+   - **livreur → vérification PHYSIQUE au guichet de Bamako**, seule exception.
+   Deux notions désormais séparées : `profile_roles.status` (le compte fonctionne) et
+   `drivers.active_status` (le livreur peut recevoir des courses). Ce dernier existait déjà
+   avec `DEFAULT false` mais n'était lu nulle part ; il devient le seul verrou du dispatch.
+   Panneau admin « Livreurs — vérification au guichet » : **note de constat obligatoire**
+   (pièce présentée, permis, assurance, moto), horodatée avec l'agent (`verified_at/by/note`,
+   `migration-livreurs-agence.sql`). Le livreur non vérifié voit son espace avec la liste de ce
+   qu'il doit apporter. `/pending-approval` ne sert plus qu'aux comptes **suspendus**.
+   Vérifié : 16 tests contre la base réelle (dispatch vide sans vérification, constat exigé,
+   dossier incomplet refusé, retrait d'autorisation, traçabilité).
+
 ---
 
 ## ⚠️ À vérifier en tout premier
@@ -202,6 +220,11 @@ curl -s -H "Authorization: Bearer $KEY" https://api.saspay.me/api/v1/merchant-ba
 - **Le modèle d'abonnement webhook n'a pas de champ `is_active`.** Un script qui le lit
   obtient `None` et pourrait conclure à tort que l'abonnement est inactif. Sa seule
   existence suffit.
+- **Passer les comptes « actifs à la création » a failli casser l'inscription Google.** Le
+  callback n'envoyait vers `/register/complete` que si `status !== 'active'` ET pas de téléphone.
+  Avec des comptes toujours actifs, un inscrit Google aurait filé vers son tableau de bord
+  sans jamais donner numéro ni quartier. La condition ne porte plus que sur le téléphone.
+  Leçon : changer une valeur par défaut oblige à relire toutes les conditions qui la testaient.
 - **`payouts.status` n'accepte que `pending`/`processing`/`completed`/`rejected`** (contrainte
   CHECK). Écrire `failed` ferait échouer la mise à jour — même famille de piège que
   l'incohérence de statut des commandes corrigée en août. Un versement raté s'écrit

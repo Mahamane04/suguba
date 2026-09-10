@@ -25,7 +25,7 @@ export default function DriverDashboardPage() {
   const [selectedOrderForReceipt, setSelectedOrderForReceipt] = useState<Order | null>(null);
 
   const currentUser = state.currentUser;
-  const [driver, setDriver] = useState<{ vehicleType: string | null; licensePlate: string | null } | null>(null);
+  const [driver, setDriver] = useState<{ vehicleType: string | null; licensePlate: string | null; verifie?: boolean } | null>(null);
 
   useEffect(() => {
     fetch('/api/driver/me')

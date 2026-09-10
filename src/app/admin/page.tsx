@@ -7,7 +7,7 @@ import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import CloudSyncBadge from '@/components/common/CloudSyncBadge';
 import ProductPricingModal from '@/components/admin/ProductPricingModal';
-import PendingProfilesPanel from '@/components/admin/PendingProfilesPanel';
+import DriverVerificationPanel from '@/components/admin/DriverVerificationPanel';
 import { useSugubaStore, sugubaStore } from '@/lib/store';
 import { whatsappHelper } from '@/lib/whatsapp-helper';
 import { Product, Order } from '@/types';
@@ -93,7 +93,7 @@ export default function AdminDashboardPage() {
               Suguba Master Ops Desk
             </h1>
             <p className="text-xs text-purple-200">
-              Pilotage des flux : Fournisseurs $\rightarrow$ Revendeurs $\rightarrow$ Confirmation Appels $\rightarrow$ Dispatch Livraisons $\rightarrow$ Finances.
+              Pilotage des flux : Fournisseurs → Revendeurs → Confirmation Appels → Dispatch Livraisons → Finances.
             </p>
           </div>
 
@@ -206,7 +206,7 @@ export default function AdminDashboardPage() {
         {/* Operational Queues & Priority Action Desks */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
 
-          <PendingProfilesPanel />
+          <DriverVerificationPanel />
 
           {/* Desk 1: Call Confirmation Queue (Anti-fausses commandes) */}
           <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs space-y-4">

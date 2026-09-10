@@ -34,18 +34,32 @@ export async function GET(req: NextRequest) {
   }
 
   const ids = activeRoles.map((r) => r.profile_id);
+
+  // Le verrou du dispatch est `drivers.active_status`, pas le statut du rôle.
+  // Un compte livreur fonctionne dès l'inscription — il peut se connecter et
+  // voir son espace — mais il ne reçoit aucune course tant qu'un agent ne l'a
+  // pas vu, lui et sa moto, au guichet de Bamako.
   const [{ data: profileRows }, { data: driverRows }] = await Promise.all([
     admin.from('profiles').select('id, full_name, phone').in('id', ids),
-    admin.from('drivers').select('profile_id, vehicle_type').in('profile_id', ids),
+    admin
+      .from('drivers')
+      .select('profile_id, vehicle_type')
+      .in('profile_id', ids)
+      .eq('active_status', true),
   ]);
 
   const vehicleById = new Map((driverRows || []).map((d) => [d.profile_id, d.vehicle_type]));
-  const drivers = (profileRows || []).map((p) => ({
-    id: p.id,
-    fullName: p.full_name,
-    phone: p.phone,
-    vehicleType: vehicleById.get(p.id) || null,
-  }));
+  // Seuls les profils ayant une ligne `drivers` vérifiée sont proposés : un
+  // compte sans fiche livreur, ou non vérifié, ne doit jamais apparaître ici.
+  const verifies = new Set((driverRows || []).map((d) => d.profile_id));
+  const drivers = (profileRows || [])
+    .filter((p) => verifies.has(p.id))
+    .map((p) => ({
+      id: p.id,
+      fullName: p.full_name,
+      phone: p.phone,
+      vehicleType: vehicleById.get(p.id) || null,
+    }));
 
   return NextResponse.json({ drivers });
 }

@@ -145,7 +145,7 @@ export default function NewSupplierProductPage() {
             Processus de validation Suguba :
           </p>
           <p className="text-[11px] text-blue-800">
-            Brouillon $\rightarrow$ Soumis $\rightarrow$ Vérification Suguba (Qualité & Marge) $\rightarrow$ Approuvé & Publié.
+            Brouillon → Soumis → Vérification Suguba (Qualité & Marge) → Approuvé & Publié.
           </p>
         </div>
 

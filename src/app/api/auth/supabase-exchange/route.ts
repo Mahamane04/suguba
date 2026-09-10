@@ -66,7 +66,16 @@ export async function POST(req: NextRequest) {
     } else {
       uid = crypto.randomUUID();
       role = requestedRole;
-      status = requestedRole === 'customer' ? 'active' : 'pending_approval';
+      // Tous les rôles naissent ACTIFS. L'ancienne validation manuelle ne
+      // vérifiait rien : l'admin ne voyait que des données saisies par le
+      // candidat lui-même — nom, téléphone, numéro de pièce d'identité tapé au
+      // clavier. Elle ajoutait un délai, pas de la sécurité.
+      //
+      // Le contrôle se déplace là où il y a de la valeur en jeu :
+      //   revendeur   → le délai de sécurité des commissions, puis le retrait
+      //   fournisseur → la modération des produits (products.status)
+      //   livreur     → drivers.active_status, levé au guichet uniquement
+      status = 'active';
       fullName = authUser.user.user_metadata?.full_name || authUser.user.user_metadata?.name || email.split('@')[0];
       const resellerCode = role === 'reseller' ? `SG-${uid.replace(/-/g, '').slice(0, 6).toUpperCase()}` : null;
 

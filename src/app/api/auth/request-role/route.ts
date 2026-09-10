@@ -15,7 +15,9 @@ import { chargerRoles } from '@/lib/profile-roles';
  *
  * C'est ce qui rend le multi-rôle utilisable : un revendeur qui possède une
  * moto demande le rôle livreur sans créer de second compte, un fournisseur
- * achète pour lui-même, etc. Le rôle naît en `pending_approval` et attend la
+ * achète pour lui-même, etc. Le rôle naît ACTIF — pour un livreur, c'est
+ * `drivers.active_status` qui commande le dispatch, pas ce statut. Ancien texte :
+ * le rôle naissait en `pending_approval` et attendait la
  * validation d'un admin, exactement comme une inscription.
  *
  * `admin` est volontairement absent des rôles demandables : il ne s'attribue
@@ -51,7 +53,7 @@ export async function POST(req: NextRequest) {
     const { error } = await admin.from('profile_roles').insert({
       profile_id: session.uid,
       role,
-      status: 'pending_approval',
+      status: 'active',
     });
     if (error) {
       console.error('[ROLES] Ajout impossible:', error);
@@ -71,7 +73,7 @@ export async function POST(req: NextRequest) {
       roles: carte,
     });
 
-    const res = NextResponse.json({ success: true, role, statut: 'pending_approval', roles: carte });
+    const res = NextResponse.json({ success: true, role, statut: 'active', roles: carte });
     res.cookies.set(SESSION_COOKIE_NAME, token, SESSION_COOKIE_OPTIONS);
     return res;
   } catch (error: any) {
