@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import ProductImage from '@/components/common/ProductImage';
@@ -20,24 +20,98 @@ export default function OrderTrackingPage() {
   const orderNumber = params?.orderNumber as string;
   const state = useSugubaStore();
 
-  const order = state.orders.find(
+  // Commande retrouvée par le serveur après vérification du téléphone. Elle
+  // prend le pas sur le store local, qui ne contient rien sur un autre appareil.
+  const [commandeDistante, setCommandeDistante] = useState<any>(null);
+  const [telephone, setTelephone] = useState('');
+  const [erreurSuivi, setErreurSuivi] = useState('');
+  const [recherche, setRecherche] = useState(false);
+
+  const orderLocal = state.orders.find(
     (o) => o.orderNumber.toUpperCase() === orderNumber?.toUpperCase()
   );
+  const order = orderLocal || commandeDistante;
 
+  const rechercher = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErreurSuivi('');
+    setRecherche(true);
+    try {
+      const res = await fetch('/api/orders/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderNumber, phone: telephone }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        setErreurSuivi(json.error || 'Commande introuvable avec ces informations.');
+        return;
+      }
+      setCommandeDistante(json.commande);
+    } catch {
+      setErreurSuivi('Erreur réseau. Vérifiez votre connexion.');
+    } finally {
+      setRecherche(false);
+    }
+  };
+
+  // Le store local ne contient les commandes que sur l'appareil qui les a
+  // passées. Ailleurs — téléphone changé, cache vidé, cybercafé — on demande
+  // le numéro du client pour prouver que la commande est bien la sienne,
+  // plutôt que d'annoncer bêtement « introuvable ».
   if (!order) {
     return (
       <div className="min-h-screen flex flex-col bg-slate-50">
         <Header />
-        <main className="flex-1 max-w-lg mx-auto p-6 flex flex-col items-center justify-center text-center space-y-4">
-          <AlertCircle className="w-12 h-12 text-rose-500" />
-          <h1 className="text-xl font-black text-slate-900">Commande introuvable</h1>
-          <p className="text-xs text-slate-600">
-            Le numéro de commande #{orderNumber} n&apos;existe pas ou a expiré.
-          </p>
-          <Link
-            href="/"
-            className="py-2.5 px-4 bg-slate-900 text-white rounded-xl text-xs font-bold"
-          >
+        <main className="flex-1 max-w-lg mx-auto p-6 w-full flex flex-col justify-center space-y-5">
+          <div className="text-center space-y-2">
+            <div className="w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center mx-auto">
+              <ShieldCheck className="w-6 h-6" />
+            </div>
+            <h1 className="text-xl font-black text-slate-900">Confirmez que c&apos;est bien vous</h1>
+            <p className="text-xs text-slate-600">
+              Entrez le numéro de téléphone donné lors de la commande
+              <strong className="text-slate-900"> #{orderNumber}</strong>.
+            </p>
+          </div>
+
+          <form onSubmit={rechercher} className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="tel-suivi" className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
+                Votre numéro de téléphone
+              </label>
+              <input
+                id="tel-suivi"
+                type="tel"
+                inputMode="tel"
+                value={telephone}
+                onChange={(e) => setTelephone(e.target.value)}
+                placeholder="Ex : 70 12 34 56"
+                className="w-full h-12 px-4 rounded-2xl border border-slate-200 text-sm font-mono focus:outline-none focus:border-slate-900"
+              />
+            </div>
+
+            {erreurSuivi && (
+              <div className="flex items-start space-x-2 bg-red-50 border border-red-200 rounded-2xl p-3">
+                <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                <p className="text-[11px] text-red-800 font-medium">{erreurSuivi}</p>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={recherche || telephone.replace(/\D/g, '').length < 8}
+              className="w-full h-[52px] bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] disabled:bg-slate-300 disabled:active:scale-100 text-white font-black px-4 rounded-2xl text-sm transition-all"
+            >
+              {recherche ? 'Recherche…' : 'Voir ma commande'}
+            </button>
+
+            <p className="text-[10px] text-slate-400 text-center">
+              Ce numéro nous sert uniquement à vérifier que la commande est la vôtre.
+            </p>
+          </form>
+
+          <Link href="/" className="text-center text-xs font-bold text-slate-500 hover:text-slate-900">
             Retour au catalogue
           </Link>
         </main>

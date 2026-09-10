@@ -82,6 +82,9 @@ const API_SESSION_REQUISE = [
  *   /api/sms/send-otp            — appelée après commande par un client sans
  *                                  compte ; ne lit plus que le numéro de
  *                                  commande, tout le reste vient de la base.
+ *   /api/orders/track            — suivi de commande par un client sans compte ;
+ *                                  authentifiée par le contenu (numéro + téléphone)
+ *                                  et protégée par une limitation de tentatives.
  *   /api/orders/sync             — sa CRÉATION est publique (commande invité) ;
  *                                  la route exige une session interne pour les
  *                                  mises à jour de statut, qui sont le vrai risque.
