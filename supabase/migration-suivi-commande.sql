@@ -58,7 +58,15 @@ COMMENT ON TABLE public.track_attempts IS
 --
 -- Le code n'est plus renvoyé une fois la commande livrée : il n'a alors plus
 -- aucun usage, et le conserver accessible serait une exposition gratuite.
-CREATE OR REPLACE FUNCTION public.track_order(p_order_number TEXT, p_customer_phone TEXT)
+--
+-- ⚠️ DROP obligatoire avant le CREATE : la signature de retour change (le code
+-- de livraison et trois colonnes s'y ajoutent), et Postgres refuse un
+-- `CREATE OR REPLACE` qui modifie le type de retour — erreur 42P13,
+-- « cannot change return type of existing function ».
+-- Aucun code n'appelle cette fonction aujourd'hui : la supprimer ne casse rien.
+DROP FUNCTION IF EXISTS public.track_order(TEXT, TEXT);
+
+CREATE FUNCTION public.track_order(p_order_number TEXT, p_customer_phone TEXT)
 RETURNS TABLE (
   order_number TEXT,
   product_name TEXT,
