@@ -162,13 +162,20 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
       // La route de synchro est idempotente, ce second envoi est sans risque.
       cloudSyncService
         .pushOrderToCloud(order)
-        .then(() =>
-          fetch('/api/sms/send-otp', {
+        .then((enregistree) => {
+          // Sans cette garde, une commande jamais arrivée en base déclenchait
+          // quand même l'envoi du SMS : le client recevait un code de
+          // livraison pour une commande que personne ne verrait jamais.
+          if (!enregistree) {
+            console.error(`[COMMANDE] ${order.orderNumber} non enregistrée — SMS non envoyé.`);
+            return;
+          }
+          return fetch('/api/sms/send-otp', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ orderNumber: order.orderNumber }),
-          }),
-        )
+          });
+        })
         .catch((err) => console.warn('Notification SMS différée:', err));
 
       router.push(`/order-success/${order.orderNumber}`);

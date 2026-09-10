@@ -11,6 +11,7 @@ import {
   INITIAL_AUDIT_LOGS, INITIAL_SAV_TICKETS 
 } from './mock-data';
 import { cloudSyncService } from './cloud-sync';
+import { genererNumeroCommande } from './order-number';
 
 // Passé de _v1 à _v2 le 2026-08-21, en même temps que le retrait du catalogue
 // de démo (mock-data.ts). hydrateFromLocalStorage écrase les valeurs par
@@ -340,7 +341,7 @@ export const sugubaStore = {
       : undefined;
 
     const resellerUser = reseller ? globalState.users.find(u => u.id === reseller?.userId) : undefined;
-    const orderNumber = `SG-${Math.floor(10000 + Math.random() * 90000)}`;
+    const orderNumber = genererNumeroCommande();
     const otp = Math.floor(1000 + Math.random() * 9000).toString(); // Code secret à 4 chiffres
 
     const unitPrice = product.publicPrice || product.supplierPrice;

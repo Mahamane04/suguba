@@ -194,9 +194,23 @@ class CloudSyncService {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ order }),
       });
-      return res.ok;
+
+      if (!res.ok) {
+        // Une commande qui n'atteint pas Supabase n'existe pour personne :
+        // ni le service client qui doit rappeler, ni le livreur, ni le
+        // paiement. Le client, lui, voit sa page de confirmation et son code
+        // secret. Cet écart doit être bruyant côté journal, faute de quoi
+        // personne ne le découvre avant l'appel mécontent.
+        const detail = await res.json().catch(() => ({} as any));
+        console.error(
+          `[SYNC] Commande ${order.orderNumber} NON enregistrée en base (HTTP ${res.status}) :`,
+          detail?.error || 'raison inconnue',
+        );
+        return false;
+      }
+      return true;
     } catch (err) {
-      console.warn('Exception push commande:', err);
+      console.error(`[SYNC] Commande ${order.orderNumber} NON enregistrée (réseau) :`, err);
       return false;
     }
   }

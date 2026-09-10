@@ -7,6 +7,7 @@ import Header from '@/components/common/Header';
 import Footer from '@/components/common/Footer';
 import BottomNav from '@/components/common/BottomNav';
 import { PackageSearch, ArrowRight, MessageCircle } from 'lucide-react';
+import { normaliserNumeroCommande } from '@/lib/order-number';
 
 /**
  * Point d'entrée du suivi de commande, créé le 2026-09-09 avec la barre de
@@ -27,18 +28,20 @@ export default function TrackIndexPage() {
     e.preventDefault();
     setErreur('');
 
-    // Le client tape souvent « 37129 », « sg-37129 » ou « #SG-37129 » — on
-    // accepte les trois plutôt que de lui reprocher un format qu'il n'a
+    // Le client tape souvent « K7M3P9RX », « sg-k7m3p9rx » ou « #SG-K7M3P9RX »
+    // — on accepte les trois plutôt que de lui reprocher un format qu'il n'a
     // jamais eu à apprendre.
-    const brut = numero.trim().toUpperCase().replace(/^#/, '');
-    const chiffres = brut.replace(/\D/g, '');
+    //
+    // Cette normalisation retirait auparavant tout ce qui n'était pas un
+    // chiffre : elle datait des numéros à 5 chiffres et aurait mutilé les
+    // numéros alphanumériques actuels (voir src/lib/order-number.ts).
+    const reference = normaliserNumeroCommande(numero.replace(/^#/, ''));
 
-    if (chiffres.length < 4) {
-      setErreur('Entrez le numéro de commande reçu à la confirmation (exemple : SG-37129).');
+    if (reference.length < 'SG-'.length + 4) {
+      setErreur('Entrez le numéro de commande reçu à la confirmation (exemple : SG-K7M3P9RX).');
       return;
     }
 
-    const reference = brut.startsWith('SG-') ? brut : `SG-${chiffres}`;
     router.push(`/track/${reference}`);
   };
 
@@ -68,7 +71,7 @@ export default function TrackIndexPage() {
               type="text"
               inputMode="text"
               autoFocus
-              placeholder="SG-37129"
+              placeholder="SG-K7M3P9RX"
               value={numero}
               onChange={(e) => setNumero(e.target.value)}
               className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-center text-lg font-black tracking-wide text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-suguba-brand/30"

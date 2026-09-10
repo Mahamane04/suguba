@@ -5,7 +5,7 @@
 
 export interface SmsPayload {
   toPhone: string;          // Numéro de téléphone malien (ex: 70000000 ou +22370000000)
-  orderNumber: string;      // Ex: SG-10492
+  orderNumber: string;      // Ex: SG-K7M3P9RX
   productName: string;      // Ex: Kit Solaire Domestique
   deliveryOtp: string;      // Ex: 5832
   totalAmount: number;      // Ex: 40000

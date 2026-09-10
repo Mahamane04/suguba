@@ -137,7 +137,7 @@ export interface Product {
 
 export interface Order {
   id: string;
-  orderNumber: string;         // ex: SG-10492
+  orderNumber: string;         // ex: SG-K7M3P9RX
   productId: string;
   productName: string;
   productImage: string;
