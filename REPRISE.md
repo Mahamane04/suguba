@@ -160,6 +160,12 @@ curl -s -H "Authorization: Bearer $KEY" https://api.saspay.me/api/v1/merchant-ba
    ne couvre pas au Mali. La route de versement le refuse explicitement (422 avec un message
    lisible) plutôt que d'échouer obscurément, mais ces revendeurs ne peuvent pas être payés
    automatiquement : il faut leur demander un numéro Orange, Moov ou Mobi Cash.
+10. **Promesses d'argent sans mécanisme derrière** (relevé le 2026-09-10) — plus proposées
+   depuis le tableau de bord revendeur, mais les pages existent encore :
+   `/reseller/referrals` (« +1 000 F par vente de filleul », aucune table ni route),
+   `/reseller/challenges` (primes de 5 000 à 25 000 F en dur), `/reseller/academy`
+   (scripts « 25 000 à 100 000 F / semaine », « 3 000 à 7 000 F par article »). À supprimer
+   ou à brancher sur un vrai mécanisme — décision de l'utilisateur.
 
 ---
 
