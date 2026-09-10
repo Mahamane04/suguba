@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Header from '@/components/common/Header';
 import ProductImage from '@/components/common/ProductImage';
 import { useSugubaStore, sugubaStore } from '@/lib/store';
+import { cloudSyncService } from '@/lib/cloud-sync';
 import Button from '@/components/ui/Button';
 import { 
   ShieldCheck, Truck, Clock, MapPin, Phone, 
@@ -154,17 +155,21 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
       });
 
       // Déclenchement de l'envoi du SMS OTP en tâche de fond
-      fetch('/api/sms/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          toPhone: customerPhone,
-          orderNumber: order.orderNumber,
-          productName: product.name,
-          deliveryOtp: order.deliveryOtp,
-          totalAmount: order.totalAmount,
-        }),
-      }).catch((err) => console.warn('Notification SMS différée:', err));
+      // La route SMS ne lit plus que le numéro de commande : téléphone, code
+      // secret et montant sont relus en base, jamais acceptés du navigateur.
+      // createOrder pousse vers Supabase sans attendre — on force donc la
+      // synchro avant, sinon le SMS partirait avant que la commande existe.
+      // La route de synchro est idempotente, ce second envoi est sans risque.
+      cloudSyncService
+        .pushOrderToCloud(order)
+        .then(() =>
+          fetch('/api/sms/send-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderNumber: order.orderNumber }),
+          }),
+        )
+        .catch((err) => console.warn('Notification SMS différée:', err));
 
       router.push(`/order-success/${order.orderNumber}`);
     } catch (err: any) {

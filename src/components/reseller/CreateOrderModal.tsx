@@ -5,6 +5,7 @@ import { Product } from '@/types';
 import { sugubaStore, useSugubaStore } from '@/lib/store';
 import { X, CheckCircle, Package, Phone, MapPin, User, FileText, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
+import { cloudSyncService } from '@/lib/cloud-sync';
 
 interface CreateOrderModalProps {
   product: Product | null;
@@ -55,17 +56,21 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
       });
 
       // Déclenchement de l'envoi du SMS OTP
-      fetch('/api/sms/send-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          toPhone: customerPhone,
-          orderNumber: order.orderNumber,
-          productName: product.name,
-          deliveryOtp: order.deliveryOtp,
-          totalAmount: order.totalAmount,
-        }),
-      }).catch((err) => console.warn('Notification SMS différée:', err));
+      // La route SMS ne lit plus que le numéro de commande : téléphone, code
+      // secret et montant sont relus en base, jamais acceptés du navigateur.
+      // createOrder pousse vers Supabase sans attendre — on force donc la
+      // synchro avant, sinon le SMS partirait avant que la commande existe.
+      // La route de synchro est idempotente, ce second envoi est sans risque.
+      cloudSyncService
+        .pushOrderToCloud(order)
+        .then(() =>
+          fetch('/api/sms/send-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orderNumber: order.orderNumber }),
+          }),
+        )
+        .catch((err) => console.warn('Notification SMS différée:', err));
 
       setCreatedOrder(order);
       if (onSuccess) onSuccess(order.orderNumber);

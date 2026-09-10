@@ -51,20 +51,23 @@ export const smsGateway = {
     const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
     const termiiApiKey = process.env.TERMII_API_KEY;
 
-    // A. Passerelle Orange Mali SMS API
+    // A. Passerelle Orange Mali — NON IMPLÉMENTÉE
+    //
+    // ⚠️ Ce bloc annonçait `success: true` avec un faux identifiant de message
+    // sans jamais appeler la moindre API : configurer ORANGE_SMS_CLIENT_ID
+    // aurait fait croire à un envoi réussi alors qu'aucun client n'aurait reçu
+    // son code de livraison, et aucune erreur n'aurait été levée. Même famille
+    // de piège que la simulation de virement CinetPay retirée le 2026-09-09.
+    //
+    // Tant que l'appel REST Orange n'est pas écrit, mieux vaut échouer
+    // franchement : le nœud tombe alors sur Twilio, Termii, ou le mode
+    // simulation explicite en fin de fonction.
     if (orangeClientId && process.env.ORANGE_SMS_CLIENT_SECRET) {
-      try {
-        console.log(`[SMS ORANGE MALI] Envoi vers ${formattedPhone}...`);
-        // Implémentation de l'appel REST Orange SMS
-        return {
-          success: true,
-          messageId: `ORANGE-${Date.now()}`,
-          provider: 'ORANGE_MALI',
-          message: `SMS transmis au réseau Orange Mali pour ${formattedPhone}`,
-        };
-      } catch (err: any) {
-        console.error('[SMS ERROR] Échec Orange Mali:', err);
-      }
+      console.error(
+        '[SMS] Orange Mali est configuré mais son intégration n\'est pas écrite — ' +
+        'aucun SMS ne partira par ce canal. Utilise TWILIO_* ou TERMII_API_KEY, ' +
+        'ou implémente l\'appel REST Orange dans src/lib/sms-gateway.ts.'
+      );
     }
 
     // B. Passerelle Twilio SMS

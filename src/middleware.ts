@@ -59,7 +59,11 @@ const API_SESSION_REQUISE = [
   '/api/auth/refresh-session',
   '/api/auth/request-role',
   '/api/orders/feed',
-  '/api/orders/sync',
+  // ⚠️ PAS /api/orders/sync : sa CRÉATION est publique — c'est le cœur du
+  // parcours client sans compte, un acheteur qui commande depuis /p/[slug]
+  // n'a pas de session. La route exige elle-même une session admin/livreur/
+  // fournisseur pour les MISES À JOUR de statut, ce qui est le vrai risque.
+  // L'avoir mise ici a cassé la commande invité en production le 2026-09-10.
   '/api/products/sync',
   '/api/products/upload-image',
 ];
@@ -76,8 +80,11 @@ const API_SESSION_REQUISE = [
  *   /api/payments/saspay/*       — un client sans compte doit pouvoir payer et
  *                                  suivre sa commande.
  *   /api/sms/send-otp            — appelée après commande par un client sans
- *                                  compte. ⚠️ Accepte encore un numéro et un
- *                                  code arbitraires depuis le navigateur.
+ *                                  compte ; ne lit plus que le numéro de
+ *                                  commande, tout le reste vient de la base.
+ *   /api/orders/sync             — sa CRÉATION est publique (commande invité) ;
+ *                                  la route exige une session interne pour les
+ *                                  mises à jour de statut, qui sont le vrai risque.
  */
 
 const ROLE_BY_PREFIX: { prefix: string; role: string }[] = [
@@ -197,7 +204,9 @@ export const config = {
     '/api/auth/me',
     '/api/auth/refresh-session',
     '/api/auth/request-role',
-    '/api/orders/:path*',
+    // `/api/orders/feed` seulement, jamais `/api/orders/:path*` : la création
+    // de commande (`/api/orders/sync`) doit rester ouverte aux clients sans compte.
+    '/api/orders/feed',
     '/api/products/:path*',
   ],
 };
