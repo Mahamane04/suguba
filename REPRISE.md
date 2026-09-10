@@ -83,6 +83,31 @@ restée figée alors que le projet a beaucoup avancé depuis.
    Vérifié : 16 tests contre la base réelle (dispatch vide sans vérification, constat exigé,
    dossier incomplet refusé, retrait d'autorisation, traçabilité).
 
+
+8. **Tarification automatique et boutiques** (2026-09-10) — code fait, build en cours de
+   validation, **deux migrations à appliquer avant tout déploiement** :
+   `migration-tarification.sql` puis `migration-boutiques.sql`.
+   - **Moteur** `src/lib/pricing.ts` (fonctions pures, même code côté admin et serveur) :
+     plancher Suguba = coûts variables (paiement 1,5 %, provision refus 4 %, message,
+     déficit livraison) + coûts fixes ÷ **volume de référence** + marge nette minimale (5 %).
+     Commission = 70 % du reste, arrondie **vers le bas**. Vérifié sur 50 000 tirages : un
+     produit « ok » ne passe jamais sous la marge minimale, le prix minimal est bien le plus
+     bas prix rentable.
+   - **Réglages** dans `platform_settings` (écran admin « Réglages économiques ») : coûts,
+     part revendeur, livraison par ville, points relais, codes promo, retrait minimum. Les
+     coûts fixes par défaut (300 000 F/mois) sont une **estimation provisoire** signalée
+     « non confirmée » tant que l'admin ne les a pas remplacés.
+   - L'admin ne fixe plus que le **prix de vente** (`/api/admin/products/price`), la
+     commission est calculée ; un prix sous le plancher est refusé.
+   - **Devis serveur unique** (`calculerCommande`) pour l'affichage (`/api/orders/quote`) et
+     l'enregistrement (`/api/orders/sync`). Remise promo prise sur la marge Suguba, jamais
+     sur la commission, et plafonnée pour ne **jamais vendre à perte**.
+   - **Boutiques** : fournisseur `/s/<adresse>` (reconstruite, composant serveur),
+     revendeur `/r/<code>` (sélection depuis le catalogue). Aperçus de partage Open Graph.
+     Aucune coordonnée fournisseur publiée.
+   - **Supprimé** : fausses chaînes de marque `/c/`, faux tableau de bord `/business`, faux
+     réseau d'ambassadrices, note « 4.9/5 » inventée, option « acompte » qui ne faisait rien.
+
 ---
 
 ## ⚠️ À vérifier en tout premier
@@ -193,6 +218,25 @@ curl -s -H "Authorization: Bearer $KEY" https://api.saspay.me/api/v1/merchant-ba
   alphabet de 30 symboles sans ambiguïté visuelle (6,5 × 10¹¹ combinaisons), et tout échec
   de synchronisation est désormais journalisé en `console.error` avec le numéro concerné.
   Le SMS n'est plus envoyé si la commande n'a pas atteint la base.
+- **Les montants d'une commande venaient du navigateur** (corrigé le 2026-09-10).
+  `/api/orders/sync` enregistrait tels quels prix, total, commission et statut, sur une route
+  publique : commission de 500 000 F sur son propre code, commande créée « livrée »
+  (commission disponible sans livraison), total à 100 F pour un article à 45 000 F — que la
+  route SasPay « relisait en base » en toute confiance. Tout est désormais calculé par le
+  serveur à partir du produit en base et figé dans `pricing_snapshot`. Les mises à jour ne
+  touchent plus aucun montant. **Règle : aucune route ne doit accepter un montant du
+  navigateur.**
+- **La synchro produit acceptait statut et prix du navigateur** : un fournisseur pouvait
+  publier son article « approuvé » sans modération, avec la commission de son choix, et
+  écraser la fiche d'un autre. L'approbation ne passe plus que par la tarification admin, et
+  un changement de prix fournisseur sur un produit approuvé le renvoie en modération.
+- **La page produit promettait une remise jamais appliquée.** Codes promo, frais par ville et
+  point relais étaient calculés dans la page, pendant que la commande gardait 1 500 F et aucune
+  remise. Le client lisait un total, le livreur en réclamait un autre.
+- **Le prix fournisseur est lisible publiquement** (lecture anon des produits approuvés, et
+  `cloud-sync` fait `select('*')`). La marge Suguba s'en déduit. Non corrigé : le resserrer
+  demande de revoir le chargement des produits côté navigateur. Ne pas y ajouter de colonnes
+  de marge — elles sont calculées à la volée côté admin.
 - **Deux sources de vérité pour les rôles, écrites de façon incohérente.** `profile_roles`
   est la source de vérité du multi-rôle, mais `/api/admin/promote` et
   `scripts/create-admin.js` n'écrivaient que `profiles.role`. Le repli de `chargerRoles()`

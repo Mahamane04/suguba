@@ -23,6 +23,7 @@ interface SupplierProduct {
 
 interface SupplierMe {
   companyName: string;
+  slug?: string | null;
   managerName: string | null;
   warehouseAddress: string | null;
   warehouseNeighborhood: string | null;
@@ -87,6 +88,17 @@ export default function SupplierDashboardPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
+            {supplier?.slug && (
+              <Link
+                href={`/s/${supplier.slug}`}
+                target="_blank"
+                className="flex items-center space-x-1.5 px-3.5 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-2xl text-xs font-black shadow-md transition-all active:scale-95"
+              >
+                <Store className="w-4 h-4" />
+                <span>Ma boutique publique</span>
+              </Link>
+            )}
+
             <Link
               href="/supplier/ambassadors"
               className="flex items-center space-x-1.5 px-3.5 py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-2xl text-xs font-black shadow-md transition-all active:scale-95"

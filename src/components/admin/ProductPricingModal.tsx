@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Product } from '@/types';
 import { sugubaStore, useSugubaStore } from '@/lib/store';
-import { X, ShieldCheck, DollarSign, ArrowRight, Percent, AlertCircle } from 'lucide-react';
-import Image from 'next/image';
+import { X, ShieldCheck, AlertCircle, Loader2, Sparkles } from 'lucide-react';
+import ProductImage from '@/components/common/ProductImage';
+import { calculerTarif, type ReglagesPlateforme } from '@/lib/pricing';
 
 interface ProductPricingModalProps {
   product: Product | null;
@@ -12,172 +13,212 @@ interface ProductPricingModalProps {
   onClose: () => void;
 }
 
+/**
+ * Tarification d'un produit par l'admin.
+ *
+ * L'admin ne choisit plus que le PRIX DE VENTE. La commission revendeur est
+ * calculée par le moteur (src/lib/pricing.ts) à partir des réglages de la
+ * plateforme : elle était auparavant saisie à la main, avec pour seule règle
+ * « marge Suguba non négative » — aucun coût n'était pris en compte.
+ *
+ * L'aperçu est calculé ici avec le même moteur que le serveur. L'enregistrement
+ * passe par /api/admin/products/price, qui recalcule tout et fait foi.
+ */
 export default function ProductPricingModal({ product, isOpen, onClose }: ProductPricingModalProps) {
   const state = useSugubaStore();
-  const [publicPrice, setPublicPrice] = useState<number>(product?.publicPrice || 0);
-  const [resellerCommission, setResellerCommission] = useState<number>(product?.resellerCommission || 0);
-  const [sugubaMargin, setSugubaMargin] = useState<number>(product?.sugubaMargin || 0);
+  const [reglages, setReglages] = useState<ReglagesPlateforme | null>(null);
+  const [confirme, setConfirme] = useState(true);
+  const [prixVente, setPrixVente] = useState<number>(0);
+  const [chargement, setChargement] = useState(true);
+  const [envoi, setEnvoi] = useState(false);
+  const [erreur, setErreur] = useState('');
 
-  // Synchronisation si le produit change
-  React.useEffect(() => {
-    if (product) {
-      const pPrice = product.publicPrice || Math.round(product.supplierPrice * 1.3);
-      const rCommission = product.resellerCommission || Math.round(product.supplierPrice * 0.1);
-      const sMargin = Math.max(0, pPrice - product.supplierPrice - rCommission);
-      
-      setPublicPrice(pPrice);
-      setResellerCommission(rCommission);
-      setSugubaMargin(sMargin);
-    }
-  }, [product]);
+  useEffect(() => {
+    if (!product || !isOpen) return;
+    let annule = false;
+    setChargement(true);
+    setErreur('');
+    fetch('/api/admin/settings')
+      .then((r) => r.json())
+      .then((json) => {
+        if (annule || !json.reglages) return;
+        setReglages(json.reglages);
+        setConfirme(Boolean(json.confirme));
+        // Un produit déjà approuvé garde son prix ; un dépôt en attente part
+        // du prix recommandé plutôt que de l'ancien « fournisseur × 1,3 ».
+        const t = calculerTarif(product.supplierPrice, product.publicPrice || 0, json.reglages);
+        setPrixVente(product.status === 'approved' && product.publicPrice > 0 ? product.publicPrice : t.prixRecommande);
+      })
+      .catch(() => setErreur('Impossible de charger les réglages de la plateforme.'))
+      .finally(() => !annule && setChargement(false));
+    return () => { annule = true; };
+  }, [product, isOpen]);
+
+  const tarif = useMemo(
+    () => (product && reglages ? calculerTarif(product.supplierPrice, prixVente, reglages) : null),
+    [product, reglages, prixVente],
+  );
 
   if (!isOpen || !product) return null;
 
-  const supplierPrice = product.supplierPrice;
-  const calculatedSugubaMargin = publicPrice - supplierPrice - resellerCommission;
-
-  const handleApprove = (e: React.FormEvent) => {
+  const enregistrer = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (publicPrice <= supplierPrice) {
-      alert('Le prix public doit être supérieur au prix fournisseur.');
-      return;
+    if (!tarif) return;
+    setErreur('');
+    setEnvoi(true);
+    try {
+      const res = await fetch('/api/admin/products/price', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: product.id, publicPrice: prixVente }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setErreur(json.error || 'Échec de l\'enregistrement.');
+        return;
+      }
+      // Le serveur a fait foi : on reprend SES montants, pas ceux de l'aperçu.
+      sugubaStore.approveProduct(
+        product.id,
+        prixVente,
+        json.tarif.commission,
+        json.tarif.margeSuguba,
+        state.currentUser.fullName,
+      );
+      onClose();
+    } catch {
+      setErreur('Erreur réseau.');
+    } finally {
+      setEnvoi(false);
     }
-    if (calculatedSugubaMargin < 0) {
-      alert('Attention : La marge nette Suguba ne peut pas être négative.');
-      return;
-    }
+  };
 
-    sugubaStore.approveProduct(
-      product.id,
-      publicPrice,
-      resellerCommission,
-      calculatedSugubaMargin,
-      state.currentUser.fullName
-    );
-
-    onClose();
+  const f = (n: number) => `${n.toLocaleString('fr-FR')} F`;
+  const statutLibelle: Record<string, { texte: string; classe: string }> = {
+    ok: { texte: 'Rentable et proposé aux revendeurs', classe: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+    commission_faible: { texte: 'Vendable, mais commission trop faible pour être proposée au partage', classe: 'bg-amber-100 text-amber-900 border-amber-300' },
+    sous_plancher: { texte: 'Sous le plancher : Suguba perdrait de l\'argent', classe: 'bg-rose-100 text-rose-800 border-rose-300' },
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
       <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden max-h-[92vh] flex flex-col">
-        
-        {/* Header */}
         <div className="p-4 sm:p-5 bg-gradient-to-r from-purple-800 to-indigo-900 text-white flex items-center justify-between">
           <div className="flex items-center space-x-2">
             <ShieldCheck className="w-5 h-5 text-purple-300" />
-            <h3 className="font-bold text-base sm:text-lg">Contrôle Économique Suguba</h3>
+            <h3 className="font-bold text-base sm:text-lg">Tarification du produit</h3>
           </div>
-          <button 
-            onClick={onClose}
-            className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors"
-          >
+          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center">
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Modal Body */}
-        <form onSubmit={handleApprove} className="p-5 overflow-y-auto space-y-4 flex-1">
-          
-          {/* Product Summary */}
+        <form onSubmit={enregistrer} className="p-5 overflow-y-auto space-y-4 flex-1">
           <div className="flex items-center space-x-3 bg-slate-50 p-3 rounded-2xl border border-slate-200">
             <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-slate-200 shrink-0">
-              <Image src={product.images[0]} alt={product.name} fill className="object-cover" />
+              <ProductImage src={product.images?.[0]} alt={product.name} fill className="object-cover" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                Fournisseur : {product.supplierName}
-              </p>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Fournisseur : {product.supplierName}</p>
               <h4 className="font-bold text-xs text-slate-900 truncate">{product.name}</h4>
-              <p className="text-xs font-black text-blue-700 mt-0.5">
-                Prix Fournisseur garanti : {supplierPrice.toLocaleString('fr-FR')} FCFA
+              <p className="text-xs font-black text-blue-700 mt-0.5">Prix fournisseur : {f(product.supplierPrice)}</p>
+            </div>
+          </div>
+
+          {!confirme && (
+            <div className="flex items-start space-x-2 bg-amber-50 border border-amber-300 rounded-2xl p-3">
+              <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+              <p className="text-[11px] text-amber-900">
+                Les coûts de la plateforme ne sont pas encore confirmés : ce calcul repose sur une
+                estimation provisoire. Renseignez vos vrais coûts dans « Réglages économiques ».
               </p>
-            </div>
-          </div>
-
-          <div className="bg-purple-50 border border-purple-200 rounded-2xl p-3 text-xs text-purple-900 leading-relaxed">
-            💡 <strong>Règle d&apos;or Suguba</strong> : Le fournisseur exige son prix plancher ({supplierPrice.toLocaleString('fr-FR')} F). Suguba fixe librement le prix de vente final, la commission fixe revendeur et préserve sa marge opérationnelle.
-          </div>
-
-          {/* Pricing Controls */}
-          <div className="space-y-3">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Prix de Vente Public Client (FCFA) *
-              </label>
-              <input
-                type="number"
-                required
-                min={supplierPrice + 1000}
-                step={500}
-                value={publicPrice}
-                onChange={(e) => setPublicPrice(parseInt(e.target.value) || 0)}
-                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-black text-slate-900 focus:bg-white focus:outline-purple-600"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Commission Fixe par Vente Revendeur (FCFA) *
-              </label>
-              <input
-                type="number"
-                required
-                min={1000}
-                step={500}
-                value={resellerCommission}
-                onChange={(e) => setResellerCommission(parseInt(e.target.value) || 0)}
-                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-black text-emerald-700 focus:bg-white focus:outline-emerald-600"
-              />
-              <p className="text-[10px] text-slate-500 mt-1">
-                Affiché directement au revendeur : &quot;Gagne {resellerCommission.toLocaleString('fr-FR')} F par vente&quot;
-              </p>
-            </div>
-          </div>
-
-          {/* Financial Breakdown Table */}
-          <div className="bg-slate-900 text-white rounded-2xl p-4 space-y-2">
-            <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              Décomposition Financière Unitaire :
-            </p>
-            <div className="flex justify-between text-xs text-slate-300">
-              <span>Prix de Vente Public :</span>
-              <span className="font-bold text-white">{publicPrice.toLocaleString('fr-FR')} FCFA</span>
-            </div>
-            <div className="flex justify-between text-xs text-blue-300">
-              <span>− Reversement Fournisseur :</span>
-              <span className="font-bold">− {supplierPrice.toLocaleString('fr-FR')} FCFA</span>
-            </div>
-            <div className="flex justify-between text-xs text-emerald-400">
-              <span>− Commission Revendeur :</span>
-              <span className="font-bold">− {resellerCommission.toLocaleString('fr-FR')} FCFA</span>
-            </div>
-            <div className="flex justify-between text-sm font-black text-purple-300 pt-2 border-t border-slate-800">
-              <span>= Marge Brute Suguba :</span>
-              <span className="text-base">{calculatedSugubaMargin.toLocaleString('fr-FR')} FCFA</span>
-            </div>
-          </div>
-
-          {calculatedSugubaMargin < 0 && (
-            <div className="flex items-center space-x-2 text-rose-600 text-xs font-bold">
-              <AlertCircle className="w-4 h-4" />
-              <span>Attention : La marge Suguba est négative avec ces paramètres !</span>
             </div>
           )}
 
-          {/* Action */}
-          <button
-            type="submit"
-            disabled={calculatedSugubaMargin < 0}
-            className="w-full bg-purple-700 hover:bg-purple-800 disabled:opacity-50 text-white font-bold py-3.5 px-4 rounded-2xl text-xs shadow-lg shadow-purple-900/20 flex items-center justify-center space-x-2 transition-transform active:scale-[0.98]"
-          >
-            <ShieldCheck className="w-4 h-4" />
-            <span>Approuver & Publier dans le Catalogue Revendeurs</span>
-          </button>
+          {chargement || !tarif ? (
+            <div className="flex items-center space-x-2 text-xs text-slate-500 py-6">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Chargement des réglages…</span>
+            </div>
+          ) : (
+            <>
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Prix de vente au client (FCFA)</label>
+                <input
+                  type="number"
+                  min={0}
+                  step={500}
+                  value={prixVente}
+                  onChange={(e) => setPrixVente(parseInt(e.target.value) || 0)}
+                  className="w-full h-12 px-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-black text-slate-900 focus:bg-white focus:outline-purple-600"
+                />
+                <div className="flex gap-2 mt-2">
+                  <button type="button" onClick={() => setPrixVente(tarif.prixRecommande)}
+                    className="flex-1 h-9 rounded-xl bg-purple-50 border border-purple-200 text-purple-900 text-[11px] font-bold flex items-center justify-center space-x-1">
+                    <Sparkles className="w-3.5 h-3.5" /><span>Recommandé : {f(tarif.prixRecommande)}</span>
+                  </button>
+                  <button type="button" onClick={() => setPrixVente(tarif.prixMinimal)}
+                    className="flex-1 h-9 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-[11px] font-bold">
+                    Minimal : {f(tarif.prixMinimal)}
+                  </button>
+                </div>
+              </div>
 
+              <div className={`border rounded-2xl px-3 py-2 text-[11px] font-bold ${statutLibelle[tarif.statut].classe}`}>
+                {statutLibelle[tarif.statut].texte}
+              </div>
+
+              <div className="bg-slate-900 text-white rounded-2xl p-4 space-y-1.5 text-xs">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 pb-1">Décomposition par article</p>
+                <Ligne l="Prix de vente" v={f(tarif.prixVente)} fort />
+                <Ligne l="− Prix fournisseur" v={f(tarif.prixFournisseur)} classe="text-blue-300" />
+                <div className="border-t border-slate-800 my-1" />
+                <Ligne l="Frais de paiement" v={f(tarif.coutPaiement)} classe="text-slate-400" />
+                <Ligne l="Provision pour refus" v={f(tarif.provisionRefus)} classe="text-slate-400" />
+                <Ligne l="Part des coûts fixes" v={f(tarif.coutFixe)} classe="text-slate-400" />
+                <Ligne l="Message au client" v={f(tarif.coutMessage)} classe="text-slate-400" />
+                {tarif.deficitLivraison > 0 && <Ligne l="Déficit livraison" v={f(tarif.deficitLivraison)} classe="text-slate-400" />}
+                <Ligne l="Marge nette minimale" v={f(tarif.margeNetteMinimale)} classe="text-slate-400" />
+                <Ligne l="= Plancher Suguba" v={f(tarif.plancher)} classe="text-amber-300" />
+                <div className="border-t border-slate-800 my-1" />
+                <Ligne l="Reste à partager" v={f(tarif.reste)} />
+                <Ligne l="→ Commission revendeur" v={f(tarif.commission)} classe="text-emerald-400" fort />
+                <Ligne l="→ Marge Suguba (brute)" v={f(tarif.margeSuguba)} classe="text-purple-300" />
+                <Ligne l="Marge nette Suguba, tous coûts payés" v={f(tarif.margeNetteSuguba)} classe="text-purple-200" fort />
+              </div>
+
+              {tarif.partageable && (
+                <p className="text-[11px] text-slate-600">
+                  Affiché au revendeur : « Gagne {f(tarif.commission)} par vente ».
+                </p>
+              )}
+
+              {erreur && (
+                <div className="flex items-start space-x-2 text-rose-700 text-[11px] font-bold bg-rose-50 border border-rose-200 rounded-xl p-2.5">
+                  <AlertCircle className="w-4 h-4 shrink-0" /><span>{erreur}</span>
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={envoi || tarif.statut === 'sous_plancher'}
+                className="w-full h-[52px] bg-purple-700 hover:bg-purple-800 disabled:opacity-50 text-white font-bold rounded-2xl text-xs flex items-center justify-center space-x-2 transition-transform active:scale-[0.98]"
+              >
+                {envoi ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                <span>{tarif.statut === 'sous_plancher' ? 'Prix sous le plancher' : 'Approuver et publier à ce prix'}</span>
+              </button>
+            </>
+          )}
         </form>
-
       </div>
+    </div>
+  );
+}
+
+function Ligne({ l, v, classe = 'text-slate-200', fort = false }: { l: string; v: string; classe?: string; fort?: boolean }) {
+  return (
+    <div className={`flex justify-between ${classe} ${fort ? 'font-black' : ''}`}>
+      <span>{l}</span><span>{v}</span>
     </div>
   );
 }

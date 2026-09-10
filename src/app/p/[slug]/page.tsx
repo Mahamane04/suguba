@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, use } from 'react';
+import React, { useState, use, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/common/Header';
@@ -12,6 +12,35 @@ import {
   ShieldCheck, Truck, Clock, MapPin, Phone, 
   User, CheckCircle2, ArrowRight, ArrowLeft, Star, Sparkles
 } from 'lucide-react';
+
+/** Devis renvoyé par /api/orders/quote — ne contient aucune marge ni commission. */
+interface DevisPublic {
+  quantite: number;
+  prixUnitaire: number;
+  montantArticles: number;
+  modeLivraison: 'domicile' | 'relais';
+  ville: string;
+  pointRelais: { id: string; nom: string } | null;
+  fraisLivraison: number;
+  codePromo: string | null;
+  remise: number;
+  avisPromo: 'invalide' | 'plafonnee' | null;
+  total: number;
+}
+
+interface ChoixLivraison {
+  fraisLivraisonClient: number;
+  livraisonParVille: Record<string, number>;
+  pointsRelais: { id: string; nom: string; frais: number; horaires: string }[];
+}
+
+/** Précision affichée pour les villes livrées en gare routière. */
+const PRECISION_VILLE: Record<string, string> = {
+  Sikasso: 'Gare SONEF',
+  'Ségou': 'Gare BTM',
+  Kayes: 'Gare SONEF',
+  Mopti: 'Sévaré - Gare',
+};
 
 export default function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = use(params);
@@ -35,24 +64,63 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [fulfillmentMethod, setFulfillmentMethod] = useState<'home_delivery' | 'pickup_point'>('home_delivery');
-  const [selectedPickupPoint, setSelectedPickupPoint] = useState<string>('Hub Central Suguba — Hamdallaye ACI 2000 (Gratuit)');
+  const [pickupPointId, setPickupPointId] = useState<string>('hub-aci');
   const [city, setCity] = useState('Bamako');
   const [neighborhood, setNeighborhood] = useState('');
   const [landmark, setLandmark] = useState('');
   const [quantity, setQuantity] = useState(1);
-  const [paymentOption, setPaymentOption] = useState<'full_cod' | 'deposit_momo'>('full_cod');
+  // L'option « acompte prioritaire » a été retirée : choisie, elle faisait
+  // baisser de 3 000 F le « reste à payer au livreur » affiché, alors que
+  // personne n'encaissait jamais cet acompte. Le client croyait avoir moins à
+  // payer, et le livreur lui réclamait la totalité.
   const [deliveryNotes, setDeliveryNotes] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Promo Code State
-  const [promoCodeInput, setPromoCodeInput] = useState(promoParam || '');
-  const [appliedPromo, setAppliedPromo] = useState<{ code: string; discount: number } | null>(
-    promoParam && promoParam.toUpperCase() === 'RAMADAN' ? { code: 'RAMADAN', discount: 2000 } :
-    promoParam && promoParam.toUpperCase() === 'TABASKI' ? { code: 'TABASKI', discount: 2000 } :
-    promoParam && promoParam.toUpperCase() === 'SUGUBAVIP' ? { code: 'SUGUBAVIP', discount: 1500 } :
-    promoParam && promoParam.toUpperCase() === 'BAMAKO' ? { code: 'BAMAKO', discount: 1000 } : null
-  );
-  const [promoError, setPromoError] = useState('');
+  // Code promo : saisi ici, VÉRIFIÉ par le serveur. La liste des codes et leurs
+  // montants étaient en dur dans cette page, et la remise affichée n'était
+  // jamais appliquée à la commande enregistrée.
+  const [promoCodeInput, setPromoCodeInput] = useState(promoParam ? promoParam.toUpperCase() : '');
+  const [promoSoumis, setPromoSoumis] = useState(promoParam ? promoParam.toUpperCase() : '');
+
+  // Villes et points relais proposés : ceux des réglages de la plateforme.
+  const [choixLivraison, setChoixLivraison] = useState<ChoixLivraison | null>(null);
+  useEffect(() => {
+    fetch('/api/settings/public')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => j && setChoixLivraison(j))
+      .catch(() => {});
+  }, []);
+
+  // Le total affiché est le devis du SERVEUR, calculé par la même fonction
+  // que celle qui enregistrera la commande. Un seul calcul, donc un seul
+  // montant : ce que le client lit est ce que le livreur lui réclamera.
+  const [devis, setDevis] = useState<DevisPublic | null>(null);
+  const [devisEnCours, setDevisEnCours] = useState(false);
+  useEffect(() => {
+    if (!product) return;
+    const controle = new AbortController();
+    const minuteur = setTimeout(() => {
+      setDevisEnCours(true);
+      fetch('/api/orders/quote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controle.signal,
+        body: JSON.stringify({
+          productId: product.id,
+          quantity,
+          city,
+          pickupPointId: fulfillmentMethod === 'pickup_point' ? pickupPointId : undefined,
+          promoCode: promoSoumis || undefined,
+          resellerCode: refCode || undefined,
+        }),
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j) => { if (j?.devis) setDevis(j.devis); })
+        .catch(() => {})
+        .finally(() => setDevisEnCours(false));
+    }, 250);
+    return () => { clearTimeout(minuteur); controle.abort(); };
+  }, [product?.id, quantity, city, pickupPointId, fulfillmentMethod, promoSoumis, refCode]);
 
   if (!product) {
     return (
@@ -79,51 +147,19 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
     );
   }
 
-  const PROMO_DATABASE: Record<string, number> = {
-    'RAMADAN': 2000,
-    'TABASKI': 2000,
-    'SUGUBAVIP': 1500,
-    'BAMAKO': 1000,
-    'PROMO2026': 1000,
-  };
-
   const handleApplyPromo = () => {
-    setPromoError('');
-    const code = promoCodeInput.trim().toUpperCase();
-    if (!code) return;
-
-    if (PROMO_DATABASE[code]) {
-      setAppliedPromo({ code, discount: PROMO_DATABASE[code] });
-    } else {
-      setPromoError('Code promo invalide ou expiré');
-    }
+    setPromoSoumis(promoCodeInput.trim().toUpperCase());
   };
 
-  const PICKUP_POINTS = [
-    { id: 'hub-aci', name: 'Hub Central Suguba — Hamdallaye ACI 2000 (Derrière Clinique Pasteur)', fee: 0, hours: '08h - 19h30' },
-    { id: 'relais-badala', name: 'Point Relais Badalabougou — Station Total Pont Fahd', fee: 500, hours: '07h - 21h00' },
-    { id: 'relais-marche', name: 'Point Relais Grand Marché — Carrefour Vox Daoula', fee: 500, hours: '08h - 18h30' },
-    { id: 'relais-faladie', name: 'Point Relais Faladié — Tour d\'Afrique / Rond-Point', fee: 500, hours: '07h30 - 20h30' },
-    { id: 'relais-kalaban', name: 'Point Relais Kalaban-Coro — Face Mairie', fee: 500, hours: '08h - 20h00' },
-    { id: 'relais-yirimadio', name: 'Point Relais Yirimadio — Près du Stade du 26 Mars', fee: 500, hours: '08h - 20h00' },
-  ];
+  const pointsRelais = choixLivraison?.pointsRelais || [];
+  const villes = choixLivraison?.livraisonParVille || { Bamako: 1500 };
+  const pointRelaisChoisi = pointsRelais.find((p) => p.id === pickupPointId) || pointsRelais[0];
 
-  const unitPrice = product.publicPrice || product.supplierPrice;
-  const deliveryFeeByCity: Record<string, number> = {
-    'Bamako': 1500,
-    'Kati': 2500,
-    'Sikasso': 3500,
-    'Ségou': 3500,
-    'Kayes': 5000,
-    'Mopti': 5000,
-  };
-
-  const activePickup = PICKUP_POINTS.find(p => p.name === selectedPickupPoint) || PICKUP_POINTS[0];
-  const deliveryFee = fulfillmentMethod === 'pickup_point' ? activePickup.fee : (deliveryFeeByCity[city] || 1500);
-  const discountAmount = appliedPromo ? appliedPromo.discount : 0;
-  const totalAmount = Math.max(0, (unitPrice * quantity) + deliveryFee - discountAmount);
-  const depositAmount = totalAmount >= 30000 ? 3000 : 0;
-  const remainingAtDelivery = paymentOption === 'deposit_momo' ? totalAmount - depositAmount : totalAmount;
+  // En attendant le devis, on n'affiche que le prix de l'article. Le bouton de
+  // commande reste bloqué tant que le devis n'est pas arrivé : c'est lui qui
+  // fait foi, pas une estimation locale.
+  const unitPrice = devis?.prixUnitaire ?? (product.publicPrice || product.supplierPrice);
+  const totalAmount = devis?.total ?? unitPrice * quantity;
 
   const handleOrderSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -137,21 +173,30 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
       return;
     }
 
-    const finalNeighborhood = fulfillmentMethod === 'pickup_point' ? 'Point Relais Partenaire' : neighborhood;
-    const finalLandmark = fulfillmentMethod === 'pickup_point' ? selectedPickupPoint : landmark;
+    if (!devis) {
+      alert('Le total est en cours de calcul, réessayez dans un instant.');
+      return;
+    }
+
+    const relais = fulfillmentMethod === 'pickup_point' ? pointRelaisChoisi : undefined;
+    const finalNeighborhood = relais ? 'Point Relais Partenaire' : neighborhood;
+    const finalLandmark = relais ? relais.nom : landmark;
 
     setIsSubmitting(true);
     try {
       const order = sugubaStore.createOrder({
         productId: product.id,
-        quantity,
+        quantity: devis.quantite,
         customerName,
         customerPhone,
-        city: fulfillmentMethod === 'pickup_point' ? 'Bamako' : city,
+        city: relais ? 'Bamako' : city,
         neighborhood: finalNeighborhood,
         landmark: finalLandmark,
-        deliveryNotes: fulfillmentMethod === 'pickup_point' ? `Retrait en Point Relais : ${selectedPickupPoint}` : deliveryNotes,
+        deliveryNotes: relais ? `Retrait en Point Relais : ${relais.nom}` : deliveryNotes,
         resellerCode: refCode || undefined,
+        pickupPointId: relais?.id,
+        promoCode: devis.codePromo || undefined,
+        devis,
       });
 
       // Déclenchement de l'envoi du SMS OTP en tâche de fond
@@ -305,7 +350,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                   <span className="font-black text-base text-slate-900 w-8 text-center">{quantity}</span>
                   <button
                     type="button"
-                    onClick={() => setQuantity(quantity + 1)}
+                    onClick={() => setQuantity(Math.min(50, quantity + 1))}
                     className="w-9 h-9 rounded-xl bg-slate-100 hover:bg-slate-200 font-black text-slate-800 text-sm flex items-center justify-center"
                   >
                     +
@@ -394,13 +439,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                     Sélectionner le Point Relais Partenaire à Bamako :
                   </label>
                   <select
-                    value={selectedPickupPoint}
-                    onChange={(e) => setSelectedPickupPoint(e.target.value)}
+                    value={pickupPointId}
+                    onChange={(e) => setPickupPointId(e.target.value)}
                     className="w-full px-3 py-2.5 bg-white border border-emerald-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-emerald-600"
                   >
-                    {PICKUP_POINTS.map(point => (
-                      <option key={point.id} value={point.name}>
-                        {point.name} — {point.fee === 0 ? 'GRATUIT' : `${point.fee} F`} ({point.hours})
+                    {pointsRelais.map(point => (
+                      <option key={point.id} value={point.id}>
+                        {point.nom} — {point.frais === 0 ? 'GRATUIT' : `${point.frais} F`} ({point.horaires})
                       </option>
                     ))}
                   </select>
@@ -419,12 +464,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                         onChange={(e) => setCity(e.target.value)}
                         className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:bg-white"
                       >
-                        <option value="Bamako">Bamako (1 500 F)</option>
-                        <option value="Kati">Kati (2 500 F)</option>
-                        <option value="Sikasso">Sikasso - Gare SONEF (3 500 F)</option>
-                        <option value="Ségou">Ségou - Gare BTM (3 500 F)</option>
-                        <option value="Kayes">Kayes - Gare SONEF (5 000 F)</option>
-                        <option value="Mopti">Mopti / Sévaré - Gare (5 000 F)</option>
+                        {Object.entries(villes).map(([ville, frais]) => (
+                          <option key={ville} value={ville}>
+                            {ville}{PRECISION_VILLE[ville] ? ` - ${PRECISION_VILLE[ville]}` : ''} ({Number(frais).toLocaleString('fr-FR')} F)
+                          </option>
+                        ))}
                       </select>
                     </div>
                     <div>
@@ -460,47 +504,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 </>
               )}
 
-              {/* Mode de règlement & Option d'Acompte */}
-              {depositAmount > 0 && (
-                <div className="space-y-2 pt-1">
-                  <label className="block text-xs font-bold text-slate-700">
-                    Option de Livraison & Règlement :
-                  </label>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentOption('full_cod')}
-                      className={`p-3 rounded-2xl border text-left transition-all ${
-                        paymentOption === 'full_cod' 
-                          ? 'bg-slate-900 text-white border-slate-900 shadow-xs' 
-                          : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                      }`}
-                    >
-                      <span className="block font-black text-xs">💵 100% à la Livraison</span>
-                      <span className={`text-[10px] block ${paymentOption === 'full_cod' ? 'text-slate-300' : 'text-slate-500'}`}>
-                        Payez la totalité au livreur
-                      </span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() => setPaymentOption('deposit_momo')}
-                      className={`p-3 rounded-2xl border text-left transition-all ${
-                        paymentOption === 'deposit_momo' 
-                          ? 'bg-emerald-800 text-white border-emerald-800 shadow-xs' 
-                          : 'bg-emerald-50/50 text-emerald-950 border-emerald-200 hover:bg-emerald-100/50'
-                      }`}
-                    >
-                      <span className="block font-black text-xs">⚡ Prioritaire (Acompte 3 000 F)</span>
-                      <span className={`text-[10px] block ${paymentOption === 'deposit_momo' ? 'text-emerald-200' : 'text-emerald-700'}`}>
-                        Bloqué par Wave/Orange Money
-                      </span>
-                    </button>
-                  </div>
-                </div>
-              )}
-
               {/* Champ Code Promo */}
               <div className="space-y-1.5 pt-1">
                 <label className="block text-xs font-bold text-slate-700">
@@ -522,53 +525,56 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                     Appliquer
                   </button>
                 </div>
-                {promoError && (
-                  <p className="text-[10px] font-bold text-rose-600">{promoError}</p>
+                {promoSoumis && devis?.avisPromo === 'invalide' && (
+                  <p className="text-[10px] font-bold text-rose-600">Code promo invalide ou expiré</p>
                 )}
-                {appliedPromo && (
+                {devis?.codePromo && devis.remise > 0 && (
                   <p className="text-[10px] font-bold text-emerald-700 flex items-center">
                     <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-                    Code {appliedPromo.code} validé : -{appliedPromo.discount.toLocaleString('fr-FR')} FCFA de réduction !
+                    Code {devis.codePromo} validé : -{devis.remise.toLocaleString('fr-FR')} FCFA
+                    {devis.avisPromo === 'plafonnee' ? ' (remise maximale sur cet article)' : ' de réduction !'}
+                  </p>
+                )}
+                {devis?.codePromo && devis.remise === 0 && (
+                  <p className="text-[10px] font-bold text-amber-700">
+                    Code {devis.codePromo} reconnu, mais aucune remise n&apos;est possible sur cet article.
                   </p>
                 )}
               </div>
 
-              {/* Price summary */}
+              {/* Récapitulatif — entièrement issu du devis serveur. */}
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1.5">
-                <div className="flex justify-between text-xs text-slate-600">
-                  <span>Produit ({quantity}x) :</span>
-                  <span className="font-semibold">{(unitPrice * quantity).toLocaleString('fr-FR')} FCFA</span>
-                </div>
-                <div className="flex justify-between text-xs text-slate-600">
-                  <span>Livraison ({city}) :</span>
-                  <span className="font-semibold">{deliveryFee.toLocaleString('fr-FR')} FCFA</span>
-                </div>
-
-                {appliedPromo && (
-                  <div className="flex justify-between text-xs font-bold text-emerald-700 bg-emerald-100/50 p-1.5 rounded-lg">
-                    <span>Remise Code Promo ({appliedPromo.code}) :</span>
-                    <span>- {appliedPromo.discount.toLocaleString('fr-FR')} FCFA</span>
-                  </div>
+                {devis ? (
+                  <>
+                    <div className="flex justify-between text-xs text-slate-600">
+                      <span>Produit ({devis.quantite}x) :</span>
+                      <span className="font-semibold">{devis.montantArticles.toLocaleString('fr-FR')} FCFA</span>
+                    </div>
+                    <div className="flex justify-between text-xs text-slate-600">
+                      <span>{devis.modeLivraison === 'relais' ? 'Retrait en point relais' : `Livraison (${devis.ville})`} :</span>
+                      <span className="font-semibold">{devis.fraisLivraison === 0 ? 'Gratuit' : `${devis.fraisLivraison.toLocaleString('fr-FR')} FCFA`}</span>
+                    </div>
+                    {devis.remise > 0 && (
+                      <div className="flex justify-between text-xs font-bold text-emerald-700 bg-emerald-100/50 p-1.5 rounded-lg">
+                        <span>Remise ({devis.codePromo}) :</span>
+                        <span>- {devis.remise.toLocaleString('fr-FR')} FCFA</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-sm font-black text-slate-900 pt-1.5 border-t border-slate-200">
+                      <span>Total à payer au livreur :</span>
+                      <span className="text-emerald-700">{devis.total.toLocaleString('fr-FR')} FCFA</span>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-xs text-slate-500">{devisEnCours ? 'Calcul du total…' : 'Total indisponible pour le moment.'}</p>
                 )}
-
-                {paymentOption === 'deposit_momo' && (
-                  <div className="flex justify-between text-xs font-bold text-amber-700 bg-amber-100/50 p-1.5 rounded-lg">
-                    <span>Acompte de réservation :</span>
-                    <span>- {depositAmount.toLocaleString('fr-FR')} FCFA</span>
-                  </div>
-                )}
-
-                <div className="flex justify-between text-sm font-black text-slate-900 pt-1.5 border-t border-slate-200">
-                  <span>Reste à payer au livreur :</span>
-                  <span className="text-emerald-700">{remainingAtDelivery.toLocaleString('fr-FR')} FCFA</span>
-                </div>
               </div>
 
               {/* Submit CTA — l'action principale de toute l'application.
                   Elle était en `emerald-600`, pas au vert de marque : le
                   bouton le plus important du parcours n'était pas à la
                   couleur de Suguba. */}
-              <Button type="submit" disabled={isSubmitting} size="lg" fullWidth>
+              <Button type="submit" disabled={isSubmitting || !devis} size="lg" fullWidth>
                 <span>Confirmer Ma Commande ({totalAmount.toLocaleString('fr-FR')} F)</span>
                 <ArrowRight className="w-4 h-4" />
               </Button>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Header from '@/components/common/Header';
@@ -11,7 +11,7 @@ import { useSugubaStore } from '@/lib/store';
 import { Product } from '@/types';
 import { 
   Search, Filter, MessageCircle, Plus, Sparkles, 
-  ShoppingBag, Check, ShieldCheck, Flame
+  ShoppingBag, Check, ShieldCheck, Flame, Store, ExternalLink
 } from 'lucide-react';
 
 export default function ResellerCatalogPage() {
@@ -21,7 +21,51 @@ export default function ResellerCatalogPage() {
   const [selectedProductForShare, setSelectedProductForShare] = useState<Product | null>(null);
   const [selectedProductForOrder, setSelectedProductForOrder] = useState<Product | null>(null);
 
-  const approvedProducts = state.products.filter(p => p.status === 'approved');
+  // Code revendeur et sélection de la boutique /r/<code>.
+  const [codeRevendeur, setCodeRevendeur] = useState<string | null>(null);
+  const [maSelection, setMaSelection] = useState<Set<string>>(new Set());
+  const [enCours, setEnCours] = useState<string | null>(null);
+  const [erreurBoutique, setErreurBoutique] = useState('');
+
+  useEffect(() => {
+    fetch('/api/reseller/me')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => j?.reseller?.referralCode && setCodeRevendeur(j.reseller.referralCode))
+      .catch(() => {});
+    fetch('/api/reseller/shop')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => j?.articles && setMaSelection(new Set(j.articles)))
+      .catch(() => {});
+  }, []);
+
+  const basculerBoutique = async (productId: string) => {
+    setErreurBoutique('');
+    setEnCours(productId);
+    const dedans = maSelection.has(productId);
+    try {
+      const res = await fetch('/api/reseller/shop', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId, action: dedans ? 'retirer' : 'ajouter' }),
+      });
+      const json = await res.json();
+      if (!res.ok) { setErreurBoutique(json.error || 'Action impossible.'); return; }
+      setMaSelection((prev) => {
+        const suivant = new Set(prev);
+        if (dedans) suivant.delete(productId); else suivant.add(productId);
+        return suivant;
+      });
+    } catch {
+      setErreurBoutique('Erreur réseau.');
+    } finally {
+      setEnCours(null);
+    }
+  };
+
+  // Seuls les produits qui rapportent une commission sont proposés au partage.
+  // Un article sous le plancher ou à commission trop faible afficherait
+  // « +0 F » : aucun sens pour un revendeur (voir src/lib/pricing.ts).
+  const approvedProducts = state.products.filter(p => p.status === 'approved' && p.resellerCommission > 0);
   const categories = ['all', ...Array.from(new Set(approvedProducts.map(p => p.category)))];
 
   const filtered = approvedProducts.filter(p => {
@@ -56,6 +100,28 @@ export default function ResellerCatalogPage() {
             <span>Studio Affiches WhatsApp</span>
           </Link>
         </div>
+
+        {/* Ma boutique : la vitrine publique composée depuis ce catalogue. */}
+        {codeRevendeur && (
+          <div className="bg-emerald-50 border border-emerald-200 rounded-3xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center space-x-3">
+              <Store className="w-6 h-6 text-emerald-700 shrink-0" />
+              <div>
+                <p className="text-sm font-black text-emerald-950">Ma boutique — {maSelection.size} article{maSelection.size > 1 ? 's' : ''}</p>
+                <p className="text-[11px] text-emerald-800">
+                  Ajoutez des articles ci-dessous, puis partagez votre boutique : chaque vente vous est attribuée.
+                </p>
+              </div>
+            </div>
+            <Link href={`/r/${codeRevendeur}`} target="_blank"
+              className="h-11 px-4 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-black flex items-center justify-center space-x-1.5">
+              <ExternalLink className="w-4 h-4" /><span>Voir et partager ma boutique</span>
+            </Link>
+          </div>
+        )}
+        {erreurBoutique && (
+          <p className="text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-2xl p-3">{erreurBoutique}</p>
+        )}
 
         {/* Search & Filter Bar */}
         <div className="flex flex-col sm:flex-row gap-3">
@@ -154,6 +220,21 @@ export default function ResellerCatalogPage() {
                     <span>Créer vente</span>
                   </button>
                 </div>
+
+                {codeRevendeur && (
+                  <button
+                    onClick={() => basculerBoutique(product.id)}
+                    disabled={enCours === product.id}
+                    className={`w-full h-10 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 border transition-colors disabled:opacity-60 ${
+                      maSelection.has(product.id)
+                        ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
+                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    {maSelection.has(product.id) ? <Check className="w-4 h-4" /> : <Store className="w-4 h-4" />}
+                    <span>{maSelection.has(product.id) ? 'Dans ma boutique' : 'Ajouter à ma boutique'}</span>
+                  </button>
+                )}
 
               </div>
             </div>

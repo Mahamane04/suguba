@@ -3,10 +3,29 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
 
 /**
+ * Création et modification des fiches produit — fournisseur ou admin.
+ *
  * Remplace l'ancien `pushProductToCloud` (écriture directe anon-key). Le
- * schéma corrigé ne donne plus qu'un accès public en LECTURE aux produits
- * approuvés — créer ou modifier une fiche produit exige désormais une
- * session fournisseur ou admin, vérifiée ici avant tout accès service_role.
+ * schéma ne donne plus qu'un accès public en LECTURE aux produits approuvés.
+ *
+ * ── Ce que cette route n'accepte plus du navigateur ──────────────────────
+ * Elle enregistrait telles quelles les valeurs envoyées : prix de vente,
+ * commission revendeur et STATUT. Un fournisseur pouvait donc publier son
+ * propre article en « approuvé », sans modération, avec la commission de son
+ * choix. Et un fournisseur pouvait écraser la fiche d'un autre en réutilisant
+ * son identifiant.
+ *
+ * Désormais :
+ *  - prix de vente et commission ne s'écrivent QUE via /api/admin/products/price,
+ *    où le moteur de tarification les calcule ;
+ *  - aucun produit ne passe en « approuvé » par ici ;
+ *  - un fournisseur ne modifie que ses propres fiches ;
+ *  - l'adresse (slug) d'un produit ne change jamais après sa création : elle
+ *    figure dans les liens déjà partagés sur WhatsApp ;
+ *  - un changement de prix fournisseur sur un produit approuvé le RENVOIE en
+ *    modération. Sans cela, un fournisseur pourrait augmenter son prix après
+ *    validation et faire passer le produit sous le plancher de Suguba sans
+ *    que personne ne le voie.
  */
 export async function POST(req: NextRequest) {
   const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
@@ -26,14 +45,24 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Produit invalide.' }, { status: 400 });
     }
 
+    const { data: existant } = await admin
+      .from('products')
+      .select('id, supplier_id, supplier_price, status')
+      .eq('id', product.id)
+      .maybeSingle();
+
+    const estFournisseur = session.role === 'supplier';
+
+    if (estFournisseur && existant && existant.supplier_id !== session.uid) {
+      return NextResponse.json({ error: 'Ce produit ne vous appartient pas.' }, { status: 403 });
+    }
+
     // Un fournisseur ne peut jamais attribuer son dépôt à un autre
-    // supplier_id que le sien — le client n'est pas digne de confiance sur
-    // ce champ (voir la fiche fournisseur dans `suppliers`, la source
-    // fiable du nom d'entreprise). Un admin, lui, peut légitimement créer ou
+    // supplier_id que le sien. Un admin, lui, peut légitimement créer ou
     // corriger une fiche au nom d'un fournisseur donné.
     let supplierId = product.supplierId;
     let supplierName = product.supplierName;
-    if (session.role === 'supplier') {
+    if (estFournisseur) {
       supplierId = session.uid;
       const { data: ownSupplier } = await admin
         .from('suppliers')
@@ -43,25 +72,64 @@ export async function POST(req: NextRequest) {
       supplierName = ownSupplier?.company_name || supplierName;
     }
 
-    const { error } = await admin.from('products').upsert({
-      id: product.id,
+    const descriptif = {
       name: product.name,
-      slug: product.slug,
       category: product.category,
       description: product.description,
-      supplier_price: product.supplierPrice,
-      public_price: product.publicPrice,
-      reseller_commission: product.resellerCommission,
       stock: product.stockQuantity,
       images: product.images,
-      status: product.status,
-      supplier_id: supplierId,
-      supplier_name: supplierName,
-      created_at: product.createdAt,
-    });
+    };
+    const prixFournisseur = Number(product.supplierPrice);
 
+    // ── Création ──────────────────────────────────────────────────────────
+    if (!existant) {
+      // Aucun produit ne naît approuvé : l'approbation passe par la
+      // tarification admin, qui calcule la commission.
+      const statut = estFournisseur || product.status === 'approved' ? 'submitted' : (product.status || 'submitted');
+      const { error } = await admin.from('products').insert({
+        id: product.id,
+        slug: product.slug,
+        ...descriptif,
+        supplier_price: Number.isFinite(prixFournisseur) ? prixFournisseur : 0,
+        public_price: 0,
+        reseller_commission: 0,
+        status: statut,
+        supplier_id: supplierId,
+        supplier_name: supplierName,
+        created_at: product.createdAt,
+      });
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ success: true, cloud: true, status: statut });
+    }
+
+    // ── Modification ──────────────────────────────────────────────────────
+    const maj: Record<string, unknown> = { ...descriptif };
+    let statut = existant.status as string;
+
+    if (Number.isFinite(prixFournisseur) && prixFournisseur !== Number(existant.supplier_price)) {
+      maj.supplier_price = prixFournisseur;
+      if (existant.status === 'approved') {
+        statut = 'submitted';
+        maj.reseller_commission = 0;
+        maj.pricing_status = null;
+      }
+    }
+
+    if (!estFournisseur) {
+      if (product.supplierId) maj.supplier_id = supplierId;
+      if (product.supplierName) maj.supplier_name = supplierName;
+      // L'admin peut rejeter, archiver ou renvoyer en modération — jamais
+      // approuver par ici. Demander « approuvé » sur un produit qui l'est déjà
+      // ne change rien ; sur un produit qui ne l'est pas, c'est ignoré.
+      const demande = product.status;
+      if (demande && demande !== 'approved' && statut !== 'submitted') statut = demande;
+      if (demande && demande !== 'approved' && existant.status !== 'approved') statut = demande;
+    }
+
+    maj.status = statut;
+    const { error } = await admin.from('products').update(maj).eq('id', product.id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    return NextResponse.json({ success: true, cloud: true });
+    return NextResponse.json({ success: true, cloud: true, status: statut });
   } catch (error: any) {
     console.error('[API products/sync ERROR]', error);
     return NextResponse.json({ error: error.message || 'Erreur serveur.' }, { status: 500 });

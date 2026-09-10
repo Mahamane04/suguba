@@ -82,6 +82,9 @@ const API_SESSION_REQUISE = [
  *   /api/sms/send-otp            — appelée après commande par un client sans
  *                                  compte ; ne lit plus que le numéro de
  *                                  commande, tout le reste vient de la base.
+ *   /api/orders/quote            — devis d'une commande (prix, livraison, remise),
+ *                                  calculé par le serveur ; ne révèle aucune marge.
+ *   /api/settings/public         — frais de livraison, points relais, retrait minimum.
  *   /api/orders/track            — suivi de commande par un client sans compte ;
  *                                  authentifiée par le contenu (numéro + téléphone)
  *                                  et protégée par une limitation de tentatives.

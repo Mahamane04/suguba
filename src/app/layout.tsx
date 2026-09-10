@@ -18,8 +18,11 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  // Sans URL de base, les images d'aperçu (Open Graph) des pages boutique
+  // seraient relatives, et WhatsApp comme Facebook les ignoreraient.
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://app.sugubaml.com'),
   title: 'SUGUBA — Vendez Sans Stock au Mali | Social Commerce & Commissions Mobile Money',
-  description: 'Plateforme B2B2C Mobile-First au Mali : connectez-vous avec les grossistes, partagez les produits sur WhatsApp, gagnez des commissions garanties et retirez par Orange Money ou Wave.',
+  description: 'Plateforme B2B2C Mobile-First au Mali : connectez-vous avec les grossistes, partagez les produits sur WhatsApp, gagnez des commissions garanties et retirez par Orange Money, Moov ou Mobi Cash.',
   manifest: '/manifest.json',
   icons: {
     icon: '/favicon.ico',

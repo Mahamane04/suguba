@@ -1,188 +1,142 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
-import { useSugubaStore } from '@/lib/store';
-import { 
-  Users, Store, Share2, Copy, Check, 
-  ArrowLeft, Sparkles, TrendingUp, DollarSign, MessageCircle, ExternalLink, Trophy
-} from 'lucide-react';
+import { Users, Store, Copy, Check, ArrowLeft, MessageCircle, ExternalLink, Loader2 } from 'lucide-react';
 
-export default function SupplierAmbassadorsPage() {
-  const state = useSugubaStore();
-  const [copiedShowroom, setCopiedShowroom] = useState(false);
-  const [copiedRecruitMsg, setCopiedRecruitMsg] = useState(false);
+/**
+ * Boutique publique du fournisseur et kit de recrutement de revendeurs.
+ *
+ * Réécrite le 2026-09-10. L'ancienne page :
+ *  - affichait un réseau entièrement INVENTÉ : « 14 ambassadrices », « 38
+ *    ventes », « 1,33 M F de chiffre d'affaires », « bonus marraine » —
+ *    constantes écrites en dur, présentées à un vrai fournisseur comme ses
+ *    propres résultats ;
+ *  - calculait l'adresse de boutique à partir du nom de l'entreprise, lu dans
+ *    des données de démonstration, au lieu de l'adresse réellement attribuée ;
+ *  - promettait aux recrues des gains versés « sur Wave », que SasPay ne
+ *    propose pas au Mali, et une fourchette de commission (3 000 à 7 000 F)
+ *    que rien ne garantit : la commission dépend de chaque produit ;
+ *  - envoyait vers un code de parrainage fabriqué avec les quatre premières
+ *    lettres du nom de l'entreprise, qui ne correspondait à aucun vrai code.
+ */
+export default function SupplierBoutiquePage() {
+  const [nom, setNom] = useState<string | null>(null);
+  const [slug, setSlug] = useState<string | null>(null);
+  const [chargement, setChargement] = useState(true);
+  const [copie, setCopie] = useState<'boutique' | 'message' | null>(null);
 
-  const currentUser = state.currentUser;
-  const supplier = state.suppliers.find(s => s.userId === currentUser.id) || state.suppliers[0];
+  useEffect(() => {
+    fetch('/api/supplier/me')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        setNom(j?.supplier?.companyName || null);
+        setSlug(j?.supplier?.slug || null);
+      })
+      .catch(() => {})
+      .finally(() => setChargement(false));
+  }, []);
 
-  const showroomSlug = supplier.companyName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
-  const showroomUrl = `https://app.sugubaml.com/s/${showroomSlug}`;
+  const origine = typeof window !== 'undefined' ? window.location.origin : 'https://app.sugubaml.com';
+  const urlBoutique = slug ? `${origine}/s/${slug}` : '';
 
-  // Dedicated Ambassador Network Metrics
-  const networkAmbassadorsCount = 14; // 14 vendeuses/filleules rattachées à la boutique
-  const totalSalesByTeam = 38; // 38 ventes générées ce mois-ci
-  const totalRevenueByTeam = 1330000; // 1 330 000 FCFA de CA généré
-  const passiveSponsorBonusEarned = totalSalesByTeam * 1000; // 38 000 FCFA de prime marraine
+  const message =
+    `🛍️ *${(nom || 'Notre boutique').toUpperCase()} recrute des revendeurs sur Suguba !*\n\n` +
+    `Vous avez une communauté sur WhatsApp, TikTok ou Facebook ? Vendez nos articles sans acheter de stock.\n\n` +
+    `✅ Pas de stock, pas d'avance d'argent\n` +
+    `✅ Suguba livre le client et encaisse à la livraison\n` +
+    `✅ Une commission sur chaque vente livrée, versée sur Orange Money, Moov ou Mobi Cash\n\n` +
+    (urlBoutique ? `👀 Nos articles : ${urlBoutique}\n` : '') +
+    `👉 Inscription gratuite : ${origine}/rejoindre`;
 
-  const recruitmentMessage = `🌟 *REJOIGNEZ L'ÉQUIPE DE REVENDEUSES OFFICIELLES DE ${supplier.companyName.toUpperCase()} SUR SUGUBA MALI !* 🇲🇱\n\n` +
-    `Vous avez une communauté sur WhatsApp, TikTok ou Instagram ? Vendez nos produits exclusifs sans acheter de stock !\n\n` +
-    `✅ Accès direct à notre collection de produits certifiés\n` +
-    `✅ Gagnez entre *3 000 F et 7 000 F* de commission par vente\n` +
-    `✅ Livraison 24h & encaissement gérés à 100% par Suguba à Bamako\n` +
-    `✅ Paiement garanti de vos gains sur votre *Wave* ou *Orange Money*\n\n` +
-    `👉 *Inscrivez-vous gratuitement dans mon équipe :*\n` +
-    `https://app.sugubaml.com/reseller/join?sponsor=${supplier.companyName.substring(0, 4).toUpperCase()}`;
-
-  const handleCopyShowroom = () => {
-    navigator.clipboard.writeText(showroomUrl);
-    setCopiedShowroom(true);
-    setTimeout(() => setCopiedShowroom(false), 2000);
-  };
-
-  const handleCopyRecruitMsg = () => {
-    navigator.clipboard.writeText(recruitmentMessage);
-    setCopiedRecruitMsg(true);
-    setTimeout(() => setCopiedRecruitMsg(false), 2000);
+  const copier = async (texte: string, quoi: 'boutique' | 'message') => {
+    try {
+      await navigator.clipboard.writeText(texte);
+      setCopie(quoi);
+      setTimeout(() => setCopie(null), 2000);
+    } catch {
+      // Presse-papiers refusé : le texte reste affiché, sélectionnable à la main.
+    }
   };
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
       <Header />
 
-      <main className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 py-6 w-full space-y-8">
-        
-        {/* Navigation & Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <Link 
-              href="/supplier" 
-              className="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-600 hover:text-slate-900"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Retour à l&apos;Espace Fournisseur</span>
-            </Link>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center space-x-2">
-              <Users className="w-6 h-6 text-purple-600" />
-              <span>Mon Réseau d&apos;Ambassadrices & Showroom Privé</span>
-            </h1>
-            <p className="text-xs text-slate-500">
-              Pilotez votre propre réseau de vendeuses affiliées dédiées aux produits de votre boutique.
-            </p>
-          </div>
-
-          <Link
-            href={`/s/${showroomSlug}`}
-            target="_blank"
-            className="flex items-center space-x-2 px-4 py-2.5 bg-slate-900 hover:bg-black text-white font-bold rounded-2xl text-xs shadow-md transition-all self-start sm:self-auto active:scale-95"
-          >
-            <ExternalLink className="w-4 h-4 text-emerald-400" />
-            <span>Voir Ma Boutique Publique</span>
+      <main className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
+        <div className="space-y-1">
+          <Link href="/supplier" className="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-600 hover:text-slate-900">
+            <ArrowLeft className="w-4 h-4" /><span>Retour à l&apos;espace fournisseur</span>
           </Link>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center space-x-2">
+            <Users className="w-6 h-6 text-purple-600" /><span>Ma boutique et mes revendeurs</span>
+          </h1>
+          <p className="text-xs text-slate-500">
+            Partagez votre boutique, et invitez des revendeurs à vendre vos articles sans stock.
+          </p>
         </div>
 
-        {/* 4 Key Network Metrics */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          
-          <div className="bg-white p-5 rounded-3xl border border-purple-200 shadow-xs space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-purple-800 uppercase tracking-wider">Mes Ambassadrices</span>
-              <Users className="w-4 h-4 text-purple-600" />
-            </div>
-            <p className="text-2xl font-black text-purple-700">{networkAmbassadorsCount}</p>
-            <p className="text-[10px] text-purple-600 font-medium">Vendeuses dans votre équipe</p>
+        {chargement ? (
+          <div className="flex items-center space-x-2 text-xs text-slate-500 py-8">
+            <Loader2 className="w-4 h-4 animate-spin" /><span>Chargement…</span>
           </div>
-
-          <div className="bg-white p-5 rounded-3xl border border-emerald-200 shadow-xs space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider">Ventes Équipe</span>
-              <TrendingUp className="w-4 h-4 text-emerald-600" />
-            </div>
-            <p className="text-2xl font-black text-emerald-700">{totalSalesByTeam}</p>
-            <p className="text-[10px] text-emerald-600 font-medium">Commandes générées ce mois</p>
-          </div>
-
-          <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Chiffre d&apos;Affaires</span>
-              <DollarSign className="w-4 h-4 text-slate-700" />
-            </div>
-            <p className="text-2xl font-black text-slate-900">
-              {(totalRevenueByTeam / 1000000).toFixed(2)}M <span className="text-xs font-normal">F</span>
-            </p>
-            <p className="text-[10px] text-slate-400">Total généré par vos filleules</p>
-          </div>
-
-          <div className="bg-gradient-to-br from-amber-500 to-orange-600 text-white p-5 rounded-3xl shadow-md space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] font-bold text-amber-100 uppercase tracking-wider">Bonus Marraine (+1 000 F)</span>
-              <Trophy className="w-4 h-4 text-amber-200" />
-            </div>
-            <p className="text-2xl font-black text-white">
-              +{passiveSponsorBonusEarned.toLocaleString('fr-FR')} <span className="text-xs font-normal">F</span>
-            </p>
-            <p className="text-[10px] text-amber-100 font-medium">Gain passif additionnel net</p>
-          </div>
-
-        </div>
-
-        {/* Private Showroom Link Card */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-            <div>
-              <h2 className="font-black text-sm text-slate-900 flex items-center space-x-2">
-                <Store className="w-4 h-4 text-emerald-600" />
-                <span>Votre Lien de Boutique Dédié (Showroom Exclusif)</span>
-              </h2>
-              <p className="text-xs text-slate-500">
-                Vos abonnées et clientes ne voient que vos articles sur cette page privée.
-              </p>
+        ) : (
+          <>
+            <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs space-y-4">
+              <div>
+                <h2 className="font-black text-sm text-slate-900 flex items-center space-x-2">
+                  <Store className="w-4 h-4 text-emerald-600" /><span>Ma boutique publique</span>
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Tous vos articles approuvés, à partager sur WhatsApp, Facebook ou TikTok. Suguba encaisse et livre.
+                </p>
+              </div>
+              {slug ? (
+                <>
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-mono text-emerald-800 break-all">{urlBoutique}</div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button type="button" onClick={() => copier(urlBoutique, 'boutique')}
+                      className="h-11 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black flex items-center justify-center space-x-1.5">
+                      {copie === 'boutique' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                      <span>{copie === 'boutique' ? 'Lien copié' : 'Copier le lien'}</span>
+                    </button>
+                    <a href={urlBoutique} target="_blank" rel="noopener noreferrer"
+                      className="h-11 rounded-2xl bg-slate-900 hover:bg-black text-white text-xs font-black flex items-center justify-center space-x-1.5">
+                      <ExternalLink className="w-4 h-4" /><span>Voir ma boutique</span>
+                    </a>
+                  </div>
+                </>
+              ) : (
+                <p className="text-xs text-amber-900 bg-amber-50 border border-amber-200 rounded-2xl p-3">
+                  Votre boutique n&apos;a pas encore d&apos;adresse : complétez votre dossier fournisseur
+                  (nom de l&apos;entreprise) pour qu&apos;elle soit créée.
+                </p>
+              )}
             </div>
 
-            <button
-              onClick={handleCopyShowroom}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center space-x-1.5 transition-colors self-start sm:self-auto shadow-xs active:scale-95"
-            >
-              {copiedShowroom ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copiedShowroom ? 'Lien copié !' : 'Copier Lien Showroom'}</span>
-            </button>
-          </div>
-
-          <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-mono text-emerald-800 break-all">
-            {showroomUrl}
-          </div>
-        </div>
-
-        {/* Recruitment Kit Card */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
-            <div>
-              <h2 className="font-black text-sm text-slate-900 flex items-center space-x-2">
-                <MessageCircle className="w-4 h-4 text-[#25D366]" />
-                <span>Message de Recrutement pour vos Statuts WhatsApp & TikTok</span>
-              </h2>
-              <p className="text-xs text-slate-500">
-                Postez ce message pour inviter vos abonnées à devenir vos vendeuses officielles.
-              </p>
+            <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h2 className="font-black text-sm text-slate-900 flex items-center space-x-2">
+                    <MessageCircle className="w-4 h-4 text-[#25D366]" /><span>Message de recrutement</span>
+                  </h2>
+                  <p className="text-xs text-slate-500">À poster sur vos statuts pour trouver des revendeurs.</p>
+                </div>
+                <button type="button" onClick={() => copier(message, 'message')}
+                  className="h-11 px-4 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-black flex items-center justify-center space-x-1.5 self-start sm:self-auto">
+                  {copie === 'message' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  <span>{copie === 'message' ? 'Texte copié' : 'Copier le message'}</span>
+                </button>
+              </div>
+              <div className="p-4 bg-emerald-50/40 border border-emerald-200 rounded-2xl text-xs text-slate-800 whitespace-pre-line leading-relaxed">
+                {message}
+              </div>
             </div>
-
-            <button
-              onClick={handleCopyRecruitMsg}
-              className="px-4 py-2 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold rounded-xl text-xs flex items-center space-x-1.5 transition-colors self-start sm:self-auto shadow-xs active:scale-95"
-            >
-              {copiedRecruitMsg ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-              <span>{copiedRecruitMsg ? 'Texte copié !' : 'Copier Message WhatsApp'}</span>
-            </button>
-          </div>
-
-          <div className="p-4 bg-emerald-50/40 border border-emerald-200 rounded-2xl text-xs text-slate-800 whitespace-pre-line leading-relaxed">
-            {recruitmentMessage}
-          </div>
-        </div>
-
+          </>
+        )}
       </main>
 
       <Footer />

@@ -46,6 +46,16 @@ export default function ResellerPayoutsPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [isCopied, setIsCopied] = useState(false);
+  // Le retrait minimum vit dans les réglages de la plateforme (écran admin).
+  // Il était écrit en dur ici et dans la route serveur, avec le risque que les
+  // deux divergent le jour où l'un est modifié sans l'autre.
+  const [retraitMinimum, setRetraitMinimum] = useState(5000);
+  useEffect(() => {
+    fetch('/api/settings/public')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => { if (j?.retraitMinimum) setRetraitMinimum(Number(j.retraitMinimum)); })
+      .catch(() => {});
+  }, []);
 
   const reseller = state.resellers.find(r => r.userId === state.currentUser.id) || state.resellers[0];
   const myWithdrawals = state.withdrawals.filter(w => w.resellerId === reseller?.id);
@@ -342,7 +352,7 @@ export default function ResellerPayoutsPage() {
                   <input
                     type="number"
                     required
-                    min={5000}
+                    min={retraitMinimum}
                     max={reseller.availableBalance}
                     step={1000}
                     value={amount}
@@ -350,7 +360,7 @@ export default function ResellerPayoutsPage() {
                     className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:bg-white focus:ring-2 focus:ring-suguba-brand/30 focus:border-suguba-brand transition-all"
                   />
                   <span className="text-[10px] text-gray-400 mt-1 block">
-                    Minimum de retrait : 5 000 FCFA
+                    Minimum de retrait : {retraitMinimum.toLocaleString('fr-FR')} FCFA
                   </span>
                 </div>
               </div>
@@ -365,7 +375,7 @@ export default function ResellerPayoutsPage() {
               {/* Submit CTA */}
               <button
                 type="submit"
-                disabled={reseller.availableBalance < 5000}
+                disabled={reseller.availableBalance < retraitMinimum}
                 className="w-full bg-suguba-brand hover:bg-suguba-brand-dark disabled:opacity-50 text-white font-bold py-3.5 px-4 rounded-2xl text-xs shadow-brand-md flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
               >
                 <span>{provider === 'Agence Suguba' ? 'Générer mon Code de Retrait Guichet' : 'Confirmer la demande de virement'}</span>

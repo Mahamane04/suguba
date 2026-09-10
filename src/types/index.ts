@@ -156,6 +156,12 @@ export interface Order {
   neighborhood: string;        // Quartier (ex: Hamdallaye ACI 2000, Badalabougou, etc.)
   landmark: string;            // Repère visuel (ex: En face de la station Total)
   deliveryNotes?: string;
+  /** Point relais choisi — le serveur en déduit les frais, jamais le navigateur. */
+  pickupPointId?: string;
+  /** Code promo saisi — validé et plafonné par le serveur. */
+  promoCode?: string;
+  /** Remise effectivement accordée par le serveur. */
+  discountAmount?: number;
   status: OrderStatus;
   deliveryOtp: string;         // Code secret à 4 chiffres (ex: 5832)
   failedOtpAttempts?: number;  // Nombre d'échecs de saisie OTP

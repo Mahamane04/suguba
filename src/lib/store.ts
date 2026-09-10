@@ -322,6 +322,15 @@ export const sugubaStore = {
     landmark: string;
     deliveryNotes?: string;
     resellerCode?: string;
+    pickupPointId?: string;
+    promoCode?: string;
+    /**
+     * Devis obtenu de /api/orders/quote. S'il est fourni, la commande locale en
+     * reprend les montants : ce sont ceux que le serveur enregistrera, calculés
+     * par la même fonction. Sans lui (écran hors ligne, ancien appelant), les
+     * valeurs locales s'appliquent et le serveur les corrigera de toute façon.
+     */
+    devis?: { prixUnitaire: number; montantArticles: number; fraisLivraison: number; remise: number; total: number };
   }) => {
     const product = globalState.products.find(p => p.id === data.productId);
     if (!product) throw new Error('Produit introuvable');
@@ -344,10 +353,14 @@ export const sugubaStore = {
     const orderNumber = genererNumeroCommande();
     const otp = Math.floor(1000 + Math.random() * 9000).toString(); // Code secret à 4 chiffres
 
-    const unitPrice = product.publicPrice || product.supplierPrice;
-    const totalProductAmount = unitPrice * data.quantity;
-    const deliveryFee = 1500;
-    const totalAmount = totalProductAmount + deliveryFee;
+    // Les montants ne font plus foi ici : /api/orders/sync les recalcule
+    // côté serveur à partir du produit en base. On affiche le devis serveur
+    // quand on l'a, pour que l'écran de confirmation montre le vrai total.
+    const unitPrice = data.devis?.prixUnitaire ?? (product.publicPrice || product.supplierPrice);
+    const totalProductAmount = data.devis?.montantArticles ?? unitPrice * data.quantity;
+    const deliveryFee = data.devis?.fraisLivraison ?? 1500;
+    const discountAmount = data.devis?.remise ?? 0;
+    const totalAmount = data.devis?.total ?? totalProductAmount + deliveryFee;
     const commissionAmount = (product.resellerCommission || 0) * data.quantity;
 
     const newOrder: Order = {
@@ -371,6 +384,9 @@ export const sugubaStore = {
       neighborhood: data.neighborhood,
       landmark: data.landmark,
       deliveryNotes: data.deliveryNotes,
+      pickupPointId: data.pickupPointId,
+      promoCode: data.promoCode,
+      discountAmount,
       status: 'pending_call', // En attente d'appel de confirmation Suguba
       deliveryOtp: otp,
       paymentMethod: 'cash_on_delivery',

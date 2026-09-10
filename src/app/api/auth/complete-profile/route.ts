@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifySessionToken, createSessionToken, SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { chargerRoles } from '@/lib/profile-roles';
+import { attribuerSlugFournisseur } from '@/lib/shop';
 
 /**
  * Deuxième étape de l'inscription — remplit les champs propres au rôle
@@ -68,6 +69,10 @@ export async function POST(req: NextRequest) {
       });
       if (supplierErr) {
         console.error('[AUTH complete-profile] Échec écriture suppliers:', supplierErr.message);
+      } else {
+        // Adresse publique de sa boutique (/s/<adresse>), attribuée une fois
+        // pour toutes : la modifier casserait les liens déjà partagés.
+        await attribuerSlugFournisseur(admin, session.uid, String(m.companyName || fullName || 'Fournisseur'));
       }
     }
 

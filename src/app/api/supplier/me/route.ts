@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { attribuerSlugFournisseur } from '@/lib/shop';
 
 /**
  * Fiche fournisseur réelle du compte connecté, avec ses produits — quel que
@@ -30,6 +31,12 @@ export async function GET(req: NextRequest) {
 
   if (supplierErr) {
     return NextResponse.json({ error: supplierErr.message }, { status: 500 });
+  }
+
+  // Fiche créée avant l'attribution automatique des adresses de boutique :
+  // on lui en attribue une maintenant, une fois pour toutes.
+  if (supplierRow && !supplierRow.slug) {
+    supplierRow.slug = await attribuerSlugFournisseur(admin, session.uid, supplierRow.company_name || 'Fournisseur');
   }
 
   const { data: productRows, error: productsErr } = await admin
@@ -66,6 +73,8 @@ export async function GET(req: NextRequest) {
     supplier: supplierRow
       ? {
           companyName: supplierRow.company_name,
+          // Adresse publique de sa boutique : /s/<slug>.
+          slug: supplierRow.slug || null,
           managerName: supplierRow.manager_name,
           contactPhone: supplierRow.contact_phone,
           warehouseAddress: supplierRow.warehouse_address,

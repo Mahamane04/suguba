@@ -8,6 +8,7 @@ import BottomNav from '@/components/common/BottomNav';
 import CloudSyncBadge from '@/components/common/CloudSyncBadge';
 import ProductPricingModal from '@/components/admin/ProductPricingModal';
 import DriverVerificationPanel from '@/components/admin/DriverVerificationPanel';
+import EconomicSettingsPanel from '@/components/admin/EconomicSettingsPanel';
 import { useSugubaStore, sugubaStore } from '@/lib/store';
 import { whatsappHelper } from '@/lib/whatsapp-helper';
 import { Product, Order } from '@/types';
@@ -202,6 +203,9 @@ export default function AdminDashboardPage() {
             <p className="text-[10px] text-slate-400">Virements Mobile Money à exécuter</p>
           </div>
         </div>
+
+        {/* Réglages économiques : coûts, marge minimale, commissions, livraison. */}
+        <EconomicSettingsPanel />
 
         {/* Operational Queues & Priority Action Desks */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">

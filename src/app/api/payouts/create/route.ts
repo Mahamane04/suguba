@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { libererCommissionsEchues } from '@/lib/commissions';
+import { chargerReglages } from '@/lib/platform-settings';
 
-const MIN_WITHDRAWAL = 5000;
+// Le retrait minimum vit dans les réglages de la plateforme (écran admin),
+// plus en dur ici : voir src/lib/pricing.ts, `retraitMinimum`.
 // Wave a disparu de cette table : SasPay ne le couvre pas au Mali, un
 // retrait Wave ne pourrait donc jamais être viré (voir migration-saspay.sql).
 const PROVIDER_MAP: Record<string, string> = {
@@ -46,8 +48,9 @@ export async function POST(req: NextRequest) {
     const { withdrawalCode, resellerName, amount, payoutProvider, payoutPhone } = body;
 
     const parsedAmount = Number(amount);
-    if (!Number.isFinite(parsedAmount) || parsedAmount < MIN_WITHDRAWAL) {
-      return NextResponse.json({ error: `Le montant minimum de retrait est de ${MIN_WITHDRAWAL} FCFA.` }, { status: 400 });
+    const minimum = (await chargerReglages()).reglages.retraitMinimum;
+    if (!Number.isFinite(parsedAmount) || parsedAmount < minimum) {
+      return NextResponse.json({ error: `Le montant minimum de retrait est de ${minimum} FCFA.` }, { status: 400 });
     }
     if (!payoutPhone || !withdrawalCode) {
       return NextResponse.json({ error: 'Champs requis manquants.' }, { status: 400 });

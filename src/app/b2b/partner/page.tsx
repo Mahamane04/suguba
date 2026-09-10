@@ -181,7 +181,7 @@ export default function B2BPartnerPitchPage() {
               <p className="font-bold text-slate-900">Contact Direction des Partenariats :</p>
               <p>📞 Téléphone / WhatsApp : <strong>+223 89 46 00 00</strong></p>
               <p>✉️ Email : <strong>partenaires@sugubaml.com</strong></p>
-              <p>🌐 Portail Entreprise : <strong>https://app.sugubaml.com/business/dashboard</strong></p>
+              <p>🌐 Espace fournisseur : <strong>https://app.sugubaml.com/supplier</strong></p>
             </div>
 
             <div className="text-center border border-slate-300 rounded-2xl p-4 w-48 space-y-4">
