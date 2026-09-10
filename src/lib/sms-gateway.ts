@@ -11,6 +11,54 @@ export interface SmsPayload {
   totalAmount: number;      // Ex: 40000
 }
 
+/**
+ * Jeton OAuth2 Orange, mis en cache au niveau du module.
+ *
+ * Le jeton vaut une heure. Sans ce cache, chaque SMS déclencherait un aller-
+ * retour d'authentification supplémentaire — inutile, et une occasion de plus
+ * de tomber en panne au pire moment. On le renouvelle 60 s avant l'échéance
+ * pour ne jamais présenter un jeton expiré entre-temps.
+ */
+let jetonOrange: { valeur: string; expireA: number } | null = null;
+
+const ORANGE_OAUTH_URL = 'https://api.orange.com/oauth/v3/token';
+const ORANGE_SMS_BASE = 'https://api.orange.com/smsmessaging/v1';
+
+/** Orange plafonne le nom d'expéditeur à 11 caractères alphanumériques. */
+const SENDER_NAME_MAX = 11;
+
+async function obtenirJetonOrange(clientId: string, clientSecret: string): Promise<string | null> {
+  if (jetonOrange && Date.now() < jetonOrange.expireA) {
+    return jetonOrange.valeur;
+  }
+
+  const basic = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+  const res = await fetch(ORANGE_OAUTH_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${basic}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+      Accept: 'application/json',
+    },
+    body: 'grant_type=client_credentials',
+  });
+
+  const json: any = await res.json().catch(() => ({}));
+  if (!res.ok || !json.access_token) {
+    console.error('[SMS ORANGE] Authentification refusée:', res.status, json.error_description || json.error || '');
+    return null;
+  }
+
+  // `expires_in` arrive en CHAÎNE ("3600") dans la réponse d'Orange, pas en
+  // nombre : un calcul direct dessus donnerait une date invalide.
+  const dureeSecondes = Number(json.expires_in) || 3600;
+  jetonOrange = {
+    valeur: json.access_token,
+    expireA: Date.now() + (dureeSecondes - 60) * 1000,
+  };
+  return jetonOrange.valeur;
+}
+
 export interface SmsResponse {
   success: boolean;
   messageId?: string;
@@ -51,23 +99,84 @@ export const smsGateway = {
     const twilioAccountSid = process.env.TWILIO_ACCOUNT_SID;
     const termiiApiKey = process.env.TERMII_API_KEY;
 
-    // A. Passerelle Orange Mali — NON IMPLÉMENTÉE
+    // A. Passerelle Orange Mali — SMS national, l'option la moins chère
     //
-    // ⚠️ Ce bloc annonçait `success: true` avec un faux identifiant de message
-    // sans jamais appeler la moindre API : configurer ORANGE_SMS_CLIENT_ID
-    // aurait fait croire à un envoi réussi alors qu'aucun client n'aurait reçu
-    // son code de livraison, et aucune erreur n'aurait été levée. Même famille
-    // de piège que la simulation de virement CinetPay retirée le 2026-09-09.
+    // Ce bloc annonçait autrefois `success: true` avec un faux identifiant
+    // sans jamais appeler la moindre API : configurer les clés aurait fait
+    // croire à des envois réussis pendant qu'aucun client ne recevait son
+    // code. L'appel réel est désormais écrit.
     //
-    // Tant que l'appel REST Orange n'est pas écrit, mieux vaut échouer
-    // franchement : le nœud tombe alors sur Twilio, Termii, ou le mode
-    // simulation explicite en fin de fonction.
+    // Le numéro expéditeur est exigé DEUX FOIS par Orange : dans le chemin de
+    // l'URL (encodé `tel%3A%2B...`) et dans le corps JSON. En omettre un
+    // renvoie une erreur peu explicite.
+    //
+    // Référence : https://developer.orange.com/apis/sms/getting-started
+    const orangeSender = process.env.ORANGE_SMS_SENDER_ADDRESS;
     if (orangeClientId && process.env.ORANGE_SMS_CLIENT_SECRET) {
-      console.error(
-        '[SMS] Orange Mali est configuré mais son intégration n\'est pas écrite — ' +
-        'aucun SMS ne partira par ce canal. Utilise TWILIO_* ou TERMII_API_KEY, ' +
-        'ou implémente l\'appel REST Orange dans src/lib/sms-gateway.ts.'
-      );
+      if (!orangeSender) {
+        console.error(
+          '[SMS ORANGE] ORANGE_SMS_SENDER_ADDRESS manquant (ex: +22389460000). ' +
+          'Orange exige le numéro expéditeur du contrat — sans lui, aucun envoi possible.'
+        );
+      } else {
+        try {
+          const jeton = await obtenirJetonOrange(orangeClientId, process.env.ORANGE_SMS_CLIENT_SECRET);
+          if (!jeton) throw new Error('jeton indisponible');
+
+          const expediteur = orangeSender.startsWith('+') ? orangeSender : `+${orangeSender}`;
+          const corps: Record<string, any> = {
+            address: `tel:${formattedPhone}`,
+            senderAddress: `tel:${expediteur}`,
+            outboundSMSTextMessage: { message: smsText },
+          };
+
+          // Nom d'expéditeur affiché au lieu du numéro. Il doit être déclaré
+          // auprès d'Orange, sinon l'envoi est refusé ou le nom ignoré.
+          const senderName = (process.env.ORANGE_SMS_SENDER_NAME || '').trim();
+          if (senderName) corps.senderName = senderName.slice(0, SENDER_NAME_MAX);
+
+          const res = await fetch(
+            `${ORANGE_SMS_BASE}/outbound/${encodeURIComponent(`tel:${expediteur}`)}/requests`,
+            {
+              method: 'POST',
+              headers: {
+                Authorization: `Bearer ${jeton}`,
+                'Content-Type': 'application/json',
+                Accept: 'application/json',
+              },
+              body: JSON.stringify({ outboundSMSMessageRequest: corps }),
+            },
+          );
+
+          const data: any = await res.json().catch(() => ({}));
+
+          if (res.ok) {
+            return {
+              success: true,
+              messageId: data?.outboundSMSMessageRequest?.resourceURL?.split('/').pop() || `ORANGE-${Date.now()}`,
+              provider: 'ORANGE_MALI',
+              message: `SMS transmis au réseau Orange Mali pour ${formattedPhone}`,
+            };
+          }
+
+          // 401 : jeton périmé ou révoqué côté Orange. On vide le cache pour
+          // que la tentative suivante en redemande un neuf plutôt que de
+          // rejouer indéfiniment un jeton mort.
+          if (res.status === 401) jetonOrange = null;
+
+          console.error(
+            '[SMS ORANGE] Envoi refusé:', res.status,
+            data?.requestError?.serviceException?.text
+              || data?.requestError?.policyException?.text
+              || JSON.stringify(data).slice(0, 200),
+          );
+          // On ne renvoie pas d'échec ici : le nœud enchaîne sur Twilio,
+          // Termii, ou le mode simulation. Un SMS non parti par Orange peut
+          // encore partir par un autre canal.
+        } catch (err: any) {
+          console.error('[SMS ERROR] Échec Orange Mali:', err?.message || err);
+        }
+      }
     }
 
     // B. Passerelle Twilio SMS
