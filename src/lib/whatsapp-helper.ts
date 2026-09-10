@@ -8,7 +8,9 @@ export const whatsappHelper = {
    * 1. Lien WhatsApp pour le client : Recevoir les alertes et le reçu de commande
    */
   getCustomerReceiptLink(order: Order, appUrl: string = 'https://app.sugubaml.com'): string {
-    const cleanPhone = order.customerPhone.replace(/\D/g, '');
+    // Un champ absent ne doit jamais faire tomber l'écran de suivi entier :
+    // le lien WhatsApp est un confort, pas le cœur de la page.
+    const cleanPhone = (order.customerPhone || '').replace(/\D/g, '');
     const trackingUrl = `${appUrl}/track/${order.orderNumber}`;
     
     const message = `🎉 *SUGUBA.ML — Reçu de votre Commande #${order.orderNumber}*\n\n` +
@@ -51,7 +53,9 @@ export const whatsappHelper = {
    * 4. Relance WhatsApp Client Injoignable (Français)
    */
   getUnreachableFollowUpLink(order: Order): string {
-    const cleanPhone = order.customerPhone.replace(/\D/g, '');
+    // Un champ absent ne doit jamais faire tomber l'écran de suivi entier :
+    // le lien WhatsApp est un confort, pas le cœur de la page.
+    const cleanPhone = (order.customerPhone || '').replace(/\D/g, '');
     const message = `👋 *Bonjour ${order.customerName}, c'est le Service Client Suguba Mali.*\n\n` +
       `Nous avons tenté de vous joindre par téléphone pour confirmer votre commande *#${order.orderNumber}* :\n` +
       `📦 *Produit :* ${order.productName}\n` +
@@ -67,7 +71,9 @@ export const whatsappHelper = {
    * 5. Relance WhatsApp Client Injoignable (Bambara / Bamanankan)
    */
   getBambaraFollowUpLink(order: Order): string {
-    const cleanPhone = order.customerPhone.replace(/\D/g, '');
+    // Un champ absent ne doit jamais faire tomber l'écran de suivi entier :
+    // le lien WhatsApp est un confort, pas le cœur de la page.
+    const cleanPhone = (order.customerPhone || '').replace(/\D/g, '');
     const message = `👋 *I ni ce ${order.customerName}, Suguba Mali de bɛ weleli kɛ.*\n\n` +
       `An ye i wele telefone kan nka an m'a sɔrɔ ka i ka commande #${order.orderNumber} lajɛ :\n` +
       `📦 *Produit :* ${order.productName}\n` +
@@ -83,7 +89,9 @@ export const whatsappHelper = {
    * 6. Rappel WhatsApp Jour de Livraison
    */
   getDeliveryReminderLink(order: Order): string {
-    const cleanPhone = order.customerPhone.replace(/\D/g, '');
+    // Un champ absent ne doit jamais faire tomber l'écran de suivi entier :
+    // le lien WhatsApp est un confort, pas le cœur de la page.
+    const cleanPhone = (order.customerPhone || '').replace(/\D/g, '');
     const message = `🛵 *SUGUBA.ML — Votre Colis #${order.orderNumber} est en route !*\n\n` +
       `Bonjour *${order.customerName}*,\n` +
       `Votre livreur arrive aujourd'hui à votre repère (*${order.landmark}*).\n\n` +

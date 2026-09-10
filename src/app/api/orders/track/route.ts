@@ -94,15 +94,36 @@ export async function POST(req: NextRequest) {
     // de réussir ne doit pas rester pénalisé.
     await admin.from('track_attempts').delete().eq('order_number', numero);
 
+    // La fonction track_order est le PORTAIL : c'est elle qui vérifie que le
+    // demandeur connaît le couple numéro + téléphone. Une fois ce contrôle
+    // passé, on lit les champs d'affichage directement — plutôt que de les
+    // ajouter à sa signature, ce qui imposerait une migration à chaque champ
+    // que l'écran veut montrer.
+    //
+    // `customer_phone` est renvoyé alors qu'il pourrait sembler sensible : le
+    // demandeur vient précisément de prouver qu'il le connaît en le saisissant.
+    // Le lui renvoyer ne lui apprend rien, et l'écran en a besoin pour les
+    // liens WhatsApp.
+    const { data: affichage } = await admin
+      .from('orders')
+      .select('customer_name, customer_phone, quantity, product_image, assigned_driver_name')
+      .eq('order_number', numero)
+      .maybeSingle();
+
     return NextResponse.json({
       success: true,
       commande: {
         orderNumber: commande.order_number,
         productName: commande.product_name,
+        productImage: affichage?.product_image || '',
+        quantity: Number(affichage?.quantity) || 1,
         status: commande.status,
         city: commande.city,
         neighborhood: commande.neighborhood,
         landmark: commande.landmark,
+        customerName: affichage?.customer_name || '',
+        customerPhone: affichage?.customer_phone || '',
+        driverName: affichage?.assigned_driver_name || undefined,
         totalAmount: Number(commande.total_amount) || 0,
         paymentCollected: Boolean(commande.payment_collected),
         deliveryOtp: commande.delivery_otp,
