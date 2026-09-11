@@ -42,9 +42,18 @@ export default function ShopView({
       <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
         <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 text-white rounded-3xl p-5 sm:p-8 shadow-xl space-y-5">
           <div className="flex items-start space-x-4">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center font-black text-2xl border-2 border-white/20 shrink-0">
-              {boutique.nom.charAt(0).toUpperCase()}
-            </div>
+            {boutique.logo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={boutique.logo}
+                alt={boutique.nom}
+                className="w-16 h-16 rounded-2xl object-cover border-2 border-white/20 shrink-0"
+              />
+            ) : (
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center font-black text-2xl border-2 border-white/20 shrink-0">
+                {boutique.nom.charAt(0).toUpperCase()}
+              </div>
+            )}
             <div className="space-y-1 min-w-0">
               <span className="inline-block px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-black uppercase tracking-wider border border-emerald-500/30">
                 {estRevendeur ? 'Revendeur partenaire Suguba' : 'Boutique sur Suguba'}
@@ -55,6 +64,9 @@ export default function ShopView({
                 {boutique.categorie ? ` · ${boutique.categorie}` : ''}
                 {boutique.livraisons > 0 ? ` · ${boutique.livraisons} livraison${boutique.livraisons > 1 ? 's' : ''} réussie${boutique.livraisons > 1 ? 's' : ''}` : ''}
               </p>
+              {boutique.description && (
+                <p className="text-xs text-slate-300/90 pt-1 max-w-md">{boutique.description}</p>
+              )}
             </div>
           </div>
 

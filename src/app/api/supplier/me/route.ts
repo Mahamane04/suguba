@@ -80,9 +80,79 @@ export async function GET(req: NextRequest) {
           warehouseAddress: supplierRow.warehouse_address,
           warehouseNeighborhood: supplierRow.warehouse_neighborhood,
           category: supplierRow.category,
+          // Réglages de boutique (2026-09-11, voir migration-shop-profile.sql) :
+          // `undefined` tant que la migration n'est pas appliquée en base — le
+          // `.select('*')` ci-dessus ne casse rien dans ce cas, il ignore
+          // simplement les colonnes qui n'existent pas encore.
+          shopDisplayName: supplierRow.shop_display_name || null,
+          logoUrl: supplierRow.logo_url || null,
+          shopDescription: supplierRow.shop_description || null,
+          contactEmail: supplierRow.contact_email || null,
         }
       : null,
     products,
     totalRevenue,
   });
+}
+
+/**
+ * Réglages de boutique (2026-09-11) : nom affiché, logo, description,
+ * e-mail et coordonnées de contact — tout ce qu'un fournisseur peut ajuster
+ * lui-même sans repasser par l'admin. Voir "Réglages de ma boutique" sur
+ * /supplier/ambassadors.
+ *
+ * `shop_display_name` ne touche JAMAIS au `slug` (voir migration-shop-profile.sql) :
+ * changer le nom affiché ne casse aucun lien déjà partagé.
+ */
+export async function PATCH(req: NextRequest) {
+  const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
+  if (!session || session.role !== 'supplier') {
+    return NextResponse.json({ error: 'Authentification fournisseur requise.' }, { status: 401 });
+  }
+
+  const admin = getSupabaseAdmin();
+  if (!admin) {
+    return NextResponse.json({ error: 'Service indisponible.' }, { status: 503 });
+  }
+
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Requête invalide.' }, { status: 400 });
+  }
+
+  const champsAutorises: Record<string, string> = {
+    shopDisplayName: 'shop_display_name',
+    logoUrl: 'logo_url',
+    shopDescription: 'shop_description',
+    contactEmail: 'contact_email',
+    managerName: 'manager_name',
+    contactPhone: 'contact_phone',
+  };
+
+  const misAJour: Record<string, string | null> = {};
+  for (const [cle, colonne] of Object.entries(champsAutorises)) {
+    if (cle in body) {
+      const valeur = body[cle];
+      misAJour[colonne] = typeof valeur === 'string' && valeur.trim() ? valeur.trim() : null;
+    }
+  }
+
+  if (misAJour.contact_email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(misAJour.contact_email)) {
+    return NextResponse.json({ error: 'Adresse e-mail invalide.' }, { status: 400 });
+  }
+
+  if (Object.keys(misAJour).length === 0) {
+    return NextResponse.json({ error: 'Aucun champ à mettre à jour.' }, { status: 400 });
+  }
+
+  const { error } = await admin.from('suppliers').update(misAJour).eq('profile_id', session.uid);
+  if (error) {
+    // Cas attendu tant que migration-shop-profile.sql n'a pas été exécutée :
+    // la colonne n'existe pas encore côté base.
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
 }

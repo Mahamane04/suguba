@@ -152,29 +152,30 @@ export default function BottomNav() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex flex-col items-center justify-center flex-1 py-2 px-1 rounded-xl transition-all duration-200 ${
+                className={`flex flex-col items-center justify-center flex-1 py-2 px-1 rounded-xl transition-colors duration-150 active:scale-95 ${
                   isActive
                     ? 'text-suguba-brand'
                     : 'text-gray-400 hover:text-gray-600'
                 }`}
               >
-                <div className={`relative flex items-center justify-center w-8 h-8 rounded-xl transition-all duration-200 ${
+                {/* Le halo pulsant (animate-pulse) donnait une impression de
+                    clignotement à chaque changement de page plutôt qu'une
+                    transition fluide — remplacé par un simple fondu du
+                    fond, qui suit naturellement le changement d'onglet. */}
+                <div className={`flex items-center justify-center w-8 h-8 rounded-xl transition-all duration-200 ${
                   isActive
                     ? 'bg-suguba-50 shadow-brand-sm'
                     : ''
                 }`}>
-                  {isActive && (
-                    <span className="absolute inset-0 rounded-xl bg-suguba-brand/10 animate-pulse" />
-                  )}
                   <Icon
-                    className={`w-4.5 h-4.5 relative z-10 transition-all ${
+                    className={`w-4.5 h-4.5 transition-all duration-150 ${
                       isActive ? 'stroke-[2.5]' : 'stroke-[1.75]'
                     }`}
                     style={{ width: '1.125rem', height: '1.125rem' }}
                   />
                 </div>
                 <span
-                  className={`text-[11px] mt-0.5 tracking-tight font-medium truncate max-w-[56px] leading-none transition-all ${
+                  className={`text-[11px] mt-0.5 tracking-tight font-medium truncate max-w-[56px] leading-none transition-all duration-150 ${
                     isActive ? 'font-bold' : ''
                   }`}
                 >

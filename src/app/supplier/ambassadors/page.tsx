@@ -5,7 +5,13 @@ import Link from 'next/link';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
-import { Users, Store, Copy, Check, ArrowLeft, MessageCircle, ExternalLink, Loader2 } from 'lucide-react';
+import PhotosUploader from '@/components/product/PhotosUploader';
+import { useToast } from '@/components/ui/Toast';
+import Button from '@/components/ui/Button';
+import {
+  Users, Store, Copy, Check, ArrowLeft, MessageCircle, ExternalLink, Loader2,
+  Settings, Mail, User as UserIcon, Phone, Save,
+} from 'lucide-react';
 
 /**
  * Boutique publique du fournisseur et kit de recrutement de revendeurs.
@@ -24,10 +30,22 @@ import { Users, Store, Copy, Check, ArrowLeft, MessageCircle, ExternalLink, Load
  *    lettres du nom de l'entreprise, qui ne correspondait à aucun vrai code.
  */
 export default function SupplierBoutiquePage() {
+  const { toast } = useToast();
   const [nom, setNom] = useState<string | null>(null);
   const [slug, setSlug] = useState<string | null>(null);
   const [chargement, setChargement] = useState(true);
   const [copie, setCopie] = useState<'boutique' | 'message' | null>(null);
+
+  // Réglages de boutique (2026-09-11) : nom personnalisé, logo, description,
+  // e-mail et coordonnées de contact — voir migration-shop-profile.sql.
+  const [shopDisplayName, setShopDisplayName] = useState('');
+  const [logo, setLogo] = useState<string[]>([]);
+  const [logoEnvoiEnCours, setLogoEnvoiEnCours] = useState(false);
+  const [shopDescription, setShopDescription] = useState('');
+  const [contactEmail, setContactEmail] = useState('');
+  const [managerName, setManagerName] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
+  const [sauvegardeEnCours, setSauvegardeEnCours] = useState(false);
 
   useEffect(() => {
     fetch('/api/supplier/me')
@@ -35,10 +53,44 @@ export default function SupplierBoutiquePage() {
       .then((j) => {
         setNom(j?.supplier?.companyName || null);
         setSlug(j?.supplier?.slug || null);
+        setShopDisplayName(j?.supplier?.shopDisplayName || '');
+        setLogo(j?.supplier?.logoUrl ? [j.supplier.logoUrl] : []);
+        setShopDescription(j?.supplier?.shopDescription || '');
+        setContactEmail(j?.supplier?.contactEmail || '');
+        setManagerName(j?.supplier?.managerName || '');
+        setContactPhone(j?.supplier?.contactPhone || '');
       })
       .catch(() => {})
       .finally(() => setChargement(false));
   }, []);
+
+  const enregistrerReglages = async () => {
+    setSauvegardeEnCours(true);
+    try {
+      const res = await fetch('/api/supplier/me', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shopDisplayName,
+          logoUrl: logo[0] || '',
+          shopDescription,
+          contactEmail,
+          managerName,
+          contactPhone,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        toast(json.error || 'Échec de la sauvegarde.', { ton: 'erreur' });
+        return;
+      }
+      toast('Réglages enregistrés.', { ton: 'succes' });
+    } catch {
+      toast('Erreur réseau — réessayez.', { ton: 'erreur' });
+    } finally {
+      setSauvegardeEnCours(false);
+    }
+  };
 
   const origine = typeof window !== 'undefined' ? window.location.origin : 'https://app.sugubaml.com';
   const urlBoutique = slug ? `${origine}/s/${slug}` : '';
@@ -85,6 +137,106 @@ export default function SupplierBoutiquePage() {
           </div>
         ) : (
           <>
+            {/* Réglages de boutique (2026-09-11) : nom, logo, description,
+                e-mail, gérant et téléphone — tout ce qu'un fournisseur peut
+                personnaliser lui-même. Le nom et le logo apparaissent
+                aussitôt sur la boutique publique ci-dessous. */}
+            <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs space-y-4">
+              <div>
+                <h2 className="font-black text-sm text-slate-900 flex items-center space-x-2">
+                  <Settings className="w-4 h-4 text-slate-700" /><span>Réglages de ma boutique</span>
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Personnalisez ce que vos clients et vos revendeurs voient.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Logo de la boutique</label>
+                <div className="w-24">
+                  <PhotosUploader value={logo} onChange={setLogo} onUploadingChange={setLogoEnvoiEnCours} max={1} />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Nom de la boutique</label>
+                <input
+                  type="text"
+                  value={shopDisplayName}
+                  onChange={(e) => setShopDisplayName(e.target.value)}
+                  placeholder={nom || 'Ex: Chez Awa Électro'}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white"
+                />
+                <span className="text-[11px] text-slate-500 mt-1 block">
+                  Affiché à la place de la raison sociale.
+                  {urlBoutique ? ` L'adresse de la boutique (${urlBoutique}) ne change pas.` : ''}
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">Présentation courte</label>
+                <textarea
+                  rows={2}
+                  value={shopDescription}
+                  onChange={(e) => setShopDescription(e.target.value)}
+                  placeholder="Ex: Électroménager et téléphones neufs, garantis, livrés partout à Bamako."
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                    <UserIcon className="w-3.5 h-3.5 text-slate-400" />Nom du gérant
+                  </label>
+                  <input
+                    type="text"
+                    value={managerName}
+                    onChange={(e) => setManagerName(e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5 text-slate-400" />Téléphone de contact
+                  </label>
+                  <input
+                    type="tel"
+                    value={contactPhone}
+                    onChange={(e) => setContactPhone(e.target.value)}
+                    placeholder="+223 70 00 00 00"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                  <Mail className="w-3.5 h-3.5 text-slate-400" />E-mail de contact
+                </label>
+                <input
+                  type="email"
+                  value={contactEmail}
+                  onChange={(e) => setContactEmail(e.target.value)}
+                  placeholder="contact@monentreprise.ml"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white"
+                />
+                <span className="text-[11px] text-slate-500 mt-1 block">
+                  Usage interne (support Suguba) — jamais affiché sur votre boutique publique.
+                </span>
+              </div>
+
+              <Button
+                type="button"
+                onClick={enregistrerReglages}
+                disabled={sauvegardeEnCours || logoEnvoiEnCours}
+                fullWidth
+              >
+                <Save className="w-4 h-4" />
+                <span>{sauvegardeEnCours ? 'Enregistrement…' : 'Enregistrer'}</span>
+              </Button>
+            </div>
+
             <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs space-y-4">
               <div>
                 <h2 className="font-black text-sm text-slate-900 flex items-center space-x-2">

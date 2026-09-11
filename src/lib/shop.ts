@@ -31,6 +31,10 @@ export interface Boutique {
   type: 'fournisseur' | 'revendeur';
   nom: string;
   categorie: string | null;
+  /** Logo choisi dans "Réglages de ma boutique". null = avatar par défaut. */
+  logo: string | null;
+  /** Courte présentation, si le fournisseur en a écrit une. */
+  description: string | null;
   produits: ProduitVitrine[];
   /** Livraisons réussies des produits présentés. Affichée seulement si > 0. */
   livraisons: number;
@@ -120,9 +124,14 @@ export async function chargerBoutiqueFournisseur(slug: string): Promise<Boutique
   const admin = getSupabaseAdmin();
   if (!admin) return null;
 
+  // `select('*')` plutôt qu'une liste explicite : les colonnes de
+  // personnalisation (shop_display_name, logo_url, shop_description) sont
+  // récentes (voir migration-shop-profile.sql) et cette page publique ne doit
+  // jamais tomber en erreur si la migration n'est pas encore passée — `*`
+  // renvoie simplement ce qui existe, `undefined` pour le reste.
   const { data: fournisseur } = await admin
     .from('suppliers')
-    .select('profile_id, company_name, category')
+    .select('*')
     .eq('slug', slug.toLowerCase())
     .maybeSingle();
   if (!fournisseur) return null;
@@ -137,8 +146,10 @@ export async function chargerBoutiqueFournisseur(slug: string): Promise<Boutique
   const liste = (produits || []).map(versVitrine);
   return {
     type: 'fournisseur',
-    nom: fournisseur.company_name,
+    nom: fournisseur.shop_display_name || fournisseur.company_name,
     categorie: fournisseur.category || null,
+    logo: fournisseur.logo_url || null,
+    description: fournisseur.shop_description || null,
     produits: liste,
     livraisons: await compterLivraisons(admin, liste.map((p) => p.id)),
     selectionVide: false,
@@ -240,6 +251,8 @@ export async function chargerBoutiqueRevendeur(codeBrut: string): Promise<Boutiq
     type: 'revendeur',
     nom: nomPublic(profil.full_name),
     categorie: null,
+    logo: null,
+    description: null,
     produits: liste,
     livraisons: 0,
     selectionVide,

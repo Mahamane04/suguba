@@ -6,18 +6,10 @@ import Link from 'next/link';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import PhotosUploader from '@/components/product/PhotosUploader';
+import { FAMILLES_CATEGORIES } from '@/lib/product-categories';
 import {
-  PackagePlus, ShieldCheck, CheckCircle2, ArrowLeft, AlertTriangle
+  PackagePlus, ShieldCheck, CheckCircle2, ArrowLeft, AlertTriangle, ChevronDown
 } from 'lucide-react';
-
-const CATEGORIES = [
-  'Électroménager',
-  'Électronique & TV',
-  'Téléphones & Tablettes',
-  'Énergie Solaire',
-  'Mode & Beauté',
-  'Maison & Déco',
-];
 
 /**
  * Création de produit par l'admin — l'équivalent côté Suguba de
@@ -36,7 +28,7 @@ export default function AdminNewProductPage() {
   const router = useRouter();
 
   const [name, setName] = useState('');
-  const [category, setCategory] = useState(CATEGORIES[0]);
+  const [category, setCategory] = useState(FAMILLES_CATEGORIES[0].categories[0]);
   const [description, setDescription] = useState('');
   const [supplierName, setSupplierName] = useState('');
   const [supplierPrice, setSupplierPrice] = useState<number>(0);
@@ -226,13 +218,20 @@ export default function AdminNewProductPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Catégorie *</label>
-                <select
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:bg-white"
-                >
-                  {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
-                </select>
+                <div className="relative">
+                  <select
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    className="w-full appearance-none px-3.5 py-2.5 pr-9 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:bg-white"
+                  >
+                    {FAMILLES_CATEGORIES.map(({ famille, categories }) => (
+                      <optgroup key={famille} label={famille}>
+                        {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+                      </optgroup>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
               </div>
 
               <div>
