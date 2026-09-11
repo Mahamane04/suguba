@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import ProductImage from '@/components/common/ProductImage';
@@ -12,8 +12,21 @@ import { useSugubaStore } from '@/lib/store';
 import { whatsappHelper } from '@/lib/whatsapp-helper';
 import { 
   CheckCircle2, Clock, Phone, MapPin, Truck, 
-  KeyRound, ShieldCheck, MessageCircle, AlertCircle, ArrowLeft
+  KeyRound, ShieldCheck, MessageCircle, AlertCircle, ArrowLeft, RefreshCw, XCircle
 } from 'lucide-react';
+
+// Tous les statuts de OrderStatus : « annulée » et « retournée » affichaient
+// une pastille vide, et les libellés étaient en capitales criardes.
+const STATUT: Record<string, { libelle: string; classe: string }> = {
+  new: { libelle: 'Reçue', classe: 'bg-slate-100 text-slate-700' },
+  pending_call: { libelle: "En attente d'appel", classe: 'bg-amber-100 text-amber-800' },
+  confirmed: { libelle: 'Confirmée', classe: 'bg-emerald-50 text-emerald-800' },
+  dispatched: { libelle: 'Livreur assigné', classe: 'bg-emerald-50 text-emerald-800' },
+  in_transit: { libelle: 'En route vers vous', classe: 'bg-emerald-100 text-emerald-800' },
+  delivered: { libelle: 'Livrée', classe: 'bg-emerald-600 text-white' },
+  cancelled: { libelle: 'Annulée', classe: 'bg-rose-100 text-rose-800' },
+  returned: { libelle: 'Retournée', classe: 'bg-rose-100 text-rose-800' },
+};
 
 export default function OrderTrackingPage() {
   const params = useParams();
@@ -31,6 +44,33 @@ export default function OrderTrackingPage() {
     (o) => o.creationConfirmed && o.orderNumber.toUpperCase() === orderNumber?.toUpperCase()
   );
   const order = commandeDistante || orderLocal;
+
+  // La copie locale est figée au moment de l'achat : le client ne reçoit
+  // aucune mise à jour (le flux des commandes est réservé à l'équipe). Sans
+  // cette relecture, sa commande restait « En attente d'appel » pour toujours,
+  // même livrée. Le téléphone de la commande locale sert de preuve.
+  const [actualisation, setActualisation] = useState(false);
+  const actualiser = useCallback(async (tel: string) => {
+    setActualisation(true);
+    try {
+      const res = await fetch('/api/orders/track', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderNumber, phone: tel }),
+      });
+      const json = await res.json();
+      if (res.ok && json.success) setCommandeDistante(json.commande);
+    } catch {
+      /* hors connexion : on garde la dernière version connue */
+    } finally {
+      setActualisation(false);
+    }
+  }, [orderNumber]);
+
+  const telLocal = orderLocal?.customerPhone;
+  useEffect(() => {
+    if (telLocal) void actualiser(telLocal);
+  }, [telLocal, actualiser]);
 
   const rechercher = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -174,23 +214,36 @@ export default function OrderTrackingPage() {
         <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-4">
             <div>
-              <span className="text-[10px] uppercase font-bold text-slate-500 block">Suivi en direct</span>
+              <button
+                type="button"
+                onClick={() => order.customerPhone && actualiser(order.customerPhone)}
+                disabled={actualisation || !order.customerPhone}
+                className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-slate-900 disabled:opacity-60"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${actualisation ? 'animate-spin' : ''}`} />
+                {actualisation ? 'Mise à jour…' : 'Actualiser'}
+              </button>
               <h1 className="text-xl font-black text-slate-900">
                 Commande #{order.orderNumber}
               </h1>
             </div>
-            <span className={`px-3 py-1 rounded-full text-xs font-black ${
-              order.status === 'delivered' ? 'bg-emerald-100 text-emerald-800' :
-              order.status === 'in_transit' ? 'bg-blue-100 text-blue-800 animate-pulse' :
-              'bg-amber-100 text-amber-800'
+            <span className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
+              (STATUT[order.status] || STATUT.new).classe
             }`}>
-              {order.status === 'delivered' && 'LIVRÉE'}
-              {order.status === 'in_transit' && 'EN COURS DE LIVRAISON'}
-              {order.status === 'dispatched' && 'LIVREUR ASSIGNÉ'}
-              {order.status === 'confirmed' && 'CONFIRMÉE PAR APPEL'}
-              {order.status === 'pending_call' && "EN ATTENTE D'APPEL"}
+              {(STATUT[order.status] || { libelle: order.status }).libelle}
             </span>
           </div>
+
+          {(order.status === 'cancelled' || order.status === 'returned') && (
+            <div className="flex items-start gap-2.5 bg-rose-50 border border-rose-200 rounded-2xl p-3.5">
+              <XCircle className="w-5 h-5 text-rose-600 shrink-0" />
+              <p className="text-sm text-rose-900">
+                {order.status === 'cancelled'
+                  ? "Cette commande a été annulée. Rien ne vous sera demandé."
+                  : "Ce colis a été retourné. Écrivez-nous si c'est une erreur."}
+              </p>
+            </div>
+          )}
 
           {/* Product Summary */}
           <div className="flex items-center space-x-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
@@ -204,7 +257,8 @@ export default function OrderTrackingPage() {
             </div>
           </div>
 
-          {/* Secret OTP Display */}
+          {/* Code secret : inutile (et trompeur) sur une commande annulée ou retournée. */}
+          {!['cancelled', 'returned'].includes(order.status) && (
           <div className="bg-gradient-to-br from-amber-500 to-orange-600 text-white rounded-2xl p-5 shadow-lg space-y-2 text-center">
             <div className="flex items-center justify-center space-x-1.5 text-xs font-bold text-amber-100 uppercase tracking-wider">
               <KeyRound className="w-4 h-4" />
@@ -219,6 +273,7 @@ export default function OrderTrackingPage() {
               À donner <strong>UNIQUEMENT</strong> au livreur lors de la remise physique de votre colis.
             </p>
           </div>
+          )}
 
           {/* Timeline */}
           <div className="space-y-4 pt-2">
@@ -247,7 +302,7 @@ export default function OrderTrackingPage() {
 
           {/* Encaissement mobile money via SasPay. Le composant vérifie
               lui-même à l'ouverture si la commande est déjà réglée. */}
-          {order.status !== 'delivered' && !order.paymentCollected && (
+          {!['delivered', 'cancelled', 'returned'].includes(order.status) && !order.paymentCollected && (
             <SasPayPaymentDesk
               amount={order.totalAmount}
               orderNumber={order.orderNumber}

@@ -8,6 +8,7 @@ import Footer from '@/components/common/Footer';
 import BottomNav from '@/components/common/BottomNav';
 import { PackageSearch, ArrowRight, MessageCircle } from 'lucide-react';
 import { normaliserNumeroCommande } from '@/lib/order-number';
+import { useSugubaStore } from '@/lib/store';
 
 /**
  * Point d'entrée du suivi de commande, créé le 2026-09-09 avec la barre de
@@ -23,6 +24,14 @@ export default function TrackIndexPage() {
   const router = useRouter();
   const [numero, setNumero] = useState('');
   const [erreur, setErreur] = useState('');
+
+  // Commandes passées depuis CE téléphone : un tap au lieu de retaper un
+  // numéro que le client a rarement noté.
+  const state = useSugubaStore();
+  const recentes = state.orders
+    .filter((o) => o.creationConfirmed)
+    .sort((a, b) => Date.parse(b.createdAt || '') - Date.parse(a.createdAt || ''))
+    .slice(0, 5);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,15 +64,34 @@ export default function TrackIndexPage() {
           <div className="w-14 h-14 rounded-2xl bg-suguba-50 text-suguba-brand flex items-center justify-center mx-auto">
             <PackageSearch className="w-7 h-7" />
           </div>
-          <h1 className="text-xl font-black text-gray-900">Suivre ma commande</h1>
-          <p className="text-xs text-gray-500 max-w-xs mx-auto leading-relaxed">
+          <h1 className="text-xl font-black text-slate-900">Suivre ma commande</h1>
+          <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
             Entrez le numéro reçu au moment de la commande pour voir où en est votre colis.
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-3xl border border-gray-100 shadow-card p-5 sm:p-6 space-y-4">
+        {recentes.length > 0 && (
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-card p-2">
+            <p className="px-3 pt-2 pb-1 text-xs font-bold text-slate-900">Mes commandes sur ce téléphone</p>
+            {recentes.map((o) => (
+              <Link
+                key={o.orderNumber}
+                href={`/track/${o.orderNumber}`}
+                className="flex items-center justify-between gap-3 px-3 py-3 rounded-2xl hover:bg-slate-50"
+              >
+                <span className="min-w-0">
+                  <span className="block text-sm font-bold text-slate-900 truncate">{o.productName}</span>
+                  <span className="block text-[11px] text-slate-500">#{o.orderNumber} · {o.totalAmount.toLocaleString('fr-FR')} F</span>
+                </span>
+                <ArrowRight className="w-4 h-4 text-slate-400 shrink-0" />
+              </Link>
+            ))}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="bg-white rounded-3xl border border-slate-100 shadow-card p-5 sm:p-6 space-y-4">
           <div className="space-y-1.5">
-            <label htmlFor="numero-commande" className="block text-xs font-bold text-gray-700">
+            <label htmlFor="numero-commande" className="block text-xs font-bold text-slate-700">
               Numéro de commande
             </label>
             <input
@@ -74,7 +102,7 @@ export default function TrackIndexPage() {
               placeholder="SG-K7M3P9RX"
               value={numero}
               onChange={(e) => setNumero(e.target.value)}
-              className="w-full px-4 py-3.5 bg-gray-50 border border-gray-200 rounded-2xl text-center text-lg font-black tracking-wide text-gray-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-suguba-brand/30"
+              className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-center text-lg font-black tracking-wide text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-suguba-brand/30"
             />
           </div>
 
@@ -93,9 +121,9 @@ export default function TrackIndexPage() {
           </button>
         </form>
 
-        <div className="bg-white rounded-3xl border border-gray-100 p-5 space-y-2">
-          <p className="text-xs font-bold text-gray-900">Vous avez perdu votre numéro ?</p>
-          <p className="text-xs text-gray-500 leading-relaxed">
+        <div className="bg-white rounded-3xl border border-slate-100 p-5 space-y-2">
+          <p className="text-xs font-bold text-slate-900">Vous avez perdu votre numéro ?</p>
+          <p className="text-xs text-slate-500 leading-relaxed">
             Il figure sur l&apos;écran de confirmation affiché après la commande, et sur le reçu
             que vous avez pu enregistrer sur WhatsApp. Sinon, écrivez-nous : nous le retrouvons
             avec votre numéro de téléphone.
@@ -111,7 +139,7 @@ export default function TrackIndexPage() {
           </a>
         </div>
 
-        <p className="text-center text-xs text-gray-500">
+        <p className="text-center text-xs text-slate-500">
           <Link href="/" className="font-bold text-suguba-brand hover:underline">
             Retour au catalogue
           </Link>

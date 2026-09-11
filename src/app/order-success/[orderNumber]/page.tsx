@@ -6,16 +6,28 @@ import ProductImage from '@/components/common/ProductImage';
 import Header from '@/components/common/Header';
 import SasPayPaymentDesk from '@/components/common/SasPayPaymentDesk';
 import { useSugubaStore } from '@/lib/store';
-import { 
-  CheckCircle2, KeyRound, ShieldCheck, MapPin, 
-  Phone, ArrowRight, Home, ShoppingBag, Truck
+import { useToast } from '@/components/ui/Toast';
+import {
+  CheckCircle2, KeyRound, ShieldCheck, MapPin,
+  Phone, ArrowRight, Home, ShoppingBag, Truck, Copy
 } from 'lucide-react';
 
 export default function OrderSuccessPage({ params }: { params: Promise<{ orderNumber: string }> }) {
   const resolvedParams = use(params);
   const state = useSugubaStore();
+  const { toast } = useToast();
 
   const order = state.orders.find(o => o.orderNumber === resolvedParams.orderNumber);
+
+  // Le numéro est la seule clé d'un client sans compte : un geste pour le garder.
+  const copierNumero = async () => {
+    try {
+      await navigator.clipboard.writeText(resolvedParams.orderNumber);
+      toast('Numéro de commande copié.', { ton: 'succes' });
+    } catch {
+      toast(`Notez votre numéro : ${resolvedParams.orderNumber}`, { ton: 'info', duree: 8000 });
+    }
+  };
 
   if (!order?.creationConfirmed) {
     return (
@@ -51,9 +63,15 @@ export default function OrderSuccessPage({ params }: { params: Promise<{ orderNu
 
           {/* Title */}
           <div className="space-y-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+            <button
+              type="button"
+              onClick={copierNumero}
+              aria-label={`Copier le numéro de commande ${order.orderNumber}`}
+              className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1 rounded-full border border-emerald-200"
+            >
               Commande #{order.orderNumber}
-            </span>
+              <Copy className="w-3.5 h-3.5" />
+            </button>
             <h1 className="text-2xl sm:text-3xl font-black text-slate-900 pt-2">
               Merci pour votre commande !
             </h1>
@@ -144,10 +162,10 @@ export default function OrderSuccessPage({ params }: { params: Promise<{ orderNu
             <div className="grid grid-cols-2 gap-2">
               <Link
                 href={`/track/${order.orderNumber}`}
-                className="py-3 px-3 bg-blue-50 hover:bg-blue-100 text-blue-900 font-bold border border-blue-200 rounded-2xl text-xs flex items-center justify-center space-x-1.5"
+                className="py-3 px-3 bg-white hover:bg-slate-50 text-slate-900 font-bold border border-slate-200 rounded-2xl text-xs flex items-center justify-center space-x-1.5"
               >
-                <Truck className="w-4 h-4 text-blue-700" />
-                <span>Suivre ma course</span>
+                <Truck className="w-4 h-4 text-suguba-brand" />
+                <span>Suivre ma commande</span>
               </Link>
 
               <Link

@@ -245,7 +245,9 @@ dépôt fournisseur, premier paiement SasPay réel.
    masqué sur `/p/*` et `/admin`. **Phase 2 (client) : première passe faite le 2026-09-11** —
    squelettes via `useCatalogueCharge()` (plus de « Produit introuvable » au chargement), barre
    « Commander » fixe sur mobile, champs 16 px, « Recommandé par » réel (`/api/shop/revendeur`).
-   **Suite : `/track`, confirmation de commande, puis phase 3 (revendeur).**
+   Suivi : `/track/[n]` relit le vrai statut (la copie locale restait figée), 8 statuts
+   libellés, annulée/retournée sans code ni paiement ; `/track` liste les commandes du
+   téléphone ; « Copier » le numéro sur la confirmation. **Suite : phase 3 (revendeur).**
    ⚠️ Un produit de test « [DÉMO] Blender / mixeur 1,5 L » (sans photo) est en vente en prod —
    à retirer (décision utilisateur).
    Règle : tout nouveau message utilisateur passe par `useToast()` — jamais `alert()`.
