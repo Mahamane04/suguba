@@ -239,7 +239,11 @@ dépôt fournisseur, premier paiement SasPay réel.
    gains revendeur sur le grand-livre + historique réel (`/api/reseller/payouts`), ventes du
    revendeur connecté, stocks fournisseur réels (`/api/supplier/stock`), code revendeur réel
    dans « Créer une commande » et la carte QR, promesses diaspora et jargon technique retirés.
-   **Prochaine étape : phase 1 (fondations du design system).**
+   **Phase 1 (fondations) faite le 2026-09-11** (commit 21ed85a) : composants communs dans
+   `src/components/ui/` (Toast/`useToast`, Sheet, Field, Surface), plus aucun `alert`/`confirm`
+   natif, en-tête refait (prénom, sans cloche ni mode sombre), barre diaspora, bouton WhatsApp
+   masqué sur `/p/*` et `/admin`. **Prochaine étape : phase 2 (parcours client).**
+   Règle : tout nouveau message utilisateur passe par `useToast()` — jamais `alert()`.
    Restent sur les données démo, à traiter dans leur phase : packs diaspora (phase 5), bandeau
    « Offre recommandée par… » de la page produit (phase 2), adresse de stock par défaut du
    formulaire fournisseur (phase 4), pages parrainage/défis/académie (décision en attente).
