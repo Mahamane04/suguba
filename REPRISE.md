@@ -1,7 +1,7 @@
-# Suguba — Fiche de reprise (9 septembre 2026)
+# Suguba — Fiche de reprise (11 septembre 2026)
 
-État réel du projet, basé sur l'historique git vérifié — remplace la version du 22 août,
-restée figée alors que le projet a beaucoup avancé depuis.
+État réel du projet, basé sur l'historique git vérifié (dernier commit : `66066c8`, déployé et
+vérifié en production). C'est LA fiche de référence : les documents de `docs/` renvoient ici.
 
 ---
 
@@ -84,9 +84,8 @@ restée figée alors que le projet a beaucoup avancé depuis.
    dossier incomplet refusé, retrait d'autorisation, traçabilité).
 
 
-8. **Tarification automatique et boutiques** (2026-09-10) — code fait, build en cours de
-   validation, **deux migrations à appliquer avant tout déploiement** :
-   `migration-tarification.sql` puis `migration-boutiques.sql`.
+8. **Tarification automatique et boutiques** (2026-09-10) — déployé ; `migration-tarification.sql`
+   et `migration-boutiques.sql` appliquées (vérifié en lecture le 2026-09-10).
    - **Moteur** `src/lib/pricing.ts` (fonctions pures, même code côté admin et serveur) :
      plancher Suguba = coûts variables (paiement 1,5 %, provision refus 4 %, message,
      déficit livraison) + coûts fixes ÷ **volume de référence** + marge nette minimale (5 %).
@@ -108,22 +107,52 @@ restée figée alors que le projet a beaucoup avancé depuis.
    - **Supprimé** : fausses chaînes de marque `/c/`, faux tableau de bord `/business`, faux
      réseau d'ambassadrices, note « 4.9/5 » inventée, option « acompte » qui ne faisait rien.
 
+9. **Design system** (2026-09-09 → 11) — un seul vert `suguba-brand` (#09b500), slate, texte
+   ≥ 11 px, composant `<Button>` ; tableaux de bord fournisseur et revendeur convertis. Les
+   « promesses d'argent » sans mécanisme (parrainage, défis, académie) ne sont plus proposées
+   depuis le tableau de bord revendeur.
+10. **Parcours d'inscription refait** (2026-09-10) — plus aucun compte créé en silence : sans
+    rôle choisi, la connexion Google/email mène au choix du profil ; `/register/complete`
+    (nom, WhatsApp obligatoire, champs du rôle) est imposé par le middleware tant que le profil
+    n'a pas de numéro. Carte « Client » = achat sans compte.
+11. **Partage WhatsApp et cartes produit** (2026-09-11) — partage photo + texte + lien en un clic
+    (`src/lib/partage.ts`), aperçu Open Graph de `/p/[slug]`, carte unique `ProductCard`
+    (carrousel, logo WhatsApp), jusqu'à 6 photos par produit, photos allégées avant l'envoi,
+    ajout de photos aux produits existants (`/admin/products`, bouton du fournisseur).
+12. **Affiches pour statut WhatsApp** (2026-09-11) — `src/lib/affiche.ts` + `AfficheModal`
+    (1080×1920 ou carré), code revendeur réel, jamais de téléphone ; `/reseller/marketing`
+    refait, `/reseller/story-generator` redirige.
+13. **Page produit honnête** (2026-09-11) — garantie inventée retirée (« 6 mois certifiés » sur
+    tous les produits), nombre réel de livraisons, bouton « Une question ? ». Un produit pas en
+    vente affiche « Pas encore en vente » (plus de partage à « 0 F »).
+14. **Service worker v3** (2026-09-11) — plus aucune réponse d'API en cache (données privées),
+    seul l'accueil préchargé, caches plafonnés.
+15. **Publication automatique des produits** (2026-09-11) — décision de l'utilisateur : plus de
+    validation avant la mise en vente ; contrôle après coup dans `/admin/products`
+    (« Nouveautés fournisseurs », Prix, Retirer).
+16. **Part revendeur choisie par le fournisseur** (2026-09-11) — prix client = fournisseur + part
+    revendeur + part Suguba (% du prix de vente ou % de la part revendeur, réglable avec un
+    tableau de simulation), toujours relevé au plancher. `migration-part-revendeur.sql` appliquée.
+17. **iPhone : barre du bas qui flottait** après fermeture du clavier — masquée pendant la saisie
+    (`useClavierOuvert`).
+
 ---
 
 ## ⚠️ À vérifier en tout premier
 
-**Migrations SQL à confirmer comme appliquées** (l'utilisateur les a appliquées au fil de la
-session précédente, mais à reconfirmer avant de considérer le sujet clos) :
-- `migration-multi-role.sql`
-- `migration-suppliers.sql`
-- `migration-drivers.sql`
-- `migration-order-status.sql`
-- `migration-saspay.sql` — **nouvelle, jamais appliquée**. Ajoute
-  `payment_transaction_id` + `payment_network` sur `orders` et `payouts`, avec index
-  UNIQUE partiels. Sans elle, aucun paiement SasPay ne peut être rattaché à une commande.
+**Migrations** — vérifiées présentes en base par lecture (service_role) les 2026-09-10 et 11 :
+`migration-saspay.sql`, `migration-tarification.sql`, `migration-boutiques.sql`,
+`migration-livreurs-agence.sql`, `migration-part-revendeur.sql`. Les plus anciennes
+(`multi-role`, `suppliers`, `drivers`, `order-status`, `commission-safety-window`, `sav`) ont été
+appliquées en août ; `migration-suivi-commande.sql` vient d'une autre session, à reconfirmer.
 
 Vérification rapide (lecture seule, service_role) : tenter un `select` sur les colonnes/tables
-attendues (`suppliers`, `drivers`, `orders.payment_invoice_token`, etc.) plutôt que de supposer.
+attendues plutôt que de supposer. **Toute nouvelle migration doit être appliquée AVANT de pousser**
+le code qui la lit : sinon devis et commandes cassent en production.
+
+**Réglage à faire par l'admin** : la part Suguba est à 8 % du prix de vente par défaut. Avec les
+coûts actuels, ce taux ne couvre pas les frais : les prix sont relevés au plancher. Pour que le
+pourcentage décide réellement du prix, viser **12 à 13 %** (tableau de simulation des réglages).
 
 **SasPay est en service** (2026-09-09, tout vérifié en production). Ce qui reste à
 surveiller : le solde `ML/XOF` est à **0**, et c'est de ce solde que partent les versements
@@ -141,11 +170,25 @@ curl -s -H "Authorization: Bearer $KEY" https://api.saspay.me/api/v1/merchant-ba
 
 ---
 
-## Chantiers non commencés
+## Chantiers non commencés et décisions en attente
+
+**Décisions de l'utilisateur en attente** (ne pas trancher à sa place) :
+- Pages qui promettent de l'argent sans mécanisme (point 10 ci-dessous) : supprimer ou brancher.
+- Forcer le **choix du compte Google** à chaque connexion (`prompt: 'select_account'`) —
+  proposé, mis de côté par l'utilisateur.
+- **Numéro du support** `+223 89 46 00 00` : c'est aussi celui de l'agent WhatsApp Micro Office
+  (« Fatouma ») — les clients Suguba tomberaient sur lui. Voulu ou non ?
+- **Formulaire fournisseur** : garantie, délai de préparation et adresse du stock sont demandés
+  mais jamais enregistrés (aucune colonne) — ajouter en base ou retirer du formulaire.
+
+**À tester en vrai** (jamais fait de bout en bout) : partage WhatsApp avec photo et affiche en
+statut sur un vrai téléphone (Android et iPhone), dépôt de photos, publication automatique d'un
+dépôt fournisseur, premier paiement SasPay réel.
 
 1. **Rôle Diaspora** — même traitement que Fournisseur/Livreur (table réelle, dashboard,
    inscription). Prochain sur la liste, jamais démarré.
-2. **Remplir le catalogue** — toujours vide, le vrai blocage commercial.
+2. **Remplir le catalogue** — le vrai blocage commercial. Au 2026-09-11 : 5 produits `[DÉMO]`
+   **sans photo**, et un portable créé par l'admin, en attente de prix.
 3. **Terminer le multi-rôle côté UI** — sélecteur d'espace dans le Header, page pour
    demander un rôle supplémentaire (`/api/auth/request-role` existe déjà côté serveur).
 4. **Parcours invité** — suivi de commande sans compte, invitation à devenir revendeur

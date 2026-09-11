@@ -1,6 +1,34 @@
 # Architecture & Schéma de Base de Données — Suguba SaaS
 
-## Schéma Relationnel PostgreSQL
+> **Mis à jour le 2026-09-11.** La section « Schéma réel » ci-dessous décrit la base Supabase
+> telle qu'elle est (projet `jwbryyaysptokzmfwijo`), reconstituée depuis `supabase/schema.sql`
+> et les migrations `supabase/migration-*.sql`. La section « Schéma de conception d'origine »,
+> plus bas, date d'août 2026 et **ne correspond plus** à la base (pas de table `users` ni de mot
+> de passe, pas de table `resellers`, etc.) : elle est conservée pour l'historique.
+> Détails, pièges et décisions : `REPRISE.md` à la racine.
+
+## Schéma réel (2026-09-11)
+
+| Table | Rôle | Colonnes à connaître |
+| :--- | :--- | :--- |
+| `profiles` | Un compte (Google/email) | `id`, `auth_user_id`, `email`, `phone` (vide = profil incomplet), `role`, `status`, `reseller_code`, `metadata` |
+| `profile_roles` | **Source de vérité des rôles** (multi-rôle) | `profile_id`, `role`, `status`, `approved_at` — unique (`profile_id`, `role`) |
+| `suppliers` | Fiche fournisseur | `profile_id`, `company_name`, `warehouse_*`, `category`, `rccm_or_nif`, `slug` (adresse `/s/<slug>`, jamais modifiée) |
+| `drivers` | Fiche livreur | `profile_id`, `vehicle_type`, `license_plate`, `zone`, `active_status` (seul verrou du dispatch), `verified_at/by/note` (guichet) |
+| `products` | Catalogue | `status` (`draft`/`pending`/`submitted`/`approved`/`rejected`/`archived`), `supplier_price`, `public_price`, `reseller_commission` (calculée), `commission_proposee` (part revendeur choisie par le fournisseur), `pricing_status`, `pricing_computed_at`, `images` (jsonb, 6 max), `slug` (jamais modifié) |
+| `orders` | Commandes | `order_number` (8 caractères), `status`, `delivery_otp`, `assigned_driver_id`, `reseller_id`, `platform_margin`, `pricing_snapshot` (montants figés), `payment_transaction_id`, `payment_network` |
+| `commissions` | Grand-livre revendeur | `status` (`pending`/`locked`/`available`/`reserved`/`paid`/`reversed`), `unlock_at` (14/7/3 jours selon le palier) |
+| `payouts` | Retraits revendeur | `status` (`pending`/`processing`/`completed`/`rejected` — jamais `failed`), `payment_method`, `payment_transaction_id` |
+| `platform_settings` | Réglages économiques (ligne unique `id = 1`) | `valeurs` (jsonb : coûts, livraison, codes promo, `modePartSuguba`, `tauxPartSuguba`, `minimumPartSuguba`…), `confirme` |
+| `reseller_shop_items` | Sélection de la boutique `/r/<code>` | `reseller_id`, `product_id`, `position` |
+| `sav_tickets` | Service après-vente | voir `migration-sav.sql` |
+
+**Règles d'accès** : RLS partout ; la clé anon ne lit que les produits `approved`. Tout le reste
+passe par des routes serveur (service_role) qui vérifient la session signée.
+
+**Règle « en vente »** : `status = 'approved'` **et** `public_price > 0`, partout.
+
+## Schéma de conception d'origine (août 2026 — obsolète)
 
 ```sql
 -- 1. Utilisateurs & Authentification

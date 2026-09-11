@@ -9,12 +9,22 @@ Suguba est conçu pour être l'outil commercial de poche des revendeurs, livreur
 
 ---
 
+> **Mis à jour le 2026-09-11** — les règles appliquées dans le code (voir `tailwind.config.js`
+> et `src/components/ui/Button.tsx`) priment sur les maquettes d'origine ci-dessous :
+> - **un seul vert de marque** : `suguba-brand` (#09b500), réservé à l'action principale ;
+>   `suguba-brand-dark` (#078000) au survol ;
+> - **une seule échelle neutre** : `slate` ;
+> - **rayons** : `rounded-2xl` pour les boutons, `rounded-3xl` pour les cartes ;
+> - **texte jamais sous 11 px** (lisibilité en plein soleil) ;
+> - **`<Button>`** : variantes `primary` (vert), `secondary` (noir), `ghost` (contour), `danger` (rose) ;
+> - **WhatsApp** : `#25D366` avec le **logo officiel** (`WhatsAppIcon`), jamais une bulle générique.
+
 ## 2. Palette de Couleurs (Design Tokens)
 
 | Rôle | Nom du Token | Valeur Hex | Utilisation |
 | :--- | :--- | :--- | :--- |
-| **Primary (Succès / Gains)** | `suguba-emerald-600` | `#16a34a` | Boutons d'action principaux, badges de gains, commissions acquises. |
-| **Primary Dark** | `suguba-emerald-800` | `#166534` | En-têtes, textes d'accentuation, boutons au survol/clic. |
+| **Primary (Action principale / Gains)** | `suguba-brand` | `#09b500` | Action principale de l'écran, gains revendeur. (Remplace l'ancien `#16a34a`.) |
+| **Primary Dark** | `suguba-brand-dark` | `#078000` | Survol / appui de l'action principale. |
 | **Mobile Money & Attention** | `suguba-amber-500` | `#f59e0b` | Alertes, délais de sécurité J+7, boutons Orange Money / Wave. |
 | **WhatsApp Social Action** | `suguba-whatsapp` | `#25D366` | Bouton de partage 1-clic vers WhatsApp Statut / Contact. |
 | **Surface Principale** | `suguba-bg` | `#f8fafc` | Fond de l'application (Slate 50). |
@@ -38,11 +48,12 @@ Suguba est conçu pour être l'outil commercial de poche des revendeurs, livreur
 
 ## 4. Composants Clés & Ergonomie Mobile
 
-### A. La Carte Produit Rémunérée
-- Image haute qualité optimisée WebP avec ratio 1:1 ou 16:9.
-- Badge flottant haut-droite : `+4 000 F de gain`.
-- Bloc économique encadré : *Prix client* vs *Ta commission*.
-- Double action basse : Bouton Vert `WhatsApp` (Partager) + Bouton Noir `Créer vente` (Commande directe).
+### A. La Carte Produit (`src/components/product/ProductCard.tsx`, unique depuis le 2026-09-11)
+- Utilisée partout : accueil, catalogue revendeur, boutiques `/s/` et `/r/`.
+- Deux colonnes sur téléphone ; photo carrée avec **carrousel** à balayer (points de position, flèches au survol sur ordinateur).
+- Nom sur deux lignes, prix en gros, « Payez à la livraison » ou « Vous gagnez X F » (revendeur).
+- Actions : `Acheter` (noir) + bouton `Partager` au **logo WhatsApp** ; dans le catalogue revendeur, « Partager sur WhatsApp » passe en action principale, avec un bouton « affiche pour mon statut ».
+- Un produit n'est affiché que s'il est **en vente** : `approved` **et** prix > 0.
 
 ### B. Le Formulaire Express 1-Clic
 - Aucun champ superflu (pas d'email, pas de mot de passe, pas de confirmation de mot de passe).
@@ -56,3 +67,5 @@ Suguba est conçu pour être l'outil commercial de poche des revendeurs, livreur
 ### D. La Barre de Navigation Basse (`BottomNav`)
 - Hauteur fixe `64px` avec support de la zone de sécurité iPhone (`pb-safe`).
 - 4 à 5 onglets maximum avec icônes Lucide stroke 2.5 pour l'onglet actif.
+- **Masquée pendant la saisie** (ainsi que le bouton WhatsApp flottant) : sur iPhone, Safari la
+  laissait décalée de la hauteur du clavier après sa fermeture (`src/lib/useClavierOuvert.ts`).

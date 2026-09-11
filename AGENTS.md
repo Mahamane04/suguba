@@ -4,8 +4,10 @@
 ## 1. Primary Mandate
 Every development action must adhere strictly to the MicroOffice SaaS Factory V3 principles:
 - **Mobile-First Priority**: The entire application is built primarily for smartphone users (resellers, suppliers, customers, delivery riders) on mobile networks in Mali (Bamako & regions).
-- **Suguba Controls the Transaction**: No direct bypass between supplier and reseller/customer. Pricing, fixed commissions, delivery dispatch, order confirmation, and accounting ledger are mastered by Suguba.
+- **Suguba Controls the Transaction**: No direct bypass between supplier and reseller/customer (never publish a supplier's phone or address). The client price is computed server-side by `src/lib/pricing.ts` (supplier price + reseller share chosen by the supplier + Suguba share set by the admin, never below the cost floor). Delivery dispatch, order confirmation and the commission ledger are mastered by Suguba.
+- **Never trust the browser with money**: no route accepts an amount from the client, except the reseller share a supplier chooses for their own product.
 - **Traceability**: All features map to Requirements (`REQ-xxx`), Tasks (`TASK-xxx`), and Tests (`TEST-xxx`).
+- **Source of truth**: read `REPRISE.md` (project state, pending decisions, known pitfalls) before any work; apply a Supabase migration BEFORE pushing code that reads it; always validate with `npm run build`.
 
 ## 2. Roles & Portals
 1. **Fournisseur (Supplier)**: Adds products, manages inventory, prepares packages.
