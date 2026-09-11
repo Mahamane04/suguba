@@ -234,9 +234,15 @@ dépôt fournisseur, premier paiement SasPay réel.
    qu'il n'y a pas de vraies transactions. Ne jamais initialiser un score à une valeur par défaut.
 7. **Refonte UI/UX** — audit complet de tous les rôles fait le 2026-09-11 :
    `docs/ux/audit-ux-2026-09-11.md` (constats avec preuves, grille de satisfaction, plan en 10
-   phases, protocole de vérification). **Phase 0 (confiance) à faire en premier** : 12 écrans
-   affichent le compte démo « Moussa » (`state.currentUser`), les retraits affichent 184 000 F
-   fictifs, la page diaspora promet une garantie et un taux BCEAO sans mécanisme.
+   phases, protocole de vérification). **Phase 0 (confiance) faite le 2026-09-11** et vérifiée
+   par rôle : identité réelle partout (`/api/auth/me` renvoie le nom, `definirUtilisateur`),
+   gains revendeur sur le grand-livre + historique réel (`/api/reseller/payouts`), ventes du
+   revendeur connecté, stocks fournisseur réels (`/api/supplier/stock`), code revendeur réel
+   dans « Créer une commande » et la carte QR, promesses diaspora et jargon technique retirés.
+   **Prochaine étape : phase 1 (fondations du design system).**
+   Restent sur les données démo, à traiter dans leur phase : packs diaspora (phase 5), bandeau
+   « Offre recommandée par… » de la page produit (phase 2), adresse de stock par défaut du
+   formulaire fournisseur (phase 4), pages parrainage/défis/académie (décision en attente).
 8. ~~**Versement des commissions**~~ — code fait le 2026-09-09 via SasPay Payouts. Reste à
    valider avec de vraies clés : aucun virement réel n'a encore été déclenché.
 9. **Revendeurs payés en Wave** — `payouts.payment_method` accepte encore `wave`, que SasPay
@@ -253,6 +259,16 @@ dépôt fournisseur, premier paiement SasPay réel.
 ---
 
 ## Pièges déjà rencontrés (ne pas les redécouvrir)
+
+- **L'identité affichée ne vient JAMAIS de la mémoire du téléphone** (2026-09-11). La mémoire
+  locale démarrait sur le compte démo « Moussa Coulibaly » et `hydrateFromLocalStorage`
+  restaurait l'utilisateur mémorisé : 12 écrans l'affichaient à tout le monde. Désormais
+  `currentUser` est neutre au démarrage, remplacé par `/api/auth/me` (CloudSyncInitializer →
+  `sugubaStore.definirUtilisateur`), et jamais restauré depuis le cache. Toute donnée d'un rôle
+  (soldes, ventes, stocks, code revendeur) se lit via une route serveur, pas via
+  `state.resellers` / `state.suppliers` / `state.withdrawals` (données de démonstration).
+- **`/api/orders/feed` répond 401 aux rôles fournisseur et diaspora** : bruit dans la console,
+  sans effet (ces rôles n'ont rien à lire par cette route). À traiter en phase 8.
 
 - **`next dev` ne détecte pas tout.** Toujours tester avec un vrai `npm run build` avant de
   conclure qu'un déploiement va réussir (un `useSearchParams()` sans `<Suspense>` a déjà fait

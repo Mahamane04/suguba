@@ -9,6 +9,7 @@ import { useOrderQuote } from '@/lib/useOrderQuote';
 import type { OrderInput } from '@/lib/order-input';
 import Image from 'next/image';
 import { useOrderCheckout } from '@/lib/useOrderCheckout';
+import { useCodeRevendeur } from '@/lib/partage';
 
 interface CreateOrderModalProps {
   product: Product | null;
@@ -29,9 +30,13 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
   const { submitOrder, isSubmitting, resetAttempt, recovery } = useOrderCheckout(`reseller:${product?.id || ''}`);
   const [createdOrder, setCreatedOrder] = useState<any | null>(null);
 
-  const currentReseller = state.resellers.find(r => r.userId === state.currentUser.id);
+  // Code RÉEL du revendeur connecté (2026-09-11). Il venait des données de
+  // démonstration (state.resellers) : les commandes saisies ici portaient le
+  // code d'un revendeur fictif, ou aucun — et le vrai revendeur perdait sa
+  // commission.
+  const codeRevendeur = useCodeRevendeur();
   const { devis, error: erreurDevis } = useOrderQuote(isOpen && product ? {
-    productId: product.id, quantity, city, resellerCode: currentReseller?.referralCode,
+    productId: product.id, quantity, city, resellerCode: codeRevendeur || undefined,
   } : null);
 
   if (!isOpen || !product) return null;
@@ -72,7 +77,7 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
         neighborhood,
         landmark,
         deliveryNotes,
-        resellerCode: currentReseller?.referralCode,
+        resellerCode: codeRevendeur || undefined,
       });
   };
 

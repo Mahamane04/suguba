@@ -186,8 +186,8 @@ export default function DiasporaPortalPage() {
               </h1>
 
               <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                Payez en <strong>Euros (€), Dollars ($)</strong> par Carte Bancaire (Visa / Mastercard) ou Apple Pay. 
-                Suguba livre directement vos proches à Bamako sous 24h et vous envoie la <strong>photo de remise du colis sur WhatsApp</strong> !
+                Payez en <strong>Euros (€), Dollars ($)</strong> par carte bancaire (Visa, Mastercard). 
+                Suguba livre vos proches à Bamako et en régions, et vous suivez la commande en ligne avec son numéro.
               </p>
             </div>
 
@@ -211,7 +211,8 @@ export default function DiasporaPortalPage() {
                   </button>
                 ))}
               </div>
-              <p className="text-[10px] text-slate-400">Taux officiel BCEAO garanti</p>
+              {/* Seule la parité euro est fixe (655,957 F) ; le dollar varie. */}
+              <p className="text-[11px] text-slate-400">Prix indicatifs convertis du franc CFA (1 € = 655,957 F)</p>
             </div>
 
           </div>
@@ -224,15 +225,15 @@ export default function DiasporaPortalPage() {
             </div>
             <div className="flex items-center space-x-2">
               <Truck className="w-4 h-4 text-blue-400 shrink-0" />
-              <span>Livraison 24h à Bamako & Régions</span>
+              <span>Livraison à Bamako et en régions</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Camera className="w-4 h-4 text-amber-400 shrink-0" />
-              <span>Photo de Remise envoyée sur WhatsApp</span>
+              <CheckCircle2 className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>Suivi de la commande en ligne</span>
             </div>
             <div className="flex items-center space-x-2">
               <ShieldCheck className="w-4 h-4 text-purple-400 shrink-0" />
-              <span>Garantie Totale 12 Mois & SAV Suguba</span>
+              <span>Service client Suguba sur WhatsApp</span>
             </div>
           </div>
         </div>
@@ -317,11 +318,11 @@ export default function DiasporaPortalPage() {
               <div className="space-y-1">
                 <h3 className="text-2xl font-black text-emerald-950">Paiement Validé & Commande Confirmée !</h3>
                 <p className="text-xs text-emerald-800 max-w-md mx-auto">
-                  Votre commande a été transmise à notre équipe logistique à Bamako. Votre parent <strong>{beneficiaryName}</strong> ({beneficiaryPhone}) sera livré sous 24h.
+                  Votre commande a été transmise à notre équipe logistique à Bamako. Suguba contactera <strong>{beneficiaryName}</strong> ({beneficiaryPhone}) pour organiser la livraison.
                 </p>
               </div>
               <div className="p-4 bg-white rounded-2xl border border-emerald-200 text-xs text-slate-700 max-w-sm mx-auto">
-                📸 La photo de remise du colis vous sera envoyée sur WhatsApp dès la livraison effectuée !
+                Suivez l&apos;avancement à tout moment depuis la page « Suivi », avec le numéro de commande.
               </div>
             </div>
           ) : !selectedProduct ? (

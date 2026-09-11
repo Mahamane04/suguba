@@ -53,39 +53,43 @@ export default function DriverDashboardPage() {
 
       <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
         
-        {/* Driver Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-r from-amber-700 to-orange-800 text-white p-5 sm:p-6 rounded-3xl shadow-lg">
-          <div className="space-y-1.5">
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-amber-600/80 text-amber-100 text-[11px] font-bold">
-                <Truck className="w-3.5 h-3.5" />
-                <span>Livreur Terrain Partenaire</span>
-              </div>
-              <CloudSyncBadge />
+        {/* En-tête livreur — design system (2026-09-11). Il affichait le nom du
+            compte de démonstration « Moussa Coulibaly », un badge technique
+            « Cloud Live (PostgreSQL Sync) » et le texte brut
+            « voir /register/complete ». */}
+        <div className="bg-white border border-slate-200 p-5 rounded-3xl space-y-4">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-[11px] font-bold">
+              <Truck className="w-3.5 h-3.5" />
+              <span>Espace livreur</span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-black">
-              {currentUser.fullName}
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900">
+              {currentUser.fullName ? `Bonjour, ${currentUser.fullName.split(' ')[0]}` : 'Bonjour'}
             </h1>
-            <p className="text-xs text-amber-100">
-              {driver?.vehicleType
-                ? <>Véhicule : <strong>{driver.vehicleType}</strong> {driver.licensePlate ? `(${driver.licensePlate})` : ''}</>
-                : 'Dossier livreur incomplet — voir /register/complete'}
-            </p>
+            {driver?.vehicleType ? (
+              <p className="text-xs text-slate-500">
+                Véhicule : <strong className="text-slate-700">{driver.vehicleType}</strong>
+                {driver.licensePlate ? ` (${driver.licensePlate})` : ''}
+              </p>
+            ) : (
+              <Link href="/register/complete" className="text-xs font-bold text-suguba-brand hover:underline">
+                Compléter mon dossier (véhicule, zone)
+              </Link>
+            )}
           </div>
 
-          <div className="flex items-center space-x-2">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-2xl bg-slate-50 p-3">
+              <p className="text-[11px] font-bold text-slate-500 uppercase">Encaissé à la livraison</p>
+              <p className="text-lg font-black text-slate-900">{totalCollectedCash.toLocaleString('fr-FR')} F</p>
+            </div>
             <Link
               href="/driver/earnings"
-              className="flex items-center space-x-1.5 px-3.5 py-2 bg-white text-slate-950 hover:bg-amber-100 rounded-xl text-xs font-black shadow-md transition-all active:scale-95"
+              className="rounded-2xl border border-slate-200 hover:bg-slate-50 p-3 flex items-center gap-2 transition-colors"
             >
-              <Wallet className="w-3.5 h-3.5 text-amber-600" />
-              <span>Mon Portefeuille</span>
+              <Wallet className="w-5 h-5 text-slate-700 shrink-0" />
+              <span className="text-sm font-bold text-slate-900">Mon portefeuille</span>
             </Link>
-
-            <div className="bg-white/10 backdrop-blur-xs border border-white/20 px-3.5 py-2 rounded-xl text-right">
-              <span className="text-[9px] uppercase font-bold text-amber-200 block">Total Encaissé</span>
-              <span className="text-sm font-black text-white">{totalCollectedCash.toLocaleString('fr-FR')} F</span>
-            </div>
           </div>
         </div>
 

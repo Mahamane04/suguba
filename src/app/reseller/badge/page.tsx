@@ -7,6 +7,7 @@ import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
 import { useSugubaStore } from '@/lib/store';
+import { useCodeRevendeur } from '@/lib/partage';
 import { 
   ShieldCheck, QrCode, ArrowLeft, Download, Printer, 
   Share2, Sparkles, Award, CheckCircle2, User, Phone, MapPin, Copy, Check
@@ -15,7 +16,10 @@ import {
 export default function ResellerBadgePage() {
   const state = useSugubaStore();
   const currentUser = state.currentUser;
-  const reseller = state.resellers.find(r => r.userId === currentUser.id) || state.resellers[0];
+  // Code RÉEL du revendeur (2026-09-11) : la carte affichait celui d'un
+  // revendeur de démonstration (state.resellers[0]).
+  const codeRevendeur = useCodeRevendeur();
+  const reseller = { referralCode: codeRevendeur || '—' };
 
   const [copiedCode, setCopiedCode] = useState(false);
 

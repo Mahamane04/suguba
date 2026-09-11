@@ -1,448 +1,314 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
-import Footer from '@/components/common/Footer';
-import { useSugubaStore, sugubaStore } from '@/lib/store';
-import { Withdrawal } from '@/types';
-import { 
-  Wallet, CheckCircle2, Clock, Smartphone,
-  AlertCircle, ArrowRight, History, ExternalLink, Zap,
-  Building2, QrCode, ShieldCheck, MapPin, Copy, Check
-} from 'lucide-react';
+import Button from '@/components/ui/Button';
+import { useSugubaStore } from '@/lib/store';
+import { Wallet, Clock, CheckCircle2, History, AlertCircle, Building2, Loader2 } from 'lucide-react';
 
-const ussdShortcuts = [
-  {
-    provider: 'Orange Money',
-    code: '#144#',
-    link: 'tel:*144%23',
-    description: 'Consulter solde & transferts OM',
-    color: 'bg-orange-50 text-orange-800 border-orange-200 hover:bg-orange-100',
-  },
-  // Mobi Cash est bien proposé comme moyen de réception (SasPay le couvre au
-  // Mali), mais il n'a pas de raccourci ici : son code USSD n'est pas connu
-  // avec certitude. Un raccourci qui composerait un mauvais code sur le
-  // téléphone d'un revendeur serait pire que pas de raccourci du tout.
-  // À rétablir dès que le code aura été vérifié auprès de l'opérateur.
-  {
-    provider: 'Moov Money',
-    code: '#166#',
-    link: 'tel:*166%23',
-    description: 'Consulter solde Moov Money',
-    color: 'bg-cyan-50 text-cyan-800 border-cyan-200 hover:bg-cyan-100',
-  },
+type Moyen = 'Orange Money' | 'Moov Money' | 'Mobi Cash' | 'Agence Suguba';
+
+interface Retrait {
+  id: string;
+  montant: number;
+  moyen: string;
+  telephone: string;
+  statut: string;
+  reference: string | null;
+  creeLe: string;
+}
+
+const MOYENS: { id: Moyen; libelle: string; detail: string }[] = [
+  { id: 'Orange Money', libelle: 'Orange Money', detail: 'Virement' },
+  { id: 'Moov Money', libelle: 'Moov Money', detail: 'Virement' },
+  { id: 'Mobi Cash', libelle: 'Mobi Cash', detail: 'Virement' },
+  { id: 'Agence Suguba', libelle: 'Espèces', detail: 'Au guichet' },
 ];
 
+const STATUTS: Record<string, { libelle: string; classe: string }> = {
+  pending: { libelle: 'En attente', classe: 'bg-amber-50 text-amber-800' },
+  processing: { libelle: 'Virement en cours', classe: 'bg-amber-50 text-amber-800' },
+  completed: { libelle: 'Versé', classe: 'bg-suguba-brand/10 text-suguba-brand' },
+  rejected: { libelle: 'Refusé', classe: 'bg-rose-50 text-rose-700' },
+};
+
+const enF = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+
+/** « WTH-7K2Q9M » : 30 symboles sans ambiguïté visuelle (pas de 0/O, 1/I). */
+function codeRetrait(): string {
+  const alphabet = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+  let code = '';
+  for (let i = 0; i < 6; i++) code += alphabet[Math.floor(Math.random() * alphabet.length)];
+  return `WTH-${code}`;
+}
+
+/**
+ * Gains du revendeur — refaits le 2026-09-11 sur les VRAIES données.
+ *
+ * L'ancienne page lisait un revendeur de démonstration : un compte sans vente
+ * y voyait « Total déjà retiré & reçu : 184 000 FCFA », et la demande de
+ * retrait vérifiait le solde de ce faux compte avant d'appeler le serveur.
+ * Désormais : soldes du grand-livre (/api/reseller/me), historique réel
+ * (/api/reseller/payouts), demande envoyée directement à /api/payouts/create,
+ * qui revérifie le solde et le réserve.
+ *
+ * Retrait en espèces : le numéro du retrait (WTH-…), enregistré en base, sert
+ * de référence au guichet. L'ancien « code guichet » était généré dans le
+ * navigateur et enregistré nulle part : le guichet n'aurait rien pu vérifier.
+ */
 export default function ResellerPayoutsPage() {
   const state = useSugubaStore();
-  const [amount, setAmount] = useState<number>(10000);
-  // Wave n'est plus proposé : SasPay, seule passerelle depuis le 2026-09-09,
-  // ne couvre pas Wave au Mali. Laisser l'option aurait créé des retraits
-  // impossibles à virer, bloqués indéfiniment en attente.
-  const [provider, setProvider] = useState<'Orange Money' | 'Moov Money' | 'Mobi Cash' | 'Agence Suguba'>('Orange Money');
-  const [phone, setPhone] = useState(state.currentUser.phone);
-  const [lastWithdrawal, setLastWithdrawal] = useState<Withdrawal | null>(null);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [errorMsg, setErrorMsg] = useState('');
-  const [isCopied, setIsCopied] = useState(false);
-  // Le retrait minimum vit dans les réglages de la plateforme (écran admin).
-  // Il était écrit en dur ici et dans la route serveur, avec le risque que les
-  // deux divergent le jour où l'un est modifié sans l'autre.
+  const [soldes, setSoldes] = useState<{ disponible: number; attente: number; verse: number } | null>(null);
+  const [retraits, setRetraits] = useState<Retrait[]>([]);
   const [retraitMinimum, setRetraitMinimum] = useState(5000);
-  useEffect(() => {
-    fetch('/api/settings/public')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => { if (j?.retraitMinimum) setRetraitMinimum(Number(j.retraitMinimum)); })
-      .catch(() => {});
+  const [chargement, setChargement] = useState(true);
+
+  const [moyen, setMoyen] = useState<Moyen>('Orange Money');
+  const [telephone, setTelephone] = useState('');
+  const [montant, setMontant] = useState<number>(0);
+  const [envoi, setEnvoi] = useState(false);
+  const [erreur, setErreur] = useState('');
+  const [succes, setSucces] = useState<{ code: string; montant: number; moyen: Moyen; telephone: string } | null>(null);
+
+  const charger = useCallback(async () => {
+    const [moi, hist, reglages] = await Promise.all([
+      fetch('/api/reseller/me').then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      fetch('/api/reseller/payouts').then((r) => (r.ok ? r.json() : null)).catch(() => null),
+      fetch('/api/settings/public').then((r) => (r.ok ? r.json() : null)).catch(() => null),
+    ]);
+    const r = moi?.reseller;
+    setSoldes({
+      disponible: Number(r?.availableBalance) || 0,
+      attente: Number(r?.pendingBalance) || 0,
+      verse: Number(r?.totalEarned) || 0,
+    });
+    setRetraits(Array.isArray(hist?.retraits) ? hist.retraits : []);
+    if (reglages?.retraitMinimum) setRetraitMinimum(Number(reglages.retraitMinimum));
+    setChargement(false);
   }, []);
 
-  const reseller = state.resellers.find(r => r.userId === state.currentUser.id) || state.resellers[0];
-  const myWithdrawals = state.withdrawals.filter(w => w.resellerId === reseller?.id);
+  useEffect(() => { charger(); }, [charger]);
 
-  // Remplace le solde de démo par le vrai solde du grand-livre serveur dès
-  // qu'il est connu, pour que le formulaire (montant max, bouton "Tout
-  // retirer", garde-fou de soumission) reflète l'argent réellement gagné —
-  // voir sugubaStore.syncResellerBalance et /api/reseller/balance.
+  // Numéro de la personne connectée par défaut, dès qu'il est connu.
   useEffect(() => {
-    if (!reseller) return;
-    fetch('/api/reseller/balance')
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data?.cloud) {
-          sugubaStore.syncResellerBalance(reseller.id, data.availableBalance, data.pendingBalance);
-        }
-      })
-      .catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reseller?.id]);
+    if (!telephone && state.currentUser.phone) setTelephone(state.currentUser.phone);
+  }, [state.currentUser.phone, telephone]);
 
-  const handleWithdrawalSubmit = (e: React.FormEvent) => {
+  const disponible = soldes?.disponible ?? 0;
+  const assez = disponible >= retraitMinimum;
+
+  const demander = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMsg('');
-    setIsSuccess(false);
+    setErreur('');
+    if (montant < retraitMinimum) { setErreur(`Le minimum de retrait est de ${enF(retraitMinimum)}.`); return; }
+    if (montant > disponible) { setErreur('Ce montant dépasse votre solde disponible.'); return; }
+    if (telephone.replace(/\D/g, '').length < 8) { setErreur('Indiquez un numéro valide.'); return; }
 
+    setEnvoi(true);
+    const code = codeRetrait();
     try {
-      const created = sugubaStore.requestWithdrawal({
-        resellerId: reseller.id,
-        amount: Number(amount),
-        payoutProvider: provider,
-        payoutPhone: phone,
+      const res = await fetch('/api/payouts/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          withdrawalCode: code,
+          resellerName: state.currentUser.fullName || undefined,
+          amount: montant,
+          payoutProvider: moyen,
+          payoutPhone: telephone,
+        }),
       });
-      setLastWithdrawal(created);
-      setIsSuccess(true);
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Erreur lors de la demande de retrait');
-    }
-  };
-
-  const copyCode = (code: string) => {
-    if (typeof navigator !== 'undefined') {
-      navigator.clipboard.writeText(code);
-      setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000);
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.success) {
+        setErreur(json.error || "La demande n'a pas pu être enregistrée.");
+        return;
+      }
+      setSucces({ code, montant, moyen, telephone });
+      setMontant(0);
+      await charger();
+    } catch {
+      setErreur('Erreur réseau, réessayez.');
+    } finally {
+      setEnvoi(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#f5f8f5] pb-20 md:pb-10">
+    <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
       <Header />
 
-      <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
-        
-        {/* Page Title */}
-        <div className="space-y-1">
-          <h1 className="text-xl sm:text-2xl font-black text-gray-900">
-            Mes Commissions & Retraits
-          </h1>
-          <p className="text-xs text-gray-500">
-            Recevez vos gains par Mobile Money (Orange Money, Moov, Mobi Cash) ou en espèces directement au Guichet Suguba Bamako.
-          </p>
+      <main className="flex-1 max-w-3xl mx-auto px-4 sm:px-6 py-6 w-full space-y-5">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900">Mes gains</h1>
+          <p className="text-xs text-slate-500">Vos commissions, et leur retrait par Mobile Money ou en espèces au guichet.</p>
         </div>
 
-        {/* Balances Overview */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          
-          <div className="bg-gradient-to-br from-emerald-600 to-green-700 text-white p-5 rounded-3xl shadow-brand-md space-y-1">
-            <span className="text-xs font-bold text-emerald-100 uppercase tracking-wider">
-              Solde Retirable Immédiatement
-            </span>
-            <p className="text-2xl sm:text-3xl font-black">
-              {reseller.availableBalance.toLocaleString('fr-FR')} <span className="text-sm font-normal">FCFA</span>
-            </p>
-            <p className="text-[11px] text-emerald-100">Prêt pour virement ou retrait guichet</p>
+        {/* Soldes */}
+        {chargement ? (
+          <div className="bg-white rounded-3xl border border-slate-200 p-8 flex justify-center">
+            <Loader2 className="w-6 h-6 text-slate-400 animate-spin" />
           </div>
-
-          <div className="bg-white p-5 rounded-3xl border border-amber-200 shadow-card space-y-1">
-            <span className="text-xs font-bold text-amber-700 uppercase tracking-wider flex items-center gap-1">
-              <Clock className="w-3.5 h-3.5" />
-              En attente de livraison
-            </span>
-            <p className="text-2xl sm:text-3xl font-black text-amber-600">
-              {reseller.pendingBalance.toLocaleString('fr-FR')} <span className="text-sm font-normal text-gray-400">FCFA</span>
-            </p>
-            <p className="text-[11px] text-gray-400">Devient disponible dès la livraison confirmée</p>
-          </div>
-
-          <div className="bg-white p-5 rounded-3xl border border-gray-100 shadow-card space-y-1">
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-              Total Déjà Retiré & Reçu
-            </span>
-            <p className="text-2xl sm:text-3xl font-black text-gray-900">
-              {Math.max(0, reseller.totalEarned - reseller.availableBalance - reseller.pendingBalance).toLocaleString('fr-FR')} <span className="text-sm font-normal text-gray-400">FCFA</span>
-            </p>
-            <p className="text-[11px] text-gray-400">Vers Mobile Money ou Guichet</p>
-          </div>
-
-        </div>
-
-        {/* USSD 1-Click Shortcuts (Mali) */}
-        <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-card space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4 text-amber-500" />
-              <h2 className="font-bold text-xs uppercase tracking-wider text-gray-700">
-                Raccourcis USSD 1-Clic Mali (Sans Connexion)
-              </h2>
+        ) : (
+          <div className="bg-white rounded-3xl border border-slate-200 p-5 space-y-4">
+            <div>
+              <p className="text-[11px] font-bold text-slate-500 uppercase">Disponible au retrait</p>
+              <p className="text-3xl font-black text-slate-900">{enF(disponible)}</p>
             </div>
-            <span className="text-[10px] text-gray-400 font-semibold">Téléphone mobile</span>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            {ussdShortcuts.map((item) => (
-              <a
-                key={item.provider}
-                href={item.link}
-                className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all active:scale-95 ${item.color}`}
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-black text-sm">{item.provider}</span>
-                    <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-lg bg-white/80 shadow-2xs">
-                      {item.code}
-                    </span>
-                  </div>
-                  <p className="text-[10px] opacity-80">{item.description}</p>
-                </div>
-                <div className="flex items-center gap-1 text-[10px] font-bold mt-2 pt-2 border-t border-current/10">
-                  <span>Lancer sur mon téléphone</span>
-                  <ExternalLink className="w-3 h-3 ml-auto" />
-                </div>
-              </a>
-            ))}
-          </div>
-        </div>
-
-        {/* Withdrawal Form Card */}
-        <div className="bg-white rounded-3xl p-5 sm:p-6 border border-gray-100 shadow-card space-y-4">
-          <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
-            <Wallet className="w-5 h-5 text-suguba-brand" />
-            <h2 className="font-black text-base text-gray-900">
-              Demander un Retrait
-            </h2>
-          </div>
-
-          {isSuccess && lastWithdrawal ? (
-            <div className="bg-suguba-50 border border-suguba-200 rounded-3xl p-6 text-center space-y-4 animate-fade-up">
-              <div className="w-14 h-14 bg-suguba-100 text-suguba-brand rounded-2xl flex items-center justify-center mx-auto shadow-brand-sm">
-                {lastWithdrawal.payoutProvider === 'Agence Suguba' ? (
-                  <Building2 className="w-8 h-8" />
-                ) : (
-                  <CheckCircle2 className="w-8 h-8" />
-                )}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-2xl bg-slate-50 p-3">
+                <p className="text-[11px] font-bold text-slate-500 uppercase flex items-center gap-1"><Clock className="w-3.5 h-3.5" />En attente</p>
+                <p className="text-lg font-black text-slate-900">{enF(soldes?.attente ?? 0)}</p>
+                <p className="text-[11px] text-slate-500">Disponible après le délai de sécurité qui suit la livraison</p>
               </div>
+              <div className="rounded-2xl bg-slate-50 p-3">
+                <p className="text-[11px] font-bold text-slate-500 uppercase flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" />Déjà versé</p>
+                <p className="text-lg font-black text-slate-900">{enF(soldes?.verse ?? 0)}</p>
+                <p className="text-[11px] text-slate-500">Depuis votre inscription</p>
+              </div>
+            </div>
+          </div>
+        )}
 
-              {lastWithdrawal.payoutProvider === 'Agence Suguba' ? (
-                /* Mode Retrait en Agence */
-                <div className="space-y-3">
-                  <h3 className="font-black text-lg text-gray-900">
-                    Code de Retrait Guichet Généré !
-                  </h3>
-                  <p className="text-xs text-gray-600 max-w-md mx-auto">
-                    Présentez ce code secret au guichet de l&apos;agence Suguba avec votre pièce d&apos;identité pour récupérer vos espèces :
+        {/* Retrait */}
+        <div className="bg-white rounded-3xl border border-slate-200 p-5 space-y-4">
+          <h2 className="font-black text-base text-slate-900 flex items-center gap-2">
+            <Wallet className="w-5 h-5 text-suguba-brand" />
+            <span>Retirer mes gains</span>
+          </h2>
+
+          {succes ? (
+            <div className="rounded-2xl bg-suguba-brand/5 border border-suguba-brand/20 p-5 text-center space-y-3">
+              <CheckCircle2 className="w-10 h-10 text-suguba-brand mx-auto" />
+              {succes.moyen === 'Agence Suguba' ? (
+                <>
+                  <p className="font-black text-slate-900">Retrait de {enF(succes.montant)} enregistré</p>
+                  <p className="text-sm text-slate-600">
+                    Présentez ce numéro au guichet Suguba (Hamdallaye ACI 2000, Bamako), avec votre pièce d&apos;identité :
                   </p>
-
-                  {/* Big Pickup Code Box */}
-                  <div className="p-4 bg-white rounded-2xl border-2 border-suguba-brand shadow-brand-md max-w-xs mx-auto space-y-2">
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                      Code Secret Guichet (72h)
-                    </p>
-                    <div className="flex items-center justify-center gap-2">
-                      <span className="font-mono text-3xl font-black text-gray-900 tracking-wider">
-                        {lastWithdrawal.pickupCode}
-                      </span>
-                      <button
-                        onClick={() => copyCode(lastWithdrawal.pickupCode || '')}
-                        className="p-1.5 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors"
-                        title="Copier le code"
-                      >
-                        {isCopied ? <Check className="w-4 h-4 text-suguba-brand" /> : <Copy className="w-4 h-4" />}
-                      </button>
-                    </div>
-                    <p className="text-[11px] font-bold text-suguba-brand">
-                      Montant : {lastWithdrawal.amount.toLocaleString('fr-FR')} FCFA
-                    </p>
-                  </div>
-
-                  <div className="p-3 bg-white/80 rounded-xl border border-gray-200 text-left max-w-sm mx-auto space-y-1 text-xs">
-                    <div className="flex items-center gap-1.5 font-bold text-gray-800">
-                      <MapPin className="w-4 h-4 text-suguba-brand shrink-0" />
-                      <span>Agence Suguba Mali :</span>
-                    </div>
-                    <p className="text-gray-600 pl-5 text-[11px]">
-                      Hamdallaye ACI 2000, Rue 314, Porte 88, Bamako
-                    </p>
-                    <p className="text-gray-400 pl-5 text-[10px]">
-                      Ouvert du Lundi au Samedi de 08h30 à 18h00 • Tél : +223 89 46 00 00
-                    </p>
-                  </div>
-                </div>
+                  <p className="font-mono text-2xl font-black text-slate-900 tracking-wider">{succes.code}</p>
+                </>
               ) : (
-                /* Mode Mobile Money */
-                <div className="space-y-2">
-                  <h3 className="font-black text-base text-gray-900">
-                    Demande de Virement Transmise !
-                  </h3>
-                  <p className="text-xs text-gray-600 max-w-md mx-auto">
-                    Votre demande de virement de <strong>{lastWithdrawal.amount.toLocaleString('fr-FR')} FCFA</strong> vers votre compte <strong>{lastWithdrawal.payoutProvider} ({lastWithdrawal.payoutPhone})</strong> a été synchronisée dans Supabase Cloud.
+                <>
+                  <p className="font-black text-slate-900">Demande de {enF(succes.montant)} envoyée</p>
+                  <p className="text-sm text-slate-600">
+                    Virement vers {succes.moyen} ({succes.telephone}). Suivez son état dans l&apos;historique ci-dessous.
                   </p>
-                </div>
+                </>
               )}
-
-              <button
-                onClick={() => { setIsSuccess(false); setLastWithdrawal(null); }}
-                className="px-5 py-2.5 bg-gray-900 text-white text-xs font-bold rounded-xl hover:bg-black transition-colors"
-              >
-                Faire une autre demande
-              </button>
+              <Button variant="ghost" size="sm" onClick={() => setSucces(null)}>Faire une autre demande</Button>
             </div>
           ) : (
-            <form onSubmit={handleWithdrawalSubmit} className="space-y-4">
-              
-              {/* Payment Provider Selection */}
+            <form onSubmit={demander} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-gray-700 mb-2">
-                  Sélectionnez votre moyen de réception *
-                </label>
+                <p className="text-xs font-bold text-slate-700 mb-2">Comment voulez-vous recevoir l&apos;argent ?</p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {[
-                    { id: 'Orange Money', label: 'Orange Money', color: 'border-orange-500 bg-orange-50 text-orange-950', badge: 'OM' },
-                    { id: 'Mobi Cash', label: 'Mobi Cash', color: 'border-blue-500 bg-blue-50 text-blue-950', badge: 'Mobi' },
-                    { id: 'Moov Money', label: 'Moov Money', color: 'border-cyan-500 bg-cyan-50 text-cyan-950', badge: 'Moov' },
-                    { id: 'Agence Suguba', label: 'Agence (Espèces)', color: 'border-emerald-600 bg-emerald-50 text-emerald-950', badge: '0% Frais' },
-                  ].map((item) => (
+                  {MOYENS.map((m) => (
                     <button
-                      key={item.id}
+                      key={m.id}
                       type="button"
-                      onClick={() => setProvider(item.id as any)}
-                      className={`p-3 rounded-2xl border-2 text-center text-xs font-bold transition-all relative ${
-                        provider === item.id 
-                          ? `${item.color} shadow-brand-sm scale-[1.02]` 
-                          : 'border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100'
+                      onClick={() => setMoyen(m.id)}
+                      className={`p-3 rounded-2xl border text-center transition-colors ${
+                        moyen === m.id ? 'border-slate-900 bg-slate-50 ring-1 ring-slate-900' : 'border-slate-200 hover:bg-slate-50'
                       }`}
                     >
-                      <span className="block">{item.label}</span>
-                      <span className="text-[9px] opacity-70 font-semibold mt-0.5 block">{item.badge}</span>
+                      <span className="block text-sm font-bold text-slate-900">{m.libelle}</span>
+                      <span className="block text-[11px] text-slate-500">{m.detail}</span>
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Notice for Agency */}
-              {provider === 'Agence Suguba' && (
-                <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-start gap-2.5 text-xs text-emerald-900 animate-fade-up">
-                  <Building2 className="w-5 h-5 text-suguba-brand shrink-0 mt-0.5" />
-                  <div>
-                    <p className="font-bold">Retrait Espèces au Guichet Suguba (0% de Frais)</p>
-                    <p className="text-[11px] text-emerald-800 mt-0.5">
-                      Un code secret unique vous sera remis. Présentez-vous à l&apos;agence d&apos;Hamdallaye ACI 2000 pour récupérer votre argent immédiatement.
-                    </p>
-                  </div>
-                </div>
+              {moyen === 'Agence Suguba' && (
+                <p className="rounded-2xl bg-slate-50 p-3 text-xs text-slate-600 flex items-start gap-2">
+                  <Building2 className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
+                  <span>Vous recevrez un numéro de retrait à présenter au guichet Suguba de Hamdallaye ACI 2000, avec votre pièce d&apos;identité.</span>
+                </p>
               )}
 
-              {/* Phone and Amount */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-gray-700 mb-1">
-                    {provider === 'Agence Suguba' ? 'Numéro de téléphone de contact *' : `Numéro ${provider} *`}
-                  </label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <label className="block text-xs font-bold text-slate-700">
+                  {moyen === 'Agence Suguba' ? 'Votre numéro de téléphone' : `Numéro ${moyen}`}
                   <input
                     type="tel"
-                    required
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:bg-white focus:ring-2 focus:ring-suguba-brand/30 focus:border-suguba-brand transition-all"
+                    inputMode="tel"
+                    value={telephone}
+                    onChange={(e) => setTelephone(e.target.value)}
+                    placeholder="76 12 34 56"
+                    className="mt-1 w-full h-12 px-3.5 rounded-2xl border border-slate-200 bg-slate-50 text-base font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-suguba-brand/30 focus:border-suguba-brand"
                   />
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-center mb-1">
-                    <label className="block text-xs font-bold text-gray-700">
-                      Montant à retirer (FCFA) *
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => setAmount(reseller.availableBalance)}
-                      className="text-[10px] font-bold text-suguba-brand hover:underline"
-                    >
-                      Tout retirer ({reseller.availableBalance.toLocaleString('fr-FR')} F)
-                    </button>
-                  </div>
+                </label>
+                <label className="block text-xs font-bold text-slate-700">
+                  <span className="flex items-center justify-between">
+                    <span>Montant (F)</span>
+                    {disponible > 0 && (
+                      <button type="button" onClick={() => setMontant(disponible)} className="text-[11px] font-bold text-suguba-brand">
+                        Tout retirer
+                      </button>
+                    )}
+                  </span>
                   <input
                     type="number"
-                    required
-                    min={retraitMinimum}
-                    max={reseller.availableBalance}
-                    step={1000}
-                    value={amount}
-                    onChange={(e) => setAmount(parseInt(e.target.value) || 0)}
-                    className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:bg-white focus:ring-2 focus:ring-suguba-brand/30 focus:border-suguba-brand transition-all"
+                    inputMode="numeric"
+                    min={0}
+                    step={500}
+                    value={montant || ''}
+                    onChange={(e) => setMontant(parseInt(e.target.value) || 0)}
+                    placeholder={String(retraitMinimum)}
+                    className="mt-1 w-full h-12 px-3.5 rounded-2xl border border-slate-200 bg-slate-50 text-base font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-suguba-brand/30 focus:border-suguba-brand"
                   />
-                  <span className="text-[10px] text-gray-400 mt-1 block">
-                    Minimum de retrait : {retraitMinimum.toLocaleString('fr-FR')} FCFA
-                  </span>
-                </div>
+                  <span className="text-[11px] font-normal text-slate-500 mt-1 block">Minimum {enF(retraitMinimum)}</span>
+                </label>
               </div>
 
-              {errorMsg && (
-                <div className="bg-rose-50 border border-rose-200 text-rose-700 p-3 rounded-xl text-xs font-bold flex items-center space-x-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{errorMsg}</span>
-                </div>
+              {erreur && (
+                <p className="rounded-2xl bg-rose-50 border border-rose-100 p-3 text-xs font-bold text-rose-700 flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />{erreur}
+                </p>
               )}
 
-              {/* Submit CTA */}
-              <button
-                type="submit"
-                disabled={reseller.availableBalance < retraitMinimum}
-                className="w-full bg-suguba-brand hover:bg-suguba-brand-dark disabled:opacity-50 text-white font-bold py-3.5 px-4 rounded-2xl text-xs shadow-brand-md flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
-              >
-                <span>{provider === 'Agence Suguba' ? 'Générer mon Code de Retrait Guichet' : 'Confirmer la demande de virement'}</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-
+              <Button type="submit" size="lg" fullWidth disabled={envoi || chargement || !assez}>
+                {envoi ? 'Envoi…' : moyen === 'Agence Suguba' ? 'Obtenir mon numéro de retrait' : 'Demander le virement'}
+              </Button>
+              {!chargement && !assez && (
+                <p className="text-[11px] text-slate-500 text-center">
+                  Vous pourrez retirer dès que votre solde disponible atteint {enF(retraitMinimum)}.
+                </p>
+              )}
             </form>
           )}
         </div>
 
-        {/* Withdrawals History */}
-        <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-card space-y-4">
-          <div className="flex items-center gap-2 border-b border-gray-100 pb-3">
-            <History className="w-5 h-5 text-gray-500" />
-            <h2 className="font-black text-base text-gray-900">
-              Historique des Retraits
-            </h2>
-          </div>
-
-          <div className="divide-y divide-gray-100">
-            {myWithdrawals.length === 0 ? (
-              <p className="text-xs text-gray-400 py-4 text-center">Aucun retrait effectué pour le moment.</p>
-            ) : (
-              myWithdrawals.map((wth) => (
-                <div key={wth.id} className="py-3 flex items-center justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-bold text-xs text-gray-900">
-                        {wth.amount.toLocaleString('fr-FR')} FCFA vers {wth.payoutProvider}
+        {/* Historique */}
+        <div className="bg-white rounded-3xl border border-slate-200 p-5 space-y-3">
+          <h2 className="font-black text-base text-slate-900 flex items-center gap-2">
+            <History className="w-5 h-5 text-slate-500" />
+            <span>Historique des retraits</span>
+          </h2>
+          {retraits.length === 0 ? (
+            <p className="text-sm text-slate-500 py-4 text-center">Aucun retrait pour le moment.</p>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {retraits.map((r) => {
+                const s = STATUTS[r.statut] || { libelle: r.statut, classe: 'bg-slate-100 text-slate-600' };
+                return (
+                  <div key={r.id} className="py-3 flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-slate-900">{enF(r.montant)} · {r.moyen}</p>
+                      <p className="text-[11px] text-slate-500 truncate">
+                        {new Date(r.creeLe).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {' · '}<span className="font-mono">{r.id}</span>
                       </p>
-                      {wth.pickupCode && (
-                        <span className="font-mono text-[10px] font-bold px-2 py-0.5 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-md">
-                          Code: {wth.pickupCode}
-                        </span>
-                      )}
                     </div>
-                    <p className="text-[11px] text-gray-400">
-                      {wth.payoutPhone} • {new Date(wth.createdAt).toLocaleDateString('fr-FR')}
-                    </p>
-                    {wth.transactionReference && (
-                      <p className="text-[10px] text-suguba-brand font-mono font-bold">
-                        Réf: {wth.transactionReference}
-                      </p>
-                    )}
+                    <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold shrink-0 ${s.classe}`}>{s.libelle}</span>
                   </div>
-
-                  <div>
-                    {wth.status === 'completed' && (
-                      <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black">
-                        ✅ Payé
-                      </span>
-                    )}
-                    {wth.status === 'pending' && (
-                      <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 text-[10px] font-black">
-                        ⏳ En attente
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
-
       </main>
 
-      <Footer />
       <BottomNav />
     </div>
   );

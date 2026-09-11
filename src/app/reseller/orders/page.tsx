@@ -14,8 +14,12 @@ export default function ResellerOrdersPage() {
   const state = useSugubaStore();
   const [filter, setFilter] = useState<string>('all');
 
-  const reseller = state.resellers.find(r => r.userId === state.currentUser.id) || state.resellers[0];
-  const myOrders = state.orders.filter(o => o.resellerId === reseller?.id);
+  // Ventes du revendeur CONNECTÉ (2026-09-11). La page cherchait le revendeur
+  // dans les données de démonstration puis ne gardait que les commandes de ce
+  // faux revendeur : un vrai revendeur ne voyait jamais ses propres ventes,
+  // pourtant renvoyées par /api/orders/feed.
+  const uid = state.currentUser.id;
+  const myOrders = uid ? state.orders.filter(o => o.resellerId === uid) : [];
 
   const filteredOrders = filter === 'all'
     ? myOrders

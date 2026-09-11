@@ -46,8 +46,21 @@ export interface SugubaState {
 // alors un mismatch d'hydratation. La donnée persistée n'est désormais lue
 // qu'après le montage (`hydrateFromLocalStorage`, appelée dans le
 // `useEffect` de `useSugubaStore`), jamais pendant le rendu initial.
+// Utilisateur neutre tant que l'identité réelle n'est pas chargée (voir
+// definirUtilisateur, appelée par CloudSyncInitializer depuis /api/auth/me).
+// C'était le compte de démonstration « Moussa Coulibaly » (INITIAL_USERS[3]),
+// affiché tel quel à tout le monde par 12 écrans.
+const UTILISATEUR_NEUTRE: User = {
+  id: '',
+  phone: '',
+  fullName: '',
+  role: 'customer',
+  city: 'Bamako',
+  createdAt: '',
+};
+
 const getDefaultState = (): SugubaState => ({
-  currentUser: INITIAL_USERS[3], // Default to Moussa Coulibaly (Revendeur)
+  currentUser: UTILISATEUR_NEUTRE,
   users: INITIAL_USERS,
   suppliers: INITIAL_SUPPLIERS,
   resellers: INITIAL_RESELLERS,
@@ -94,6 +107,10 @@ export const sugubaStore = {
       globalState = {
         ...globalState,
         ...parsed,
+        // Jamais l'utilisateur mémorisé : les anciens téléphones gardent
+        // « Moussa Coulibaly » dans leur cache, et une autre personne peut
+        // s'être connectée depuis. L'identité vient toujours du serveur.
+        currentUser: globalState.currentUser,
         diasporaProfiles: parsed.diasporaProfiles || INITIAL_DIASPORA,
         savTickets: parsed.savTickets || INITIAL_SAV_TICKETS,
       };
@@ -115,6 +132,26 @@ export const sugubaStore = {
       resellers: globalState.resellers.map(r =>
         r.id === resellerId ? { ...r, availableBalance, pendingBalance } : r
       ),
+    };
+    notify();
+  },
+
+  // Identité réelle de la personne connectée (null = visiteur). Appelée au
+  // démarrage par CloudSyncInitializer, à partir de /api/auth/me.
+  definirUtilisateur: (identite: { id: string; fullName?: string; phone?: string; role?: UserRole; city?: string } | null) => {
+    globalState = {
+      ...globalState,
+      currentUser: identite
+        ? {
+            ...UTILISATEUR_NEUTRE,
+            id: identite.id,
+            fullName: identite.fullName || '',
+            // Un profil Google sans numéro porte l'email à sa place dans la session.
+            phone: identite.phone && !identite.phone.includes('@') ? identite.phone : '',
+            role: identite.role || 'customer',
+            city: identite.city || 'Bamako',
+          }
+        : UTILISATEUR_NEUTRE,
     };
     notify();
   },
@@ -613,7 +650,7 @@ export const sugubaStore = {
   // Réinitialiser les données de démo
   resetDemoData: () => {
     globalState = {
-      currentUser: INITIAL_USERS[3],
+      currentUser: UTILISATEUR_NEUTRE,
       users: INITIAL_USERS,
       suppliers: INITIAL_SUPPLIERS,
       resellers: INITIAL_RESELLERS,
