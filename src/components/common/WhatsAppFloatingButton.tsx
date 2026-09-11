@@ -2,9 +2,13 @@
 
 import React, { useState } from 'react';
 import { MessageCircle, X, ShoppingBag, Users, Phone, HelpCircle } from 'lucide-react';
+import { useClavierOuvert } from '@/lib/useClavierOuvert';
 
 export default function WhatsAppFloatingButton() {
   const [isOpen, setIsOpen] = useState(false);
+  // Masqué pendant la saisie : même décalage que la barre du bas sur iPhone
+  // après fermeture du clavier (voir src/lib/useClavierOuvert.ts).
+  const clavierOuvert = useClavierOuvert();
   const supportPhone = '22389460000';
 
   const handleOpenWhatsApp = (topic: string) => {
@@ -21,7 +25,7 @@ export default function WhatsAppFloatingButton() {
     // (z-50 contre z-40). La valeur reste une classe et non un style en ligne,
     // sinon `md:bottom-6` ne pourrait plus reprendre la main sur desktop, où
     // la barre du bas n'existe pas.
-    <div className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom,0px))] md:bottom-6 right-4 z-50">
+    <div hidden={clavierOuvert} className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom,0px))] md:bottom-6 right-4 z-50">
       
       {/* Expanded Popup Menu */}
       {isOpen && (

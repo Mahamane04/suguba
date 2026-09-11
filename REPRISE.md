@@ -351,6 +351,17 @@ curl -s -H "Authorization: Bearer $KEY" https://api.saspay.me/api/v1/merchant-ba
      le bouton de partage. Le destinataire, lui, voyait « Produit introuvable ». La page affiche
      désormais « Pas encore en vente » (ni commande ni partage), et le partage comme l'affiche
      refusent un produit sans prix. Règle : **« en vente » = `approved` ET prix > 0**, partout.
+- **La barre du bas « flottait » au milieu de l'écran sur iPhone** (corrigé le 2026-09-11,
+  signalé avec capture sur /admin). Ce n'était ni un zoom ni un conteneur transformé : l'écart
+  valait la hauteur du clavier. Safari repositionne mal les éléments `fixed` en bas après la
+  fermeture du clavier. `src/lib/useClavierOuvert.ts` masque la barre du bas et le bouton
+  WhatsApp flottant pendant la saisie ; les réafficher force Safari à les recalculer.
+  ⚠️ Détecter la fin de saisie avec `relatedTarget` de l'événement `focusout`, **jamais**
+  `document.activeElement` lu juste après : selon le navigateur il désigne encore l'ancien
+  champ, et la barre restait masquée pour de bon.
+- **Tester du focus ou des minuteries dans le panneau Browser masqué** : la page n'a pas le
+  focus (aucun vrai `focusin`) et Chrome ralentit les minuteries à ~1 par seconde. Déclencher
+  les `FocusEvent` à la main et attendre plusieurs secondes avant de conclure.
 - **`payouts.status` n'accepte que `pending`/`processing`/`completed`/`rejected`** (contrainte
   CHECK). Écrire `failed` ferait échouer la mise à jour — même famille de piège que
   l'incohérence de statut des commandes corrigée en août. Un versement raté s'écrit

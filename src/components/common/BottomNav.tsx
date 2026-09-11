@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useClavierOuvert } from '@/lib/useClavierOuvert';
 import {
   Home, Grid3X3, ShoppingCart, Wallet, TrendingUp,
   PackagePlus, ShieldCheck, Truck, Store, Users,
@@ -83,6 +84,9 @@ function getNavItems(role: string | null): NavItem[] {
 export default function BottomNav() {
   const pathname = usePathname();
   const [role, setRole] = useState<string | null>(null);
+  // Masquée pendant la saisie : sur iPhone, elle restait décalée de la hauteur
+  // du clavier après sa fermeture (voir src/lib/useClavierOuvert.ts).
+  const clavierOuvert = useClavierOuvert();
 
   useEffect(() => {
     let annule = false;
@@ -118,6 +122,7 @@ export default function BottomNav() {
         style={{ height: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}
       />
     <nav
+      hidden={clavierOuvert}
       className="fixed bottom-0 left-0 right-0 z-40 md:hidden"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
