@@ -98,7 +98,7 @@ export default function PushNotificationManager() {
 
             <button
               onClick={() => setShowBanner(false)}
-              className="text-slate-400 hover:text-white p-1"
+              className="text-slate-500 hover:text-white p-1"
             >
               <X className="w-4 h-4" />
             </button>

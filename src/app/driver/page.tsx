@@ -107,7 +107,7 @@ export default function DriverDashboardPage() {
           </div>
 
           {myAssignedOrders.length === 0 ? (
-            <div className="bg-white rounded-3xl p-8 text-center text-slate-400 text-xs border border-slate-200 shadow-xs">
+            <div className="bg-white rounded-3xl p-8 text-center text-slate-500 text-xs border border-slate-200 shadow-xs">
               <Truck className="w-10 h-10 mx-auto text-slate-300 mb-2" />
               Aucune livraison en attente pour le moment.
             </div>

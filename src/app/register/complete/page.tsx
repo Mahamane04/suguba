@@ -173,7 +173,7 @@ function FinaliserInscription() {
   };
 
   if (mode === 'chargement') {
-    return <div className="p-10 text-center text-sm text-slate-400">Chargement…</div>;
+    return <div className="p-10 text-center text-sm text-slate-500">Chargement…</div>;
   }
 
   return (
@@ -353,7 +353,7 @@ function Champ({ label, aide, children }: { label: string; aide?: string; childr
     <div className="space-y-1">
       <label className="block text-xs font-bold text-slate-700">{label}</label>
       {children}
-      {aide && <p className="text-[11px] text-slate-400">{aide}</p>}
+      {aide && <p className="text-[11px] text-slate-500">{aide}</p>}
     </div>
   );
 }
@@ -363,7 +363,7 @@ export default function CompleteProfilePage() {
     <div className="min-h-screen flex flex-col bg-slate-50">
       <Header />
       <main className="flex-1">
-        <Suspense fallback={<div className="p-10 text-center text-sm text-slate-400">Chargement…</div>}>
+        <Suspense fallback={<div className="p-10 text-center text-sm text-slate-500">Chargement…</div>}>
           <FinaliserInscription />
         </Suspense>
       </main>

@@ -107,25 +107,25 @@ export default function AdminSavPage() {
           <div className="bg-white p-4 rounded-3xl border border-rose-200 shadow-xs space-y-1">
             <span className="text-[11px] font-bold text-rose-700 uppercase">Dossiers Ouverts</span>
             <p className="text-2xl font-black text-rose-600">{openTickets.length}</p>
-            <p className="text-[11px] text-slate-400">À traiter en priorité</p>
+            <p className="text-[11px] text-slate-500">À traiter en priorité</p>
           </div>
 
           <div className="bg-white p-4 rounded-3xl border border-amber-200 shadow-xs space-y-1">
             <span className="text-[11px] font-bold text-amber-700 uppercase">Échanges en Cours</span>
             <p className="text-2xl font-black text-amber-600">{inProgressTickets.length}</p>
-            <p className="text-[11px] text-slate-400">Livreur moto en mission</p>
+            <p className="text-[11px] text-slate-500">Livreur moto en mission</p>
           </div>
 
           <div className="bg-white p-4 rounded-3xl border border-emerald-200 shadow-xs space-y-1">
             <span className="text-[11px] font-bold text-emerald-700 uppercase">Dossiers Résolus</span>
             <p className="text-2xl font-black text-emerald-600">{resolvedTickets.length}</p>
-            <p className="text-[11px] text-slate-400">Échanges réussis sous 72h</p>
+            <p className="text-[11px] text-slate-500">Échanges réussis sous 72h</p>
           </div>
 
           <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs space-y-1">
             <span className="text-[11px] font-bold text-slate-500 uppercase">Taux de Résolution</span>
             <p className="text-2xl font-black text-slate-900">100%</p>
-            <p className="text-[11px] text-slate-400">Engagement Qualité Suguba</p>
+            <p className="text-[11px] text-slate-500">Engagement Qualité Suguba</p>
           </div>
         </div>
 
@@ -144,7 +144,7 @@ export default function AdminSavPage() {
           </div>
 
           {tickets.length === 0 ? (
-            <div className="p-8 text-center text-xs text-slate-400">
+            <div className="p-8 text-center text-xs text-slate-500">
               Aucun dossier SAV en cours. Tout fonctionne parfaitement !
             </div>
           ) : (
@@ -235,7 +235,7 @@ export default function AdminSavPage() {
                             envoyait `state.drivers[0]`, un livreur fictif. */}
                         {ticket.status === 'open' && (
                           livreurs.length === 0 ? (
-                            <span className="py-2 px-3 text-[11px] text-slate-400 italic">
+                            <span className="py-2 px-3 text-[11px] text-slate-500 italic">
                               Aucun livreur actif à assigner
                             </span>
                           ) : (

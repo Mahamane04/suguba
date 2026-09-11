@@ -124,7 +124,7 @@ export default function AdminDailyReportPage() {
             <p className="text-2xl font-black text-slate-900">
               {totalGmv.toLocaleString('fr-FR')} <span className="text-xs font-normal">F</span>
             </p>
-            <p className="text-[11px] text-slate-400">Total encaissé</p>
+            <p className="text-[11px] text-slate-500">Total encaissé</p>
           </div>
 
           <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-1">

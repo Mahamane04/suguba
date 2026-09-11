@@ -20,14 +20,18 @@ import {
  * Tableau de bord revendeur — converti au design system (2026-09-10).
  *
  * Retirés au passage, parce qu'ils promettaient de l'argent que rien ne verse :
- *  - « Parrainage (+1000 F) » : /reseller/referrals annonce une prime par vente
- *    de filleul, sans aucune table, route ni ligne de commission derrière ;
- *  - « Défis & Primes » : /reseller/challenges affiche des récompenses de 5 000
+ *  - « Parrainage (+1000 F) » : /reseller/referrals annonçait une prime par vente
+ *    de filleul, sans aucune table, route ni ligne de commission derrière — et
+ *    listait un « réseau de filleuls » entièrement inventé (noms, téléphones) ;
+ *  - « Défis & Primes » : /reseller/challenges affichait des récompenses de 5 000
  *    à 25 000 F écrites en dur, qu'aucun mécanisme ne paie ;
- *  - « Académie » : ses scripts font dire au revendeur « 25 000 à 100 000 F par
- *    semaine » et « 3 000 à 7 000 F par article », chiffres que la commission
+ *  - « Académie » : ses scripts faisaient dire au revendeur « 25 000 à 100 000 F
+ *    par semaine » et « 3 000 à 7 000 F par article », chiffres que la commission
  *    calculée par produit (src/lib/pricing.ts) ne garantit pas.
- * Les pages existent encore mais ne sont plus proposées depuis ici.
+ * Ces 3 pages ont été SUPPRIMÉES le 2026-09-11 (pas seulement masquées) : les
+ * garder en ligne, même sans lien depuis ici, laissait n'importe qui tomber sur
+ * des données de personnes fictives présentées comme réelles. À reconstruire
+ * uniquement le jour où un vrai mécanisme (table, calcul, paiement) existe.
  *
  * Corrigés : l'objectif de palier (10 puis 30 ventes, comme
  * palierDepuisVentes dans src/lib/commissions.ts — la page visait 100 en VIP),
@@ -131,7 +135,7 @@ export default function ResellerDashboardPage() {
                   ? <Check className="w-4 h-4 text-suguba-brand" />
                   : <Copy className="w-4 h-4 text-slate-400" />}
               </button>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-slate-500">
                 {copiedRef ? 'Code copié.' : 'Il est déjà inclus dans chaque lien que vous partagez.'}
               </p>
             </div>
@@ -188,7 +192,7 @@ export default function ResellerDashboardPage() {
           <div className="bg-slate-100 rounded-full h-2 overflow-hidden">
             <div className="h-2 rounded-full bg-suguba-brand transition-all duration-500" style={{ width: `${progression}%` }} />
           </div>
-          <p className="text-[11px] text-slate-400">
+          <p className="text-[11px] text-slate-500">
             14 jours pour un nouveau revendeur, 7 jours dès 10 ventes livrées, 3 jours dès 30. Ce délai protège contre les retours.
           </p>
         </div>
@@ -343,7 +347,7 @@ function Indicateur({ icone, titre, note, children }: {
         <span className="text-[11px] font-bold uppercase">{titre}</span>
       </div>
       <p className="text-xl sm:text-2xl font-black text-slate-900">{children}</p>
-      <p className="text-[11px] text-slate-400">{note}</p>
+      <p className="text-[11px] text-slate-500">{note}</p>
     </div>
   );
 }

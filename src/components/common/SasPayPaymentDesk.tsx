@@ -180,7 +180,7 @@ export default function SasPayPaymentDesk({ amount, orderNumber, defaultPhone = 
         <p className="text-[28px] leading-none font-black text-emerald-700 font-mono tracking-tight">
           {amount.toLocaleString('fr-FR')} <span className="text-base align-top">FCFA</span>
         </p>
-        <p className="text-[11px] font-bold text-slate-400 mt-1.5">Commande #{orderNumber}</p>
+        <p className="text-[11px] font-bold text-slate-500 mt-1.5">Commande #{orderNumber}</p>
       </div>
 
       {etape === 'attente' ? (
@@ -194,7 +194,7 @@ export default function SasPayPaymentDesk({ amount, orderNumber, defaultPhone = 
               </p>
             </div>
           </div>
-          <p className="text-[11px] text-slate-400">
+          <p className="text-[11px] text-slate-500">
             Cet écran se met à jour tout seul dès que le paiement est confirmé. Ne fermez pas la page.
           </p>
         </div>
@@ -266,7 +266,7 @@ export default function SasPayPaymentDesk({ amount, orderNumber, defaultPhone = 
         </>
       )}
 
-      <div className="flex items-center space-x-1.5 text-[11px] text-slate-400 pt-1 border-t border-slate-100">
+      <div className="flex items-center space-x-1.5 text-[11px] text-slate-500 pt-1 border-t border-slate-100">
         <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
         <span>Paiement sécurisé. Suguba ne voit jamais votre code secret.</span>
       </div>

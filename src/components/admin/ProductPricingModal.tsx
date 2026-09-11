@@ -169,16 +169,16 @@ export default function ProductPricingModal({ product, isOpen, onClose }: Produc
               </div>
 
               <div className="bg-slate-900 text-white rounded-2xl p-4 space-y-1.5 text-xs">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 pb-1">Décomposition par article</p>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 pb-1">Décomposition par article</p>
                 <Ligne l="Prix de vente" v={f(tarif.prixVente)} fort />
                 <Ligne l="− Prix fournisseur" v={f(tarif.prixFournisseur)} classe="text-slate-300" />
                 <div className="border-t border-slate-800 my-1" />
-                <Ligne l="Frais de paiement" v={f(tarif.coutPaiement)} classe="text-slate-400" />
-                <Ligne l="Provision pour refus" v={f(tarif.provisionRefus)} classe="text-slate-400" />
-                <Ligne l="Part des coûts fixes" v={f(tarif.coutFixe)} classe="text-slate-400" />
-                <Ligne l="Message au client" v={f(tarif.coutMessage)} classe="text-slate-400" />
-                {tarif.deficitLivraison > 0 && <Ligne l="Déficit livraison" v={f(tarif.deficitLivraison)} classe="text-slate-400" />}
-                <Ligne l="Marge nette minimale" v={f(tarif.margeNetteMinimale)} classe="text-slate-400" />
+                <Ligne l="Frais de paiement" v={f(tarif.coutPaiement)} classe="text-slate-500" />
+                <Ligne l="Provision pour refus" v={f(tarif.provisionRefus)} classe="text-slate-500" />
+                <Ligne l="Part des coûts fixes" v={f(tarif.coutFixe)} classe="text-slate-500" />
+                <Ligne l="Message au client" v={f(tarif.coutMessage)} classe="text-slate-500" />
+                {tarif.deficitLivraison > 0 && <Ligne l="Déficit livraison" v={f(tarif.deficitLivraison)} classe="text-slate-500" />}
+                <Ligne l="Marge nette minimale" v={f(tarif.margeNetteMinimale)} classe="text-slate-500" />
                 <Ligne l="= Plancher Suguba" v={f(tarif.plancher)} classe="text-amber-300" />
                 <div className="border-t border-slate-800 my-1" />
                 <Ligne l="Reste à partager" v={f(tarif.reste)} />

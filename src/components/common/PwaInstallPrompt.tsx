@@ -77,7 +77,7 @@ export default function PwaInstallPrompt() {
               setShowPrompt(false);
               setIsIos(false);
             }}
-            className="text-slate-400 hover:text-white p-1"
+            className="text-slate-500 hover:text-white p-1"
           >
             <X className="w-3.5 h-3.5" />
           </button>

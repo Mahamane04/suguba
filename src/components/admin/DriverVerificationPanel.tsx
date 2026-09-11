@@ -162,7 +162,7 @@ export default function DriverVerificationPanel() {
                 <p className="text-[11px] text-slate-600 bg-white border border-slate-200 rounded-xl p-2.5">
                   <span className="font-bold">Constat : </span>{l.constat}
                   {l.verifieLe && (
-                    <span className="text-slate-400"> — {new Date(l.verifieLe).toLocaleDateString('fr-FR')}</span>
+                    <span className="text-slate-500"> — {new Date(l.verifieLe).toLocaleDateString('fr-FR')}</span>
                   )}
                 </p>
               )}
@@ -224,7 +224,7 @@ export default function DriverVerificationPanel() {
         </div>
       )}
 
-      <p className="text-[11px] text-slate-400 border-t border-slate-100 pt-3">
+      <p className="text-[11px] text-slate-500 border-t border-slate-100 pt-3">
         Un compte livreur fonctionne dès l&apos;inscription : il peut se connecter et voir
         son espace. Ce panneau décide seulement du droit de recevoir des courses.
       </p>

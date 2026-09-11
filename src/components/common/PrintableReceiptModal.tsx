@@ -52,7 +52,7 @@ export default function PrintableReceiptModal({ order, isOpen, onClose }: Printa
             <h2 className="text-xl font-black tracking-wider uppercase">SUGUBA MALI</h2>
             <p className="text-[11px] text-slate-500 font-sans">Plateforme de Social Commerce & Logistique</p>
             <p className="text-[11px] font-sans">Bamako, Mali • Tél : <strong>+223 89 46 00 00</strong></p>
-            <p className="text-[11px] text-slate-400 font-sans">https://app.sugubaml.com</p>
+            <p className="text-[11px] text-slate-500 font-sans">https://app.sugubaml.com</p>
           </div>
 
           {/* Order Meta */}
@@ -78,7 +78,7 @@ export default function PrintableReceiptModal({ order, isOpen, onClose }: Printa
 
           {/* Items Table */}
           <div className="space-y-2 border-b-2 border-dashed border-slate-300 pb-4">
-            <div className="flex justify-between font-bold text-[11px] uppercase text-slate-400 border-b border-slate-200 pb-1">
+            <div className="flex justify-between font-bold text-[11px] uppercase text-slate-500 border-b border-slate-200 pb-1">
               <span>Désignation</span>
               <span className="text-right">Total FCFA</span>
             </div>
@@ -131,7 +131,7 @@ export default function PrintableReceiptModal({ order, isOpen, onClose }: Printa
           </div>
 
           {/* Footer Note */}
-          <div className="text-center text-[11px] text-slate-400 font-sans pt-2">
+          <div className="text-center text-[11px] text-slate-500 font-sans pt-2">
             <p>Merci pour votre confiance sur Suguba.ml !</p>
             <p>Service Client & SAV : +223 89 46 00 00</p>
           </div>

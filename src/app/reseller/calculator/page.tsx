@@ -58,7 +58,7 @@ export default function ResellerCalculatorPage() {
                 </div>
                 <div>
                   <strong className="block text-slate-900">Fatoumata D. (22 ans)</strong>
-                  <span className="text-[11px] text-slate-400">Étudiante à la FSEG (Badalabougou)</span>
+                  <span className="text-[11px] text-slate-500">Étudiante à la FSEG (Badalabougou)</span>
                 </div>
               </div>
               <p className="text-slate-600 leading-relaxed">
@@ -73,7 +73,7 @@ export default function ResellerCalculatorPage() {
                 </div>
                 <div>
                   <strong className="block text-slate-900">Oumar T. (27 ans)</strong>
-                  <span className="text-[11px] text-slate-400">Créateur TikTok (Hamdallaye ACI)</span>
+                  <span className="text-[11px] text-slate-500">Créateur TikTok (Hamdallaye ACI)</span>
                 </div>
               </div>
               <p className="text-slate-600 leading-relaxed">
@@ -88,7 +88,7 @@ export default function ResellerCalculatorPage() {
                 </div>
                 <div>
                   <strong className="block text-slate-900">Mariam C. (34 ans)</strong>
-                  <span className="text-[11px] text-slate-400">Mère au foyer (Kalaban-Coro)</span>
+                  <span className="text-[11px] text-slate-500">Mère au foyer (Kalaban-Coro)</span>
                 </div>
               </div>
               <p className="text-slate-600 leading-relaxed">

@@ -222,7 +222,7 @@ export default function AdminDashboardPage() {
             <p className="text-xl sm:text-2xl font-black text-slate-900">
               {totalGMV.toLocaleString('fr-FR')} <span className="text-xs font-normal">F</span>
             </p>
-            <p className="text-[11px] text-slate-400">{state.orders.length} commandes totales</p>
+            <p className="text-[11px] text-slate-500">{state.orders.length} commandes totales</p>
           </div>
 
           <div className="bg-white p-4 rounded-3xl border border-emerald-200 shadow-xs space-y-1">
@@ -230,7 +230,7 @@ export default function AdminDashboardPage() {
             <p className="text-xl sm:text-2xl font-black text-emerald-600">
               {totalCommissionsPaid.toLocaleString('fr-FR')} <span className="text-xs font-normal">F</span>
             </p>
-            <p className="text-[11px] text-slate-400">Pour le réseau revendeurs</p>
+            <p className="text-[11px] text-slate-500">Pour le réseau revendeurs</p>
           </div>
 
           <div className="bg-white p-4 rounded-3xl border border-amber-200 shadow-xs space-y-1">
@@ -238,7 +238,7 @@ export default function AdminDashboardPage() {
             <p className="text-xl sm:text-2xl font-black text-amber-600">
               {pendingCallOrders.length}
             </p>
-            <p className="text-[11px] text-slate-400">Confirmations clients requises</p>
+            <p className="text-[11px] text-slate-500">Confirmations clients requises</p>
           </div>
 
           <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs space-y-1">
@@ -246,7 +246,7 @@ export default function AdminDashboardPage() {
             <p className="text-xl sm:text-2xl font-black text-slate-600">
               {pendingPayouts.length}
             </p>
-            <p className="text-[11px] text-slate-400">Virements Mobile Money à exécuter</p>
+            <p className="text-[11px] text-slate-500">Virements Mobile Money à exécuter</p>
           </div>
         </div>
 
@@ -276,7 +276,7 @@ export default function AdminDashboardPage() {
             </div>
 
             {pendingCallOrders.length === 0 ? (
-              <div className="text-center py-6 text-slate-400 text-xs">
+              <div className="text-center py-6 text-slate-500 text-xs">
                 ✅ Tous les appels de confirmation ont été traités !
               </div>
             ) : (
@@ -295,7 +295,7 @@ export default function AdminDashboardPage() {
                           📍 {order.neighborhood} ({order.landmark})
                         </p>
                       </div>
-                      <span className="font-mono text-[11px] font-bold text-slate-400">#{order.orderNumber}</span>
+                      <span className="font-mono text-[11px] font-bold text-slate-500">#{order.orderNumber}</span>
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-1">
@@ -375,7 +375,7 @@ export default function AdminDashboardPage() {
             </div>
 
             {pendingProducts.length === 0 ? (
-              <div className="text-center py-6 text-slate-400 text-xs">
+              <div className="text-center py-6 text-slate-500 text-xs">
                 ✅ Aucun produit en attente de modération.
               </div>
             ) : (
@@ -429,7 +429,7 @@ export default function AdminDashboardPage() {
           </div>
 
           {confirmedOrders.length === 0 ? (
-            <div className="text-center py-6 text-slate-400 text-xs">
+            <div className="text-center py-6 text-slate-500 text-xs">
               Toutes les livraisons confirmées sont actuellement assignées.
             </div>
           ) : (
@@ -447,7 +447,7 @@ export default function AdminDashboardPage() {
 
                   <div className="flex items-center space-x-2">
                     {activeDrivers.length === 0 ? (
-                      <p className="flex-1 text-[11px] text-slate-400 italic">Aucun livreur actif pour l&apos;instant.</p>
+                      <p className="flex-1 text-[11px] text-slate-500 italic">Aucun livreur actif pour l&apos;instant.</p>
                     ) : (
                       <>
                         <select
@@ -628,7 +628,7 @@ export default function AdminDashboardPage() {
             </h3>
 
             {state.commissions.filter(c => c.status === 'locked').length === 0 ? (
-              <p className="text-xs text-slate-400">Aucune commission verrouillée en ce moment.</p>
+              <p className="text-xs text-slate-500">Aucune commission verrouillée en ce moment.</p>
             ) : (
               <div className="divide-y divide-slate-100">
                 {state.commissions.filter(c => c.status === 'locked').map((com) => (

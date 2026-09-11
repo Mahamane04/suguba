@@ -192,7 +192,7 @@ export default function DiasporaPortalPage() {
                 ))}
               </div>
               {/* Seule la parité euro est fixe (655,957 F) ; le dollar varie. */}
-              <p className="text-[11px] text-slate-400">Prix indicatifs convertis du franc CFA (1 € = 655,957 F)</p>
+              <p className="text-[11px] text-slate-500">Prix indicatifs convertis du franc CFA (1 € = 655,957 F)</p>
             </div>
 
           </div>
@@ -332,7 +332,7 @@ export default function DiasporaPortalPage() {
                   <span className="text-base font-black text-emerald-700 font-mono">
                     {formatPrice(selectedProduct.publicPrice)}
                   </span>
-                  <span className="text-[11px] text-slate-400 block">TTC</span>
+                  <span className="text-[11px] text-slate-500 block">TTC</span>
                 </div>
               </div>
 
@@ -426,7 +426,7 @@ export default function DiasporaPortalPage() {
                   </div>
                 )}
 
-                <p className="text-[11px] text-slate-400 text-center">
+                <p className="text-[11px] text-slate-500 text-center">
                   🔒 Paiement par carte sur la page sécurisée SasPay : Suguba ne voit ni ne conserve vos données bancaires.
                 </p>
               </div>

@@ -106,7 +106,7 @@ function JoinContent() {
           <GoogleIcon className="w-5 h-5" />
           S&apos;inscrire avec Google
         </button>
-        <p className="text-[11px] text-slate-400 text-center -mt-3">
+        <p className="text-[11px] text-slate-500 text-center -mt-3">
           Sans code, sans mot de passe. Il ne restera qu&apos;à confirmer votre numéro et votre
           quartier à Bamako.
         </p>

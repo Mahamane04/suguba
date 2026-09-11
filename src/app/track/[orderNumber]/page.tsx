@@ -146,7 +146,7 @@ export default function OrderTrackingPage() {
               {recherche ? 'Recherche…' : 'Voir ma commande'}
             </button>
 
-            <p className="text-[11px] text-slate-400 text-center">
+            <p className="text-[11px] text-slate-500 text-center">
               Ce numéro nous sert uniquement à vérifier que la commande est la vôtre.
             </p>
           </form>
@@ -290,7 +290,7 @@ export default function OrderTrackingPage() {
                     {step.done ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
                   </div>
                   <div>
-                    <h4 className={`text-xs font-bold ${step.done ? 'text-slate-900' : 'text-slate-400'}`}>
+                    <h4 className={`text-xs font-bold ${step.done ? 'text-slate-900' : 'text-slate-500'}`}>
                       {step.title}
                     </h4>
                     <p className="text-[11px] text-slate-500">{step.desc}</p>

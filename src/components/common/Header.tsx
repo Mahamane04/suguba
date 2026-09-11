@@ -156,7 +156,7 @@ export default function Header() {
                     <span className="block text-sm font-bold text-slate-900">{nomAffiche}</span>
                     <span className="block text-[11px] text-slate-500">{conf?.label}</span>
                   </span>
-                  <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${menuCompte ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${menuCompte ? 'rotate-180' : ''}`} />
                 </button>
                 {menuCompte && (
                   <div role="menu" className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-float border border-slate-100 p-1.5 z-50 animate-slide-down">

@@ -106,7 +106,7 @@ export default function AdminBroadcastPage() {
 
         {/* Quick Presets Carousel */}
         <div className="space-y-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">
             Modèles de Messages Rapides Prêts à l&apos;Emploi :
           </span>
 
@@ -288,7 +288,7 @@ export default function AdminBroadcastPage() {
 
           {/* Right: Real-Time Smartphone Mockup (5 cols) */}
           <div className="lg:col-span-5 space-y-4">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">
               Aperçu en Direct sur Smartphone :
             </span>
 
@@ -314,13 +314,13 @@ export default function AdminBroadcastPage() {
                 {/* Message Bubble */}
                 <div className="bg-white p-3.5 rounded-2xl rounded-tl-xs shadow-xs text-xs text-slate-900 space-y-2 whitespace-pre-line leading-relaxed border border-slate-100 font-sans">
                   {messageText}
-                  <div className="text-[11px] text-slate-400 text-right font-medium">
+                  <div className="text-[11px] text-slate-500 text-right font-medium">
                     12:30 • Envoyé par Suguba Ops
                   </div>
                 </div>
 
                 {/* Quick Reply Bar */}
-                <div className="bg-white/80 backdrop-blur-xs p-2 rounded-xl text-[11px] text-slate-400 text-center">
+                <div className="bg-white/80 backdrop-blur-xs p-2 rounded-xl text-[11px] text-slate-500 text-center">
                   📱 Réception instantanée sur smartphone
                 </div>
               </div>

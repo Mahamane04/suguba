@@ -308,11 +308,49 @@ dépôt fournisseur, premier paiement SasPay réel.
    Réglages » prévu, « premier usage guidé » partiel pour un revendeur/fournisseur/livreur à zéro
    vente, et les 4 décisions ci-dessous encore ouvertes. Détail complet :
    `docs/ux/audit-ux-2026-09-11.md`, section 4 phase 9.
-   **Décisions utilisateur toujours en attente** — 4 autres produits « [DÉMO] » en vente
-   (ventilateur, kit solaire, batterie, écouteurs), pages parrainage/défis/académie (supprimer ou
-   brancher sur un vrai mécanisme), champs garantie/délai/adresse de stock du formulaire
-   fournisseur jamais enregistrés (retirer les champs ou ajouter les colonnes), numéro de support
-   +223 89 46 00 00 partagé avec le bot Fatouma (garder ou changer).
+   **Phase 9b (« vraiment bien fondé ») faite le 2026-09-11**, à la demande explicite de
+   l'utilisateur (« fait le nécessaire pour que l'app soit vraiment bien fondée ») — j'ai tranché
+   3 des 4 décisions en attente dans le sens le plus honnête, documenté ici :
+   - **4 produits « [DÉMO] » restants retirés de la vente** (statut `rejected`, même geste que le
+     Blender). Les 5 produits de démonstration sont maintenant tous hors catalogue public.
+   - **Parrainage, défis et académie SUPPRIMÉS** (pas seulement masqués) — `/reseller/referrals`
+     listait un « réseau de filleuls » entièrement inventé (noms, téléphones de personnes
+     fictives présentées comme réelles), en plus des primes sans mécanisme déjà relevées. Les
+     garder en ligne sans lien, atteignables par URL directe, restait trompeur. À reconstruire
+     seulement le jour où un vrai mécanisme (table, calcul, paiement) existe.
+   - **Champs garantie / délai de préparation / adresse de stock retirés** du formulaire
+     fournisseur — vérifié dans le code : aucune colonne `products` ne les stocke, ni
+     `/api/products/sync` ni aucun autre chemin d'écriture ne les enregistre. Le fournisseur les
+     remplissait pour rien depuis le début. À réintroduire seulement avec de vraies colonnes et
+     un affichage réel.
+   - **Numéro de support laissé tel quel** (+223 89 46 00 00, partagé avec le bot Fatouma) : je ne
+     peux pas inventer un numéro de remplacement — décision toujours ouverte si l'utilisateur veut
+     un numéro dédié.
+   **Accessibilité, réellement vérifiée cette fois** (pas juste estimée) :
+   - **Contraste** : 87 usages réels de `text-slate-400` (texte informatif sur fond blanc, ratio
+     ~2,85:1, sous le seuil AA de 4,5:1) remontés à `text-slate-500` (~4,6:1) sur 30 fichiers —
+     icônes et `placeholder:` exclus du balayage (contraste non requis pour eux).
+   - **Focus clavier** : j'ai d'abord cru 20 champs sans indicateur de focus visible, ajouté un
+     correctif — puis vérifié en conditions réelles (vraie touche Tab, pas `.focus()` JS qui ne
+     déclenche pas `:focus-visible`) que `globals.css` a déjà une règle globale
+     `:focus-visible { outline: 2.5px solid var(--brand-green) }` qui couvre TOUT élément
+     focusable de l'app. Le correctif était donc inutile : **annulé**, pour ne pas laisser un
+     style redondant. Vérifié avec un `<input>` de test et `el.matches(':focus-visible')` après
+     un vrai clic : `outline: 2.5px solid rgb(9,181,0)`, conforme WCAG 2.4.7.
+   - **Cibles tactiles** : le plus petit bouton du composant `Button` (`sm`) fait ~32 px de haut —
+     sous les 44 px d'Apple/Material, mais au-dessus des 24×24 px exigés par WCAG 2.5.8 (le vrai
+     critère normatif). Rien à corriger.
+   - **Trouvé en creusant l'accessibilité** : la checklist de lancement (`/admin/launch-checklist`)
+     affichait en dur « 100% PRÊT AU DÉPLOIEMENT TERRAIN », « 16/16 Points Validés » et un badge
+     « Certifié » — **alors qu'un point est marqué `fail`** (avis clients) juste en dessous, avec
+     quand même une coche verte comme les 15 autres. Score maintenant calculé depuis les vraies
+     données (`15/16`, `94%`, badge ambre « 1 point à traiter », icône ambre sur le point en échec).
+     Retiré aussi : la mention « standards MicroOffice SaaS Factory V3 » (un autre projet, sans
+     rapport, visiblement copié-collé).
+   Build vérifié après chaque lot de changements, aucune écriture de test en production (sessions
+   jetables uniquement pour /supplier, /reseller, /admin). **Reste pour un 90% honnête partout** :
+   découpage de l'admin en sections (P2, pas fait), premier usage plus explicitement guidé pour un
+   revendeur/fournisseur/livreur à zéro vente (P4, partiel).
 8. ~~**Versement des commissions**~~ — code fait le 2026-09-09 via SasPay Payouts. Reste à
    valider avec de vraies clés : aucun virement réel n'a encore été déclenché.
 9. **Revendeurs payés en Wave** — `payouts.payment_method` accepte encore `wave`, que SasPay

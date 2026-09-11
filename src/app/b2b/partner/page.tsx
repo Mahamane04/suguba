@@ -167,7 +167,7 @@ export default function B2BPartnerPitchPage() {
               </div>
 
               <div className="p-4 bg-slate-900 text-white rounded-2xl space-y-1">
-                <span className="font-black text-slate-400 block">Étape 3 : Ventes & Reversements</span>
+                <span className="font-black text-slate-500 block">Étape 3 : Ventes & Reversements</span>
                 <p className="text-slate-300">
                   Les commandes affluent, Suguba livre et vous encaissez votre chiffre d&apos;affaires sans vous déplacer.
                 </p>
@@ -185,7 +185,7 @@ export default function B2BPartnerPitchPage() {
             </div>
 
             <div className="text-center border border-slate-300 rounded-2xl p-4 w-48 space-y-4">
-              <p className="text-[11px] text-slate-400 uppercase font-bold">Cachet & Signature Suguba</p>
+              <p className="text-[11px] text-slate-500 uppercase font-bold">Cachet & Signature Suguba</p>
               <div className="text-emerald-800 font-serif italic text-sm font-black py-2">
                 Direction Générale<br />Suguba Mali SAS
               </div>

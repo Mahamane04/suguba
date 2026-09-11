@@ -232,7 +232,7 @@ export default function HomePage() {
                     </div>
                     <div>
                       <h3 className="font-bold text-sm text-slate-900">{title}</h3>
-                      <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">{desc}</p>
+                      <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{desc}</p>
                     </div>
                   </div>
                 ))}

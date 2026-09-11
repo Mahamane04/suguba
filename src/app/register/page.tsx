@@ -135,7 +135,7 @@ export default function RegisterPage() {
 
           <div className="flex items-center gap-3">
             <div className="h-px flex-1 bg-slate-100" />
-            <span className="text-[11px] font-bold text-slate-400 uppercase">ou</span>
+            <span className="text-[11px] font-bold text-slate-500 uppercase">ou</span>
             <div className="h-px flex-1 bg-slate-100" />
           </div>
 
@@ -173,7 +173,7 @@ export default function RegisterPage() {
             </div>
           )}
 
-          <p className="text-[11px] text-slate-400 text-center">
+          <p className="text-[11px] text-slate-500 text-center">
             En créant un compte, vous acceptez les{' '}
             <Link href="/legal/terms" className="text-suguba-brand underline">conditions générales</Link>.
           </p>

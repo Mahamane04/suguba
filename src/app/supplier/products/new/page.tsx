@@ -9,7 +9,7 @@ import { useToast } from '@/components/ui/Toast';
 import Button from '@/components/ui/Button';
 import { sugubaStore } from '@/lib/store';
 import {
-  PackagePlus, MapPin, ShieldCheck, CheckCircle2, ArrowLeft
+  PackagePlus, ShieldCheck, CheckCircle2, ArrowLeft
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -17,19 +17,14 @@ export default function NewSupplierProductPage() {
   const router = useRouter();
   const { toast } = useToast();
   // Fiche fournisseur RÉELLE. Elle venait du store de démonstration
-  // (state.suppliers[0]) : l'adresse de stock était pré-remplie avec celle du
-  // fournisseur fictif. Le serveur (/api/products/sync) impose de toute façon
+  // (state.suppliers[0]) : le nom envoyé au serveur était celui du fournisseur
+  // fictif. Le serveur (/api/products/sync) impose de toute façon
   // l'identifiant de la session : aucun dépôt n'a pu partir sous un autre nom.
-  const [fiche, setFiche] = useState<{ companyName: string; warehouseAddress: string | null; warehouseNeighborhood: string | null } | null>(null);
+  const [fiche, setFiche] = useState<{ companyName: string } | null>(null);
   useEffect(() => {
     fetch('/api/supplier/me')
       .then((r) => (r.ok ? r.json() : null))
-      .then((j) => {
-        if (!j?.supplier) return;
-        setFiche(j.supplier);
-        const adresse = [j.supplier.warehouseAddress, j.supplier.warehouseNeighborhood].filter(Boolean).join(', ');
-        if (adresse) setStockLocationAddress((actuelle) => actuelle || adresse);
-      })
+      .then((j) => { if (j?.supplier) setFiche(j.supplier); })
       .catch(() => {});
   }, []);
 
@@ -38,9 +33,6 @@ export default function NewSupplierProductPage() {
   const [description, setDescription] = useState('');
   const [supplierPrice, setSupplierPrice] = useState<number>(30000);
   const [stockQuantity, setStockQuantity] = useState<number>(20);
-  const [warrantyMonths, setWarrantyMonths] = useState<number>(6);
-  const [preparationDelayHours, setPreparationDelayHours] = useState<number>(2);
-  const [stockLocationAddress, setStockLocationAddress] = useState('');
   // Photos envoyées au stockage Suguba (jamais une URL collée à la main, voir
   // BUG-011) — plusieurs désormais, la première étant la photo principale.
   const [images, setImages] = useState<string[]>([]);
@@ -98,9 +90,6 @@ export default function NewSupplierProductPage() {
       supplierPrice: Number(supplierPrice),
       resellerCommissionProposee: Number(partRevendeur) || 0,
       stockQuantity: Number(stockQuantity),
-      warrantyMonths: Number(warrantyMonths),
-      preparationDelayHours: Number(preparationDelayHours),
-      stockLocationAddress,
     });
 
     setIsSubmitting(false);
@@ -324,51 +313,12 @@ export default function NewSupplierProductPage() {
               )}
             </div>
 
-            {/* Garantie & Délai de préparation */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Garantie (en mois)
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  value={warrantyMonths}
-                  onChange={(e) => setWarrantyMonths(parseInt(e.target.value) || 0)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Délai de préparation (heures)
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  value={preparationDelayHours}
-                  onChange={(e) => setPreparationDelayHours(parseInt(e.target.value) || 1)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white"
-                />
-              </div>
-            </div>
-
-            {/* Localisation du stock */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Adresse & Localisation du Stock à Bamako *
-              </label>
-              <div className="relative">
-                <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
-                  type="text"
-                  required
-                  value={stockLocationAddress}
-                  onChange={(e) => setStockLocationAddress(e.target.value)}
-                  className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white"
-                />
-              </div>
-            </div>
+            {/* Garantie, délai de préparation et adresse de stock retirés le
+                2026-09-11 : le fournisseur les remplissait, mais aucune
+                colonne ne les enregistrait nulle part (voir
+                /api/products/sync) — 3 champs qui ne servaient à rien. À
+                réintroduire seulement avec de vraies colonnes en base et un
+                affichage réel côté client. */}
 
             {/* Submit button */}
             {/* « Soumettre pour modération » : faux depuis la publication

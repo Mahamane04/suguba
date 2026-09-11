@@ -86,7 +86,7 @@ export default function WhatsAppFloatingButton() {
             </button>
           </div>
 
-          <div className="text-center pt-1 border-t border-slate-100 text-[11px] text-slate-400">
+          <div className="text-center pt-1 border-t border-slate-100 text-[11px] text-slate-500">
             Tél : <strong>+223 89 46 00 00</strong>
           </div>
         </div>

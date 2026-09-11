@@ -194,7 +194,7 @@ export default function SupplierDashboardPage() {
                     </Button>
                     <Statut status={product.status} />
                     <div className="text-right">
-                      <span className="text-[11px] text-slate-400 block">Prix public</span>
+                      <span className="text-[11px] text-slate-500 block">Prix public</span>
                       <span className="text-xs font-bold text-slate-800">
                         {product.publicPrice ? `${product.publicPrice.toLocaleString('fr-FR')} F` : 'En attente'}
                       </span>
@@ -237,7 +237,7 @@ function Indicateur({ titre, valeur, note, accent }: {
     <div className="bg-white p-4 rounded-3xl border border-slate-200 space-y-1">
       <span className="text-[11px] font-bold text-slate-500 uppercase">{titre}</span>
       <p className={`text-2xl font-black ${accent ? 'text-suguba-brand' : 'text-slate-900'}`}>{valeur}</p>
-      <p className="text-[11px] text-slate-400">{note}</p>
+      <p className="text-[11px] text-slate-500">{note}</p>
     </div>
   );
 }

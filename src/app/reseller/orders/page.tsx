@@ -71,7 +71,7 @@ export default function ResellerOrdersPage() {
         {/* Orders List */}
         <div className="space-y-3">
           {filteredOrders.length === 0 ? (
-            <div className="bg-white rounded-3xl p-8 text-center text-slate-400 text-xs border border-slate-200">
+            <div className="bg-white rounded-3xl p-8 text-center text-slate-500 text-xs border border-slate-200">
               Aucune commande trouvée pour ce filtre.
             </div>
           ) : (
@@ -89,7 +89,7 @@ export default function ResellerOrdersPage() {
                       <span className="font-mono text-xs font-bold text-slate-900">
                         #{order.orderNumber}
                       </span>
-                      <span className="text-[11px] text-slate-400">•</span>
+                      <span className="text-[11px] text-slate-500">•</span>
                       <span className="text-[11px] text-slate-500 flex items-center">
                         <Calendar className="w-3 h-3 mr-1" />
                         {new Date(order.createdAt).toLocaleDateString('fr-FR')}
@@ -146,7 +146,7 @@ export default function ResellerOrdersPage() {
                     {/* Customer & Location */}
                     <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 text-xs space-y-1 sm:w-72">
                       <p className="font-bold text-slate-800 flex items-center">
-                        <span className="text-slate-400 mr-1.5 font-normal">Client :</span>
+                        <span className="text-slate-500 mr-1.5 font-normal">Client :</span>
                         {order.customerName} ({order.customerPhone})
                       </p>
                       <p className="text-slate-600 flex items-start">

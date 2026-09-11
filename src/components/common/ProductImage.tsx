@@ -22,7 +22,7 @@ export default function ProductImage({ compact = false, ...props }: Omit<ImagePr
   if (failed || !props.src) {
     return (
       <div
-        className={`flex flex-col items-center justify-center gap-2 bg-slate-100 text-slate-400 ${props.fill ? 'absolute inset-0' : ''} ${props.className || ''}`}
+        className={`flex flex-col items-center justify-center gap-2 bg-slate-100 text-slate-500 ${props.fill ? 'absolute inset-0' : ''} ${props.className || ''}`}
         style={props.fill ? undefined : { width: props.width, height: props.height }}
         role="img"
         aria-label="Photo indisponible"

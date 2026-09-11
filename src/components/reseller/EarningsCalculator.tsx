@@ -93,7 +93,7 @@ export default function EarningsCalculator({ showCta = true }: EarningsCalculato
             aria-label="Nombre de ventes réalisées par jour"
             className="suguba-range text-emerald-600"
           />
-          <div className="flex justify-between text-[11px] text-slate-400 font-semibold">
+          <div className="flex justify-between text-[11px] text-slate-500 font-semibold">
             <span>1 / jour (Débutant)</span>
             <span>5 / jour (Actif)</span>
             <span>10 / jour (Pro TikTok)</span>
@@ -121,7 +121,7 @@ export default function EarningsCalculator({ showCta = true }: EarningsCalculato
             aria-label="Commission moyenne par produit, en FCFA"
             className="suguba-range text-amber-500"
           />
-          <div className="flex justify-between text-[11px] text-slate-400 font-semibold">
+          <div className="flex justify-between text-[11px] text-slate-500 font-semibold">
             <span>2 000 F (Accessoires)</span>
             <span>4 000 F (Mode & Beauté)</span>
             <span>8 000 F (Électro & Solaire)</span>
@@ -149,7 +149,7 @@ export default function EarningsCalculator({ showCta = true }: EarningsCalculato
             aria-label="Nombre d'amis parrainés dans votre équipe"
             className="suguba-range text-slate-600"
           />
-          <div className="flex justify-between text-[11px] text-slate-400 font-semibold">
+          <div className="flex justify-between text-[11px] text-slate-500 font-semibold">
             <span>0 filleul</span>
             <span>10 filleuls</span>
             <span>20 filleuls</span>

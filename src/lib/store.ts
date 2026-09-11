@@ -260,9 +260,13 @@ export const sugubaStore = {
     images: string[];
     supplierPrice: number;
     stockQuantity: number;
-    warrantyMonths: number;
-    preparationDelayHours: number;
-    stockLocationAddress: string;
+    // Retirés du formulaire le 2026-09-11 : ces 3 champs n'ont jamais eu de
+    // colonne dans `products` (voir /api/products/sync) — un fournisseur les
+    // remplissait pour rien. Restent optionnels ici (valeurs par défaut, comme
+    // les autres lectures du catalogue) tant qu'aucune colonne n'existe.
+    warrantyMonths?: number;
+    preparationDelayHours?: number;
+    stockLocationAddress?: string;
     marketingPitch?: string;
     /** Part revendeur par vente choisie par le fournisseur (0 = Suguba décide). */
     resellerCommissionProposee?: number;
@@ -289,7 +293,7 @@ export const sugubaStore = {
       warrantyMonths: Number(data.warrantyMonths) || 0,
       preparationDelayHours: Number(data.preparationDelayHours) || 2,
       stockLocationType: 'supplier',
-      stockLocationAddress: data.stockLocationAddress,
+      stockLocationAddress: data.stockLocationAddress || '',
       status: 'submitted', // Passe obligatoirement en vérification Suguba
       marketingPitch: data.marketingPitch || `🔥 NOUVEAUTÉ : ${data.name}\nQualité garantie !\nLivraison disponible à Bamako.`,
       createdAt: new Date().toISOString(),

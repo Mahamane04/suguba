@@ -191,7 +191,7 @@ export default function AdminAnalyticsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-200 text-slate-400 font-bold uppercase text-[11px]">
+                <tr className="border-b border-slate-200 text-slate-500 font-bold uppercase text-[11px]">
                   <th className="pb-2">Commande</th>
                   <th className="pb-2">Produit</th>
                   <th className="pb-2">Client & Quartier</th>
