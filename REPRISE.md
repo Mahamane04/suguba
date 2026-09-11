@@ -8,8 +8,8 @@ vérifié en production). C'est LA fiche de référence : les documents de `docs
 ## Lot déployé le 11 septembre 2026 — REQ-013 / TASK-017
 
 **Lot REQ-013 / TASK-017 : commande confirmée après enregistrement atomique.**
-Le code local ajoute `/api/orders/create` ; `/api/orders/sync` ne sert plus qu'aux
-mises à jour internes authentifiées. Les trois formulaires (produit, revendeur,
+`/api/orders/create` (en production) crée les commandes ; `/api/orders/sync` ne sert plus
+qu'aux mises à jour internes authentifiées. Les trois formulaires (produit, revendeur,
 diaspora) attendent le reçu serveur avant tout succès ou démarrage de paiement.
 
 - Identifiant et numéro de commande, code secret et montants générés/calculés côté serveur.
@@ -34,8 +34,9 @@ depuis Vercel. Aucun paiement réel ni écriture de test en production n'a été
 ce lot. Après déploiement, recharger les anciens onglets : leur ancien parcours de création
 `/api/orders/sync` n'est plus accepté.
 
-Preuves et limites : `docs/qa/order-creation-tests.md`. Les sections suivantes décrivent
-encore la version déployée avant ce lot.
+Preuves et limites : `docs/qa/order-creation-tests.md`. Dans les sections suivantes, toute
+mention de création de commande via `/api/orders/sync` est antérieure à ce lot : la création
+passe désormais par `/api/orders/create`.
 
 ---
 
@@ -133,7 +134,7 @@ encore la version déployée avant ce lot.
    - L'admin ne fixe plus que le **prix de vente** (`/api/admin/products/price`), la
      commission est calculée ; un prix sous le plancher est refusé.
    - **Devis serveur unique** (`calculerCommande`) pour l'affichage (`/api/orders/quote`) et
-     l'enregistrement (`/api/orders/sync`). Remise promo prise sur la marge Suguba, jamais
+     l'enregistrement (`/api/orders/create` depuis le 2026-09-11, auparavant `/api/orders/sync`). Remise promo prise sur la marge Suguba, jamais
      sur la commission, et plafonnée pour ne **jamais vendre à perte**.
    - **Boutiques** : fournisseur `/s/<adresse>` (reconstruite, composant serveur),
      revendeur `/r/<code>` (sélection depuis le catalogue). Aperçus de partage Open Graph.
@@ -176,9 +177,10 @@ encore la version déployée avant ce lot.
 
 **Migrations** — vérifiées présentes en base par lecture (service_role) les 2026-09-10 et 11 :
 `migration-saspay.sql`, `migration-tarification.sql`, `migration-boutiques.sql`,
-`migration-livreurs-agence.sql`, `migration-part-revendeur.sql`. Les plus anciennes
-(`multi-role`, `suppliers`, `drivers`, `order-status`, `commission-safety-window`, `sav`) ont été
-appliquées en août ; `migration-suivi-commande.sql` vient d'une autre session, à reconfirmer.
+`migration-livreurs-agence.sql`, `migration-part-revendeur.sql`, `migration-order-creation.sql`
+(table `order_creation_requests` présente). Les plus anciennes (`multi-role`, `suppliers`,
+`drivers`, `order-status`, `commission-safety-window`, `sav`) ont été appliquées en août ;
+`migration-suivi-commande.sql` : table `track_attempts` vérifiée le 2026-09-11 (voir ci-dessous).
 
 Vérification rapide (lecture seule, service_role) : tenter un `select` sur les colonnes/tables
 attendues plutôt que de supposer. **Toute nouvelle migration doit être appliquée AVANT de pousser**
@@ -230,7 +232,11 @@ dépôt fournisseur, premier paiement SasPay réel.
 5. **Vérification d'identité** fournisseurs/livreurs.
 6. **Scores calculés** (livreurs, boutiques) — décision explicite de ne PAS les simuler tant
    qu'il n'y a pas de vraies transactions. Ne jamais initialiser un score à une valeur par défaut.
-7. **Audit mobile des tableaux de bord authentifiés** (fait sur les pages publiques seulement).
+7. **Refonte UI/UX** — audit complet de tous les rôles fait le 2026-09-11 :
+   `docs/ux/audit-ux-2026-09-11.md` (constats avec preuves, grille de satisfaction, plan en 10
+   phases, protocole de vérification). **Phase 0 (confiance) à faire en premier** : 12 écrans
+   affichent le compte démo « Moussa » (`state.currentUser`), les retraits affichent 184 000 F
+   fictifs, la page diaspora promet une garantie et un taux BCEAO sans mécanisme.
 8. ~~**Versement des commissions**~~ — code fait le 2026-09-09 via SasPay Payouts. Reste à
    valider avec de vraies clés : aucun virement réel n'a encore été déclenché.
 9. **Revendeurs payés en Wave** — `payouts.payment_method` accepte encore `wave`, que SasPay
