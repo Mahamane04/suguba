@@ -45,7 +45,11 @@ export default function DriverDashboardPage() {
 
   const myDeliveredOrders = state.orders.filter(o => o.status === 'delivered');
 
-  const totalCollectedCash = myDeliveredOrders.reduce((acc, o) => acc + o.totalAmount, 0);
+  // Seulement ce que le livreur a réellement encaissé : une commande déjà
+  // payée en ligne (carte diaspora, mobile money) n'entre pas dans sa sacoche.
+  const totalCollectedCash = myDeliveredOrders
+    .filter((o) => !o.paymentCollected)
+    .reduce((acc, o) => acc + o.totalAmount, 0);
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
@@ -98,7 +102,7 @@ export default function DriverDashboardPage() {
           <div className="flex items-center justify-between">
             <h2 className="font-black text-base text-slate-900 flex items-center">
               <Navigation className="w-4 h-4 mr-2 text-amber-600" />
-              <span>Mes Courses Actives ({myAssignedOrders.length})</span>
+              <span>Mes courses en cours ({myAssignedOrders.length})</span>
             </h2>
           </div>
 
@@ -155,13 +159,16 @@ export default function DriverDashboardPage() {
                     </div>
 
                     {/* Step 1: Pickup Location */}
-                    <div className="p-3 bg-blue-50/60 rounded-2xl border border-blue-100 text-xs space-y-1">
-                      <div className="flex items-center space-x-1.5 text-blue-900 font-bold">
-                        <Package className="w-4 h-4 text-blue-700" />
-                        <span>1. Point de Récupération du Colis :</span>
+                    {/* Retrait : le fournisseur réel. L'ancien texte affichait
+                        « Hub Central Suguba (ACI 2000) », ou l'adresse de stock
+                        — toujours « Bamako », la base ne l'enregistre pas. */}
+                    <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-1">
+                      <div className="flex items-center space-x-1.5 text-slate-900 font-bold">
+                        <Package className="w-4 h-4 text-slate-600" />
+                        <span>1. Récupérer le colis</span>
                       </div>
                       <p className="text-slate-700 pl-5">
-                        {product?.stockLocationType === 'suguba_hub' ? 'Hub Central Suguba (ACI 2000)' : product?.stockLocationAddress || 'Entrepôt Fournisseur'}
+                        Chez <strong>{product?.supplierName || 'le fournisseur'}</strong>
                       </p>
                     </div>
 
@@ -169,7 +176,7 @@ export default function DriverDashboardPage() {
                     <div className="p-3 bg-emerald-50/60 rounded-2xl border border-emerald-100 text-xs space-y-1">
                       <div className="flex items-center space-x-1.5 text-emerald-900 font-bold">
                         <MapPin className="w-4 h-4 text-emerald-700" />
-                        <span>2. Destination Client :</span>
+                        <span>2. Livrer au client</span>
                       </div>
                       <p className="font-bold text-slate-900 pl-5">
                         {order.customerName} — <span className="font-mono text-emerald-800">{order.customerPhone}</span>
@@ -191,10 +198,10 @@ export default function DriverDashboardPage() {
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
                       <button
                         onClick={() => setSelectedOrderForMap(order)}
-                        className="py-3 px-2 bg-blue-50 hover:bg-blue-100 text-blue-900 font-bold border border-blue-200 rounded-2xl text-[11px] flex items-center justify-center space-x-1 transition-colors"
+                        className="py-3 px-2 bg-white hover:bg-slate-50 text-slate-800 font-bold border border-slate-200 rounded-2xl text-xs flex items-center justify-center space-x-1 transition-colors"
                       >
-                        <Compass className="w-3.5 h-3.5 text-blue-700" />
-                        <span>GPS</span>
+                        <Compass className="w-4 h-4 text-slate-600" />
+                        <span>Itinéraire</span>
                       </button>
 
                       <button
@@ -217,8 +224,9 @@ export default function DriverDashboardPage() {
                         onClick={() => setSelectedOrderForOtp(order)}
                         className="py-3 px-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-2xl text-[11px] shadow-md shadow-amber-600/20 flex items-center justify-center space-x-1 transition-transform active:scale-95"
                       >
-                        <KeyRound className="w-3.5 h-3.5 stroke-[2.5]" />
-                        <span>OTP</span>
+                        <KeyRound className="w-4 h-4 stroke-[2.5]" />
+                        {/* « OTP » : jargon. Le client parle de son « code secret ». */}
+                        <span>Code client</span>
                       </button>
                     </div>
 
@@ -232,10 +240,13 @@ export default function DriverDashboardPage() {
         {/* Completed Runs History */}
         <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs space-y-4">
           <h2 className="font-black text-base text-slate-900">
-            Historique des Livraisons Réussies
+            Livraisons effectuées
           </h2>
 
           <div className="divide-y divide-slate-100">
+            {myDeliveredOrders.length === 0 && (
+              <p className="text-sm text-slate-500 py-2">Aucune livraison effectuée pour le moment.</p>
+            )}
             {myDeliveredOrders.map((order) => (
               <div key={order.id} className="py-3 flex items-center justify-between">
                 <div>
@@ -258,8 +269,8 @@ export default function DriverDashboardPage() {
                     <span className="text-xs font-black text-emerald-700 block">
                       {order.totalAmount.toLocaleString('fr-FR')} F
                     </span>
-                    <span className="text-[10px] text-emerald-600 font-bold">
-                      ✅ OTP Validé
+                    <span className="text-[11px] text-emerald-700 font-bold">
+                      {order.paymentCollected ? 'Payé en ligne' : 'Encaissé'}
                     </span>
                   </div>
                 </div>

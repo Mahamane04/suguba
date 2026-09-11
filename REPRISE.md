@@ -276,7 +276,15 @@ dépôt fournisseur, premier paiement SasPay réel.
    locales et « Recharger le jeu de démo » retirés, plus de violet/indigo/bleu ni de 10 px.
    Vérifié avec une session admin jetable, sans aucune action sur les retraits.
    **Reste admin** : les commissions « verrouillées » lisent encore la mémoire locale ;
-   découpage « Aujourd'hui / Catalogue / Réglages » à faire. **Suite : phase 7 (livreur).**
+   découpage « Aujourd'hui / Catalogue / Réglages » à faire.
+   **Phase 7 (livreur) : première passe faite le 2026-09-11** — portefeuille refait sur des
+   données réelles : rémunération = réglage admin `remunerationLivreur` × livraisons (exposé
+   seulement au livreur via `/api/driver/me` → `remunerationParLivraison`) ; retirés : 1 000 F
+   et « indemnité carburant » en dur, bouton « Déclarer mon versement » sans effet, adresse
+   « Hub ACI 2000 / Clinique Pasteur / avant 19h » et « compte marchand Wave », inventés.
+   Espèces encaissées = commandes livrées NON payées en ligne (elles comptaient tout). Courses :
+   point de retrait = fournisseur réel (« Hub Central » en dur retiré), « OTP » → « Code
+   client », plus de bleu ni de 10 px. **Suite : phase 8 (qualité transverse).**
    Produit « [DÉMO] Blender » retiré de la vente (statut `rejected`) le 2026-09-11 à la demande
    de l'utilisateur. ⚠️ 4 autres « [DÉMO] » restent en vente (ventilateur, kit solaire,
    batterie, écouteurs) — en attente de sa décision.
