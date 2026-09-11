@@ -292,7 +292,7 @@ export default function ResellerDashboardPage() {
         <div className="space-y-2.5">
           <h2 className="font-black text-sm text-slate-900">Outils de vente</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <Raccourci href="/reseller/story-generator" icone={<Sparkles className="w-5 h-5" />} titre="Studio stories" sousTitre="Créer un visuel 9:16" />
+            <Raccourci href="/reseller/marketing" icone={<Sparkles className="w-5 h-5" />} titre="Affiches statut" sousTitre="Prêtes à publier" />
             <Raccourci href="/reseller/badge" icone={<QrCode className="w-5 h-5" />} titre="Ma carte & QR" sousTitre="Votre carte revendeur" />
             <Raccourci href="/reseller/calculator" icone={<Calculator className="w-5 h-5" />} titre="Simulateur" sousTitre="Estimer vos gains" />
           </div>

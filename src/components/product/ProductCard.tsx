@@ -3,11 +3,12 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Carrousel from '@/components/product/Carrousel';
+import AfficheModal from '@/components/product/AfficheModal';
 import Button from '@/components/ui/Button';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 import { partagerProduit, prechargerImage, useCodeRevendeur } from '@/lib/partage';
 import type { Product } from '@/types';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Image as ImageIcon } from 'lucide-react';
 
 export interface ProduitCarte {
   id: string;
@@ -65,6 +66,7 @@ export default function ProductCard({
 }) {
   const monCode = useCodeRevendeur();
   const [preparation, setPreparation] = useState(false);
+  const [afficheOuverte, setAfficheOuverte] = useState(false);
   const lien = `/p/${produit.slug}${refCode ? `?ref=${encodeURIComponent(refCode)}` : ''}`;
   const enRupture = produit.enStock === false;
 
@@ -90,11 +92,18 @@ export default function ProductCard({
       disabled={preparation}
       aria-label={`Partager ${produit.nom} sur WhatsApp`}
       className={`h-9 rounded-2xl bg-[#25D366] hover:bg-[#1ebe5b] text-white font-bold text-xs inline-flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] disabled:opacity-70 ${
-        pleineLargeur ? 'w-full' : 'px-3 shrink-0'
+        pleineLargeur ? 'flex-1 min-w-0' : 'px-3 shrink-0'
       }`}
     >
       {preparation ? <Loader2 className="w-4 h-4 animate-spin" /> : <WhatsAppIcon className="w-4 h-4" />}
-      <span className={pleineLargeur ? '' : 'hidden sm:inline'}>{pleineLargeur ? 'Partager sur WhatsApp' : 'Partager'}</span>
+      {pleineLargeur ? (
+        <>
+          <span className="sm:hidden">Partager</span>
+          <span className="hidden sm:inline">Partager sur WhatsApp</span>
+        </>
+      ) : (
+        <span className="hidden sm:inline">Partager</span>
+      )}
     </button>
   );
 
@@ -131,7 +140,19 @@ export default function ProductCard({
 
         <div className="mt-auto pt-1.5 space-y-2">
           {partageEnAvant ? (
-            boutonPartage(true)
+            // Catalogue revendeur : partage direct + affiche pour le statut.
+            <div className="flex items-center gap-2">
+              {boutonPartage(true)}
+              <button
+                type="button"
+                onClick={() => setAfficheOuverte(true)}
+                aria-label={`Créer une affiche de ${produit.nom} pour mon statut WhatsApp`}
+                title="Affiche pour mon statut"
+                className="h-9 w-9 shrink-0 rounded-2xl border border-slate-200 hover:bg-slate-50 text-slate-700 inline-flex items-center justify-center"
+              >
+                <ImageIcon className="w-4 h-4" />
+              </button>
+            </div>
           ) : (
             <div className="flex items-center gap-2">
               <Button href={lien} variant="secondary" size="sm" className="flex-1 !h-9 !py-0">
@@ -143,6 +164,13 @@ export default function ProductCard({
           {children}
         </div>
       </div>
+
+      {afficheOuverte && (
+        <AfficheModal
+          produit={{ nom: produit.nom, prix: produit.prix, slug: produit.slug, images: produit.images }}
+          onClose={() => setAfficheOuverte(false)}
+        />
+      )}
     </article>
   );
 }

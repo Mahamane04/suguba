@@ -307,6 +307,22 @@ curl -s -H "Authorization: Bearer $KEY" https://api.saspay.me/api/v1/merchant-ba
   « Produits » de la barre du bas) ou bouton « Photos » du tableau de bord fournisseur. Route
   dédiée `/api/products/images` : ne touche qu'aux photos, n'accepte que des URL de notre
   stockage `product-images`, fournisseur limité à ses produits, statut inchangé.
+- **Les outils marketing revendeur affichaient de fausses données** (corrigé le 2026-09-11).
+  `BannerGeneratorModal` et `/reseller/story-generator` prenaient le revendeur dans les données
+  de démonstration (`state.resellers[0]`) : code et **téléphone d'un autre** sur l'affiche, ventes
+  non attribuées. La page Marketing proposait des « kits » pour des produits inexistants (Smart TV
+  145 000 F, kit solaire 65 000 F) et une garantie inventée ; le studio stories envoyait le lien
+  du revendeur à quickchart.io. Remplacés par `src/lib/affiche.ts` (canvas 1080×1920 ou carré,
+  sans bibliothèque, jamais de téléphone) + `AfficheModal` (aperçu PUIS partage : générer au
+  clic ferait refuser le partage sur iPhone). `/reseller/story-generator` redirige vers
+  `/reseller/marketing`. Bouton « affiche » sur les cartes du catalogue revendeur.
+- **`/api/auth/me` renvoyait 401 à tout visiteur non connecté** (corrigé le 2026-09-11) : elle
+  figurait dans les routes « session requise » du middleware alors qu'elle sert précisément à
+  répondre `{ authenticated: false }`. Une erreur rouge dans la console, sur chaque page.
+- **Tester une page à rôle en local sans exposer le vrai `SESSION_SECRET`** : lancer le serveur
+  avec un secret jetable (`env SESSION_SECRET=… npm run dev`), signer la session de test avec
+  lui, et l'ouvrir sur `127.0.0.1` (cookies séparés de `localhost`). Un jeton signé avec le vrai
+  secret serait valable en production : ne jamais l'écrire dans une conversation.
 - **`payouts.status` n'accepte que `pending`/`processing`/`completed`/`rejected`** (contrainte
   CHECK). Écrire `failed` ferait échouer la mise à jour — même famille de piège que
   l'incohérence de statut des commandes corrigée en août. Un versement raté s'écrit

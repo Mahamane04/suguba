@@ -53,9 +53,12 @@ const API_ROLE_BY_PREFIX: { prefix: string; role: SugubaRole }[] = [
 /**
  * Routes API exigeant une session valide, quel que soit le rôle.
  */
+// ⚠️ PAS /api/auth/me : elle sert justement à dire « non connecté » à un
+// visiteur ({ authenticated: false }). Bloquée ici, elle renvoyait 401 à chaque
+// visiteur, sur chaque page (erreur rouge dans la console), sans rien protéger :
+// elle ne lit que la session du demandeur lui-même.
 const API_SESSION_REQUISE = [
   '/api/auth/complete-profile',
-  '/api/auth/me',
   '/api/auth/refresh-session',
   '/api/auth/request-role',
   '/api/orders/feed',
@@ -217,7 +220,6 @@ export const config = {
     '/api/reseller/:path*',
     '/api/payouts/:path*',
     '/api/auth/complete-profile',
-    '/api/auth/me',
     '/api/auth/refresh-session',
     '/api/auth/request-role',
     // `/api/orders/feed` seulement, jamais `/api/orders/:path*` : la création
