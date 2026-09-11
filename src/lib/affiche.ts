@@ -87,6 +87,9 @@ export async function genererAffiche(
   code: string | null,
   { theme = 'vert', format = 'story' }: { theme?: ThemeAffiche; format?: FormatAffiche } = {},
 ): Promise<File> {
+  if (!(p.prix > 0)) {
+    throw new Error("Ce produit n'est pas encore en vente (prix non fixé) : pas d'affiche possible.");
+  }
   const L = 1080;
   const H = format === 'story' ? 1920 : 1080;
   const marge = 60;

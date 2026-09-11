@@ -32,7 +32,10 @@ export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [search, setSearch] = useState('');
 
-  const approvedProducts = state.products.filter(p => p.status === 'approved');
+  // Prix > 0 en plus du statut : un produit sans prix n'est pas en vente, même
+  // si la mémoire locale du téléphone le croit « approuvé » (bug du 2026-09-11,
+  // partage à « 0 F » vers un lien « Produit introuvable »).
+  const approvedProducts = state.products.filter(p => p.status === 'approved' && p.publicPrice > 0);
   const categories = ['all', ...Array.from(new Set(approvedProducts.map(p => p.category)))];
 
   const requete = search.trim().toLowerCase();

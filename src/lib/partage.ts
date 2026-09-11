@@ -67,6 +67,12 @@ export function prechargerImage(url: string | undefined, nom: string): Promise<F
 }
 
 export async function partagerProduit(p: ProduitAPartager, refCode?: string | null): Promise<ResultatPartage> {
+  // Un produit sans prix n'est pas en vente : son lien mène à « Produit
+  // introuvable » et le message annoncerait « 0 F » (bug du 2026-09-11).
+  if (!(p.prix > 0)) {
+    alert("Ce produit n'est pas encore en vente (prix non fixé) : il ne peut pas être partagé.");
+    return 'annule';
+  }
   const url = lienProduit(p.slug, refCode);
   const texte = texteProduit(p, url);
   const nav = navigator as Navigator & { canShare?: (donnees: ShareData) => boolean };

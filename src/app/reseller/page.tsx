@@ -75,7 +75,8 @@ export default function ResellerDashboardPage() {
 
   // /api/orders/feed ne renvoie au revendeur que SES propres ventes.
   const myOrders = state.orders;
-  const approvedProducts = state.products.filter(p => p.status === 'approved');
+  // Prix > 0 : un produit sans prix n'est pas en vente (voir src/app/page.tsx).
+  const approvedProducts = state.products.filter(p => p.status === 'approved' && p.publicPrice > 0);
 
   const ventesLivrees = moi?.successfulOrdersCount ?? myOrders.filter(o => o.status === 'delivered').length;
   const progression = palier.prochain ? Math.min(100, Math.round((ventesLivrees / palier.prochain) * 100)) : 100;

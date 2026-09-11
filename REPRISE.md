@@ -340,6 +340,17 @@ curl -s -H "Authorization: Bearer $KEY" https://api.saspay.me/api/v1/merchant-ba
   met jamais `/api/` en cache, ne précharge que l'accueil, plafonne pages (40) et photos (200),
   et supprime les anciens caches à l'activation. Le SW n'est enregistré qu'en production : pour
   le tester en local, l'enregistrer à la main (`navigator.serviceWorker.register('/sw.js')`).
+- **Un produit pas en vente pouvait être partagé à « 0 F »** (corrigé le 2026-09-11, signalé
+  par l'utilisateur avec capture). Deux bugs combinés :
+  1. `/admin/products/new` enregistrait via `/api/products/sync` — qui crée TOUJOURS un produit
+     `submitted` à prix 0 depuis la tarification automatique — puis affichait « Produit publié ! ».
+     Le formulaire appelle désormais `/api/admin/products/price` (commission calculée, prix sous
+     le plancher refusé avec le prix minimal) et dit la vérité s'il n'a pas pu publier.
+  2. `/p/[slug]` cherche le produit dans la mémoire locale SANS regarder son statut ; sur le
+     téléphone de l'admin (qui y charge les produits en attente), la page s'affichait à 0 F avec
+     le bouton de partage. Le destinataire, lui, voyait « Produit introuvable ». La page affiche
+     désormais « Pas encore en vente » (ni commande ni partage), et le partage comme l'affiche
+     refusent un produit sans prix. Règle : **« en vente » = `approved` ET prix > 0**, partout.
 - **`payouts.status` n'accepte que `pending`/`processing`/`completed`/`rejected`** (contrainte
   CHECK). Écrire `failed` ferait échouer la mise à jour — même famille de piège que
   l'incohérence de statut des commandes corrigée en août. Un versement raté s'écrit

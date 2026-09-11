@@ -162,6 +162,40 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
     );
   }
 
+  // Produit connu du téléphone mais PAS en vente (en attente de prix, refusé…).
+  // Bug du 2026-09-11 : sur le téléphone de l'admin, le tableau de bord charge
+  // les produits en attente dans la mémoire locale ; cette page, qui cherche
+  // le produit dans cette mémoire sans regarder son statut, l'affichait à
+  // « 0 F » avec le bouton de partage. Le lien partagé menait chez le
+  // destinataire à « Produit introuvable ». Ni commande ni partage ici.
+  if (!(product.status === 'approved' && product.publicPrice > 0)) {
+    return (
+      <div className="min-h-screen flex flex-col bg-slate-50">
+        <Header />
+        <main className="flex-1 flex items-center justify-center px-4 py-16">
+          <div className="max-w-md w-full text-center bg-white rounded-3xl border border-slate-200 p-8 space-y-4">
+            <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
+              <Clock className="w-7 h-7" />
+            </div>
+            <h1 className="text-lg font-black text-slate-900">Pas encore en vente</h1>
+            <p className="text-sm text-slate-500">
+              « {product.name} » attend son prix de vente. Tant qu&apos;il n&apos;est pas publié, il ne peut être ni commandé ni partagé.
+            </p>
+            <p className="text-xs text-slate-400">
+              Administrateur : fixez son prix depuis « Modération » sur le tableau de bord.
+            </p>
+            <Link
+              href="/"
+              className="inline-flex items-center justify-center w-full py-3 px-4 rounded-2xl bg-slate-900 hover:bg-black text-white font-bold text-sm transition-colors"
+            >
+              Voir le catalogue
+            </Link>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   const handleApplyPromo = () => {
     setPromoSoumis(promoCodeInput.trim().toUpperCase());
   };

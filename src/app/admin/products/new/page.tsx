@@ -41,7 +41,6 @@ export default function AdminNewProductPage() {
   const [supplierName, setSupplierName] = useState('');
   const [supplierPrice, setSupplierPrice] = useState<number>(0);
   const [publicPrice, setPublicPrice] = useState<number>(0);
-  const [resellerCommission, setResellerCommission] = useState<number>(0);
   const [stockQuantity, setStockQuantity] = useState<number>(10);
 
   const [images, setImages] = useState<string[]>([]);
@@ -53,12 +52,17 @@ export default function AdminNewProductPage() {
   const [isSuccess, setIsSuccess] = useState(false);
   const [submitError, setSubmitError] = useState('');
 
-  // Prix public = prix fournisseur + commission revendeur + marge Suguba.
-  // La marge est donc le reste, jamais une saisie libre : la laisser saisir
-  // permettrait d'enregistrer un produit dont les trois montants ne
-  // s'additionnent pas au prix réellement facturé au client.
-  const sugubaMargin = publicPrice - supplierPrice - resellerCommission;
-  const margeInvalide = publicPrice > 0 && sugubaMargin < 0;
+  // Commission calculée par le moteur de tarification (src/lib/pricing.ts),
+  // renvoyée par /api/admin/products/price à la publication.
+  //
+  // Bug corrigé le 2026-09-11 : ce formulaire enregistrait le produit via
+  // /api/products/sync — qui, depuis la tarification automatique, crée
+  // TOUJOURS un produit « submitted » à prix 0 — puis affichait « Produit
+  // publié ! ». Le produit restait invisible, et partagé, il annonçait « 0 F »
+  // avec un lien « Produit introuvable ». La publication passe désormais par
+  // la route de tarification, seule habilitée à fixer un prix et à approuver.
+  const [commissionCalculee, setCommissionCalculee] = useState<number | null>(null);
+  const [publieOk, setPublieOk] = useState(false);
 
   const slugify = (value: string) =>
     value.toLowerCase()
@@ -74,8 +78,8 @@ export default function AdminNewProductPage() {
       setSubmitError('Nom, description, prix public et stock sont obligatoires.');
       return;
     }
-    if (margeInvalide) {
-      setSubmitError('La marge Suguba est négative : le prix public doit couvrir le prix fournisseur et la commission revendeur.');
+    if (!supplierPrice) {
+      setSubmitError("Indiquez le prix fournisseur : c'est lui qui détermine le prix minimal et la commission.");
       return;
     }
     if (isUploadingImage) {
@@ -93,12 +97,10 @@ export default function AdminNewProductPage() {
       description,
       images,
       supplierPrice: Number(supplierPrice),
-      publicPrice: Number(publicPrice),
-      resellerCommission: Number(resellerCommission),
       stockQuantity: Number(stockQuantity),
-      // Publié immédiatement : c'est l'admin qui tient la file de modération,
-      // se soumettre une fiche à soi-même n'aurait aucun sens.
-      status: 'approved',
+      // Créé en attente ; la publication (prix + commission) suit juste après
+      // via /api/admin/products/price.
+      status: 'submitted',
       supplierId: null,
       supplierName: supplierName || 'Suguba',
       createdAt: new Date().toISOString(),
@@ -111,12 +113,33 @@ export default function AdminNewProductPage() {
         body: JSON.stringify({ product: produit }),
       });
       const json = await res.json();
-      setIsSubmitting(false);
-
       if (!res.ok || !json.success) {
+        setIsSubmitting(false);
         setSubmitError(json.error || "Le produit n'a pas pu être enregistré.");
         return;
       }
+
+      // Publication : prix de vente + commission calculée, approbation.
+      const resPrix = await fetch('/api/admin/products/price', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: produit.id, publicPrice: Number(publicPrice) }),
+      });
+      const jsonPrix = await resPrix.json();
+      setIsSubmitting(false);
+      if (!resPrix.ok || !jsonPrix.success) {
+        // Enregistré mais pas publié : on le dit franchement, le produit reste
+        // dans « Modération » pour être tarifé.
+        setPublieOk(false);
+        setSubmitError(
+          `Produit enregistré, mais PAS publié : ${jsonPrix.error || 'prix refusé.'} ` +
+          'Corrigez le prix depuis « Modération » sur le tableau de bord.',
+        );
+        setIsSuccess(true);
+        return;
+      }
+      setCommissionCalculee(Number(jsonPrix.tarif?.commission) || 0);
+      setPublieOk(true);
       setIsSuccess(true);
     } catch (err) {
       setIsSubmitting(false);
@@ -126,7 +149,8 @@ export default function AdminNewProductPage() {
 
   const resetForm = () => {
     setName(''); setDescription(''); setSupplierName('');
-    setSupplierPrice(0); setPublicPrice(0); setResellerCommission(0); setStockQuantity(10);
+    setSupplierPrice(0); setPublicPrice(0); setStockQuantity(10);
+    setCommissionCalculee(null); setPublieOk(false);
     setImages([]); setUploaderKey((k) => k + 1);
     setIsSuccess(false); setSubmitError('');
   };
@@ -160,9 +184,13 @@ export default function AdminNewProductPage() {
               <CheckCircle2 className="w-10 h-10" />
             </div>
             <div>
-              <h2 className="text-xl font-black text-slate-900">Produit publié !</h2>
+              <h2 className="text-xl font-black text-slate-900">
+                {publieOk ? 'Produit publié !' : 'Produit enregistré, pas encore publié'}
+              </h2>
               <p className="text-xs text-slate-600 mt-1">
-                Il est désormais visible dans le catalogue public et partageable par les revendeurs.
+                {publieOk
+                  ? `Il est visible dans le catalogue et partageable. Commission revendeur calculée : ${(commissionCalculee ?? 0).toLocaleString('fr-FR')} F.`
+                  : submitError}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 justify-center">
@@ -243,9 +271,9 @@ export default function AdminNewProductPage() {
                 Économie du produit
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Prix fournisseur (FCFA)</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Prix fournisseur (FCFA) *</label>
                   <input
                     type="number"
                     min={0}
@@ -269,32 +297,15 @@ export default function AdminNewProductPage() {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Commission revendeur (FCFA)</label>
-                  <input
-                    type="number"
-                    min={0}
-                    step={500}
-                    value={resellerCommission}
-                    onChange={(e) => setResellerCommission(parseInt(e.target.value) || 0)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-emerald-700 focus:bg-white"
-                  />
-                </div>
               </div>
 
-              <div className={`p-3 rounded-2xl border text-xs font-bold flex items-center justify-between ${
-                margeInvalide
-                  ? 'bg-red-50 border-red-200 text-red-700'
-                  : 'bg-slate-50 border-slate-200 text-slate-700'
-              }`}>
-                <span className="flex items-center gap-1.5">
-                  {margeInvalide && <AlertTriangle className="w-4 h-4" />}
-                  Marge Suguba (calculée)
+              <p className="p-3 rounded-2xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600 flex items-start gap-1.5">
+                <AlertTriangle className="w-4 h-4 text-slate-400 shrink-0" />
+                <span>
+                  La commission revendeur est calculée automatiquement à partir des réglages économiques.
+                  Un prix trop bas pour couvrir les coûts est refusé, avec le prix minimal indiqué.
                 </span>
-                <span className={margeInvalide ? 'text-red-700' : 'text-slate-900'}>
-                  {sugubaMargin.toLocaleString('fr-FR')} FCFA
-                </span>
-              </div>
+              </p>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">Quantité en stock *</label>
@@ -317,7 +328,7 @@ export default function AdminNewProductPage() {
 
             <button
               type="submit"
-              disabled={isSubmitting || margeInvalide}
+              disabled={isSubmitting}
               className="w-full bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white font-bold py-3.5 px-4 rounded-2xl text-xs shadow-lg shadow-blue-800/20 flex items-center justify-center space-x-2 transition-transform active:scale-[0.98]"
             >
               <PackagePlus className="w-4 h-4" />
