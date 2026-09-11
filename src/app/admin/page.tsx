@@ -233,6 +233,37 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
+        {/* Aperçu — se connecter en tant que (2026-09-11, sorti de la modale
+            « Comptes admin » où l'utilisateur ne l'a pas retrouvé lors d'un
+            test filmé : direct sur le tableau de bord, impossible à manquer. */}
+        <div className="bg-amber-50 border border-amber-200 p-4 sm:p-5 rounded-3xl space-y-3">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-amber-400 text-amber-950 flex items-center justify-center shrink-0">
+              <Eye className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-sm font-black text-amber-950">Tester un profil</h2>
+              <p className="text-[11px] text-amber-800">
+                Ouvre l&apos;espace choisi avec un compte de test dédié (jamais le vôtre). ⚠️ Les
+                actions faites en aperçu écrivent pour de vrai — à nettoyer vous-même après coup.
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {ROLES_APERCU.map(({ role, libelle, chemin }) => (
+              <button
+                key={role}
+                type="button"
+                disabled={apercuEnCours !== null}
+                onClick={() => ouvrirApercu(role, chemin)}
+                className="px-3 py-2.5 bg-white hover:bg-amber-100 disabled:opacity-50 border border-amber-300 text-amber-950 rounded-xl text-xs font-bold transition-colors"
+              >
+                {apercuEnCours === role ? '...' : libelle}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Action Feedback Banner */}
         {actionFeedback && (
           <div className={`p-4 rounded-2xl flex items-center justify-between gap-3 text-xs font-bold ${
@@ -909,33 +940,6 @@ export default function AdminDashboardPage() {
                 >
                   {promoteBusy ? '...' : 'Promouvoir'}
                 </button>
-              </div>
-            </div>
-
-            {/* Section 1ter : Aperçu — se connecter en tant que */}
-            <div className="space-y-3.5 bg-amber-50/70 p-4 rounded-2xl border border-amber-200">
-              <h4 className="font-black text-xs text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
-                <Eye className="w-4 h-4 text-amber-700" />
-                <span>Aperçu — se connecter en tant que</span>
-              </h4>
-              <p className="text-[11px] text-amber-900">
-                Ouvre l&apos;espace choisi avec un compte de test dédié (jamais le vôtre), pour
-                vérifier vous-même ce qu&apos;un nouveau compte voit. Un bandeau reste affiché tant
-                que l&apos;aperçu est ouvert. ⚠️ Les actions faites en aperçu (déposer un produit,
-                passer une commande…) écrivent pour de vrai — à nettoyer vous-même après coup.
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {ROLES_APERCU.map(({ role, libelle, chemin }) => (
-                  <button
-                    key={role}
-                    type="button"
-                    disabled={apercuEnCours !== null}
-                    onClick={() => { setShowConfigModal(false); ouvrirApercu(role, chemin); }}
-                    className="px-3 py-2.5 bg-white hover:bg-amber-100 disabled:opacity-50 border border-amber-300 text-amber-950 rounded-xl text-xs font-bold transition-colors"
-                  >
-                    {apercuEnCours === role ? '...' : libelle}
-                  </button>
-                ))}
               </div>
             </div>
 

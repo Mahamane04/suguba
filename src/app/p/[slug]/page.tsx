@@ -272,9 +272,36 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
       });
   };
 
+  // Corrige un défaut signalé par vidéo : ouvrir une fiche produit ne laissait
+  // aucun moyen de revenir à la boutique — le Header du site n'a qu'un logo et
+  // un menu, jamais de flèche retour. `history.length` distingue une vraie
+  // navigation interne (bouton produit, lien partagé cliqué depuis l'app) d'un
+  // lien WhatsApp ouvert directement dans un onglet neuf, où il n'y a rien
+  // dans l'historique vers quoi revenir.
+  const revenirEnArriere = () => {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
+      router.back();
+    } else {
+      router.push('/');
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 pb-32 md:pb-16">
       <Header />
+
+      <div className="sticky top-16 z-40 bg-white/95 backdrop-blur-xs border-b border-slate-100">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+          <button
+            type="button"
+            onClick={revenirEnArriere}
+            className="h-11 -ml-1 pl-1 pr-3 inline-flex items-center gap-1.5 text-sm font-bold text-slate-700 hover:text-slate-900 active:text-slate-950"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Retour
+          </button>
+        </div>
+      </div>
 
       <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
         
