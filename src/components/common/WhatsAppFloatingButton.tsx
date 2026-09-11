@@ -2,13 +2,21 @@
 
 import React, { useState } from 'react';
 import { MessageCircle, X, ShoppingBag, Users, Phone, HelpCircle } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 import { useClavierOuvert } from '@/lib/useClavierOuvert';
+
+// Pages où le bouton gêne plus qu'il n'aide : la fiche produit a sa propre
+// barre d'achat en bas (le bouton la recouvrait), et l'admin est l'équipe
+// Suguba elle-même.
+const MASQUE_SUR = ['/p/', '/admin'];
 
 export default function WhatsAppFloatingButton() {
   const [isOpen, setIsOpen] = useState(false);
+  const pathname = usePathname() || '';
   // Masqué pendant la saisie : même décalage que la barre du bas sur iPhone
   // après fermeture du clavier (voir src/lib/useClavierOuvert.ts).
   const clavierOuvert = useClavierOuvert();
+  if (MASQUE_SUR.some((prefixe) => pathname.startsWith(prefixe))) return null;
   const supportPhone = '22389460000';
 
   const handleOpenWhatsApp = (topic: string) => {
@@ -37,7 +45,7 @@ export default function WhatsAppFloatingButton() {
               </div>
               <div>
                 <h4 className="font-bold text-slate-900">Assistance Suguba</h4>
-                <p className="text-[10px] text-emerald-600 font-bold">En ligne • Réponse en 5 min</p>
+                <p className="text-[10px] text-emerald-600 font-bold">Réponse sur WhatsApp</p>
               </div>
             </div>
             <button 

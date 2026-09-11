@@ -6,6 +6,7 @@ import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
 import { useSugubaStore, sugubaStore } from '@/lib/store';
+import { useToast } from '@/components/ui/Toast';
 import { 
   ShieldCheck, CheckCircle2, AlertTriangle, RefreshCw, 
   Download, ArrowLeft, Server, Lock, Smartphone, Database, Check, Sparkles, Truck, DollarSign
@@ -13,6 +14,7 @@ import {
 
 export default function LaunchChecklistPage() {
   const state = useSugubaStore();
+  const { confirmer } = useToast();
   const [dataCleaned, setDataCleaned] = useState(false);
   const [backupDownloaded, setBackupDownloaded] = useState(false);
 
@@ -79,8 +81,13 @@ export default function LaunchChecklistPage() {
     setTimeout(() => setBackupDownloaded(false), 3000);
   };
 
-  const handleCleanDataForProduction = () => {
-    if (confirm("⚠️ Confirmation : Voulez-vous réinitialiser et nettoyer les commandes de test pour démarrer la production ?")) {
+  const handleCleanDataForProduction = async () => {
+    if (await confirmer({
+      titre: 'Nettoyer les commandes de test ?',
+      message: "L'affichage local est réinitialisé pour démarrer la production.",
+      confirmer: 'Nettoyer',
+      danger: true,
+    })) {
       sugubaStore.resetDemoData();
       setDataCleaned(true);
       setTimeout(() => setDataCleaned(false), 3000);

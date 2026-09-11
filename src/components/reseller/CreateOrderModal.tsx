@@ -10,6 +10,7 @@ import type { OrderInput } from '@/lib/order-input';
 import Image from 'next/image';
 import { useOrderCheckout } from '@/lib/useOrderCheckout';
 import { useCodeRevendeur } from '@/lib/partage';
+import { useToast } from '@/components/ui/Toast';
 
 interface CreateOrderModalProps {
   product: Product | null;
@@ -20,6 +21,7 @@ interface CreateOrderModalProps {
 
 export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }: CreateOrderModalProps) {
   const state = useSugubaStore();
+  const { toast } = useToast();
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [city, setCity] = useState('Bamako');
@@ -56,14 +58,14 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
       setCreatedOrder(order);
       onSuccess?.(order.orderNumber);
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Erreur lors de la création de la commande');
+      toast(error instanceof Error ? error.message : "La commande n'a pas pu être créée.", { ton: 'erreur' });
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customerName || !customerPhone || !neighborhood || !landmark) {
-      alert('Veuillez remplir tous les champs obligatoires (Nom, Téléphone, Quartier, Repère)');
+      toast('Remplissez le nom, le téléphone, le quartier et le repère du client.', { ton: 'erreur' });
       return;
     }
 

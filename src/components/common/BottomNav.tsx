@@ -47,6 +47,14 @@ function getNavItems(role: string | null): NavItem[] {
         // livraisons est dans le portefeuille.
         { label: 'Portefeuille',href: '/driver/earnings', icon: Wallet },
       ];
+    case 'diaspora':
+      // Le client diaspora n'avait aucune barre à lui : il voyait celle des
+      // visiteurs (Boutique / Suivi / Gagner / Connexion) alors qu'il était connecté.
+      return [
+        { label: 'Boutique',  href: '/',          icon: Store        },
+        { label: 'Commander', href: '/diaspora',  icon: ShoppingCart },
+        { label: 'Suivi',     href: '/track',     icon: PackageSearch},
+      ];
     case 'admin':
       return [
         { label: 'Vue globale', href: '/admin',              icon: Home       },

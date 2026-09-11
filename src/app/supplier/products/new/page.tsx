@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import PhotosUploader from '@/components/product/PhotosUploader';
+import { useToast } from '@/components/ui/Toast';
 import { sugubaStore, useSugubaStore } from '@/lib/store';
 import {
   PackagePlus, MapPin, ShieldCheck, CheckCircle2, ArrowLeft
@@ -13,6 +14,7 @@ import Link from 'next/link';
 
 export default function NewSupplierProductPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const state = useSugubaStore();
   const supplier = state.suppliers.find(s => s.userId === state.currentUser.id) || state.suppliers[0];
 
@@ -59,11 +61,11 @@ export default function NewSupplierProductPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !description || !supplierPrice || !stockQuantity) {
-      alert('Veuillez remplir tous les champs obligatoires.');
+      toast('Remplissez le nom, la description, le prix et le stock.', { ton: 'erreur' });
       return;
     }
     if (isUploadingImage) {
-      alert('Attendez la fin de l\'envoi des photos.');
+      toast("Attendez la fin de l'envoi des photos.", { ton: 'info' });
       return;
     }
 

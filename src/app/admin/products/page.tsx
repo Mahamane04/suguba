@@ -8,6 +8,7 @@ import ProductImage from '@/components/common/ProductImage';
 import PhotosProduitModal from '@/components/product/PhotosProduitModal';
 import ProductPricingModal from '@/components/admin/ProductPricingModal';
 import Button from '@/components/ui/Button';
+import { useToast } from '@/components/ui/Toast';
 import type { Product } from '@/types';
 import { ArrowLeft, Camera, ImageOff, Loader2, Plus, Tag, Ban } from 'lucide-react';
 
@@ -65,6 +66,7 @@ export default function AdminProductsPage() {
   const [photosPour, setPhotosPour] = useState<ProduitAdmin | null>(null);
   const [prixPour, setPrixPour] = useState<ProduitAdmin | null>(null);
   const [enCours, setEnCours] = useState<string | null>(null);
+  const { toast, confirmer } = useToast();
 
   const recharger = useCallback(async (choisirFiltre = false) => {
     try {
@@ -90,7 +92,13 @@ export default function AdminProductsPage() {
   const affiches = filtre === 'nouveautes' ? nouveautes : filtre === 'sans_photo' ? sansPhoto : tous;
 
   const retirer = async (p: ProduitAdmin) => {
-    if (!window.confirm(`Retirer « ${p.nom} » de la vente ? Il ne sera plus visible ni partageable. Vous pourrez le remettre en vente en fixant son prix.`)) return;
+    const ok = await confirmer({
+      titre: `Retirer « ${p.nom} » de la vente ?`,
+      message: 'Il ne sera plus visible ni partageable. Vous pourrez le remettre en vente en fixant son prix.',
+      confirmer: 'Retirer',
+      danger: true,
+    });
+    if (!ok) return;
     setErreur('');
     setEnCours(p.id);
     try {
@@ -102,6 +110,7 @@ export default function AdminProductsPage() {
       const json = await res.json();
       if (!res.ok) { setErreur(json.error || 'Retrait impossible.'); return; }
       setProduits((prev) => (prev || []).map((x) => (x.id === p.id ? { ...x, statut: 'rejected' } : x)));
+      toast('Produit retiré de la vente.', { ton: 'succes' });
     } catch {
       setErreur('Erreur réseau.');
     } finally {

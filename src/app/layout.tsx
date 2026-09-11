@@ -8,6 +8,7 @@ import WhatsAppFloatingButton from '@/components/common/WhatsAppFloatingButton';
 import PushNotificationManager from '@/components/common/PushNotificationManager';
 import CloudSyncInitializer from '@/components/common/CloudSyncInitializer';
 import AuthHashCatcher from '@/components/common/AuthHashCatcher';
+import { ToastProvider } from '@/components/ui/Toast';
 
 /* ── Inter Variable Font — Police officielle Suguba V1.3 ── */
 const inter = Inter({
@@ -51,8 +52,11 @@ export default function RootLayout({
         <OfflineStatus />
         <PwaInstallPrompt />
         <PushNotificationManager />
-        {children}
-        <WhatsAppFloatingButton />
+        {/* Messages et confirmations de l'application (remplacent alert/confirm). */}
+        <ToastProvider>
+          {children}
+          <WhatsAppFloatingButton />
+        </ToastProvider>
       </body>
     </html>
   );

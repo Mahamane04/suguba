@@ -7,6 +7,7 @@ import Header from '@/components/common/Header';
 import Carrousel from '@/components/product/Carrousel';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 import { partagerProduit, prechargerImage, useCodeRevendeur } from '@/lib/partage';
+import { useToast } from '@/components/ui/Toast';
 import { useSugubaStore } from '@/lib/store';
 import { useOrderCheckout } from '@/lib/useOrderCheckout';
 import OrderRecovery from '@/components/common/OrderRecovery';
@@ -40,6 +41,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   // Un revendeur connecté partage avec SON code ; sinon le lien garde celui
   // de la visite en cours.
   const monCode = useCodeRevendeur();
+  const { toast } = useToast();
 
   const refCode = searchParams.get('ref');
   const promoParam = searchParams.get('promo');
@@ -110,7 +112,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
       router.push(`/order-success/${order.orderNumber}`);
       resetAttempt();
     } catch (error) {
-      alert(error instanceof Error ? error.message : 'Erreur lors de la validation');
+      toast(error instanceof Error ? error.message : "La commande n'a pas pu être enregistrée.", { ton: 'erreur' });
     }
   };
   const recoveryNotice = <OrderRecovery attempt={recovery} disabled={isSubmitting}
@@ -194,17 +196,17 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   const handleOrderSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customerName || !customerPhone) {
-      alert('Veuillez renseigner votre nom et votre numéro de téléphone.');
+      toast('Indiquez votre nom et votre numéro de téléphone.', { ton: 'erreur' });
       return;
     }
 
     if (fulfillmentMethod === 'home_delivery' && (!neighborhood || !landmark)) {
-      alert('Veuillez renseigner votre quartier et votre repère visuel pour la livraison à domicile.');
+      toast('Indiquez votre quartier et un repère pour que le livreur vous trouve.', { ton: 'erreur' });
       return;
     }
 
     if (!devis) {
-      alert('Le total est en cours de calcul, réessayez dans un instant.');
+      toast('Le total est en cours de calcul, réessayez dans un instant.', { ton: 'info' });
       return;
     }
 

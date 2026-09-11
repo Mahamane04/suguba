@@ -70,7 +70,10 @@ export async function partagerProduit(p: ProduitAPartager, refCode?: string | nu
   // Un produit sans prix n'est pas en vente : son lien mène à « Produit
   // introuvable » et le message annoncerait « 0 F » (bug du 2026-09-11).
   if (!(p.prix > 0)) {
-    alert("Ce produit n'est pas encore en vente (prix non fixé) : il ne peut pas être partagé.");
+    // Message de l'application (src/components/ui/Toast.tsx), pas alert().
+    window.dispatchEvent(new CustomEvent('suguba:toast', {
+      detail: { texte: "Ce produit n'est pas encore en vente : il ne peut pas être partagé.", ton: 'info' },
+    }));
     return 'annule';
   }
   const url = lienProduit(p.slug, refCode);

@@ -12,6 +12,7 @@ import DriverVerificationPanel from '@/components/admin/DriverVerificationPanel'
 import EconomicSettingsPanel from '@/components/admin/EconomicSettingsPanel';
 import { useSugubaStore, sugubaStore } from '@/lib/store';
 import { whatsappHelper } from '@/lib/whatsapp-helper';
+import { useToast } from '@/components/ui/Toast';
 import { Product, Order } from '@/types';
 import { 
   ShieldCheck, PhoneCall, Truck, Wallet, ShoppingBag, 
@@ -22,6 +23,7 @@ import {
 
 export default function AdminDashboardPage() {
   const state = useSugubaStore();
+  const { confirmer } = useToast();
   const [selectedProductForPricing, setSelectedProductForPricing] = useState<Product | null>(null);
   const [agencyCodeInput, setAgencyCodeInput] = useState('');
   const [agencyCodeFeedback, setAgencyCodeFeedback] = useState<{ success: boolean; message: string } | null>(null);
@@ -956,8 +958,13 @@ export default function AdminDashboardPage() {
               <div className="space-y-2 pt-1">
                 <button
                   type="button"
-                  onClick={() => {
-                    if (confirm("Vider l'affichage local des commandes, retraits et commissions sur cet appareil ? (La base Supabase n'est pas touchée)")) {
+                  onClick={async () => {
+                    if (await confirmer({
+                      titre: "Vider l'affichage local ?",
+                      message: "Commandes, retraits et commissions affichés sur cet appareil seront effacés. La base Supabase n'est pas touchée.",
+                      confirmer: 'Vider',
+                      danger: true,
+                    })) {
                       sugubaStore.purgeAllGhostData({ keepProducts: true });
                       setActionFeedback({
                         type: 'success',
@@ -974,8 +981,13 @@ export default function AdminDashboardPage() {
 
                 <button
                   type="button"
-                  onClick={() => {
-                    if (confirm("Vider aussi l'affichage local du catalogue sur cet appareil ? (Les produits restent en base et réapparaîtront au rechargement)")) {
+                  onClick={async () => {
+                    if (await confirmer({
+                      titre: "Vider aussi l'affichage du catalogue ?",
+                      message: 'Les produits restent en base et réapparaîtront au prochain chargement.',
+                      confirmer: 'Vider',
+                      danger: true,
+                    })) {
                       sugubaStore.purgeAllGhostData({ keepProducts: false });
                       setActionFeedback({
                         type: 'success',
@@ -991,8 +1003,12 @@ export default function AdminDashboardPage() {
 
                 <button
                   type="button"
-                  onClick={() => {
-                    if (confirm("Recharger le jeu de données de démonstration dans l'affichage de cet appareil ? (Sans effet sur la base Supabase)")) {
+                  onClick={async () => {
+                    if (await confirmer({
+                      titre: 'Recharger le jeu de démonstration ?',
+                      message: "Uniquement dans l'affichage de cet appareil : sans effet sur la base Supabase.",
+                      confirmer: 'Recharger',
+                    })) {
                       sugubaStore.resetDemoData();
                       setActionFeedback({
                         type: 'success',
