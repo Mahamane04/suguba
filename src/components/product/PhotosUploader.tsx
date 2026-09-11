@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { ImagePlus, Loader2, X, Star } from 'lucide-react';
+import { compresserImage } from '@/lib/compression-image';
 
 interface Photo {
   id: string;
@@ -46,8 +47,11 @@ export default function PhotosUploader({
 
   const envoyer = async (fichier: File, id: string) => {
     try {
+      // Allégée avant l'envoi (1600 px, JPEG) : une photo de téléphone de 8 Mo
+      // était refusée (limite 5 Mo) et coûtait cher en data à chaque partage.
+      const allegee = await compresserImage(fichier);
       const donnees = new FormData();
-      donnees.append('file', fichier);
+      donnees.append('file', allegee);
       const res = await fetch('/api/products/upload-image', { method: 'POST', body: donnees });
       const json = await res.json();
       setPhotos((prev) => prev.map((p) => {
@@ -152,7 +156,7 @@ export default function PhotosUploader({
         )}
       </div>
       <p className="text-[11px] text-slate-500">
-        Jusqu&apos;à {max} photos (JPEG, PNG ou WEBP, 5 Mo max chacune). La première est la photo
+        Jusqu&apos;à {max} photos, allégées automatiquement avant l&apos;envoi. La première est la photo
         principale : c&apos;est elle qui part avec le partage WhatsApp. Touchez l&apos;étoile pour en changer.
       </p>
     </div>
