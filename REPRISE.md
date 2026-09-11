@@ -323,6 +323,23 @@ curl -s -H "Authorization: Bearer $KEY" https://api.saspay.me/api/v1/merchant-ba
   avec un secret jetable (`env SESSION_SECRET=… npm run dev`), signer la session de test avec
   lui, et l'ouvrir sur `127.0.0.1` (cookies séparés de `localhost`). Un jeton signé avec le vrai
   secret serait valable en production : ne jamais l'écrire dans une conversation.
+- **Une garantie inventée s'affichait sur tous les produits** (corrigé le 2026-09-11) :
+  `cloud-sync.ts` fixait `warrantyMonths: 6` en dur, et la page produit affichait « Garantie 6
+  mois — Service certifié » (la page devis B2B, « Garantie certifiée »). La table `products` n'a
+  **aucune** colonne garantie. Remplacé par des engagements réels (paiement à la livraison, code
+  secret remis au livreur, livré par Suguba) et le nombre réel de livraisons réussies du produit
+  (`/api/products/livraisons`, affiché seulement s'il est > 0).
+  ⚠️ Non corrigé : le formulaire fournisseur demande garantie, délai de préparation et adresse
+  du stock, **jamais enregistrés** (aucune colonne). À ajouter en base ou à retirer du formulaire.
+- **Photos allégées avant l'envoi** (2026-09-11, `src/lib/compression-image.ts`) : 1600 px,
+  JPEG 0,82. Une photo de téléphone de 8 à 13 Mo était refusée (limite serveur 5 Mo) ; vérifié :
+  13,8 Mo → 0,67 Mo. En cas d'échec, le fichier d'origine part tel quel.
+- **Le service worker v2 mettait en cache toutes les réponses d'API** (corrigé le 2026-09-11,
+  `public/sw.js` v3) : commandes, soldes, données admin restaient lisibles hors ligne sur un
+  téléphone partagé. Il préchargeait aussi 27 pages à la première visite, sans plafond. La v3 ne
+  met jamais `/api/` en cache, ne précharge que l'accueil, plafonne pages (40) et photos (200),
+  et supprime les anciens caches à l'activation. Le SW n'est enregistré qu'en production : pour
+  le tester en local, l'enregistrer à la main (`navigator.serviceWorker.register('/sw.js')`).
 - **`payouts.status` n'accepte que `pending`/`processing`/`completed`/`rejected`** (contrainte
   CHECK). Écrire `failed` ferait échouer la mise à jour — même famille de piège que
   l'incohérence de statut des commandes corrigée en août. Un versement raté s'écrit
