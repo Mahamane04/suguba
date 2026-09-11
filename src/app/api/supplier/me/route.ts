@@ -129,6 +129,10 @@ export async function PATCH(req: NextRequest) {
     contactEmail: 'contact_email',
     managerName: 'manager_name',
     contactPhone: 'contact_phone',
+    // Sert désormais aussi au tarif de livraison à la distance réelle (voir
+    // livraisonDistanceBamako dans src/lib/pricing.ts) : un fournisseur qui
+    // corrige son quartier ici change directement ce que ses clients paient.
+    warehouseNeighborhood: 'warehouse_neighborhood',
   };
 
   const misAJour: Record<string, string | null> = {};

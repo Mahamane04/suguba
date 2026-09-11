@@ -19,7 +19,7 @@ import { calculerCommande, completerReglages, QUANTITE_MAX } from '@/lib/pricing
  */
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
-  const { productId, quantity, city, pickupPointId, promoCode, resellerCode } = body || {};
+  const { productId, quantity, city, neighborhood, pickupPointId, promoCode, resellerCode } = body || {};
 
   if (!productId || typeof productId !== 'string') {
     return NextResponse.json({ error: 'Produit requis.' }, { status: 400 });
@@ -34,13 +34,26 @@ export async function POST(req: NextRequest) {
 
   const { data: produit, error: produitErreur } = await admin
     .from('products')
-    .select('supplier_price, public_price, status, commission_proposee')
+    .select('supplier_price, public_price, status, commission_proposee, supplier_id')
     .eq('id', productId)
     .maybeSingle();
 
   if (produitErreur) return NextResponse.json({ error: 'Service indisponible.' }, { status: 503 });
   if (!produit || produit.status !== 'approved' || Number(produit.public_price) <= 0) {
     return NextResponse.json({ error: 'Produit indisponible.' }, { status: 404 });
+  }
+
+  // Quartier du fournisseur de CE produit — pour le tarif de livraison à la
+  // distance réelle (2026-09-11, voir livraisonDistanceBamako). Une commande
+  // reste calculable sans ça : repli sur le tarif plat, jamais une erreur.
+  let quartierFournisseur: string | undefined;
+  if (produit.supplier_id) {
+    const { data: fournisseur } = await admin
+      .from('suppliers')
+      .select('warehouse_neighborhood')
+      .eq('profile_id', produit.supplier_id)
+      .maybeSingle();
+    quartierFournisseur = fournisseur?.warehouse_neighborhood || undefined;
   }
 
   // Seul effet de l'attribution sur le devis : le plafond de la remise promo,
@@ -70,6 +83,8 @@ export async function POST(req: NextRequest) {
     {
       quantite: Number(quantity) || 1,
       ville: typeof city === 'string' ? city : undefined,
+      quartierClient: typeof neighborhood === 'string' ? neighborhood : undefined,
+      quartierFournisseur,
       pointRelaisId: typeof pickupPointId === 'string' ? pickupPointId : undefined,
       codePromo: typeof promoCode === 'string' ? promoCode : undefined,
       revendeurAttribue,
@@ -89,6 +104,7 @@ export async function POST(req: NextRequest) {
       ville: d.ville,
       pointRelais: d.pointRelais,
       fraisLivraison: d.fraisLivraison,
+      distanceLivraisonKm: d.distanceLivraisonKm,
       codePromo: d.codePromo,
       remise: d.remise,
       avisPromo: d.avisPromo,

@@ -4,8 +4,9 @@ import { useEffect, useState } from 'react';
 import type { Devis } from './pricing';
 import type { OrderInput } from './order-input';
 
-type QuoteInput = Pick<OrderInput, 'productId' | 'quantity' | 'city' | 'pickupPointId' | 'promoCode' | 'resellerCode'>;
-export type PublicOrderQuote = Pick<Devis, 'quantite' | 'prixUnitaire' | 'montantArticles' | 'modeLivraison' | 'ville' | 'pointRelais' | 'fraisLivraison' | 'codePromo' | 'remise' | 'avisPromo' | 'total'>;
+type QuoteInput = Pick<OrderInput, 'productId' | 'quantity' | 'city' | 'pickupPointId' | 'promoCode' | 'resellerCode'>
+  & { neighborhood?: string };
+export type PublicOrderQuote = Pick<Devis, 'quantite' | 'prixUnitaire' | 'montantArticles' | 'modeLivraison' | 'ville' | 'pointRelais' | 'fraisLivraison' | 'distanceLivraisonKm' | 'codePromo' | 'remise' | 'avisPromo' | 'total'>;
 
 /** Un changement de quantité/ville invalide immédiatement l'ancien devis. */
 export function useOrderQuote(input: QuoteInput | null) {

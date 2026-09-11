@@ -31,6 +31,8 @@
  * donc surestimés — là encore dans le sens de la prudence.
  */
 
+import { trouverQuartier, distanceKm } from './bamako-quartiers';
+
 export interface LigneCoutFixe {
   libelle: string;
   /** Montant mensuel en FCFA. */
@@ -85,6 +87,24 @@ export interface ReglagesPlateforme {
   fraisLivraisonClient: number;
   /** Frais de livraison par ville. */
   livraisonParVille: Record<string, number>;
+  /**
+   * Livraison À BAMAKO calculée sur la distance réelle entre le quartier du
+   * fournisseur et celui du client (2026-09-11), plutôt qu'un tarif plat
+   * unique. Ne s'applique que si les DEUX quartiers sont reconnus (voir
+   * src/lib/bamako-quartiers.ts) ; sinon, repli silencieux sur
+   * `livraisonParVille['Bamako']` — aucune commande ne peut se retrouver sans
+   * tarif calculable.
+   */
+  livraisonDistanceBamako: {
+    /** Frais fixe, même pour une distance nulle (même quartier). */
+    fraisBase: number;
+    /** Frais par kilomètre à vol d'oiseau au-delà de la base. */
+    fraisParKm: number;
+    /** Plancher, quelle que soit la distance calculée. */
+    fraisMinimum: number;
+    /** Plafond, pour qu'une erreur de coordonnées ne facture jamais une fortune. */
+    fraisMaximum: number;
+  };
   /** Points relais où le client retire lui-même son colis. */
   pointsRelais: PointRelais[];
   /** Rémunération du livreur par livraison, en FCFA. */
@@ -152,6 +172,12 @@ export const REGLAGES_PAR_DEFAUT: ReglagesPlateforme = {
     'Ségou': 3500,
     Kayes: 5000,
     Mopti: 5000,
+  },
+  livraisonDistanceBamako: {
+    fraisBase: 300,
+    fraisParKm: 150,
+    fraisMinimum: 500,
+    fraisMaximum: 3000,
   },
   pointsRelais: [
     { id: 'hub-aci', nom: 'Hub Central Suguba — Hamdallaye ACI 2000 (Derrière Clinique Pasteur)', frais: 0, horaires: '08h - 19h30' },
@@ -426,6 +452,16 @@ export function prixDepuisPartRevendeur(
 export interface DemandeDevis {
   quantite: number;
   ville?: string;
+  /**
+   * Quartier du CLIENT à Bamako (2026-09-11). Combiné à `quartierFournisseur`,
+   * remplace le tarif plat par un calcul à la distance réelle — voir
+   * `livraisonDistanceBamako`. Le caller (route API) le résout depuis la
+   * fiche fournisseur du produit ; cette fonction reste pure, donc ne va
+   * jamais le chercher elle-même.
+   */
+  quartierClient?: string;
+  /** Quartier du FOURNISSEUR du produit commandé (`suppliers.warehouse_neighborhood`). */
+  quartierFournisseur?: string;
   /** Si renseigné et valide, le client retire son colis à ce point relais. */
   pointRelaisId?: string;
   codePromo?: string;
@@ -441,6 +477,8 @@ export interface Devis {
   ville: string;
   pointRelais: { id: string; nom: string } | null;
   fraisLivraison: number;
+  /** Distance estimée (km, à vol d'oiseau) ayant servi au calcul ci-dessus. null hors Bamako ou quartiers inconnus. */
+  distanceLivraisonKm: number | null;
   codePromo: string | null;
   remiseDemandee: number;
   remise: number;
@@ -455,6 +493,27 @@ export interface Devis {
 }
 
 export const QUANTITE_MAX = 50;
+
+/**
+ * Livraison à Bamako calculée sur la distance réelle entre les deux
+ * quartiers, si les deux sont reconnus. Renvoie `null` sinon (quartier
+ * manquant ou non répertorié) : le caller retombe alors sur le tarif plat
+ * `livraisonParVille['Bamako']`, jamais sur une commande sans tarif.
+ */
+function fraisLivraisonDistanceBamako(
+  r: ReglagesPlateforme,
+  quartierFournisseur: string | undefined,
+  quartierClient: string | undefined,
+): { frais: number; distanceKm: number } | null {
+  const a = trouverQuartier(quartierFournisseur);
+  const b = trouverQuartier(quartierClient);
+  if (!a || !b) return null;
+  const km = distanceKm(a, b);
+  const d = r.livraisonDistanceBamako;
+  const brut = d.fraisBase + d.fraisParKm * km;
+  const frais = Math.round(Math.min(d.fraisMaximum, Math.max(d.fraisMinimum, brut)) / 50) * 50;
+  return { frais, distanceKm: km };
+}
 
 /** Recherche d'une ville sans tenir compte de la casse ni des espaces autour. */
 function fraisPourVille(r: ReglagesPlateforme, ville: string): { ville: string; frais: number } {
@@ -500,6 +559,7 @@ export function calculerCommande(
   let modeLivraison: 'domicile' | 'relais';
   let ville: string;
   let fraisLivraison: number;
+  let distanceLivraisonKm: number | null = null;
   if (relais) {
     modeLivraison = 'relais';
     ville = 'Bamako';
@@ -509,6 +569,15 @@ export function calculerCommande(
     const trouve = fraisPourVille(r, demande.ville || 'Bamako');
     ville = trouve.ville;
     fraisLivraison = trouve.frais;
+    // À Bamako, un tarif à la distance réelle remplace le tarif plat dès que
+    // les deux quartiers (fournisseur et client) sont reconnus.
+    if (ville.trim().toLowerCase() === 'bamako') {
+      const parDistance = fraisLivraisonDistanceBamako(r, demande.quartierFournisseur, demande.quartierClient);
+      if (parDistance) {
+        fraisLivraison = parDistance.frais;
+        distanceLivraisonKm = parDistance.distanceKm;
+      }
+    }
   }
 
   const commissionUnitaire = demande.revendeurAttribue ? tarif.commission : 0;
@@ -543,6 +612,7 @@ export function calculerCommande(
     ville,
     pointRelais: relais ? { id: relais.id, nom: relais.nom } : null,
     fraisLivraison,
+    distanceLivraisonKm,
     codePromo: promo ? promo.code : null,
     remiseDemandee,
     remise,
@@ -611,6 +681,14 @@ export function validerReglages(r: ReglagesPlateforme): string[] {
       || Object.values(r.livraisonParVille).some((v) => !(Number(v) >= 0))) {
     erreurs.push('Chaque tarif de livraison par ville doit être un montant positif.');
   }
+  {
+    const d = r.livraisonDistanceBamako;
+    if (!d || typeof d !== 'object'
+        || !(Number(d.fraisBase) >= 0) || !(Number(d.fraisParKm) >= 0)
+        || !(Number(d.fraisMinimum) >= 0) || !(Number(d.fraisMaximum) >= Number(d.fraisMinimum))) {
+      erreurs.push('Le tarif de livraison à la distance (Bamako) est invalide : vérifiez que le maximum ≥ minimum.');
+    }
+  }
   if (!Array.isArray(r.pointsRelais) || r.pointsRelais.some((p) => !p.id || !(Number(p.frais) >= 0))) {
     erreurs.push('Chaque point relais doit avoir un identifiant et des frais positifs.');
   }
@@ -635,6 +713,9 @@ export function completerReglages(partiels: Partial<ReglagesPlateforme> | null |
   if (!Array.isArray(r.codesPromo)) r.codesPromo = REGLAGES_PAR_DEFAUT.codesPromo;
   if (!r.livraisonParVille || typeof r.livraisonParVille !== 'object') {
     r.livraisonParVille = REGLAGES_PAR_DEFAUT.livraisonParVille;
+  }
+  if (!r.livraisonDistanceBamako || typeof r.livraisonDistanceBamako !== 'object') {
+    r.livraisonDistanceBamako = REGLAGES_PAR_DEFAUT.livraisonDistanceBamako;
   }
   return r;
 }

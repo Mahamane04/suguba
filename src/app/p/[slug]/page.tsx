@@ -16,9 +16,11 @@ import OrderRecovery from '@/components/common/OrderRecovery';
 import { useOrderQuote } from '@/lib/useOrderQuote';
 import type { OrderInput } from '@/lib/order-input';
 import Button from '@/components/ui/Button';
-import { 
+import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
+import {
   ShieldCheck, Truck, Clock, MapPin, Phone, Minus, Plus,
-  User, CheckCircle2, ArrowRight, ArrowLeft, Star, Sparkles
+  User, CheckCircle2, ArrowRight, ArrowLeft, Star, Sparkles,
+  Navigation, Tag, ChevronDown, Receipt,
 } from 'lucide-react';
 
 interface ChoixLivraison {
@@ -98,6 +100,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   // jamais appliquée à la commande enregistrée.
   const [promoCodeInput, setPromoCodeInput] = useState(promoParam ? promoParam.toUpperCase() : '');
   const [promoSoumis, setPromoSoumis] = useState(promoParam ? promoParam.toUpperCase() : '');
+  // Replié par défaut : un champ que la plupart des commandes n'utilisent
+  // jamais n'a pas à occuper de la place dans une fenêtre déjà signalée
+  // "trop chargée" — sauf s'il arrive déjà rempli par un lien partagé.
+  const [promoOuvert, setPromoOuvert] = useState(Boolean(promoParam));
 
   // Livraisons réussies de ce produit : chiffre réel, affiché seulement s'il
   // est supérieur à zéro (voir /api/products/livraisons).
@@ -119,7 +125,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   }, []);
 
   const { devis, loading: devisEnCours, error: erreurDevis } = useOrderQuote(product ? {
-    productId: product.id, quantity, city,
+    productId: product.id, quantity, city, neighborhood,
     pickupPointId: fulfillmentMethod === 'pickup_point' ? pickupPointId : undefined,
     promoCode: promoSoumis || undefined, resellerCode: refCode || undefined,
   } : null);
@@ -527,58 +533,61 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
           </Button>
         }
       >
-        <form id="formulaire-commande" onSubmit={handleOrderSubmit} className="space-y-4">
+        <form id="formulaire-commande" onSubmit={handleOrderSubmit} className="space-y-5">
 
-          <p className="text-[11px] text-slate-500 -mt-1">
+          <p className="text-[11px] text-slate-500 -mt-1 flex items-center gap-1.5">
+            <ShieldCheck className="w-3.5 h-3.5 text-suguba-brand shrink-0" />
             Payez en espèces ou Mobile Money uniquement quand le livreur arrive chez vous.
           </p>
 
-          {/* Nom */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
-              Votre Nom & Prénom *
-            </label>
-            <div className="relative">
-              <User className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-              <input
-                id="champ-nom"
-                type="text"
-                required
-                autoFocus
-                autoComplete="name"
-                placeholder="Ex: Moussa Traoré"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-                className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:bg-white focus:outline-emerald-600"
-              />
+          {/* ── Section : vos coordonnées ── */}
+          <div className="space-y-3">
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Vos coordonnées</p>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Nom & prénom *
+              </label>
+              <div className="relative">
+                <User className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <input
+                  id="champ-nom"
+                  type="text"
+                  required
+                  autoFocus
+                  autoComplete="name"
+                  placeholder="Ex: Moussa Traoré"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:bg-white focus:outline-emerald-600"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Téléphone (appel / WhatsApp) *
+              </label>
+              <div className="relative">
+                <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                <input
+                  type="tel"
+                  required
+                  inputMode="tel"
+                  autoComplete="tel"
+                  placeholder="Ex: 70 12 34 56"
+                  value={customerPhone}
+                  onChange={(e) => setCustomerPhone(e.target.value)}
+                  className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:bg-white focus:outline-emerald-600"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Téléphone */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
-              Numéro de Téléphone (Appel / WhatsApp) *
-            </label>
-            <div className="relative">
-              <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-              <input
-                type="tel"
-                required
-                inputMode="tel"
-                autoComplete="tel"
-                placeholder="Ex: 70 12 34 56"
-                value={customerPhone}
-                onChange={(e) => setCustomerPhone(e.target.value)}
-                className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:bg-white focus:outline-emerald-600"
-              />
-            </div>
-          </div>
+          {/* ── Section : livraison ── */}
+          <div className="space-y-3 pt-1 border-t border-slate-100">
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider pt-4">Livraison</p>
 
-          {/* Choix du mode de livraison */}
-          <div className="space-y-2 pt-1">
-            <label className="block text-xs font-bold text-slate-700">
-              Mode de Réception du Colis :
-            </label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
@@ -589,7 +598,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                     : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
                 }`}
               >
-                <span className="block font-black text-xs">🛵 À Domicile</span>
+                <span className="block font-black text-xs">🛵 À domicile</span>
                 <span className={`text-[11px] block ${fulfillmentMethod === 'home_delivery' ? 'text-slate-300' : 'text-slate-500'}`}>
                   Livré devant votre porte
                 </span>
@@ -604,149 +613,185 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                     : 'bg-emerald-50/50 text-emerald-950 border-emerald-200 hover:bg-emerald-100/50'
                 }`}
               >
-                <span className="block font-black text-xs">🏪 Point Relais</span>
+                <span className="block font-black text-xs">🏪 Point relais</span>
                 <span className={`text-[11px] block ${fulfillmentMethod === 'pickup_point' ? 'text-emerald-200' : 'text-emerald-700'}`}>
                   {libelleRelais}
                 </span>
               </button>
             </div>
+
+            {fulfillmentMethod === 'pickup_point' ? (
+              <div className="space-y-2 bg-emerald-50/40 p-3.5 rounded-2xl border border-emerald-200">
+                <label className="block text-xs font-bold text-emerald-950">
+                  Point relais partenaire à Bamako
+                </label>
+                <select
+                  value={pickupPointId}
+                  onChange={(e) => setPickupPointId(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-white border border-emerald-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:outline-emerald-600"
+                >
+                  {pointsRelais.map(point => (
+                    <option key={point.id} value={point.id}>
+                      {point.nom} — {point.frais === 0 ? 'GRATUIT' : `${point.frais} F`} ({point.horaires})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-emerald-800">
+                  💡 Votre colis sera déposé sous 24h. Vous recevrez un SMS avec votre code de retrait OTP.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Ville *</label>
+                    <div className="relative">
+                      <select
+                        value={city}
+                        onChange={(e) => { setCity(e.target.value); setNeighborhood(''); }}
+                        className="w-full appearance-none px-3 py-2.5 pr-9 bg-white border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:outline-emerald-600"
+                      >
+                        {Object.entries(villes).map(([ville, frais]) => (
+                          <option key={ville} value={ville}>
+                            {ville}{PRECISION_VILLE[ville] ? ` - ${PRECISION_VILLE[ville]}` : ''} ({Number(frais).toLocaleString('fr-FR')} F)
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1">Quartier *</label>
+                    {city.trim().toLowerCase() === 'bamako' ? (
+                      // Quartier reconnu (voir bamako-quartiers.ts) : le tarif
+                      // de livraison se calcule alors sur la vraie distance
+                      // jusqu'au quartier du fournisseur, pas un tarif plat.
+                      // Même sélecteur que pour l'inscription fournisseur, la
+                      // même liste de quartiers partout dans l'app.
+                      <NeighborhoodPicker
+                        value={neighborhood || 'Choisir…'}
+                        onChange={setNeighborhood}
+                      />
+                    ) : (
+                      <input
+                        type="text"
+                        required={fulfillmentMethod === 'home_delivery'}
+                        placeholder="Ex: Centre-ville"
+                        value={neighborhood}
+                        onChange={(e) => setNeighborhood(e.target.value)}
+                        className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:outline-emerald-600"
+                      />
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Repère visuel précis (pharmacie, école, station...) *
+                  </label>
+                  <div className="relative">
+                    <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                    <input
+                      type="text"
+                      required={fulfillmentMethod === 'home_delivery'}
+                      placeholder="Ex: En face de la boulangerie de l'ACI, portail blanc"
+                      value={landmark}
+                      onChange={(e) => setLandmark(e.target.value)}
+                      className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:outline-emerald-600"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Si Point Relais Partenaire sélectionné */}
-          {fulfillmentMethod === 'pickup_point' ? (
-            <div className="space-y-2 bg-emerald-50/40 p-3.5 rounded-2xl border border-emerald-200">
-              <label className="block text-xs font-bold text-emerald-950">
-                Sélectionner le Point Relais Partenaire à Bamako :
-              </label>
-              <select
-                value={pickupPointId}
-                onChange={(e) => setPickupPointId(e.target.value)}
-                className="w-full px-3 py-2.5 bg-white border border-emerald-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:outline-emerald-600"
-              >
-                {pointsRelais.map(point => (
-                  <option key={point.id} value={point.id}>
-                    {point.nom} — {point.frais === 0 ? 'GRATUIT' : `${point.frais} F`} ({point.horaires})
-                  </option>
-                ))}
-              </select>
-              <p className="text-[11px] text-emerald-800">
-                💡 Votre colis sera déposé sous 24h. Vous recevrez un SMS avec votre code de retrait OTP.
-              </p>
-            </div>
-          ) : (
-            <>
-              {/* Ville & Quartier pour Livraison à Domicile */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Ville *</label>
-                  <select
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:bg-white"
-                  >
-                    {Object.entries(villes).map(([ville, frais]) => (
-                      <option key={ville} value={ville}>
-                        {ville}{PRECISION_VILLE[ville] ? ` - ${PRECISION_VILLE[ville]}` : ''} ({Number(frais).toLocaleString('fr-FR')} F)
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Quartier *</label>
-                  <input
-                    type="text"
-                    required={fulfillmentMethod === 'home_delivery'}
-                    placeholder="Ex: Hamdallaye ACI"
-                    value={neighborhood}
-                    onChange={(e) => setNeighborhood(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:bg-white"
-                  />
-                </div>
-              </div>
-
-              {/* Repère visuel (Indispensable) */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Repère Visuel Précis (Pharmacie, École, Station...) *
-                </label>
-                <div className="relative">
-                  <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                  <input
-                    type="text"
-                    required={fulfillmentMethod === 'home_delivery'}
-                    placeholder="Ex: En face de la boulangerie de l'ACI, portail blanc"
-                    value={landmark}
-                    onChange={(e) => setLandmark(e.target.value)}
-                    className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:bg-white"
-                  />
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Champ Code Promo */}
-          <div className="space-y-1.5 pt-1">
-            <label className="block text-xs font-bold text-slate-700">
-              Code Promo / Réduction Partenaire :
-            </label>
-            <div className="flex space-x-2">
-              <input
-                type="text"
-                placeholder="Ex: RAMADAN, TABASKI, SUGUBAVIP"
-                value={promoCodeInput}
-                onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
-                className="flex-1 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-mono font-bold text-slate-900 focus:bg-white uppercase"
-              />
+          {/* Code promo : replié par défaut, la plupart des commandes n'en ont pas. */}
+          <div className="pt-1 border-t border-slate-100">
+            {!promoOuvert ? (
               <button
                 type="button"
-                onClick={handleApplyPromo}
-                className="px-3.5 py-2 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-xs transition-colors"
+                onClick={() => setPromoOuvert(true)}
+                className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 pt-4"
               >
-                Appliquer
+                <Tag className="w-3.5 h-3.5" />
+                J&apos;ai un code promo
               </button>
-            </div>
-            {promoSoumis && devis?.avisPromo === 'invalide' && (
-              <p className="text-[11px] font-bold text-rose-600">Code promo invalide ou expiré</p>
-            )}
-            {devis?.codePromo && devis.remise > 0 && (
-              <p className="text-[11px] font-bold text-emerald-700 flex items-center">
-                <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-                Code {devis.codePromo} validé : -{devis.remise.toLocaleString('fr-FR')} FCFA
-                {devis.avisPromo === 'plafonnee' ? ' (remise maximale sur cet article)' : ' de réduction !'}
-              </p>
-            )}
-            {devis?.codePromo && devis.remise === 0 && (
-              <p className="text-[11px] font-bold text-amber-700">
-                Code {devis.codePromo} reconnu, mais aucune remise n&apos;est possible sur cet article.
-              </p>
+            ) : (
+              <div className="space-y-1.5 pt-4">
+                <label className="block text-xs font-bold text-slate-700">
+                  Code promo / réduction partenaire
+                </label>
+                <div className="flex space-x-2">
+                  <input
+                    type="text"
+                    autoFocus
+                    placeholder="Ex: RAMADAN, TABASKI, SUGUBAVIP"
+                    value={promoCodeInput}
+                    onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
+                    className="flex-1 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-mono font-bold text-slate-900 focus:bg-white uppercase"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleApplyPromo}
+                    className="px-3.5 py-2 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-xs transition-colors shrink-0"
+                  >
+                    Appliquer
+                  </button>
+                </div>
+                {promoSoumis && devis?.avisPromo === 'invalide' && (
+                  <p className="text-[11px] font-bold text-rose-600">Code promo invalide ou expiré</p>
+                )}
+                {devis?.codePromo && devis.remise > 0 && (
+                  <p className="text-[11px] font-bold text-emerald-700 flex items-center">
+                    <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+                    Code {devis.codePromo} validé : -{devis.remise.toLocaleString('fr-FR')} FCFA
+                    {devis.avisPromo === 'plafonnee' ? ' (remise maximale sur cet article)' : ' de réduction !'}
+                  </p>
+                )}
+                {devis?.codePromo && devis.remise === 0 && (
+                  <p className="text-[11px] font-bold text-amber-700">
+                    Code {devis.codePromo} reconnu, mais aucune remise n&apos;est possible sur cet article.
+                  </p>
+                )}
+              </div>
             )}
           </div>
 
-          {/* Récapitulatif — entièrement issu du devis serveur. */}
-          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-1.5">
+          {/* ── Récapitulatif — entièrement issu du devis serveur. ── */}
+          <div className="bg-slate-900 text-white p-4 rounded-2xl space-y-1.5">
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 pb-1">
+              <Receipt className="w-3.5 h-3.5" />Récapitulatif
+            </p>
             {devis ? (
               <>
-                <div className="flex justify-between text-xs text-slate-600">
-                  <span>Produit ({devis.quantite}x) :</span>
-                  <span className="font-semibold">{devis.montantArticles.toLocaleString('fr-FR')} FCFA</span>
+                <div className="flex justify-between text-xs text-slate-300">
+                  <span>Produit ({devis.quantite}x)</span>
+                  <span className="font-semibold text-white">{devis.montantArticles.toLocaleString('fr-FR')} FCFA</span>
                 </div>
-                <div className="flex justify-between text-xs text-slate-600">
-                  <span>{devis.modeLivraison === 'relais' ? 'Retrait en point relais' : `Livraison (${devis.ville})`} :</span>
-                  <span className="font-semibold">{devis.fraisLivraison === 0 ? 'Gratuit' : `${devis.fraisLivraison.toLocaleString('fr-FR')} FCFA`}</span>
+                <div className="flex justify-between text-xs text-slate-300">
+                  <span className="flex items-center gap-1">
+                    {devis.modeLivraison === 'relais' ? 'Retrait en point relais' : `Livraison (${devis.ville})`}
+                    {devis.distanceLivraisonKm !== null && (
+                      <span className="inline-flex items-center gap-0.5 text-[10px] text-slate-400">
+                        <Navigation className="w-2.5 h-2.5" />~{devis.distanceLivraisonKm.toFixed(1)} km
+                      </span>
+                    )}
+                  </span>
+                  <span className="font-semibold text-white">{devis.fraisLivraison === 0 ? 'Gratuit' : `${devis.fraisLivraison.toLocaleString('fr-FR')} FCFA`}</span>
                 </div>
                 {devis.remise > 0 && (
-                  <div className="flex justify-between text-xs font-bold text-emerald-700 bg-emerald-100/50 p-1.5 rounded-lg">
-                    <span>Remise ({devis.codePromo}) :</span>
+                  <div className="flex justify-between text-xs font-bold text-emerald-400">
+                    <span>Remise ({devis.codePromo})</span>
                     <span>- {devis.remise.toLocaleString('fr-FR')} FCFA</span>
                   </div>
                 )}
-                <div className="flex justify-between text-sm font-black text-slate-900 pt-1.5 border-t border-slate-200">
-                  <span>Total à payer au livreur :</span>
-                  <span className="text-emerald-700">{devis.total.toLocaleString('fr-FR')} FCFA</span>
+                <div className="flex justify-between text-base font-black pt-2 mt-1 border-t border-white/10">
+                  <span>Total à payer au livreur</span>
+                  <span className="text-emerald-400">{devis.total.toLocaleString('fr-FR')} FCFA</span>
                 </div>
               </>
             ) : (
-              <p className="text-xs text-slate-500">{devisEnCours ? 'Calcul du total…' : erreurDevis || 'Total indisponible pour le moment.'}</p>
+              <p className="text-xs text-slate-400">{devisEnCours ? 'Calcul du total…' : erreurDevis || 'Total indisponible pour le moment.'}</p>
             )}
           </div>
         </form>

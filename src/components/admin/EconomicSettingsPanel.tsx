@@ -212,6 +212,26 @@ export default function EconomicSettingsPanel() {
               ))}
               <AjoutVille onAjout={(ville) => maj('livraisonParVille', { ...r.livraisonParVille, [ville]: r.fraisLivraisonClient })} />
             </div>
+            <div className="sm:col-span-2 space-y-2 pt-2 border-t border-slate-100">
+              <p className="text-[11px] font-bold text-slate-600">
+                Livraison à Bamako à la distance réelle (2026-09-11)
+              </p>
+              <p className="text-[11px] text-slate-500 -mt-1">
+                Remplace le tarif plat « Bamako » ci-dessus quand le quartier du fournisseur ET celui
+                du client sont reconnus (voir src/lib/bamako-quartiers.ts). Formule : base + (frais/km ×
+                distance à vol d&apos;oiseau), plafonnée entre le minimum et le maximum.
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <Num l="Frais de base" suffixe="F" v={r.livraisonDistanceBamako.fraisBase}
+                  on={(v) => maj('livraisonDistanceBamako', { ...r.livraisonDistanceBamako, fraisBase: v })} />
+                <Num l="Frais par km" suffixe="F" v={r.livraisonDistanceBamako.fraisParKm}
+                  on={(v) => maj('livraisonDistanceBamako', { ...r.livraisonDistanceBamako, fraisParKm: v })} />
+                <Num l="Minimum" suffixe="F" v={r.livraisonDistanceBamako.fraisMinimum}
+                  on={(v) => maj('livraisonDistanceBamako', { ...r.livraisonDistanceBamako, fraisMinimum: v })} />
+                <Num l="Maximum" suffixe="F" v={r.livraisonDistanceBamako.fraisMaximum}
+                  on={(v) => maj('livraisonDistanceBamako', { ...r.livraisonDistanceBamako, fraisMaximum: v })} />
+              </div>
+            </div>
             <div className="sm:col-span-2 space-y-2">
               <p className="text-[11px] font-bold text-slate-600">Points relais</p>
               {r.pointsRelais.map((p, i) => (

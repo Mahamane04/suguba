@@ -6,11 +6,12 @@ import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
 import LogoUploader from '@/components/common/LogoUploader';
+import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
 import { useToast } from '@/components/ui/Toast';
 import Button from '@/components/ui/Button';
 import {
   Users, Store, Copy, Check, ArrowLeft, MessageCircle, ExternalLink, Loader2,
-  Settings, Mail, User as UserIcon, Phone, Save,
+  Settings, Mail, User as UserIcon, Phone, Save, MapPin,
 } from 'lucide-react';
 
 /**
@@ -45,6 +46,11 @@ export default function SupplierBoutiquePage() {
   const [contactEmail, setContactEmail] = useState('');
   const [managerName, setManagerName] = useState('');
   const [contactPhone, setContactPhone] = useState('');
+  // Sert au calcul du tarif de livraison à la distance réelle (voir
+  // livraisonDistanceBamako, pricing.ts) : c'est le point de départ de la
+  // course. Vide par défaut plutôt que pré-rempli — un fournisseur qui ne le
+  // touche jamais reste sur le tarif plat, jamais un mauvais quartier facturé.
+  const [warehouseNeighborhood, setWarehouseNeighborhood] = useState('');
   const [sauvegardeEnCours, setSauvegardeEnCours] = useState(false);
 
   useEffect(() => {
@@ -59,6 +65,7 @@ export default function SupplierBoutiquePage() {
         setContactEmail(j?.supplier?.contactEmail || '');
         setManagerName(j?.supplier?.managerName || '');
         setContactPhone(j?.supplier?.contactPhone || '');
+        setWarehouseNeighborhood(j?.supplier?.warehouseNeighborhood || '');
       })
       .catch(() => {})
       .finally(() => setChargement(false));
@@ -77,6 +84,7 @@ export default function SupplierBoutiquePage() {
           contactEmail,
           managerName,
           contactPhone,
+          warehouseNeighborhood,
         }),
       });
       const json = await res.json();
@@ -237,6 +245,21 @@ export default function SupplierBoutiquePage() {
                     />
                     <span className="text-[11px] text-slate-500 mt-1 block">
                       Jamais affiché sur votre boutique publique.
+                    </span>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-slate-400" />Quartier de mon entrepôt / magasin
+                    </label>
+                    <NeighborhoodPicker
+                      value={warehouseNeighborhood || 'Choisir…'}
+                      onChange={setWarehouseNeighborhood}
+                    />
+                    <span className="text-[11px] text-slate-500 mt-1 block">
+                      Point de départ des livraisons de vos produits : sert à calculer un tarif de
+                      livraison juste selon la distance jusqu&apos;au quartier du client, plutôt qu&apos;un
+                      tarif unique pour tout Bamako.
                     </span>
                   </div>
                 </div>

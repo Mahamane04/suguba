@@ -62,11 +62,23 @@ export async function creerCommande(admin: SupabaseClient | null, value: unknown
   }
 
   const { data: product, error: productError } = await admin.from('products')
-    .select('id, name, images, supplier_price, public_price, status, commission_proposee')
+    .select('id, name, images, supplier_price, public_price, status, commission_proposee, supplier_id')
     .eq('id', input.productId).maybeSingle();
   if (productError) indisponible();
   if (!product || product.status !== 'approved' || Number(product.public_price) <= 0) {
     throw new OrderCreationError('Ce produit n’est pas disponible à la vente.', 400);
+  }
+
+  // Quartier du fournisseur — voir /api/orders/quote pour le détail : sans
+  // lui, repli sur le tarif plat, jamais un blocage de la commande.
+  let quartierFournisseur: string | undefined;
+  if (product.supplier_id) {
+    const { data: fournisseur } = await admin
+      .from('suppliers')
+      .select('warehouse_neighborhood')
+      .eq('profile_id', product.supplier_id)
+      .maybeSingle();
+    quartierFournisseur = fournisseur?.warehouse_neighborhood || undefined;
   }
   let reseller: { id: string; full_name: string; reseller_code: string } | null = null;
   if (input.resellerCode) {
@@ -85,7 +97,9 @@ export async function creerCommande(admin: SupabaseClient | null, value: unknown
     prixFournisseur: Number(product.supplier_price), prixVente: Number(product.public_price),
     commissionProposee: product.commission_proposee,
   }, {
-    quantite: input.quantity, ville: input.city, pointRelaisId: input.pickupPointId,
+    quantite: input.quantity, ville: input.city,
+    quartierClient: input.neighborhood, quartierFournisseur,
+    pointRelaisId: input.pickupPointId,
     codePromo: input.promoCode, revendeurAttribue: Boolean(reseller),
   }, completerReglages(settings?.valeurs || {}));
   if (devis.tarif.statut === 'sous_plancher' || !Number.isFinite(devis.total) || devis.total <= 0) {
