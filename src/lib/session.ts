@@ -33,6 +33,15 @@ export interface SugubaSession {
    * directement, sous peine de casser les sessions encore en circulation.
    */
   roles?: Partial<Record<SugubaRole, ProfileStatus>>;
+  /**
+   * Mode aperçu (2026-09-11) : présent quand un admin s'est connecté « en
+   * tant que » un autre rôle pour tester ses écrans (voir
+   * /api/admin/preview-role). `depuis` garde l'identité RÉELLE de l'admin
+   * pour pouvoir y revenir — sans elle, /api/admin/preview-role/exit ne
+   * saurait pas quel compte restaurer, l'admin resterait coincé dans
+   * l'aperçu jusqu'à une reconnexion complète.
+   */
+  apercu?: { depuis: { uid: string; phone: string } };
   iat: number;
   exp: number;
 }
@@ -99,6 +108,7 @@ export async function createSessionToken(params: {
   role: SugubaRole;
   status: ProfileStatus;
   roles?: Partial<Record<SugubaRole, ProfileStatus>>;
+  apercu?: { depuis: { uid: string; phone: string } };
 }): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   const payload: SugubaSession = {
@@ -107,6 +117,7 @@ export async function createSessionToken(params: {
     role: params.role,
     status: params.status,
     ...(params.roles && Object.keys(params.roles).length > 0 ? { roles: params.roles } : {}),
+    ...(params.apercu ? { apercu: params.apercu } : {}),
     iat: now,
     exp: now + SESSION_TTL_SECONDS,
   };

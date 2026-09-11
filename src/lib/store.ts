@@ -829,6 +829,32 @@ export function useCatalogueCharge(): boolean {
   return charge;
 }
 
+/**
+ * Mode aperçu admin (2026-09-11) — « se connecter en tant que » (voir
+ * /api/admin/preview-role). Posé une fois par CloudSyncInitializer d'après
+ * /api/auth/me, lu par PreviewBanner. Contrairement à `catalogueCharge`, peut
+ * redevenir `false` (sortie d'aperçu) : chaque changement notifie.
+ */
+let apercuAdmin = false;
+const ecouteursApercu = new Set<(v: boolean) => void>();
+
+export function definirApercuAdmin(valeur: boolean): void {
+  if (apercuAdmin === valeur) return;
+  apercuAdmin = valeur;
+  ecouteursApercu.forEach((f) => f(valeur));
+}
+
+export function useApercuAdmin(): boolean {
+  const [valeur, setValeur] = useState(apercuAdmin);
+  useEffect(() => {
+    const maj = (v: boolean) => setValeur(v);
+    ecouteursApercu.add(maj);
+    setValeur(apercuAdmin);
+    return () => { ecouteursApercu.delete(maj); };
+  }, []);
+  return valeur;
+}
+
 export function useSugubaStore() {
   const [state, setState] = useState<SugubaState>(sugubaStore.getState());
 

@@ -8,6 +8,7 @@ import WhatsAppFloatingButton from '@/components/common/WhatsAppFloatingButton';
 import PushNotificationManager from '@/components/common/PushNotificationManager';
 import CloudSyncInitializer from '@/components/common/CloudSyncInitializer';
 import AuthHashCatcher from '@/components/common/AuthHashCatcher';
+import PreviewBanner from '@/components/common/PreviewBanner';
 import { ToastProvider } from '@/components/ui/Toast';
 
 /* ── Inter Variable Font — Police officielle Suguba V1.3 ── */
@@ -54,6 +55,7 @@ export default function RootLayout({
         <PushNotificationManager />
         {/* Messages et confirmations de l'application (remplacent alert/confirm). */}
         <ToastProvider>
+          <PreviewBanner />
           {children}
           <WhatsAppFloatingButton />
         </ToastProvider>

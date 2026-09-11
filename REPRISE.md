@@ -373,12 +373,39 @@ dépôt fournisseur, premier paiement SasPay réel.
    ne couvre pas au Mali. La route de versement le refuse explicitement (422 avec un message
    lisible) plutôt que d'échouer obscurément, mais ces revendeurs ne peuvent pas être payés
    automatiquement : il faut leur demander un numéro Orange, Moov ou Mobi Cash.
-10. **Promesses d'argent sans mécanisme derrière** (relevé le 2026-09-10) — plus proposées
-   depuis le tableau de bord revendeur, mais les pages existent encore :
-   `/reseller/referrals` (« +1 000 F par vente de filleul », aucune table ni route),
-   `/reseller/challenges` (primes de 5 000 à 25 000 F en dur), `/reseller/academy`
-   (scripts « 25 000 à 100 000 F / semaine », « 3 000 à 7 000 F par article »). À supprimer
-   ou à brancher sur un vrai mécanisme — décision de l'utilisateur.
+10. ~~**Promesses d'argent sans mécanisme derrière**~~ — `/reseller/referrals` (réseau de
+   filleuls fictif), `/reseller/challenges` et `/reseller/academy` **supprimées le 2026-09-11**
+   (phase 9b), pas juste masquées. À reconstruire seulement avec un vrai mécanisme derrière.
+11. **Corrections UI du 2026-09-11, à partir d'une vidéo filmée par l'utilisateur** :
+    - **Flash Header/BottomNav à chaque navigation** — les deux lisaient l'identité via leur
+      propre `fetch('/api/auth/me')`, refait à chaque remontage (chaque page monte son propre
+      Header/BottomNav, pas de layout partagé) : bandeau « Se connecter »/nav visiteur pendant
+      ~200 ms à chaque tap, même pour un admin connecté. Corrigé en lisant
+      `useSugubaStore().currentUser` (déjà résolu, jamais remonté) au lieu de refetcher — voir
+      « Pièges déjà rencontrés » ci-dessous.
+    - **Fiche produit trop chargée** — le formulaire de commande complet (nom, téléphone,
+      livraison, promo, récapitulatif) restait affiché EN PERMANENCE sous la description. Refait
+      en boîte d'achat compacte (prix + quantité + total) qui ouvre une fenêtre dédiée
+      (`Sheet.tsx`, jamais utilisée jusqu'ici : feuille du bas sur téléphone, boîte centrée sur
+      ordinateur) pour les informations de livraison — la quantité reste réglable directement sur
+      la page, sans ouvrir la fenêtre. Vérifié : ouverture/fermeture (Escape, backdrop), champs
+      conservés à la réouverture, positionnement correct mobile ET ordinateur (mesuré au DOM,
+      512 px centré sur 1024).
+    - **« Se connecter en tant que » pour l'admin** — nouvelle section dans Compte Admin (icône
+      réglages) : Client, Revendeur, Fournisseur, Diaspora. Ouvre l'espace choisi avec une
+      identité de TEST dédiée et stable (`apercu-<role>`, jamais le vrai compte admin), donc les
+      écrans affichés sont exactement ceux d'un compte neuf sans historique — utile aussi pour
+      juger le « premier usage » (phase 9, point resté ouvert). Un bandeau ambre reste affiché
+      tant que l'aperçu est ouvert, avec un bouton pour en sortir et retrouver le vrai compte
+      admin (jamais perdu : `apercu.depuis` le garde dans le jeton signé). Vérifié : bascule,
+      chaînage d'aperçu bloqué (409/403), sortie qui restaure le bon uid/téléphone (revérifié
+      côté serveur, pas juste l'affichage), bandeau qui survit à un rechargement complet.
+      ⚠️ Les actions faites en aperçu écrivent en base RÉELLE comme n'importe quel compte de ce
+      rôle (un produit déposé en aperçu fournisseur part en vente pour de vrai) — le bandeau le
+      rappelle, mais rien ne le bloque techniquement : à l'admin de nettoyer ce qu'il crée pour
+      tester. Voir `/api/admin/preview-role` (entrée, admin uniquement) et
+      `/api/auth/preview-exit` (sortie, hors `/api/admin/*` car le rôle actif n'est plus admin à
+      ce moment — sécurité assurée par la présence d'un `apercu` signé, pas par le rôle).
 
 ---
 
@@ -419,6 +446,18 @@ dépôt fournisseur, premier paiement SasPay réel.
   pas avec le code déployé : `unregister()` le SW + vider les caches avant de chercher ailleurs.
 - **`localStorage` peut ressusciter des données supprimées du code et de la base.** Changer la
   clé de stockage (`suguba_platform_state_v1` → `v2` → ...) invalide les anciens caches.
+- **Header/BottomNav flashaient la version "visiteur" à CHAQUE navigation** (corrigé 2026-09-11,
+  à partir d'une vidéo filmée par l'utilisateur). Cause : chaque `page.tsx` monte SON PROPRE
+  `<Header />`/`<BottomNav />` (pas de layout partagé) — ces composants redémarraient donc à zéro
+  à chaque clic, avec un `useState` qui repartait à `null` le temps d'un nouveau
+  `fetch('/api/auth/me')`. Résultat filmé : bandeau/navbar « Se connecter »/visiteur pendant
+  ~200 ms à chaque tape, avant de revenir au bon état. Les deux composants lisent désormais
+  `useSugubaStore().currentUser`, déjà résolu une fois pour toutes par `CloudSyncInitializer`
+  (lui monté dans layout.tsx, donc jamais remonté) et disponible de façon SYNCHRONE dès le
+  premier rendu — plus aucune requête dans Header/BottomNav, plus de flash. Vérifié en
+  chronométrant le DOM toutes les 20 ms pendant un clic : une seule valeur du début à la fin.
+  Piège pour la suite : tout composant qui lit l'identité doit passer par le store, jamais par
+  son propre `fetch('/api/auth/me')`, sous peine de refaire cette même erreur.
 - **Le statut vivait dans un cookie de session signé de 7 jours, pas seulement en base** —
   toute action admin qui change un statut doit forcer un rafraîchissement de session.
 - **Ne jamais faire de boucles `curl` rapprochées sur la prod** — déclenche le Attack

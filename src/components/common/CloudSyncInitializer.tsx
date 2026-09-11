@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { cloudSyncService } from '@/lib/cloud-sync';
-import { sugubaStore } from '@/lib/store';
+import { sugubaStore, definirApercuAdmin } from '@/lib/store';
 
 export default function CloudSyncInitializer() {
   useEffect(() => {
@@ -29,6 +29,8 @@ export default function CloudSyncInitializer() {
             ? { id: moi.uid, fullName: moi.fullName, phone: moi.phone, role: moi.role, city: moi.city }
             : null,
         );
+        // Bandeau « aperçu admin » (voir PreviewBanner.tsx).
+        definirApercuAdmin(Boolean(moi?.authenticated && moi.apercu));
         // Seuls admin/livreur/revendeur ont des commandes à lire ici (voir
         // /api/orders/feed) : un client, fournisseur ou diaspora déclenchait
         // sinon un 401 sur CHAQUE page (constaté en vérification phase 9).

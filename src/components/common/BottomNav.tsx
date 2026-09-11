@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useSugubaStore } from '@/lib/store';
 import { useClavierOuvert } from '@/lib/useClavierOuvert';
 import {
   Home, Grid3X3, ShoppingCart, Wallet, TrendingUp,
@@ -88,24 +89,28 @@ function getNavItems(role: string | null): NavItem[] {
  * voyait donc une navigation Revendeur (Ventes, Gains, Marketing) menant à des
  * pages que le middleware renvoie aussitôt vers /login. Même reliquat que
  * celui déjà corrigé sur le Header — la source de vérité est /api/auth/me.
+ *
+ * ⚠️ Correctif du 2026-09-11 : chaque page.tsx monte SON PROPRE `<BottomNav />`
+ * (pas de layout partagé) — ce composant est donc une instance TOUTE NEUVE à
+ * chaque navigation. Il refaisait un `fetch('/api/auth/me')` à chaque fois,
+ * avec un état local `role` qui redémarrait à `null` : le temps de la requête
+ * réseau, la barre affichait la version « visiteur » (Boutique/Suivi/Gagner/
+ * Connexion), même pour un admin ou un revendeur connecté — un flash visible
+ * à chaque tape sur une icône, filmé et signalé par l'utilisateur. Le rôle est
+ * désormais lu depuis `useSugubaStore()`, déjà résolu une fois pour toutes par
+ * `CloudSyncInitializer` (monté dans layout.tsx, qui NE remonte PAS lui) et
+ * disponible de façon SYNCHRONE dès le tout premier rendu de ce composant :
+ * plus de requête ici, plus de flash.
  */
 export default function BottomNav() {
   const pathname = usePathname();
-  const [role, setRole] = useState<string | null>(null);
+  const state = useSugubaStore();
+  // id vide = personne connue pour l'instant (visiteur, ou identité pas
+  // encore résolue lors du tout premier chargement de l'app).
+  const role = state.currentUser.id ? state.currentUser.role : null;
   // Masquée pendant la saisie : sur iPhone, elle restait décalée de la hauteur
   // du clavier après sa fermeture (voir src/lib/useClavierOuvert.ts).
   const clavierOuvert = useClavierOuvert();
-
-  useEffect(() => {
-    let annule = false;
-    fetch('/api/auth/me')
-      .then((res) => (res.ok ? res.json() : { authenticated: false }))
-      .then((data) => {
-        if (!annule) setRole(data.authenticated ? data.role : null);
-      })
-      .catch(() => { if (!annule) setRole(null); });
-    return () => { annule = true; };
-  }, [pathname]);
 
   const navItems = getNavItems(role);
 

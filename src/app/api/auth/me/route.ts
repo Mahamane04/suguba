@@ -43,5 +43,8 @@ export async function GET(req: NextRequest) {
     phone: session.phone,
     status: session.status,
     roles: rolesDeLaSession(session),
+    // Mode aperçu admin (voir /api/admin/preview-role) : le bandeau
+    // PreviewBanner s'appuie dessus pour s'afficher.
+    apercu: Boolean(session.apercu),
   });
 }

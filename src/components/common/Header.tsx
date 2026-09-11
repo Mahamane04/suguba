@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import { UserRole } from '@/types';
+import { sugubaStore, useSugubaStore } from '@/lib/store';
 import {
   ShoppingBag, Shield, Truck, Store, UserCheck,
   ChevronDown, LogOut, Menu, X, Globe, LogIn
@@ -19,14 +20,6 @@ const roleConfig: Record<UserRole, { label: string; icon: React.ElementType; pat
   diaspora: { label: 'Diaspora', icon: Globe, path: '/diaspora' },
 };
 
-interface AuthState {
-  authenticated: boolean;
-  role?: UserRole;
-  phone?: string;
-  fullName?: string;
-  status?: string;
-}
-
 /**
  * En-tête commun — refait le 2026-09-11 (phase 1 du plan UI/UX).
  *
@@ -39,21 +32,25 @@ interface AuthState {
  *
  * Un visiteur ne voit qu'un bouton « Se connecter » ; un compte ne voit que
  * SON espace (voir /api/auth/me).
+ *
+ * ⚠️ Correctif du 2026-09-11 : chaque page.tsx monte SON PROPRE `<Header />`
+ * (pas de layout partagé), donc ce composant redémarre à zéro à CHAQUE
+ * navigation. Il refaisait un `fetch('/api/auth/me')` à chaque fois, avec un
+ * état local qui redémarrait à `null` : le temps de la requête, l'en-tête
+ * affichait « Se connecter » même pour un compte connecté — un flash visible
+ * à chaque tape sur un lien, filmé et signalé par l'utilisateur (identique au
+ * même bug sur BottomNav). L'identité vient désormais de `useSugubaStore()`,
+ * déjà résolue une fois pour toutes par `CloudSyncInitializer` (monté dans
+ * layout.tsx, qui ne remonte pas, lui) et disponible de façon SYNCHRONE dès
+ * le tout premier rendu de ce composant : plus de requête ici, plus de flash.
  */
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
+  const state = useSugubaStore();
   const [menuCompte, setMenuCompte] = useState(false);
   const [menuMobile, setMenuMobile] = useState(false);
   const [defile, setDefile] = useState(false);
-  const [auth, setAuth] = useState<AuthState | null>(null);
-
-  useEffect(() => {
-    fetch('/api/auth/me')
-      .then((res) => (res.ok ? res.json() : { authenticated: false }))
-      .then(setAuth)
-      .catch(() => setAuth({ authenticated: false }));
-  }, [pathname]);
 
   useEffect(() => {
     const surDefilement = () => setDefile(window.scrollY > 4);
@@ -71,7 +68,9 @@ export default function Header() {
     setMenuCompte(false);
     setMenuMobile(false);
     await fetch('/api/auth/logout', { method: 'POST' });
-    setAuth({ authenticated: false });
+    // Met à jour le store partagé tout de suite : BottomNav (et tout le
+    // reste de l'app) le lit en direct, sans attendre un rechargement.
+    sugubaStore.definirUtilisateur(null);
     router.push('/');
   }, [router]);
 
@@ -84,10 +83,12 @@ export default function Header() {
     return () => document.removeEventListener('click', surClic);
   }, [menuCompte]);
 
-  const connecte = Boolean(auth?.authenticated && auth.role);
-  const conf = connecte ? roleConfig[auth!.role as UserRole] : null;
+  // id vide = personne connue pour l'instant (visiteur, ou identité pas
+  // encore résolue lors du tout premier chargement de l'app).
+  const connecte = Boolean(state.currentUser.id);
+  const conf = connecte ? roleConfig[state.currentUser.role as UserRole] : null;
   const IconeRole = conf?.icon;
-  const prenom = auth?.fullName?.trim().split(/\s+/)[0] || '';
+  const prenom = state.currentUser.fullName?.trim().split(/\s+/)[0] || '';
   // Sans nom au profil, « Mon compte » : le rôle est déjà écrit juste dessous.
   const nomAffiche = prenom || 'Mon compte';
 

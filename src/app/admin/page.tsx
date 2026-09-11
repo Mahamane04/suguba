@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import ProductImage from '@/components/common/ProductImage';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
@@ -10,16 +11,24 @@ import CloudSyncBadge from '@/components/common/CloudSyncBadge';
 import ProductPricingModal from '@/components/admin/ProductPricingModal';
 import DriverVerificationPanel from '@/components/admin/DriverVerificationPanel';
 import EconomicSettingsPanel from '@/components/admin/EconomicSettingsPanel';
-import { useSugubaStore, sugubaStore } from '@/lib/store';
+import { useSugubaStore, sugubaStore, definirApercuAdmin } from '@/lib/store';
 import { whatsappHelper } from '@/lib/whatsapp-helper';
 import { useToast } from '@/components/ui/Toast';
-import { Product, Order } from '@/types';
-import { 
-  ShieldCheck, PhoneCall, Truck, Wallet, ShoppingBag, 
+import { Product, Order, UserRole } from '@/types';
+import {
+  ShieldCheck, PhoneCall, Truck, Wallet, ShoppingBag,
   Clock, CheckCircle2, TrendingUp, AlertCircle, ArrowRight,
   ExternalLink, UserCheck, ShieldAlert, MessageCircle, BarChart3, Radio,
-  Building2, QrCode, Settings, Trash2, UserCog, RotateCcw, Sparkles, X, Check
+  Building2, QrCode, Settings, Trash2, UserCog, RotateCcw, Sparkles, X, Check, Eye
 } from 'lucide-react';
+
+/** Rôles que l'admin peut prévisualiser (voir /api/admin/preview-role). */
+const ROLES_APERCU: { role: string; libelle: string; chemin: string }[] = [
+  { role: 'customer', libelle: 'Client',      chemin: '/' },
+  { role: 'reseller', libelle: 'Revendeur',   chemin: '/reseller' },
+  { role: 'supplier', libelle: 'Fournisseur', chemin: '/supplier' },
+  { role: 'diaspora', libelle: 'Diaspora',    chemin: '/diaspora' },
+];
 
 interface RetraitAdmin {
   id: string; revendeur: string; montant: number; moyen: string;
@@ -33,7 +42,36 @@ const LIBELLE_MOYEN: Record<string, string> = {
 
 export default function AdminDashboardPage() {
   const state = useSugubaStore();
+  const router = useRouter();
   const { confirmer, toast } = useToast();
+  const [apercuEnCours, setApercuEnCours] = useState<string | null>(null);
+
+  // « Se connecter en tant que » (2026-09-11) — pour vérifier soi-même les
+  // écrans client/revendeur/fournisseur/diaspora sans créer et faire
+  // valider un vrai compte à chaque fois. Identité de test dédiée, jamais
+  // celle de l'admin (voir la route). Un bandeau (PreviewBanner) rappelle en
+  // permanence qu'on est en aperçu, avec un bouton pour en sortir.
+  const ouvrirApercu = async (role: string, chemin: string) => {
+    setApercuEnCours(role);
+    try {
+      const res = await fetch('/api/admin/preview-role', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        toast(json.error || "Impossible d'ouvrir l'aperçu.", { ton: 'erreur' });
+        return;
+      }
+      sugubaStore.definirUtilisateur({ id: `apercu-${role}`, fullName: '', phone: '', role: role as UserRole, city: 'Bamako' });
+      definirApercuAdmin(true);
+      router.push(chemin);
+    } catch {
+      toast('Erreur réseau.', { ton: 'erreur' });
+    } finally {
+      setApercuEnCours(null);
+    }
+  };
 
   // Retraits RÉELS (table payouts). Ils venaient de la mémoire locale : une
   // demande faite depuis le téléphone d'un revendeur n'apparaissait jamais ici.
@@ -871,6 +909,33 @@ export default function AdminDashboardPage() {
                 >
                   {promoteBusy ? '...' : 'Promouvoir'}
                 </button>
+              </div>
+            </div>
+
+            {/* Section 1ter : Aperçu — se connecter en tant que */}
+            <div className="space-y-3.5 bg-amber-50/70 p-4 rounded-2xl border border-amber-200">
+              <h4 className="font-black text-xs text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
+                <Eye className="w-4 h-4 text-amber-700" />
+                <span>Aperçu — se connecter en tant que</span>
+              </h4>
+              <p className="text-[11px] text-amber-900">
+                Ouvre l&apos;espace choisi avec un compte de test dédié (jamais le vôtre), pour
+                vérifier vous-même ce qu&apos;un nouveau compte voit. Un bandeau reste affiché tant
+                que l&apos;aperçu est ouvert. ⚠️ Les actions faites en aperçu (déposer un produit,
+                passer une commande…) écrivent pour de vrai — à nettoyer vous-même après coup.
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {ROLES_APERCU.map(({ role, libelle, chemin }) => (
+                  <button
+                    key={role}
+                    type="button"
+                    disabled={apercuEnCours !== null}
+                    onClick={() => { setShowConfigModal(false); ouvrirApercu(role, chemin); }}
+                    className="px-3 py-2.5 bg-white hover:bg-amber-100 disabled:opacity-50 border border-amber-300 text-amber-950 rounded-xl text-xs font-bold transition-colors"
+                  >
+                    {apercuEnCours === role ? '...' : libelle}
+                  </button>
+                ))}
               </div>
             </div>
 
