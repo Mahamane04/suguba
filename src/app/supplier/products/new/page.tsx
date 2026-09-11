@@ -31,6 +31,9 @@ export default function NewSupplierProductPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  // Résultat de la publication automatique : en vente à tel prix, ou en
+  // attente avec la raison (voir src/lib/publication-auto.ts).
+  const [publication, setPublication] = useState<{ publie: boolean; prix?: number; commission?: number; raison?: string } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +49,7 @@ export default function NewSupplierProductPage() {
     setIsSubmitting(true);
     setSubmitError('');
 
-    const { cloud } = await sugubaStore.addSupplierProduct({
+    const { cloud, publication: resultat } = await sugubaStore.addSupplierProduct({
       supplierId: supplier.id,
       supplierName: supplier.companyName,
       name,
@@ -71,6 +74,7 @@ export default function NewSupplierProductPage() {
       return;
     }
 
+    setPublication(resultat ?? null);
     setIsSuccess(true);
   };
 
@@ -95,7 +99,7 @@ export default function NewSupplierProductPage() {
             Ajouter un Nouveau Produit au Réseau
           </h1>
           <p className="text-xs text-slate-500">
-            Le produit passera par la validation Suguba avant d&apos;être visible par des milliers de revendeurs.
+            Avec au moins une photo, votre produit est mis en vente tout de suite, au prix calculé par Suguba.
           </p>
         </div>
 
@@ -103,10 +107,11 @@ export default function NewSupplierProductPage() {
         <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 text-xs text-blue-900 space-y-1">
           <p className="font-bold flex items-center">
             <ShieldCheck className="w-4 h-4 mr-1.5 text-blue-700" />
-            Processus de validation Suguba :
+            Comment ça marche :
           </p>
           <p className="text-[11px] text-blue-800">
-            Brouillon → Soumis → Vérification Suguba (Qualité & Marge) → Approuvé & Publié.
+            Vous déposez → Suguba calcule le prix de vente et la commission des revendeurs → le produit est en vente
+            aussitôt. Suguba peut ajuster le prix ou retirer un produit après coup.
           </p>
         </div>
 
@@ -122,9 +127,13 @@ export default function NewSupplierProductPage() {
               <CheckCircle2 className="w-10 h-10" />
             </div>
             <div>
-              <h2 className="text-xl font-black text-slate-900">Produit Soumis avec Succès !</h2>
+              <h2 className="text-xl font-black text-slate-900">
+                {publication?.publie ? 'Produit en vente !' : 'Produit enregistré'}
+              </h2>
               <p className="text-xs text-slate-600 mt-1 max-w-md mx-auto">
-                Notre équipe Suguba va vérifier les spécifications et fixer le prix public et la commission revendeur sous quelques heures.
+                {publication?.publie
+                  ? `Il est visible dans le catalogue au prix de ${(publication.prix ?? 0).toLocaleString('fr-FR')} F. Vous toucherez votre prix fournisseur sur chaque vente livrée.`
+                  : `Pas encore en vente : ${publication?.raison || 'Suguba doit fixer son prix.'}`}
               </p>
             </div>
             <button

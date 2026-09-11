@@ -201,6 +201,12 @@ export default function SupplierDashboardPage() {
           onEnregistre={(images) => {
             setProducts((prev) => prev.map((p) => (p.id === photosPour.id ? { ...p, images } : p)));
             setPhotosPour(null);
+            // Une première photo peut avoir mis le produit en vente (prix et
+            // statut calculés par le serveur) : on relit la fiche à jour.
+            fetch('/api/supplier/me')
+              .then((r) => r.json())
+              .then((j) => { if (Array.isArray(j.products)) setProducts(j.products); })
+              .catch(() => {});
           }}
         />
       )}

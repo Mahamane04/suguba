@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
+import { publierAutomatiquement } from '@/lib/publication-auto';
 
 /**
  * Création et modification des fiches produit — fournisseur ou admin.
@@ -16,16 +17,21 @@ import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
  * son identifiant.
  *
  * Désormais :
- *  - prix de vente et commission ne s'écrivent QUE via /api/admin/products/price,
- *    où le moteur de tarification les calcule ;
- *  - aucun produit ne passe en « approuvé » par ici ;
+ *  - prix de vente et commission ne sont JAMAIS lus du navigateur : ils sont
+ *    calculés par le moteur de tarification, soit à la publication
+ *    automatique (src/lib/publication-auto.ts), soit via
+ *    /api/admin/products/price quand l'admin ajuste le prix ;
+ *  - un dépôt fournisseur est publié AUTOMATIQUEMENT au prix recommandé
+ *    (décision du 2026-09-11 : plus de validation manuelle préalable), s'il a
+ *    une photo et qu'un prix rentable existe ; sinon il reste en attente avec
+ *    la raison, renvoyée au fournisseur ;
  *  - un fournisseur ne modifie que ses propres fiches ;
  *  - l'adresse (slug) d'un produit ne change jamais après sa création : elle
  *    figure dans les liens déjà partagés sur WhatsApp ;
- *  - un changement de prix fournisseur sur un produit approuvé le RENVOIE en
- *    modération. Sans cela, un fournisseur pourrait augmenter son prix après
- *    validation et faire passer le produit sous le plancher de Suguba sans
- *    que personne ne le voie.
+ *  - un changement de prix fournisseur sur un produit en vente le fait
+ *    RETARIFER automatiquement (plancher recalculé). Sans cela, un fournisseur
+ *    pourrait augmenter son prix et faire passer le produit sous le plancher
+ *    de Suguba sans que personne ne le voie.
  */
 export async function POST(req: NextRequest) {
   const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
@@ -99,6 +105,15 @@ export async function POST(req: NextRequest) {
         created_at: product.createdAt,
       });
       if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+      // Dépôt fournisseur : publication automatique. L'admin, lui, publie avec
+      // SON prix juste après (voir /admin/products/new).
+      if (estFournisseur) {
+        const publication = await publierAutomatiquement(admin, product.id);
+        return NextResponse.json({
+          success: true, cloud: true, status: publication.publie ? 'approved' : statut, publication,
+        });
+      }
       return NextResponse.json({ success: true, cloud: true, status: statut });
     }
 
@@ -129,6 +144,15 @@ export async function POST(req: NextRequest) {
     maj.status = statut;
     const { error } = await admin.from('products').update(maj).eq('id', product.id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+    // Revenu en attente (prix fournisseur changé) ou jamais publié : on
+    // retente la publication automatique au nouveau prix recommandé.
+    if (statut === 'submitted') {
+      const publication = await publierAutomatiquement(admin, product.id);
+      return NextResponse.json({
+        success: true, cloud: true, status: publication.publie ? 'approved' : statut, publication,
+      });
+    }
     return NextResponse.json({ success: true, cloud: true, status: statut });
   } catch (error: any) {
     console.error('[API products/sync ERROR]', error);

@@ -362,6 +362,18 @@ curl -s -H "Authorization: Bearer $KEY" https://api.saspay.me/api/v1/merchant-ba
 - **Tester du focus ou des minuteries dans le panneau Browser masqué** : la page n'a pas le
   focus (aucun vrai `focusin`) et Chrome ralentit les minuteries à ~1 par seconde. Déclencher
   les `FocusEvent` à la main et attendre plusieurs secondes avant de conclure.
+- **Publication automatique des produits** (décision de l'utilisateur, 2026-09-11) : plus de
+  validation manuelle avant la mise en vente. `src/lib/publication-auto.ts` publie au **prix
+  recommandé** du moteur (commission calculée) si le produit a au moins une photo et qu'un prix
+  rentable existe ; sinon il reste « en attente » avec la raison, renvoyée au fournisseur.
+  Déclenchée au dépôt fournisseur (`/api/products/sync`), au changement de prix fournisseur
+  (retarification) et à l'ajout de photos (`/api/products/images`). Un produit **retiré** par
+  l'admin (`rejected`/`archived`) n'est jamais republié automatiquement. Contrôle après coup :
+  `/admin/products` → « Nouveautés fournisseurs » (14 jours), boutons « Prix » et « Retirer »
+  (`/api/admin/products/status`). Pas de période d'essai pour les nouveaux fournisseurs (option
+  proposée, écartée pour l'instant — facile à ajouter dans `publierAutomatiquement`).
+  ⚠️ Les prix publiés dépendent des réglages économiques : tant que les coûts fixes par défaut
+  (estimation) n'ont pas été remplacés par les vrais, les prix recommandés en héritent.
 - **`payouts.status` n'accepte que `pending`/`processing`/`completed`/`rejected`** (contrainte
   CHECK). Écrire `failed` ferait échouer la mise à jour — même famille de piège que
   l'incohérence de statut des commandes corrigée en août. Un versement raté s'écrit

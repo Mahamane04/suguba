@@ -17,7 +17,8 @@ export default function PhotosProduitModal({
 }: {
   produit: { id: string; nom: string; images: string[] };
   onClose: () => void;
-  onEnregistre: (images: string[]) => void;
+  /** `publication` : résultat de la publication automatique déclenchée par une première photo. */
+  onEnregistre: (images: string[], publication?: { publie: boolean; prix?: number; raison?: string }) => void;
 }) {
   const [images, setImages] = useState<string[]>(produit.images);
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
@@ -38,7 +39,7 @@ export default function PhotosProduitModal({
         setErreur(json.error || "Les photos n'ont pas pu être enregistrées.");
         return;
       }
-      onEnregistre(json.images);
+      onEnregistre(json.images, json.publication);
     } catch {
       setErreur('Erreur réseau, réessayez.');
     } finally {

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { publierAutomatiquement } from '@/lib/publication-auto';
 
 const MAX_PHOTOS = 6;
 
@@ -56,5 +57,10 @@ export async function POST(req: NextRequest) {
   const { error } = await admin.from('products').update({ images }).eq('id', productId);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({ success: true, images });
+  // Un produit en attente faute de photo peut maintenant partir en vente
+  // (publication automatique, voir src/lib/publication-auto.ts). Sans effet
+  // sur un produit déjà en vente ou retiré par l'admin.
+  const publication = await publierAutomatiquement(admin, productId);
+
+  return NextResponse.json({ success: true, images, publication });
 }

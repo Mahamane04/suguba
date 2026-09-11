@@ -184,6 +184,26 @@ class CloudSyncService {
     }
   }
 
+  // Même envoi, avec le résultat de la publication automatique (publié ou
+  // non, prix calculé, raison) — voir src/lib/publication-auto.ts.
+  public async pushProductToCloudDetail(product: Product): Promise<{
+    ok: boolean;
+    publication?: { publie: boolean; prix?: number; commission?: number; raison?: string };
+  }> {
+    try {
+      const res = await fetch('/api/products/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product }),
+      });
+      const json = await res.json().catch(() => ({}));
+      return { ok: res.ok && json.success !== false, publication: json.publication };
+    } catch (err) {
+      console.warn('Exception push produit:', err);
+      return { ok: false };
+    }
+  }
+
   // 5. Push d'une commande — via /api/orders/sync. La création reste
   // publique (client sans compte), la mise à jour de statut exige une
   // session admin/livreur (voir la route pour le détail).

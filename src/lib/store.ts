@@ -218,7 +218,11 @@ export const sugubaStore = {
     preparationDelayHours: number;
     stockLocationAddress: string;
     marketingPitch?: string;
-  }): Promise<{ product: Product; cloud: boolean }> => {
+  }): Promise<{
+    product: Product;
+    cloud: boolean;
+    publication?: { publie: boolean; prix?: number; commission?: number; raison?: string };
+  }> => {
     const newProduct: Product = {
       id: `prd-${Date.now()}`,
       supplierId: data.supplierId,
@@ -260,11 +264,24 @@ export const sugubaStore = {
       ]
     };
     let cloud = false;
+    let publication: { publie: boolean; prix?: number; commission?: number; raison?: string } | undefined;
     if (typeof window !== 'undefined') {
-      cloud = await cloudSyncService.pushProductToCloud(newProduct);
+      const envoi = await cloudSyncService.pushProductToCloudDetail(newProduct);
+      cloud = envoi.ok;
+      publication = envoi.publication;
+      // Publication automatique réussie : la mémoire locale reprend le prix et
+      // la commission du SERVEUR, pas l'estimation « fournisseur × 1,3 ».
+      if (publication?.publie) {
+        globalState = {
+          ...globalState,
+          products: globalState.products.map((p) => (p.id === newProduct.id
+            ? { ...p, status: 'approved', publicPrice: publication!.prix ?? p.publicPrice, resellerCommission: publication!.commission ?? 0 }
+            : p)),
+        };
+      }
     }
     notify();
-    return { product: newProduct, cloud };
+    return { product: newProduct, cloud, publication };
   },
 
   // 2. Admin : Modérer & Fixer l'économie du Produit (Suguba contrôle le modèle)
