@@ -46,7 +46,7 @@ export default function ShopView({
               {boutique.nom.charAt(0).toUpperCase()}
             </div>
             <div className="space-y-1 min-w-0">
-              <span className="inline-block px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-black uppercase tracking-wider border border-emerald-500/30">
+              <span className="inline-block px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-black uppercase tracking-wider border border-emerald-500/30">
                 {estRevendeur ? 'Revendeur partenaire Suguba' : 'Boutique sur Suguba'}
               </span>
               <h1 className="text-2xl sm:text-3xl font-black leading-tight">{titre}</h1>

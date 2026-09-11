@@ -196,7 +196,7 @@ export default function AdminNewProductPage() {
             <div className="flex flex-col sm:flex-row gap-2 justify-center">
               <button
                 onClick={resetForm}
-                className="bg-blue-700 hover:bg-blue-800 text-white font-bold py-3 px-6 rounded-2xl text-xs transition-colors"
+                className="bg-slate-700 hover:bg-slate-800 text-white font-bold py-3 px-6 rounded-2xl text-xs transition-colors"
               >
                 Ajouter un autre produit
               </button>
@@ -219,7 +219,7 @@ export default function AdminNewProductPage() {
                 placeholder="Ex: Ventilateur Rechargeable 16 pouces"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:bg-white focus:outline-blue-600"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:bg-white focus:outline-slate-600"
               />
             </div>
 
@@ -255,7 +255,7 @@ export default function AdminNewProductPage() {
                 placeholder="Caractéristiques, garantie, contenu de la boîte..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:bg-white focus:outline-blue-600"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:bg-white focus:outline-slate-600"
               />
             </div>
 
@@ -267,7 +267,7 @@ export default function AdminNewProductPage() {
             {/* Économie du produit */}
             <div className="pt-2 border-t border-slate-100 space-y-4">
               <p className="text-xs font-black text-slate-900 flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-blue-700" />
+                <ShieldCheck className="w-4 h-4 text-slate-700" />
                 Économie du produit
               </p>
 
@@ -293,7 +293,7 @@ export default function AdminNewProductPage() {
                     step={500}
                     value={publicPrice}
                     onChange={(e) => setPublicPrice(parseInt(e.target.value) || 0)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-black text-blue-700 focus:bg-white"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-black text-slate-700 focus:bg-white"
                   />
                 </div>
 
@@ -329,7 +329,7 @@ export default function AdminNewProductPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white font-bold py-3.5 px-4 rounded-2xl text-xs shadow-lg shadow-blue-800/20 flex items-center justify-center space-x-2 transition-transform active:scale-[0.98]"
+              className="w-full bg-slate-700 hover:bg-slate-800 disabled:opacity-50 text-white font-bold py-3.5 px-4 rounded-2xl text-xs shadow-lg shadow-slate-800/20 flex items-center justify-center space-x-2 transition-transform active:scale-[0.98]"
             >
               <PackagePlus className="w-4 h-4" />
               <span>{isSubmitting ? 'Publication...' : 'Publier le produit'}</span>

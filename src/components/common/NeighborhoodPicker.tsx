@@ -43,7 +43,7 @@ export default function NeighborhoodPicker({ value, onChange, className = '' }: 
         <div className="absolute z-30 mt-1.5 w-full min-w-[240px] max-h-72 overflow-y-auto bg-white border border-gray-100 rounded-2xl shadow-float py-1.5 animate-slide-down">
           {BAMAKO_NEIGHBORHOODS.map((group) => (
             <div key={group.commune}>
-              <p className="px-3.5 pt-2 pb-1 text-[10px] font-black text-gray-400 uppercase tracking-wider">
+              <p className="px-3.5 pt-2 pb-1 text-[11px] font-black text-gray-400 uppercase tracking-wider">
                 {group.commune}
               </p>
               {group.quartiers.map((q) => (

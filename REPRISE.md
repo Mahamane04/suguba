@@ -284,7 +284,13 @@ dépôt fournisseur, premier paiement SasPay réel.
    « Hub ACI 2000 / Clinique Pasteur / avant 19h » et « compte marchand Wave », inventés.
    Espèces encaissées = commandes livrées NON payées en ligne (elles comptaient tout). Courses :
    point de retrait = fournisseur réel (« Hub Central » en dur retiré), « OTP » → « Code
-   client », plus de bleu ni de 10 px. **Suite : phase 8 (qualité transverse).**
+   client », plus de bleu ni de 10 px.
+   **Phase 8 (qualité transverse) : première passe faite le 2026-09-11** — 34 fichiers : texte
+   9/10 px → 11 px et bleu/violet/indigo → slate dans toute l'app (sauf parrainage/défis, en
+   attente de décision). Rapport du soir : livreurs actifs réels (`/api/admin/drivers/active`),
+   compte de revendeurs de démo retiré. Checklist de lancement : 9 affirmations fausses
+   corrigées (paiement 1-clic Wave, 6 points relais, codes RAMADAN « actifs », prime carburant,
+   assistance H24, académie « prête »). **Suite : phase 9 (vérification finale par rôle).**
    Produit « [DÉMO] Blender » retiré de la vente (statut `rejected`) le 2026-09-11 à la demande
    de l'utilisateur. ⚠️ 4 autres « [DÉMO] » restent en vente (ventilateur, kit solaire,
    batterie, écouteurs) — en attente de sa décision.

@@ -146,7 +146,7 @@ export default function OrderTrackingPage() {
               {recherche ? 'Recherche…' : 'Voir ma commande'}
             </button>
 
-            <p className="text-[10px] text-slate-400 text-center">
+            <p className="text-[11px] text-slate-400 text-center">
               Ce numéro nous sert uniquement à vérifier que la commande est la vôtre.
             </p>
           </form>

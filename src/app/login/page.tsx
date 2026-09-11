@@ -26,9 +26,9 @@ function GoogleIcon({ className }: { className?: string }) {
 
 const quickRoles = [
   { role: 'reseller' as UserRole,  label: 'Revendeur',   icon: Store,       color: 'bg-emerald-50 text-emerald-700 border-emerald-200',  dest: '/reseller'  },
-  { role: 'supplier' as UserRole,  label: 'Fournisseur', icon: ShoppingBag, color: 'bg-blue-50 text-blue-700 border-blue-200',            dest: '/supplier'  },
+  { role: 'supplier' as UserRole,  label: 'Fournisseur', icon: ShoppingBag, color: 'bg-slate-50 text-slate-700 border-slate-200',            dest: '/supplier'  },
   { role: 'driver' as UserRole,    label: 'Livreur',     icon: Truck,       color: 'bg-amber-50 text-amber-700 border-amber-200',         dest: '/driver'    },
-  { role: 'admin' as UserRole,     label: 'Admin',       icon: Shield,      color: 'bg-purple-50 text-purple-700 border-purple-200',      dest: '/admin'     },
+  { role: 'admin' as UserRole,     label: 'Admin',       icon: Shield,      color: 'bg-slate-50 text-slate-700 border-slate-200',      dest: '/admin'     },
 ];
 
 // Corrige BUG-003 : la "connexion rapide" n'existe plus qu'en développement
@@ -182,7 +182,7 @@ function LoginPageContent() {
 
             <div className="flex items-center gap-3 mb-4">
               <div className="h-px flex-1 bg-gray-100" />
-              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wider">ou</span>
+              <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">ou</span>
               <div className="h-px flex-1 bg-gray-100" />
             </div>
 
@@ -256,12 +256,12 @@ function LoginPageContent() {
 
             {/* Trust badges */}
             <div className="flex items-center justify-center gap-3 mt-4 pt-4 border-t border-gray-50">
-              <div className="flex items-center gap-1 text-[10px] text-gray-400">
+              <div className="flex items-center gap-1 text-[11px] text-gray-400">
                 <ShieldCheck className="w-3 h-3 text-suguba-brand" />
                 Connexion sécurisée
               </div>
               <div className="w-px h-3 bg-gray-200" />
-              <div className="flex items-center gap-1 text-[10px] text-gray-400">
+              <div className="flex items-center gap-1 text-[11px] text-gray-400">
                 <Zap className="w-3 h-3 text-amber-500" />
                 Sans mot de passe
               </div>
@@ -274,10 +274,10 @@ function LoginPageContent() {
               positionné explicitement sur le serveur. */}
           {DEMO_MODE && (
             <div className="bg-white rounded-2xl p-4 border border-amber-200 shadow-card">
-              <p className="text-[10px] font-bold uppercase tracking-widest text-amber-600 text-center mb-1">
+              <p className="text-[11px] font-bold uppercase tracking-widest text-amber-600 text-center mb-1">
                 ⚠️ Accès démo — désactivé en production
               </p>
-              <p className="text-[9px] text-gray-400 text-center mb-3">
+              <p className="text-[11px] text-gray-400 text-center mb-3">
                 Ne saute aucune vérification réelle : réservé aux environnements de développement.
               </p>
               {/* Corrige BUG-015 : en grid-cols-4 sur mobile, la 4e carte
@@ -294,7 +294,7 @@ function LoginPageContent() {
                     className={`p-2 rounded-xl text-center border transition-all hover:shadow-sm active:scale-95 ${color}`}
                   >
                     <Icon className="w-4 h-4 mx-auto mb-0.5" />
-                    <span className="text-[9px] font-bold leading-none block">{label}</span>
+                    <span className="text-[11px] font-bold leading-none block">{label}</span>
                   </button>
                 ))}
               </div>
@@ -306,7 +306,7 @@ function LoginPageContent() {
 
       {/* Bottom legal */}
       <div className="text-center pb-6 px-4">
-        <p className="text-[10px] text-gray-300">
+        <p className="text-[11px] text-gray-300">
           En vous connectant, vous acceptez les{' '}
           <Link href="/legal/terms" className="text-suguba-brand hover:underline">
             Conditions générales

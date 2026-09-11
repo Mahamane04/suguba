@@ -158,10 +158,10 @@ https://app.sugubaml.com/reseller/join`,
               <div key={idx} className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs flex flex-col justify-between space-y-4">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <span className="px-2.5 py-0.5 rounded-full bg-slate-900 text-white text-[10px] font-black">
+                    <span className="px-2.5 py-0.5 rounded-full bg-slate-900 text-white text-[11px] font-black">
                       {script.lang}
                     </span>
-                    <span className="text-[10px] text-slate-400 font-bold">{script.target}</span>
+                    <span className="text-[11px] text-slate-400 font-bold">{script.target}</span>
                   </div>
                   <h3 className="font-black text-xs text-slate-900 leading-snug">{script.title}</h3>
                   <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl text-[11px] font-mono text-slate-700 whitespace-pre-line leading-relaxed max-h-60 overflow-y-auto">
@@ -236,7 +236,7 @@ https://app.sugubaml.com/reseller/join`,
         {/* Section 3 : Plan d'Action 7 Jours pour Recruter 50 Revendeurs */}
         <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-emerald-950 text-white rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl">
           <div className="space-y-1">
-            <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 font-black text-[10px] rounded-full uppercase tracking-wider border border-emerald-500/30">
+            <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 font-black text-[11px] rounded-full uppercase tracking-wider border border-emerald-500/30">
               Stratégie Terrain Bamako
             </span>
             <h2 className="text-lg sm:text-xl font-black">

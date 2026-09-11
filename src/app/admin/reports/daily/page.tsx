@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
@@ -14,6 +14,16 @@ import {
 export default function AdminDailyReportPage() {
   const state = useSugubaStore();
   const [copied, setCopied] = useState(false);
+
+  // Livreurs actifs RÉELS : le rapport comptait les livreurs et revendeurs de
+  // démonstration (state.drivers / state.resellers) et les envoyait tels quels.
+  const [nbLivreurs, setNbLivreurs] = useState<number | null>(null);
+  useEffect(() => {
+    fetch('/api/admin/drivers/active')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => setNbLivreurs(Array.isArray(j?.drivers) ? j.drivers.length : null))
+      .catch(() => setNbLivreurs(null));
+  }, []);
 
   const todayStr = new Date().toLocaleDateString('fr-FR', {
     weekday: 'long',
@@ -51,8 +61,7 @@ export default function AdminDailyReportPage() {
     `• 🏢 *Marge Nette Suguba :* *${totalSugubaMargin.toLocaleString('fr-FR')} FCFA* (Bénéfice)\n` +
     `• 🤝 Commissions Revendeurs : *${totalCommissions.toLocaleString('fr-FR')} FCFA*\n\n` +
     `👥 *RÉSEAU & OPÉRATIONS :*\n` +
-    `• Revendeurs actifs : *${state.resellers.length}*\n` +
-    `• Livreurs déployés : *${state.drivers.length}*\n` +
+    `• Livreurs actifs : *${nbLivreurs ?? '—'}*\n` +
     `• Dossiers SAV en cours : *${openSav}*\n\n` +
     `📲 *Plateforme en direct :* https://app.sugubaml.com/admin`;
 
@@ -103,33 +112,33 @@ export default function AdminDailyReportPage() {
         {/* 4 Key Executive Metrics */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white p-5 rounded-3xl border border-emerald-200 shadow-xs space-y-1">
-            <span className="text-[10px] font-bold text-emerald-800 uppercase">Marge Nette Suguba</span>
+            <span className="text-[11px] font-bold text-emerald-800 uppercase">Marge Nette Suguba</span>
             <p className="text-2xl font-black text-emerald-700">
               {totalSugubaMargin.toLocaleString('fr-FR')} <span className="text-xs font-normal">F</span>
             </p>
-            <p className="text-[10px] text-emerald-600 font-bold">Bénéfice net du jour</p>
+            <p className="text-[11px] text-emerald-600 font-bold">Bénéfice net du jour</p>
           </div>
 
           <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-1">
-            <span className="text-[10px] font-bold text-slate-500 uppercase">Volume Global (GMV)</span>
+            <span className="text-[11px] font-bold text-slate-500 uppercase">Volume Global (GMV)</span>
             <p className="text-2xl font-black text-slate-900">
               {totalGmv.toLocaleString('fr-FR')} <span className="text-xs font-normal">F</span>
             </p>
-            <p className="text-[10px] text-slate-400">Total encaissé</p>
+            <p className="text-[11px] text-slate-400">Total encaissé</p>
           </div>
 
           <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-1">
-            <span className="text-[10px] font-bold text-slate-500 uppercase">Colis Livrés</span>
+            <span className="text-[11px] font-bold text-slate-500 uppercase">Colis Livrés</span>
             <p className="text-2xl font-black text-slate-900">{deliveredOrders.length}</p>
-            <p className="text-[10px] text-emerald-600 font-bold">100% avec OTP validé</p>
+            <p className="text-[11px] text-emerald-600 font-bold">100% avec OTP validé</p>
           </div>
 
-          <div className="bg-white p-5 rounded-3xl border border-purple-200 shadow-xs space-y-1">
-            <span className="text-[10px] font-bold text-purple-800 uppercase">Commissions Réseau</span>
-            <p className="text-2xl font-black text-purple-700">
+          <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-1">
+            <span className="text-[11px] font-bold text-slate-800 uppercase">Commissions Réseau</span>
+            <p className="text-2xl font-black text-slate-700">
               {totalCommissions.toLocaleString('fr-FR')} <span className="text-xs font-normal">F</span>
             </p>
-            <p className="text-[10px] text-purple-600 font-medium">Distribuées aux revendeurs</p>
+            <p className="text-[11px] text-slate-600 font-medium">Distribuées aux revendeurs</p>
           </div>
         </div>
 

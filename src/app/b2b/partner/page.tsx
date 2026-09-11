@@ -89,7 +89,7 @@ export default function B2BPartnerPitchPage() {
 
           {/* Headline Proposition */}
           <div className="bg-emerald-50 rounded-2xl p-6 border border-emerald-200 space-y-2">
-            <span className="px-3 py-1 bg-emerald-600 text-white text-[10px] font-black rounded-full uppercase tracking-wider">
+            <span className="px-3 py-1 bg-emerald-600 text-white text-[11px] font-black rounded-full uppercase tracking-wider">
               Offre Partenaire Distribution Exclusive
             </span>
             <h2 className="text-xl sm:text-2xl font-black text-emerald-950">
@@ -115,7 +115,7 @@ export default function B2BPartnerPitchPage() {
 
             <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
               <div className="flex items-center space-x-2 text-slate-900 font-black text-sm">
-                <Truck className="w-5 h-5 text-blue-600" />
+                <Truck className="w-5 h-5 text-slate-600" />
                 <span>2. Logistique 24h & Flotte Moto</span>
               </div>
               <p className="text-slate-600 leading-relaxed">
@@ -125,7 +125,7 @@ export default function B2BPartnerPitchPage() {
 
             <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
               <div className="flex items-center space-x-2 text-slate-900 font-black text-sm">
-                <ShieldCheck className="w-5 h-5 text-purple-600" />
+                <ShieldCheck className="w-5 h-5 text-slate-600" />
                 <span>3. Sécurité Anti-Fraude par Code OTP</span>
               </div>
               <p className="text-slate-600 leading-relaxed">
@@ -167,7 +167,7 @@ export default function B2BPartnerPitchPage() {
               </div>
 
               <div className="p-4 bg-slate-900 text-white rounded-2xl space-y-1">
-                <span className="font-black text-blue-400 block">Étape 3 : Ventes & Reversements</span>
+                <span className="font-black text-slate-400 block">Étape 3 : Ventes & Reversements</span>
                 <p className="text-slate-300">
                   Les commandes affluent, Suguba livre et vous encaissez votre chiffre d&apos;affaires sans vous déplacer.
                 </p>
@@ -185,7 +185,7 @@ export default function B2BPartnerPitchPage() {
             </div>
 
             <div className="text-center border border-slate-300 rounded-2xl p-4 w-48 space-y-4">
-              <p className="text-[10px] text-slate-400 uppercase font-bold">Cachet & Signature Suguba</p>
+              <p className="text-[11px] text-slate-400 uppercase font-bold">Cachet & Signature Suguba</p>
               <div className="text-emerald-800 font-serif italic text-sm font-black py-2">
                 Direction Générale<br />Suguba Mali SAS
               </div>

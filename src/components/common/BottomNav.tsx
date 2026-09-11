@@ -169,7 +169,7 @@ export default function BottomNav() {
                   />
                 </div>
                 <span
-                  className={`text-[10px] mt-0.5 tracking-tight font-medium truncate max-w-[56px] leading-none transition-all ${
+                  className={`text-[11px] mt-0.5 tracking-tight font-medium truncate max-w-[56px] leading-none transition-all ${
                     isActive ? 'font-bold' : ''
                   }`}
                 >

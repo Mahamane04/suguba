@@ -303,14 +303,14 @@ export default function B2BQuotePage() {
               {/* Client Info Card */}
               <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 grid grid-cols-2 gap-4 text-xs">
                 <div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Destinataire / Acheteur B2B</span>
+                  <span className="text-[11px] font-bold text-slate-400 uppercase block mb-1">Destinataire / Acheteur B2B</span>
                   <p className="font-black text-sm text-slate-900">{companyName || 'Société Partenaire'}</p>
                   {nifNumber && <p className="font-mono text-slate-600">{nifNumber}</p>}
                   <p className="text-slate-700 mt-1">Attn : {contactName || 'Responsable Achats'}</p>
                 </div>
 
                 <div className="text-right">
-                  <span className="text-[10px] font-bold text-slate-400 uppercase block mb-1">Lieu & Modalités de Livraison</span>
+                  <span className="text-[11px] font-bold text-slate-400 uppercase block mb-1">Lieu & Modalités de Livraison</span>
                   <p className="font-bold text-slate-900">{deliveryCity} (Mali)</p>
                   <p className="text-slate-600">Contact : {contactPhone || '+223 -- -- -- --'}</p>
                   <p className="text-slate-600 font-medium mt-1">Conditions : {paymentTerms}</p>
@@ -373,11 +373,11 @@ export default function B2BQuotePage() {
                 </div>
 
                 <div className="text-center flex flex-col justify-between h-28 border border-dashed border-slate-300 p-3 rounded-xl">
-                  <span className="text-[10px] text-slate-500 font-bold">Cachet & Signature de la Direction</span>
+                  <span className="text-[11px] text-slate-500 font-bold">Cachet & Signature de la Direction</span>
                   <div className="font-serif italic text-emerald-800 text-sm font-bold">
                     Pour Accord — Direction Générale Suguba
                   </div>
-                  <span className="text-[9px] text-slate-400">Document généré électroniquement • Fait foi</span>
+                  <span className="text-[11px] text-slate-400">Document généré électroniquement • Fait foi</span>
                 </div>
               </div>
 

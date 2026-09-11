@@ -121,7 +121,7 @@ export default function PendingApprovalPage() {
         {/* Récapitulatif de ce qui est examiné */}
         {dossier && (
           <div className="bg-gray-50 border border-gray-100 rounded-2xl p-3 text-left space-y-1">
-            <p className="text-[10px] font-black uppercase tracking-wider text-gray-400">
+            <p className="text-[11px] font-black uppercase tracking-wider text-gray-400">
               Ce que Suguba examine
             </p>
             <p className="text-xs text-gray-700">

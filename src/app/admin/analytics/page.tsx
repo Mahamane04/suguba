@@ -130,21 +130,21 @@ export default function AdminAnalyticsPage() {
             <p className="text-2xl font-black text-emerald-700">
               {totalSugubaMargin.toLocaleString('fr-FR')} <span className="text-xs font-bold text-slate-500">FCFA</span>
             </p>
-            <p className="text-[10px] text-emerald-600 font-bold">Bénéfice net plateforme</p>
+            <p className="text-[11px] text-emerald-600 font-bold">Bénéfice net plateforme</p>
           </div>
 
           {/* Volume d'Affaires Total (GMV) */}
           <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-1">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Volume d&apos;Affaires (GMV)</span>
-              <div className="w-7 h-7 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
+              <div className="w-7 h-7 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center">
                 <ShoppingBag className="w-4 h-4" />
               </div>
             </div>
             <p className="text-2xl font-black text-slate-900">
               {totalGmv.toLocaleString('fr-FR')} <span className="text-xs font-bold text-slate-500">FCFA</span>
             </p>
-            <p className="text-[10px] text-slate-500">{deliveredOrders.length} commandes encaissées</p>
+            <p className="text-[11px] text-slate-500">{deliveredOrders.length} commandes encaissées</p>
           </div>
 
           {/* Commissions Revendeurs Distribuées */}
@@ -158,21 +158,21 @@ export default function AdminAnalyticsPage() {
             <p className="text-2xl font-black text-amber-700">
               {totalCommissionsPaid.toLocaleString('fr-FR')} <span className="text-xs font-bold text-slate-500">FCFA</span>
             </p>
-            <p className="text-[10px] text-slate-500">Rémunération réseau</p>
+            <p className="text-[11px] text-slate-500">Rémunération réseau</p>
           </div>
 
           {/* Frais de Livraison Encaissés */}
           <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-1">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Frais de Course</span>
-              <div className="w-7 h-7 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center">
+              <div className="w-7 h-7 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center">
                 <Truck className="w-4 h-4" />
               </div>
             </div>
             <p className="text-2xl font-black text-slate-900">
               {totalDeliveryFees.toLocaleString('fr-FR')} <span className="text-xs font-bold text-slate-500">FCFA</span>
             </p>
-            <p className="text-[10px] text-slate-500">Budget logistique</p>
+            <p className="text-[11px] text-slate-500">Budget logistique</p>
           </div>
 
         </div>
@@ -191,7 +191,7 @@ export default function AdminAnalyticsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-200 text-slate-400 font-bold uppercase text-[10px]">
+                <tr className="border-b border-slate-200 text-slate-400 font-bold uppercase text-[11px]">
                   <th className="pb-2">Commande</th>
                   <th className="pb-2">Produit</th>
                   <th className="pb-2">Client & Quartier</th>
@@ -213,7 +213,7 @@ export default function AdminAnalyticsPage() {
                       <td className="py-3 font-medium text-slate-700 max-w-[180px] truncate">{o.productName}</td>
                       <td className="py-3 text-slate-600">
                         <span className="font-bold block text-slate-900">{o.customerName}</span>
-                        <span className="text-[10px] text-slate-500">{o.neighborhood}</span>
+                        <span className="text-[11px] text-slate-500">{o.neighborhood}</span>
                       </td>
                       <td className="py-3 font-black text-slate-900 text-right">
                         {o.totalAmount.toLocaleString('fr-FR')} F
@@ -225,7 +225,7 @@ export default function AdminAnalyticsPage() {
                         +{Math.max(0, margin).toLocaleString('fr-FR')} F
                       </td>
                       <td className="py-3 text-center">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
+                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${
                           o.status === 'delivered' ? 'bg-emerald-100 text-emerald-800' :
                           'bg-amber-100 text-amber-800'
                         }`}>

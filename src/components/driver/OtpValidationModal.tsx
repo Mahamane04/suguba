@@ -134,7 +134,7 @@ export default function OtpValidationModal({ order, isOpen, onClose, onSuccess }
                     <p className="text-xl font-black text-emerald-900 mt-0.5">
                       Ne rien encaisser
                     </p>
-                    <p className="text-[10px] text-slate-600 mt-0.5">
+                    <p className="text-[11px] text-slate-600 mt-0.5">
                       Remettez simplement le colis à {order.customerName} ({order.customerPhone}).
                     </p>
                   </div>
@@ -149,7 +149,7 @@ export default function OtpValidationModal({ order, isOpen, onClose, onSuccess }
                     <p className="text-xl font-black text-slate-900 mt-0.5">
                       {order.totalAmount.toLocaleString('fr-FR')} FCFA
                     </p>
-                    <p className="text-[10px] text-slate-600 mt-0.5">
+                    <p className="text-[11px] text-slate-600 mt-0.5">
                       Client : {order.customerName} ({order.customerPhone})
                     </p>
                   </div>
@@ -163,7 +163,7 @@ export default function OtpValidationModal({ order, isOpen, onClose, onSuccess }
                     Demandez au client son Code Secret *
                   </label>
                   {attempts > 0 && (
-                    <span className="text-[10px] font-black text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
+                    <span className="text-[11px] font-black text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
                       Tentative {attempts} / 3
                     </span>
                   )}
@@ -182,7 +182,7 @@ export default function OtpValidationModal({ order, isOpen, onClose, onSuccess }
                     className="w-full pl-10 pr-4 py-3 bg-slate-50 border-2 border-slate-300 focus:border-amber-500 rounded-2xl text-center text-2xl tracking-[0.5em] font-black text-slate-900 focus:bg-white focus:outline-hidden disabled:bg-slate-200 disabled:opacity-60"
                   />
                 </div>
-                <p className="text-[10px] text-slate-500 mt-1 text-center">
+                <p className="text-[11px] text-slate-500 mt-1 text-center">
                   Le client a reçu ce code par SMS/WhatsApp lors de la commande.
                 </p>
               </div>

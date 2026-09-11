@@ -122,7 +122,7 @@ export default function EconomicSettingsPanel() {
     <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-4">
       <button type="button" onClick={() => setOuvert((o) => !o)} className="w-full flex items-center justify-between">
         <div className="flex items-center space-x-2 text-left">
-          <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-800 flex items-center justify-center">
+          <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-800 flex items-center justify-center">
             <Calculator className="w-4 h-4" />
           </div>
           <div>
@@ -358,18 +358,18 @@ export default function EconomicSettingsPanel() {
             <div className="bg-slate-900 text-white rounded-2xl p-4 space-y-2 text-xs">
               <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Aperçu sur un produit exemple</p>
               <div className="flex gap-2">
-                <label className="flex-1 text-[10px] text-slate-400">Prix fournisseur
+                <label className="flex-1 text-[11px] text-slate-400">Prix fournisseur
                   <input type="number" value={exemple.fournisseur} onChange={(e) => setExemple({ ...exemple, fournisseur: Number(e.target.value) || 0 })}
                     className="w-full h-9 mt-1 px-2 rounded-lg bg-slate-800 text-white font-mono" />
                 </label>
-                <label className="flex-1 text-[10px] text-slate-400">Prix de vente
+                <label className="flex-1 text-[11px] text-slate-400">Prix de vente
                   <input type="number" value={exemple.vente} onChange={(e) => setExemple({ ...exemple, vente: Number(e.target.value) || 0 })}
                     className="w-full h-9 mt-1 px-2 rounded-lg bg-slate-800 text-white font-mono" />
                 </label>
               </div>
               <div className="flex justify-between text-amber-300"><span>Plancher Suguba</span><span>{f(apercu.plancher)}</span></div>
               <div className="flex justify-between text-emerald-400 font-black"><span>Commission revendeur</span><span>{f(apercu.commission)}</span></div>
-              <div className="flex justify-between text-purple-200 font-black"><span>Marge nette Suguba</span><span>{f(apercu.margeNetteSuguba)}</span></div>
+              <div className="flex justify-between text-slate-200 font-black"><span>Marge nette Suguba</span><span>{f(apercu.margeNetteSuguba)}</span></div>
               <div className="flex justify-between text-slate-400"><span>Prix minimal / recommandé</span><span>{f(apercu.prixMinimal)} / {f(apercu.prixRecommande)}</span></div>
             </div>
           )}
@@ -400,7 +400,7 @@ export default function EconomicSettingsPanel() {
           )}
 
           <button type="button" onClick={enregistrer} disabled={envoi || erreursLocales.length > 0}
-            className="w-full h-[52px] bg-purple-700 hover:bg-purple-800 disabled:opacity-50 text-white font-black rounded-2xl text-xs flex items-center justify-center space-x-2 transition-transform active:scale-[0.98]">
+            className="w-full h-[52px] bg-slate-700 hover:bg-slate-800 disabled:opacity-50 text-white font-black rounded-2xl text-xs flex items-center justify-center space-x-2 transition-transform active:scale-[0.98]">
             {envoi && <Loader2 className="w-4 h-4 animate-spin" />}
             <span>Enregistrer et recalculer les commissions</span>
           </button>
@@ -426,7 +426,7 @@ function Num({ l, v, on, suffixe }: { l: string; v: number; on: (v: number) => v
       <div className="flex items-center mt-1">
         <input type="number" min={0} step="any" value={v} onChange={(e) => on(Number(e.target.value) || 0)}
           className="flex-1 min-w-0 h-10 px-3 rounded-xl border border-slate-200 text-xs font-mono text-slate-900" />
-        {suffixe && <span className="ml-2 text-[10px] text-slate-400 whitespace-nowrap">{suffixe}</span>}
+        {suffixe && <span className="ml-2 text-[11px] text-slate-400 whitespace-nowrap">{suffixe}</span>}
       </div>
     </label>
   );

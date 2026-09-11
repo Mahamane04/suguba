@@ -77,7 +77,7 @@ export default function Footer() {
               </div>
               <div>
                 <span className="text-white font-black text-lg tracking-tight">SUGUBA<span className="text-suguba-brand">.ML</span></span>
-                <p className="text-[10px] text-gray-500 font-semibold tracking-wider uppercase">Plateforme SaaS B2B2C Mali</p>
+                <p className="text-[11px] text-gray-500 font-semibold tracking-wider uppercase">Plateforme SaaS B2B2C Mali</p>
               </div>
             </div>
             <p className="text-xs text-gray-500 leading-relaxed max-w-xs">
@@ -88,7 +88,7 @@ export default function Footer() {
               <a href="tel:+22389460000" className="hover:text-white transition-colors">+223 89 46 00 00</a>
             </div>
             {/* Legal IDs */}
-            <div className="text-[10px] text-gray-600 space-y-0.5">
+            <div className="text-[11px] text-gray-600 space-y-0.5">
               <p>NIF : 086419208K</p>
               <p>RCCM : MA.BKO.2026.B.14820</p>
               <p>Hamdallaye ACI 2000, Rue 314 P.88, Bamako</p>

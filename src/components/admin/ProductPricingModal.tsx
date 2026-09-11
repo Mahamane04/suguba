@@ -103,9 +103,9 @@ export default function ProductPricingModal({ product, isOpen, onClose }: Produc
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
       <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden max-h-[92vh] flex flex-col">
-        <div className="p-4 sm:p-5 bg-gradient-to-r from-purple-800 to-indigo-900 text-white flex items-center justify-between">
+        <div className="p-4 sm:p-5 bg-gradient-to-r from-slate-800 to-slate-900 text-white flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <ShieldCheck className="w-5 h-5 text-purple-300" />
+            <ShieldCheck className="w-5 h-5 text-slate-300" />
             <h3 className="font-bold text-base sm:text-lg">Tarification du produit</h3>
           </div>
           <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center">
@@ -119,9 +119,9 @@ export default function ProductPricingModal({ product, isOpen, onClose }: Produc
               <ProductImage src={product.images?.[0]} alt={product.name} fill className="object-cover" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Fournisseur : {product.supplierName}</p>
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Fournisseur : {product.supplierName}</p>
               <h4 className="font-bold text-xs text-slate-900 truncate">{product.name}</h4>
-              <p className="text-xs font-black text-blue-700 mt-0.5">Prix fournisseur : {f(product.supplierPrice)}</p>
+              <p className="text-xs font-black text-slate-700 mt-0.5">Prix fournisseur : {f(product.supplierPrice)}</p>
             </div>
           </div>
 
@@ -150,11 +150,11 @@ export default function ProductPricingModal({ product, isOpen, onClose }: Produc
                   step={500}
                   value={prixVente}
                   onChange={(e) => setPrixVente(parseInt(e.target.value) || 0)}
-                  className="w-full h-12 px-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-black text-slate-900 focus:bg-white focus:outline-purple-600"
+                  className="w-full h-12 px-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-black text-slate-900 focus:bg-white focus:outline-slate-600"
                 />
                 <div className="flex gap-2 mt-2">
                   <button type="button" onClick={() => setPrixVente(tarif.prixRecommande)}
-                    className="flex-1 h-9 rounded-xl bg-purple-50 border border-purple-200 text-purple-900 text-[11px] font-bold flex items-center justify-center space-x-1">
+                    className="flex-1 h-9 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-[11px] font-bold flex items-center justify-center space-x-1">
                     <Sparkles className="w-3.5 h-3.5" /><span>Recommandé : {f(tarif.prixRecommande)}</span>
                   </button>
                   <button type="button" onClick={() => setPrixVente(tarif.prixMinimal)}
@@ -171,7 +171,7 @@ export default function ProductPricingModal({ product, isOpen, onClose }: Produc
               <div className="bg-slate-900 text-white rounded-2xl p-4 space-y-1.5 text-xs">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 pb-1">Décomposition par article</p>
                 <Ligne l="Prix de vente" v={f(tarif.prixVente)} fort />
-                <Ligne l="− Prix fournisseur" v={f(tarif.prixFournisseur)} classe="text-blue-300" />
+                <Ligne l="− Prix fournisseur" v={f(tarif.prixFournisseur)} classe="text-slate-300" />
                 <div className="border-t border-slate-800 my-1" />
                 <Ligne l="Frais de paiement" v={f(tarif.coutPaiement)} classe="text-slate-400" />
                 <Ligne l="Provision pour refus" v={f(tarif.provisionRefus)} classe="text-slate-400" />
@@ -183,8 +183,8 @@ export default function ProductPricingModal({ product, isOpen, onClose }: Produc
                 <div className="border-t border-slate-800 my-1" />
                 <Ligne l="Reste à partager" v={f(tarif.reste)} />
                 <Ligne l="→ Commission revendeur" v={f(tarif.commission)} classe="text-emerald-400" fort />
-                <Ligne l="→ Marge Suguba (brute)" v={f(tarif.margeSuguba)} classe="text-purple-300" />
-                <Ligne l="Marge nette Suguba, tous coûts payés" v={f(tarif.margeNetteSuguba)} classe="text-purple-200" fort />
+                <Ligne l="→ Marge Suguba (brute)" v={f(tarif.margeSuguba)} classe="text-slate-300" />
+                <Ligne l="Marge nette Suguba, tous coûts payés" v={f(tarif.margeNetteSuguba)} classe="text-slate-200" fort />
               </div>
 
               {tarif.partageable && (
@@ -202,7 +202,7 @@ export default function ProductPricingModal({ product, isOpen, onClose }: Produc
               <button
                 type="submit"
                 disabled={envoi || tarif.statut === 'sous_plancher'}
-                className="w-full h-[52px] bg-purple-700 hover:bg-purple-800 disabled:opacity-50 text-white font-bold rounded-2xl text-xs flex items-center justify-center space-x-2 transition-transform active:scale-[0.98]"
+                className="w-full h-[52px] bg-slate-700 hover:bg-slate-800 disabled:opacity-50 text-white font-bold rounded-2xl text-xs flex items-center justify-center space-x-2 transition-transform active:scale-[0.98]"
               >
                 {envoi ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
                 <span>{tarif.statut === 'sous_plancher' ? 'Prix sous le plancher' : 'Approuver et publier à ce prix'}</span>

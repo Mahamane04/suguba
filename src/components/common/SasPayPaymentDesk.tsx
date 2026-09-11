@@ -25,7 +25,7 @@ import { Smartphone, ShieldCheck, Loader2, CheckCircle2, AlertCircle, ArrowUpRig
 // ligne et cassait l'alignement. Au Mali ces noms courts sont sans ambiguïté.
 const RESEAUX = [
   { code: 'orange_ml', label: 'Orange', couleur: 'bg-orange-500' },
-  { code: 'moov_ml', label: 'Moov', couleur: 'bg-blue-600' },
+  { code: 'moov_ml', label: 'Moov', couleur: 'bg-slate-600' },
   { code: 'mobi_cash_ml', label: 'Mobi Cash', couleur: 'bg-emerald-600' },
 ] as const;
 
@@ -266,7 +266,7 @@ export default function SasPayPaymentDesk({ amount, orderNumber, defaultPhone = 
         </>
       )}
 
-      <div className="flex items-center space-x-1.5 text-[10px] text-slate-400 pt-1 border-t border-slate-100">
+      <div className="flex items-center space-x-1.5 text-[11px] text-slate-400 pt-1 border-t border-slate-100">
         <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
         <span>Paiement sécurisé. Suguba ne voit jamais votre code secret.</span>
       </div>

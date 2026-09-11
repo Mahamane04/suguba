@@ -143,7 +143,7 @@ export default function DriverVerificationPanel() {
                   </div>
                 </div>
                 <span
-                  className={`shrink-0 px-2.5 py-1 rounded-full text-[10px] font-black ${
+                  className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-black ${
                     l.verifie ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-white'
                   }`}
                 >
@@ -224,7 +224,7 @@ export default function DriverVerificationPanel() {
         </div>
       )}
 
-      <p className="text-[10px] text-slate-400 border-t border-slate-100 pt-3">
+      <p className="text-[11px] text-slate-400 border-t border-slate-100 pt-3">
         Un compte livreur fonctionne dès l&apos;inscription : il peut se connecter et voir
         son espace. Ce panneau décide seulement du droit de recevoir des courses.
       </p>

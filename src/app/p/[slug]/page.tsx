@@ -291,7 +291,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 </p>
               </div>
             </div>
-            <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-black">
+            <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-black">
               Code : {refCode}
             </span>
           </div>
@@ -501,7 +501,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                     }`}
                   >
                     <span className="block font-black text-xs">🛵 À Domicile</span>
-                    <span className={`text-[10px] block ${fulfillmentMethod === 'home_delivery' ? 'text-slate-300' : 'text-slate-500'}`}>
+                    <span className={`text-[11px] block ${fulfillmentMethod === 'home_delivery' ? 'text-slate-300' : 'text-slate-500'}`}>
                       Livré devant votre porte
                     </span>
                   </button>
@@ -516,7 +516,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                     }`}
                   >
                     <span className="block font-black text-xs">🏪 Point Relais</span>
-                    <span className={`text-[10px] block ${fulfillmentMethod === 'pickup_point' ? 'text-emerald-200' : 'text-emerald-700'}`}>
+                    <span className={`text-[11px] block ${fulfillmentMethod === 'pickup_point' ? 'text-emerald-200' : 'text-emerald-700'}`}>
                       {libelleRelais}
                     </span>
                   </button>
@@ -540,7 +540,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                       </option>
                     ))}
                   </select>
-                  <p className="text-[10px] text-emerald-800">
+                  <p className="text-[11px] text-emerald-800">
                     💡 Votre colis sera déposé sous 24h. Vous recevrez un SMS avec votre code de retrait OTP.
                   </p>
                 </div>
@@ -617,17 +617,17 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                   </button>
                 </div>
                 {promoSoumis && devis?.avisPromo === 'invalide' && (
-                  <p className="text-[10px] font-bold text-rose-600">Code promo invalide ou expiré</p>
+                  <p className="text-[11px] font-bold text-rose-600">Code promo invalide ou expiré</p>
                 )}
                 {devis?.codePromo && devis.remise > 0 && (
-                  <p className="text-[10px] font-bold text-emerald-700 flex items-center">
+                  <p className="text-[11px] font-bold text-emerald-700 flex items-center">
                     <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
                     Code {devis.codePromo} validé : -{devis.remise.toLocaleString('fr-FR')} FCFA
                     {devis.avisPromo === 'plafonnee' ? ' (remise maximale sur cet article)' : ' de réduction !'}
                   </p>
                 )}
                 {devis?.codePromo && devis.remise === 0 && (
-                  <p className="text-[10px] font-bold text-amber-700">
+                  <p className="text-[11px] font-bold text-amber-700">
                     Code {devis.codePromo} reconnu, mais aucune remise n&apos;est possible sur cet article.
                   </p>
                 )}

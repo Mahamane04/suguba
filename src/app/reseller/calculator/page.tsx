@@ -58,7 +58,7 @@ export default function ResellerCalculatorPage() {
                 </div>
                 <div>
                   <strong className="block text-slate-900">Fatoumata D. (22 ans)</strong>
-                  <span className="text-[10px] text-slate-400">Étudiante à la FSEG (Badalabougou)</span>
+                  <span className="text-[11px] text-slate-400">Étudiante à la FSEG (Badalabougou)</span>
                 </div>
               </div>
               <p className="text-slate-600 leading-relaxed">
@@ -68,12 +68,12 @@ export default function ResellerCalculatorPage() {
 
             <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
               <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-xs">
+                <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-800 flex items-center justify-center font-bold text-xs">
                   OT
                 </div>
                 <div>
                   <strong className="block text-slate-900">Oumar T. (27 ans)</strong>
-                  <span className="text-[10px] text-slate-400">Créateur TikTok (Hamdallaye ACI)</span>
+                  <span className="text-[11px] text-slate-400">Créateur TikTok (Hamdallaye ACI)</span>
                 </div>
               </div>
               <p className="text-slate-600 leading-relaxed">
@@ -83,12 +83,12 @@ export default function ResellerCalculatorPage() {
 
             <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
               <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 rounded-full bg-purple-100 text-purple-800 flex items-center justify-center font-bold text-xs">
+                <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-800 flex items-center justify-center font-bold text-xs">
                   MC
                 </div>
                 <div>
                   <strong className="block text-slate-900">Mariam C. (34 ans)</strong>
-                  <span className="text-[10px] text-slate-400">Mère au foyer (Kalaban-Coro)</span>
+                  <span className="text-[11px] text-slate-400">Mère au foyer (Kalaban-Coro)</span>
                 </div>
               </div>
               <p className="text-slate-600 leading-relaxed">

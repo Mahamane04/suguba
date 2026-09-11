@@ -93,7 +93,7 @@ export default function EarningsCalculator({ showCta = true }: EarningsCalculato
             aria-label="Nombre de ventes réalisées par jour"
             className="suguba-range text-emerald-600"
           />
-          <div className="flex justify-between text-[10px] text-slate-400 font-semibold">
+          <div className="flex justify-between text-[11px] text-slate-400 font-semibold">
             <span>1 / jour (Débutant)</span>
             <span>5 / jour (Actif)</span>
             <span>10 / jour (Pro TikTok)</span>
@@ -121,7 +121,7 @@ export default function EarningsCalculator({ showCta = true }: EarningsCalculato
             aria-label="Commission moyenne par produit, en FCFA"
             className="suguba-range text-amber-500"
           />
-          <div className="flex justify-between text-[10px] text-slate-400 font-semibold">
+          <div className="flex justify-between text-[11px] text-slate-400 font-semibold">
             <span>2 000 F (Accessoires)</span>
             <span>4 000 F (Mode & Beauté)</span>
             <span>8 000 F (Électro & Solaire)</span>
@@ -132,10 +132,10 @@ export default function EarningsCalculator({ showCta = true }: EarningsCalculato
         <div className="space-y-2">
           <div className="flex justify-between items-baseline text-xs">
             <span className="font-bold text-slate-700 flex items-center space-x-1.5">
-              <Users className="w-4 h-4 text-purple-600" />
+              <Users className="w-4 h-4 text-slate-600" />
               <span>Amis parrainés dans votre équipe :</span>
             </span>
-            <span className="font-black text-purple-700 font-mono text-sm bg-purple-50 px-2.5 py-0.5 rounded-lg border border-purple-200">
+            <span className="font-black text-slate-700 font-mono text-sm bg-slate-50 px-2.5 py-0.5 rounded-lg border border-slate-200">
               {referralsCount} {referralsCount > 1 ? 'filleuls actifs' : 'filleul actif'}
             </span>
           </div>
@@ -147,9 +147,9 @@ export default function EarningsCalculator({ showCta = true }: EarningsCalculato
             value={referralsCount}
             onChange={(e) => setReferralsCount(Number(e.target.value))}
             aria-label="Nombre d'amis parrainés dans votre équipe"
-            className="suguba-range text-purple-600"
+            className="suguba-range text-slate-600"
           />
-          <div className="flex justify-between text-[10px] text-slate-400 font-semibold">
+          <div className="flex justify-between text-[11px] text-slate-400 font-semibold">
             <span>0 filleul</span>
             <span>10 filleuls</span>
             <span>20 filleuls</span>
@@ -175,7 +175,7 @@ export default function EarningsCalculator({ showCta = true }: EarningsCalculato
               Ventes directes : <strong className="text-white font-mono">{monthlyDirectIncome.toLocaleString('fr-FR')} F</strong>
             </div>
             {monthlyReferralIncome > 0 && (
-              <div className="text-purple-300">
+              <div className="text-slate-300">
                 Parrainage d&apos;équipe : <strong className="text-white font-mono">+{monthlyReferralIncome.toLocaleString('fr-FR')} F</strong>
               </div>
             )}

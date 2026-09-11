@@ -64,7 +64,7 @@ function JoinContent() {
         </p>
 
         {refCode && (
-          <div className="inline-block p-2 px-4 bg-purple-50 border border-purple-200 rounded-2xl text-xs font-bold text-purple-900">
+          <div className="inline-block p-2 px-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900">
             🎁 Parrainé par le code Partenaire : <span className="font-mono font-black">{refCode}</span>
           </div>
         )}
@@ -75,19 +75,19 @@ function JoinContent() {
         <div className="bg-white p-3 rounded-2xl border border-slate-200 text-center space-y-1">
           <Wallet className="w-5 h-5 text-emerald-600 mx-auto" />
           <span className="font-black text-[11px] text-slate-900 block">0 FCFA</span>
-          <span className="text-[9px] text-slate-500 block leading-tight">Zéro capital requis</span>
+          <span className="text-[11px] text-slate-500 block leading-tight">Zéro capital requis</span>
         </div>
 
         <div className="bg-white p-3 rounded-2xl border border-slate-200 text-center space-y-1">
-          <ShieldCheck className="w-5 h-5 text-blue-600 mx-auto" />
+          <ShieldCheck className="w-5 h-5 text-slate-600 mx-auto" />
           <span className="font-black text-[11px] text-slate-900 block">Garantie 12M</span>
-          <span className="text-[9px] text-slate-500 block leading-tight">Produits certifiés</span>
+          <span className="text-[11px] text-slate-500 block leading-tight">Produits certifiés</span>
         </div>
 
         <div className="bg-white p-3 rounded-2xl border border-slate-200 text-center space-y-1">
-          <Users className="w-5 h-5 text-purple-600 mx-auto" />
+          <Users className="w-5 h-5 text-slate-600 mx-auto" />
           <span className="font-black text-[11px] text-slate-900 block">Wave / Orange</span>
-          <span className="text-[9px] text-slate-500 block leading-tight">Paiement Mobile</span>
+          <span className="text-[11px] text-slate-500 block leading-tight">Paiement Mobile</span>
         </div>
       </div>
 
@@ -106,7 +106,7 @@ function JoinContent() {
           <GoogleIcon className="w-5 h-5" />
           S&apos;inscrire avec Google
         </button>
-        <p className="text-[10px] text-slate-400 text-center -mt-3">
+        <p className="text-[11px] text-slate-400 text-center -mt-3">
           Sans code, sans mot de passe. Il ne restera qu&apos;à confirmer votre numéro et votre
           quartier à Bamako.
         </p>

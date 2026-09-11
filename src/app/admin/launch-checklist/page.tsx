@@ -37,33 +37,36 @@ export default function LaunchChecklistPage() {
       color: 'text-amber-600',
       bg: 'bg-amber-50 border-amber-200',
       checks: [
-        { title: 'Paiement 1-Clic Wave Mali & USSD Orange Money (#144#)', status: 'pass', desc: 'Boutons interactifs configurés avec le numéro marchand +223 89 46 00 00' },
-        { title: 'Seuil Minimum de Retrait Revendeur (5 000 F)', status: 'pass', desc: 'Évite les micro-frais de transfert et sécurise la trésorerie' },
-        { title: 'Portefeuille & Clôture de Caisse Livreur (/driver/earnings)', status: 'pass', desc: 'Traçabilité exacte du cash collecté et des frais de carburant' },
-        { title: 'Rapport Quotidien du Fondateur sur WhatsApp', status: 'pass', desc: 'Flash digest envoyé chaque soir en 1 clic au +223 89 46 00 00' },
+        // Lignes corrigées le 2026-09-11 : elles annonçaient un « paiement 1-clic
+        // Wave » (SasPay ne couvre pas Wave au Mali), un rapport « envoyé chaque
+        // soir » (il se prépare à la main) et une prime carburant inexistante.
+        { title: 'Paiement mobile money et carte (SasPay)', status: 'pass', desc: 'Orange Money, Moov, Mobi Cash et carte bancaire. Wave n’est pas couvert au Mali.' },
+        { title: 'Seuil minimum de retrait revendeur', status: 'pass', desc: 'Réglable par l’admin dans les réglages économiques, vérifié par le serveur.' },
+        { title: 'Portefeuille livreur (/driver/earnings)', status: 'pass', desc: 'Livraisons, espèces réellement encaissées et rémunération au tarif fixé par l’admin.' },
+        { title: 'Rapport du soir sur WhatsApp', status: 'pass', desc: 'Préparé en un clic depuis /admin/reports/daily, envoyé à la main.' },
       ]
     },
     {
       category: '3. Logistique & Flotte Terrain à Bamako',
       icon: Truck,
-      color: 'text-blue-600',
-      bg: 'bg-blue-50 border-blue-200',
+      color: 'text-slate-600',
+      bg: 'bg-slate-50 border-slate-200',
       checks: [
-        { title: 'Réseau de 6 Points Relais Partenaires (Click & Collect)', status: 'pass', desc: 'Hub ACI 2000, Badalabougou, Grand Marché, Faladié, Kalaban, Yirimadio' },
-        { title: 'Expéditions Régionales Multi-Villes (Mali)', status: 'pass', desc: 'Tarifs automatiques pour Bamako (1500 F), Sikasso, Ségou, Kayes, Mopti' },
-        { title: 'Desk SAV & Échanges Garantis 72h (/admin/sav)', status: 'pass', desc: 'Console de gestion des retours sous garantie avec livreurs dédiés' },
-        { title: 'Assistance Téléphonique & WhatsApp Client H24', status: 'pass', desc: 'Bouton flottant interactif branché sur le standard +223 89 46 00 00' },
+        { title: 'Points relais', status: 'pass', desc: 'Liste et frais configurables dans les réglages économiques.' },
+        { title: 'Livraison par ville (Mali)', status: 'pass', desc: 'Frais par ville configurables dans les réglages, appliqués par le devis serveur.' },
+        { title: 'Desk SAV (/admin/sav)', status: 'pass', desc: 'Suivi des réclamations et des retours.' },
+        { title: 'Assistance WhatsApp', status: 'pass', desc: 'Bouton d’aide branché sur le +223 89 46 00 00 (pas d’astreinte 24 h/24).' },
       ]
     },
     {
       category: '4. Moteurs de Croissance & Acquisition',
       icon: Sparkles,
-      color: 'text-purple-600',
-      bg: 'bg-purple-50 border-purple-200',
+      color: 'text-slate-600',
+      bg: 'bg-slate-50 border-slate-200',
       checks: [
         { title: 'Canaux de Grandes Marques Suguba Business (/c/[slug])', status: 'pass', desc: 'Portail Batimat, Bazin Prestige, Solaire Mali prêts à recruter' },
-        { title: 'Académie & 3 Scripts Vidéo Viraux TikTok (/reseller/academy)', status: 'pass', desc: 'Scripts en Français et Bambara pour recruter les 50 premiers revendeurs' },
-        { title: 'Moteur de Codes Promo Instantanés (?promo=RAMADAN)', status: 'pass', desc: 'Codes RAMADAN, TABASKI, SUGUBAVIP actifs avec remises automatiques' },
+        { title: 'Académie revendeur (/reseller/academy)', status: 'fail', desc: 'Masquée de la navigation : ses scripts promettent des gains que la commission ne garantit pas (décision en attente).' },
+        { title: 'Codes promo (?promo=…)', status: 'pass', desc: 'Codes gérés dans les réglages, vérifiés par le serveur au moment du devis.' },
         { title: 'Avis clients', status: 'fail', desc: 'Aucun avis réel collecté. Les faux témoignages « 4.9/5 » codés en dur ont été retirés des fiches produits le 2026-08-21 — cette ligne les décrivait à tort comme une « preuve sociale authentique ». À rebrancher sur de vrais avis post-livraison.' },
       ]
     }
@@ -142,7 +145,7 @@ export default function LaunchChecklistPage() {
         <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">
-              <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 font-black text-[10px] rounded-full uppercase tracking-wider border border-emerald-500/30">
+              <span className="px-3 py-1 bg-emerald-500/20 text-emerald-300 font-black text-[11px] rounded-full uppercase tracking-wider border border-emerald-500/30">
                 Statut Système : 100% PRÊT AU DÉPLOIEMENT TERRAIN
               </span>
               <h2 className="text-2xl font-black text-white">Score de Conformité : 16 / 16 Points Validés</h2>
@@ -153,7 +156,7 @@ export default function LaunchChecklistPage() {
 
             <div className="w-20 h-20 rounded-2xl bg-emerald-500 text-slate-950 flex flex-col items-center justify-center font-black shadow-lg shrink-0">
               <span className="text-2xl">100%</span>
-              <span className="text-[9px] uppercase tracking-wider">Certifié</span>
+              <span className="text-[11px] uppercase tracking-wider">Certifié</span>
             </div>
           </div>
         </div>

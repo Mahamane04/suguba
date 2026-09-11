@@ -60,8 +60,8 @@ const ROLES: Record<RoleKey, {
   },
   supplier: {
     label: 'Fournisseur', tagline: 'Faites distribuer votre stock', icon: ShoppingBag,
-    accent: 'text-blue-700', bord: 'ring-blue-500 border-blue-500 bg-blue-50',
-    puce: 'bg-blue-100 text-blue-800', fond: 'from-blue-600 to-indigo-700',
+    accent: 'text-slate-700', bord: 'ring-slate-500 border-slate-500 bg-slate-50',
+    puce: 'bg-slate-100 text-slate-800', fond: 'from-slate-600 to-slate-700',
     quoiFaire: "Vous déposez vos produits. Le réseau de revendeurs les diffuse, nos livreurs les remettent au client. Vous ne gérez ni la vente ni la livraison.",
     etapes: [
       'Compte Google + votre entreprise et quartier d\'entrepôt',
@@ -84,8 +84,8 @@ const ROLES: Record<RoleKey, {
   },
   diaspora: {
     label: 'Diaspora', tagline: 'Depuis l\'étranger', icon: Globe,
-    accent: 'text-purple-700', bord: 'ring-purple-500 border-purple-500 bg-purple-50',
-    puce: 'bg-purple-100 text-purple-800', fond: 'from-purple-600 to-violet-700',
+    accent: 'text-slate-700', bord: 'ring-slate-500 border-slate-500 bg-slate-50',
+    puce: 'bg-slate-100 text-slate-800', fond: 'from-slate-600 to-violet-700',
     quoiFaire: "Vous vivez hors du Mali et vous voulez équiper un proche à Bamako. Vous choisissez, vous payez, nous livrons — personne à déranger sur place.",
     etapes: [
       'Choisissez un produit (prix affichés en € ou $)',
@@ -271,7 +271,7 @@ export default function RejoindrePage() {
             </p>
             {actif.etapes.map((etape, i) => (
               <div key={etape} className="flex items-start gap-2.5">
-                <span className={`w-5 h-5 shrink-0 rounded-full flex items-center justify-center text-[10px] font-black ${actif.puce}`}>
+                <span className={`w-5 h-5 shrink-0 rounded-full flex items-center justify-center text-[11px] font-black ${actif.puce}`}>
                   {i + 1}
                 </span>
                 <span className="text-xs text-gray-700 leading-relaxed">{etape}</span>

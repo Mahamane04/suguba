@@ -45,7 +45,7 @@ export default function WhatsAppFloatingButton() {
               </div>
               <div>
                 <h4 className="font-bold text-slate-900">Assistance Suguba</h4>
-                <p className="text-[10px] text-emerald-600 font-bold">Réponse sur WhatsApp</p>
+                <p className="text-[11px] text-emerald-600 font-bold">Réponse sur WhatsApp</p>
               </div>
             </div>
             <button 
@@ -73,7 +73,7 @@ export default function WhatsAppFloatingButton() {
               onClick={() => handleOpenWhatsApp('Rejoindre le réseau des Revendeurs')}
               className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold rounded-xl flex items-center space-x-2 text-left transition-colors"
             >
-              <Users className="w-3.5 h-3.5 text-purple-600" />
+              <Users className="w-3.5 h-3.5 text-slate-600" />
               <span>Devenir Revendeur rémunéré</span>
             </button>
 
@@ -86,7 +86,7 @@ export default function WhatsAppFloatingButton() {
             </button>
           </div>
 
-          <div className="text-center pt-1 border-t border-slate-100 text-[10px] text-slate-400">
+          <div className="text-center pt-1 border-t border-slate-100 text-[11px] text-slate-400">
             Tél : <strong>+223 89 46 00 00</strong>
           </div>
         </div>

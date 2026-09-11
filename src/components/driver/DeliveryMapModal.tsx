@@ -43,7 +43,7 @@ export default function DeliveryMapModal({ order, isOpen, onClose }: DeliveryMap
             <Compass className="w-5 h-5 text-amber-400" />
             <div>
               <h3 className="font-bold text-base sm:text-lg">Itinéraire & Repère Terrain</h3>
-              <p className="text-[10px] text-slate-300">Commande #{order.orderNumber}</p>
+              <p className="text-[11px] text-slate-300">Commande #{order.orderNumber}</p>
             </div>
           </div>
           <button 
@@ -70,7 +70,7 @@ export default function DeliveryMapModal({ order, isOpen, onClose }: DeliveryMap
             <div className="flex items-start space-x-3">
               <MapPin className="w-6 h-6 text-emerald-700 shrink-0 mt-0.5" />
               <div>
-                <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-800">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">
                   Quartier de Destination :
                 </p>
                 <p className="text-base font-black text-slate-900">
@@ -82,7 +82,7 @@ export default function DeliveryMapModal({ order, isOpen, onClose }: DeliveryMap
                     📍 Repère Précis : <span className="text-emerald-800 font-black">{order.landmark}</span>
                   </p>
                   {order.deliveryNotes && (
-                    <p className="text-[10px] text-slate-500 mt-1 italic">
+                    <p className="text-[11px] text-slate-500 mt-1 italic">
                       Note client : {order.deliveryNotes}
                     </p>
                   )}
@@ -94,13 +94,13 @@ export default function DeliveryMapModal({ order, isOpen, onClose }: DeliveryMap
           {/* Amount & Contact Preview */}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 text-xs">
-              <span className="text-[10px] text-slate-500 font-bold block">Client :</span>
+              <span className="text-[11px] text-slate-500 font-bold block">Client :</span>
               <strong className="text-slate-900 block truncate">{order.customerName}</strong>
               <span className="font-mono text-emerald-700 font-bold">{order.customerPhone}</span>
             </div>
 
             <div className="bg-amber-50 p-3 rounded-2xl border border-amber-200 text-xs">
-              <span className="text-[10px] text-amber-800 font-bold block">À encaisser :</span>
+              <span className="text-[11px] text-amber-800 font-bold block">À encaisser :</span>
               <strong className="text-base font-black text-slate-900">
                 {order.totalAmount.toLocaleString('fr-FR')} F
               </strong>
@@ -116,7 +116,7 @@ export default function DeliveryMapModal({ order, isOpen, onClose }: DeliveryMap
                 href={googleMapsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="py-3 px-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-2xl text-xs flex items-center justify-center space-x-1.5 shadow-md shadow-blue-600/20"
+                className="py-3 px-3 bg-slate-600 hover:bg-slate-700 text-white font-bold rounded-2xl text-xs flex items-center justify-center space-x-1.5 shadow-md shadow-slate-600/20"
               >
                 <Navigation className="w-4 h-4" />
                 <span>Google Maps</span>

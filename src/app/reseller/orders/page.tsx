@@ -105,13 +105,13 @@ export default function ResellerOrdersPage() {
                         </span>
                       )}
                       {order.status === 'in_transit' && (
-                        <span className="px-2.5 py-1 rounded-full bg-blue-100 border border-blue-300 text-blue-800 text-[11px] font-black flex items-center space-x-1">
-                          <Truck className="w-3 h-3 text-blue-600" />
+                        <span className="px-2.5 py-1 rounded-full bg-slate-100 border border-slate-300 text-slate-800 text-[11px] font-black flex items-center space-x-1">
+                          <Truck className="w-3 h-3 text-slate-600" />
                           <span>En cours de livraison</span>
                         </span>
                       )}
                       {order.status === 'dispatched' && (
-                        <span className="px-2.5 py-1 rounded-full bg-purple-100 border border-purple-300 text-purple-800 text-[11px] font-black">
+                        <span className="px-2.5 py-1 rounded-full bg-slate-100 border border-slate-300 text-slate-800 text-[11px] font-black">
                           🛵 Livreur assigné
                         </span>
                       )}

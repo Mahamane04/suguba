@@ -177,7 +177,7 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
                   </p>
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-slate-500 block">Qté</label>
+                  <label className="text-[11px] font-bold text-slate-500 block">Qté</label>
                   <input
                     type="number"
                     min="1"

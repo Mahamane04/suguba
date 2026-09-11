@@ -107,25 +107,25 @@ export default function AdminSavPage() {
           <div className="bg-white p-4 rounded-3xl border border-rose-200 shadow-xs space-y-1">
             <span className="text-[11px] font-bold text-rose-700 uppercase">Dossiers Ouverts</span>
             <p className="text-2xl font-black text-rose-600">{openTickets.length}</p>
-            <p className="text-[10px] text-slate-400">À traiter en priorité</p>
+            <p className="text-[11px] text-slate-400">À traiter en priorité</p>
           </div>
 
           <div className="bg-white p-4 rounded-3xl border border-amber-200 shadow-xs space-y-1">
             <span className="text-[11px] font-bold text-amber-700 uppercase">Échanges en Cours</span>
             <p className="text-2xl font-black text-amber-600">{inProgressTickets.length}</p>
-            <p className="text-[10px] text-slate-400">Livreur moto en mission</p>
+            <p className="text-[11px] text-slate-400">Livreur moto en mission</p>
           </div>
 
           <div className="bg-white p-4 rounded-3xl border border-emerald-200 shadow-xs space-y-1">
             <span className="text-[11px] font-bold text-emerald-700 uppercase">Dossiers Résolus</span>
             <p className="text-2xl font-black text-emerald-600">{resolvedTickets.length}</p>
-            <p className="text-[10px] text-slate-400">Échanges réussis sous 72h</p>
+            <p className="text-[11px] text-slate-400">Échanges réussis sous 72h</p>
           </div>
 
           <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs space-y-1">
             <span className="text-[11px] font-bold text-slate-500 uppercase">Taux de Résolution</span>
             <p className="text-2xl font-black text-slate-900">100%</p>
-            <p className="text-[10px] text-slate-400">Engagement Qualité Suguba</p>
+            <p className="text-[11px] text-slate-400">Engagement Qualité Suguba</p>
           </div>
         </div>
 
@@ -178,7 +178,7 @@ export default function AdminSavPage() {
                       </div>
 
                       <div className="flex items-center space-x-2">
-                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-black ${
+                        <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black ${
                           isResolved ? 'bg-emerald-100 text-emerald-800' :
                           isDispatched ? 'bg-amber-100 text-amber-900 animate-pulse' :
                           'bg-rose-100 text-rose-900'

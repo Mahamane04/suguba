@@ -53,7 +53,7 @@ export default function EtapesInscription({ etapeActuelle }: { etapeActuelle: 1 
             </span>
 
             <span
-              className={`mt-1.5 text-[10px] leading-tight ${
+              className={`mt-1.5 text-[11px] leading-tight ${
                 active ? 'font-black text-gray-900' : faite ? 'font-semibold text-gray-600' : 'text-gray-400'
               }`}
             >
@@ -61,7 +61,7 @@ export default function EtapesInscription({ etapeActuelle }: { etapeActuelle: 1 
             </span>
 
             {active && (
-              <span className="text-[9px] font-bold text-suguba-brand uppercase tracking-wider mt-0.5">
+              <span className="text-[11px] font-bold text-suguba-brand uppercase tracking-wider mt-0.5">
                 Vous êtes ici
               </span>
             )}
