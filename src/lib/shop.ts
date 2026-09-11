@@ -154,6 +154,35 @@ function nomPublic(nomComplet: string | null): string {
   return `${mots[0]} ${mots[mots.length - 1].charAt(0).toUpperCase()}.`;
 }
 
+/**
+ * Nom public (« Awa D. ») du revendeur ACTIF derrière un code, pour le
+ * bandeau « Recommandé par … » de la fiche produit. Ce bandeau lisait les
+ * revendeurs de démonstration : il ne s'affichait jamais pour un vrai code.
+ */
+export async function nomRevendeurPublic(codeBrut: string): Promise<string | null> {
+  const admin = getSupabaseAdmin();
+  if (!admin) return null;
+  const code = codeBrut.trim().toUpperCase();
+  if (!/^[A-Z0-9-]{3,40}$/.test(code)) return null;
+
+  const { data: profil } = await admin
+    .from('profiles')
+    .select('id, full_name')
+    .eq('reseller_code', code)
+    .maybeSingle();
+  if (!profil) return null;
+
+  const { data: role } = await admin
+    .from('profile_roles')
+    .select('status')
+    .eq('profile_id', profil.id)
+    .eq('role', 'reseller')
+    .maybeSingle();
+  if (!role || role.status !== 'active') return null;
+
+  return nomPublic(profil.full_name);
+}
+
 export async function chargerBoutiqueRevendeur(codeBrut: string): Promise<Boutique | null> {
   const admin = getSupabaseAdmin();
   if (!admin) return null;

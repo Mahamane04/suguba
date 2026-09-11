@@ -7,7 +7,7 @@ import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
 import Button from '@/components/ui/Button';
 import ProductCard, { carteDepuisProduit } from '@/components/product/ProductCard';
-import { useSugubaStore } from '@/lib/store';
+import { useSugubaStore, useCatalogueCharge } from '@/lib/store';
 import {
   ArrowRight, Search, Banknote,
   ShieldCheck, Truck, TrendingUp, X
@@ -29,6 +29,7 @@ import {
 
 export default function HomePage() {
   const state = useSugubaStore();
+  const catalogueCharge = useCatalogueCharge();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [search, setSearch] = useState('');
 
@@ -70,20 +71,20 @@ export default function HomePage() {
 
             {/* Recherche */}
             <div className="relative">
-              <Search className="w-4 h-4 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
+              <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
               <input
                 type="search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Rechercher un produit (ventilateur, téléphone, solaire...)"
-                className="w-full pl-11 pr-10 py-3.5 rounded-full bg-white text-sm font-medium text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-[#09b500]"
+                className="w-full pl-11 pr-10 py-3.5 rounded-full bg-white text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#09b500]"
               />
               {search && (
                 <button
                   type="button"
                   onClick={() => setSearch('')}
                   aria-label="Effacer la recherche"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-500"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
@@ -117,18 +118,32 @@ export default function HomePage() {
         <section className="py-6 px-4 sm:px-6">
           <div className="max-w-6xl mx-auto">
 
-            {approvedProducts.length === 0 ? (
-              <div className="bg-white rounded-3xl border border-gray-100 shadow-card p-10 text-center space-y-2">
-                <p className="text-sm font-black text-gray-900">Catalogue en cours de constitution</p>
-                <p className="text-xs text-gray-500 max-w-sm mx-auto">
+            {approvedProducts.length === 0 && !catalogueCharge ? (
+              // Squelettes pendant le chargement : l'écran « catalogue en
+              // cours de constitution » s'affichait une seconde à chaque visite.
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4" aria-busy="true" aria-label="Chargement des produits">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="bg-white rounded-3xl border border-slate-100 overflow-hidden animate-pulse">
+                    <div className="aspect-square bg-slate-200" />
+                    <div className="p-3 space-y-2">
+                      <div className="h-3 w-4/5 rounded bg-slate-200" />
+                      <div className="h-4 w-1/2 rounded bg-slate-200" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : approvedProducts.length === 0 ? (
+              <div className="bg-white rounded-3xl border border-slate-100 shadow-card p-10 text-center space-y-2">
+                <p className="text-sm font-black text-slate-900">Catalogue en cours de constitution</p>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
                   Nos fournisseurs partenaires référencent actuellement leurs produits.
                   Revenez très bientôt pour découvrir les premiers articles.
                 </p>
               </div>
             ) : filteredProducts.length === 0 ? (
-              <div className="bg-white rounded-3xl border border-gray-100 shadow-card p-10 text-center space-y-2">
-                <p className="text-sm font-black text-gray-900">Aucun produit ne correspond</p>
-                <p className="text-xs text-gray-500">
+              <div className="bg-white rounded-3xl border border-slate-100 shadow-card p-10 text-center space-y-2">
+                <p className="text-sm font-black text-slate-900">Aucun produit ne correspond</p>
+                <p className="text-xs text-slate-500">
                   Essayez un autre mot, ou parcourez toutes les catégories.
                 </p>
                 <Button
@@ -161,21 +176,21 @@ export default function HomePage() {
           <div className="max-w-4xl mx-auto">
             <Link
               href="/rejoindre"
-              className="block bg-white rounded-3xl border border-gray-100 shadow-card p-5 sm:p-6 hover:shadow-card-hover transition-all group"
+              className="block bg-white rounded-3xl border border-slate-100 shadow-card p-5 sm:p-6 hover:shadow-card-hover transition-all group"
             >
               <div className="flex items-center gap-4">
                 <div className="w-11 h-11 rounded-2xl bg-suguba-50 flex items-center justify-center shrink-0">
                   <TrendingUp className="w-5 h-5 text-suguba-brand" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h2 className="font-black text-sm sm:text-base text-gray-900">
+                  <h2 className="font-black text-sm sm:text-base text-slate-900">
                     Gagner de l&apos;argent avec Suguba
                   </h2>
-                  <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                  <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
                     Revendeur, fournisseur ou livreur — voir comment ça marche et combien ça rapporte.
                   </p>
                 </div>
-                <ArrowRight className="w-5 h-5 text-gray-300 group-hover:text-suguba-brand group-hover:translate-x-0.5 transition-all shrink-0" />
+                <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-suguba-brand group-hover:translate-x-0.5 transition-all shrink-0" />
               </div>
             </Link>
           </div>
@@ -186,7 +201,7 @@ export default function HomePage() {
         ══════════════════════════════════════════════ */}
         <section className="pb-8 px-4 sm:px-6">
           <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-3xl p-5 sm:p-6 border border-gray-100 shadow-card">
+            <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-100 shadow-card">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
                   {
@@ -200,15 +215,15 @@ export default function HomePage() {
                     icon: Truck,
                     title: 'Livraison 24h à Bamako',
                     desc: 'Suivi de votre commande du dépôt jusqu\'à votre porte.',
-                    color: 'text-amber-600',
-                    bg: 'bg-amber-50',
+                    color: 'text-suguba-brand',
+                    bg: 'bg-suguba-50',
                   },
                   {
                     icon: ShieldCheck,
                     title: 'Code secret à la remise',
                     desc: 'Vous ne donnez votre code qu\'après avoir vérifié le colis.',
-                    color: 'text-blue-600',
-                    bg: 'bg-blue-50',
+                    color: 'text-suguba-brand',
+                    bg: 'bg-suguba-50',
                   },
                 ].map(({ icon: Icon, title, desc, color, bg }) => (
                   <div key={title} className="flex gap-3 items-start">
@@ -216,8 +231,8 @@ export default function HomePage() {
                       <Icon className={`w-4 h-4 ${color}`} />
                     </div>
                     <div>
-                      <h3 className="font-bold text-sm text-gray-900">{title}</h3>
-                      <p className="text-xs text-gray-400 mt-0.5 leading-relaxed">{desc}</p>
+                      <h3 className="font-bold text-sm text-slate-900">{title}</h3>
+                      <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">{desc}</p>
                     </div>
                   </div>
                 ))}

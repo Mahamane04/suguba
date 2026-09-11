@@ -8,7 +8,8 @@ import Carrousel from '@/components/product/Carrousel';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 import { partagerProduit, prechargerImage, useCodeRevendeur } from '@/lib/partage';
 import { useToast } from '@/components/ui/Toast';
-import { useSugubaStore } from '@/lib/store';
+import { useSugubaStore, useCatalogueCharge } from '@/lib/store';
+import { useClavierOuvert } from '@/lib/useClavierOuvert';
 import { useOrderCheckout } from '@/lib/useOrderCheckout';
 import OrderRecovery from '@/components/common/OrderRecovery';
 import { useOrderQuote } from '@/lib/useOrderQuote';
@@ -52,8 +53,19 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   // catalogue vient peut-être de se charger) de "vraiment introuvable".
   const product = state.products.find(p => p.slug === resolvedParams.slug);
 
-  const reseller = refCode ? state.resellers.find(r => r.referralCode.toUpperCase() === refCode.toUpperCase()) : null;
-  const resellerUser = reseller ? state.users.find(u => u.id === reseller.userId) : null;
+  const catalogueCharge = useCatalogueCharge();
+  const clavierOuvert = useClavierOuvert();
+
+  // « Recommandé par … » : le vrai revendeur derrière le code du lien (il
+  // lisait les revendeurs de démonstration et ne s'affichait donc jamais).
+  const [nomRecommandeur, setNomRecommandeur] = useState<string | null>(null);
+  useEffect(() => {
+    if (!refCode) return;
+    fetch(`/api/shop/revendeur?code=${encodeURIComponent(refCode)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => j?.nom && setNomRecommandeur(j.nom))
+      .catch(() => {});
+  }, [refCode]);
 
   // Checkout form states
   const [customerName, setCustomerName] = useState('');
@@ -118,6 +130,25 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   const recoveryNotice = <OrderRecovery attempt={recovery} disabled={isSubmitting}
     onResume={() => { void finishOrder(); }} />;
 
+  // Catalogue pas encore arrivé : squelette, pas « Produit introuvable ».
+  if (!product && !catalogueCharge) {
+    return (
+      <div className="min-h-screen flex flex-col bg-slate-50">
+        <Header />
+        <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 py-6 w-full" aria-busy="true" aria-label="Chargement du produit">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-pulse">
+            <div className="aspect-square rounded-3xl bg-slate-200" />
+            <div className="space-y-3">
+              <div className="h-6 w-3/4 rounded-lg bg-slate-200" />
+              <div className="h-8 w-1/3 rounded-lg bg-slate-200" />
+              <div className="h-40 rounded-3xl bg-slate-200" />
+            </div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
   if (!product) {
     return (
       <div className="min-h-screen flex flex-col bg-slate-50">
@@ -164,9 +195,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             <p className="text-sm text-slate-500">
               « {product.name} » attend son prix de vente. Tant qu&apos;il n&apos;est pas publié, il ne peut être ni commandé ni partagé.
             </p>
-            <p className="text-xs text-slate-400">
-              Administrateur : fixez son prix depuis « Modération » sur le tableau de bord.
-            </p>
             <Link
               href="/"
               className="inline-flex items-center justify-center w-full py-3 px-4 rounded-2xl bg-slate-900 hover:bg-black text-white font-bold text-sm transition-colors"
@@ -192,6 +220,17 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   // fait foi, pas une estimation locale.
   const unitPrice = devis?.prixUnitaire ?? (product.publicPrice || product.supplierPrice);
   const totalAmount = devis?.total ?? unitPrice * quantity;
+
+  const fraisRelaisMin = pointsRelais.length ? Math.min(...pointsRelais.map((p) => p.frais)) : null;
+  const libelleRelais = fraisRelaisMin === null
+    ? 'Retrait au comptoir'
+    : fraisRelaisMin === 0 ? 'Gratuit à Bamako' : `Dès ${fraisRelaisMin.toLocaleString('fr-FR')} F à Bamako`;
+
+  // Barre fixe mobile → formulaire, curseur dans le premier champ.
+  const allerAuFormulaire = () => {
+    document.getElementById('commande')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => document.getElementById('champ-nom')?.focus({ preventScroll: true }), 450);
+  };
 
   const handleOrderSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -230,24 +269,24 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 pb-16">
+    <div className="min-h-screen flex flex-col bg-slate-50 pb-32 md:pb-16">
       <Header />
 
       <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
         
         {recoveryNotice}
         {/* Referral info banner if referred */}
-        {resellerUser && (
+        {nomRecommandeur && (
           <div className="bg-emerald-50 border border-emerald-300 rounded-2xl p-3.5 flex items-center justify-between">
             <div className="flex items-center space-x-2.5">
               <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">
-                {resellerUser.fullName.charAt(0)}
+                {nomRecommandeur.charAt(0)}
               </div>
               <div>
                 <p className="text-xs font-bold text-emerald-950">
-                  Offre recommandée par {resellerUser.fullName}
+                  Recommandé par {nomRecommandeur}
                 </p>
-                <p className="text-[10px] text-emerald-700">
+                <p className="text-[11px] text-emerald-700">
                   Partenaire revendeur officiel Suguba
                 </p>
               </div>
@@ -291,6 +330,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 <WhatsAppIcon className="w-4 h-4" />
                 <span>Partager</span>
               </button>
+            </div>
+
+            {/* Téléphone : nom et prix juste sous la photo. Ils étaient dans la
+                colonne de droite, donc SOUS la description, à ~3 écrans. */}
+            <div className="md:hidden space-y-1">
+              <h1 className="text-xl font-black text-slate-900 leading-tight">{product.name}</h1>
+              <p className="text-2xl font-black text-suguba-brand">{unitPrice.toLocaleString('fr-FR')} FCFA</p>
             </div>
 
             {/* Réassurance : uniquement des engagements réels et vérifiables.
@@ -346,9 +392,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
           </div>
 
           {/* Right: 1-Click Order Form (Zero Friction) */}
-          <div className="bg-white rounded-3xl p-5 sm:p-6 border-2 border-emerald-500/80 shadow-xl space-y-5">
-            
-            <div>
+          <div id="commande" className="scroll-mt-20 bg-white rounded-3xl p-5 sm:p-6 border-2 border-emerald-500/80 shadow-xl space-y-5">
+
+            <div className="hidden md:block">
               <h1 className="text-lg sm:text-xl font-black text-slate-900 leading-tight">
                 {product.name}
               </h1>
@@ -407,12 +453,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 <div className="relative">
                   <User className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
                   <input
+                    id="champ-nom"
                     type="text"
                     required
+                    autoComplete="name"
                     placeholder="Ex: Moussa Traoré"
                     value={customerName}
                     onChange={(e) => setCustomerName(e.target.value)}
-                    className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-emerald-600"
+                    className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:bg-white focus:outline-emerald-600"
                   />
                 </div>
               </div>
@@ -427,10 +475,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                   <input
                     type="tel"
                     required
+                    inputMode="tel"
+                    autoComplete="tel"
                     placeholder="Ex: 70 12 34 56"
                     value={customerPhone}
                     onChange={(e) => setCustomerPhone(e.target.value)}
-                    className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:bg-white focus:outline-emerald-600"
+                    className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:bg-white focus:outline-emerald-600"
                   />
                 </div>
               </div>
@@ -467,7 +517,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                   >
                     <span className="block font-black text-xs">🏪 Point Relais</span>
                     <span className={`text-[10px] block ${fulfillmentMethod === 'pickup_point' ? 'text-emerald-200' : 'text-emerald-700'}`}>
-                      Gratuit ou 500 F à Bamako
+                      {libelleRelais}
                     </span>
                   </button>
                 </div>
@@ -482,7 +532,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                   <select
                     value={pickupPointId}
                     onChange={(e) => setPickupPointId(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-white border border-emerald-300 rounded-xl text-xs font-bold text-slate-900 focus:outline-emerald-600"
+                    className="w-full px-3 py-2.5 bg-white border border-emerald-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:outline-emerald-600"
                   >
                     {pointsRelais.map(point => (
                       <option key={point.id} value={point.id}>
@@ -503,7 +553,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                       <select
                         value={city}
                         onChange={(e) => setCity(e.target.value)}
-                        className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:bg-white"
+                        className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:bg-white"
                       >
                         {Object.entries(villes).map(([ville, frais]) => (
                           <option key={ville} value={ville}>
@@ -520,7 +570,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                         placeholder="Ex: Hamdallaye ACI"
                         value={neighborhood}
                         onChange={(e) => setNeighborhood(e.target.value)}
-                        className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:bg-white"
+                        className="w-full px-3 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:bg-white"
                       />
                     </div>
                   </div>
@@ -538,7 +588,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                         placeholder="Ex: En face de la boulangerie de l'ACI, portail blanc"
                         value={landmark}
                         onChange={(e) => setLandmark(e.target.value)}
-                        className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:bg-white"
+                        className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:bg-white"
                       />
                     </div>
                   </div>
@@ -556,7 +606,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                     placeholder="Ex: RAMADAN, TABASKI, SUGUBAVIP"
                     value={promoCodeInput}
                     onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
-                    className="flex-1 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono font-bold text-slate-900 focus:bg-white uppercase"
+                    className="flex-1 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-mono font-bold text-slate-900 focus:bg-white uppercase"
                   />
                   <button
                     type="button"
@@ -636,6 +686,26 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             après livraison confirmée par OTP — jamais en dur. */}
 
       </main>
+
+      {/* Barre d'achat fixe sur téléphone : le prix et « Commander » restent
+          toujours à portée de pouce (masquée pendant la saisie). */}
+      {!clavierOuvert && (
+        <div
+          className="md:hidden fixed inset-x-0 bottom-0 z-40 bg-white/95 backdrop-blur border-t border-slate-200 px-4 pt-3"
+          style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="min-w-0">
+              <p className="text-[11px] text-slate-500">{devis ? 'Total à la livraison' : 'Prix'}</p>
+              <p className="text-lg font-black text-slate-900 whitespace-nowrap">{totalAmount.toLocaleString('fr-FR')} F</p>
+            </div>
+            <Button onClick={allerAuFormulaire} fullWidth className="flex-1">
+              <span>Commander</span>
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

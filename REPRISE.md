@@ -242,7 +242,12 @@ dépôt fournisseur, premier paiement SasPay réel.
    **Phase 1 (fondations) faite le 2026-09-11** (commit 21ed85a) : composants communs dans
    `src/components/ui/` (Toast/`useToast`, Sheet, Field, Surface), plus aucun `alert`/`confirm`
    natif, en-tête refait (prénom, sans cloche ni mode sombre), barre diaspora, bouton WhatsApp
-   masqué sur `/p/*` et `/admin`. **Prochaine étape : phase 2 (parcours client).**
+   masqué sur `/p/*` et `/admin`. **Phase 2 (client) : première passe faite le 2026-09-11** —
+   squelettes via `useCatalogueCharge()` (plus de « Produit introuvable » au chargement), barre
+   « Commander » fixe sur mobile, champs 16 px, « Recommandé par » réel (`/api/shop/revendeur`).
+   **Suite : `/track`, confirmation de commande, puis phase 3 (revendeur).**
+   ⚠️ Un produit de test « [DÉMO] Blender / mixeur 1,5 L » (sans photo) est en vente en prod —
+   à retirer (décision utilisateur).
    Règle : tout nouveau message utilisateur passe par `useToast()` — jamais `alert()`.
    Restent sur les données démo, à traiter dans leur phase : packs diaspora (phase 5), bandeau
    « Offre recommandée par… » de la page produit (phase 2), adresse de stock par défaut du

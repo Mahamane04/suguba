@@ -186,6 +186,14 @@ export const sugubaStore = {
     notify();
   },
 
+  // Premier chargement du catalogue terminé (réussi ou non) : les écrans
+  // cessent d'afficher un squelette. Voir useCatalogueCharge.
+  marquerCatalogueCharge: () => {
+    if (catalogueCharge) return;
+    catalogueCharge = true;
+    ecouteursCatalogue.forEach((f) => f());
+  },
+
   setOrdersFromCloud: (cloudOrders: Order[]) => {
     if (!cloudOrders || cloudOrders.length === 0) return;
     const existingMap = new Map(globalState.orders.map(o => [o.orderNumber, o]));
@@ -765,6 +773,26 @@ export const sugubaStore = {
 };
 
 // React hook pour consommer le store avec réactivité en temps réel
+/**
+ * Le catalogue part vide (INITIAL_PRODUCTS = []) et arrive de Supabase une
+ * seconde plus tard. Sans ce signal, un lien partagé sur WhatsApp affichait
+ * d'abord « Produit introuvable », et l'accueil « Catalogue en cours de
+ * constitution » — avant de se corriger tout seul.
+ */
+let catalogueCharge = false;
+const ecouteursCatalogue = new Set<() => void>();
+
+export function useCatalogueCharge(): boolean {
+  const [charge, setCharge] = useState(false);
+  useEffect(() => {
+    const maj = () => setCharge(true);
+    ecouteursCatalogue.add(maj);
+    if (catalogueCharge) setCharge(true);
+    return () => { ecouteursCatalogue.delete(maj); };
+  }, []);
+  return charge;
+}
+
 export function useSugubaStore() {
   const [state, setState] = useState<SugubaState>(sugubaStore.getState());
 

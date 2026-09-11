@@ -22,6 +22,7 @@ class CloudSyncService {
     if (!this.isInitialFetched) {
       this.isInitialFetched = true;
       await this.fetchProductsFromCloud();
+      sugubaStore.marquerCatalogueCharge();
       await this.fetchOrdersFromCloud();
     }
 
