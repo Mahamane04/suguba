@@ -5,8 +5,9 @@ import Image from 'next/image';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Button from '@/components/ui/Button';
+import PhotosProduitModal from '@/components/product/PhotosProduitModal';
 import {
-  Plus, ShieldCheck, Clock, Store, Package, Users, Loader2, XCircle
+  Plus, ShieldCheck, Clock, Store, Package, Users, Loader2, XCircle, Camera
 } from 'lucide-react';
 
 interface SupplierProduct {
@@ -44,6 +45,7 @@ export default function SupplierDashboardPage() {
   const [products, setProducts] = useState<SupplierProduct[]>([]);
   const [valeurCatalogue, setValeurCatalogue] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [photosPour, setPhotosPour] = useState<SupplierProduct | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -168,6 +170,14 @@ export default function SupplierDashboardPage() {
                   </div>
 
                   <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                    <Button
+                      onClick={() => setPhotosPour(product)}
+                      variant={product.images.length === 0 ? 'primary' : 'ghost'}
+                      size="sm"
+                    >
+                      <Camera className="w-4 h-4" />
+                      <span>{product.images.length === 0 ? 'Ajouter des photos' : `Photos (${product.images.length})`}</span>
+                    </Button>
                     <Statut status={product.status} />
                     <div className="text-right">
                       <span className="text-[11px] text-slate-400 block">Prix public</span>
@@ -183,6 +193,17 @@ export default function SupplierDashboardPage() {
         </div>
 
       </main>
+
+      {photosPour && (
+        <PhotosProduitModal
+          produit={{ id: photosPour.id, nom: photosPour.name, images: photosPour.images }}
+          onClose={() => setPhotosPour(null)}
+          onEnregistre={(images) => {
+            setProducts((prev) => prev.map((p) => (p.id === photosPour.id ? { ...p, images } : p)));
+            setPhotosPour(null);
+          }}
+        />
+      )}
 
       <BottomNav />
     </div>

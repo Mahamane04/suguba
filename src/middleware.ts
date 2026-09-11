@@ -66,6 +66,7 @@ const API_SESSION_REQUISE = [
   // L'avoir mise ici a cassé la commande invité en production le 2026-09-10.
   '/api/products/sync',
   '/api/products/upload-image',
+  '/api/products/images',
 ];
 
 /**

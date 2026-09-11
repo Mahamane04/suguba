@@ -51,7 +51,9 @@ function getNavItems(role: string | null): NavItem[] {
         { label: 'Vue globale', href: '/admin',              icon: Home       },
         // La modération, les commandes et les retraits sont tous des blocs de
         // /admin lui-même : les trois anciennes entrées menaient à des 404.
-        { label: 'Ajouter',     href: '/admin/products/new', icon: PackagePlus},
+        // /admin/products existe depuis le 2026-09-11 (catalogue complet,
+        // photos) et donne accès à « Nouveau produit ».
+        { label: 'Produits',    href: '/admin/products',     icon: Boxes      },
         { label: 'Analyses',    href: '/admin/analytics',    icon: BarChart3  },
         { label: 'SAV',         href: '/admin/sav',          icon: LifeBuoy   },
       ];

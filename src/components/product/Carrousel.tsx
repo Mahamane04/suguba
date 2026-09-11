@@ -117,7 +117,7 @@ export default function Carrousel({
                 i === index ? 'border-suguba-brand' : 'border-transparent opacity-70 hover:opacity-100'
               }`}
             >
-              <ProductImage src={src} alt="" fill sizes="64px" className="object-cover" />
+              <ProductImage src={src} alt="" fill sizes="64px" className="object-cover" compact />
             </button>
           ))}
         </div>

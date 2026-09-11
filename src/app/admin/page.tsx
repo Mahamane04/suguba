@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import ProductImage from '@/components/common/ProductImage';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import CloudSyncBadge from '@/components/common/CloudSyncBadge';
@@ -308,6 +309,14 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
               <div className="flex items-center gap-2">
+                {/* Catalogue complet : c'est là qu'on ajoute les photos d'un
+                    produit existant (voir /admin/products). */}
+                <Link
+                  href="/admin/products"
+                  className="px-2.5 py-1 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-800 text-[11px] font-black whitespace-nowrap"
+                >
+                  Produits & photos
+                </Link>
                 <Link
                   href="/admin/products/new"
                   className="px-2.5 py-1 rounded-xl bg-blue-700 hover:bg-blue-800 text-white text-[11px] font-black whitespace-nowrap"
@@ -330,7 +339,9 @@ export default function AdminDashboardPage() {
                   <div key={product.id} className="p-3.5 bg-purple-50/50 border border-purple-200 rounded-2xl flex items-center justify-between gap-3">
                     <div className="flex items-center space-x-3 min-w-0">
                       <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-slate-100 shrink-0">
-                        <Image src={product.images[0]} alt={product.name} fill className="object-cover" />
+                        {/* ProductImage : un produit soumis SANS photo passait
+                            `undefined` à next/image, qui plante la page. */}
+                        <ProductImage src={product.images[0] || ''} alt={product.name} fill sizes="48px" className="object-cover" compact />
                       </div>
                       <div className="min-w-0">
                         <h4 className="font-bold text-xs text-slate-900 truncate">{product.name}</h4>

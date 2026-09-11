@@ -303,6 +303,10 @@ curl -s -H "Authorization: Bearer $KEY" https://api.saspay.me/api/v1/merchant-ba
   par l'accueil, le catalogue revendeur et les boutiques ; dépôt de **plusieurs photos**
   (`PhotosUploader`, 6 max, la première = principale). ⚠️ Au 2026-09-11, **aucun produit n'a de
   photo** : le partage part sans image tant que le catalogue n'est pas photographié.
+  Pour en ajouter à un produit EXISTANT : `/admin/products` (filtre « Sans photo », onglet
+  « Produits » de la barre du bas) ou bouton « Photos » du tableau de bord fournisseur. Route
+  dédiée `/api/products/images` : ne touche qu'aux photos, n'accepte que des URL de notre
+  stockage `product-images`, fournisseur limité à ses produits, statut inchangé.
 - **`payouts.status` n'accepte que `pending`/`processing`/`completed`/`rejected`** (contrainte
   CHECK). Écrire `failed` ferait échouer la mise à jour — même famille de piège que
   l'incohérence de statut des commandes corrigée en août. Un versement raté s'écrit

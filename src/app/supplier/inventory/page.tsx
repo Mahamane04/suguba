@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
+import ProductImage from '@/components/common/ProductImage';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
@@ -107,7 +107,7 @@ export default function SupplierInventoryPage() {
                   {/* Product Details */}
                   <div className="flex items-center space-x-3">
                     <div className="relative w-14 h-14 rounded-2xl overflow-hidden bg-slate-100 shrink-0 border border-slate-200">
-                      <Image src={product.images[0]} alt={product.name} fill className="object-cover" />
+                      <ProductImage src={product.images[0] || ''} alt={product.name} fill sizes="56px" className="object-cover" compact />
                     </div>
                     <div>
                       <div className="flex items-center space-x-2">
