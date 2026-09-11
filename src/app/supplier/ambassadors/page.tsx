@@ -5,7 +5,7 @@ import Link from 'next/link';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
-import PhotosUploader from '@/components/product/PhotosUploader';
+import LogoUploader from '@/components/common/LogoUploader';
 import { useToast } from '@/components/ui/Toast';
 import Button from '@/components/ui/Button';
 import {
@@ -39,7 +39,7 @@ export default function SupplierBoutiquePage() {
   // Réglages de boutique (2026-09-11) : nom personnalisé, logo, description,
   // e-mail et coordonnées de contact — voir migration-shop-profile.sql.
   const [shopDisplayName, setShopDisplayName] = useState('');
-  const [logo, setLogo] = useState<string[]>([]);
+  const [logo, setLogo] = useState<string | null>(null);
   const [logoEnvoiEnCours, setLogoEnvoiEnCours] = useState(false);
   const [shopDescription, setShopDescription] = useState('');
   const [contactEmail, setContactEmail] = useState('');
@@ -54,7 +54,7 @@ export default function SupplierBoutiquePage() {
         setNom(j?.supplier?.companyName || null);
         setSlug(j?.supplier?.slug || null);
         setShopDisplayName(j?.supplier?.shopDisplayName || '');
-        setLogo(j?.supplier?.logoUrl ? [j.supplier.logoUrl] : []);
+        setLogo(j?.supplier?.logoUrl || null);
         setShopDescription(j?.supplier?.shopDescription || '');
         setContactEmail(j?.supplier?.contactEmail || '');
         setManagerName(j?.supplier?.managerName || '');
@@ -72,7 +72,7 @@ export default function SupplierBoutiquePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           shopDisplayName,
-          logoUrl: logo[0] || '',
+          logoUrl: logo || '',
           shopDescription,
           contactEmail,
           managerName,
@@ -141,8 +141,8 @@ export default function SupplierBoutiquePage() {
                 e-mail, gérant et téléphone — tout ce qu'un fournisseur peut
                 personnaliser lui-même. Le nom et le logo apparaissent
                 aussitôt sur la boutique publique ci-dessous. */}
-            <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs space-y-4">
-              <div>
+            <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
+              <div className="p-5 pb-4">
                 <h2 className="font-black text-sm text-slate-900 flex items-center space-x-2">
                   <Settings className="w-4 h-4 text-slate-700" /><span>Réglages de ma boutique</span>
                 </h2>
@@ -151,90 +151,106 @@ export default function SupplierBoutiquePage() {
                 </p>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Logo de la boutique</label>
-                <div className="w-24">
-                  <PhotosUploader value={logo} onChange={setLogo} onUploadingChange={setLogoEnvoiEnCours} max={1} />
+              <div className="px-5 pb-5 space-y-5">
+                {/* Logo + nom ensemble : c'est littéralement l'en-tête que la
+                    boutique publique affichera (voir ShopView), donc les deux
+                    se retrouvent groupés ici comme un seul bloc "identité". */}
+                <div className="flex items-start gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                  <LogoUploader
+                    value={logo}
+                    onChange={setLogo}
+                    onUploadingChange={setLogoEnvoiEnCours}
+                    nomPourInitiale={shopDisplayName || nom || undefined}
+                  />
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Nom de la boutique</label>
-                <input
-                  type="text"
-                  value={shopDisplayName}
-                  onChange={(e) => setShopDisplayName(e.target.value)}
-                  placeholder={nom || 'Ex: Chez Awa Électro'}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white"
-                />
-                <span className="text-[11px] text-slate-500 mt-1 block">
-                  Affiché à la place de la raison sociale.
-                  {urlBoutique ? ` L'adresse de la boutique (${urlBoutique}) ne change pas.` : ''}
-                </span>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Présentation courte</label>
-                <textarea
-                  rows={2}
-                  value={shopDescription}
-                  onChange={(e) => setShopDescription(e.target.value)}
-                  placeholder="Ex: Électroménager et téléphones neufs, garantis, livrés partout à Bamako."
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
-                    <UserIcon className="w-3.5 h-3.5 text-slate-400" />Nom du gérant
-                  </label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Nom de la boutique</label>
                   <input
                     type="text"
-                    value={managerName}
-                    onChange={(e) => setManagerName(e.target.value)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white"
+                    value={shopDisplayName}
+                    onChange={(e) => setShopDisplayName(e.target.value)}
+                    placeholder={nom || 'Ex: Chez Awa Électro'}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white focus:outline-emerald-600"
                   />
+                  <span className="text-[11px] text-slate-500 mt-1 block">
+                    Affiché à la place de la raison sociale.
+                    {urlBoutique ? ` L'adresse de la boutique (${urlBoutique}) ne change pas.` : ''}
+                  </span>
                 </div>
+
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
-                    <Phone className="w-3.5 h-3.5 text-slate-400" />Téléphone de contact
-                  </label>
-                  <input
-                    type="tel"
-                    value={contactPhone}
-                    onChange={(e) => setContactPhone(e.target.value)}
-                    placeholder="+223 70 00 00 00"
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white"
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Présentation courte</label>
+                  <textarea
+                    rows={2}
+                    value={shopDescription}
+                    onChange={(e) => setShopDescription(e.target.value)}
+                    placeholder="Ex: Électroménager et téléphones neufs, garantis, livrés partout à Bamako."
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white focus:outline-emerald-600"
                   />
                 </div>
-              </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-slate-400" />E-mail de contact
-                </label>
-                <input
-                  type="email"
-                  value={contactEmail}
-                  onChange={(e) => setContactEmail(e.target.value)}
-                  placeholder="contact@monentreprise.ml"
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white"
-                />
-                <span className="text-[11px] text-slate-500 mt-1 block">
-                  Usage interne (support Suguba) — jamais affiché sur votre boutique publique.
-                </span>
-              </div>
+                {/* Séparateur : tout ce qui suit est un usage interne (support
+                    Suguba), pas ce que montre la boutique — la distinction
+                    visuelle évite qu'on le confonde avec le nom/logo publics. */}
+                <div className="pt-1 border-t border-slate-100 space-y-4">
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider pt-4">
+                    Vos coordonnées (usage interne)
+                  </p>
 
-              <Button
-                type="button"
-                onClick={enregistrerReglages}
-                disabled={sauvegardeEnCours || logoEnvoiEnCours}
-                fullWidth
-              >
-                <Save className="w-4 h-4" />
-                <span>{sauvegardeEnCours ? 'Enregistrement…' : 'Enregistrer'}</span>
-              </Button>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                        <UserIcon className="w-3.5 h-3.5 text-slate-400" />Nom du gérant
+                      </label>
+                      <input
+                        type="text"
+                        value={managerName}
+                        onChange={(e) => setManagerName(e.target.value)}
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white focus:outline-emerald-600"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                        <Phone className="w-3.5 h-3.5 text-slate-400" />Téléphone de contact
+                      </label>
+                      <input
+                        type="tel"
+                        value={contactPhone}
+                        onChange={(e) => setContactPhone(e.target.value)}
+                        placeholder="+223 70 00 00 00"
+                        className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white focus:outline-emerald-600"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-1 flex items-center gap-1.5">
+                      <Mail className="w-3.5 h-3.5 text-slate-400" />E-mail de contact
+                    </label>
+                    <input
+                      type="email"
+                      value={contactEmail}
+                      onChange={(e) => setContactEmail(e.target.value)}
+                      placeholder="contact@monentreprise.ml"
+                      className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white focus:outline-emerald-600"
+                    />
+                    <span className="text-[11px] text-slate-500 mt-1 block">
+                      Jamais affiché sur votre boutique publique.
+                    </span>
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  onClick={enregistrerReglages}
+                  disabled={sauvegardeEnCours || logoEnvoiEnCours}
+                  fullWidth
+                >
+                  <Save className="w-4 h-4" />
+                  <span>{sauvegardeEnCours ? 'Enregistrement…' : 'Enregistrer'}</span>
+                </Button>
+              </div>
             </div>
 
             <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs space-y-4">
