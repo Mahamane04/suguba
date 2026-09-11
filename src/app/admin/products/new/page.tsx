@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
+import PhotosUploader from '@/components/product/PhotosUploader';
 import {
-  PackagePlus, Image as ImageIcon, ShieldCheck, CheckCircle2,
-  ArrowLeft, Loader2, X, AlertTriangle
+  PackagePlus, ShieldCheck, CheckCircle2, ArrowLeft, AlertTriangle
 } from 'lucide-react';
 
 const CATEGORIES = [
@@ -44,11 +44,10 @@ export default function AdminNewProductPage() {
   const [resellerCommission, setResellerCommission] = useState<number>(0);
   const [stockQuantity, setStockQuantity] = useState<number>(10);
 
-  const [imageUrl, setImageUrl] = useState('');
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [images, setImages] = useState<string[]>([]);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
-  const [imageError, setImageError] = useState('');
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // Changer cette clé remonte PhotosUploader à vide (« Ajouter un autre produit »).
+  const [uploaderKey, setUploaderKey] = useState(0);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -60,35 +59,6 @@ export default function AdminNewProductPage() {
   // s'additionnent pas au prix réellement facturé au client.
   const sugubaMargin = publicPrice - supplierPrice - resellerCommission;
   const margeInvalide = publicPrice > 0 && sugubaMargin < 0;
-
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setImageError('');
-    setImagePreview(URL.createObjectURL(file));
-    setIsUploadingImage(true);
-
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const res = await fetch('/api/products/upload-image', { method: 'POST', body: formData });
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        setImageError(json.error || "Échec de l'envoi de la photo.");
-        setImagePreview(null);
-        setImageUrl('');
-      } else {
-        setImageUrl(json.url);
-      }
-    } catch (err) {
-      setImageError("Erreur réseau lors de l'envoi de la photo.");
-      setImagePreview(null);
-      setImageUrl('');
-    } finally {
-      setIsUploadingImage(false);
-    }
-  };
 
   const slugify = (value: string) =>
     value.toLowerCase()
@@ -109,7 +79,7 @@ export default function AdminNewProductPage() {
       return;
     }
     if (isUploadingImage) {
-      setSubmitError("Attendez la fin de l'envoi de la photo.");
+      setSubmitError("Attendez la fin de l'envoi des photos.");
       return;
     }
 
@@ -121,7 +91,7 @@ export default function AdminNewProductPage() {
       name,
       category,
       description,
-      images: imageUrl ? [imageUrl] : [],
+      images,
       supplierPrice: Number(supplierPrice),
       publicPrice: Number(publicPrice),
       resellerCommission: Number(resellerCommission),
@@ -157,8 +127,7 @@ export default function AdminNewProductPage() {
   const resetForm = () => {
     setName(''); setDescription(''); setSupplierName('');
     setSupplierPrice(0); setPublicPrice(0); setResellerCommission(0); setStockQuantity(10);
-    setImageUrl(''); setImagePreview(null); setImageError('');
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    setImages([]); setUploaderKey((k) => k + 1);
     setIsSuccess(false); setSubmitError('');
   };
 
@@ -263,46 +232,8 @@ export default function AdminNewProductPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Photo du produit</label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-
-              {imagePreview ? (
-                <div className="relative w-28 h-28 rounded-2xl overflow-hidden border border-slate-200 bg-slate-50">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={imagePreview} alt="Aperçu" className="w-full h-full object-cover" />
-                  {isUploadingImage && (
-                    <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
-                      <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
-                    </div>
-                  )}
-                  {!isUploadingImage && (
-                    <button
-                      type="button"
-                      onClick={() => { setImagePreview(null); setImageUrl(''); if (fileInputRef.current) fileInputRef.current.value = ''; }}
-                      className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-28 h-28 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 flex flex-col items-center justify-center gap-1 text-slate-400 transition-colors"
-                >
-                  <ImageIcon className="w-5 h-5" />
-                  <span className="text-[10px] font-bold">Ajouter</span>
-                </button>
-              )}
-              <p className="text-[10px] text-slate-400 mt-1">JPEG, PNG ou WEBP — 5MB max.</p>
-              {imageError && <p className="text-[10px] font-bold text-red-600 mt-1">{imageError}</p>}
+              <label className="block text-xs font-bold text-slate-700 mb-1">Photos du produit</label>
+              <PhotosUploader key={uploaderKey} value={images} onChange={setImages} onUploadingChange={setIsUploadingImage} />
             </div>
 
             {/* Économie du produit */}

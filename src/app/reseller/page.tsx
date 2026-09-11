@@ -5,14 +5,15 @@ import Link from 'next/link';
 import ProductImage from '@/components/common/ProductImage';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
-import ShareModal from '@/components/reseller/ShareModal';
 import CreateOrderModal from '@/components/reseller/CreateOrderModal';
 import Button from '@/components/ui/Button';
+import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
+import { partagerProduit } from '@/lib/partage';
 import { useSugubaStore } from '@/lib/store';
 import { Product } from '@/types';
 import {
   Wallet, TrendingUp, ShoppingBag, Clock, Copy, Check, Plus, ChevronRight,
-  Store, Calculator, Sparkles, MessageCircle, QrCode, ShieldCheck, ClipboardList
+  Store, Calculator, Sparkles, QrCode, ShieldCheck, ClipboardList
 } from 'lucide-react';
 
 /**
@@ -44,7 +45,6 @@ type Palier = keyof typeof PALIERS;
 
 export default function ResellerDashboardPage() {
   const state = useSugubaStore();
-  const [selectedProductForShare, setSelectedProductForShare] = useState<Product | null>(null);
   const [selectedProductForOrder, setSelectedProductForOrder] = useState<Product | null>(null);
   const [copiedRef, setCopiedRef] = useState(false);
 
@@ -230,10 +230,19 @@ export default function ResellerDashboardPage() {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Button onClick={() => setSelectedProductForShare(product)} variant="primary" size="sm" className="flex-1">
-                      <MessageCircle className="w-3.5 h-3.5" />
+                    {/* Partage en un clic : photo + texte + lien avec le code
+                        du revendeur (voir src/lib/partage.ts). */}
+                    <button
+                      type="button"
+                      onClick={() => partagerProduit(
+                        { nom: product.name, prix: product.publicPrice, slug: product.slug, images: product.images },
+                        referralCode,
+                      )}
+                      className="flex-1 h-9 rounded-2xl bg-[#25D366] hover:bg-[#1ebe5b] text-white text-xs font-bold inline-flex items-center justify-center gap-1.5 active:scale-[0.97] transition-all"
+                    >
+                      <WhatsAppIcon className="w-4 h-4" />
                       <span>Partager</span>
-                    </Button>
+                    </button>
                     <Button onClick={() => setSelectedProductForOrder(product)} variant="ghost" size="sm" aria-label="Créer une commande pour ce produit">
                       <Plus className="w-4 h-4" />
                     </Button>
@@ -290,15 +299,6 @@ export default function ResellerDashboardPage() {
         </div>
 
       </main>
-
-      {selectedProductForShare && (
-        <ShareModal
-          product={selectedProductForShare}
-          isOpen={!!selectedProductForShare}
-          onClose={() => setSelectedProductForShare(null)}
-          onCreateManualOrder={(product) => setSelectedProductForOrder(product)}
-        />
-      )}
 
       {selectedProductForOrder && (
         <CreateOrderModal

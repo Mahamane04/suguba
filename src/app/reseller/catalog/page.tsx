@@ -1,24 +1,26 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Image from 'next/image';
 import Link from 'next/link';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
-import ShareModal from '@/components/reseller/ShareModal';
 import CreateOrderModal from '@/components/reseller/CreateOrderModal';
+import ProductCard, { carteDepuisProduit } from '@/components/product/ProductCard';
+import Button from '@/components/ui/Button';
 import { useSugubaStore } from '@/lib/store';
 import { Product } from '@/types';
-import { 
-  Search, Filter, MessageCircle, Plus, Sparkles, 
-  ShoppingBag, Check, ShieldCheck, Flame, Store, ExternalLink
-} from 'lucide-react';
+import { Search, Plus, Sparkles, Check, Store, ExternalLink } from 'lucide-react';
 
+/**
+ * Catalogue revendeur — refondu le 2026-09-11 sur la carte produit commune :
+ * plusieurs photos, partage WhatsApp en un clic (photo + texte + lien), deux
+ * colonnes sur téléphone. Le partage y est l'action principale : c'est le
+ * métier du revendeur.
+ */
 export default function ResellerCatalogPage() {
   const state = useSugubaStore();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [selectedProductForShare, setSelectedProductForShare] = useState<Product | null>(null);
   const [selectedProductForOrder, setSelectedProductForOrder] = useState<Product | null>(null);
 
   // Code revendeur et sélection de la boutique /r/<code>.
@@ -68,9 +70,10 @@ export default function ResellerCatalogPage() {
   const approvedProducts = state.products.filter(p => p.status === 'approved' && p.resellerCommission > 0);
   const categories = ['all', ...Array.from(new Set(approvedProducts.map(p => p.category)))];
 
+  const recherche = searchTerm.trim().toLowerCase();
   const filtered = approvedProducts.filter(p => {
-    const matchesSearch = p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          p.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = !recherche || p.name.toLowerCase().includes(recherche) ||
+                          p.description.toLowerCase().includes(recherche);
     const matchesCategory = selectedCategory === 'all' || p.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
@@ -79,179 +82,126 @@ export default function ResellerCatalogPage() {
     <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
       <Header />
 
-      <main className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
-        
-        {/* Header Title & Studio Banner */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 py-6 w-full space-y-5">
+
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
           <div className="space-y-1">
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900">
-              Catalogue Produits Rémunérés
-            </h1>
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900">Catalogue à partager</h1>
             <p className="text-xs text-slate-500">
-              Partagez sur WhatsApp et gagnez des commissions garanties sur chaque vente livrée.
+              Un clic sur « Partager sur WhatsApp » envoie la photo, le prix et votre lien. Chaque vente livrée vous rapporte la commission affichée.
             </p>
           </div>
-
-          <Link
-            href="/reseller/marketing"
-            className="flex items-center space-x-2 px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 text-white font-black rounded-2xl text-xs shadow-md shadow-emerald-600/20 active:scale-95 transition-all self-start sm:self-auto"
-          >
-            <Sparkles className="w-4 h-4 text-amber-300" />
-            <span>Studio Affiches WhatsApp</span>
-          </Link>
+          <Button href="/reseller/marketing" variant="ghost" size="sm" className="self-start sm:self-auto">
+            <Sparkles className="w-4 h-4" />
+            <span>Studio affiches</span>
+          </Button>
         </div>
 
         {/* Ma boutique : la vitrine publique composée depuis ce catalogue. */}
         {codeRevendeur && (
-          <div className="bg-emerald-50 border border-emerald-200 rounded-3xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center space-x-3">
-              <Store className="w-6 h-6 text-emerald-700 shrink-0" />
+          <div className="bg-white border border-slate-200 rounded-3xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <Store className="w-6 h-6 text-slate-700 shrink-0" />
               <div>
-                <p className="text-sm font-black text-emerald-950">Ma boutique — {maSelection.size} article{maSelection.size > 1 ? 's' : ''}</p>
-                <p className="text-[11px] text-emerald-800">
+                <p className="text-sm font-black text-slate-900">Ma boutique — {maSelection.size} article{maSelection.size > 1 ? 's' : ''}</p>
+                <p className="text-[11px] text-slate-500">
                   Ajoutez des articles ci-dessous, puis partagez votre boutique : chaque vente vous est attribuée.
                 </p>
               </div>
             </div>
-            <Link href={`/r/${codeRevendeur}`} target="_blank"
-              className="h-11 px-4 rounded-2xl bg-emerald-700 hover:bg-emerald-800 text-white text-xs font-black flex items-center justify-center space-x-1.5">
-              <ExternalLink className="w-4 h-4" /><span>Voir et partager ma boutique</span>
-            </Link>
+            <Button href={`/r/${codeRevendeur}`} target="_blank" variant="secondary" size="sm">
+              <ExternalLink className="w-4 h-4" />
+              <span>Voir ma boutique</span>
+            </Button>
           </div>
         )}
         {erreurBoutique && (
           <p className="text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-2xl p-3">{erreurBoutique}</p>
         )}
 
-        {/* Search & Filter Bar */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+        {/* Recherche et catégories */}
+        <div className="space-y-3">
+          <div className="relative">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
-              type="text"
-              placeholder="Rechercher TV, mixeur, solaire, téléphone..."
+              type="search"
+              placeholder="Rechercher un produit…"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-xs font-medium text-slate-900 focus:outline-emerald-600 shadow-2xs"
+              className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-suguba-brand/30 focus:border-suguba-brand"
             />
           </div>
-
-          <div className="flex items-center space-x-2 overflow-x-auto pb-1 sm:pb-0 scrollbar-none">
-            {categories.map((cat) => (
-              <button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors ${
-                  selectedCategory === cat
-                    ? 'bg-emerald-600 text-white shadow-xs'
-                    : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-                }`}
-              >
-                {cat === 'all' ? 'Toutes catégories' : cat}
-              </button>
-            ))}
-          </div>
+          {categories.length > 1 && (
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
+                    selectedCategory === cat
+                      ? 'bg-slate-900 text-white'
+                      : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  {cat === 'all' ? 'Tout' : cat}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Products Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filtered.map((product) => (
-            <div 
-              key={product.id}
-              className="bg-white rounded-3xl overflow-hidden border border-slate-200/80 shadow-xs flex flex-col justify-between"
-            >
-              {/* Product Media & Badges */}
-              <div className="relative h-48 bg-slate-100 overflow-hidden">
-                <Image src={product.images[0]} alt={product.name} fill className="object-cover" />
-                <div className="absolute top-3 left-3">
-                  <span className="px-2.5 py-1 rounded-full bg-slate-900/80 backdrop-blur-xs text-white text-[10px] font-bold">
-                    {product.category}
-                  </span>
-                </div>
-                <div className="absolute top-3 right-3">
-                  <span className="px-2.5 py-1 rounded-full bg-emerald-600 text-white text-[11px] font-black shadow-md flex items-center space-x-1">
-                    <Sparkles className="w-3 h-3 text-amber-300" />
-                    <span>+{product.resellerCommission.toLocaleString('fr-FR')} F</span>
-                  </span>
-                </div>
-              </div>
-
-              {/* Product Info */}
-              <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-                <div className="space-y-1">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    Stock : {product.stockQuantity} unités disponibles
-                  </p>
-                  <h3 className="font-bold text-sm text-slate-900 line-clamp-1">{product.name}</h3>
-                  <p className="text-xs text-slate-500 line-clamp-2">{product.description}</p>
-                </div>
-
-                {/* Economics Box */}
-                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-500 block">Prix Public Client</span>
-                    <span className="text-sm font-black text-slate-900">
-                      {product.publicPrice.toLocaleString('fr-FR')} FCFA
-                    </span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-[10px] font-bold text-emerald-700 block">Ta Commission</span>
-                    <span className="text-sm font-black text-emerald-600">
-                      +{product.resellerCommission.toLocaleString('fr-FR')} FCFA
-                    </span>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="grid grid-cols-2 gap-2 pt-1">
-                  <button
-                    onClick={() => setSelectedProductForShare(product)}
-                    className="flex items-center justify-center space-x-1.5 py-2.5 px-3 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl text-xs font-bold shadow-xs transition-transform active:scale-95"
-                  >
-                    <MessageCircle className="w-4 h-4 fill-current" />
-                    <span>WhatsApp</span>
-                  </button>
-
+        {filtered.length === 0 ? (
+          <div className="bg-white rounded-3xl border border-slate-200 p-8 text-center text-sm text-slate-500">
+            {approvedProducts.length === 0
+              ? 'Le catalogue est en cours de remplissage. Les produits apparaîtront ici dès leur validation.'
+              : 'Aucun produit ne correspond à votre recherche.'}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            {filtered.map((product, i) => (
+              <ProductCard
+                key={product.id}
+                produit={carteDepuisProduit(product)}
+                afficherCommission
+                partageEnAvant
+                priority={i < 4}
+              >
+                <div className="grid grid-cols-2 gap-1.5">
                   <button
                     onClick={() => setSelectedProductForOrder(product)}
-                    className="flex items-center justify-center space-x-1.5 py-2.5 px-3 bg-slate-900 hover:bg-black text-white rounded-xl text-xs font-bold transition-colors"
+                    className="h-8 rounded-xl border border-slate-200 hover:bg-slate-50 text-[11px] font-bold text-slate-700 inline-flex items-center justify-center gap-1"
                   >
-                    <Plus className="w-4 h-4" />
-                    <span>Créer vente</span>
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Vente</span>
                   </button>
+                  {codeRevendeur ? (
+                    <button
+                      onClick={() => basculerBoutique(product.id)}
+                      disabled={enCours === product.id}
+                      className={`h-8 rounded-xl border text-[11px] font-bold inline-flex items-center justify-center gap-1 transition-colors disabled:opacity-60 ${
+                        maSelection.has(product.id)
+                          ? 'bg-suguba-brand/10 border-suguba-brand/30 text-suguba-brand'
+                          : 'border-slate-200 text-slate-700 hover:bg-slate-50'
+                      }`}
+                    >
+                      {maSelection.has(product.id) ? <Check className="w-3.5 h-3.5" /> : <Store className="w-3.5 h-3.5" />}
+                      <span>{maSelection.has(product.id) ? 'En boutique' : 'Boutique'}</span>
+                    </button>
+                  ) : (
+                    <Link
+                      href={`/p/${product.slug}`}
+                      className="h-8 rounded-xl border border-slate-200 hover:bg-slate-50 text-[11px] font-bold text-slate-700 inline-flex items-center justify-center"
+                    >
+                      Voir
+                    </Link>
+                  )}
                 </div>
-
-                {codeRevendeur && (
-                  <button
-                    onClick={() => basculerBoutique(product.id)}
-                    disabled={enCours === product.id}
-                    className={`w-full h-10 rounded-xl text-xs font-bold flex items-center justify-center space-x-1.5 border transition-colors disabled:opacity-60 ${
-                      maSelection.has(product.id)
-                        ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
-                        : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
-                    }`}
-                  >
-                    {maSelection.has(product.id) ? <Check className="w-4 h-4" /> : <Store className="w-4 h-4" />}
-                    <span>{maSelection.has(product.id) ? 'Dans ma boutique' : 'Ajouter à ma boutique'}</span>
-                  </button>
-                )}
-
-              </div>
-            </div>
-          ))}
-        </div>
+              </ProductCard>
+            ))}
+          </div>
+        )}
 
       </main>
-
-      {/* Modals */}
-      {selectedProductForShare && (
-        <ShareModal
-          product={selectedProductForShare}
-          isOpen={!!selectedProductForShare}
-          onClose={() => setSelectedProductForShare(null)}
-          onCreateManualOrder={(product) => setSelectedProductForOrder(product)}
-        />
-      )}
 
       {selectedProductForOrder && (
         <CreateOrderModal

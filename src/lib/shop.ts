@@ -20,6 +20,8 @@ export interface ProduitVitrine {
   nom: string;
   categorie: string;
   image: string | null;
+  /** Toutes les photos, pour le carrousel de la carte produit. */
+  images: string[];
   prix: number;
   enStock: boolean;
   garantieMois: number;
@@ -87,6 +89,7 @@ function versVitrine(p: any): ProduitVitrine {
     nom: p.name,
     categorie: p.category || '',
     image: Array.isArray(p.images) && p.images[0] ? String(p.images[0]) : null,
+    images: Array.isArray(p.images) ? p.images.filter(Boolean).map(String) : [],
     prix: Number(p.public_price) || 0,
     enStock: Number(p.stock) > 0,
     garantieMois: Number(p.warranty_months) || 0,
@@ -212,5 +215,33 @@ export async function chargerBoutiqueRevendeur(codeBrut: string): Promise<Boutiq
     livraisons: 0,
     selectionVide,
     code,
+  };
+}
+
+export interface ProduitPublic {
+  nom: string;
+  prix: number;
+  categorie: string;
+  image: string | null;
+}
+
+/**
+ * Données d'aperçu d'un produit (page /p/<slug>) : nom, prix public, photo
+ * principale — rien d'autre. Un produit non approuvé n'a pas d'aperçu.
+ */
+export async function chargerProduitPublic(slug: string): Promise<ProduitPublic | null> {
+  const admin = getSupabaseAdmin();
+  if (!admin) return null;
+  const { data } = await admin
+    .from('products')
+    .select('name, category, images, public_price, status')
+    .eq('slug', slug)
+    .maybeSingle();
+  if (!data || data.status !== 'approved') return null;
+  return {
+    nom: data.name,
+    prix: Number(data.public_price) || 0,
+    categorie: data.category || '',
+    image: Array.isArray(data.images) && data.images[0] ? String(data.images[0]) : null,
   };
 }

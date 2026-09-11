@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
-import ProductImage from '@/components/common/ProductImage';
+import ProductCard from '@/components/product/ProductCard';
 import ShopShareBar from '@/components/shop/ShopShareBar';
 import type { Boutique } from '@/lib/shop';
 import { ShieldCheck, Truck, KeyRound, ArrowRight, Store, Users } from 'lucide-react';
@@ -81,26 +81,15 @@ export default function ShopView({
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
-            {boutique.produits.map((p) => (
-              <Link key={p.id} href={`/p/${p.slug}${suffixeRef}`}
-                className="bg-white rounded-3xl overflow-hidden border border-slate-200 shadow-xs hover:shadow-lg transition-all flex flex-col group">
-                <div className="relative aspect-square bg-slate-100 overflow-hidden">
-                  <ProductImage src={p.image ?? ''} alt={p.nom} fill className="object-cover group-hover:scale-105 transition-transform duration-300" />
-                  {!p.enStock && (
-                    <span className="absolute top-2 left-2 px-2 py-0.5 rounded-md bg-slate-900/80 text-white text-[10px] font-bold">Rupture</span>
-                  )}
-                </div>
-                <div className="p-3 flex-1 flex flex-col justify-between space-y-2">
-                  <div>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 truncate">{p.categorie}</p>
-                    <h3 className="font-black text-xs sm:text-sm text-slate-900 line-clamp-2 leading-snug">{p.nom}</h3>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm sm:text-base font-black text-suguba-brand">{p.prix.toLocaleString('fr-FR')} F</span>
-                    <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-600" />
-                  </div>
-                </div>
-              </Link>
+            {boutique.produits.map((p, i) => (
+              // Carte commune : plusieurs photos, partage WhatsApp en un clic.
+              // Le lien d'achat garde le code de la boutique visitée.
+              <ProductCard
+                key={p.id}
+                produit={{ id: p.id, slug: p.slug, nom: p.nom, prix: p.prix, categorie: p.categorie, images: p.images, enStock: p.enStock }}
+                refCode={refCode}
+                priority={i < 4}
+              />
             ))}
           </div>
         )}

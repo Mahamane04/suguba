@@ -2,17 +2,14 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import ProductImage from '@/components/common/ProductImage';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
-import ShareModal from '@/components/reseller/ShareModal';
 import Button from '@/components/ui/Button';
-import CreateOrderModal from '@/components/reseller/CreateOrderModal';
+import ProductCard, { carteDepuisProduit } from '@/components/product/ProductCard';
 import { useSugubaStore } from '@/lib/store';
-import { Product } from '@/types';
 import {
-  ArrowRight, MessageCircle, Search, Banknote,
+  ArrowRight, Search, Banknote,
   ShieldCheck, Truck, TrendingUp, X
 } from 'lucide-react';
 
@@ -32,8 +29,6 @@ import {
 
 export default function HomePage() {
   const state = useSugubaStore();
-  const [selectedProductForShare, setSelectedProductForShare] = useState<Product | null>(null);
-  const [selectedProductForOrder, setSelectedProductForOrder] = useState<Product | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [search, setSearch] = useState('');
 
@@ -143,71 +138,12 @@ export default function HomePage() {
                 </Button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {filteredProducts.map((product) => (
-                  <div
-                    key={product.id}
-                    className="bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-card hover:shadow-card-hover transition-all hover:-translate-y-0.5 flex flex-col touch-card"
-                  >
-                    <div className="relative h-48 bg-gray-50 overflow-hidden">
-                      <Link href={`/p/${product.slug}`} className="block h-full">
-                        <ProductImage
-                          src={product.images[0]}
-                          alt={product.name}
-                          fill
-                          className="object-cover transition-transform duration-300 hover:scale-105"
-                        />
-                      </Link>
-                      <div className="absolute top-3 left-3">
-                        <span className="px-2.5 py-1 rounded-full bg-gray-900/70 backdrop-blur-sm text-white text-[10px] font-bold">
-                          {product.category}
-                        </span>
-                      </div>
-                      {/* Le partage WhatsApp vit sur l'image, pas en bas de
-                          carte : en bas à droite il tombait sous le bouton
-                          flottant de support, qui le rendait intouchable sur
-                          mobile. C'est aussi une action de revendeur, elle n'a
-                          pas à concurrencer « Acheter » sur une vitrine
-                          d'abord destinée aux clients. */}
-                      <button
-                        onClick={() => setSelectedProductForShare(product)}
-                        aria-label={`Partager ${product.name} sur WhatsApp`}
-                        className="absolute top-2.5 right-2.5 w-9 h-9 rounded-full bg-[#25D366] hover:bg-[#1eb558] text-white flex items-center justify-center shadow-md transition-all active:scale-95"
-                      >
-                        <MessageCircle className="w-4 h-4 fill-current" />
-                      </button>
-                    </div>
-
-                    <div className="p-4 flex-1 flex flex-col gap-3">
-                      <div>
-                        <Link href={`/p/${product.slug}`}>
-                          <h3 className="font-bold text-gray-900 text-sm leading-snug line-clamp-2 hover:text-suguba-brand transition-colors">
-                            {product.name}
-                          </h3>
-                        </Link>
-                        <p className="text-xs text-gray-400 line-clamp-2 mt-1 leading-relaxed">
-                          {product.description}
-                        </p>
-                      </div>
-
-                      {/* Le prix client est l'information principale ; la
-                          commission reste visible car c'est l'argument de
-                          recrutement des revendeurs, mais en second rang. */}
-                      <div className="mt-auto">
-                        <p className="text-lg font-black text-gray-900 leading-none">
-                          {product.publicPrice.toLocaleString('fr-FR')} F
-                        </p>
-                        <p className="text-[11px] font-bold text-suguba-brand mt-1">
-                          Revendez-le et gagnez +{product.resellerCommission.toLocaleString('fr-FR')} F
-                        </p>
-                      </div>
-
-                      <Button href={`/p/${product.slug}`} variant="secondary" size="md" fullWidth>
-                        Acheter
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
-                  </div>
+              // Carte produit commune (2026-09-11) : deux colonnes sur
+              // téléphone comme les grandes places de marché, plusieurs
+              // photos à balayer, partage WhatsApp en un clic.
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                {filteredProducts.map((product, i) => (
+                  <ProductCard key={product.id} produit={carteDepuisProduit(product)} priority={i < 4} />
                 ))}
               </div>
             )}
@@ -288,23 +224,6 @@ export default function HomePage() {
         </section>
 
       </main>
-
-      {/* Modals */}
-      {selectedProductForShare && (
-        <ShareModal
-          product={selectedProductForShare}
-          isOpen={!!selectedProductForShare}
-          onClose={() => setSelectedProductForShare(null)}
-          onCreateManualOrder={(product) => setSelectedProductForOrder(product)}
-        />
-      )}
-      {selectedProductForOrder && (
-        <CreateOrderModal
-          product={selectedProductForOrder}
-          isOpen={!!selectedProductForOrder}
-          onClose={() => setSelectedProductForOrder(null)}
-        />
-      )}
 
       <Footer />
       <BottomNav />

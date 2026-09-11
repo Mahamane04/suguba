@@ -293,6 +293,16 @@ curl -s -H "Authorization: Bearer $KEY" https://api.saspay.me/api/v1/merchant-ba
   le numéro est obligatoire ; le middleware renvoie vers le formulaire toute session dont le
   « phone » est encore un email (admin exempté). Les 2 comptes créés en silence le 2026-09-10
   seront invités à choisir leur profil à leur prochaine connexion.
+- **Les partages WhatsApp n'étaient qu'un lien nu** (corrigé le 2026-09-11). Deux causes :
+  `api.whatsapp.com/send?text=` ne transporte que du texte, et `/p/[slug]` étant `'use client'`
+  sans métadonnées, WhatsApp ne trouvait aucune image d'aperçu. Désormais : `src/lib/partage.ts`
+  partage photo + texte + lien en un clic (Web Share avec fichier, image préchargée au toucher
+  car Safari refuse un partage trop long après le geste), repli texte puis `wa.me` ;
+  `app/p/[slug]/layout.tsx` produit l'aperçu (logo Suguba tant que le produit n'a pas de photo).
+  Carte produit unique `components/product/ProductCard.tsx` (carrousel, logo WhatsApp) utilisée
+  par l'accueil, le catalogue revendeur et les boutiques ; dépôt de **plusieurs photos**
+  (`PhotosUploader`, 6 max, la première = principale). ⚠️ Au 2026-09-11, **aucun produit n'a de
+  photo** : le partage part sans image tant que le catalogue n'est pas photographié.
 - **`payouts.status` n'accepte que `pending`/`processing`/`completed`/`rejected`** (contrainte
   CHECK). Écrire `failed` ferait échouer la mise à jour — même famille de piège que
   l'incohérence de statut des commandes corrigée en août. Un versement raté s'écrit

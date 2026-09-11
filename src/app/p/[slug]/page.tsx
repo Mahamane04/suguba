@@ -4,7 +4,9 @@ import React, { useState, use, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/common/Header';
-import ProductImage from '@/components/common/ProductImage';
+import Carrousel from '@/components/product/Carrousel';
+import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
+import { partagerProduit, prechargerImage, useCodeRevendeur } from '@/lib/partage';
 import { useSugubaStore, sugubaStore } from '@/lib/store';
 import { cloudSyncService } from '@/lib/cloud-sync';
 import Button from '@/components/ui/Button';
@@ -47,6 +49,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   const searchParams = useSearchParams();
   const router = useRouter();
   const state = useSugubaStore();
+  // Un revendeur connecté partage avec SON code ; sinon le lien garde celui
+  // de la visite en cours.
+  const monCode = useCodeRevendeur();
 
   const refCode = searchParams.get('ref');
   const promoParam = searchParams.get('promo');
@@ -263,13 +268,34 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
           
           {/* Left: Product Images & Quality Guarantees */}
           <div className="space-y-4">
-            <div className="relative h-72 sm:h-96 rounded-3xl overflow-hidden bg-white border border-slate-200 shadow-sm">
-              <ProductImage src={product.images[0]} alt={product.name} fill className="object-cover" priority />
-              <div className="absolute top-3 left-3">
+            {/* Galerie : toutes les photos, à balayer, avec vignettes. */}
+            <div className="relative">
+              <Carrousel
+                images={product.images}
+                alt={product.name}
+                className="aspect-square rounded-3xl border border-slate-200"
+                sizes="(max-width: 768px) 100vw, 50vw"
+                priority
+                miniatures
+              />
+              <div className="absolute top-3 left-3 pointer-events-none">
                 <span className="px-3 py-1 rounded-full bg-slate-900/80 backdrop-blur-xs text-white text-xs font-bold">
                   {product.category}
                 </span>
               </div>
+              <button
+                type="button"
+                onClick={() => partagerProduit(
+                  { nom: product.name, prix: product.publicPrice, slug: product.slug, images: product.images },
+                  monCode || refCode,
+                )}
+                onPointerDown={() => prechargerImage(product.images[0], product.slug)}
+                aria-label="Partager ce produit sur WhatsApp"
+                className="absolute top-3 right-3 h-9 px-3 rounded-full bg-[#25D366] hover:bg-[#1ebe5b] text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-md active:scale-[0.97] transition-all"
+              >
+                <WhatsAppIcon className="w-4 h-4" />
+                <span>Partager</span>
+              </button>
             </div>
 
             {/* Trust badges */}
