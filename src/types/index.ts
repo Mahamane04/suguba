@@ -123,6 +123,7 @@ export interface Product {
   supplierPrice: number;       // Prix demandé par le fournisseur (ex: 30 000 F)
   publicPrice: number;         // Prix public fixé par Suguba (ex: 40 000 F)
   resellerCommission: number;  // Gain revendeur fixe par vente (ex: 4 000 F)
+  resellerCommissionProposee?: number; // Part revendeur choisie par le fournisseur (voir modePartSuguba)
   sugubaMargin: number;        // Marge nette Suguba (ex: 6 000 F)
   stockQuantity: number;
   warrantyMonths: number;

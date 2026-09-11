@@ -67,7 +67,7 @@ export async function PUT(req: NextRequest) {
   // ── Recalcul des commissions de tous les produits approuvés ─────────────
   const { data: produits } = await admin
     .from('products')
-    .select('id, name, supplier_price, public_price, reseller_commission')
+    .select('id, name, supplier_price, public_price, reseller_commission, commission_proposee')
     .eq('status', 'approved');
 
   const alertes: { id: string; nom: string; statut: string; prixVente: number; prixMinimal: number }[] = [];
@@ -75,7 +75,8 @@ export async function PUT(req: NextRequest) {
   const maintenant = new Date().toISOString();
 
   for (const p of produits || []) {
-    const t = calculerTarif(Number(p.supplier_price), Number(p.public_price), reglages);
+    // La part revendeur choisie par le fournisseur est conservée (sauf en mode automatique).
+    const t = calculerTarif(Number(p.supplier_price), Number(p.public_price), reglages, p.commission_proposee);
     if (t.statut !== 'ok') {
       alertes.push({ id: p.id, nom: p.name, statut: t.statut, prixVente: t.prixVente, prixMinimal: t.prixMinimal });
     }

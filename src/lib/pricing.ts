@@ -52,6 +52,19 @@ export interface CodePromo {
   actif: boolean;
 }
 
+/**
+ * Comment Suguba se rémunère quand le FOURNISSEUR fixe la part du revendeur
+ * (ajouté le 2026-09-11) :
+ *  - 'auto'           : le fournisseur ne fixe rien, le moteur calcule la
+ *                       commission (part revendeur du reste, comme avant) ;
+ *  - 'prix_vente'     : Suguba prend `tauxPartSuguba` % du prix de vente ;
+ *  - 'part_revendeur' : Suguba prend `tauxPartSuguba` % de la part revendeur.
+ * Dans les deux derniers cas, un produit sans part indiquée retombe sur le
+ * calcul automatique, et le prix est TOUJOURS relevé au plancher s'il ne
+ * couvre pas les coûts : aucun mode ne peut faire vendre à perte.
+ */
+export type ModePartSuguba = 'auto' | 'prix_vente' | 'part_revendeur';
+
 export interface ReglagesPlateforme {
   // ── Coûts variables, par commande ────────────────────────────────────
   /** Frais SasPay d'encaissement, en % du montant encaissé (article + livraison). */
@@ -102,6 +115,15 @@ export interface ReglagesPlateforme {
   arrondiPrix: number;
   /** Montant minimal d'un retrait revendeur, en FCFA. */
   retraitMinimum: number;
+
+  // ── Part revendeur fixée par le fournisseur ──────────────────────────
+  /** Mode de rémunération de Suguba (voir ModePartSuguba). */
+  modePartSuguba: ModePartSuguba;
+  /** Pourcentage prélevé par Suguba, sur le prix de vente ou sur la part revendeur selon le mode. */
+  tauxPartSuguba: number;
+  /** Part minimale de Suguba par article vendu, en FCFA. */
+  minimumPartSuguba: number;
+
   /** Codes promo acceptés au moment de la commande. */
   codesPromo: CodePromo[];
 }
@@ -156,6 +178,9 @@ export const REGLAGES_PAR_DEFAUT: ReglagesPlateforme = {
   arrondiCommission: 250,
   arrondiPrix: 500,
   retraitMinimum: 5000,
+  modePartSuguba: 'prix_vente',
+  tauxPartSuguba: 8,
+  minimumPartSuguba: 1000,
   codesPromo: [
     { code: 'RAMADAN', remise: 2000, actif: true },
     { code: 'TABASKI', remise: 2000, actif: true },
@@ -236,7 +261,18 @@ function prixPourReste(r: ReglagesPlateforme, prixFournisseur: number, resteVoul
   return (prixFournisseur + chargesIndependantesDuPrix(r) + resteVoulu) / denominateur;
 }
 
-export function calculerTarif(prixFournisseur: number, prixVente: number, r: ReglagesPlateforme): DetailTarif {
+/**
+ * `commissionProposee` : part revendeur choisie par le fournisseur (colonne
+ * products.commission_proposee). Ignorée en mode 'auto' ou si elle est vide ;
+ * sinon elle devient LA commission, à condition que le prix couvre les coûts
+ * plus cette commission (sinon verdict « sous_plancher »).
+ */
+export function calculerTarif(
+  prixFournisseur: number,
+  prixVente: number,
+  r: ReglagesPlateforme,
+  commissionProposee?: number | null,
+): DetailTarif {
   const PF = Math.max(0, Number(prixFournisseur) || 0);
   const PV = Math.max(0, Number(prixVente) || 0);
 
@@ -250,20 +286,45 @@ export function calculerTarif(prixFournisseur: number, prixVente: number, r: Reg
   const plancher = coutParCommande + margeNetteMinimale;
   const reste = PV - PF - plancher;
 
-  const prixMinimal = arrondiSup(prixPourReste(r, PF, 0), r.arrondiPrix);
-
-  // Commission visée, puis le reste nécessaire pour la verser à la part
-  // revendeur choisie. Sans part revendeur, le prix recommandé est le minimal.
-  const cible = arrondiSup(Math.max(r.commissionMinimale, pct(r.commissionCiblePct) * PF), r.arrondiCommission);
   const part = pct(r.partRevendeurPct);
-  const prixRecommande = part > 0
-    ? arrondiSup(prixPourReste(r, PF, cible / part), r.arrondiPrix)
-    : prixMinimal;
+  const tauxVersement = pct(r.fraisVersementPct);
+
+  // Part revendeur CHOISIE par le fournisseur (modes « % du prix de vente » et
+  // « % de la part revendeur »). En mode automatique elle est ignorée.
+  const imposee = r.modePartSuguba !== 'auto' && Number(commissionProposee) > 0
+    ? arrondiInf(Number(commissionProposee), r.arrondiCommission)
+    : null;
+
+  let prixMinimal: number;
+  let prixRecommande: number;
+  if (imposee !== null) {
+    // Le prix doit couvrir les coûts ET la commission promise, frais de
+    // versement compris.
+    prixMinimal = arrondiSup(prixPourReste(r, PF, imposee * (1 + tauxVersement)), r.arrondiPrix);
+    prixRecommande = prixDepuisPartRevendeur(PF, imposee, r).prixVente;
+  } else {
+    prixMinimal = arrondiSup(prixPourReste(r, PF, 0), r.arrondiPrix);
+    // Commission visée, puis le reste nécessaire pour la verser à la part
+    // revendeur choisie. Sans part revendeur, le prix recommandé est le minimal.
+    const cible = arrondiSup(Math.max(r.commissionMinimale, pct(r.commissionCiblePct) * PF), r.arrondiCommission);
+    prixRecommande = part > 0
+      ? arrondiSup(prixPourReste(r, PF, cible / part), r.arrondiPrix)
+      : prixMinimal;
+  }
 
   let commission = 0;
   let statut: StatutTarif;
 
-  if (reste < 0) {
+  if (imposee !== null) {
+    if (reste < imposee * (1 + tauxVersement)) {
+      statut = 'sous_plancher';
+    } else if (imposee < r.commissionMinimale) {
+      statut = 'commission_faible';
+    } else {
+      statut = 'ok';
+      commission = imposee;
+    }
+  } else if (reste < 0) {
     statut = 'sous_plancher';
   } else {
     // Le versement de la commission coûte `fraisVersementPct` à Suguba. On
@@ -303,6 +364,60 @@ export function calculerTarif(prixFournisseur: number, prixVente: number, r: Reg
     partageable: statut === 'ok',
     prixMinimal,
     prixRecommande,
+  };
+}
+
+// ──────────────── Prix à partir de la part revendeur choisie ─────────────
+
+export interface PrixDepuisPart {
+  /** Prix client final (arrondi, relevé au plancher si besoin). */
+  prixVente: number;
+  commission: number;
+  /** Ce qui revient à Suguba avant ses coûts : prix − fournisseur − commission. */
+  partSuguba: number;
+  /** Prix issu du seul pourcentage Suguba, avant relèvement au plancher. */
+  prixCalcule: number;
+  /** Vrai si le pourcentage ne couvrait pas les coûts et que le prix a été relevé. */
+  releveAuPlancher: boolean;
+  prixMinimal: number;
+}
+
+/**
+ * Prix client = prix fournisseur + part revendeur + part Suguba, selon le mode
+ * choisi par l'admin. Utilisé par la publication automatique, l'aperçu du
+ * fournisseur et le tableau de simulation de l'admin — un seul calcul.
+ */
+export function prixDepuisPartRevendeur(
+  prixFournisseur: number,
+  commissionVoulue: number,
+  r: ReglagesPlateforme,
+): PrixDepuisPart {
+  const PF = Math.max(0, Number(prixFournisseur) || 0);
+  const C = arrondiInf(Math.max(0, Number(commissionVoulue) || 0), r.arrondiCommission);
+  const taux = pct(r.tauxPartSuguba);
+  const minimum = Math.max(0, Number(r.minimumPartSuguba) || 0);
+
+  let brut: number;
+  if (r.modePartSuguba === 'part_revendeur') {
+    brut = PF + C + Math.max(minimum, taux * C);
+  } else {
+    // % du prix de vente : P = (PF + C) / (1 − taux), sauf si la part qui en
+    // résulte est sous le minimum.
+    const p = taux < 1 ? (PF + C) / (1 - taux) : Number.POSITIVE_INFINITY;
+    brut = taux * p >= minimum ? p : PF + C + minimum;
+  }
+
+  const prixCalcule = arrondiSup(brut, r.arrondiPrix);
+  const prixMinimal = arrondiSup(prixPourReste(r, PF, C * (1 + pct(r.fraisVersementPct))), r.arrondiPrix);
+  const prixVente = Math.max(prixCalcule, prixMinimal);
+
+  return {
+    prixVente,
+    commission: C,
+    partSuguba: prixVente - PF - C,
+    prixCalcule,
+    releveAuPlancher: prixVente > prixCalcule,
+    prixMinimal,
   };
 }
 
@@ -366,12 +481,14 @@ function fraisPourVille(r: ReglagesPlateforme, ville: string): { ville: string; 
  * — et le devis le dit (`avisPromo: 'plafonnee'`) plutôt que de le cacher.
  */
 export function calculerCommande(
-  produit: { prixFournisseur: number; prixVente: number },
+  produit: { prixFournisseur: number; prixVente: number; commissionProposee?: number | null },
   demande: DemandeDevis,
   r: ReglagesPlateforme,
 ): Devis {
   const quantite = Math.min(QUANTITE_MAX, Math.max(1, Math.floor(Number(demande.quantite) || 1)));
-  const tarif = calculerTarif(produit.prixFournisseur, produit.prixVente, r);
+  // La part revendeur choisie par le fournisseur doit suivre jusqu'à la
+  // commande : sinon la commission enregistrée différerait de celle affichée.
+  const tarif = calculerTarif(produit.prixFournisseur, produit.prixVente, r, produit.commissionProposee);
 
   const prixUnitaire = tarif.prixVente;
   const montantArticles = prixUnitaire * quantite;
@@ -454,6 +571,7 @@ export function validerReglages(r: ReglagesPlateforme): string[] {
     ['margeNetteMinPct', 'Marge nette minimale'],
     ['partRevendeurPct', 'Part revendeur'],
     ['commissionCiblePct', 'Commission visée'],
+    ['tauxPartSuguba', 'Part Suguba'],
   ];
   for (const [cle, libelle] of pourcentages) {
     const v = Number(r[cle]);
@@ -468,10 +586,17 @@ export function validerReglages(r: ReglagesPlateforme): string[] {
     ['remunerationLivreur', 'Rémunération du livreur'],
     ['commissionMinimale', 'Commission minimale'],
     ['retraitMinimum', 'Retrait minimum'],
+    ['minimumPartSuguba', 'Part minimale Suguba par vente'],
   ];
   for (const [cle, libelle] of montants) {
     const v = Number(r[cle]);
     if (!Number.isFinite(v) || v < 0) erreurs.push(`${libelle} : doit être un montant positif.`);
+  }
+  if (!['auto', 'prix_vente', 'part_revendeur'].includes(r.modePartSuguba)) {
+    erreurs.push('Mode de rémunération Suguba inconnu.');
+  }
+  if (r.modePartSuguba === 'prix_vente' && Number(r.tauxPartSuguba) >= 90) {
+    erreurs.push('Part Suguba sur le prix de vente : au-delà de 90 %, aucun prix ne serait raisonnable.');
   }
   if (!Number.isFinite(r.volumeReference) || r.volumeReference < 1) {
     erreurs.push('Le volume de référence doit être d\'au moins 1 commande par mois.');

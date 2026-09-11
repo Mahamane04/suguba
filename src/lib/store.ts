@@ -218,6 +218,8 @@ export const sugubaStore = {
     preparationDelayHours: number;
     stockLocationAddress: string;
     marketingPitch?: string;
+    /** Part revendeur par vente choisie par le fournisseur (0 = Suguba décide). */
+    resellerCommissionProposee?: number;
   }): Promise<{
     product: Product;
     cloud: boolean;
@@ -235,6 +237,7 @@ export const sugubaStore = {
       supplierPrice: Number(data.supplierPrice),
       publicPrice: Number(data.supplierPrice) * 1.3, // Prix suggéré temporaire
       resellerCommission: Math.round(Number(data.supplierPrice) * 0.1),
+      resellerCommissionProposee: Number(data.resellerCommissionProposee) || 0,
       sugubaMargin: Math.round(Number(data.supplierPrice) * 0.2),
       stockQuantity: Number(data.stockQuantity),
       warrantyMonths: Number(data.warrantyMonths) || 0,

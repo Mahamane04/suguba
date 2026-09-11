@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
 
   const { data: produit } = await admin
     .from('products')
-    .select('id, name, supplier_price, status')
+    .select('id, name, supplier_price, status, commission_proposee')
     .eq('id', productId)
     .maybeSingle();
 
@@ -47,7 +47,9 @@ export async function POST(req: NextRequest) {
   }
 
   const { reglages, confirme } = await chargerReglages();
-  const tarif = calculerTarif(Number(produit.supplier_price), prixVente, reglages);
+  // Si le fournisseur a fixé la part du revendeur, elle est respectée : le
+  // prix doit alors couvrir les coûts ET cette part.
+  const tarif = calculerTarif(Number(produit.supplier_price), prixVente, reglages, produit.commission_proposee);
 
   if (tarif.statut === 'sous_plancher') {
     return NextResponse.json(

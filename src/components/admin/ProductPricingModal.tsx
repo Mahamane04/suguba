@@ -46,7 +46,7 @@ export default function ProductPricingModal({ product, isOpen, onClose }: Produc
         setConfirme(Boolean(json.confirme));
         // Un produit déjà approuvé garde son prix ; un dépôt en attente part
         // du prix recommandé plutôt que de l'ancien « fournisseur × 1,3 ».
-        const t = calculerTarif(product.supplierPrice, product.publicPrice || 0, json.reglages);
+        const t = calculerTarif(product.supplierPrice, product.publicPrice || 0, json.reglages, product.resellerCommissionProposee);
         setPrixVente(product.status === 'approved' && product.publicPrice > 0 ? product.publicPrice : t.prixRecommande);
       })
       .catch(() => setErreur('Impossible de charger les réglages de la plateforme.'))
@@ -55,7 +55,7 @@ export default function ProductPricingModal({ product, isOpen, onClose }: Produc
   }, [product, isOpen]);
 
   const tarif = useMemo(
-    () => (product && reglages ? calculerTarif(product.supplierPrice, prixVente, reglages) : null),
+    () => (product && reglages ? calculerTarif(product.supplierPrice, prixVente, reglages, product.resellerCommissionProposee) : null),
     [product, reglages, prixVente],
   );
 

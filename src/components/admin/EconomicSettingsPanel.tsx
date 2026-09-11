@@ -5,10 +5,14 @@ import { Calculator, ChevronDown, ChevronUp, Loader2, Plus, Trash2, AlertCircle,
 import {
   calculerTarif,
   coutFixeParCommande,
+  prixDepuisPartRevendeur,
   totalCoutsFixes,
   validerReglages,
+  type ModePartSuguba,
   type ReglagesPlateforme,
 } from '@/lib/pricing';
+
+const enF = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
 
 /**
  * Réglages économiques de la plateforme — le tableau de bord de l'admin.
@@ -49,6 +53,39 @@ export default function EconomicSettingsPanel() {
 
   const apercu = useMemo(() => (r ? calculerTarif(exemple.fournisseur, exemple.vente, r) : null), [r, exemple]);
   const erreursLocales = useMemo(() => (r ? validerReglages(r) : []), [r]);
+
+  // Tableau de simulation : pour chaque couple (prix fournisseur, part
+  // revendeur), le prix client et le partage, avec les réglages EN COURS
+  // d'édition — l'admin voit l'effet d'un changement avant d'enregistrer.
+  const [simulations, setSimulations] = useState([
+    { fournisseur: 8000, part: 1000 },
+    { fournisseur: 30000, part: 3000 },
+    { fournisseur: 155000, part: 15000 },
+  ]);
+  const lignesSimulation = useMemo(() => {
+    if (!r) return [];
+    return simulations.map((s) => {
+      const auto = r.modePartSuguba === 'auto' || !(s.part > 0);
+      if (auto) {
+        const prix = calculerTarif(s.fournisseur, 0, r).prixRecommande;
+        const t = calculerTarif(s.fournisseur, prix, r);
+        return {
+          ...s, prix, commission: t.commission, partSuguba: prix - s.fournisseur - t.commission,
+          couts: t.coutParCommande + t.fraisVersement, margeNette: t.margeNetteSuguba,
+          note: `calcul auto : ${enF(t.commission)} au revendeur`,
+        };
+      }
+      const d = prixDepuisPartRevendeur(s.fournisseur, s.part, r);
+      const t = calculerTarif(s.fournisseur, d.prixVente, r, s.part);
+      return {
+        ...s, prix: d.prixVente, commission: t.commission, partSuguba: d.partSuguba,
+        couts: t.coutParCommande + t.fraisVersement, margeNette: t.margeNetteSuguba,
+        note: d.releveAuPlancher
+          ? `relevé au plancher (le % seul donnait ${enF(d.prixCalcule)})`
+          : t.statut === 'commission_faible' ? 'part trop faible : pas proposé au partage' : '',
+      };
+    });
+  }, [r, simulations]);
 
   const maj = <K extends keyof ReglagesPlateforme>(cle: K, valeur: ReglagesPlateforme[K]) =>
     setR((prev) => (prev ? { ...prev, [cle]: valeur } : prev));
@@ -219,6 +256,101 @@ export default function EconomicSettingsPanel() {
                 className="h-9 px-3 rounded-xl bg-slate-50 border border-slate-200 text-[11px] font-bold text-slate-700 flex items-center space-x-1">
                 <Plus className="w-3.5 h-3.5" /><span>Ajouter un code</span>
               </button>
+            </div>
+          </Section>
+
+          <Section titre="Part revendeur fixée par le fournisseur">
+            <div className="sm:col-span-2 space-y-2">
+              <p className="text-[11px] text-slate-500">
+                Le fournisseur indique combien il laisse au revendeur. Choisissez comment Suguba se rémunère :
+                le prix client est calculé automatiquement, et relevé au plancher s&apos;il ne couvre pas vos coûts.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                {([
+                  ['prix_vente', '% du prix de vente', 'Suguba prend un pourcentage du prix payé par le client.'],
+                  ['part_revendeur', '% de la part revendeur', 'Suguba prend un pourcentage de ce que le fournisseur laisse au revendeur.'],
+                  ['auto', 'Automatique', 'Le fournisseur ne choisit rien : Suguba calcule la commission.'],
+                ] as [ModePartSuguba, string, string][]).map(([cle, titre, detail]) => (
+                  <button
+                    key={cle}
+                    type="button"
+                    onClick={() => maj('modePartSuguba', cle)}
+                    className={`text-left p-3 rounded-2xl border transition-colors ${
+                      r.modePartSuguba === cle ? 'border-slate-900 bg-slate-50 ring-1 ring-slate-900' : 'border-slate-200 hover:bg-slate-50'
+                    }`}
+                  >
+                    <p className="text-xs font-black text-slate-900">{titre}</p>
+                    <p className="text-[11px] text-slate-500">{detail}</p>
+                  </button>
+                ))}
+              </div>
+            </div>
+            {r.modePartSuguba !== 'auto' && (
+              <>
+                <Num
+                  l={r.modePartSuguba === 'prix_vente' ? 'Part Suguba (% du prix de vente)' : 'Part Suguba (% de la part revendeur)'}
+                  suffixe="%"
+                  v={r.tauxPartSuguba}
+                  on={(v) => maj('tauxPartSuguba', v)}
+                />
+                <Num l="Part minimale Suguba par vente" suffixe="F" v={r.minimumPartSuguba} on={(v) => maj('minimumPartSuguba', v)} />
+              </>
+            )}
+
+            <div className="sm:col-span-2 space-y-2">
+              <p className="text-[11px] font-bold text-slate-600">Tableau de simulation (réglages en cours, avant enregistrement)</p>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[620px] text-[11px]">
+                  <thead>
+                    <tr className="text-left text-slate-500">
+                      <th className="py-1.5 pr-2 font-bold">Prix fournisseur</th>
+                      <th className="pr-2 font-bold">Part revendeur</th>
+                      <th className="pr-2 font-bold text-right">Prix client</th>
+                      <th className="pr-2 font-bold text-right">Part Suguba</th>
+                      <th className="pr-2 font-bold text-right">Coûts</th>
+                      <th className="pr-2 font-bold text-right">Marge nette</th>
+                      <th className="font-bold">Remarque</th>
+                      <th />
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {lignesSimulation.map((l, i) => (
+                      <tr key={i} className="border-t border-slate-100">
+                        <td className="py-1.5 pr-2">
+                          <input type="number" min={0} value={l.fournisseur}
+                            onChange={(e) => setSimulations((s) => s.map((x, j) => (j === i ? { ...x, fournisseur: Number(e.target.value) || 0 } : x)))}
+                            className="w-24 h-8 px-2 rounded-lg border border-slate-200 font-mono" />
+                        </td>
+                        <td className="pr-2">
+                          <input type="number" min={0} value={l.part}
+                            onChange={(e) => setSimulations((s) => s.map((x, j) => (j === i ? { ...x, part: Number(e.target.value) || 0 } : x)))}
+                            className="w-20 h-8 px-2 rounded-lg border border-slate-200 font-mono" />
+                        </td>
+                        <td className="pr-2 text-right font-black text-slate-900">{enF(l.prix)}</td>
+                        <td className="pr-2 text-right">{enF(l.partSuguba)}</td>
+                        <td className="pr-2 text-right text-slate-500">{enF(l.couts)}</td>
+                        <td className={`pr-2 text-right font-black ${l.margeNette < 0 ? 'text-rose-600' : 'text-slate-900'}`}>{enF(l.margeNette)}</td>
+                        <td className="pr-2 text-amber-700">{l.note}</td>
+                        <td>
+                          <button type="button" aria-label="Supprimer la ligne"
+                            onClick={() => setSimulations((s) => s.filter((_, j) => j !== i))}
+                            className="w-7 h-7 rounded-lg border border-slate-200 text-slate-400 hover:text-rose-600 flex items-center justify-center">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <button type="button" onClick={() => setSimulations((s) => [...s, { fournisseur: 20000, part: 2000 }])}
+                className="h-9 px-3 rounded-xl bg-slate-50 border border-slate-200 text-[11px] font-bold text-slate-700 flex items-center space-x-1">
+                <Plus className="w-3.5 h-3.5" /><span>Ajouter une ligne</span>
+              </button>
+              <p className="text-[11px] text-slate-500">
+                Coûts = paiement, provision pour refus, message, livraison non couverte, coûts fixes par commande et frais de
+                versement de la commission. Marge nette = ce qui reste réellement à Suguba.
+              </p>
             </div>
           </Section>
 

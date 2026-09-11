@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     if (!existing) {
       const { data: produit } = await admin
         .from('products')
-        .select('id, name, images, supplier_price, public_price, status')
+        .select('id, name, images, supplier_price, public_price, status, commission_proposee')
         .eq('id', order.productId)
         .maybeSingle();
 
@@ -86,7 +86,13 @@ export async function POST(req: NextRequest) {
 
       const { reglages, majLe } = await chargerReglages();
       const devis = calculerCommande(
-        { prixFournisseur: Number(produit.supplier_price), prixVente: Number(produit.public_price) },
+        {
+          prixFournisseur: Number(produit.supplier_price),
+          prixVente: Number(produit.public_price),
+          // Part revendeur choisie par le fournisseur : la commission figée
+          // sur la commande doit être celle affichée au revendeur.
+          commissionProposee: produit.commission_proposee,
+        },
         {
           quantite: Number(order.quantity) || 1,
           ville: typeof order.city === 'string' ? order.city : undefined,

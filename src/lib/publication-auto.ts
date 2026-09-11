@@ -33,7 +33,7 @@ export interface ResultatPublication {
 export async function publierAutomatiquement(admin: ClientAdmin, productId: string): Promise<ResultatPublication> {
   const { data: p } = await admin
     .from('products')
-    .select('id, status, supplier_price, images')
+    .select('id, status, supplier_price, images, commission_proposee')
     .eq('id', productId)
     .maybeSingle();
 
@@ -52,9 +52,12 @@ export async function publierAutomatiquement(admin: ClientAdmin, productId: stri
   if (prixFournisseur <= 0) return { publie: false, raison: 'Prix fournisseur manquant.' };
 
   const { reglages } = await chargerReglages();
-  // Le prix recommandé ne dépend que du prix fournisseur et des réglages.
-  const prix = calculerTarif(prixFournisseur, 0, reglages).prixRecommande;
-  const tarif = calculerTarif(prixFournisseur, prix, reglages);
+  // Prix recommandé : si le fournisseur a fixé la part du revendeur, prix
+  // fournisseur + cette part + part Suguba (mode choisi par l'admin) ; sinon
+  // calcul automatique. Ne dépend jamais du prix de vente actuel.
+  const partChoisie = Number(p.commission_proposee) || null;
+  const prix = calculerTarif(prixFournisseur, 0, reglages, partChoisie).prixRecommande;
+  const tarif = calculerTarif(prixFournisseur, prix, reglages, partChoisie);
   if (!(prix > 0) || tarif.statut === 'sous_plancher') {
     return { publie: false, raison: 'Aucun prix de vente rentable trouvé : un administrateur doit fixer le prix.' };
   }

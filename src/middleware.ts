@@ -70,6 +70,7 @@ const API_SESSION_REQUISE = [
   '/api/products/sync',
   '/api/products/upload-image',
   '/api/products/images',
+  '/api/products/apercu-prix',
 ];
 
 /**

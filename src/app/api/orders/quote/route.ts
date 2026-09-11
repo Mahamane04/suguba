@@ -31,7 +31,7 @@ export async function POST(req: NextRequest) {
 
   const { data: produit } = await admin
     .from('products')
-    .select('supplier_price, public_price, status')
+    .select('supplier_price, public_price, status, commission_proposee')
     .eq('id', productId)
     .maybeSingle();
 
@@ -53,7 +53,11 @@ export async function POST(req: NextRequest) {
 
   const { reglages } = await chargerReglages();
   const d = calculerCommande(
-    { prixFournisseur: Number(produit.supplier_price), prixVente: Number(produit.public_price) },
+    {
+      prixFournisseur: Number(produit.supplier_price),
+      prixVente: Number(produit.public_price),
+      commissionProposee: produit.commission_proposee,
+    },
     {
       quantite: Number(quantity) || 1,
       ville: typeof city === 'string' ? city : undefined,

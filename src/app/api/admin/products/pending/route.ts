@@ -42,6 +42,7 @@ export async function GET(req: NextRequest) {
     supplierPrice: Number(p.supplier_price || 0),
     publicPrice: Number(p.public_price || 0),
     resellerCommission: Number(p.reseller_commission || 0),
+    resellerCommissionProposee: Number(p.commission_proposee) || 0,
     sugubaMargin: Math.max(0, Number(p.public_price || 0) - Number(p.supplier_price || 0) - Number(p.reseller_commission || 0)),
     stockQuantity: Number(p.stock || 0),
     warrantyMonths: 0,

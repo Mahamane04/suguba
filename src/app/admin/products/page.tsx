@@ -22,6 +22,8 @@ interface ProduitAdmin {
   stock: number;
   fournisseur: string;
   prixFournisseur: number;
+  partProposee: number;
+  commission: number;
   fournisseurId: string | null;
   creeLe: string;
 }
@@ -40,7 +42,7 @@ function versProduct(p: ProduitAdmin): Product {
   return {
     id: p.id, supplierId: p.fournisseurId || '', supplierName: p.fournisseur, name: p.nom, slug: p.slug,
     category: p.categorie, description: '', images: p.images, supplierPrice: p.prixFournisseur,
-    publicPrice: p.prix, resellerCommission: 0, sugubaMargin: 0, stockQuantity: p.stock, warrantyMonths: 0,
+    publicPrice: p.prix, resellerCommission: p.commission, resellerCommissionProposee: p.partProposee, sugubaMargin: 0, stockQuantity: p.stock, warrantyMonths: 0,
     preparationDelayHours: 0, stockLocationType: 'supplier', stockLocationAddress: '',
     status: p.statut as Product['status'], marketingPitch: '', createdAt: p.creeLe,
   };
@@ -192,6 +194,10 @@ export default function AdminProductsPage() {
                     <p className="text-[11px] text-slate-500">
                       {p.prix ? `${p.prix.toLocaleString('fr-FR')} F` : 'Sans prix'}
                       {p.prixFournisseur ? ` (fournisseur ${p.prixFournisseur.toLocaleString('fr-FR')} F)` : ''}
+                    </p>
+                    <p className="text-[11px] text-slate-500">
+                      Revendeur : {p.commission.toLocaleString('fr-FR')} F
+                      {p.partProposee > 0 ? ' (part choisie par le fournisseur)' : ' (calculée par Suguba)'}
                     </p>
                     <p className="text-[11px] text-slate-500">
                       <span className={p.statut === 'approved' ? 'text-suguba-brand font-bold' : p.statut === 'rejected' ? 'text-rose-600 font-bold' : 'text-amber-700 font-bold'}>

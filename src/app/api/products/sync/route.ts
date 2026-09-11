@@ -53,7 +53,7 @@ export async function POST(req: NextRequest) {
 
     const { data: existant } = await admin
       .from('products')
-      .select('id, supplier_id, supplier_price, status')
+      .select('id, supplier_id, supplier_price, status, commission_proposee')
       .eq('id', product.id)
       .maybeSingle();
 
@@ -87,6 +87,20 @@ export async function POST(req: NextRequest) {
     };
     const prixFournisseur = Number(product.supplierPrice);
 
+    // Part revendeur choisie par le fournisseur : le SEUL montant accepté du
+    // navigateur, parce que c'est l'argent du fournisseur qu'il décide de
+    // partager. Suguba ne la prend jamais telle quelle pour fixer un prix : le
+    // moteur calcule le prix client autour d'elle et le relève au plancher.
+    // undefined = non envoyée (on ne touche pas à la valeur en base).
+    let partProposee: number | null | undefined;
+    if (product.resellerCommissionProposee !== undefined) {
+      const v = Number(product.resellerCommissionProposee);
+      if (!Number.isFinite(v) || v < 0 || v > 10_000_000) {
+        return NextResponse.json({ error: 'Part revendeur invalide.' }, { status: 400 });
+      }
+      partProposee = v > 0 ? v : null;
+    }
+
     // ── Création ──────────────────────────────────────────────────────────
     if (!existant) {
       // Aucun produit ne naît approuvé : l'approbation passe par la
@@ -99,6 +113,7 @@ export async function POST(req: NextRequest) {
         supplier_price: Number.isFinite(prixFournisseur) ? prixFournisseur : 0,
         public_price: 0,
         reseller_commission: 0,
+        commission_proposee: partProposee ?? null,
         status: statut,
         supplier_id: supplierId,
         supplier_name: supplierName,
@@ -123,6 +138,17 @@ export async function POST(req: NextRequest) {
 
     if (Number.isFinite(prixFournisseur) && prixFournisseur !== Number(existant.supplier_price)) {
       maj.supplier_price = prixFournisseur;
+      if (existant.status === 'approved') {
+        statut = 'submitted';
+        maj.reseller_commission = 0;
+        maj.pricing_status = null;
+      }
+    }
+
+    // Nouvelle part revendeur : même traitement qu'un nouveau prix fournisseur,
+    // le produit est retarifé automatiquement autour d'elle.
+    if (partProposee !== undefined && (partProposee ?? null) !== (existant.commission_proposee == null ? null : Number(existant.commission_proposee))) {
+      maj.commission_proposee = partProposee;
       if (existant.status === 'approved') {
         statut = 'submitted';
         maj.reseller_commission = 0;

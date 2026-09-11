@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
@@ -35,6 +35,27 @@ export default function NewSupplierProductPage() {
   // attente avec la raison (voir src/lib/publication-auto.ts).
   const [publication, setPublication] = useState<{ publie: boolean; prix?: number; commission?: number; raison?: string } | null>(null);
 
+  // Part laissée au revendeur, choisie par le fournisseur (2026-09-11). Le prix
+  // client en découle, calculé par le SERVEUR (/api/products/apercu-prix) : la
+  // structure de coûts de Suguba ne part pas dans le navigateur.
+  const [partRevendeur, setPartRevendeur] = useState<number>(3000);
+  const [apercu, setApercu] = useState<{
+    prixVente: number; commission: number; partChoisieUtilisee: boolean; mode: string;
+    releveAuPlancher?: boolean; commissionFaible?: boolean; commissionMinimale: number;
+  } | null>(null);
+  useEffect(() => {
+    if (!(supplierPrice > 0)) { setApercu(null); return; }
+    const controle = new AbortController();
+    const minuteur = setTimeout(() => {
+      fetch(`/api/products/apercu-prix?prixFournisseur=${supplierPrice}&partRevendeur=${partRevendeur || 0}`, { signal: controle.signal })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((j) => setApercu(j && typeof j.prixVente === 'number' ? j : null))
+        .catch(() => {});
+    }, 350);
+    return () => { clearTimeout(minuteur); controle.abort(); };
+  }, [supplierPrice, partRevendeur]);
+  const fmt = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !description || !supplierPrice || !stockQuantity) {
@@ -57,6 +78,7 @@ export default function NewSupplierProductPage() {
       description,
       images,
       supplierPrice: Number(supplierPrice),
+      resellerCommissionProposee: Number(partRevendeur) || 0,
       stockQuantity: Number(stockQuantity),
       warrantyMonths: Number(warrantyMonths),
       preparationDelayHours: Number(preparationDelayHours),
@@ -238,6 +260,47 @@ export default function NewSupplierProductPage() {
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:bg-white"
                 />
               </div>
+            </div>
+
+            {/* Part revendeur fixée par le fournisseur + aperçu du prix client */}
+            <div className="rounded-2xl border border-slate-200 p-4 space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Part du revendeur par vente (FCFA)
+                </label>
+                <input
+                  type="number"
+                  min={0}
+                  step={250}
+                  value={partRevendeur}
+                  onChange={(e) => setPartRevendeur(parseInt(e.target.value) || 0)}
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:bg-white"
+                />
+                <span className="text-[11px] text-slate-500 mt-1 block">
+                  Ce que vous laissez au revendeur qui vend votre produit. Plus elle est élevée, plus les revendeurs le partageront.
+                </span>
+              </div>
+
+              {apercu && (
+                <div className="bg-slate-50 rounded-xl p-3 text-xs space-y-1.5">
+                  <div className="flex justify-between"><span className="text-slate-600">Prix payé par le client</span><strong className="text-slate-900 text-sm">{fmt(apercu.prixVente)}</strong></div>
+                  <div className="flex justify-between"><span className="text-slate-600">Vous touchez</span><strong className="text-slate-900">{fmt(supplierPrice)}</strong></div>
+                  <div className="flex justify-between"><span className="text-slate-600">Le revendeur touche</span><strong className="text-suguba-brand">{fmt(apercu.commission)}</strong></div>
+                  {!apercu.partChoisieUtilisee && (
+                    <p className="text-[11px] text-slate-500 pt-1">
+                      {apercu.mode === 'auto' ? 'La part du revendeur est actuellement calculée par Suguba.' : 'Sans part indiquée, Suguba la calcule.'}
+                    </p>
+                  )}
+                  {apercu.releveAuPlancher && (
+                    <p className="text-[11px] text-amber-700 pt-1">Prix ajusté pour couvrir la livraison et les frais de service.</p>
+                  )}
+                  {apercu.commissionFaible && (
+                    <p className="text-[11px] text-amber-700 pt-1">
+                      Part inférieure à {fmt(apercu.commissionMinimale)} : le produit sera en vente, mais pas proposé au partage des revendeurs.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Garantie & Délai de préparation */}

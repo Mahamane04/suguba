@@ -374,6 +374,17 @@ curl -s -H "Authorization: Bearer $KEY" https://api.saspay.me/api/v1/merchant-ba
   proposée, écartée pour l'instant — facile à ajouter dans `publierAutomatiquement`).
   ⚠️ Les prix publiés dépendent des réglages économiques : tant que les coûts fixes par défaut
   (estimation) n'ont pas été remplacés par les vrais, les prix recommandés en héritent.
+- **Part revendeur choisie par le fournisseur** (décision de l'utilisateur, 2026-09-11) — colonne
+  `products.commission_proposee` (`migration-part-revendeur.sql`). Réglages économiques :
+  `modePartSuguba` = `prix_vente` (Suguba prend X % du prix client) | `part_revendeur` (X % de la
+  part revendeur) | `auto` (le moteur calcule, comme avant), `tauxPartSuguba`, `minimumPartSuguba`.
+  Prix client = fournisseur + part revendeur + part Suguba (`prixDepuisPartRevendeur`), **relevé
+  au plancher** s'il ne couvre pas les coûts. `calculerTarif(…, commissionProposee)` impose la
+  part choisie partout (publication auto, tarification admin, recalcul des réglages, devis,
+  commande) — sinon la commission figée sur la commande différerait de celle affichée. Tableau
+  de simulation dans « Réglages économiques ». Aperçu du prix pour le fournisseur via
+  `/api/products/apercu-prix` (ne renvoie jamais les coûts). ⚠️ Le mode `part_revendeur` avec un
+  petit % ne couvre pas les coûts : c'est le relèvement au plancher qui protège la marge.
 - **`payouts.status` n'accepte que `pending`/`processing`/`completed`/`rejected`** (contrainte
   CHECK). Écrire `failed` ferait échouer la mise à jour — même famille de piège que
   l'incohérence de statut des commandes corrigée en août. Un versement raté s'écrit

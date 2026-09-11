@@ -87,6 +87,7 @@ class CloudSyncService {
           supplierPrice: Number(p.supplier_price || 0),
           publicPrice: Number(p.public_price || 0),
           resellerCommission: Number(p.reseller_commission || 0),
+          resellerCommissionProposee: Number(p.commission_proposee) || 0,
           sugubaMargin: Math.max(0, Number(p.public_price || 0) - Number(p.supplier_price || 0) - Number(p.reseller_commission || 0)),
           stockQuantity: Number(p.stock || 10),
           warrantyMonths: 0, // Aucune colonne garantie en base : ne jamais en afficher une inventée.
@@ -343,6 +344,7 @@ class CloudSyncService {
       supplierPrice: Number(cloudProduct.supplier_price || 0),
       publicPrice: Number(cloudProduct.public_price || 0),
       resellerCommission: Number(cloudProduct.reseller_commission || 0),
+      resellerCommissionProposee: Number(cloudProduct.commission_proposee) || 0,
       sugubaMargin: Math.max(0, Number(cloudProduct.public_price || 0) - Number(cloudProduct.supplier_price || 0) - Number(cloudProduct.reseller_commission || 0)),
       stockQuantity: Number(cloudProduct.stock || 10),
       warrantyMonths: 0, // Aucune colonne garantie en base : ne jamais en afficher une inventée.
