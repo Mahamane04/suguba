@@ -174,8 +174,40 @@ export const sugubaStore = {
   },
 
   // ── Cloud Sync Ingestion Handlers ──
-  setProductsFromCloud: (cloudProducts: Product[]) => {
-    if (!cloudProducts || cloudProducts.length === 0) return;
+  //
+  // `estCatalogueApprouveComplet` (2026-09-11) : sans lui, retirer un produit
+  // de la vente (statut → `rejected`) ne le faisait JAMAIS disparaître du
+  // téléphone d'un visiteur qui l'avait déjà chargé — la fusion par slug
+  // n'ajoute/ne met à jour que ce que renvoie le cloud, elle ne retire
+  // jamais ce qui n'y figure plus. Constaté en vérifiant le retrait des
+  // produits « [DÉMO] » (visibles en apparence sur l'accueil alors que
+  // `rejected` en base).
+  //
+  // `cloud-sync.ts` (lecture anonyme, RLS ne renvoie que les produits
+  // `approved`) passe `true` : c'est LA liste complète et à jour de ce qui
+  // est publiquement visible. Toute fiche EN CACHE avec le statut `approved`
+  // absente de ce nouveau lot vient de cesser de l'être — on la retire.
+  //
+  // On ne retire en revanche jamais une fiche dont le statut en cache n'est
+  // PAS `approved` (soumise, en attente…) : cet appel anonyme ne les
+  // connaît de toute façon pas, les supprimer romprait la file de
+  // modération admin (`/admin/page.tsx` les injecte séparément, sans ordre
+  // garanti face à cet appel-ci — un simple filtre par slug casserait selon
+  // lequel des deux réseaux répond en dernier).
+  setProductsFromCloud: (cloudProducts: Product[], estCatalogueApprouveComplet = false) => {
+    if (!cloudProducts) return;
+    if (estCatalogueApprouveComplet) {
+      const nouveauxSlugs = new Set(cloudProducts.map((p) => p.slug));
+      const aGarder = globalState.products.filter(
+        (p) => p.status !== 'approved' || nouveauxSlugs.has(p.slug),
+      );
+      const existingMap = new Map(aGarder.map((p) => [p.slug, p]));
+      cloudProducts.forEach((p) => existingMap.set(p.slug, p));
+      globalState = { ...globalState, products: Array.from(existingMap.values()) };
+      notify();
+      return;
+    }
+    if (cloudProducts.length === 0) return;
     // Fusionner les produits du cloud en évitant les doublons
     const existingMap = new Map(globalState.products.map(p => [p.slug, p]));
     cloudProducts.forEach(p => existingMap.set(p.slug, p));

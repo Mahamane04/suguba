@@ -80,6 +80,12 @@ class CloudSyncService {
         return [];
       }
 
+      // Lecture réussie mais VIDE traitée comme les autres : deuxième
+      // paramètre `true` (voir son commentaire dans store.ts) — sans lui, un
+      // catalogue qui vient de se vider entièrement (tout rejeté) laissait
+      // les anciens produits affichés indéfiniment chez qui les avait déjà
+      // chargés. Une erreur réseau/RLS, elle, ne touche pas au cache (`return`
+      // plus haut) : on ne veut vider l'affichage que sur une réponse fiable.
       if (data && data.length > 0) {
         const cloudProducts: Product[] = data.map((p) => ({
           id: p.id,
@@ -105,9 +111,10 @@ class CloudSyncService {
           createdAt: p.created_at || new Date().toISOString(),
         }));
 
-        sugubaStore.setProductsFromCloud(cloudProducts);
+        sugubaStore.setProductsFromCloud(cloudProducts, true);
         return cloudProducts;
       }
+      sugubaStore.setProductsFromCloud([], true);
       return [];
     } catch (err) {
       console.warn('Exception réseau chargement produits:', err);

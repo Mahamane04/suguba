@@ -351,6 +351,22 @@ dépôt fournisseur, premier paiement SasPay réel.
    jetables uniquement pour /supplier, /reseller, /admin). **Reste pour un 90% honnête partout** :
    découpage de l'admin en sections (P2, pas fait), premier usage plus explicitement guidé pour un
    revendeur/fournisseur/livreur à zéro vente (P4, partiel).
+
+   ⚠️ **Bug trouvé EN VÉRIFIANT le retrait des produits démo, corrigé le 2026-09-11** :
+   `sugubaStore.setProductsFromCloud` ne faisait que FUSIONNER le lot renvoyé par le cloud dans le
+   cache existant — jamais en retirer ce qui n'y figure plus. Retirer un produit de la vente
+   (`rejected` en base) ne le faisait donc JAMAIS disparaître chez un visiteur qui l'avait déjà
+   chargé : constaté en rechargeant l'accueil dans CE navigateur après avoir retiré les 4 derniers
+   produits « [DÉMO] » — ils s'affichaient encore. Pire : si le catalogue public devenait
+   entièrement vide, la fonction ne faisait RIEN du tout (`if (!cloudProducts || .length === 0)
+   return`), laissant l'ancien catalogue affiché indéfiniment. Nouveau paramètre
+   `estCatalogueApprouveComplet` (`cloud-sync.ts` le passe `true`, seul appelant public/anonyme) :
+   toute fiche en cache avec `status: 'approved'` absente du nouveau lot est retirée ; toute fiche
+   avec un AUTRE statut (soumise, en attente — injectées séparément par `/admin/page.tsx`) est
+   préservée, quel que soit l'ordre d'arrivée des deux requêtes réseau. **Vérifié par un vrai test**
+   (pas une lecture de code) : produit fantôme injecté dans le cache local → disparaît après le
+   rechargement ; produit `submitted` injecté → survit. Purement un bug de cache client, jamais
+   dans la base ni le SSR (le catalogue part toujours vide côté serveur, voir `getDefaultState`).
 8. ~~**Versement des commissions**~~ — code fait le 2026-09-09 via SasPay Payouts. Reste à
    valider avec de vraies clés : aucun virement réel n'a encore été déclenché.
 9. **Revendeurs payés en Wave** — `payouts.payment_method` accepte encore `wave`, que SasPay
@@ -383,6 +399,13 @@ dépôt fournisseur, premier paiement SasPay réel.
   plus que pour les 3 rôles concernés, appelé depuis `CloudSyncInitializer` une fois `/api/auth/me`
   résolu. Piège pour la suite : ne jamais rattacher un fetch réservé à un rôle à un effet qui
   monte pour tout le monde sans passer le rôle en paramètre.
+
+- **`setProductsFromCloud` fusionnait, ne retirait jamais** (corrigé phase 9b, 2026-09-11) —
+  retirer un produit de la vente ne le faisait jamais disparaître d'un cache déjà chargé, et un
+  catalogue devenu entièrement vide laissait l'ancien affiché pour toujours. Voir
+  `estCatalogueApprouveComplet` dans `store.ts`. Piège pour la suite : toute fonction qui FUSIONNE
+  des données cloud dans un cache local doit aussi dire ce qu'il faut RETIRER quand la source de
+  vérité ne les renvoie plus — une fusion qui n'ajoute/ne met à jour jamais ne suffit pas.
 
 - **`next dev` ne détecte pas tout.** Toujours tester avec un vrai `npm run build` avant de
   conclure qu'un déploiement va réussir (un `useSearchParams()` sans `<Suspense>` a déjà fait
