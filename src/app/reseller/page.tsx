@@ -9,7 +9,7 @@ import CreateOrderModal from '@/components/reseller/CreateOrderModal';
 import Button from '@/components/ui/Button';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 import { partagerProduit } from '@/lib/partage';
-import { useSugubaStore } from '@/lib/store';
+import { useSugubaStore, useCatalogueCharge } from '@/lib/store';
 import { Product } from '@/types';
 import {
   Wallet, TrendingUp, ShoppingBag, Clock, Copy, Check, Plus, ChevronRight,
@@ -45,8 +45,12 @@ type Palier = keyof typeof PALIERS;
 
 export default function ResellerDashboardPage() {
   const state = useSugubaStore();
+  const catalogueCharge = useCatalogueCharge();
   const [selectedProductForOrder, setSelectedProductForOrder] = useState<Product | null>(null);
   const [copiedRef, setCopiedRef] = useState(false);
+  // Tant que /api/reseller/me n'a pas répondu, pas de « 0 F » : un revendeur
+  // qui voit son solde à zéro une seconde croit avoir perdu ses gains.
+  const [charge, setCharge] = useState(false);
 
   const currentUser = state.currentUser;
 
@@ -62,7 +66,8 @@ export default function ResellerDashboardPage() {
     fetch('/api/reseller/me')
       .then((res) => (res.ok ? res.json() : { reseller: null }))
       .then((json) => { if (!annule) setMoi(json.reseller || null); })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => { if (!annule) setCharge(true); });
     return () => { annule = true; };
   }, []);
 
@@ -76,7 +81,12 @@ export default function ResellerDashboardPage() {
   // /api/orders/feed ne renvoie au revendeur que SES propres ventes.
   const myOrders = state.orders;
   // Prix > 0 : un produit sans prix n'est pas en vente (voir src/app/page.tsx).
-  const approvedProducts = state.products.filter(p => p.status === 'approved' && p.publicPrice > 0);
+  // Commission > 0 comme au catalogue : « Vous gagnez 0 F » n'a aucun sens ici.
+  const approvedProducts = state.products.filter(p => p.status === 'approved' && p.publicPrice > 0 && p.resellerCommission > 0);
+
+  const montant = (n: number) => charge
+    ? <>{n.toLocaleString('fr-FR')} <span className="text-xs font-bold text-slate-500">F</span></>
+    : <span className="inline-block h-6 w-20 rounded-lg bg-slate-200 animate-pulse align-middle" aria-label="Chargement" />;
 
   const ventesLivrees = moi?.successfulOrdersCount ?? myOrders.filter(o => o.status === 'delivered').length;
   const progression = palier.prochain ? Math.min(100, Math.round((ventesLivrees / palier.prochain) * 100)) : 100;
@@ -131,7 +141,9 @@ export default function ResellerDashboardPage() {
             <div>
               <p className="text-[11px] font-bold text-slate-500 uppercase">Disponible au retrait</p>
               <p className="text-3xl font-black text-slate-900">
-                {availableBalance.toLocaleString('fr-FR')} <span className="text-sm font-bold text-slate-500">F</span>
+                {charge
+                  ? <>{availableBalance.toLocaleString('fr-FR')} <span className="text-sm font-bold text-slate-500">F</span></>
+                  : <span className="inline-block h-8 w-32 rounded-lg bg-slate-200 animate-pulse align-middle" aria-label="Chargement du solde" />}
               </p>
             </div>
             <Button href="/reseller/payouts" variant="primary" fullWidth>
@@ -144,10 +156,10 @@ export default function ResellerDashboardPage() {
         {/* 2. Indicateurs */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <Indicateur icone={<Clock className="w-4 h-4" />} titre="En attente" note={`Débloqué ${palier.jours} jours après livraison`}>
-            {pendingBalance.toLocaleString('fr-FR')} <span className="text-xs font-bold text-slate-500">F</span>
+            {montant(pendingBalance)}
           </Indicateur>
           <Indicateur icone={<TrendingUp className="w-4 h-4" />} titre="Total gagné" note="Depuis votre inscription">
-            {totalEarned.toLocaleString('fr-FR')} <span className="text-xs font-bold text-slate-500">F</span>
+            {montant(totalEarned)}
           </Indicateur>
           <Indicateur icone={<ShoppingBag className="w-4 h-4" />} titre="Ventes livrées" note={`${myOrders.length} commande${myOrders.length > 1 ? 's' : ''} au total`}>
             {ventesLivrees}
@@ -184,12 +196,13 @@ export default function ResellerDashboardPage() {
         {/* 4. Actions */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Raccourci href="/reseller/catalog" icone={<ShoppingBag className="w-5 h-5" />} titre="Catalogue" sousTitre="Choisir quoi partager" />
+          {/* Ouvrait la commande sur le PREMIER produit du catalogue, sans
+              choix possible. On passe par le catalogue : bouton « Vente ». */}
           <Raccourci
-            onClick={() => { if (approvedProducts.length > 0) setSelectedProductForOrder(approvedProducts[0]); }}
-            disabled={approvedProducts.length === 0}
+            href="/reseller/catalog"
             icone={<Plus className="w-5 h-5" />}
             titre="Créer une commande"
-            sousTitre="Pour un client au téléphone"
+            sousTitre="Choisir le produit, puis « Vente »"
           />
           <Raccourci href="/reseller/orders" icone={<ClipboardList className="w-5 h-5" />} titre="Mes ventes" sousTitre="Suivre les livraisons" />
           <Raccourci href="/reseller/channels" icone={<Store className="w-5 h-5" />} titre="Boutiques" sousTitre="Partager une boutique" />
@@ -208,7 +221,13 @@ export default function ResellerDashboardPage() {
             </Link>
           </div>
 
-          {approvedProducts.length === 0 ? (
+          {approvedProducts.length === 0 && !catalogueCharge ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3" aria-busy="true" aria-label="Chargement des produits">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-32 bg-white rounded-3xl border border-slate-200 animate-pulse" />
+              ))}
+            </div>
+          ) : approvedProducts.length === 0 ? (
             <div className="bg-white rounded-3xl border border-slate-200 p-8 text-center text-sm text-slate-500">
               Le catalogue est en cours de remplissage. Les produits apparaîtront ici dès leur validation.
             </div>

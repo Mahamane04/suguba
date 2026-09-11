@@ -247,7 +247,12 @@ dépôt fournisseur, premier paiement SasPay réel.
    « Commander » fixe sur mobile, champs 16 px, « Recommandé par » réel (`/api/shop/revendeur`).
    Suivi : `/track/[n]` relit le vrai statut (la copie locale restait figée), 8 statuts
    libellés, annulée/retournée sans code ni paiement ; `/track` liste les commandes du
-   téléphone ; « Copier » le numéro sur la confirmation. **Suite : phase 3 (revendeur).**
+   téléphone ; « Copier » le numéro sur la confirmation.
+   **Phase 3 (revendeur) : première passe faite le 2026-09-11** — plus de « 0 F » pendant le
+   chargement (squelettes du solde et des indicateurs), « Créer une commande » mène au catalogue
+   (il ouvrait la commande sur le 1er produit, sans choix), produits à commission nulle retirés
+   du tableau de bord, squelettes du catalogue. Vérifié avec une session revendeur jetable.
+   **Suite : ventes/gains du revendeur au design system, puis phase 4 (fournisseur).**
    ⚠️ Un produit de test « [DÉMO] Blender / mixeur 1,5 L » (sans photo) est en vente en prod —
    à retirer (décision utilisateur).
    Règle : tout nouveau message utilisateur passe par `useToast()` — jamais `alert()`.

@@ -7,7 +7,7 @@ import BottomNav from '@/components/common/BottomNav';
 import CreateOrderModal from '@/components/reseller/CreateOrderModal';
 import ProductCard, { carteDepuisProduit } from '@/components/product/ProductCard';
 import Button from '@/components/ui/Button';
-import { useSugubaStore } from '@/lib/store';
+import { useSugubaStore, useCatalogueCharge } from '@/lib/store';
 import { Product } from '@/types';
 import { Search, Plus, Sparkles, Check, Store, ExternalLink } from 'lucide-react';
 
@@ -19,6 +19,7 @@ import { Search, Plus, Sparkles, Check, Store, ExternalLink } from 'lucide-react
  */
 export default function ResellerCatalogPage() {
   const state = useSugubaStore();
+  const catalogueCharge = useCatalogueCharge();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedProductForOrder, setSelectedProductForOrder] = useState<Product | null>(null);
@@ -150,7 +151,19 @@ export default function ResellerCatalogPage() {
           )}
         </div>
 
-        {filtered.length === 0 ? (
+        {approvedProducts.length === 0 && !catalogueCharge ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4" aria-busy="true" aria-label="Chargement du catalogue">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="bg-white rounded-3xl border border-slate-200 overflow-hidden animate-pulse">
+                <div className="aspect-square bg-slate-200" />
+                <div className="p-3 space-y-2">
+                  <div className="h-3 w-4/5 rounded bg-slate-200" />
+                  <div className="h-4 w-1/2 rounded bg-slate-200" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="bg-white rounded-3xl border border-slate-200 p-8 text-center text-sm text-slate-500">
             {approvedProducts.length === 0
               ? 'Le catalogue est en cours de remplissage. Les produits apparaîtront ici dès leur validation.'
