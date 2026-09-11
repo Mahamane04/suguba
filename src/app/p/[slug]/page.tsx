@@ -87,6 +87,16 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   const [promoCodeInput, setPromoCodeInput] = useState(promoParam ? promoParam.toUpperCase() : '');
   const [promoSoumis, setPromoSoumis] = useState(promoParam ? promoParam.toUpperCase() : '');
 
+  // Livraisons réussies de ce produit : chiffre réel, affiché seulement s'il
+  // est supérieur à zéro (voir /api/products/livraisons).
+  const [livraisons, setLivraisons] = useState(0);
+  useEffect(() => {
+    fetch(`/api/products/livraisons?slug=${encodeURIComponent(resolvedParams.slug)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => j && setLivraisons(Number(j.livraisons) || 0))
+      .catch(() => {});
+  }, [resolvedParams.slug]);
+
   // Villes et points relais proposés : ceux des réglages de la plateforme.
   const [choixLivraison, setChoixLivraison] = useState<ChoixLivraison | null>(null);
   useEffect(() => {
@@ -298,26 +308,46 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               </button>
             </div>
 
-            {/* Trust badges */}
+            {/* Réassurance : uniquement des engagements réels et vérifiables.
+                Jusqu'au 2026-09-11, « Garantie 6 mois — Service certifié »
+                s'affichait sur TOUS les produits : la base n'a aucune colonne
+                garantie, ce 6 était écrit en dur dans cloud-sync.ts. */}
             <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="bg-white p-3 rounded-2xl border border-slate-200 text-slate-800 shadow-2xs space-y-1">
-                <Truck className="w-5 h-5 mx-auto text-emerald-600" />
-                <p className="font-bold text-[11px]">Livraison 24h</p>
-                <p className="text-[9px] text-slate-500">Partout à Bamako</p>
-              </div>
-
-              <div className="bg-white p-3 rounded-2xl border border-slate-200 text-slate-800 shadow-2xs space-y-1">
-                <ShieldCheck className="w-5 h-5 mx-auto text-blue-600" />
-                <p className="font-bold text-[11px]">Garantie {product.warrantyMonths} mois</p>
-                <p className="text-[9px] text-slate-500">Service certifié</p>
-              </div>
-
-              <div className="bg-white p-3 rounded-2xl border border-slate-200 text-slate-800 shadow-2xs space-y-1">
-                <CheckCircle2 className="w-5 h-5 mx-auto text-amber-600" />
-                <p className="font-bold text-[11px]">Paiement</p>
-                <p className="text-[9px] text-slate-500">À la livraison</p>
-              </div>
+              {[
+                { Icone: CheckCircle2, titre: 'Payez à la livraison', detail: 'Rien à payer avant' },
+                { Icone: ShieldCheck, titre: 'Code secret', detail: 'Remis au livreur après vérification' },
+                { Icone: Truck, titre: 'Livré par Suguba', detail: 'Bamako et régions' },
+              ].map(({ Icone, titre, detail }) => (
+                <div key={titre} className="bg-white p-3 rounded-2xl border border-slate-200 text-slate-800 space-y-1">
+                  <Icone className="w-5 h-5 mx-auto text-suguba-brand" />
+                  <p className="font-bold text-[11px] leading-tight">{titre}</p>
+                  <p className="text-[11px] text-slate-500 leading-tight">{detail}</p>
+                </div>
+              ))}
             </div>
+
+            {livraisons > 0 && (
+              <p className="text-xs text-slate-700 bg-white border border-slate-200 rounded-2xl px-3 py-2.5 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-suguba-brand shrink-0" />
+                <span>
+                  <strong>{livraisons}</strong> livraison{livraisons > 1 ? 's' : ''} réussie{livraisons > 1 ? 's' : ''} de ce produit
+                </span>
+              </p>
+            )}
+
+            {/* Une question avant d'acheter : un clic vers le service client,
+                le produit déjà nommé dans le message. */}
+            <a
+              href={`https://wa.me/22389460000?text=${encodeURIComponent(
+                `Bonjour Suguba, j'ai une question sur « ${product.name} » : https://app.sugubaml.com/p/${product.slug}`,
+              )}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-2 h-11 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-bold text-slate-800 transition-colors"
+            >
+              <WhatsAppIcon className="w-5 h-5 text-[#25D366]" />
+              <span>Une question ? Écrivez-nous</span>
+            </a>
 
             {/* Description */}
             <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-2xs space-y-2">

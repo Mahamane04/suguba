@@ -332,7 +332,12 @@ export default function B2BQuotePage() {
                   <tr>
                     <td className="py-3">
                       <strong className="block text-slate-900">{selectedProduct?.name}</strong>
-                      <span className="text-[10px] text-slate-500">Garantie certifiée {selectedProduct?.warrantyMonths} mois • Neuf sous emballage d&apos;origine</span>
+                      {/* Garantie affichée seulement si elle existe vraiment : la
+                          base n'a pas de colonne garantie, le « 6 mois certifiés »
+                          d'avant était écrit en dur (voir cloud-sync.ts). */}
+                      {(selectedProduct?.warrantyMonths ?? 0) > 0 && (
+                        <span className="text-[11px] text-slate-500">Garantie {selectedProduct?.warrantyMonths} mois</span>
+                      )}
                     </td>
                     <td className="py-3 text-center font-bold">{quantity}</td>
                     <td className="py-3 text-right font-mono">{unitPrice.toLocaleString('fr-FR')} F</td>
