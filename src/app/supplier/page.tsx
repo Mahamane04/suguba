@@ -7,7 +7,7 @@ import BottomNav from '@/components/common/BottomNav';
 import Button from '@/components/ui/Button';
 import PhotosProduitModal from '@/components/product/PhotosProduitModal';
 import {
-  Plus, ShieldCheck, Clock, Store, Package, Users, Loader2, XCircle, Camera
+  Plus, ShieldCheck, Clock, Store, Package, Users, XCircle, Camera
 } from 'lucide-react';
 
 interface SupplierProduct {
@@ -43,7 +43,6 @@ interface SupplierMe {
 export default function SupplierDashboardPage() {
   const [supplier, setSupplier] = useState<SupplierMe | null>(null);
   const [products, setProducts] = useState<SupplierProduct[]>([]);
-  const [valeurCatalogue, setValeurCatalogue] = useState(0);
   const [loading, setLoading] = useState(true);
   const [photosPour, setPhotosPour] = useState<SupplierProduct | null>(null);
 
@@ -56,7 +55,6 @@ export default function SupplierDashboardPage() {
         if (cancelled) return;
         setSupplier(json.supplier || null);
         setProducts(json.products || []);
-        setValeurCatalogue(json.totalRevenue || 0);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -68,8 +66,13 @@ export default function SupplierDashboardPage() {
     return (
       <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
         <Header />
-        <main className="flex-1 flex items-center justify-center">
-          <Loader2 className="w-6 h-6 text-slate-400 animate-spin" />
+        {/* Squelette à la forme de l'écran plutôt qu'une roue seule. */}
+        <main className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6 animate-pulse" aria-busy="true" aria-label="Chargement de l'espace fournisseur">
+          <div className="h-40 bg-white border border-slate-200 rounded-3xl" />
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-24 bg-white border border-slate-200 rounded-3xl" />)}
+          </div>
+          <div className="h-64 bg-white border border-slate-200 rounded-3xl" />
         </main>
         <BottomNav />
       </div>
@@ -77,7 +80,9 @@ export default function SupplierDashboardPage() {
   }
 
   const actifs = products.filter(p => p.status === 'approved').length;
-  const enModeration = products.filter(p => p.status === 'submitted').length;
+  // Tout ce qui n'est ni en vente ni retiré attend quelque chose (photo, prix).
+  const enAttente = products.filter(p => ['submitted', 'pending', 'draft'].includes(p.status)).length;
+  const sansPhoto = products.filter(p => p.images.length === 0).length;
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
@@ -128,13 +133,22 @@ export default function SupplierDashboardPage() {
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <Indicateur titre="Produits déposés" valeur={products.length} note="Toutes références" />
           <Indicateur titre="En vente" valeur={actifs} note="Visibles par les revendeurs" accent />
-          <Indicateur titre="En modération" valeur={enModeration} note="Vérification Suguba" />
-          <Indicateur
-            titre="Catalogue en vente"
-            valeur={<>{valeurCatalogue.toLocaleString('fr-FR')} <span className="text-xs font-bold">F</span></>}
-            note="Somme des prix publics"
-          />
+          <Indicateur titre="En attente" valeur={enAttente} note="Photo ou prix manquant" />
+          {/* Remplace « Catalogue en vente » (somme des prix publics) : un
+              chiffre sans signification pour le fournisseur. Celui-ci dit
+              quoi faire. */}
+          <Indicateur titre="Sans photo" valeur={sansPhoto} note={sansPhoto ? 'Ajoutez une photo pour vendre' : 'Tout est illustré'} />
         </div>
+
+        {sansPhoto > 0 && (
+          <div className="rounded-3xl bg-amber-50 border border-amber-200 p-4 flex items-center gap-3">
+            <Camera className="w-6 h-6 text-amber-600 shrink-0" />
+            <p className="text-sm text-amber-900">
+              <strong>{sansPhoto} produit{sansPhoto > 1 ? 's' : ''} sans photo</strong> : un produit sans photo ne peut pas être mis en vente.
+              Touchez « Ajouter des photos » ci-dessous.
+            </p>
+          </div>
+        )}
 
         {/* Liste des produits */}
         <div className="bg-white rounded-3xl p-5 border border-slate-200 space-y-4">
@@ -237,21 +251,19 @@ function Statut({ status }: { status: string }) {
       </span>
     );
   }
-  if (status === 'submitted') {
-    return (
-      <span className="px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-[11px] font-bold inline-flex items-center gap-1">
-        <Clock className="w-3 h-3" />
-        <span>En modération</span>
-      </span>
-    );
-  }
   if (status === 'rejected') {
     return (
       <span className="px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 text-[11px] font-bold inline-flex items-center gap-1">
         <XCircle className="w-3 h-3" />
-        <span>Refusé</span>
+        <span>Retiré de la vente</span>
       </span>
     );
   }
-  return null;
+  // submitted / pending / draft : il n'y avait aucune pastille pour les deux derniers.
+  return (
+    <span className="px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-[11px] font-bold inline-flex items-center gap-1">
+      <Clock className="w-3 h-3" />
+      <span>En attente</span>
+    </span>
+  );
 }

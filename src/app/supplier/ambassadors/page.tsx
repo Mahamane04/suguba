@@ -72,7 +72,7 @@ export default function SupplierBoutiquePage() {
             <ArrowLeft className="w-4 h-4" /><span>Retour à l&apos;espace fournisseur</span>
           </Link>
           <h1 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center space-x-2">
-            <Users className="w-6 h-6 text-purple-600" /><span>Ma boutique et mes revendeurs</span>
+            <Users className="w-6 h-6 text-suguba-brand" /><span>Ma boutique et mes revendeurs</span>
           </h1>
           <p className="text-xs text-slate-500">
             Partagez votre boutique, et invitez des revendeurs à vendre vos articles sans stock.

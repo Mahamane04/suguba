@@ -6,7 +6,8 @@ import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import PhotosUploader from '@/components/product/PhotosUploader';
 import { useToast } from '@/components/ui/Toast';
-import { sugubaStore, useSugubaStore } from '@/lib/store';
+import Button from '@/components/ui/Button';
+import { sugubaStore } from '@/lib/store';
 import {
   PackagePlus, MapPin, ShieldCheck, CheckCircle2, ArrowLeft
 } from 'lucide-react';
@@ -15,8 +16,22 @@ import Link from 'next/link';
 export default function NewSupplierProductPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const state = useSugubaStore();
-  const supplier = state.suppliers.find(s => s.userId === state.currentUser.id) || state.suppliers[0];
+  // Fiche fournisseur RÉELLE. Elle venait du store de démonstration
+  // (state.suppliers[0]) : l'adresse de stock était pré-remplie avec celle du
+  // fournisseur fictif. Le serveur (/api/products/sync) impose de toute façon
+  // l'identifiant de la session : aucun dépôt n'a pu partir sous un autre nom.
+  const [fiche, setFiche] = useState<{ companyName: string; warehouseAddress: string | null; warehouseNeighborhood: string | null } | null>(null);
+  useEffect(() => {
+    fetch('/api/supplier/me')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (!j?.supplier) return;
+        setFiche(j.supplier);
+        const adresse = [j.supplier.warehouseAddress, j.supplier.warehouseNeighborhood].filter(Boolean).join(', ');
+        if (adresse) setStockLocationAddress((actuelle) => actuelle || adresse);
+      })
+      .catch(() => {});
+  }, []);
 
   const [name, setName] = useState('');
   const [category, setCategory] = useState('Électroménager');
@@ -25,7 +40,7 @@ export default function NewSupplierProductPage() {
   const [stockQuantity, setStockQuantity] = useState<number>(20);
   const [warrantyMonths, setWarrantyMonths] = useState<number>(6);
   const [preparationDelayHours, setPreparationDelayHours] = useState<number>(2);
-  const [stockLocationAddress, setStockLocationAddress] = useState(supplier?.warehouseAddress || 'Grand Marché, Bamako');
+  const [stockLocationAddress, setStockLocationAddress] = useState('');
   // Photos envoyées au stockage Suguba (jamais une URL collée à la main, voir
   // BUG-011) — plusieurs désormais, la première étant la photo principale.
   const [images, setImages] = useState<string[]>([]);
@@ -73,8 +88,9 @@ export default function NewSupplierProductPage() {
     setSubmitError('');
 
     const { cloud, publication: resultat } = await sugubaStore.addSupplierProduct({
-      supplierId: supplier.id,
-      supplierName: supplier.companyName,
+      // Remplacé côté serveur par le fournisseur de la session.
+      supplierId: '',
+      supplierName: fiche?.companyName || '',
       name,
       category,
       description,
@@ -120,7 +136,7 @@ export default function NewSupplierProductPage() {
         {/* Page Title */}
         <div className="space-y-1">
           <h1 className="text-xl sm:text-2xl font-black text-slate-900">
-            Ajouter un Nouveau Produit au Réseau
+            Ajouter un produit
           </h1>
           <p className="text-xs text-slate-500">
             Avec au moins une photo, votre produit est mis en vente tout de suite, au prix calculé par Suguba.
@@ -128,12 +144,12 @@ export default function NewSupplierProductPage() {
         </div>
 
         {/* Workflow reminder card */}
-        <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 text-xs text-blue-900 space-y-1">
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 text-xs text-slate-900 space-y-1">
           <p className="font-bold flex items-center">
-            <ShieldCheck className="w-4 h-4 mr-1.5 text-blue-700" />
+            <ShieldCheck className="w-4 h-4 mr-1.5 text-suguba-brand" />
             Comment ça marche :
           </p>
-          <p className="text-[11px] text-blue-800">
+          <p className="text-[11px] text-slate-600">
             Vous déposez → Suguba calcule le prix de vente et la commission des revendeurs → le produit est en vente
             aussitôt. Suguba peut ajuster le prix ou retirer un produit après coup.
           </p>
@@ -160,12 +176,15 @@ export default function NewSupplierProductPage() {
                   : `Pas encore en vente : ${publication?.raison || 'Suguba doit fixer son prix.'}`}
               </p>
             </div>
-            <button
-              onClick={() => router.push('/supplier')}
-              className="bg-slate-900 hover:bg-black text-white font-bold py-3 px-6 rounded-2xl text-xs transition-colors"
-            >
-              Retourner à mon catalogue
-            </button>
+            <div className="flex flex-col sm:flex-row gap-2 justify-center">
+              <Button onClick={() => router.push('/supplier')} variant="secondary">
+                Retourner à mon catalogue
+              </Button>
+              {/* Enchaîner les dépôts sans repasser par le tableau de bord. */}
+              <Button onClick={() => { setIsSuccess(false); setPublication(null); setName(''); setDescription(''); setImages([]); }} variant="ghost">
+                Ajouter un autre produit
+              </Button>
+            </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
@@ -181,7 +200,7 @@ export default function NewSupplierProductPage() {
                 placeholder="Ex: Smart TV Samsung 43 Pouces Full HD"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:bg-white focus:outline-blue-600"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white focus:outline-emerald-600"
               />
             </div>
 
@@ -193,7 +212,7 @@ export default function NewSupplierProductPage() {
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:bg-white"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white"
               >
                 <option value="Électroménager">Électroménager</option>
                 <option value="Électronique & TV">Électronique & TV</option>
@@ -215,7 +234,7 @@ export default function NewSupplierProductPage() {
                 placeholder="Ex: Écran Full HD, 2 ports HDMI, garantie 1 an, livré avec support mural..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:bg-white focus:outline-blue-600"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white focus:outline-emerald-600"
               />
             </div>
 
@@ -241,9 +260,9 @@ export default function NewSupplierProductPage() {
                   placeholder="Ex: 30000"
                   value={supplierPrice}
                   onChange={(e) => setSupplierPrice(parseInt(e.target.value) || 0)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-black text-blue-700 focus:bg-white"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-black text-slate-900 focus:bg-white"
                 />
-                <span className="text-[10px] text-slate-400 mt-1 block">
+                <span className="text-[11px] text-slate-500 mt-1 block">
                   Montant exact que vous toucherez sur chaque vente livrée.
                 </span>
               </div>
@@ -259,7 +278,7 @@ export default function NewSupplierProductPage() {
                   placeholder="Ex: 25"
                   value={stockQuantity}
                   onChange={(e) => setStockQuantity(parseInt(e.target.value) || 1)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:bg-white"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:bg-white"
                 />
               </div>
             </div>
@@ -276,7 +295,7 @@ export default function NewSupplierProductPage() {
                   step={250}
                   value={partRevendeur}
                   onChange={(e) => setPartRevendeur(parseInt(e.target.value) || 0)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:bg-white"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:bg-white"
                 />
                 <span className="text-[11px] text-slate-500 mt-1 block">
                   Ce que vous laissez au revendeur qui vend votre produit. Plus elle est élevée, plus les revendeurs le partageront.
@@ -316,7 +335,7 @@ export default function NewSupplierProductPage() {
                   min={0}
                   value={warrantyMonths}
                   onChange={(e) => setWarrantyMonths(parseInt(e.target.value) || 0)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:bg-white"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white"
                 />
               </div>
 
@@ -329,7 +348,7 @@ export default function NewSupplierProductPage() {
                   min={1}
                   value={preparationDelayHours}
                   onChange={(e) => setPreparationDelayHours(parseInt(e.target.value) || 1)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:bg-white"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white"
                 />
               </div>
             </div>
@@ -346,20 +365,18 @@ export default function NewSupplierProductPage() {
                   required
                   value={stockLocationAddress}
                   onChange={(e) => setStockLocationAddress(e.target.value)}
-                  className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:bg-white"
+                  className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white"
                 />
               </div>
             </div>
 
             {/* Submit button */}
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-blue-700 hover:bg-blue-800 disabled:opacity-50 text-white font-bold py-3.5 px-4 rounded-2xl text-xs shadow-lg shadow-blue-800/20 flex items-center justify-center space-x-2 transition-transform active:scale-[0.98]"
-            >
+            {/* « Soumettre pour modération » : faux depuis la publication
+                automatique (2026-09-11). Le bouton dit ce qui se passe. */}
+            <Button type="submit" disabled={isSubmitting} size="lg" fullWidth>
               <PackagePlus className="w-4 h-4" />
-              <span>Soumettre le produit pour modération Suguba</span>
-            </button>
+              <span>{isSubmitting ? 'Envoi…' : images.length > 0 ? 'Mettre en vente' : 'Enregistrer (photo à ajouter)'}</span>
+            </Button>
 
           </form>
         )}

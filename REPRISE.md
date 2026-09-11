@@ -252,9 +252,16 @@ dépôt fournisseur, premier paiement SasPay réel.
    chargement (squelettes du solde et des indicateurs), « Créer une commande » mène au catalogue
    (il ouvrait la commande sur le 1er produit, sans choix), produits à commission nulle retirés
    du tableau de bord, squelettes du catalogue. Vérifié avec une session revendeur jetable.
-   **Suite : ventes/gains du revendeur au design system, puis phase 4 (fournisseur).**
-   ⚠️ Un produit de test « [DÉMO] Blender / mixeur 1,5 L » (sans photo) est en vente en prod —
-   à retirer (décision utilisateur).
+   **Phase 4 (fournisseur) : première passe faite le 2026-09-11** — tableau de bord en squelette,
+   indicateur « Catalogue en vente » (somme de prix, sans sens) remplacé par « Sans photo » +
+   bandeau d'action, pastille pour tous les statuts (« Retiré de la vente »). Formulaire : fiche
+   réelle via `/api/supplier/me` (lisait le fournisseur de démo — sans conséquence en base :
+   `/api/products/sync` impose l'uid de session), bouton « Mettre en vente » (plus de
+   « modération »), champs 16 px, plus de bleu, « Ajouter un autre produit » après succès.
+   **Suite : phase 5 (diaspora), phase 6 (admin).**
+   Produit « [DÉMO] Blender » retiré de la vente (statut `rejected`) le 2026-09-11 à la demande
+   de l'utilisateur. ⚠️ 4 autres « [DÉMO] » restent en vente (ventilateur, kit solaire,
+   batterie, écouteurs) — en attente de sa décision.
    Règle : tout nouveau message utilisateur passe par `useToast()` — jamais `alert()`.
    Restent sur les données démo, à traiter dans leur phase : packs diaspora (phase 5), bandeau
    « Offre recommandée par… » de la page produit (phase 2), adresse de stock par défaut du
