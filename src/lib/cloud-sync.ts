@@ -23,7 +23,12 @@ class CloudSyncService {
       this.isInitialFetched = true;
       await this.fetchProductsFromCloud();
       sugubaStore.marquerCatalogueCharge();
-      await this.fetchOrdersFromCloud();
+      // Les commandes ne sont plus tirées ici : ce chemin s'exécute pour
+      // TOUT visiteur (bouton CloudSyncBadge compris), donc un client, un
+      // fournisseur ou un diaspora déclenchait systématiquement un
+      // /api/orders/feed → 401 (bruit console à chaque page, sur toute
+      // l'application). Seul CloudSyncInitializer, qui connaît le rôle réel
+      // via /api/auth/me, appelle désormais fetchOrdersFromCloudSiEligible.
     }
 
     if (this.isListening) return;
@@ -114,6 +119,15 @@ class CloudSyncService {
   // admin/livreur), plus via un SELECT anon direct depuis BUG-006 : cette
   // table contient des données personnelles clients, la clé publique
   // anon n'y a plus accès (voir supabase/schema.sql).
+  // N'appelle /api/orders/feed que pour les rôles qu'elle sert réellement —
+  // la route renvoie 401 pour tout le reste (voir son commentaire). Évite le
+  // 401 systématique constaté en vérification phase 9 sur l'accueil et le
+  // suivi, où AUCUN visiteur n'est admin/livreur/revendeur.
+  public async fetchOrdersFromCloudSiEligible(role: string | null | undefined): Promise<Order[]> {
+    if (!role || !['admin', 'driver', 'reseller'].includes(role)) return [];
+    return this.fetchOrdersFromCloud();
+  }
+
   public async fetchOrdersFromCloud(): Promise<Order[]> {
     try {
       const res = await fetch('/api/orders/feed');

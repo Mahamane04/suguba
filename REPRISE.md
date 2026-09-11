@@ -295,9 +295,24 @@ dépôt fournisseur, premier paiement SasPay réel.
    de l'utilisateur. ⚠️ 4 autres « [DÉMO] » restent en vente (ventilateur, kit solaire,
    batterie, écouteurs) — en attente de sa décision.
    Règle : tout nouveau message utilisateur passe par `useToast()` — jamais `alert()`.
-   Restent sur les données démo, à traiter dans leur phase : packs diaspora (phase 5), bandeau
-   « Offre recommandée par… » de la page produit (phase 2), adresse de stock par défaut du
-   formulaire fournisseur (phase 4), pages parrainage/défis/académie (décision en attente).
+   **Phase 9 (vérification finale) faite le 2026-09-11.** Parcours rejoué pour les 6 rôles avec
+   des sessions jetables ; console sans erreur sur les 6 une fois corrigé au passage un bruit
+   systémique : `/api/orders/feed` (401 attendu pour admin/livreur/revendeur non connectés)
+   partait en réalité pour **tout visiteur, sur toute page** — `cloud-sync.ts` ne connaissait pas
+   le rôle avant d'appeler. Ne fetch plus que pour les 3 rôles concernés (voir
+   `fetchOrdersFromCloudSiEligible`). Nouvelle notation détaillée dans l'audit : Client ~82 %,
+   Livreur ~80 %, Admin/Revendeur/Diaspora ~77-78 %, Fournisseur ~77 % — net progrès depuis les
+   25-45 % de départ, **mais aucun rôle n'atteint encore la cible de 90 %**. Ce qui retient
+   chacun, par ordre d'impact : accessibilité jamais auditée formellement (contrastes, focus,
+   cibles tactiles), admin toujours un flux unique sans le découpage « Aujourd'hui / Catalogue /
+   Réglages » prévu, « premier usage guidé » partiel pour un revendeur/fournisseur/livreur à zéro
+   vente, et les 4 décisions ci-dessous encore ouvertes. Détail complet :
+   `docs/ux/audit-ux-2026-09-11.md`, section 4 phase 9.
+   **Décisions utilisateur toujours en attente** — 4 autres produits « [DÉMO] » en vente
+   (ventilateur, kit solaire, batterie, écouteurs), pages parrainage/défis/académie (supprimer ou
+   brancher sur un vrai mécanisme), champs garantie/délai/adresse de stock du formulaire
+   fournisseur jamais enregistrés (retirer les champs ou ajouter les colonnes), numéro de support
+   +223 89 46 00 00 partagé avec le bot Fatouma (garder ou changer).
 8. ~~**Versement des commissions**~~ — code fait le 2026-09-09 via SasPay Payouts. Reste à
    valider avec de vraies clés : aucun virement réel n'a encore été déclenché.
 9. **Revendeurs payés en Wave** — `payouts.payment_method` accepte encore `wave`, que SasPay
@@ -322,12 +337,23 @@ dépôt fournisseur, premier paiement SasPay réel.
   `sugubaStore.definirUtilisateur`), et jamais restauré depuis le cache. Toute donnée d'un rôle
   (soldes, ventes, stocks, code revendeur) se lit via une route serveur, pas via
   `state.resellers` / `state.suppliers` / `state.withdrawals` (données de démonstration).
-- **`/api/orders/feed` répond 401 aux rôles fournisseur et diaspora** : bruit dans la console,
-  sans effet (ces rôles n'ont rien à lire par cette route). À traiter en phase 8.
+- **`fetchOrdersFromCloud` s'appelait pour TOUT visiteur, sur TOUTE page** (corrigé phase 9,
+  2026-09-11) — `CloudSyncInitializer`/`CloudSyncBadge` déclenchaient `initRealtimeSync()` sans
+  connaître le rôle, qui allait chercher `/api/orders/feed`, une route réservée à
+  admin/livreur/revendeur : 401 en bruit de fond sur l'accueil, le suivi, la fiche produit…
+  pour un client, un fournisseur ou un diaspora. `fetchOrdersFromCloudSiEligible(role)` ne part
+  plus que pour les 3 rôles concernés, appelé depuis `CloudSyncInitializer` une fois `/api/auth/me`
+  résolu. Piège pour la suite : ne jamais rattacher un fetch réservé à un rôle à un effet qui
+  monte pour tout le monde sans passer le rôle en paramètre.
 
 - **`next dev` ne détecte pas tout.** Toujours tester avec un vrai `npm run build` avant de
   conclure qu'un déploiement va réussir (un `useSearchParams()` sans `<Suspense>` a déjà fait
   échouer tous les déploiements Vercel silencieusement).
+- **Ne JAMAIS lancer `npm run build` pendant qu'un `npm run dev` tourne sur le même dossier**
+  (constaté phase 9, 2026-09-11) — les deux écrivent dans le même `.next/`. Résultat : le serveur
+  dev plante (`Cannot find module './XXXX.js'`), et même après redémarrage le middleware peut se
+  comporter bizarrement (sessions valides rejetées) jusqu'à un `rm -rf .next` + redémarrage propre.
+  Faire le build de contrôle serveur dev arrêté, ou sur un port/checkout distinct.
 - **Le Service Worker PWA cache les anciens bundles JS.** En cas de comportement qui ne colle
   pas avec le code déployé : `unregister()` le SW + vider les caches avant de chercher ailleurs.
 - **`localStorage` peut ressusciter des données supprimées du code et de la base.** Changer la

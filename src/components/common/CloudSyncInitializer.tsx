@@ -29,6 +29,10 @@ export default function CloudSyncInitializer() {
             ? { id: moi.uid, fullName: moi.fullName, phone: moi.phone, role: moi.role, city: moi.city }
             : null,
         );
+        // Seuls admin/livreur/revendeur ont des commandes à lire ici (voir
+        // /api/orders/feed) : un client, fournisseur ou diaspora déclenchait
+        // sinon un 401 sur CHAQUE page (constaté en vérification phase 9).
+        cloudSyncService.fetchOrdersFromCloudSiEligible(moi?.authenticated ? moi.role : null);
       })
       .catch(() => {});
 
