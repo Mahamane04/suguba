@@ -258,7 +258,12 @@ dépôt fournisseur, premier paiement SasPay réel.
    réelle via `/api/supplier/me` (lisait le fournisseur de démo — sans conséquence en base :
    `/api/products/sync` impose l'uid de session), bouton « Mettre en vente » (plus de
    « modération »), champs 16 px, plus de bleu, « Ajouter un autre produit » après succès.
-   **Suite : phase 5 (diaspora), phase 6 (admin).**
+   **Phase 5 (diaspora) : première passe faite le 2026-09-11** — les 3 « packs » inventés
+   (photos Unsplash, prix fictifs) sont remplacés par la grille des vrais produits en vente : leur
+   bouton sélectionnait un produit quelconque, l'acheteur payait par carte un autre article que
+   celui choisi. Présélection limitée aux produits en vente, quartier « Hamdallaye ACI 2000 »
+   pré-rempli retiré, mention « 3D-Secure 256-bit » remplacée par un texte vérifiable, un seul
+   vert, champs 16 px. **Suite : phase 6 (admin).**
    Produit « [DÉMO] Blender » retiré de la vente (statut `rejected`) le 2026-09-11 à la demande
    de l'utilisateur. ⚠️ 4 autres « [DÉMO] » restent en vente (ventilateur, kit solaire,
    batterie, écouteurs) — en attente de sa décision.
