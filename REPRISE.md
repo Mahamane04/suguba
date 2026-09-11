@@ -263,7 +263,20 @@ dépôt fournisseur, premier paiement SasPay réel.
    bouton sélectionnait un produit quelconque, l'acheteur payait par carte un autre article que
    celui choisi. Présélection limitée aux produits en vente, quartier « Hamdallaye ACI 2000 »
    pré-rempli retiré, mention « 3D-Secure 256-bit » remplacée par un texte vérifiable, un seul
-   vert, champs 16 px. **Suite : phase 6 (admin).**
+   vert, champs 16 px.
+   **Phase 6 (admin) : première passe faite le 2026-09-11** — ⚠️ correctif fonctionnel : les
+   retraits affichés à l'admin venaient de la mémoire LOCALE (une demande faite depuis le
+   téléphone d'un revendeur n'apparaissait jamais) et « Valider le virement » / « Guichet » ne
+   changeaient que cette mémoire (`updatePayoutInCloud` est désactivé depuis BUG-006). Nouvelle
+   route `/api/admin/payouts` : GET des vrais retraits ; POST `payer_especes` (guichet, code
+   WTH-…, `completed` + `settle_commissions_for_withdrawal` comme le webhook) ; POST `rejeter`
+   (`rejected` + `release_commissions_for_withdrawal`). Les virements passent par
+   `/api/payouts/initiate` (SasPay). Plus de `prompt()`. En-tête neutre « Tableau de bord »,
+   onglets Revendeurs/Diaspora de démo remplacés par des explications, coordonnées admin
+   locales et « Recharger le jeu de démo » retirés, plus de violet/indigo/bleu ni de 10 px.
+   Vérifié avec une session admin jetable, sans aucune action sur les retraits.
+   **Reste admin** : les commissions « verrouillées » lisent encore la mémoire locale ;
+   découpage « Aujourd'hui / Catalogue / Réglages » à faire. **Suite : phase 7 (livreur).**
    Produit « [DÉMO] Blender » retiré de la vente (statut `rejected`) le 2026-09-11 à la demande
    de l'utilisateur. ⚠️ 4 autres « [DÉMO] » restent en vente (ventilateur, kit solaire,
    batterie, écouteurs) — en attente de sa décision.

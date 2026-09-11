@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import ProductImage from '@/components/common/ProductImage';
@@ -21,18 +21,39 @@ import {
   Building2, QrCode, Settings, Trash2, UserCog, RotateCcw, Sparkles, X, Check
 } from 'lucide-react';
 
+interface RetraitAdmin {
+  id: string; revendeur: string; montant: number; moyen: string;
+  telephone: string; statut: string; creeLe: string;
+}
+
+const LIBELLE_MOYEN: Record<string, string> = {
+  orange_money: 'Orange Money', moov: 'Moov Money', mobi_cash: 'Mobi Cash',
+  wave: 'Wave (non pris en charge)', cash: 'Espèces au guichet',
+};
+
 export default function AdminDashboardPage() {
   const state = useSugubaStore();
-  const { confirmer } = useToast();
+  const { confirmer, toast } = useToast();
+
+  // Retraits RÉELS (table payouts). Ils venaient de la mémoire locale : une
+  // demande faite depuis le téléphone d'un revendeur n'apparaissait jamais ici.
+  const [retraits, setRetraits] = useState<RetraitAdmin[] | null>(null);
+  const [retraitEnCours, setRetraitEnCours] = useState<string | null>(null);
+  const chargerRetraits = useCallback(async () => {
+    try {
+      const j = await fetch('/api/admin/payouts').then((r) => r.json());
+      setRetraits(Array.isArray(j.retraits) ? j.retraits : []);
+    } catch {
+      setRetraits((prev) => prev ?? []);
+    }
+  }, []);
+  useEffect(() => { chargerRetraits(); }, [chargerRetraits]);
   const [selectedProductForPricing, setSelectedProductForPricing] = useState<Product | null>(null);
   const [agencyCodeInput, setAgencyCodeInput] = useState('');
   const [agencyCodeFeedback, setAgencyCodeFeedback] = useState<{ success: boolean; message: string } | null>(null);
 
   // Admin Config & Data Purge State
   const [showConfigModal, setShowConfigModal] = useState(false);
-  const [adminNameInput, setAdminNameInput] = useState(state.currentUser.fullName || 'Directeur Opérations Suguba');
-  const [adminPhoneInput, setAdminPhoneInput] = useState(state.currentUser.phone || '+223 89 46 00 00');
-  const [adminCityInput, setAdminCityInput] = useState(state.currentUser.city || 'Bamako (Hamdallaye ACI 2000)');
   const [actionFeedback, setActionFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const [promotePhoneInput, setPromotePhoneInput] = useState('');
   const [promoteBusy, setPromoteBusy] = useState(false);
@@ -70,7 +91,57 @@ export default function AdminDashboardPage() {
   const pendingCallOrders = state.orders.filter(o => o.status === 'pending_call');
   const confirmedOrders = state.orders.filter(o => o.status === 'confirmed');
   const inTransitOrders = state.orders.filter(o => o.status === 'in_transit');
-  const pendingPayouts = state.withdrawals.filter(w => w.status === 'pending');
+  const pendingPayouts = (retraits || []).filter((r) => r.statut === 'pending');
+  const enCoursDeVirement = (retraits || []).filter((r) => r.statut === 'processing');
+  const fmt = (n: number) => `${n.toLocaleString('fr-FR')} F`;
+
+  const agirSurRetrait = async (r: RetraitAdmin, action: 'virer' | 'payer_especes' | 'rejeter') => {
+    const questions = {
+      virer: {
+        titre: `Envoyer ${fmt(r.montant)} à ${r.revendeur} ?`,
+        message: `Virement ${LIBELLE_MOYEN[r.moyen] || r.moyen} au ${r.telephone} via SasPay. Il sera marqué payé à la confirmation du réseau.`,
+        confirmer: 'Envoyer le virement',
+      },
+      payer_especes: {
+        titre: `Remettre ${fmt(r.montant)} en espèces à ${r.revendeur} ?`,
+        message: `À confirmer une fois l'argent remis en main propre (code ${r.id}).`,
+        confirmer: 'Argent remis',
+      },
+      rejeter: {
+        titre: `Refuser le retrait de ${r.revendeur} ?`,
+        message: `${fmt(r.montant)} retournent sur son solde disponible.`,
+        confirmer: 'Refuser',
+      },
+    }[action];
+    if (!(await confirmer({ ...questions, danger: action === 'rejeter' }))) return;
+
+    setRetraitEnCours(r.id);
+    try {
+      const res = action === 'virer'
+        ? await fetch('/api/payouts/initiate', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ withdrawalId: r.id }),
+          })
+        : await fetch('/api/admin/payouts', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: r.id, action }),
+          });
+      const j = await res.json().catch(() => ({}));
+      if (res.ok && j.success) {
+        toast(
+          action === 'virer' ? 'Virement transmis à SasPay.' : action === 'payer_especes' ? 'Retrait marqué payé.' : 'Retrait refusé, solde rendu.',
+          { ton: 'succes' },
+        );
+      } else {
+        toast(j.error || 'Action impossible.', { ton: 'erreur', duree: 7000 });
+      }
+    } catch {
+      toast('Erreur réseau.', { ton: 'erreur' });
+    } finally {
+      setRetraitEnCours(null);
+      chargerRetraits();
+    }
+  };
 
   const totalGMV = state.orders.reduce((acc, o) => acc + o.totalAmount, 0);
   const totalCommissionsPaid = state.commissions
@@ -83,71 +154,43 @@ export default function AdminDashboardPage() {
 
       <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
         
-        {/* Admin Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 text-white p-5 sm:p-6 rounded-3xl shadow-lg">
-          <div className="space-y-1.5">
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-purple-800 text-purple-200 text-[11px] font-bold">
-                <ShieldCheck className="w-3.5 h-3.5 text-purple-300" />
-                <span>Tour de Contrôle Opérationnelle</span>
-              </div>
-              <CloudSyncBadge />
+        {/* En-tête : un titre clair et des raccourcis neutres. Il y avait un
+            dégradé violet, « Suguba Master Ops Desk » et six boutons de six
+            couleurs différentes. */}
+        <div className="bg-white border border-slate-200 p-5 sm:p-6 rounded-3xl space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="space-y-1">
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900">Tableau de bord</h1>
+              <p className="text-xs text-slate-500">
+                Appels à passer, livraisons à assigner, retraits à payer : ce qui attend une action aujourd&apos;hui.
+              </p>
             </div>
-            <h1 className="text-xl sm:text-2xl font-black">
-              Suguba Master Ops Desk
-            </h1>
-            <p className="text-xs text-purple-200">
-              Pilotage des flux : Fournisseurs → Revendeurs → Confirmation Appels → Dispatch Livraisons → Finances.
-            </p>
+            <CloudSyncBadge />
           </div>
-
-          <div className="flex flex-wrap items-center gap-2">
-            <Link
-              href="/admin/launch-checklist"
-              className="flex items-center space-x-1.5 px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 rounded-xl text-xs font-black shadow-md transition-all active:scale-95"
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>Checklist & Audit 100%</span>
-            </Link>
-
-            <Link
-              href="/admin/reports/daily"
-              className="flex items-center space-x-1.5 px-3.5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-md transition-all active:scale-95"
-            >
-              <BarChart3 className="w-3.5 h-3.5" />
-              <span>Rapport Flash Soir</span>
-            </Link>
-
-            <Link
-              href="/admin/broadcast"
-              className="flex items-center space-x-1.5 px-3.5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl text-xs font-bold shadow-md transition-all active:scale-95"
-            >
-              <Radio className="w-3.5 h-3.5 text-purple-200 animate-pulse" />
-              <span>Diffusion Broadcast</span>
-            </Link>
-
-            <Link
-              href="/admin/sav"
-              className="flex items-center space-x-1.5 px-3.5 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-md transition-all active:scale-95"
-            >
-              <ShieldAlert className="w-3.5 h-3.5" />
-              <span>Desk SAV & Retours</span>
-            </Link>
-
-            <Link
-              href="/admin/analytics"
-              className="flex items-center space-x-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-md transition-all active:scale-95"
-            >
-              <TrendingUp className="w-3.5 h-3.5" />
-              <span>Analytics & Trésorerie</span>
-            </Link>
-
+          <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
+            {[
+              { href: '/admin/products', label: 'Produits', Icone: ShoppingBag },
+              { href: '/admin/sav', label: 'SAV & retours', Icone: ShieldAlert },
+              { href: '/admin/analytics', label: 'Analyses', Icone: TrendingUp },
+              { href: '/admin/reports/daily', label: 'Rapport du soir', Icone: BarChart3 },
+              { href: '/admin/broadcast', label: 'Diffusion', Icone: Radio },
+              { href: '/admin/launch-checklist', label: 'Checklist', Icone: ShieldCheck },
+            ].map(({ href, label, Icone }) => (
+              <Link
+                key={href}
+                href={href}
+                className="shrink-0 inline-flex items-center gap-1.5 h-10 px-3.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700"
+              >
+                <Icone className="w-4 h-4 text-slate-500" />
+                <span>{label}</span>
+              </Link>
+            ))}
             <button
               onClick={() => setShowConfigModal(true)}
-              className="flex items-center space-x-1.5 px-3.5 py-2 bg-amber-400 hover:bg-amber-500 text-slate-950 rounded-xl text-xs font-black shadow-md transition-all active:scale-95"
+              className="shrink-0 inline-flex items-center gap-1.5 h-10 px-3.5 rounded-2xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700"
             >
-              <Settings className="w-3.5 h-3.5" />
-              <span>Compte Admin & Nettoyage</span>
+              <Settings className="w-4 h-4 text-slate-500" />
+              <span>Comptes admin</span>
             </button>
           </div>
         </div>
@@ -179,7 +222,7 @@ export default function AdminDashboardPage() {
             <p className="text-xl sm:text-2xl font-black text-slate-900">
               {totalGMV.toLocaleString('fr-FR')} <span className="text-xs font-normal">F</span>
             </p>
-            <p className="text-[10px] text-slate-400">{state.orders.length} commandes totales</p>
+            <p className="text-[11px] text-slate-400">{state.orders.length} commandes totales</p>
           </div>
 
           <div className="bg-white p-4 rounded-3xl border border-emerald-200 shadow-xs space-y-1">
@@ -187,7 +230,7 @@ export default function AdminDashboardPage() {
             <p className="text-xl sm:text-2xl font-black text-emerald-600">
               {totalCommissionsPaid.toLocaleString('fr-FR')} <span className="text-xs font-normal">F</span>
             </p>
-            <p className="text-[10px] text-slate-400">Pour le réseau revendeurs</p>
+            <p className="text-[11px] text-slate-400">Pour le réseau revendeurs</p>
           </div>
 
           <div className="bg-white p-4 rounded-3xl border border-amber-200 shadow-xs space-y-1">
@@ -195,15 +238,15 @@ export default function AdminDashboardPage() {
             <p className="text-xl sm:text-2xl font-black text-amber-600">
               {pendingCallOrders.length}
             </p>
-            <p className="text-[10px] text-slate-400">Confirmations clients requises</p>
+            <p className="text-[11px] text-slate-400">Confirmations clients requises</p>
           </div>
 
-          <div className="bg-white p-4 rounded-3xl border border-purple-200 shadow-xs space-y-1">
-            <span className="text-[11px] font-bold text-purple-700 uppercase">Retraits en attente</span>
-            <p className="text-xl sm:text-2xl font-black text-purple-600">
+          <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs space-y-1">
+            <span className="text-[11px] font-bold text-slate-700 uppercase">Retraits en attente</span>
+            <p className="text-xl sm:text-2xl font-black text-slate-600">
               {pendingPayouts.length}
             </p>
-            <p className="text-[10px] text-slate-400">Virements Mobile Money à exécuter</p>
+            <p className="text-[11px] text-slate-400">Virements Mobile Money à exécuter</p>
           </div>
         </div>
 
@@ -224,7 +267,7 @@ export default function AdminDashboardPage() {
                 </div>
                 <div>
                   <h2 className="font-black text-sm text-slate-900">Desk Appel Confirmation</h2>
-                  <p className="text-[10px] text-slate-500">Validation téléphonique préalable obligatoire</p>
+                  <p className="text-[11px] text-slate-500">Validation téléphonique préalable obligatoire</p>
                 </div>
               </div>
               <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[11px] font-black">
@@ -248,17 +291,17 @@ export default function AdminDashboardPage() {
                         <p className="text-[11px] text-slate-600">
                           {order.productName} ({order.quantity}x) — {order.totalAmount.toLocaleString('fr-FR')} FCFA
                         </p>
-                        <p className="text-[10px] text-slate-500">
+                        <p className="text-[11px] text-slate-500">
                           📍 {order.neighborhood} ({order.landmark})
                         </p>
                       </div>
-                      <span className="font-mono text-[10px] font-bold text-slate-400">#{order.orderNumber}</span>
+                      <span className="font-mono text-[11px] font-bold text-slate-400">#{order.orderNumber}</span>
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-1">
                       <a
                         href={`tel:${order.customerPhone}`}
-                        className="py-2 px-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-[10px] font-bold flex items-center justify-center space-x-1 shadow-2xs"
+                        className="py-2 px-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-[11px] font-bold flex items-center justify-center space-x-1 shadow-2xs"
                       >
                         <PhoneCall className="w-3 h-3" />
                         <span>Appeler</span>
@@ -268,7 +311,7 @@ export default function AdminDashboardPage() {
                         href={whatsappHelper.getUnreachableFollowUpLink(order)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="py-2 px-2 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl text-[10px] font-bold flex items-center justify-center space-x-1 shadow-2xs"
+                        className="py-2 px-2 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl text-[11px] font-bold flex items-center justify-center space-x-1 shadow-2xs"
                       >
                         <MessageCircle className="w-3 h-3 fill-current" />
                         <span>Relance FR</span>
@@ -278,7 +321,7 @@ export default function AdminDashboardPage() {
                         href={whatsappHelper.getBambaraFollowUpLink(order)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="py-2 px-2 bg-[#128C7E] hover:bg-[#0e7064] text-white rounded-xl text-[10px] font-bold flex items-center justify-center space-x-1 shadow-2xs"
+                        className="py-2 px-2 bg-[#128C7E] hover:bg-[#0e7064] text-white rounded-xl text-[11px] font-bold flex items-center justify-center space-x-1 shadow-2xs"
                       >
                         <MessageCircle className="w-3 h-3 fill-current" />
                         <span>Bambara</span>
@@ -286,7 +329,7 @@ export default function AdminDashboardPage() {
 
                       <button
                         onClick={() => sugubaStore.confirmOrderCall(order.id, state.currentUser.fullName)}
-                        className="py-2 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[10px] font-black flex items-center justify-center space-x-1 shadow-2xs"
+                        className="py-2 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[11px] font-black flex items-center justify-center space-x-1 shadow-2xs"
                       >
                         <CheckCircle2 className="w-3 h-3" />
                         <span>Valider</span>
@@ -302,12 +345,12 @@ export default function AdminDashboardPage() {
           <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center">
                   <ShieldCheck className="w-4 h-4" />
                 </div>
                 <div>
                   <h2 className="font-black text-sm text-slate-900">Modération Catalogue & Marges</h2>
-                  <p className="text-[10px] text-slate-500">Suguba fixe le prix public et la commission fixe</p>
+                  <p className="text-[11px] text-slate-500">Suguba fixe le prix public et la commission fixe</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -321,11 +364,11 @@ export default function AdminDashboardPage() {
                 </Link>
                 <Link
                   href="/admin/products/new"
-                  className="px-2.5 py-1 rounded-xl bg-blue-700 hover:bg-blue-800 text-white text-[11px] font-black whitespace-nowrap"
+                  className="px-2.5 py-1 rounded-xl bg-slate-700 hover:bg-slate-800 text-white text-[11px] font-black whitespace-nowrap"
                 >
                   + Ajouter
                 </Link>
-                <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-800 text-[11px] font-black">
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-800 text-[11px] font-black">
                   {pendingProducts.length} soumis
                 </span>
               </div>
@@ -338,7 +381,7 @@ export default function AdminDashboardPage() {
             ) : (
               <div className="space-y-3">
                 {pendingProducts.map((product) => (
-                  <div key={product.id} className="p-3.5 bg-purple-50/50 border border-purple-200 rounded-2xl flex items-center justify-between gap-3">
+                  <div key={product.id} className="p-3.5 bg-slate-50/50 border border-slate-200 rounded-2xl flex items-center justify-between gap-3">
                     <div className="flex items-center space-x-3 min-w-0">
                       <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-slate-100 shrink-0">
                         {/* ProductImage : un produit soumis SANS photo passait
@@ -347,8 +390,8 @@ export default function AdminDashboardPage() {
                       </div>
                       <div className="min-w-0">
                         <h4 className="font-bold text-xs text-slate-900 truncate">{product.name}</h4>
-                        <p className="text-[10px] text-slate-500">Fournisseur : {product.supplierName}</p>
-                        <p className="text-[11px] font-black text-blue-700">
+                        <p className="text-[11px] text-slate-500">Fournisseur : {product.supplierName}</p>
+                        <p className="text-[11px] font-black text-slate-700">
                           Prix Fournisseur : {product.supplierPrice.toLocaleString('fr-FR')} FCFA
                         </p>
                       </div>
@@ -356,7 +399,7 @@ export default function AdminDashboardPage() {
 
                     <button
                       onClick={() => setSelectedProductForPricing(product)}
-                      className="py-2 px-3 bg-purple-700 hover:bg-purple-800 text-white rounded-xl text-xs font-bold shrink-0 shadow-2xs"
+                      className="py-2 px-3 bg-slate-700 hover:bg-slate-800 text-white rounded-xl text-xs font-bold shrink-0 shadow-2xs"
                     >
                       Fixer Prix & Marge
                     </button>
@@ -372,15 +415,15 @@ export default function AdminDashboardPage() {
         <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center">
                 <Truck className="w-4 h-4" />
               </div>
               <div>
                 <h2 className="font-black text-sm text-slate-900">Dispatch & Assignation des Livreurs</h2>
-                <p className="text-[10px] text-slate-500">Commandes confirmées prêtes pour la course</p>
+                <p className="text-[11px] text-slate-500">Commandes confirmées prêtes pour la course</p>
               </div>
             </div>
-            <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[11px] font-black">
+            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-800 text-[11px] font-black">
               {confirmedOrders.length} à dispatcher
             </span>
           </div>
@@ -426,7 +469,7 @@ export default function AdminDashboardPage() {
                               sugubaStore.assignDriver(order.id, chosen.id, chosen.fullName, chosen.phone || undefined, state.currentUser.fullName);
                             }
                           }}
-                          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs"
+                          className="px-3 py-1.5 bg-slate-600 hover:bg-slate-700 text-white text-xs font-bold rounded-xl shadow-xs"
                         >
                           Assigner
                         </button>
@@ -447,8 +490,8 @@ export default function AdminDashboardPage() {
                 <Wallet className="w-4 h-4" />
               </div>
               <div>
-                <h2 className="font-black text-sm text-slate-900">Validation des Retraits Mobile Money & Guichet Agence</h2>
-                <p className="text-[10px] text-slate-500">Exécuter les virements Orange Money / Wave ou décaisser les espèces au Guichet</p>
+                <h2 className="font-black text-sm text-slate-900">Retraits des revendeurs</h2>
+                <p className="text-[11px] text-slate-500">Virement Orange Money, Moov ou Mobi Cash via SasPay, ou espèces au guichet</p>
               </div>
             </div>
             <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-black">
@@ -456,81 +499,112 @@ export default function AdminDashboardPage() {
             </span>
           </div>
 
-          {/* Guichet Express Code Validation Box */}
-          <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-2xl space-y-2.5">
-            <div className="flex items-center gap-2 text-emerald-900 font-bold text-xs">
-              <Building2 className="w-4 h-4 text-emerald-700" />
-              <span>Guichet Express : Validation Retrait Espèces par Code (Agence Bamako)</span>
+          {/* Guichet : le revendeur présente le code WTH-XXXXXX affiché sur son
+              écran « Gains ». Il ne changeait que la mémoire locale de ce
+              navigateur ; il marque maintenant le vrai retrait payé. */}
+          <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2.5">
+            <div className="flex items-center gap-2 text-slate-900 font-bold text-xs">
+              <Building2 className="w-4 h-4 text-slate-600" />
+              <span>Guichet : retrait en espèces par code</span>
             </div>
-            
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                if (!agencyCodeInput.trim()) return;
-                const res = sugubaStore.processAgencyPickupCode(agencyCodeInput, state.currentUser.fullName);
-                setAgencyCodeFeedback(res);
-                if (res.success) setAgencyCodeInput('');
+                const code = agencyCodeInput.trim().toUpperCase();
+                if (!code) return;
+                const r = pendingPayouts.find((x) => x.id.toUpperCase() === code);
+                if (!r) {
+                  setAgencyCodeFeedback({ success: false, message: `Aucun retrait en attente avec le code ${code}.` });
+                  return;
+                }
+                if (r.moyen !== 'cash') {
+                  setAgencyCodeFeedback({ success: false, message: `Le retrait ${code} est demandé en ${LIBELLE_MOYEN[r.moyen] || r.moyen} : il se paie par virement, pas au guichet.` });
+                  return;
+                }
+                setAgencyCodeFeedback(null);
+                setAgencyCodeInput('');
+                void agirSurRetrait(r, 'payer_especes');
               }}
               className="flex flex-col sm:flex-row gap-2"
             >
               <input
                 type="text"
-                placeholder="Entrez le Code Guichet (ex: SUG-8492)..."
+                placeholder="Code du retrait (ex : WTH-K7M3P9)"
                 value={agencyCodeInput}
                 onChange={(e) => setAgencyCodeInput(e.target.value)}
-                className="flex-1 px-3.5 py-2.5 bg-white border border-emerald-300 rounded-xl text-xs font-mono font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                className="flex-1 h-11 px-3.5 bg-white border border-slate-300 rounded-xl text-base sm:text-sm font-mono font-bold text-slate-900 uppercase focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
               <button
                 type="submit"
-                className="px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-black shadow-xs whitespace-nowrap active:scale-95 transition-transform"
+                className="h-11 px-4 bg-slate-900 hover:bg-black text-white rounded-xl text-xs font-bold whitespace-nowrap"
               >
-                Valider & Décaisser Espèces
+                Payer en espèces
               </button>
             </form>
-
             {agencyCodeFeedback && (
-              <div className={`p-3 rounded-xl text-xs font-bold ${agencyCodeFeedback.success ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-rose-100 text-rose-800 border border-rose-200'}`}>
+              <p className={`text-xs font-bold ${agencyCodeFeedback.success ? 'text-emerald-800' : 'text-rose-700'}`}>
                 {agencyCodeFeedback.message}
-              </div>
+              </p>
             )}
           </div>
 
-          {pendingPayouts.length === 0 ? (
-            <div className="text-center py-6 text-slate-400 text-xs">
-              ✅ Toutes les demandes de retrait ont été traitées et payées.
+          {retraits === null ? (
+            <div className="space-y-2 animate-pulse" aria-busy="true" aria-label="Chargement des retraits">
+              <div className="h-14 bg-slate-100 rounded-2xl" />
+              <div className="h-14 bg-slate-100 rounded-2xl" />
+            </div>
+          ) : pendingPayouts.length === 0 ? (
+            <div className="text-center py-6 text-slate-500 text-xs">
+              Aucune demande de retrait en attente.
             </div>
           ) : (
             <div className="divide-y divide-slate-100">
-              {pendingPayouts.map((wth) => (
-                <div key={wth.id} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-bold text-xs text-slate-900">
-                        {wth.amount.toLocaleString('fr-FR')} FCFA pour <strong>{wth.resellerName}</strong>
-                      </p>
-                      {wth.pickupCode && (
-                        <span className="font-mono text-[10px] font-black px-2 py-0.5 bg-emerald-100 text-emerald-900 rounded-md">
-                          Guichet: {wth.pickupCode}
-                        </span>
-                      )}
-                    </div>
+              {pendingPayouts.map((r) => (
+                <div key={r.id} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-bold text-sm text-slate-900">
+                      {fmt(r.montant)} pour {r.revendeur}
+                    </p>
                     <p className="text-[11px] text-slate-500">
-                      Mode : <strong className="text-slate-800">{wth.payoutProvider}</strong> ({wth.payoutPhone}) • Réf : {wth.withdrawalCode}
+                      {LIBELLE_MOYEN[r.moyen] || r.moyen}{r.moyen !== 'cash' ? ` · ${r.telephone}` : ''} · code <span className="font-mono">{r.id}</span>
+                      {' · '}{new Date(r.creeLe).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                     </p>
                   </div>
-
-                  <button
-                    onClick={() => {
-                      const ref = prompt('Entrez la référence de transaction Mobile Money ou Quittance Guichet :');
-                      sugubaStore.processWithdrawal(wth.id, ref || '', state.currentUser.fullName);
-                    }}
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs whitespace-nowrap"
-                  >
-                    Valider le virement/paiement
-                  </button>
+                  <div className="flex gap-2 shrink-0">
+                    {r.moyen === 'cash' ? (
+                      <button
+                        onClick={() => agirSurRetrait(r, 'payer_especes')}
+                        disabled={retraitEnCours === r.id}
+                        className="h-10 px-4 bg-slate-900 hover:bg-black disabled:opacity-50 text-white rounded-xl text-xs font-bold whitespace-nowrap"
+                      >
+                        Argent remis
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => agirSurRetrait(r, 'virer')}
+                        disabled={retraitEnCours === r.id || r.moyen === 'wave'}
+                        className="h-10 px-4 bg-suguba-brand hover:bg-suguba-brand-dark disabled:opacity-50 text-white rounded-xl text-xs font-bold whitespace-nowrap"
+                      >
+                        Envoyer le virement
+                      </button>
+                    )}
+                    <button
+                      onClick={() => agirSurRetrait(r, 'rejeter')}
+                      disabled={retraitEnCours === r.id}
+                      className="h-10 px-3 border border-slate-200 hover:bg-rose-50 disabled:opacity-50 text-rose-700 rounded-xl text-xs font-bold"
+                    >
+                      Refuser
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
+          )}
+
+          {enCoursDeVirement.length > 0 && (
+            <p className="text-[11px] text-slate-500 pt-2 border-t border-slate-100">
+              {enCoursDeVirement.length} virement{enCoursDeVirement.length > 1 ? 's' : ''} en cours chez SasPay : marqué{enCoursDeVirement.length > 1 ? 's' : ''} payé{enCoursDeVirement.length > 1 ? 's' : ''} automatiquement à la confirmation du réseau.
+            </p>
           )}
         </div>
 
@@ -538,12 +612,12 @@ export default function AdminDashboardPage() {
         <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center">
                 <ShieldAlert className="w-4 h-4" />
               </div>
               <div>
                 <h2 className="font-black text-sm text-slate-900">Sécurité Antifraude & Déblocage des Commissions</h2>
-                <p className="text-[10px] text-slate-500">Supervision des alertes OTP et transfert des commissions verrouillées (J+7 / J+14)</p>
+                <p className="text-[11px] text-slate-500">Supervision des alertes OTP et transfert des commissions verrouillées (J+7 / J+14)</p>
               </div>
             </div>
           </div>
@@ -563,7 +637,7 @@ export default function AdminDashboardPage() {
                       <p className="font-bold text-xs text-slate-900">
                         {com.resellerName} — +{com.amount.toLocaleString('fr-FR')} FCFA ({com.productName})
                       </p>
-                      <p className="text-[10px] text-slate-500">
+                      <p className="text-[11px] text-slate-500">
                         Période de garantie : J+{com.safetyWindowDays} • Déblocage prévu : {new Date(com.unlockAt).toLocaleDateString('fr-FR')}
                       </p>
                     </div>
@@ -580,7 +654,7 @@ export default function AdminDashboardPage() {
                           ? { type: 'success', message: '✅ Commission débloquée : elle est désormais retirable par le revendeur.' }
                           : { type: 'error', message: json.error || 'Déblocage impossible.' });
                       }}
-                      className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-2xs"
+                      className="px-3 py-1.5 bg-slate-600 hover:bg-slate-700 text-white rounded-xl text-xs font-bold shadow-2xs"
                       title="Rendre la commission retirable avant la fin du délai de sécurité"
                     >
                       Débloquer avant terme (J+{com.safetyWindowDays})
@@ -596,12 +670,12 @@ export default function AdminDashboardPage() {
         <div className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-xs space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center">
                 <UserCheck className="w-4 h-4" />
               </div>
               <div>
                 <h2 className="font-black text-sm text-slate-900">Validation des Inscriptions & Onboarding</h2>
-                <p className="text-[10px] text-slate-500">Valider les nouveaux Fournisseurs, Livreurs et gérer les paliers Revendeurs & Diaspora</p>
+                <p className="text-[11px] text-slate-500">Valider les nouveaux Fournisseurs, Livreurs et gérer les paliers Revendeurs & Diaspora</p>
               </div>
             </div>
 
@@ -629,7 +703,7 @@ export default function AdminDashboardPage() {
                   onboardingTab === 'resellers' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
-                Revendeurs ({state.resellers.length})
+                Revendeurs
               </button>
               <button
                 onClick={() => setOnboardingTab('diaspora')}
@@ -637,7 +711,7 @@ export default function AdminDashboardPage() {
                   onboardingTab === 'diaspora' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'
                 }`}
               >
-                Diaspora ({(state.diasporaProfiles || []).length})
+                Diaspora
               </button>
             </div>
           </div>
@@ -688,108 +762,29 @@ export default function AdminDashboardPage() {
             </div>
           )}
 
-          {/* TAB 3: Revendeurs */}
+          {/* Revendeurs : la liste et les boutons « Promouvoir VIP » lisaient
+              les revendeurs de DÉMONSTRATION et ne changeaient que la mémoire
+              locale — sans effet réel, puisque le palier est calculé par le
+              serveur sur les ventes livrées (/api/reseller/me). */}
           {onboardingTab === 'resellers' && (
-            <div className="space-y-3">
-              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                Gestion des Paliers Revendeurs :
-              </h3>
-              <div className="divide-y divide-slate-100">
-                {state.resellers.map((res) => {
-                  const resUser = state.users.find(u => u.id === res.userId);
-                  return (
-                    <div key={res.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-bold text-xs text-slate-900">{resUser?.fullName || 'Revendeur'}</p>
-                          <span className="font-mono text-[10px] bg-emerald-100 text-emerald-900 font-bold px-2 py-0.5 rounded">
-                            {res.referralCode}
-                          </span>
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                            res.tier === 'vip' ? 'bg-amber-100 text-amber-800' : res.tier === 'verified' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'
-                          }`}>
-                            Palier: {res.tier.toUpperCase()}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
-                          Tél : {resUser?.phone} • Ventes : {res.successfulOrdersCount} • Solde dispo : {res.availableBalance.toLocaleString('fr-FR')} FCFA
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => {
-                            sugubaStore.updateResellerTier(res.id, 'vip', state.currentUser.fullName);
-                            setActionFeedback({
-                              type: 'success',
-                              message: `👑 Revendeur ${resUser?.fullName} promu au statut VIP (Déblocage à J+3) !`
-                            });
-                          }}
-                          className="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl text-xs font-black"
-                          title="Accorder le statut VIP pour déblocage J+3"
-                        >
-                          👑 Promouvoir VIP (J+3)
-                        </button>
-                        <button
-                          onClick={() => {
-                            sugubaStore.updateResellerTier(res.id, 'verified', state.currentUser.fullName);
-                            setActionFeedback({
-                              type: 'success',
-                              message: `⭐ Revendeur ${resUser?.fullName} passé au statut Vérifié (J+7) !`
-                            });
-                          }}
-                          className="px-2.5 py-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-900 rounded-xl text-xs font-bold"
-                        >
-                          ⭐ Vérifié (J+7)
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+            <div className="space-y-2">
+              <p className="text-sm text-slate-700">
+                Les paliers sont <strong>automatiques</strong> : « Vérifié » dès 10 ventes livrées (commissions débloquées à 7 jours),
+                « VIP » dès 30 (3 jours). Un nouveau revendeur attend 14 jours.
+              </p>
+              <p className="text-[11px] text-slate-500">
+                Les nouvelles inscriptions revendeur apparaissent dans « Comptes en attente de validation ».
+              </p>
             </div>
           )}
 
-          {/* TAB 4: Diaspora */}
+          {/* Diaspora : la liste venait des profils de DÉMONSTRATION. */}
           {onboardingTab === 'diaspora' && (
-            <div className="space-y-3">
-              <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wider">
-                Membres Diaspora Inscrits :
-              </h3>
-              {(state.diasporaProfiles || []).length === 0 ? (
-                <p className="text-xs text-slate-400 py-3">Aucun membre diaspora inscrit pour le moment.</p>
-              ) : (
-                <div className="divide-y divide-slate-100">
-                  {(state.diasporaProfiles || []).map((dia) => (
-                    <div key={dia.id} className="py-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-bold text-xs text-slate-900">{dia.fullName}</p>
-                          <span className="text-[10px] bg-purple-100 text-purple-900 font-bold px-2 py-0.5 rounded">
-                            {dia.countryOfResidence}
-                          </span>
-                          <span className="text-[10px] bg-slate-100 text-slate-700 font-bold px-2 py-0.5 rounded">
-                            Devise : {dia.currency}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
-                          WhatsApp : {dia.phone} • Bénéficiaire au Mali : <strong className="text-slate-800">{dia.beneficiaryNameInMali}</strong> ({dia.beneficiaryPhoneInMali}, {dia.beneficiaryNeighborhoodInMali})
-                        </p>
-                      </div>
-
-                      <a
-                        href={`https://wa.me/${dia.phone.replace(/[^\d]/g, '')}?text=Bonjour%20${encodeURIComponent(dia.fullName)}%20bienvenue%20sur%20Suguba%20Diaspora%20!`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-3 py-1.5 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl text-xs font-bold flex items-center gap-1 self-start sm:self-auto"
-                      >
-                        <MessageCircle className="w-3.5 h-3.5 fill-current" />
-                        <span>Contacter WhatsApp</span>
-                      </a>
-                    </div>
-                  ))}
-                </div>
-              )}
+            <div className="space-y-2">
+              <p className="text-sm text-slate-700">
+                Les commandes diaspora arrivent avec les autres dans « Appels à passer » : leur repère commence par
+                « Commande Diaspora » et indique le pays de l&apos;acheteur. Elles sont payées par carte avant l&apos;appel.
+              </p>
             </div>
           )}
 
@@ -830,71 +825,13 @@ export default function AdminDashboardPage() {
               </button>
             </div>
 
-            {/* Section 1: Coordonnées Administrateur */}
-            <div className="space-y-3.5 bg-slate-50 p-4 rounded-2xl border border-slate-200">
-              <h4 className="font-black text-xs text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-emerald-600" />
-                <span>1. Vos Coordonnées Super Admin</span>
-              </h4>
-
-              <div className="space-y-2">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Nom Complet de l&apos;Administrateur :</label>
-                  <input
-                    type="text"
-                    value={adminNameInput}
-                    onChange={(e) => setAdminNameInput(e.target.value)}
-                    placeholder="Ex: Mahamane Haidara..."
-                    className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Numéro de Téléphone (SMS / WhatsApp Ops) :</label>
-                  <input
-                    type="tel"
-                    value={adminPhoneInput}
-                    onChange={(e) => setAdminPhoneInput(e.target.value)}
-                    placeholder="Ex: +223 89 46 00 00 ou +223 76 12 34 56..."
-                    className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Ville & Emplacement du Hub Central :</label>
-                  <input
-                    type="text"
-                    value={adminCityInput}
-                    onChange={(e) => setAdminCityInput(e.target.value)}
-                    placeholder="Ex: Bamako (Hamdallaye ACI 2000)..."
-                    className="w-full px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  />
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    sugubaStore.updateAdminProfile(adminNameInput, adminPhoneInput, adminCityInput);
-                    setActionFeedback({
-                      type: 'success',
-                      message: `✅ Profil Super Admin mis à jour avec succès : ${adminNameInput} (${adminPhoneInput}) !`
-                    });
-                    setShowConfigModal(false);
-                  }}
-                  className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-black shadow-xs transition-colors mt-2"
-                >
-                  Enregistrer les Coordonnées Super Admin
-                </button>
-              </div>
-            </div>
-
             {/* Section 1bis: Promouvoir un nouvel Admin (accès réel, pas la démo) */}
-            <div className="space-y-3.5 bg-purple-50/70 p-4 rounded-2xl border border-purple-200">
-              <h4 className="font-black text-xs text-purple-900 uppercase tracking-wider flex items-center gap-1.5">
-                <UserCog className="w-4 h-4 text-purple-700" />
-                <span>1bis. Promouvoir un compte Admin</span>
+            <div className="space-y-3.5 bg-slate-50/70 p-4 rounded-2xl border border-slate-200">
+              <h4 className="font-black text-xs text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                <UserCog className="w-4 h-4 text-slate-700" />
+                <span>Donner l'accès admin</span>
               </h4>
-              <p className="text-[11px] text-purple-800">
+              <p className="text-[11px] text-slate-800">
                 Donne le rôle admin (accès immédiat, sans validation) à un numéro déjà inscrit sur Suguba.
                 Le tout premier compte admin, lui, se crée uniquement en ligne de commande — voir <code className="font-mono">scripts/create-admin.js</code>.
               </p>
@@ -904,7 +841,7 @@ export default function AdminDashboardPage() {
                   value={promotePhoneInput}
                   onChange={(e) => setPromotePhoneInput(e.target.value)}
                   placeholder="+223 70 00 00 00"
-                  className="flex-1 px-3.5 py-2 bg-white border border-purple-300 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  className="flex-1 px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-slate-500"
                 />
                 <button
                   type="button"
@@ -930,7 +867,7 @@ export default function AdminDashboardPage() {
                       setPromoteBusy(false);
                     }
                   }}
-                  className="px-4 py-2 bg-purple-700 hover:bg-purple-800 disabled:opacity-50 text-white rounded-xl text-xs font-black shadow-xs transition-colors whitespace-nowrap"
+                  className="px-4 py-2 bg-slate-700 hover:bg-slate-800 disabled:opacity-50 text-white rounded-xl text-xs font-black shadow-xs transition-colors whitespace-nowrap"
                 >
                   {promoteBusy ? '...' : 'Promouvoir'}
                 </button>
@@ -999,28 +936,6 @@ export default function AdminDashboardPage() {
                   className="w-full py-2 bg-white hover:bg-rose-100 text-rose-700 border border-rose-300 rounded-xl text-xs font-bold transition-colors"
                 >
                   Vider aussi l&apos;affichage du catalogue
-                </button>
-
-                <button
-                  type="button"
-                  onClick={async () => {
-                    if (await confirmer({
-                      titre: 'Recharger le jeu de démonstration ?',
-                      message: "Uniquement dans l'affichage de cet appareil : sans effet sur la base Supabase.",
-                      confirmer: 'Recharger',
-                    })) {
-                      sugubaStore.resetDemoData();
-                      setActionFeedback({
-                        type: 'success',
-                        message: '🔄 Données de démonstration rechargées dans l\'affichage local.'
-                      });
-                      setShowConfigModal(false);
-                    }
-                  }}
-                  className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-1"
-                >
-                  <RotateCcw className="w-3.5 h-3.5" />
-                  <span>Recharger le jeu de démo (local)</span>
                 </button>
               </div>
             </div>
