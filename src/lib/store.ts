@@ -11,7 +11,8 @@ import {
   INITIAL_AUDIT_LOGS, INITIAL_SAV_TICKETS 
 } from './mock-data';
 import { cloudSyncService } from './cloud-sync';
-import { genererNumeroCommande } from './order-number';
+import { soumettreCommande } from './order-submit';
+import type { OrderInput } from './order-input';
 
 // Passé de _v1 à _v2 le 2026-08-21, en même temps que le retrait du catalogue
 // de démo (mock-data.ts). hydrateFromLocalStorage écrase les valeurs par
@@ -331,137 +332,16 @@ export const sugubaStore = {
     notify();
   },
 
-  // 3. Client ou Revendeur : Créer une commande
-  createOrder: (data: {
-    productId: string;
-    quantity: number;
-    customerName: string;
-    customerPhone: string;
-    city: string;
-    neighborhood: string;
-    landmark: string;
-    deliveryNotes?: string;
-    resellerCode?: string;
-    pickupPointId?: string;
-    promoCode?: string;
-    /**
-     * Devis obtenu de /api/orders/quote. S'il est fourni, la commande locale en
-     * reprend les montants : ce sont ceux que le serveur enregistrera, calculés
-     * par la même fonction. Sans lui (écran hors ligne, ancien appelant), les
-     * valeurs locales s'appliquent et le serveur les corrigera de toute façon.
-     */
-    devis?: { prixUnitaire: number; montantArticles: number; fraisLivraison: number; remise: number; total: number };
-  }) => {
-    const product = globalState.products.find(p => p.id === data.productId);
-    if (!product) throw new Error('Produit introuvable');
-
-    // Uniquement le code explicitement fourni par l'appelant — jamais de
-    // repli sur globalState.currentUser. Ce repli existait pour la commande
-    // manuelle du dashboard revendeur (CreateOrderModal), mais ce composant
-    // passe déjà son propre resellerCode explicitement ; le repli était donc
-    // mort pour cet usage et actif uniquement sur le parcours public
-    // anonyme (/p/[slug]) — où currentUser vaut toujours le revendeur
-    // fictif de démo par défaut. Conséquence réelle : toute commande passée
-    // sans lien de parrainage attribuait quand même une commission (sur le
-    // champ orders.reseller_commission) à ce faux revendeur. Découvert le
-    // 2026-09-08 en testant le parcours visiteur sans compte.
-    const reseller = data.resellerCode
-      ? globalState.resellers.find(r => r.referralCode.toUpperCase() === data.resellerCode?.toUpperCase())
-      : undefined;
-
-    const resellerUser = reseller ? globalState.users.find(u => u.id === reseller?.userId) : undefined;
-    const orderNumber = genererNumeroCommande();
-    const otp = Math.floor(1000 + Math.random() * 9000).toString(); // Code secret à 4 chiffres
-
-    // Les montants ne font plus foi ici : /api/orders/sync les recalcule
-    // côté serveur à partir du produit en base. On affiche le devis serveur
-    // quand on l'a, pour que l'écran de confirmation montre le vrai total.
-    const unitPrice = data.devis?.prixUnitaire ?? (product.publicPrice || product.supplierPrice);
-    const totalProductAmount = data.devis?.montantArticles ?? unitPrice * data.quantity;
-    const deliveryFee = data.devis?.fraisLivraison ?? 1500;
-    const discountAmount = data.devis?.remise ?? 0;
-    const totalAmount = data.devis?.total ?? totalProductAmount + deliveryFee;
-    const commissionAmount = (product.resellerCommission || 0) * data.quantity;
-
-    const newOrder: Order = {
-      id: `ord-${Date.now()}`,
-      orderNumber,
-      productId: product.id,
-      productName: product.name,
-      productImage: product.images[0],
-      resellerId: reseller?.id,
-      resellerName: resellerUser?.fullName,
-      resellerCode: reseller?.referralCode,
-      resellerCommission: commissionAmount,
-      quantity: data.quantity,
-      unitPrice,
-      totalProductAmount,
-      deliveryFee,
-      totalAmount,
-      customerName: data.customerName,
-      customerPhone: data.customerPhone,
-      city: data.city || 'Bamako',
-      neighborhood: data.neighborhood,
-      landmark: data.landmark,
-      deliveryNotes: data.deliveryNotes,
-      pickupPointId: data.pickupPointId,
-      promoCode: data.promoCode,
-      discountAmount,
-      status: 'pending_call', // En attente d'appel de confirmation Suguba
-      deliveryOtp: otp,
-      paymentMethod: 'cash_on_delivery',
-      paymentCollected: false,
-      createdAt: new Date().toISOString(),
-    };
-
-    // Créer la commission potentielle si un revendeur est rattaché
-    let updatedCommissions = [...globalState.commissions];
-    if (reseller && commissionAmount > 0) {
-      // Système de Réputation Suguba : Nouveau = 14 jours, Vérifié = 7 jours, VIP = 3 jours
-      const safetyDays = reseller.tier === 'vip' ? 3 : reseller.tier === 'verified' ? 7 : 14;
-      const newCommission: Commission = {
-        id: `com-${Date.now()}`,
-        commissionCode: `COM-${Math.floor(100 + Math.random() * 900)}`,
-        resellerId: reseller.id,
-        resellerName: resellerUser?.fullName || 'Revendeur',
-        orderId: newOrder.id,
-        orderNumber: newOrder.orderNumber,
-        productName: product.name,
-        amount: commissionAmount,
-        status: 'potential',
-        safetyWindowDays: safetyDays,
-        unlockAt: new Date(Date.now() + safetyDays * 24 * 60 * 60 * 1000).toISOString(),
-        createdAt: new Date().toISOString(),
-      };
-      updatedCommissions = [newCommission, ...updatedCommissions];
-    }
-
+  // REQ-013 : aucun reçu ni commission locale avant confirmation PostgreSQL.
+  createOrder: async (data: OrderInput, idempotencyKey: string): Promise<Order> => {
+    const order = await soumettreCommande({ input: data, key: idempotencyKey });
     globalState = {
       ...globalState,
-      orders: [newOrder, ...globalState.orders],
-      commissions: updatedCommissions,
-      auditLogs: [
-        {
-          id: `log-${Date.now()}`,
-          actorName: resellerUser?.fullName || data.customerName,
-          role: resellerUser ? 'reseller' : 'customer',
-          action: 'CREATE_ORDER',
-          entityType: 'order',
-          entityId: newOrder.id,
-          details: `Commande ${orderNumber} créée pour ${data.customerName} (${data.neighborhood}). Montant: ${totalAmount} FCFA. Code OTP généré: ${otp}.`,
-          createdAt: new Date().toISOString(),
-        },
-        ...globalState.auditLogs
-      ]
+      orders: [order, ...globalState.orders.filter(o => o.id !== order.id)],
     };
-    // Sync order to Supabase PostgreSQL Cloud in background
-    if (typeof window !== 'undefined') {
-      cloudSyncService.pushOrderToCloud(newOrder).catch((err) => {
-        console.warn('Background Supabase cloud push non-blocking error:', err);
-      });
-    }
-    notify();
-    return newOrder;
+    // Un stockage local plein ne transforme pas une commande enregistrée en échec.
+    try { notify(); } catch { listeners.forEach(listener => listener()); }
+    return order;
   },
 
   // 4. Admin : Valider l'appel téléphonique de confirmation

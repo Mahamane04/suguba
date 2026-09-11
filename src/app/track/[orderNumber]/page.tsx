@@ -28,9 +28,9 @@ export default function OrderTrackingPage() {
   const [recherche, setRecherche] = useState(false);
 
   const orderLocal = state.orders.find(
-    (o) => o.orderNumber.toUpperCase() === orderNumber?.toUpperCase()
+    (o) => o.creationConfirmed && o.orderNumber.toUpperCase() === orderNumber?.toUpperCase()
   );
-  const order = orderLocal || commandeDistante;
+  const order = commandeDistante || orderLocal;
 
   const rechercher = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -5,6 +5,40 @@ vérifié en production). C'est LA fiche de référence : les documents de `docs
 
 ---
 
+## Travail local du 11 septembre 2026 — non déployé
+
+**Lot REQ-013 / TASK-017 : commande confirmée après enregistrement atomique.**
+Le code local ajoute `/api/orders/create` ; `/api/orders/sync` ne sert plus qu'aux
+mises à jour internes authentifiées. Les trois formulaires (produit, revendeur,
+diaspora) attendent le reçu serveur avant tout succès ou démarrage de paiement.
+
+- Identifiant et numéro de commande, code secret et montants générés/calculés côté serveur.
+- Attribution par le code revendeur transmis explicitement, même si son profil n'est
+  pas chargé dans le navigateur. Un code inconnu ou une erreur de lecture est signalé.
+- Transaction PostgreSQL unique : commande + commission `pending` + reçu de reprise.
+  Échec d'une écriture = annulation complète. Même clé = même reçu, sans doublon.
+- Clé de reprise aléatoire conservée dans l'onglet, seul son hash stocké en base.
+  Bouton « Reprendre ma commande » après coupure/rechargement ; pas de remplacement
+  silencieux des coordonnées d'une demande incertaine.
+- Devis serveur dans les trois formulaires, ancien devis invalidé lors d'un changement
+  de quantité/ville. Aucun coût de repli après une erreur de lecture des réglages.
+- La confirmation n'affiche jamais une autre commande ni un ancien brouillon local.
+- `npm test` exécute maintenant le code réel et PostgreSQL embarqué (PGlite), avec les
+  migrations du dépôt. Les anciens exemples sont conservés via `npm run test:legacy`.
+
+**Déploiement restant :** appliquer `supabase/migration-order-creation.sql` AVANT
+de déployer ce code. Migration validée localement, **pas appliquée en production**.
+Elle ajoute `order_creation_requests` et `create_order_with_commission`, et retire
+l'ancienne politique d'INSERT public sur les commandes. Sans elle, le nouveau parcours
+échoue explicitement en 503. Aucun paiement réel ni écriture de test en production
+n'a été effectué pour ce lot. Après déploiement, recharger les anciens onglets : leur
+ancien parcours de création `/api/orders/sync` n'est plus accepté.
+
+Preuves et limites : `docs/qa/order-creation-tests.md`. Les sections suivantes décrivent
+encore la version déployée, avant ce lot local.
+
+---
+
 ## Fait et déployé
 
 1. **Audit de sécurité initial** — RLS resserrées, session signée HMAC, middleware par rôle.

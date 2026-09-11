@@ -7,28 +7,16 @@ import Header from '@/components/common/Header';
 import Carrousel from '@/components/product/Carrousel';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 import { partagerProduit, prechargerImage, useCodeRevendeur } from '@/lib/partage';
-import { useSugubaStore, sugubaStore } from '@/lib/store';
-import { cloudSyncService } from '@/lib/cloud-sync';
+import { useSugubaStore } from '@/lib/store';
+import { useOrderCheckout } from '@/lib/useOrderCheckout';
+import OrderRecovery from '@/components/common/OrderRecovery';
+import { useOrderQuote } from '@/lib/useOrderQuote';
+import type { OrderInput } from '@/lib/order-input';
 import Button from '@/components/ui/Button';
 import { 
   ShieldCheck, Truck, Clock, MapPin, Phone, 
   User, CheckCircle2, ArrowRight, ArrowLeft, Star, Sparkles
 } from 'lucide-react';
-
-/** Devis renvoyé par /api/orders/quote — ne contient aucune marge ni commission. */
-interface DevisPublic {
-  quantite: number;
-  prixUnitaire: number;
-  montantArticles: number;
-  modeLivraison: 'domicile' | 'relais';
-  ville: string;
-  pointRelais: { id: string; nom: string } | null;
-  fraisLivraison: number;
-  codePromo: string | null;
-  remise: number;
-  avisPromo: 'invalide' | 'plafonnee' | null;
-  total: number;
-}
 
 interface ChoixLivraison {
   fraisLivraisonClient: number;
@@ -79,7 +67,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   // personne n'encaissait jamais cet acompte. Le client croyait avoir moins à
   // payer, et le livreur lui réclamait la totalité.
   const [deliveryNotes, setDeliveryNotes] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { submitOrder, isSubmitting, resetAttempt, recovery } = useOrderCheckout(`product:${resolvedParams.slug}`);
 
   // Code promo : saisi ici, VÉRIFIÉ par le serveur. La liste des codes et leurs
   // montants étaient en dur dans cette page, et la remise affichée n'était
@@ -106,36 +94,27 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
       .catch(() => {});
   }, []);
 
-  // Le total affiché est le devis du SERVEUR, calculé par la même fonction
-  // que celle qui enregistrera la commande. Un seul calcul, donc un seul
-  // montant : ce que le client lit est ce que le livreur lui réclamera.
-  const [devis, setDevis] = useState<DevisPublic | null>(null);
-  const [devisEnCours, setDevisEnCours] = useState(false);
-  useEffect(() => {
-    if (!product) return;
-    const controle = new AbortController();
-    const minuteur = setTimeout(() => {
-      setDevisEnCours(true);
-      fetch('/api/orders/quote', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: controle.signal,
-        body: JSON.stringify({
-          productId: product.id,
-          quantity,
-          city,
-          pickupPointId: fulfillmentMethod === 'pickup_point' ? pickupPointId : undefined,
-          promoCode: promoSoumis || undefined,
-          resellerCode: refCode || undefined,
-        }),
-      })
-        .then((r) => (r.ok ? r.json() : null))
-        .then((j) => { if (j?.devis) setDevis(j.devis); })
-        .catch(() => {})
-        .finally(() => setDevisEnCours(false));
-    }, 250);
-    return () => { clearTimeout(minuteur); controle.abort(); };
-  }, [product?.id, quantity, city, pickupPointId, fulfillmentMethod, promoSoumis, refCode]);
+  const { devis, loading: devisEnCours, error: erreurDevis } = useOrderQuote(product ? {
+    productId: product.id, quantity, city,
+    pickupPointId: fulfillmentMethod === 'pickup_point' ? pickupPointId : undefined,
+    promoCode: promoSoumis || undefined, resellerCode: refCode || undefined,
+  } : null);
+
+  const finishOrder = async (data?: OrderInput) => {
+    try {
+      const order = await submitOrder(data);
+      void fetch('/api/sms/send-otp', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderNumber: order.orderNumber }),
+      }).catch(() => {});
+      router.push(`/order-success/${order.orderNumber}`);
+      resetAttempt();
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Erreur lors de la validation');
+    }
+  };
+  const recoveryNotice = <OrderRecovery attempt={recovery} disabled={isSubmitting}
+    onResume={() => { void finishOrder(); }} />;
 
   if (!product) {
     return (
@@ -146,6 +125,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             <div className="w-14 h-14 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center mx-auto text-2xl font-black">
               !
             </div>
+            {recoveryNotice}
             <h1 className="text-lg font-black text-slate-900">Produit introuvable</h1>
             <p className="text-sm text-slate-500">
               Ce lien ne correspond à aucun produit disponible sur Suguba — il a peut-être expiré ou été mal recopié.
@@ -177,6 +157,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
               <Clock className="w-7 h-7" />
             </div>
+            {recoveryNotice}
             <h1 className="text-lg font-black text-slate-900">Pas encore en vente</h1>
             <p className="text-sm text-slate-500">
               « {product.name} » attend son prix de vente. Tant qu&apos;il n&apos;est pas publié, il ne peut être ni commandé ni partagé.
@@ -210,7 +191,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   const unitPrice = devis?.prixUnitaire ?? (product.publicPrice || product.supplierPrice);
   const totalAmount = devis?.total ?? unitPrice * quantity;
 
-  const handleOrderSubmit = (e: React.FormEvent) => {
+  const handleOrderSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customerName || !customerPhone) {
       alert('Veuillez renseigner votre nom et votre numéro de téléphone.');
@@ -231,9 +212,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
     const finalNeighborhood = relais ? 'Point Relais Partenaire' : neighborhood;
     const finalLandmark = relais ? relais.nom : landmark;
 
-    setIsSubmitting(true);
-    try {
-      const order = sugubaStore.createOrder({
+    await finishOrder({
         productId: product.id,
         quantity: devis.quantite,
         customerName,
@@ -245,38 +224,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
         resellerCode: refCode || undefined,
         pickupPointId: relais?.id,
         promoCode: devis.codePromo || undefined,
-        devis,
       });
-
-      // Déclenchement de l'envoi du SMS OTP en tâche de fond
-      // La route SMS ne lit plus que le numéro de commande : téléphone, code
-      // secret et montant sont relus en base, jamais acceptés du navigateur.
-      // createOrder pousse vers Supabase sans attendre — on force donc la
-      // synchro avant, sinon le SMS partirait avant que la commande existe.
-      // La route de synchro est idempotente, ce second envoi est sans risque.
-      cloudSyncService
-        .pushOrderToCloud(order)
-        .then((enregistree) => {
-          // Sans cette garde, une commande jamais arrivée en base déclenchait
-          // quand même l'envoi du SMS : le client recevait un code de
-          // livraison pour une commande que personne ne verrait jamais.
-          if (!enregistree) {
-            console.error(`[COMMANDE] ${order.orderNumber} non enregistrée — SMS non envoyé.`);
-            return;
-          }
-          return fetch('/api/sms/send-otp', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ orderNumber: order.orderNumber }),
-          });
-        })
-        .catch((err) => console.warn('Notification SMS différée:', err));
-
-      router.push(`/order-success/${order.orderNumber}`);
-    } catch (err: any) {
-      alert(err.message || 'Erreur lors de la validation');
-      setIsSubmitting(false);
-    }
   };
 
   return (
@@ -285,6 +233,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
 
       <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
         
+        {recoveryNotice}
         {/* Referral info banner if referred */}
         {resellerUser && (
           <div className="bg-emerald-50 border border-emerald-300 rounded-2xl p-3.5 flex items-center justify-between">
@@ -656,7 +605,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                     </div>
                   </>
                 ) : (
-                  <p className="text-xs text-slate-500">{devisEnCours ? 'Calcul du total…' : 'Total indisponible pour le moment.'}</p>
+                  <p className="text-xs text-slate-500">{devisEnCours ? 'Calcul du total…' : erreurDevis || 'Total indisponible pour le moment.'}</p>
                 )}
               </div>
 

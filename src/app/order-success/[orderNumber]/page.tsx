@@ -15,7 +15,26 @@ export default function OrderSuccessPage({ params }: { params: Promise<{ orderNu
   const resolvedParams = use(params);
   const state = useSugubaStore();
 
-  const order = state.orders.find(o => o.orderNumber === resolvedParams.orderNumber) || state.orders[0];
+  const order = state.orders.find(o => o.orderNumber === resolvedParams.orderNumber);
+
+  if (!order?.creationConfirmed) {
+    return (
+      <div className="min-h-screen bg-slate-50">
+        <Header />
+        <main className="mx-auto max-w-xl px-4 py-12 space-y-4">
+          <h1 className="text-xl font-bold text-slate-900">Retrouvez votre commande</h1>
+          <p className="text-sm text-slate-600">
+            Le reçu de cette commande n’est pas disponible sur cet appareil.
+            Vérifiez son enregistrement avec votre numéro de commande et votre téléphone.
+          </p>
+          <Link href={`/track/${encodeURIComponent(resolvedParams.orderNumber)}`}
+            className="inline-flex min-h-12 items-center rounded-2xl bg-slate-900 px-5 py-3 font-bold text-white">
+            Vérifier ma commande
+          </Link>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 pb-16">

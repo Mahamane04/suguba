@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { chargerReglages } from '@/lib/platform-settings';
-import { calculerCommande } from '@/lib/pricing';
+import { calculerCommande, completerReglages, QUANTITE_MAX } from '@/lib/pricing';
 
 /**
  * Devis d'une commande, pour affichage sur la page produit — publique.
@@ -29,13 +28,18 @@ export async function POST(req: NextRequest) {
   const admin = getSupabaseAdmin();
   if (!admin) return NextResponse.json({ error: 'Service indisponible.' }, { status: 503 });
 
-  const { data: produit } = await admin
+  if (!Number.isInteger(quantity) || quantity < 1 || quantity > QUANTITE_MAX) {
+    return NextResponse.json({ error: 'Quantité invalide.' }, { status: 400 });
+  }
+
+  const { data: produit, error: produitErreur } = await admin
     .from('products')
     .select('supplier_price, public_price, status, commission_proposee')
     .eq('id', productId)
     .maybeSingle();
 
-  if (!produit || produit.status !== 'approved') {
+  if (produitErreur) return NextResponse.json({ error: 'Service indisponible.' }, { status: 503 });
+  if (!produit || produit.status !== 'approved' || Number(produit.public_price) <= 0) {
     return NextResponse.json({ error: 'Produit indisponible.' }, { status: 404 });
   }
 
@@ -43,15 +47,20 @@ export async function POST(req: NextRequest) {
   // qui doit laisser la commission du revendeur intacte.
   let revendeurAttribue = false;
   if (resellerCode && typeof resellerCode === 'string') {
-    const { data: revendeur } = await admin
+    const { data: revendeur, error: revendeurErreur } = await admin
       .from('profiles')
       .select('id')
-      .eq('reseller_code', resellerCode.trim())
+      .eq('reseller_code', resellerCode.trim().toUpperCase())
       .maybeSingle();
-    revendeurAttribue = Boolean(revendeur);
+    if (revendeurErreur) return NextResponse.json({ error: 'Service indisponible.' }, { status: 503 });
+    if (!revendeur) return NextResponse.json({ error: 'Code revendeur introuvable. Vérifiez le lien partagé.' }, { status: 400 });
+    revendeurAttribue = true;
   }
 
-  const { reglages } = await chargerReglages();
+  const { data: settings, error: settingsError } = await admin.from('platform_settings')
+    .select('valeurs, updated_at').eq('id', 1).maybeSingle();
+  if (settingsError) return NextResponse.json({ error: 'Service indisponible.' }, { status: 503 });
+  const reglages = completerReglages(settings?.valeurs || {});
   const d = calculerCommande(
     {
       prixFournisseur: Number(produit.supplier_price),
@@ -68,6 +77,9 @@ export async function POST(req: NextRequest) {
     reglages,
   );
 
+  if (d.tarif.statut === 'sous_plancher' || !Number.isFinite(d.total) || d.total <= 0) {
+    return NextResponse.json({ error: 'Le prix de ce produit doit être actualisé.' }, { status: 409 });
+  }
   return NextResponse.json({
     devis: {
       quantite: d.quantite,
@@ -82,5 +94,5 @@ export async function POST(req: NextRequest) {
       avisPromo: d.avisPromo,
       total: d.total,
     },
-  });
+  }, { headers: { 'Cache-Control': 'no-store' } });
 }

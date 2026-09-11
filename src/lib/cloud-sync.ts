@@ -205,9 +205,8 @@ class CloudSyncService {
     }
   }
 
-  // 5. Push d'une commande — via /api/orders/sync. La création reste
-  // publique (client sans compte), la mise à jour de statut exige une
-  // session admin/livreur (voir la route pour le détail).
+  // 5. Mise à jour d'une commande existante, avec une session interne.
+  // La création passe exclusivement par /api/orders/create.
   public async pushOrderToCloud(order: Order): Promise<boolean> {
     try {
       const res = await fetch('/api/orders/sync', {
@@ -217,21 +216,18 @@ class CloudSyncService {
       });
 
       if (!res.ok) {
-        // Une commande qui n'atteint pas Supabase n'existe pour personne :
-        // ni le service client qui doit rappeler, ni le livreur, ni le
-        // paiement. Le client, lui, voit sa page de confirmation et son code
-        // secret. Cet écart doit être bruyant côté journal, faute de quoi
-        // personne ne le découvre avant l'appel mécontent.
+        // Conserver une trace de la mise à jour interne refusée.
         const detail = await res.json().catch(() => ({} as any));
         console.error(
-          `[SYNC] Commande ${order.orderNumber} NON enregistrée en base (HTTP ${res.status}) :`,
+          `[SYNC] Commande ${order.orderNumber} NON mise à jour (HTTP ${res.status}) :`,
           detail?.error || 'raison inconnue',
         );
         return false;
       }
-      return true;
+      const json = await res.json().catch(() => null);
+      return json?.success === true && json?.cloud === true;
     } catch (err) {
-      console.error(`[SYNC] Commande ${order.orderNumber} NON enregistrée (réseau) :`, err);
+      console.error(`[SYNC] Commande ${order.orderNumber} NON mise à jour (réseau) :`, err);
       return false;
     }
   }

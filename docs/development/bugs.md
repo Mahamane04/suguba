@@ -18,3 +18,7 @@
 | `BUG-011` | iPhone : barre du bas flottant au milieu de l'écran après fermeture du clavier | Moyen | **RÉSOLU** (2026-09-11) | Barre masquée pendant la saisie (`useClavierOuvert`). |
 | `BUG-012` | `/api/auth/me` renvoyait 401 à tout visiteur (erreur console sur chaque page) | Faible | **RÉSOLU** (2026-09-11) | Retirée des routes « session requise » du middleware. |
 | `BUG-013` | Formulaire fournisseur : garantie, délai et adresse du stock jamais enregistrés | Moyen | **OUVERT** | Décision de l'utilisateur : colonnes à créer ou champs à retirer. |
+| `BUG-014` | Confirmation avant enregistrement, doubles envois et erreurs de commission ignorées | Critique | **CORRIGÉ LOCALEMENT** | REQ-013 : création atomique, attente serveur et reprise par clé ; migration/déploiement en attente. |
+| `BUG-015` | Code revendeur perdu lorsque son profil n'est pas présent dans le store client | Élevé | **CORRIGÉ LOCALEMENT** | Transmission explicite du code, résolution en base, erreur si code inconnu. |
+| `BUG-016` | Confirmation d'une commande absente remplacée par la première commande locale | Élevé | **CORRIGÉ LOCALEMENT** | Aucun repli ; proposition de suivi avec numéro et téléphone. |
+| `BUG-017` | Ancien devis encore utilisable après changement de quantité/ville ; totaux livraison en dur dans d'autres formulaires | Élevé | **CORRIGÉ LOCALEMENT** | Devis serveur partagé, invalidation immédiate, affichage du total avec livraison. |

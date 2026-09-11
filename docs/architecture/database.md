@@ -9,6 +9,11 @@
 
 ## Schéma réel (2026-09-11)
 
+**Ajout local non déployé** : `migration-order-creation.sql` crée la table privée
+`order_creation_requests` (hash de clé, empreinte de demande, commande, reçu initial)
+et la RPC `create_order_with_commission`. Cette RPC service_role enregistre commande,
+commission et reçu en une transaction. Ne pas supposer leur présence en production.
+
 | Table | Rôle | Colonnes à connaître |
 | :--- | :--- | :--- |
 | `profiles` | Un compte (Google/email) | `id`, `auth_user_id`, `email`, `phone` (vide = profil incomplet), `role`, `status`, `reseller_code`, `metadata` |

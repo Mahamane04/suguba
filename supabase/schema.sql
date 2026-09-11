@@ -157,19 +157,10 @@ CREATE POLICY "Public read approved products"
   ON public.products FOR SELECT
   USING (status = 'approved');
 
--- Commandes : la création reste publique (client sans compte, cœur du
--- produit), mais la lecture/modification en masse ne l'est plus — un
--- visiteur ne doit plus pouvoir lister ou modifier les commandes de tout le
--- monde. Le suivi d'une commande précise se fait via la fonction
--- `track_order` ci-dessous (nécessite de connaître le numéro ET le
--- téléphone exacts, pas un simple SELECT * ouvert).
-CREATE POLICY "Public insert orders"
-  ON public.orders FOR INSERT
-  WITH CHECK (
-    customer_name IS NOT NULL AND length(trim(customer_name)) > 0 AND
-    customer_phone IS NOT NULL AND length(trim(customer_phone)) >= 8 AND
-    total_amount >= 0
-  );
+-- Commandes : création invité via /api/orders/create (service_role), jamais
+-- par INSERT anon. Les montants doivent venir du moteur serveur.
+-- migration-order-creation.sql ajoute la transaction commande + commission
+-- et supprime cette ancienne politique sur les installations existantes.
 
 -- Aucune politique SELECT/UPDATE publique sur orders : admin/livreur/
 -- desk d'appel passent par le serveur (service_role), pas par le

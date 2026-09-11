@@ -62,11 +62,7 @@ const API_SESSION_REQUISE = [
   '/api/auth/refresh-session',
   '/api/auth/request-role',
   '/api/orders/feed',
-  // ⚠️ PAS /api/orders/sync : sa CRÉATION est publique — c'est le cœur du
-  // parcours client sans compte, un acheteur qui commande depuis /p/[slug]
-  // n'a pas de session. La route exige elle-même une session admin/livreur/
-  // fournisseur pour les MISES À JOUR de statut, ce qui est le vrai risque.
-  // L'avoir mise ici a cassé la commande invité en production le 2026-09-10.
+  '/api/orders/sync', // Mises à jour internes ; création publique sur /api/orders/create.
   '/api/products/sync',
   '/api/products/upload-image',
   '/api/products/images',
@@ -93,9 +89,7 @@ const API_SESSION_REQUISE = [
  *   /api/orders/track            — suivi de commande par un client sans compte ;
  *                                  authentifiée par le contenu (numéro + téléphone)
  *                                  et protégée par une limitation de tentatives.
- *   /api/orders/sync             — sa CRÉATION est publique (commande invité) ;
- *                                  la route exige une session interne pour les
- *                                  mises à jour de statut, qui sont le vrai risque.
+ *   /api/orders/create           — création atomique invité avec clé de reprise.
  */
 
 const ROLE_BY_PREFIX: { prefix: string; role: string }[] = [
@@ -223,9 +217,9 @@ export const config = {
     '/api/auth/complete-profile',
     '/api/auth/refresh-session',
     '/api/auth/request-role',
-    // `/api/orders/feed` seulement, jamais `/api/orders/:path*` : la création
-    // de commande (`/api/orders/sync`) doit rester ouverte aux clients sans compte.
+    // Les créations invité sur /api/orders/create restent publiques.
     '/api/orders/feed',
+    '/api/orders/sync',
     '/api/products/:path*',
   ],
 };

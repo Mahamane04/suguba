@@ -14,3 +14,4 @@
 | **REQ-010** (Validation OTP Livraison) | `TASK-010` | `src/app/driver/delivery/[id]/page.tsx` | `TEST-010` (Vérification code OTP) | 🔄 En cours |
 | **REQ-011** (Machine d'États Commissions) | `TASK-011` | `src/lib/commissions.ts` | `TEST-011` (Pending -> Locked -> Available) | 🔄 En cours |
 | **REQ-012** (Retraits Mobile Money) | `TASK-012` | `src/app/reseller/payouts/page.tsx` | `TEST-012` (Demande & validation virement) | 🔄 En cours |
+| **REQ-013** (Confirmation fiable) | `TASK-017` | `src/lib/order-create.ts`, `src/lib/order-submit.ts`, `src/lib/useOrderCheckout.ts`, `supabase/migration-order-creation.sql` | `TEST-013` à `TEST-021` : `tests/order-creation.test.cjs` | ✅ Vérifié localement ; migration et déploiement en attente |

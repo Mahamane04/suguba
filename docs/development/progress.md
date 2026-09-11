@@ -20,3 +20,4 @@
 | `TASK-014` | PWA | Service worker v3, photos allégées avant l'envoi | ✅ Terminé (2026-09-11) |
 | `TASK-015` | Catalogue | Remplir avec de vrais produits photographiés | ⏳ À faire |
 | `TASK-016` | Diaspora | Brancher le rôle sur la base | ⏳ À faire |
+| `TASK-017` | Fiabilité des commandes | Création atomique commande/commission, reçu serveur, reprise sans doublon, devis serveur dans les trois formulaires | ✅ Implémenté et testé localement ; migration/déploiement en attente |

@@ -137,6 +137,8 @@ export interface Product {
 }
 
 export interface Order {
+  /** Reçu de création effectivement confirmé par le serveur (pas un brouillon local). */
+  creationConfirmed?: boolean;
   id: string;
   orderNumber: string;         // ex: SG-K7M3P9RX
   productId: string;
@@ -245,4 +247,3 @@ export interface SavTicket {
   createdAt: string;
   resolvedAt?: string;
 }
-

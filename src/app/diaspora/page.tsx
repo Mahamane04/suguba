@@ -1,13 +1,16 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
-import { useSugubaStore, sugubaStore } from '@/lib/store';
-import { cloudSyncService } from '@/lib/cloud-sync';
+import { useSugubaStore } from '@/lib/store';
+import OrderRecovery from '@/components/common/OrderRecovery';
+import { useOrderQuote } from '@/lib/useOrderQuote';
+import type { OrderInput } from '@/lib/order-input';
+import { useOrderCheckout } from '@/lib/useOrderCheckout';
 import { 
   Globe2, CreditCard, HeartHandshake, ShieldCheck, 
   Truck, ArrowRight, CheckCircle2, Phone, MapPin, Sparkles, Star, Camera, Lock
@@ -23,7 +26,12 @@ export default function DiasporaPortalPage() {
   const [beneficiaryNeighborhood, setBeneficiaryNeighborhood] = useState('Hamdallaye ACI 2000');
   const [buyerEmail, setBuyerEmail] = useState('');
   const [buyerCountry, setBuyerCountry] = useState('France (Europe)');
+  const paymentInFlight = useRef(false);
+  const { submitOrder, recovery } = useOrderCheckout('diaspora');
   const [isProcessing, setIsProcessing] = useState(false);
+  const { devis, error: erreurDevis } = useOrderQuote(selectedProduct ? {
+    productId: selectedProduct.id, quantity: 1, city: 'Bamako',
+  } : null);
   const [orderComplete, setOrderComplete] = useState(false);
   const [erreurPaiement, setErreurPaiement] = useState('');
 
@@ -81,9 +89,8 @@ export default function DiasporaPortalPage() {
       return;
     }
 
-    setIsProcessing(true);
-    try {
-      const commande = sugubaStore.createOrder({
+    if (!devis) return;
+    await finishOrder({
         productId: selectedProduct.id,
         quantity: 1,
         customerName: beneficiaryName.trim(),
@@ -93,13 +100,15 @@ export default function DiasporaPortalPage() {
         landmark: `Commande Diaspora [${buyerCountry}] - Bénéficiaire : ${beneficiaryName}`,
         deliveryNotes: `Paiement en ligne Diaspora (${currency}). Email acheteur : ${buyerEmail || 'Non spécifié'}`,
       });
+  };
 
-      // createOrder pousse vers Supabase en arrière-plan sans attendre : sans
-      // cette synchro explicite, la facture pourrait être demandée avant que
-      // la commande existe en base, et l'API répondrait « introuvable ». La
-      // route de synchro est idempotente, ce second envoi est donc sans risque.
-      await cloudSyncService.pushOrderToCloud(commande);
-
+  const finishOrder = async (data?: OrderInput) => {
+    if (paymentInFlight.current) return;
+    paymentInFlight.current = true;
+    setIsProcessing(true);
+    setErreurPaiement('');
+    try {
+      const commande = await submitOrder(data);
       const res = await fetch('/api/payments/saspay/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -108,7 +117,7 @@ export default function DiasporaPortalPage() {
         body: JSON.stringify({
           orderNumber: commande.orderNumber,
           network: 'card',
-          phone: beneficiaryPhone.trim(),
+          phone: commande.customerPhone,
         }),
       });
       const json = await res.json();
@@ -123,7 +132,9 @@ export default function DiasporaPortalPage() {
     } catch (err) {
       console.error(err);
       setIsProcessing(false);
-      setErreurPaiement('Erreur réseau lors du démarrage du paiement.');
+      setErreurPaiement(err instanceof Error ? err.message : 'Erreur réseau lors du démarrage du paiement.');
+    } finally {
+      paymentInFlight.current = false;
     }
   };
 
@@ -286,6 +297,7 @@ export default function DiasporaPortalPage() {
 
         {/* The 1-Click Diaspora Order Form */}
         <div id="diaspora-order-form" className="bg-white rounded-3xl p-6 sm:p-10 border border-slate-200 shadow-xl space-y-6">
+          <OrderRecovery attempt={recovery} disabled={isProcessing} onResume={() => { void finishOrder(); }} />
           
           <div className="border-b border-slate-100 pb-4">
             <span className="px-3 py-1 bg-indigo-100 text-indigo-800 text-[10px] font-black rounded-full uppercase tracking-wider">
@@ -335,7 +347,7 @@ export default function DiasporaPortalPage() {
                   </div>
                   <div>
                     <strong className="block text-xs text-slate-900">{selectedProduct.name}</strong>
-                    <span className="text-[11px] text-slate-500">Livraison Express Bamako Offerte</span>
+                    <span className="text-[11px] text-slate-500">Livraison à Bamako : {devis ? formatPrice(devis.fraisLivraison) : 'calcul…'}</span>
                   </div>
                 </div>
                 <div className="text-right">
@@ -414,7 +426,8 @@ export default function DiasporaPortalPage() {
 
               </div>
 
-              {/* Payment Button (Stripe / Visa / Mastercard Simulation) */}
+              {erreurDevis && <p role="alert" className="text-sm text-red-700">{erreurDevis}</p>}
+              {/* Paiement du total calculé par le serveur. */}
               <div className="space-y-2 pt-2">
                 <button
                   type="submit"
@@ -425,7 +438,7 @@ export default function DiasporaPortalPage() {
                   <span>
                     {isProcessing
                       ? 'Redirection vers le paiement sécurisé...'
-                      : `Régler ${formatPrice(selectedProduct.publicPrice)} par Carte Bancaire / Visa / Mastercard`}
+                      : devis ? `Régler ${formatPrice(devis.total)} par Carte Bancaire / Visa / Mastercard` : 'Calcul du total…'}
                   </span>
                 </button>
 

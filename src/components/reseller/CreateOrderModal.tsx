@@ -2,10 +2,13 @@
 
 import React, { useState } from 'react';
 import { Product } from '@/types';
-import { sugubaStore, useSugubaStore } from '@/lib/store';
+import { useSugubaStore } from '@/lib/store';
 import { X, CheckCircle, Package, Phone, MapPin, User, FileText, ArrowRight } from 'lucide-react';
+import OrderRecovery from '@/components/common/OrderRecovery';
+import { useOrderQuote } from '@/lib/useOrderQuote';
+import type { OrderInput } from '@/lib/order-input';
 import Image from 'next/image';
-import { cloudSyncService } from '@/lib/cloud-sync';
+import { useOrderCheckout } from '@/lib/useOrderCheckout';
 
 interface CreateOrderModalProps {
   product: Product | null;
@@ -23,27 +26,44 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
   const [landmark, setLandmark] = useState('');
   const [quantity, setQuantity] = useState(1);
   const [deliveryNotes, setDeliveryNotes] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { submitOrder, isSubmitting, resetAttempt, recovery } = useOrderCheckout(`reseller:${product?.id || ''}`);
   const [createdOrder, setCreatedOrder] = useState<any | null>(null);
+
+  const currentReseller = state.resellers.find(r => r.userId === state.currentUser.id);
+  const { devis, error: erreurDevis } = useOrderQuote(isOpen && product ? {
+    productId: product.id, quantity, city, resellerCode: currentReseller?.referralCode,
+  } : null);
 
   if (!isOpen || !product) return null;
 
-  const currentReseller = state.resellers.find(r => r.userId === state.currentUser.id);
-  const unitPrice = product.publicPrice;
+  const unitPrice = devis?.prixUnitaire ?? product.publicPrice;
   const commissionPerUnit = product.resellerCommission;
-  const totalAmount = (unitPrice * quantity) + 1500;
+  const totalAmount = devis?.total;
   const totalCommission = commissionPerUnit * quantity;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const finishOrder = async (data?: OrderInput) => {
+    try {
+      const order = await submitOrder(data);
+      void fetch('/api/sms/send-otp', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderNumber: order.orderNumber }),
+      }).catch(() => {});
+      setCreatedOrder(order);
+      onSuccess?.(order.orderNumber);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : 'Erreur lors de la création de la commande');
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!customerName || !customerPhone || !neighborhood || !landmark) {
       alert('Veuillez remplir tous les champs obligatoires (Nom, Téléphone, Quartier, Repère)');
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      const order = sugubaStore.createOrder({
+    if (!devis) return;
+    await finishOrder({
         productId: product.id,
         quantity,
         customerName,
@@ -54,41 +74,11 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
         deliveryNotes,
         resellerCode: currentReseller?.referralCode,
       });
-
-      // Déclenchement de l'envoi du SMS OTP
-      // La route SMS ne lit plus que le numéro de commande : téléphone, code
-      // secret et montant sont relus en base, jamais acceptés du navigateur.
-      // createOrder pousse vers Supabase sans attendre — on force donc la
-      // synchro avant, sinon le SMS partirait avant que la commande existe.
-      // La route de synchro est idempotente, ce second envoi est sans risque.
-      cloudSyncService
-        .pushOrderToCloud(order)
-        .then((enregistree) => {
-          // Sans cette garde, une commande jamais arrivée en base déclenchait
-          // quand même l'envoi du SMS : le client recevait un code de
-          // livraison pour une commande que personne ne verrait jamais.
-          if (!enregistree) {
-            console.error(`[COMMANDE] ${order.orderNumber} non enregistrée — SMS non envoyé.`);
-            return;
-          }
-          return fetch('/api/sms/send-otp', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ orderNumber: order.orderNumber }),
-          });
-        })
-        .catch((err) => console.warn('Notification SMS différée:', err));
-
-      setCreatedOrder(order);
-      if (onSuccess) onSuccess(order.orderNumber);
-    } catch (err: any) {
-      alert(err.message || 'Erreur lors de la création de la commande');
-    } finally {
-      setIsSubmitting(false);
-    }
   };
 
   const handleReset = () => {
+    if (isSubmitting) return;
+    if (createdOrder) resetAttempt();
     setCreatedOrder(null);
     setCustomerName('');
     setCustomerPhone('');
@@ -166,6 +156,7 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
           ) : (
             /* Order Form */
             <form onSubmit={handleSubmit} className="space-y-4">
+              <OrderRecovery attempt={recovery} disabled={isSubmitting} onResume={() => { void finishOrder(); }} />
               
               {/* Product preview */}
               <div className="flex items-center space-x-3 bg-slate-50 p-3 rounded-2xl border border-slate-200">
@@ -298,12 +289,12 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
                   <span className="font-semibold">{(unitPrice * quantity).toLocaleString('fr-FR')} FCFA</span>
                 </div>
                 <div className="flex justify-between text-xs text-slate-600">
-                  <span>Frais de livraison estimés :</span>
-                  <span className="font-semibold">1 500 FCFA</span>
+                  <span>Frais de livraison :</span>
+                  <span className="font-semibold">{devis ? `${devis.fraisLivraison.toLocaleString('fr-FR')} FCFA` : 'Calcul…'}</span>
                 </div>
                 <div className="flex justify-between text-xs font-black text-slate-900 pt-1 border-t border-slate-200">
                   <span>Total à payer par le client :</span>
-                  <span>{totalAmount.toLocaleString('fr-FR')} FCFA</span>
+                  <span>{totalAmount !== undefined ? `${totalAmount.toLocaleString('fr-FR')} FCFA` : 'Calcul…'}</span>
                 </div>
                 <div className="flex justify-between text-xs font-bold text-emerald-700 pt-1">
                   <span>Ta commission sur cette vente :</span>
@@ -311,6 +302,7 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
                 </div>
               </div>
 
+              {erreurDevis && <p role="alert" className="text-sm text-red-700">{erreurDevis}</p>}
               {/* Submit */}
               <button
                 type="submit"
