@@ -441,7 +441,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               ne garde que ce qu'on règle AVANT de vouloir commander — le
               prix et la quantité — et ouvre la fenêtre « Sheet » pour tout
               le reste, exactement comme un panier d'e-commerce classique. */}
-          <div className="md:sticky md:top-20 bg-white rounded-3xl p-5 sm:p-6 border-2 border-suguba-brand/70 shadow-xl space-y-4">
+          {/* Sur téléphone, cette carte ne sert plus que de sélecteur de
+              quantité (le total et « Commander » vivent dans la barre fixe
+              du bas) : moins d'emphase visuelle, pour ne pas rivaliser avec
+              elle. Sur ordinateur, elle reste l'unique boîte d'achat. */}
+          <div className="md:sticky md:top-20 bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-xs md:border-2 md:border-suguba-brand/70 md:shadow-xl space-y-4">
             <div className="hidden md:block space-y-1">
               <h1 className="text-lg sm:text-xl font-black text-slate-900 leading-tight">{product.name}</h1>
               {/* Le prix barré affiché ici valait `unitPrice * 1.2` : un prix
@@ -476,19 +480,26 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               </div>
             </div>
 
-            <div className="flex items-center justify-between text-sm border-t border-slate-100 pt-3">
+            {/* Total + Commander : SEULEMENT sur ordinateur. Sur téléphone,
+                la barre fixe en bas de l'écran (ci-dessous) porte déjà le
+                total et le même bouton — les deux affichés en même temps
+                dupliquaient le prix et « Commander » à l'écran (signalé par
+                capture), donnant une impression de désordre. */}
+            <div className="hidden md:flex items-center justify-between text-sm border-t border-slate-100 pt-3">
               <span className="text-slate-600">Total {quantity > 1 ? `(${quantity} articles)` : ''}</span>
               <span className="font-black text-slate-900">{totalAmount.toLocaleString('fr-FR')} FCFA</span>
             </div>
 
-            <Button type="button" onClick={() => setCommandeOuverte(true)} size="lg" fullWidth>
-              <Sparkles className="w-4 h-4" />
-              <span>Commander</span>
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-            <p className="text-[11px] text-slate-500 text-center">
-              Sans créer de compte · Payez en espèces ou Mobile Money à la livraison
-            </p>
+            <div className="hidden md:block space-y-3">
+              <Button type="button" onClick={() => setCommandeOuverte(true)} size="lg" fullWidth>
+                <Sparkles className="w-4 h-4" />
+                <span>Commander</span>
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+              <p className="text-[11px] text-slate-500 text-center">
+                Sans créer de compte · Payez en espèces ou Mobile Money à la livraison
+              </p>
+            </div>
           </div>
 
         </div>
