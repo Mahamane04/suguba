@@ -20,7 +20,7 @@ import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
 import {
   ShieldCheck, Truck, Clock, MapPin, Phone, Minus, Plus,
   User, CheckCircle2, ArrowRight, ArrowLeft, Star, Sparkles,
-  Navigation, Tag, ChevronDown, Receipt,
+  Navigation, Tag, ChevronDown, Receipt, Bike, Store, Info,
 } from 'lucide-react';
 
 interface ChoixLivraison {
@@ -598,7 +598,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                     : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
                 }`}
               >
-                <span className="block font-black text-xs">🛵 À domicile</span>
+                <span className="flex items-center gap-1 font-black text-xs">
+                  <Bike className="w-3.5 h-3.5" />À domicile
+                </span>
                 <span className={`text-[11px] block ${fulfillmentMethod === 'home_delivery' ? 'text-slate-300' : 'text-slate-500'}`}>
                   Livré devant votre porte
                 </span>
@@ -613,7 +615,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                     : 'bg-emerald-50/50 text-emerald-950 border-emerald-200 hover:bg-emerald-100/50'
                 }`}
               >
-                <span className="block font-black text-xs">🏪 Point relais</span>
+                <span className="flex items-center gap-1 font-black text-xs">
+                  <Store className="w-3.5 h-3.5" />Point relais
+                </span>
                 <span className={`text-[11px] block ${fulfillmentMethod === 'pickup_point' ? 'text-emerald-200' : 'text-emerald-700'}`}>
                   {libelleRelais}
                 </span>
@@ -636,8 +640,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                     </option>
                   ))}
                 </select>
-                <p className="text-[11px] text-emerald-800">
-                  💡 Votre colis sera déposé sous 24h. Vous recevrez un SMS avec votre code de retrait OTP.
+                <p className="text-[11px] text-emerald-800 flex items-start gap-1">
+                  <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                  Votre colis sera déposé sous 24h. Vous recevrez un SMS avec votre code de retrait OTP.
                 </p>
               </div>
             ) : (
@@ -772,8 +777,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                   <span className="flex items-center gap-1">
                     {devis.modeLivraison === 'relais' ? 'Retrait en point relais' : `Livraison (${devis.ville})`}
                     {devis.distanceLivraisonKm !== null && (
-                      <span className="inline-flex items-center gap-0.5 text-[10px] text-slate-400">
-                        <Navigation className="w-2.5 h-2.5" />~{devis.distanceLivraisonKm.toFixed(1)} km
+                      <span className="inline-flex items-center gap-0.5 text-[11px] text-slate-400">
+                        <Navigation className="w-3 h-3" />~{devis.distanceLivraisonKm.toFixed(1)} km
                       </span>
                     )}
                   </span>

@@ -6,9 +6,10 @@ import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
 import { useSugubaStore } from '@/lib/store';
-import { 
-  Radio, Send, MessageCircle, Smartphone, Users, 
-  ArrowLeft, Sparkles, CheckCircle2, Copy, Check, Clock, Flame, Trophy, Bell
+import {
+  Radio, Send, MessageCircle, Smartphone, Users,
+  ArrowLeft, Sparkles, CheckCircle2, Copy, Check, Clock, Flame, Trophy, Bell,
+  Bike, Wallet,
 } from 'lucide-react';
 
 export default function AdminBroadcastPage() {
@@ -29,22 +30,29 @@ export default function AdminBroadcastPage() {
 
   const presets = [
     {
-      title: '🔥 Arrivage Nouveau Stock Flash',
+      // Le titre est un LIBELLÉ DE BOUTON (UI) : icône Lucide plutôt qu'un
+      // emoji. Le `content`, lui, part sur WhatsApp — l'émoji y reste, c'est
+      // le seul langage visuel que ce canal comprend.
+      icon: Flame,
+      title: 'Arrivage Nouveau Stock Flash',
       target: 'resellers',
       content: `🔥 *ARRIVAGE DE NOUVEAU STOCK FLASH — SUGUBA MALI !* 🇲🇱\n\n📦 *200 Ventilateurs Solaires Rechargeables 16"* viennent d'arriver à l'entrepôt ACI 2000 !\n\n💰 *Commission Spéciale : 5 000 FCFA / vente* pour les 48h !\n\n👉 *Téléchargez vos visuels :* https://app.sugubaml.com/reseller/catalog`,
     },
     {
-      title: '🏆 Défi Flash Weekend (+15 000 F)',
+      icon: Trophy,
+      title: 'Défi Flash Weekend (+15 000 F)',
       target: 'resellers',
       content: `🏆 *DÉFI FLASH DU WEEKEND SUGUBA !* 🚀\n\nLes 10 premiers revendeurs qui réalisent 3 ventes d'ici dimanche soir reçoivent une *Prime Exceptionnelle de +15 000 FCFA* sur leur compte Wave !\n\nÀ vos statuts WhatsApp ! 🔥\nhttps://app.sugubaml.com/reseller`,
     },
     {
-      title: '🛵 Alerte Dispatch & Primes Courses Livreurs',
+      icon: Bike,
+      title: 'Alerte Dispatch & Primes Courses Livreurs',
       target: 'drivers',
       content: `🛵 *ALERTE LIVREURS SUGUBA — FORTE DEMANDE SUR ACI 2000 & BADALA !*\n\n+500 FCFA de prime carburant supplémentaire par course livrée avant 18h aujourd'hui avec code OTP validé.\n\n👉 Ouvrez votre feuille de route : https://app.sugubaml.com/driver`,
     },
     {
-      title: '💳 Notification Virements Wave / Orange Envoyés',
+      icon: Wallet,
+      title: 'Notification Virements Wave / Orange Envoyés',
       target: 'resellers',
       content: `🎉 *CLÔTURE DES RETRAITS DU JOUR EFFECTUÉE !*\n\nToutes les demandes de paiement de commissions ont été virées avec succès sur vos comptes Wave et Orange Money.\n\nConsultez votre historique : https://app.sugubaml.com/reseller/payouts`,
     }
@@ -117,7 +125,8 @@ export default function AdminBroadcastPage() {
                 onClick={() => handleApplyPreset(preset)}
                 className="p-3 bg-white hover:bg-slate-50/50 border border-slate-200 hover:border-slate-300 rounded-2xl text-left transition-all shadow-2xs group"
               >
-                <strong className="block text-xs font-black text-slate-900 group-hover:text-slate-950 truncate">
+                <strong className="flex items-center gap-1.5 text-xs font-black text-slate-900 group-hover:text-slate-950 truncate">
+                  <preset.icon className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                   {preset.title}
                 </strong>
                 <span className="text-[11px] text-slate-500 block capitalize">

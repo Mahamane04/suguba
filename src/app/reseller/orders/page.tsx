@@ -5,9 +5,9 @@ import ProductImage from '@/components/common/ProductImage';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import { useSugubaStore } from '@/lib/store';
-import { 
-  ShoppingBag, Phone, MapPin, Clock, CheckCircle2, 
-  Truck, AlertCircle, Shield, KeyRound, Calendar
+import {
+  ShoppingBag, Phone, MapPin, Clock, CheckCircle2,
+  Truck, AlertCircle, Shield, KeyRound, Calendar, Bike,
 } from 'lucide-react';
 
 export default function ResellerOrdersPage() {
@@ -111,8 +111,9 @@ export default function ResellerOrdersPage() {
                         </span>
                       )}
                       {order.status === 'dispatched' && (
-                        <span className="px-2.5 py-1 rounded-full bg-slate-100 border border-slate-300 text-slate-800 text-[11px] font-black">
-                          🛵 Livreur assigné
+                        <span className="px-2.5 py-1 rounded-full bg-slate-100 border border-slate-300 text-slate-800 text-[11px] font-black flex items-center space-x-1">
+                          <Bike className="w-3 h-3 text-slate-600" />
+                          <span>Livreur assigné</span>
                         </span>
                       )}
                       {order.status === 'pending_call' && (

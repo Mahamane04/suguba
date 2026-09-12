@@ -103,9 +103,9 @@ export default function OtpValidationModal({ order, isOpen, onClose, onSuccess }
                 <p className="text-xs text-slate-600 mt-1">
                   Le paiement de <strong>{order.totalAmount.toLocaleString('fr-FR')} FCFA</strong> est enregistré comme encaissé.
                 </p>
-                <div className="mt-3 p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-[11px] text-emerald-800 font-medium">
-                  ✅ Statut commande : <strong>LIVRÉ</strong><br />
-                  ✅ Commission revendeur ({order.resellerCommission.toLocaleString('fr-FR')} F) : <strong>VERROUILLÉE EN SÉCURITÉ</strong>
+                <div className="mt-3 p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-[11px] text-emerald-800 font-medium space-y-1">
+                  <p className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 shrink-0" />Statut commande : <strong>LIVRÉ</strong></p>
+                  <p className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 shrink-0" />Commission revendeur ({order.resellerCommission.toLocaleString('fr-FR')} F) : <strong>VERROUILLÉE EN SÉCURITÉ</strong></p>
                 </div>
               </div>
               <button

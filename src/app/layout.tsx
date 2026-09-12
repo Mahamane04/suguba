@@ -34,8 +34,12 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // Le zoom était désactivé (maximumScale: 1, userScalable: false) pour garder
+  // une sensation "app" — mais ça empêche un malvoyant d'agrandir le texte
+  // (échec WCAG 1.4.4). `maximumScale` généreux + zoom réactivé : les gestes
+  // de zoom restent rares en usage normal, mais existent pour qui en a besoin.
+  maximumScale: 5,
+  userScalable: true,
   themeColor: '#09b500',
 };
 

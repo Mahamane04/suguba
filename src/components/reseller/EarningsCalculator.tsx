@@ -2,9 +2,10 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { 
-  Calculator, Sparkles, TrendingUp, Users, 
-  ArrowRight, Share2, CheckCircle2, DollarSign, Trophy, Wallet
+import {
+  Calculator, Sparkles, TrendingUp, Users,
+  ArrowRight, Share2, CheckCircle2, DollarSign, Trophy, Wallet,
+  Flame, Rocket, Lightbulb,
 } from 'lucide-react';
 
 interface EarningsCalculatorProps {
@@ -37,12 +38,16 @@ export default function EarningsCalculator({ showCta = true }: EarningsCalculato
 
   // Real-life benchmark in Mali
   let benchmarkText = "Complément de revenu idéal pour étudiants et mères de famille";
+  let BenchmarkIcon: React.ElementType | null = null;
   if (totalMonthlyIncome >= 300000) {
-    benchmarkText = "🔥 Revenu supérieur à celui d'un cadre moyen à Bamako !";
+    benchmarkText = "Revenu supérieur à celui d'un cadre moyen à Bamako !";
+    BenchmarkIcon = Flame;
   } else if (totalMonthlyIncome >= 150000) {
-    benchmarkText = "🚀 Équivaut à plus de 3x le SMIG officiel au Mali !";
+    benchmarkText = "Équivaut à plus de 3x le SMIG officiel au Mali !";
+    BenchmarkIcon = Rocket;
   } else if (totalMonthlyIncome >= 80000) {
-    benchmarkText = "💡 Couvre le loyer et les dépenses quotidiennes d'un foyer à Bamako.";
+    benchmarkText = "Couvre le loyer et les dépenses quotidiennes d'un foyer à Bamako.";
+    BenchmarkIcon = Lightbulb;
   }
 
   return (
@@ -189,7 +194,7 @@ export default function EarningsCalculator({ showCta = true }: EarningsCalculato
 
         {/* Benchmark Tag */}
         <div className="p-3 bg-white/10 rounded-2xl border border-white/10 text-xs font-semibold text-emerald-200 flex items-center space-x-2">
-          <Sparkles className="w-4 h-4 text-amber-300 shrink-0" />
+          {BenchmarkIcon ? <BenchmarkIcon className="w-4 h-4 text-amber-300 shrink-0" /> : <Sparkles className="w-4 h-4 text-amber-300 shrink-0" />}
           <span>{benchmarkText}</span>
         </div>
       </div>

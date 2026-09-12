@@ -345,8 +345,9 @@ export default function AdminDashboardPage() {
             </div>
 
             {pendingCallOrders.length === 0 ? (
-              <div className="text-center py-6 text-slate-500 text-xs">
-                ✅ Tous les appels de confirmation ont été traités !
+              <div className="text-center py-6 text-slate-500 text-xs flex items-center justify-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                Tous les appels de confirmation ont été traités !
               </div>
             ) : (
               <div className="space-y-3">
@@ -444,8 +445,9 @@ export default function AdminDashboardPage() {
             </div>
 
             {pendingProducts.length === 0 ? (
-              <div className="text-center py-6 text-slate-500 text-xs">
-                ✅ Aucun produit en attente de modération.
+              <div className="text-center py-6 text-slate-500 text-xs flex items-center justify-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                Aucun produit en attente de modération.
               </div>
             ) : (
               <div className="space-y-3">
