@@ -7,7 +7,8 @@ import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
 import Button from '@/components/ui/Button';
 import ProductCard, { carteDepuisProduit } from '@/components/product/ProductCard';
-import { useSugubaStore, useCatalogueCharge } from '@/lib/store';
+import { useSugubaStore, useCatalogueCharge, useQuartierClient, definirQuartierClient } from '@/lib/store';
+import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
 import {
   ArrowRight, Search, Banknote,
   ShieldCheck, Truck, TrendingUp, X
@@ -32,6 +33,10 @@ export default function HomePage() {
   const catalogueCharge = useCatalogueCharge();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [search, setSearch] = useState('');
+  // « Livrer à … » (2026-09-12, inspiré des apps de livraison à Bamako) :
+  // fixé une fois ici, il pré-remplit le quartier de la fenêtre de commande
+  // (voir /p/[slug]) au lieu de le redemander à chaque produit.
+  const quartierClient = useQuartierClient();
 
   // Prix > 0 en plus du statut : un produit sans prix n'est pas en vente, même
   // si la mémoire locale du téléphone le croit « approuvé » (bug du 2026-09-11,
@@ -60,6 +65,18 @@ export default function HomePage() {
         ══════════════════════════════════════════════ */}
         <section className="bg-[#064e3b] px-4 sm:px-6 py-6 sm:py-8">
           <div className="max-w-4xl mx-auto space-y-4">
+            {/* Livrer à … : fixé une fois, réutilisé par la fenêtre de
+                commande de chaque produit (voir DeliveryAddressBar). */}
+            <div className="max-w-xs mx-auto">
+              <span className="block text-[10px] font-bold text-emerald-100/60 uppercase tracking-wider mb-1 px-1">
+                Livrer à
+              </span>
+              <NeighborhoodPicker
+                value={quartierClient || 'Choisir mon quartier'}
+                onChange={definirQuartierClient}
+              />
+            </div>
+
             <div className="text-center">
               <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
                 Achetez à Bamako, payez à la livraison

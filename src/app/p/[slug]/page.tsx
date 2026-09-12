@@ -9,7 +9,7 @@ import Sheet from '@/components/ui/Sheet';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 import { partagerProduit, prechargerImage, useCodeRevendeur } from '@/lib/partage';
 import { useToast } from '@/components/ui/Toast';
-import { useSugubaStore, useCatalogueCharge } from '@/lib/store';
+import { useSugubaStore, useCatalogueCharge, useQuartierClient } from '@/lib/store';
 import { useClavierOuvert } from '@/lib/useClavierOuvert';
 import { useOrderCheckout } from '@/lib/useOrderCheckout';
 import OrderRecovery from '@/components/common/OrderRecovery';
@@ -78,6 +78,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   const [city, setCity] = useState('Bamako');
   const [neighborhood, setNeighborhood] = useState('');
   const [landmark, setLandmark] = useState('');
+  // Pré-remplit depuis « Livrer à … » (accueil, voir src/lib/store.ts) — sans
+  // écraser une saisie déjà commencée par le client sur cette commande.
+  const quartierClient = useQuartierClient();
+  useEffect(() => {
+    if (quartierClient && !neighborhood) setNeighborhood(quartierClient);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quartierClient]);
   const [quantity, setQuantity] = useState(1);
   // L'option « acompte prioritaire » a été retirée : choisie, elle faisait
   // baisser de 3 000 F le « reste à payer au livreur » affiché, alors que

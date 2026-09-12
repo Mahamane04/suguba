@@ -115,6 +115,24 @@ export function trouverQuartier(nom: string | null | undefined): Coord | null {
   return INDEX_NORMALISE[normaliser(nom)] || null;
 }
 
+/**
+ * Quartier connu le plus proche d'une coordonnée (2026-09-12) — pour le
+ * bouton « Utiliser ma position actuelle » du sélecteur de quartier. Renvoie
+ * le nom EXACT de la liste canonique (bamako-neighborhoods.ts) et la distance
+ * réelle jusqu'à lui : à l'appelant de refuser une position trop éloignée de
+ * Bamako (test depuis un autre pays, GPS erratique) plutôt que de proposer
+ * silencieusement un quartier n'ayant aucun rapport.
+ */
+export function quartierLePlusProche(position: Coord): { nom: string; distanceKm: number } | null {
+  let meilleur: string | null = null;
+  let distanceMin = Infinity;
+  for (const [nom, coord] of Object.entries(COORDS_QUARTIERS)) {
+    const d = distanceKm(position, coord);
+    if (d < distanceMin) { distanceMin = d; meilleur = nom; }
+  }
+  return meilleur ? { nom: meilleur, distanceKm: distanceMin } : null;
+}
+
 /** Distance à vol d'oiseau (km) entre deux points — formule de haversine. */
 export function distanceKm(a: Coord, b: Coord): number {
   const R = 6371;

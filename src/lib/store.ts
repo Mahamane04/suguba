@@ -855,6 +855,49 @@ export function useApercuAdmin(): boolean {
   return valeur;
 }
 
+/**
+ * Quartier de livraison du client (2026-09-12) — inspiré des apps de
+ * livraison à Bamako (« Livrer à … » en haut de l'accueil) : fixé une fois,
+ * il pré-remplit le champ Quartier de la fenêtre de commande au lieu de le
+ * redemander à chaque produit. Simple préférence d'appareil (localStorage),
+ * jamais envoyée telle quelle au serveur — la commande reste le seul devis
+ * qui compte (voir /api/orders/quote).
+ */
+const QUARTIER_CLIENT_KEY = 'suguba_quartier_client';
+let quartierClient: string | null = null;
+let quartierClientHydrate = false;
+const ecouteursQuartierClient = new Set<(v: string | null) => void>();
+
+export function definirQuartierClient(valeur: string | null): void {
+  quartierClient = valeur;
+  try {
+    if (valeur) localStorage.setItem(QUARTIER_CLIENT_KEY, valeur);
+    else localStorage.removeItem(QUARTIER_CLIENT_KEY);
+  } catch { /* stockage indisponible (navigation privée) */ }
+  ecouteursQuartierClient.forEach((f) => f(valeur));
+}
+
+export function useQuartierClient(): string | null {
+  const [valeur, setValeur] = useState<string | null>(quartierClient);
+  useEffect(() => {
+    // Lu une seule fois, après le montage (post-hydratation) — même raison
+    // que hydrateFromLocalStorage plus haut : le tout premier rendu client
+    // doit correspondre au HTML du serveur.
+    if (!quartierClientHydrate) {
+      quartierClientHydrate = true;
+      try {
+        const stocke = localStorage.getItem(QUARTIER_CLIENT_KEY);
+        if (stocke) quartierClient = stocke;
+      } catch { /* stockage indisponible */ }
+    }
+    const maj = (v: string | null) => setValeur(v);
+    ecouteursQuartierClient.add(maj);
+    setValeur(quartierClient);
+    return () => { ecouteursQuartierClient.delete(maj); };
+  }, []);
+  return valeur;
+}
+
 export function useSugubaStore() {
   const [state, setState] = useState<SugubaState>(sugubaStore.getState());
 
