@@ -7,8 +7,9 @@ import BottomNav from '@/components/common/BottomNav';
 import PrintableReceiptModal from '@/components/common/PrintableReceiptModal';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 import { useSugubaStore } from '@/lib/store';
+import EmptyState from '@/components/ui/EmptyState';
 import { Order } from '@/types';
-import { ArrowLeft, Banknote, Printer, Truck, Wallet } from 'lucide-react';
+import { ArrowLeft, Banknote, Package, Printer, Truck, Wallet } from 'lucide-react';
 
 /**
  * Portefeuille livreur — refait le 2026-09-11 sur des données réelles.
@@ -93,7 +94,7 @@ export default function DriverEarningsPage() {
         <div className="bg-white rounded-3xl p-5 border border-slate-200 space-y-3">
           <h2 className="font-black text-sm text-slate-900">Mes livraisons ({livrees.length})</h2>
           {livrees.length === 0 ? (
-            <p className="text-sm text-slate-500 py-2">Aucune livraison effectuée pour le moment.</p>
+            <EmptyState icon={Package} title="Aucune livraison effectuée pour le moment." />
           ) : (
             <div className="divide-y divide-slate-100">
               {livrees.map((o) => (

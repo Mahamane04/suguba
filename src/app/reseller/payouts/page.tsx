@@ -5,6 +5,7 @@ import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Button from '@/components/ui/Button';
 import { useSugubaStore } from '@/lib/store';
+import EmptyState from '@/components/ui/EmptyState';
 import { Wallet, Clock, CheckCircle2, History, AlertCircle, Building2, Loader2 } from 'lucide-react';
 
 type Moyen = 'Orange Money' | 'Moov Money' | 'Mobi Cash' | 'Agence Suguba';
@@ -286,7 +287,7 @@ export default function ResellerPayoutsPage() {
             <span>Historique des retraits</span>
           </h2>
           {retraits.length === 0 ? (
-            <p className="text-sm text-slate-500 py-4 text-center">Aucun retrait pour le moment.</p>
+            <EmptyState icon={Wallet} title="Aucun retrait pour le moment." />
           ) : (
             <div className="divide-y divide-slate-100">
               {retraits.map((r) => {

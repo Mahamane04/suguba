@@ -5,6 +5,7 @@ import ProductImage from '@/components/common/ProductImage';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import { useSugubaStore } from '@/lib/store';
+import EmptyState from '@/components/ui/EmptyState';
 import {
   ShoppingBag, Phone, MapPin, Clock, CheckCircle2,
   Truck, AlertCircle, Shield, KeyRound, Calendar, Bike,
@@ -71,9 +72,7 @@ export default function ResellerOrdersPage() {
         {/* Orders List */}
         <div className="space-y-3">
           {filteredOrders.length === 0 ? (
-            <div className="bg-white rounded-3xl p-8 text-center text-slate-500 text-xs border border-slate-200">
-              Aucune commande trouvée pour ce filtre.
-            </div>
+            <EmptyState icon={ShoppingBag} title="Aucune commande trouvée pour ce filtre." />
           ) : (
             filteredOrders.map((order) => {
               const commission = state.commissions.find(c => c.orderId === order.id);

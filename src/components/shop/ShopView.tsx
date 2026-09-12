@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
-import ProductCard from '@/components/product/ProductCard';
+import BoutiqueProduits from '@/components/shop/BoutiqueProduits';
 import ShopShareBar from '@/components/shop/ShopShareBar';
 import type { Boutique } from '@/lib/shop';
 import { ShieldCheck, Truck, KeyRound, ArrowRight, Store, Users } from 'lucide-react';
@@ -92,18 +92,7 @@ export default function ShopView({
             <p className="text-xs text-slate-500">Revenez bientôt, la boutique se remplit.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
-            {boutique.produits.map((p, i) => (
-              // Carte commune : plusieurs photos, partage WhatsApp en un clic.
-              // Le lien d'achat garde le code de la boutique visitée.
-              <ProductCard
-                key={p.id}
-                produit={{ id: p.id, slug: p.slug, nom: p.nom, prix: p.prix, categorie: p.categorie, images: p.images, enStock: p.enStock }}
-                refCode={refCode}
-                priority={i < 4}
-              />
-            ))}
-          </div>
+          <BoutiqueProduits produits={boutique.produits} refCode={refCode} />
         )}
 
         <div className="bg-white rounded-3xl border border-slate-200 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">

@@ -7,6 +7,7 @@ import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
 import LogoUploader from '@/components/common/LogoUploader';
 import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
+import QrCode from '@/components/common/QrCode';
 import { useToast } from '@/components/ui/Toast';
 import Button from '@/components/ui/Button';
 import {
@@ -287,7 +288,11 @@ export default function SupplierBoutiquePage() {
               </div>
               {slug ? (
                 <>
-                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-mono text-emerald-800 break-all">{urlBoutique}</div>
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1 p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-mono text-emerald-800 break-all">{urlBoutique}</div>
+                    {/* À montrer directement à un client au marché — pas besoin de dicter l'adresse. */}
+                    <QrCode value={urlBoutique} size={72} />
+                  </div>
                   <div className="grid grid-cols-2 gap-2">
                     <button type="button" onClick={() => copier(urlBoutique, 'boutique')}
                       className="h-11 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black flex items-center justify-center space-x-1.5">

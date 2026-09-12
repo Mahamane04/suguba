@@ -2,14 +2,14 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
+import QrCode from '@/components/common/QrCode';
 import { useSugubaStore } from '@/lib/store';
 import { useCodeRevendeur } from '@/lib/partage';
-import { 
-  ShieldCheck, QrCode, ArrowLeft, Download, Printer, 
+import {
+  ShieldCheck, ArrowLeft, Download, Printer,
   Share2, Sparkles, Award, CheckCircle2, User, Phone, MapPin, Copy, Check
 } from 'lucide-react';
 
@@ -38,9 +38,6 @@ export default function ResellerBadgePage() {
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2000);
   };
-
-  // Dynamic QR Code URL using quickchart.io for high-res instant scanning
-  const qrCodeImageUrl = `https://quickchart.io/qr?text=${encodeURIComponent(personalCatalogUrl)}&size=200&dark=064e3b&light=ffffff&margin=1`;
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-100 pb-20 md:pb-10 print:bg-white print:p-0 print:pb-0">
@@ -151,17 +148,11 @@ export default function ResellerBadgePage() {
               </div>
             </div>
 
-            {/* Right: The Dynamic QR Code Box */}
+            {/* Right: le QR code — généré localement (voir QrCode.tsx),
+                remplace un appel à quickchart.io qui envoyait le lien du
+                revendeur à un service tiers pour chaque affichage. */}
             <div className="bg-white p-3 rounded-2xl shadow-lg text-center space-y-1.5 shrink-0">
-              <div className="relative w-32 h-32 mx-auto rounded-xl overflow-hidden bg-white">
-                <Image
-                  src={qrCodeImageUrl}
-                  alt={`QR Code ${reseller.referralCode}`}
-                  fill
-                  className="object-contain"
-                  unoptimized
-                />
-              </div>
+              <QrCode value={personalCatalogUrl} size={128} />
               <span className="text-[11px] font-black text-slate-900 uppercase block tracking-wider">
                 Scanner pour Commander
               </span>

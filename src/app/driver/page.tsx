@@ -11,6 +11,7 @@ import DeliveryMapModal from '@/components/driver/DeliveryMapModal';
 import PrintableReceiptModal from '@/components/common/PrintableReceiptModal';
 import { useSugubaStore, sugubaStore } from '@/lib/store';
 import { cloudSyncService } from '@/lib/cloud-sync';
+import EmptyState from '@/components/ui/EmptyState';
 import { Order } from '@/types';
 import { 
   Truck, Phone, MapPin, KeyRound, CheckCircle2, 
@@ -245,7 +246,7 @@ export default function DriverDashboardPage() {
 
           <div className="divide-y divide-slate-100">
             {myDeliveredOrders.length === 0 && (
-              <p className="text-sm text-slate-500 py-2">Aucune livraison effectuée pour le moment.</p>
+              <EmptyState icon={Package} title="Aucune livraison effectuée pour le moment." />
             )}
             {myDeliveredOrders.map((order) => (
               <div key={order.id} className="py-3 flex items-center justify-between">
