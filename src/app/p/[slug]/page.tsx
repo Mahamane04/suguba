@@ -2,40 +2,19 @@
 
 import React, { useState, use, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Carrousel from '@/components/product/Carrousel';
-import Sheet from '@/components/ui/Sheet';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
-import { partagerProduit, prechargerImage, useCodeRevendeur } from '@/lib/partage';
-import { useToast } from '@/components/ui/Toast';
-import { useSugubaStore, useCatalogueCharge, useQuartierClient } from '@/lib/store';
-import { useOrderCheckout } from '@/lib/useOrderCheckout';
-import OrderRecovery from '@/components/common/OrderRecovery';
-import { useOrderQuote } from '@/lib/useOrderQuote';
-import type { OrderInput } from '@/lib/order-input';
 import Button from '@/components/ui/Button';
-import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
+import { partagerProduit, prechargerImage, useCodeRevendeur } from '@/lib/partage';
+import { useSugubaStore, useCatalogueCharge } from '@/lib/store';
+import { useOrderQuote } from '@/lib/useOrderQuote';
 import {
-  ShieldCheck, Truck, Clock, MapPin, Phone, Minus, Plus,
-  User, CheckCircle2, ArrowRight, ArrowLeft, Star, Sparkles,
-  Navigation, Tag, ChevronDown, Receipt, Bike, Store, Info,
+  ShieldCheck, Truck, Clock, Minus, Plus, CheckCircle2, ArrowRight, ArrowLeft,
 } from 'lucide-react';
 
-interface ChoixLivraison {
-  fraisLivraisonClient: number;
-  livraisonParVille: Record<string, number>;
-  pointsRelais: { id: string; nom: string; frais: number; horaires: string }[];
-}
-
-/** Précision affichée pour les villes livrées en gare routière. */
-const PRECISION_VILLE: Record<string, string> = {
-  Sikasso: 'Gare SONEF',
-  'Ségou': 'Gare BTM',
-  Kayes: 'Gare SONEF',
-  Mopti: 'Sévaré - Gare',
-};
+const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} FCFA`;
 
 export default function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = use(params);
@@ -45,23 +24,18 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   // Un revendeur connecté partage avec SON code ; sinon le lien garde celui
   // de la visite en cours.
   const monCode = useCodeRevendeur();
-  const { toast } = useToast();
 
   const refCode = searchParams.get('ref');
   const promoParam = searchParams.get('promo');
-  // Corrige BUG-009 : un slug inexistant/mal recopié retombait silencieusement
-  // sur state.products[0], affichant un article différent comme s'il était
-  // légitime — grave puisque le modèle repose entièrement sur des liens
-  // partagés sur WhatsApp. On distingue maintenant "pas encore trouvé" (le
-  // catalogue vient peut-être de se charger) de "vraiment introuvable".
+  // Corrige BUG-009 : un slug inexistant ne retombe plus sur un autre produit.
   const product = state.products.find(p => p.slug === resolvedParams.slug);
-
   const catalogueCharge = useCatalogueCharge();
 
-  // Bloc « nom · prix · Commander » sous la photo. Tant qu'il est visible,
-  // rien d'autre n'affiche le prix ; dès qu'il sort de l'écran en défilant,
-  // le prix et « Commander » apparaissent dans la barre « Retour » collée en
-  // haut — jamais les deux à la fois (doublon signalé par capture).
+  const [quantity, setQuantity] = useState(1);
+
+  // Bloc « nom · prix · Commander » sous la photo. Dès qu'il passe sous
+  // l'en-tête en défilant, le prix et « Commander » apparaissent dans la barre
+  // « Retour » collée en haut — jamais les deux à la fois.
   const blocAchatRef = useRef<HTMLDivElement>(null);
   const [blocAchatVisible, setBlocAchatVisible] = useState(true);
   useEffect(() => {
@@ -69,16 +43,19 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
     if (!el) return;
     const obs = new IntersectionObserver(
       ([entree]) => setBlocAchatVisible(entree.isIntersecting),
-      // Marge haute = en-tête (64px) + barre Retour (44px) : le bloc est
-      // « sorti » dès qu'il passe sous ces barres, pas au bord de l'écran.
       { rootMargin: '-108px 0px 0px 0px' },
     );
     obs.observe(el);
     return () => obs.disconnect();
   }, [product?.id]);
 
-  // « Recommandé par … » : le vrai revendeur derrière le code du lien (il
-  // lisait les revendeurs de démonstration et ne s'affichait donc jamais).
+  // La commande se fait sur sa propre page (/p/<slug>/commander) : préchargée
+  // dès l'arrivée sur la fiche pour que « Commander » s'ouvre sans attente.
+  useEffect(() => {
+    if (product?.slug) router.prefetch(`/p/${product.slug}/commander`);
+  }, [product?.slug, router]);
+
+  // « Recommandé par … » : le vrai revendeur derrière le code du lien.
   const [nomRecommandeur, setNomRecommandeur] = useState<string | null>(null);
   useEffect(() => {
     if (!refCode) return;
@@ -87,48 +64,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
       .then((j) => j?.nom && setNomRecommandeur(j.nom))
       .catch(() => {});
   }, [refCode]);
-
-  // Checkout form states
-  const [customerName, setCustomerName] = useState('');
-  const [customerPhone, setCustomerPhone] = useState('');
-  const [fulfillmentMethod, setFulfillmentMethod] = useState<'home_delivery' | 'pickup_point'>('home_delivery');
-  const [pickupPointId, setPickupPointId] = useState<string>('hub-aci');
-  const [city, setCity] = useState('Bamako');
-  const [neighborhood, setNeighborhood] = useState('');
-  const [landmark, setLandmark] = useState('');
-  // Pré-remplit depuis « Livrer à … » (accueil, voir src/lib/store.ts) — sans
-  // écraser une saisie déjà commencée par le client sur cette commande.
-  const quartierClient = useQuartierClient();
-  useEffect(() => {
-    if (quartierClient && !neighborhood) setNeighborhood(quartierClient);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [quartierClient]);
-  const [quantity, setQuantity] = useState(1);
-  // L'option « acompte prioritaire » a été retirée : choisie, elle faisait
-  // baisser de 3 000 F le « reste à payer au livreur » affiché, alors que
-  // personne n'encaissait jamais cet acompte. Le client croyait avoir moins à
-  // payer, et le livreur lui réclamait la totalité.
-  const [deliveryNotes, setDeliveryNotes] = useState('');
-  const { submitOrder, isSubmitting, resetAttempt, recovery } = useOrderCheckout(`product:${resolvedParams.slug}`);
-  // Fenêtre de commande (2026-09-11) : le formulaire complet (nom, téléphone,
-  // livraison, code promo…) restait affiché EN PERMANENCE sur la page, sous
-  // la description — beaucoup trop chargé, signalé par capture vidéo. La
-  // fiche produit ne montre plus que l'essentiel ; « Commander » ouvre une
-  // fenêtre dédiée (feuille en bas sur téléphone, boîte centrée sur
-  // ordinateur — voir Sheet.tsx) pour les informations de livraison. La
-  // quantité, elle, reste réglable directement sur la page : c'est la seule
-  // chose qu'on change souvent avant même de vouloir commander.
-  const [commandeOuverte, setCommandeOuverte] = useState(false);
-
-  // Code promo : saisi ici, VÉRIFIÉ par le serveur. La liste des codes et leurs
-  // montants étaient en dur dans cette page, et la remise affichée n'était
-  // jamais appliquée à la commande enregistrée.
-  const [promoCodeInput, setPromoCodeInput] = useState(promoParam ? promoParam.toUpperCase() : '');
-  const [promoSoumis, setPromoSoumis] = useState(promoParam ? promoParam.toUpperCase() : '');
-  // Replié par défaut : un champ que la plupart des commandes n'utilisent
-  // jamais n'a pas à occuper de la place dans une fenêtre déjà signalée
-  // "trop chargée" — sauf s'il arrive déjà rempli par un lien partagé.
-  const [promoOuvert, setPromoOuvert] = useState(Boolean(promoParam));
 
   // Livraisons réussies de ce produit : chiffre réel, affiché seulement s'il
   // est supérieur à zéro (voir /api/products/livraisons).
@@ -140,38 +75,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
       .catch(() => {});
   }, [resolvedParams.slug]);
 
-  // Villes et points relais proposés : ceux des réglages de la plateforme.
-  const [choixLivraison, setChoixLivraison] = useState<ChoixLivraison | null>(null);
-  useEffect(() => {
-    fetch('/api/settings/public')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => j && setChoixLivraison(j))
-      .catch(() => {});
-  }, []);
-
-  const { devis, loading: devisEnCours, error: erreurDevis } = useOrderQuote(product ? {
-    productId: product.id, quantity, city, neighborhood,
-    pickupPointId: fulfillmentMethod === 'pickup_point' ? pickupPointId : undefined,
-    promoCode: promoSoumis || undefined, resellerCode: refCode || undefined,
+  // Prix unitaire fait foi côté serveur (il peut être relevé au plancher) :
+  // le même que celui que la page de commande affichera.
+  const { devis } = useOrderQuote(product ? {
+    productId: product.id, quantity: 1, city: 'Bamako', resellerCode: refCode || undefined,
   } : null);
 
-  const finishOrder = async (data?: OrderInput) => {
-    try {
-      const order = await submitOrder(data);
-      void fetch('/api/sms/send-otp', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderNumber: order.orderNumber }),
-      }).catch(() => {});
-      router.push(`/order-success/${order.orderNumber}`);
-      resetAttempt();
-    } catch (error) {
-      toast(error instanceof Error ? error.message : "La commande n'a pas pu être enregistrée.", { ton: 'erreur' });
-    }
-  };
-  const recoveryNotice = <OrderRecovery attempt={recovery} disabled={isSubmitting}
-    onResume={() => { void finishOrder(); }} />;
-
-  // Catalogue pas encore arrivé : squelette, pas « Produit introuvable ».
   if (!product && !catalogueCharge) {
     return (
       <div className="min-h-screen flex flex-col bg-slate-50">
@@ -199,29 +108,19 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             <div className="w-14 h-14 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center mx-auto text-2xl font-black">
               !
             </div>
-            {recoveryNotice}
             <h1 className="text-lg font-black text-slate-900">Produit introuvable</h1>
             <p className="text-sm text-slate-500">
               Ce lien ne correspond à aucun produit disponible sur Suguba — il a peut-être expiré ou été mal recopié.
             </p>
-            <Link
-              href="/"
-              className="inline-flex items-center justify-center w-full py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm transition-colors"
-            >
-              Voir le catalogue Suguba
-            </Link>
+            <Button href="/" size="lg" fullWidth>Voir le catalogue Suguba</Button>
           </div>
         </main>
       </div>
     );
   }
 
-  // Produit connu du téléphone mais PAS en vente (en attente de prix, refusé…).
-  // Bug du 2026-09-11 : sur le téléphone de l'admin, le tableau de bord charge
-  // les produits en attente dans la mémoire locale ; cette page, qui cherche
-  // le produit dans cette mémoire sans regarder son statut, l'affichait à
-  // « 0 F » avec le bouton de partage. Le lien partagé menait chez le
-  // destinataire à « Produit introuvable ». Ni commande ni partage ici.
+  // Produit connu du téléphone mais PAS en vente (en attente de prix, refusé…) :
+  // ni commande ni partage.
   if (!(product.status === 'approved' && product.publicPrice > 0)) {
     return (
       <div className="min-h-screen flex flex-col bg-slate-50">
@@ -231,84 +130,30 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
               <Clock className="w-7 h-7" />
             </div>
-            {recoveryNotice}
             <h1 className="text-lg font-black text-slate-900">Pas encore en vente</h1>
             <p className="text-sm text-slate-500">
               « {product.name} » attend son prix de vente. Tant qu&apos;il n&apos;est pas publié, il ne peut être ni commandé ni partagé.
             </p>
-            <Link
-              href="/"
-              className="inline-flex items-center justify-center w-full py-3 px-4 rounded-2xl bg-slate-900 hover:bg-black text-white font-bold text-sm transition-colors"
-            >
-              Voir le catalogue
-            </Link>
+            <Button href="/" variant="secondary" size="lg" fullWidth>Voir le catalogue</Button>
           </div>
         </main>
       </div>
     );
   }
 
-  const handleApplyPromo = () => {
-    setPromoSoumis(promoCodeInput.trim().toUpperCase());
+  const unitPrice = devis?.prixUnitaire ?? product.publicPrice;
+
+  const allerCommander = () => {
+    const parametres = new URLSearchParams();
+    if (quantity > 1) parametres.set('q', String(quantity));
+    if (refCode) parametres.set('ref', refCode);
+    if (promoParam) parametres.set('promo', promoParam);
+    const suite = parametres.toString();
+    router.push(`/p/${product.slug}/commander${suite ? `?${suite}` : ''}`);
   };
 
-  const pointsRelais = choixLivraison?.pointsRelais || [];
-  const villes = choixLivraison?.livraisonParVille || { Bamako: 1500 };
-  const pointRelaisChoisi = pointsRelais.find((p) => p.id === pickupPointId) || pointsRelais[0];
-
-  // En attendant le devis, on n'affiche que le prix de l'article. Le bouton de
-  // commande reste bloqué tant que le devis n'est pas arrivé : c'est lui qui
-  // fait foi, pas une estimation locale.
-  const unitPrice = devis?.prixUnitaire ?? (product.publicPrice || product.supplierPrice);
-  const totalAmount = devis?.total ?? unitPrice * quantity;
-
-  const fraisRelaisMin = pointsRelais.length ? Math.min(...pointsRelais.map((p) => p.frais)) : null;
-  const libelleRelais = fraisRelaisMin === null
-    ? 'Retrait au comptoir'
-    : fraisRelaisMin === 0 ? 'Gratuit à Bamako' : `Dès ${fraisRelaisMin.toLocaleString('fr-FR')} F à Bamako`;
-
-  const handleOrderSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!customerName || !customerPhone) {
-      toast('Indiquez votre nom et votre numéro de téléphone.', { ton: 'erreur' });
-      return;
-    }
-
-    if (fulfillmentMethod === 'home_delivery' && (!neighborhood || !landmark)) {
-      toast('Indiquez votre quartier et un repère pour que le livreur vous trouve.', { ton: 'erreur' });
-      return;
-    }
-
-    if (!devis) {
-      toast('Le total est en cours de calcul, réessayez dans un instant.', { ton: 'info' });
-      return;
-    }
-
-    const relais = fulfillmentMethod === 'pickup_point' ? pointRelaisChoisi : undefined;
-    const finalNeighborhood = relais ? 'Point Relais Partenaire' : neighborhood;
-    const finalLandmark = relais ? relais.nom : landmark;
-
-    await finishOrder({
-        productId: product.id,
-        quantity: devis.quantite,
-        customerName,
-        customerPhone,
-        city: relais ? 'Bamako' : city,
-        neighborhood: finalNeighborhood,
-        landmark: finalLandmark,
-        deliveryNotes: relais ? `Retrait en Point Relais : ${relais.nom}` : deliveryNotes,
-        resellerCode: refCode || undefined,
-        pickupPointId: relais?.id,
-        promoCode: devis.codePromo || undefined,
-      });
-  };
-
-  // Corrige un défaut signalé par vidéo : ouvrir une fiche produit ne laissait
-  // aucun moyen de revenir à la boutique — le Header du site n'a qu'un logo et
-  // un menu, jamais de flèche retour. `history.length` distingue une vraie
-  // navigation interne (bouton produit, lien partagé cliqué depuis l'app) d'un
-  // lien WhatsApp ouvert directement dans un onglet neuf, où il n'y a rien
-  // dans l'historique vers quoi revenir.
+  // `history.length` distingue une navigation interne d'un lien WhatsApp
+  // ouvert dans un onglet neuf, où il n'y a rien vers quoi revenir.
   const revenirEnArriere = () => {
     if (typeof window !== 'undefined' && window.history.length > 1) {
       router.back();
@@ -332,7 +177,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             Retour
           </button>
 
-          {/* Téléphone, une fois le bloc prix passé : prix + Commander ici. */}
           <div
             aria-hidden={blocAchatVisible}
             className={`md:hidden flex items-center gap-2.5 min-w-0 transition-all duration-200 ${
@@ -340,12 +184,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             }`}
           >
             <span className="text-sm font-black text-slate-900 whitespace-nowrap">
-              {unitPrice.toLocaleString('fr-FR')} F
+              {Math.round(unitPrice).toLocaleString('fr-FR')} F
             </span>
             <button
               type="button"
               tabIndex={blocAchatVisible ? -1 : 0}
-              onClick={() => setCommandeOuverte(true)}
+              onClick={allerCommander}
               className="h-8 px-3.5 rounded-full bg-suguba-brand hover:bg-suguba-brand-dark text-white text-xs font-black whitespace-nowrap active:scale-95 transition-transform"
             >
               Commander
@@ -355,9 +199,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
       </div>
 
       <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
-        
-        {recoveryNotice}
-        {/* Referral info banner if referred */}
         {nomRecommandeur && (
           <div className="bg-emerald-50 border border-emerald-300 rounded-2xl p-3.5 flex items-center justify-between">
             <div className="flex items-center space-x-2.5">
@@ -379,12 +220,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
           </div>
         )}
 
-        {/* Product Details Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-          
-          {/* Left: Product Images & Quality Guarantees */}
           <div className="space-y-4">
-            {/* Galerie : toutes les photos, à balayer, avec vignettes. */}
             <div className="relative">
               <Carrousel
                 images={product.images}
@@ -414,15 +251,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               </button>
             </div>
 
-            {/* Téléphone : nom et prix juste sous la photo. Ils étaient dans la
-                colonne de droite, donc SOUS la description, à ~3 écrans. */}
+            {/* Téléphone : nom, prix et Commander juste sous la photo. */}
             <div ref={blocAchatRef} className="md:hidden space-y-2">
               <h1 className="text-xl font-black text-slate-900 leading-tight">{product.name}</h1>
               <div className="flex items-center justify-between gap-3">
                 <p className="text-2xl font-black text-suguba-brand whitespace-nowrap">
-                  {unitPrice.toLocaleString('fr-FR')} <span className="text-base">FCFA</span>
+                  {Math.round(unitPrice).toLocaleString('fr-FR')} <span className="text-base">FCFA</span>
                 </p>
-                <Button type="button" onClick={() => setCommandeOuverte(true)} className="shrink-0">
+                <Button type="button" onClick={allerCommander} className="shrink-0">
                   <span>Commander</span>
                   <ArrowRight className="w-4 h-4" />
                 </Button>
@@ -432,10 +268,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               </p>
             </div>
 
-            {/* Réassurance : uniquement des engagements réels et vérifiables.
-                Jusqu'au 2026-09-11, « Garantie 6 mois — Service certifié »
-                s'affichait sur TOUS les produits : la base n'a aucune colonne
-                garantie, ce 6 était écrit en dur dans cloud-sync.ts. */}
+            {/* Réassurance : uniquement des engagements réels et vérifiables. */}
             <div className="grid grid-cols-3 gap-2 text-center">
               {[
                 { Icone: CheckCircle2, titre: 'Payez à la livraison', detail: 'Rien à payer avant' },
@@ -459,8 +292,6 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               </p>
             )}
 
-            {/* Une question avant d'acheter : un clic vers le service client,
-                le produit déjà nommé dans le message. */}
             <a
               href={`https://wa.me/22389460000?text=${encodeURIComponent(
                 `Bonjour Suguba, j'ai une question sur « ${product.name} » : https://app.sugubaml.com/p/${product.slug}`,
@@ -473,410 +304,68 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               <span>Une question ? Écrivez-nous</span>
             </a>
 
-            {/* Description */}
-            <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-2xs space-y-2">
-              <h3 className="font-bold text-xs text-slate-900 uppercase tracking-wider">
-                Description du Produit
-              </h3>
-              <p className="text-xs text-slate-600 leading-relaxed">
+            <div className="bg-white p-5 rounded-3xl border border-slate-200 space-y-2">
+              <h2 className="font-bold text-xs text-slate-900 uppercase tracking-wider">
+                Description du produit
+              </h2>
+              <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
                 {product.description}
               </p>
             </div>
           </div>
 
-          {/* Boîte d'achat — compacte. Le formulaire complet (nom, téléphone,
-              livraison, promo…) s'affichait ici en PERMANENCE, sous la
-              description : beaucoup trop chargé (capture vidéo). Cette carte
-              ne garde que ce qu'on règle AVANT de vouloir commander — le
-              prix et la quantité — et ouvre la fenêtre « Sheet » pour tout
-              le reste, exactement comme un panier d'e-commerce classique. */}
-          {/* Sur téléphone, cette carte ne sert plus que de sélecteur de
-              quantité (le total et « Commander » vivent dans la barre fixe
-              du bas) : moins d'emphase visuelle, pour ne pas rivaliser avec
-              elle. Sur ordinateur, elle reste l'unique boîte d'achat. */}
-          <div className="hidden md:block md:sticky md:top-28 bg-white rounded-3xl p-6 border-2 border-suguba-brand/70 shadow-xl space-y-4">
-            <div className="hidden md:block space-y-1">
-              <h1 className="text-lg sm:text-xl font-black text-slate-900 leading-tight">{product.name}</h1>
-              {/* Le prix barré affiché ici valait `unitPrice * 1.2` : un prix
-                  de référence inventé en code, jamais pratiqué. Retiré le
-                  2026-09-09 — afficher un prix barré fictif est une pratique
-                  commerciale trompeuse. */}
-              <span className="block text-2xl sm:text-3xl font-black text-suguba-brand">
-                {unitPrice.toLocaleString('fr-FR')} FCFA
-              </span>
+          {/* Ordinateur : boîte d'achat collée à droite pendant le défilement. */}
+          <div className="hidden md:block md:sticky md:top-28 bg-white rounded-3xl p-6 border border-slate-200 shadow-float space-y-5">
+            <div className="space-y-1">
+              <h1 className="text-xl font-black text-slate-900 leading-tight">{product.name}</h1>
+              <p className="text-3xl font-black text-suguba-brand">{fcfa(unitPrice)}</p>
             </div>
 
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-700">Quantité</span>
-              <div className="flex items-center gap-3">
+              <span className="text-sm font-bold text-slate-700">Quantité</span>
+              <div className="flex items-center rounded-2xl border border-slate-200">
                 <button
                   type="button"
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                  disabled={quantity <= 1}
                   aria-label="Diminuer la quantité"
-                  className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center justify-center"
+                  className="w-10 h-10 flex items-center justify-center text-slate-700 disabled:text-slate-300"
                 >
                   <Minus className="w-4 h-4" />
                 </button>
-                <span className="font-black text-lg text-slate-900 w-6 text-center" aria-live="polite">{quantity}</span>
+                <span className="w-8 text-center text-sm font-black text-slate-900" aria-live="polite">{quantity}</span>
                 <button
                   type="button"
-                  onClick={() => setQuantity(Math.min(50, quantity + 1))}
+                  onClick={() => setQuantity((q) => Math.min(50, q + 1))}
+                  disabled={quantity >= 50}
                   aria-label="Augmenter la quantité"
-                  className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 flex items-center justify-center"
+                  className="w-10 h-10 flex items-center justify-center text-slate-700 disabled:text-slate-300"
                 >
                   <Plus className="w-4 h-4" />
                 </button>
               </div>
             </div>
 
-            {/* Total + Commander : SEULEMENT sur ordinateur. Sur téléphone,
-                la barre fixe en bas de l'écran (ci-dessous) porte déjà le
-                total et le même bouton — les deux affichés en même temps
-                dupliquaient le prix et « Commander » à l'écran (signalé par
-                capture), donnant une impression de désordre. */}
-            <div className="hidden md:flex items-center justify-between text-sm border-t border-slate-100 pt-3">
-              <span className="text-slate-600">Total {quantity > 1 ? `(${quantity} articles)` : ''}</span>
-              <span className="font-black text-slate-900">{totalAmount.toLocaleString('fr-FR')} FCFA</span>
+            <div className="flex items-center justify-between text-sm border-t border-slate-100 pt-4">
+              <span className="text-slate-600">Sous-total</span>
+              <span className="font-black text-slate-900">{fcfa(unitPrice * quantity)}</span>
             </div>
 
-            <div className="hidden md:block space-y-3">
-              <Button type="button" onClick={() => setCommandeOuverte(true)} size="lg" fullWidth>
-                <Sparkles className="w-4 h-4" />
-                <span>Commander</span>
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-              <p className="text-[11px] text-slate-500 text-center">
-                Sans créer de compte · Payez en espèces ou Mobile Money à la livraison
-              </p>
-            </div>
+            <Button type="button" onClick={allerCommander} size="lg" fullWidth>
+              <span>Commander</span>
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+            <p className="text-[11px] text-slate-500 text-center">
+              Livraison calculée à l&apos;étape suivante · Payez à la livraison
+            </p>
           </div>
-
         </div>
 
-        {/* Les avis clients ont été retirés le 2026-08-21 : cette section
-            affichait trois témoignages entièrement inventés (noms, quartiers,
-            citations) sous un label « 100% Authentifiés par OTP » et une note
-            « 4.9/5 (42 avis) » tout aussi fictive, alors qu'aucun avis n'a
-            jamais été collecté. Présenter de la fausse preuve sociale comme
-            vérifiée à des clients qui paient réellement est trompeur.
-            À réintroduire uniquement branché sur de vrais avis, collectés
-            après livraison confirmée par OTP — jamais en dur. */}
-
+        {/* Les avis inventés ont été retirés le 2026-08-21 : à réintroduire
+            uniquement branchés sur de vrais avis collectés après livraison. */}
       </main>
 
-      {/* La barre de navigation reste en bas, comme sur le reste de l'app :
-          le prix et « Commander » vivent désormais sous le nom du produit,
-          puis dans la barre « Retour » une fois défilés. */}
       <BottomNav />
-
-      {/* Fenêtre de commande : feuille du bas sur téléphone, boîte centrée
-          sur ordinateur (voir Sheet.tsx). Ne contient que ce qui reste à
-          régler une fois la quantité choisie — livraison et coordonnées. */}
-      <Sheet
-        ouvert={commandeOuverte}
-        onFermer={() => setCommandeOuverte(false)}
-        titre="Finaliser ma commande"
-        sousTitre={`${product.name} · ${quantity} × ${unitPrice.toLocaleString('fr-FR')} F`}
-        pied={
-          <Button type="submit" form="formulaire-commande" disabled={isSubmitting || !devis} size="lg" fullWidth>
-            <span>Confirmer ({totalAmount.toLocaleString('fr-FR')} F)</span>
-            <ArrowRight className="w-4 h-4" />
-          </Button>
-        }
-      >
-        <form id="formulaire-commande" onSubmit={handleOrderSubmit} className="space-y-5">
-
-          <p className="text-[11px] text-slate-500 -mt-1 flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 text-suguba-brand shrink-0" />
-            Payez en espèces ou Mobile Money uniquement quand le livreur arrive chez vous.
-          </p>
-
-          {/* Quantité : réglée ici sur téléphone (la boîte d'achat de la
-              page est réservée à l'ordinateur). */}
-          <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5">
-            <span className="text-xs font-bold text-slate-700">Quantité</span>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                aria-label="Diminuer la quantité"
-                className="w-9 h-9 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-800 flex items-center justify-center"
-              >
-                <Minus className="w-4 h-4" />
-              </button>
-              <span className="font-black text-base text-slate-900 w-6 text-center" aria-live="polite">{quantity}</span>
-              <button
-                type="button"
-                onClick={() => setQuantity(Math.min(50, quantity + 1))}
-                aria-label="Augmenter la quantité"
-                className="w-9 h-9 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-800 flex items-center justify-center"
-              >
-                <Plus className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
-
-          {/* ── Section : vos coordonnées ── */}
-          <div className="space-y-3">
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Vos coordonnées</p>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Nom & prénom *
-              </label>
-              <div className="relative">
-                <User className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
-                  id="champ-nom"
-                  type="text"
-                  required
-                  autoFocus
-                  autoComplete="name"
-                  placeholder="Ex: Moussa Traoré"
-                  value={customerName}
-                  onChange={(e) => setCustomerName(e.target.value)}
-                  className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:bg-white focus:outline-emerald-600"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Téléphone (appel / WhatsApp) *
-              </label>
-              <div className="relative">
-                <Phone className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                <input
-                  type="tel"
-                  required
-                  inputMode="tel"
-                  autoComplete="tel"
-                  placeholder="Ex: 70 12 34 56"
-                  value={customerPhone}
-                  onChange={(e) => setCustomerPhone(e.target.value)}
-                  className="w-full pl-9 pr-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:bg-white focus:outline-emerald-600"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* ── Section : livraison ── */}
-          <div className="space-y-3 pt-1 border-t border-slate-100">
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider pt-4">Livraison</p>
-
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setFulfillmentMethod('home_delivery')}
-                className={`p-3 rounded-2xl border text-left transition-all ${
-                  fulfillmentMethod === 'home_delivery'
-                    ? 'bg-slate-900 text-white border-slate-900 shadow-xs'
-                    : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
-                }`}
-              >
-                <span className="flex items-center gap-1 font-black text-xs">
-                  <Bike className="w-3.5 h-3.5" />À domicile
-                </span>
-                <span className={`text-[11px] block ${fulfillmentMethod === 'home_delivery' ? 'text-slate-300' : 'text-slate-500'}`}>
-                  Livré devant votre porte
-                </span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setFulfillmentMethod('pickup_point')}
-                className={`p-3 rounded-2xl border text-left transition-all ${
-                  fulfillmentMethod === 'pickup_point'
-                    ? 'bg-emerald-800 text-white border-emerald-800 shadow-xs'
-                    : 'bg-emerald-50/50 text-emerald-950 border-emerald-200 hover:bg-emerald-100/50'
-                }`}
-              >
-                <span className="flex items-center gap-1 font-black text-xs">
-                  <Store className="w-3.5 h-3.5" />Point relais
-                </span>
-                <span className={`text-[11px] block ${fulfillmentMethod === 'pickup_point' ? 'text-emerald-200' : 'text-emerald-700'}`}>
-                  {libelleRelais}
-                </span>
-              </button>
-            </div>
-
-            {fulfillmentMethod === 'pickup_point' ? (
-              <div className="space-y-2 bg-emerald-50/40 p-3.5 rounded-2xl border border-emerald-200">
-                <label className="block text-xs font-bold text-emerald-950">
-                  Point relais partenaire à Bamako
-                </label>
-                <select
-                  value={pickupPointId}
-                  onChange={(e) => setPickupPointId(e.target.value)}
-                  className="w-full px-3 py-2.5 bg-white border border-emerald-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:outline-emerald-600"
-                >
-                  {pointsRelais.map(point => (
-                    <option key={point.id} value={point.id}>
-                      {point.nom} — {point.frais === 0 ? 'GRATUIT' : `${point.frais} F`} ({point.horaires})
-                    </option>
-                  ))}
-                </select>
-                <p className="text-[11px] text-emerald-800 flex items-start gap-1">
-                  <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                  Votre colis sera déposé sous 24h. Vous recevrez un SMS avec votre code de retrait OTP.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Ville *</label>
-                    <div className="relative">
-                      <select
-                        value={city}
-                        onChange={(e) => { setCity(e.target.value); setNeighborhood(''); }}
-                        className="w-full appearance-none px-3 py-2.5 pr-9 bg-white border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:outline-emerald-600"
-                      >
-                        {Object.entries(villes).map(([ville, frais]) => (
-                          <option key={ville} value={ville}>
-                            {ville}{PRECISION_VILLE[ville] ? ` - ${PRECISION_VILLE[ville]}` : ''} ({Number(frais).toLocaleString('fr-FR')} F)
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Quartier *</label>
-                    {city.trim().toLowerCase() === 'bamako' ? (
-                      // Quartier reconnu (voir bamako-quartiers.ts) : le tarif
-                      // de livraison se calcule alors sur la vraie distance
-                      // jusqu'au quartier du fournisseur, pas un tarif plat.
-                      // Même sélecteur que pour l'inscription fournisseur, la
-                      // même liste de quartiers partout dans l'app.
-                      <NeighborhoodPicker
-                        value={neighborhood || 'Choisir…'}
-                        onChange={setNeighborhood}
-                      />
-                    ) : (
-                      <input
-                        type="text"
-                        required={fulfillmentMethod === 'home_delivery'}
-                        placeholder="Ex: Centre-ville"
-                        value={neighborhood}
-                        onChange={(e) => setNeighborhood(e.target.value)}
-                        className="w-full px-3 py-2.5 bg-white border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:outline-emerald-600"
-                      />
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Repère visuel précis (pharmacie, école, station...) *
-                  </label>
-                  <div className="relative">
-                    <MapPin className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
-                    <input
-                      type="text"
-                      required={fulfillmentMethod === 'home_delivery'}
-                      placeholder="Ex: En face de la boulangerie de l'ACI, portail blanc"
-                      value={landmark}
-                      onChange={(e) => setLandmark(e.target.value)}
-                      className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:outline-emerald-600"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Code promo : replié par défaut, la plupart des commandes n'en ont pas. */}
-          <div className="pt-1 border-t border-slate-100">
-            {!promoOuvert ? (
-              <button
-                type="button"
-                onClick={() => setPromoOuvert(true)}
-                className="flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-800 pt-4"
-              >
-                <Tag className="w-3.5 h-3.5" />
-                J&apos;ai un code promo
-              </button>
-            ) : (
-              <div className="space-y-1.5 pt-4">
-                <label className="block text-xs font-bold text-slate-700">
-                  Code promo / réduction partenaire
-                </label>
-                <div className="flex space-x-2">
-                  <input
-                    type="text"
-                    autoFocus
-                    placeholder="Ex: RAMADAN, TABASKI, SUGUBAVIP"
-                    value={promoCodeInput}
-                    onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
-                    className="flex-1 px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-mono font-bold text-slate-900 focus:bg-white uppercase"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleApplyPromo}
-                    className="px-3.5 py-2 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-xs transition-colors shrink-0"
-                  >
-                    Appliquer
-                  </button>
-                </div>
-                {promoSoumis && devis?.avisPromo === 'invalide' && (
-                  <p className="text-[11px] font-bold text-rose-600">Code promo invalide ou expiré</p>
-                )}
-                {devis?.codePromo && devis.remise > 0 && (
-                  <p className="text-[11px] font-bold text-emerald-700 flex items-center">
-                    <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
-                    Code {devis.codePromo} validé : -{devis.remise.toLocaleString('fr-FR')} FCFA
-                    {devis.avisPromo === 'plafonnee' ? ' (remise maximale sur cet article)' : ' de réduction !'}
-                  </p>
-                )}
-                {devis?.codePromo && devis.remise === 0 && (
-                  <p className="text-[11px] font-bold text-amber-700">
-                    Code {devis.codePromo} reconnu, mais aucune remise n&apos;est possible sur cet article.
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* ── Récapitulatif — entièrement issu du devis serveur. ── */}
-          <div className="bg-slate-900 text-white p-4 rounded-2xl space-y-1.5">
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider flex items-center gap-1.5 pb-1">
-              <Receipt className="w-3.5 h-3.5" />Récapitulatif
-            </p>
-            {devis ? (
-              <>
-                <div className="flex justify-between text-xs text-slate-300">
-                  <span>Produit ({devis.quantite}x)</span>
-                  <span className="font-semibold text-white">{devis.montantArticles.toLocaleString('fr-FR')} FCFA</span>
-                </div>
-                <div className="flex justify-between text-xs text-slate-300">
-                  <span className="flex items-center gap-1">
-                    {devis.modeLivraison === 'relais' ? 'Retrait en point relais' : `Livraison (${devis.ville})`}
-                    {devis.distanceLivraisonKm !== null && (
-                      <span className="inline-flex items-center gap-0.5 text-[11px] text-slate-400">
-                        <Navigation className="w-3 h-3" />~{devis.distanceLivraisonKm.toFixed(1)} km
-                      </span>
-                    )}
-                  </span>
-                  <span className="font-semibold text-white">{devis.fraisLivraison === 0 ? 'Gratuit' : `${devis.fraisLivraison.toLocaleString('fr-FR')} FCFA`}</span>
-                </div>
-                {devis.remise > 0 && (
-                  <div className="flex justify-between text-xs font-bold text-emerald-400">
-                    <span>Remise ({devis.codePromo})</span>
-                    <span>- {devis.remise.toLocaleString('fr-FR')} FCFA</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-base font-black pt-2 mt-1 border-t border-white/10">
-                  <span>Total à payer au livreur</span>
-                  <span className="text-emerald-400">{devis.total.toLocaleString('fr-FR')} FCFA</span>
-                </div>
-              </>
-            ) : (
-              <p className="text-xs text-slate-400">{devisEnCours ? 'Calcul du total…' : erreurDevis || 'Total indisponible pour le moment.'}</p>
-            )}
-          </div>
-        </form>
-      </Sheet>
     </div>
   );
 }

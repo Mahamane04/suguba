@@ -10,6 +10,11 @@ interface NeighborhoodPickerProps {
   value: string;
   onChange: (neighborhood: string) => void;
   className?: string;
+  /** Texte grisé tant qu'aucun quartier n'est choisi. */
+  placeholder?: string;
+  /** Relie le déclencheur à un <label htmlFor> et permet d'y ramener le focus. */
+  id?: string;
+  invalide?: boolean;
 }
 
 /** Au-delà, la position n'a plus rien à voir avec Bamako (test à l'étranger, GPS erratique). */
@@ -24,7 +29,9 @@ const DISTANCE_MAX_KM = 40;
  * livraison à Bamako) : géolocalise puis sélectionne le quartier connu le
  * plus proche — sans jamais bloquer la saisie manuelle si refusée/indisponible.
  */
-export default function NeighborhoodPicker({ value, onChange, className = '' }: NeighborhoodPickerProps) {
+export default function NeighborhoodPicker({
+  value, onChange, className = '', placeholder = 'Choisir…', id, invalide = false,
+}: NeighborhoodPickerProps) {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [localisationEnCours, setLocalisationEnCours] = useState(false);
@@ -69,13 +76,21 @@ export default function NeighborhoodPicker({ value, onChange, className = '' }: 
 
   return (
     <div ref={ref} className={`relative ${className}`}>
+      {/* Même gabarit que les champs du design system (Field.tsx) : 48 px,
+          rayon 2xl, texte 16 px sur téléphone, focus au vert de marque. */}
       <button
+        id={id}
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="w-full flex items-center justify-between gap-1 bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 text-xs font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-suguba-brand/30"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-invalid={invalide}
+        className={`w-full h-12 flex items-center justify-between gap-2 bg-white border rounded-2xl px-3.5 text-base sm:text-sm text-left focus:outline-none focus:ring-2 focus:ring-suguba-brand/30 focus:border-suguba-brand ${
+          invalide ? 'border-rose-400' : 'border-slate-200'
+        }`}
       >
-        <span className="truncate">{value}</span>
-        <ChevronDown className={`w-3.5 h-3.5 text-gray-400 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+        <span className={`truncate ${value ? 'text-slate-900' : 'text-slate-400'}`}>{value || placeholder}</span>
+        <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
