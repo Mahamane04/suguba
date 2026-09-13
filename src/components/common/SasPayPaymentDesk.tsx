@@ -1,7 +1,10 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Smartphone, ShieldCheck, Loader2, CheckCircle2, AlertCircle, ArrowUpRight } from 'lucide-react';
+import { ShieldCheck, Loader2, CheckCircle2, AlertCircle, Check } from 'lucide-react';
+import Button from '@/components/ui/Button';
+import { Field, Input } from '@/components/ui/Field';
+import PaymentLogo, { type MoyenPaiement } from '@/components/ui/PaymentLogo';
 
 /**
  * Paiement mobile money d'une commande, via SasPay.
@@ -21,13 +24,15 @@ import { Smartphone, ShieldCheck, Loader2, CheckCircle2, AlertCircle, ArrowUpRig
  *    statut jusqu'à la validation.
  */
 
-// Libellés courts : « Orange Money » sur trois colonnes à 375 px passait à la
-// ligne et cassait l'alignement. Au Mali ces noms courts sont sans ambiguïté.
-const RESEAUX = [
-  { code: 'orange_ml', label: 'Orange', couleur: 'bg-orange-500' },
-  { code: 'moov_ml', label: 'Moov', couleur: 'bg-slate-600' },
-  { code: 'mobi_cash_ml', label: 'Mobi Cash', couleur: 'bg-emerald-600' },
-] as const;
+// Logo de la marque au-dessus d'un libellé court : « Orange Money » sur trois
+// colonnes à 375 px passait à la ligne et cassait l'alignement.
+const RESEAUX: readonly { code: 'orange_ml' | 'moov_ml' | 'mobi_cash_ml'; label: string; moyen: MoyenPaiement }[] = [
+  { code: 'orange_ml', label: 'Orange Money', moyen: 'orange_money' },
+  { code: 'moov_ml', label: 'Moov Money', moyen: 'moov_money' },
+  { code: 'mobi_cash_ml', label: 'Mobi Cash', moyen: 'mobi_cash' },
+];
+
+const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} FCFA`;
 
 type CodeReseau = (typeof RESEAUX)[number]['code'];
 type Etape = 'saisie' | 'envoi' | 'attente' | 'paye' | 'echec';
@@ -146,51 +151,43 @@ export default function SasPayPaymentDesk({ amount, orderNumber, defaultPhone = 
       // séparer d'une somme importante. Le montant réglé doit être aussi
       // lisible ici qu'il l'était sur l'écran de paiement, sans quoi il n'a
       // aucune confirmation chiffrée de ce qu'il a payé.
-      <div className="bg-emerald-50 rounded-3xl p-5 sm:p-6 border border-emerald-200 text-left space-y-3">
-        <div className="flex items-center space-x-2">
-          <CheckCircle2 className="w-7 h-7 text-emerald-600 shrink-0" />
-          <h3 className="font-black text-base text-emerald-900">Paiement reçu</h3>
+      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 text-left space-y-3">
+        <div className="flex items-center gap-2.5">
+          <span className="w-9 h-9 rounded-full bg-suguba-brand/10 text-suguba-brand flex items-center justify-center shrink-0">
+            <CheckCircle2 className="w-5 h-5" />
+          </span>
+          <h3 className="font-black text-base text-slate-900">Paiement reçu</h3>
         </div>
-        <p className="text-[28px] leading-none font-black text-emerald-700 font-mono tracking-tight">
-          {amount.toLocaleString('fr-FR')} <span className="text-base align-top">FCFA</span>
-        </p>
-        <div className="space-y-1 pt-1">
-          <p className="text-[11px] font-bold text-emerald-800">Commande #{orderNumber} réglée.</p>
-          <p className="text-[11px] text-emerald-700">
-            Le livreur ne vous redemandera rien à la remise du colis.
-          </p>
+        <p className="text-3xl font-black text-slate-900 tabular-nums">{fcfa(amount)}</p>
+        <div className="space-y-1">
+          <p className="text-xs font-bold text-slate-700">Commande #{orderNumber} réglée.</p>
+          <p className="text-xs text-slate-500">Le livreur ne vous redemandera rien à la remise du colis.</p>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-sm text-left space-y-5">
+  const choisi = RESEAUX.find((r) => r.code === reseau) || RESEAUX[0];
 
-      {/* Clarté monétaire immédiate : le montant est l'information la plus
-          importante de l'écran, il est donc traité en Display 1 (28px, 900)
-          et non noyé dans une ligne de métadonnées. */}
-      <div className="border-b border-slate-100 pb-4">
-        <div className="flex items-center space-x-2 mb-2">
-          <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
-            <Smartphone className="w-4 h-4" />
-          </div>
-          <h3 className="font-black text-sm text-slate-900">Payer maintenant par Mobile Money</h3>
-        </div>
-        <p className="text-[28px] leading-none font-black text-emerald-700 font-mono tracking-tight">
-          {amount.toLocaleString('fr-FR')} <span className="text-base align-top">FCFA</span>
-        </p>
-        <p className="text-[11px] font-bold text-slate-500 mt-1.5">Commande #{orderNumber}</p>
+  return (
+    <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 text-left space-y-5">
+      <div className="space-y-1">
+        <h3 className="text-sm font-black text-slate-900">Payer maintenant par Mobile Money</h3>
+        <p className="text-3xl font-black text-slate-900 tabular-nums">{fcfa(amount)}</p>
+        <p className="text-xs text-slate-500">Commande #{orderNumber} · ou payez en espèces au livreur</p>
       </div>
 
       {etape === 'attente' ? (
-        <div className="space-y-3 py-2">
-          <div className="flex items-center space-x-3">
-            <Loader2 className="w-6 h-6 text-emerald-600 animate-spin shrink-0" />
-            <div>
-              <p className="font-bold text-xs text-slate-900">Validez sur votre téléphone</p>
-              <p className="text-[11px] text-slate-500">
-                Une demande de paiement vient d&apos;être envoyée au {telephone}. Tapez votre code secret pour confirmer.
+        <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4 space-y-2">
+          <div className="flex items-center gap-3">
+            <PaymentLogo moyen={choisi.moyen} taille="md" />
+            <div className="min-w-0">
+              <p className="font-bold text-sm text-slate-900 flex items-center gap-2">
+                <Loader2 className="w-4 h-4 text-suguba-brand animate-spin shrink-0" />
+                Validez sur votre téléphone
+              </p>
+              <p className="text-xs text-slate-500">
+                Demande envoyée au {telephone}. Tapez votre code secret {choisi.label} pour confirmer.
               </p>
             </div>
           </div>
@@ -200,76 +197,70 @@ export default function SasPayPaymentDesk({ amount, orderNumber, defaultPhone = 
         </div>
       ) : (
         <>
-          <div className="space-y-2">
-            <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">Votre réseau</label>
-            <div className="grid grid-cols-3 gap-2">
-              {RESEAUX.map((r) => (
+          <div role="radiogroup" aria-label="Votre réseau" className="grid grid-cols-3 gap-2">
+            {RESEAUX.map((r) => {
+              const actif = reseau === r.code;
+              return (
                 <button
                   key={r.code}
                   type="button"
+                  role="radio"
+                  aria-checked={actif}
                   onClick={() => setReseau(r.code)}
-                  className={`h-12 px-2 rounded-2xl text-[11px] font-bold border transition-all active:scale-[0.98] flex items-center justify-center whitespace-nowrap ${
-                    reseau === r.code
-                      ? 'border-slate-900 bg-slate-900 text-white'
-                      : 'border-slate-200 bg-white text-slate-700 hover:border-slate-400'
+                  className={`relative rounded-2xl border p-2.5 pt-3 flex flex-col items-center gap-1.5 transition-all active:scale-[0.98] ${
+                    actif
+                      ? 'border-suguba-brand bg-suguba-brand/5 ring-1 ring-suguba-brand'
+                      : 'border-slate-200 bg-white hover:border-slate-300'
                   }`}
                 >
-                  <span className={`inline-block w-2 h-2 rounded-full mr-1.5 shrink-0 ${r.couleur}`} />
-                  {r.label}
+                  <PaymentLogo moyen={r.moyen} taille="lg" />
+                  <span className="text-[11px] font-bold text-slate-900 leading-tight text-center">{r.label}</span>
+                  {actif && (
+                    <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-suguba-brand text-white flex items-center justify-center">
+                      <Check className="w-2.5 h-2.5" strokeWidth={3} />
+                    </span>
+                  )}
                 </button>
-              ))}
-            </div>
+              );
+            })}
           </div>
 
-          <div className="space-y-2">
-            <label htmlFor="saspay-tel" className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
-              Numéro qui paie
-            </label>
-            <input
+          <Field label={`Numéro ${choisi.label} qui paie`} htmlFor="saspay-tel" erreur={erreur && etape === 'saisie' ? erreur : undefined}>
+            <Input
               id="saspay-tel"
               type="tel"
               inputMode="tel"
+              autoComplete="tel"
               value={telephone}
               onChange={(e) => setTelephone(e.target.value)}
               placeholder="Ex : 70 00 00 00"
-              className="w-full h-12 px-4 rounded-2xl border border-slate-200 text-sm font-mono focus:outline-none focus:border-slate-900"
             />
-          </div>
+          </Field>
 
-          {erreur && (
-            <div className="flex items-start space-x-2 bg-red-50 border border-red-200 rounded-2xl p-3">
-              <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-              <p className="text-[11px] text-red-800 font-medium">{erreur}</p>
+          {erreur && etape === 'echec' && (
+            <div role="alert" className="flex items-start gap-2 bg-rose-50 border border-rose-100 rounded-2xl p-3">
+              <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+              <p className="text-xs font-semibold text-rose-700">{erreur}</p>
             </div>
           )}
 
-          <button
-            type="button"
-            onClick={payer}
-            disabled={etape === 'envoi'}
-            // Zone du pouce : 52 px de haut, au-delà du minimum de 48 px du
-            // design system, avec retour tactile actif:scale-[0.98].
-            className="w-full h-[52px] bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] disabled:bg-slate-300 disabled:active:scale-100 text-white font-black px-4 rounded-2xl text-sm flex items-center justify-center space-x-2 shadow-xs transition-all"
-          >
+          <Button type="button" onClick={payer} disabled={etape === 'envoi'} size="lg" fullWidth>
             {etape === 'envoi' ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
                 <span>Envoi en cours…</span>
               </>
             ) : (
-              <>
-                <span>Payer {amount.toLocaleString('fr-FR')} FCFA</span>
-                <ArrowUpRight className="w-4 h-4" />
-              </>
+              <span>Payer {fcfa(amount)}</span>
             )}
-          </button>
+          </Button>
         </>
       )}
 
-      <div className="flex items-center space-x-1.5 text-[11px] text-slate-500 pt-1 border-t border-slate-100">
-        <ShieldCheck className="w-3.5 h-3.5 shrink-0" />
-        <span>Paiement sécurisé. Suguba ne voit jamais votre code secret.</span>
-      </div>
+      <p className="flex items-center gap-1.5 text-[11px] text-slate-500">
+        <ShieldCheck className="w-3.5 h-3.5 text-suguba-brand shrink-0" />
+        Paiement sécurisé par SasPay. Suguba ne voit jamais votre code secret.
+      </p>
     </div>
   );
 }

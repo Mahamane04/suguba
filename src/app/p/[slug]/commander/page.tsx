@@ -10,7 +10,8 @@ import type { OrderInput } from '@/lib/order-input';
 import OrderRecovery from '@/components/common/OrderRecovery';
 import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
 import Button from '@/components/ui/Button';
-import { Field, Input, Select, Textarea } from '@/components/ui/Field';
+import { Field, Input, Textarea } from '@/components/ui/Field';
+import ChoicePicker from '@/components/ui/ChoicePicker';
 import { Card, EmptyState, Skeleton } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
 import {
@@ -386,19 +387,20 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
             {mode === 'home_delivery' ? (
               <div className="space-y-4">
                 <Field label="Ville" htmlFor="champ-ville" requis>
-                  <Select
+                  <ChoicePicker
                     id="champ-ville"
-                    value={city}
-                    onChange={(e) => { setCity(e.target.value); setNeighborhood(''); }}
-                  >
-                    {Object.entries(villes).map(([ville, frais]) => (
-                      <option key={ville} value={ville}>
-                        {ville}
-                        {PRECISION_VILLE[ville] ? ` (${PRECISION_VILLE[ville]})` : ''}
-                        {ville.toLowerCase() === 'bamako' ? '' : ` — ${fcfa(Number(frais))}`}
-                      </option>
-                    ))}
-                  </Select>
+                    valeur={city}
+                    onChange={(v) => { setCity(v); setNeighborhood(''); }}
+                    // Bamako en tête (livraison la plus demandée, prix au
+                    // quartier) ; les autres villes : livraison en gare.
+                    choix={Object.entries(villes)
+                      .sort(([a], [b]) => (a.toLowerCase() === 'bamako' ? -1 : b.toLowerCase() === 'bamako' ? 1 : a.localeCompare(b, 'fr')))
+                      .map(([ville, frais]) => ({
+                        valeur: ville,
+                        libelle: PRECISION_VILLE[ville] ? `${ville} (${PRECISION_VILLE[ville]})` : ville,
+                        detail: ville.toLowerCase() === 'bamako' ? 'Selon le quartier' : fcfa(Number(frais)),
+                      }))}
+                  />
                 </Field>
 
                 <Field label="Quartier" htmlFor="champ-quartier" requis erreur={afficher(erreurs.quartier)}>

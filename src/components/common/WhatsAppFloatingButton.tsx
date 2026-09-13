@@ -5,10 +5,13 @@ import { MessageCircle, X, ShoppingBag, Users, Phone, HelpCircle } from 'lucide-
 import { usePathname } from 'next/navigation';
 import { useClavierOuvert } from '@/lib/useClavierOuvert';
 
-// Pages où le bouton gêne plus qu'il n'aide : la fiche produit a sa propre
-// barre d'achat en bas (le bouton la recouvrait), et l'admin est l'équipe
-// Suguba elle-même.
-const MASQUE_SUR = ['/p/', '/admin'];
+// Liste AUTORISÉE plutôt que liste d'exclusion (2026-09-13) : sur les écrans
+// de formulaire ou d'action (retraits, paiement, badge, commande…), la bulle
+// flottante recouvrait les champs et les boutons principaux (captures). Elle
+// ne s'affiche que sur les vitrines de découverte ; ailleurs, l'aide reste
+// accessible par le menu et les liens « Une question ? » de chaque écran.
+const VISIBLE_SUR_EXACT = ['/', '/rejoindre'];
+const VISIBLE_SUR_PREFIXE = ['/s/', '/r/'];
 
 export default function WhatsAppFloatingButton() {
   const [isOpen, setIsOpen] = useState(false);
@@ -16,7 +19,8 @@ export default function WhatsAppFloatingButton() {
   // Masqué pendant la saisie : même décalage que la barre du bas sur iPhone
   // après fermeture du clavier (voir src/lib/useClavierOuvert.ts).
   const clavierOuvert = useClavierOuvert();
-  if (MASQUE_SUR.some((prefixe) => pathname.startsWith(prefixe))) return null;
+  const visible = VISIBLE_SUR_EXACT.includes(pathname) || VISIBLE_SUR_PREFIXE.some((p) => pathname.startsWith(p));
+  if (!visible) return null;
   const supportPhone = '22389460000';
 
   const handleOpenWhatsApp = (topic: string) => {

@@ -6,7 +6,8 @@ import BottomNav from '@/components/common/BottomNav';
 import Button from '@/components/ui/Button';
 import { useSugubaStore } from '@/lib/store';
 import EmptyState from '@/components/ui/EmptyState';
-import { Wallet, Clock, CheckCircle2, History, AlertCircle, Building2, Loader2 } from 'lucide-react';
+import PaymentLogo, { moyenDepuisCode } from '@/components/ui/PaymentLogo';
+import { Wallet, Clock, CheckCircle2, History, AlertCircle, Building2, Loader2, Check } from 'lucide-react';
 
 type Moyen = 'Orange Money' | 'Moov Money' | 'Mobi Cash' | 'Agence Suguba';
 
@@ -203,20 +204,35 @@ export default function ResellerPayoutsPage() {
             <form onSubmit={demander} className="space-y-4">
               <div>
                 <p className="text-xs font-bold text-slate-700 mb-2">Comment voulez-vous recevoir l&apos;argent ?</p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {MOYENS.map((m) => (
-                    <button
-                      key={m.id}
-                      type="button"
-                      onClick={() => setMoyen(m.id)}
-                      className={`p-3 rounded-2xl border text-center transition-colors ${
-                        moyen === m.id ? 'border-slate-900 bg-slate-50 ring-1 ring-slate-900' : 'border-slate-200 hover:bg-slate-50'
-                      }`}
-                    >
-                      <span className="block text-sm font-bold text-slate-900">{m.libelle}</span>
-                      <span className="block text-[11px] text-slate-500">{m.detail}</span>
-                    </button>
-                  ))}
+                <div role="radiogroup" aria-label="Moyen de retrait" className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  {MOYENS.map((m) => {
+                    const actif = moyen === m.id;
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={actif}
+                        onClick={() => setMoyen(m.id)}
+                        className={`relative p-3 rounded-2xl border flex items-center gap-2.5 text-left transition-all ${
+                          actif
+                            ? 'border-suguba-brand bg-suguba-brand/5 ring-1 ring-suguba-brand'
+                            : 'border-slate-200 bg-white hover:border-slate-300'
+                        }`}
+                      >
+                        <PaymentLogo moyen={m.id === 'Agence Suguba' ? 'especes' : moyenDepuisCode(m.id)} taille="md" />
+                        <span className="min-w-0">
+                          <span className="block text-sm font-bold text-slate-900 leading-tight">{m.libelle}</span>
+                          <span className="block text-[11px] text-slate-500">{m.detail}</span>
+                        </span>
+                        {actif && (
+                          <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-suguba-brand text-white flex items-center justify-center">
+                            <Check className="w-2.5 h-2.5" strokeWidth={3} />
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -294,12 +310,15 @@ export default function ResellerPayoutsPage() {
                 const s = STATUTS[r.statut] || { libelle: r.statut, classe: 'bg-slate-100 text-slate-600' };
                 return (
                   <div key={r.id} className="py-3 flex items-center justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold text-slate-900">{enF(r.montant)} · {r.moyen}</p>
-                      <p className="text-[11px] text-slate-500 truncate">
-                        {new Date(r.creeLe).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        {' · '}<span className="font-mono">{r.id}</span>
-                      </p>
+                    <div className="min-w-0 flex items-center gap-3">
+                      <PaymentLogo moyen={/agence|cash|esp/i.test(r.moyen) ? 'especes' : moyenDepuisCode(r.moyen)} taille="md" />
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-slate-900">{enF(r.montant)} · {r.moyen}</p>
+                        <p className="text-[11px] text-slate-500 truncate">
+                          {new Date(r.creeLe).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          {' · '}<span className="font-mono">{r.id}</span>
+                        </p>
+                      </div>
                     </div>
                     <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold shrink-0 ${s.classe}`}>{s.libelle}</span>
                   </div>

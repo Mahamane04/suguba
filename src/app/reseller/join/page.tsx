@@ -8,7 +8,7 @@ import BottomNav from '@/components/common/BottomNav';
 import EarningsCalculator from '@/components/reseller/EarningsCalculator';
 import { supabase } from '@/lib/supabase';
 import {
-  Sparkles, ShieldCheck, Wallet, Users
+  Sparkles, ShieldCheck, Wallet
 } from 'lucide-react';
 
 function GoogleIcon({ className }: { className?: string }) {
@@ -84,10 +84,11 @@ function JoinContent() {
           <span className="text-[11px] text-slate-500 block leading-tight">Produits certifiés</span>
         </div>
 
+        {/* Wave retiré : SasPay ne le couvre pas au Mali, aucun gain ne peut y être versé. */}
         <div className="bg-white p-3 rounded-2xl border border-slate-200 text-center space-y-1">
-          <Users className="w-5 h-5 text-slate-600 mx-auto" />
-          <span className="font-black text-[11px] text-slate-900 block">Wave / Orange</span>
-          <span className="text-[11px] text-slate-500 block leading-tight">Paiement Mobile</span>
+          <Wallet className="w-5 h-5 text-slate-600 mx-auto" />
+          <span className="font-black text-[11px] text-slate-900 block">Mobile Money</span>
+          <span className="text-[11px] text-slate-500 block leading-tight">Orange · Moov · Mobi Cash</span>
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
@@ -23,9 +23,11 @@ export default function ResellerBadgePage() {
 
   const [copiedCode, setCopiedCode] = useState(false);
 
-  const personalCatalogUrl = typeof window !== 'undefined'
-    ? `${window.location.origin}/reseller/join?ref=${reseller.referralCode}`
-    : `https://app.sugubaml.com/reseller/join?ref=${reseller.referralCode}`;
+  // Origine lue APRÈS le montage : calculée pendant le rendu, elle différait
+  // entre serveur et navigateur (erreur d'hydratation en console).
+  const [origine, setOrigine] = useState('https://app.sugubaml.com');
+  useEffect(() => { setOrigine(window.location.origin); }, []);
+  const personalCatalogUrl = `${origine}/reseller/join?ref=${reseller.referralCode}`;
 
   const handlePrint = () => {
     if (typeof window !== 'undefined') {
@@ -82,9 +84,9 @@ export default function ResellerBadgePage() {
 
         {/* Title */}
         <div className="text-center space-y-1 print:hidden">
-          <h1 className="text-xl font-black text-slate-900 flex items-center justify-center space-x-2">
-            <Award className="w-5 h-5 text-amber-500" />
-            <span>Votre Carte Professionnelle Digitale Suguba</span>
+          <Award className="w-6 h-6 text-amber-500 mx-auto" />
+          <h1 className="text-xl font-black text-slate-900 text-balance">
+            Votre carte professionnelle Suguba
           </h1>
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
             Présentez cette carte à vos clients et commerçants à Bamako pour prouver votre statut officiel.
@@ -95,26 +97,26 @@ export default function ResellerBadgePage() {
         <div className="relative bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 text-white rounded-3xl p-6 sm:p-8 shadow-2xl border-2 border-emerald-500/30 overflow-hidden space-y-6 print:border-slate-800 print:shadow-none">
           
           {/* Top Header of the Badge */}
-          <div className="flex items-center justify-between border-b border-white/10 pb-4">
-            <div className="flex items-center space-x-2.5">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-700 flex items-center justify-center font-black text-xl text-white shadow-md border border-white/20">
+          <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-4">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-700 flex items-center justify-center font-black text-xl text-white shadow-md border border-white/20 shrink-0">
                 S
               </div>
-              <div>
-                <span className="text-sm font-black tracking-tight text-white flex items-center">
+              <div className="min-w-0">
+                <span className="text-sm font-black tracking-tight text-white block">
                   SUGUBA<span className="text-emerald-400">.ML</span>
                 </span>
-                <span className="text-[11px] block font-bold text-emerald-300 uppercase tracking-widest -mt-0.5">
-                  Réseau Officiel Mali 🇲🇱
+                <span className="text-[11px] block font-bold text-emerald-300 uppercase tracking-wider truncate">
+                  Réseau officiel Mali
                 </span>
               </div>
             </div>
 
-            <div className="text-right">
-              <span className="px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-black uppercase tracking-wider border border-emerald-500/30">
-                Revendeur Agréé
-              </span>
-            </div>
+            {/* Pastille sur une seule ligne : elle se coupait en deux blocs
+                décalés « REVENDEUR / AGRÉÉ » sur téléphone (capture). */}
+            <span className="shrink-0 whitespace-nowrap px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-black uppercase tracking-wide border border-emerald-500/30">
+              Agréé
+            </span>
           </div>
 
           {/* Body with Profile & QR Code */}
@@ -161,12 +163,12 @@ export default function ResellerBadgePage() {
           </div>
 
           {/* Footer Security Hologram */}
-          <div className="pt-4 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-500">
-            <div className="flex items-center space-x-1.5">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+          <div className="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 text-[11px] text-slate-400">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
               <span>Certifié par Suguba Technologies Mali SAS</span>
             </div>
-            <span className="font-mono text-emerald-300 font-bold">ID: ML-BKO-2026</span>
+            <span className="font-mono text-emerald-300 font-bold whitespace-nowrap">ML-BKO-2026</span>
           </div>
 
         </div>

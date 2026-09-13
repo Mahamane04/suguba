@@ -284,7 +284,7 @@ export default function RejoindrePage() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
           {[
             'Aucun stock à acheter',
-            'Paiement Orange Money ou Wave',
+            'Gains versés par Orange Money, Moov ou Mobi Cash',
             'Livraison assurée par Suguba',
           ].map((texte) => (
             <div key={texte} className="bg-white rounded-2xl border border-gray-100 px-3 py-2.5 flex items-center gap-2">

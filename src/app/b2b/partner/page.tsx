@@ -129,7 +129,7 @@ export default function B2BPartnerPitchPage() {
                 <span>3. Sécurité Anti-Fraude par Code OTP</span>
               </div>
               <p className="text-slate-600 leading-relaxed">
-                Aucun colis n&apos;est remis sans validation du <strong>Code Secret OTP</strong> du client. L&apos;argent liquide ou Mobile Money (Wave / Orange Money) est encaissé avec une traçabilité à 100%.
+                Aucun colis n&apos;est remis sans validation du <strong>Code Secret OTP</strong> du client. L&apos;argent liquide ou Mobile Money (Orange Money, Moov Money, Mobi Cash) est encaissé avec une traçabilité à 100%.
               </p>
             </div>
 

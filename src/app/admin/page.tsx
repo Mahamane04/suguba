@@ -13,6 +13,7 @@ import DriverVerificationPanel from '@/components/admin/DriverVerificationPanel'
 import EconomicSettingsPanel from '@/components/admin/EconomicSettingsPanel';
 import { useSugubaStore, sugubaStore, definirApercuAdmin } from '@/lib/store';
 import { whatsappHelper } from '@/lib/whatsapp-helper';
+import PaymentLogo, { moyenDepuisCode } from '@/components/ui/PaymentLogo';
 import { useToast } from '@/components/ui/Toast';
 import { Product, Order, UserRole } from '@/types';
 import {
@@ -632,7 +633,9 @@ export default function AdminDashboardPage() {
             <div className="divide-y divide-slate-100">
               {pendingPayouts.map((r) => (
                 <div key={r.id} className="py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex items-center gap-3">
+                    <PaymentLogo moyen={r.moyen === 'cash' ? 'especes' : moyenDepuisCode(r.moyen)} taille="md" />
+                    <div className="min-w-0">
                     <p className="font-bold text-sm text-slate-900">
                       {fmt(r.montant)} pour {r.revendeur}
                     </p>
@@ -640,6 +643,7 @@ export default function AdminDashboardPage() {
                       {LIBELLE_MOYEN[r.moyen] || r.moyen}{r.moyen !== 'cash' ? ` · ${r.telephone}` : ''} · code <span className="font-mono">{r.id}</span>
                       {' · '}{new Date(r.creeLe).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                     </p>
+                    </div>
                   </div>
                   <div className="flex gap-2 shrink-0">
                     {r.moyen === 'cash' ? (
