@@ -1,16 +1,16 @@
 'use client';
 
-import React, { useState, use, useEffect } from 'react';
+import React, { useState, use, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/common/Header';
+import BottomNav from '@/components/common/BottomNav';
 import Carrousel from '@/components/product/Carrousel';
 import Sheet from '@/components/ui/Sheet';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 import { partagerProduit, prechargerImage, useCodeRevendeur } from '@/lib/partage';
 import { useToast } from '@/components/ui/Toast';
 import { useSugubaStore, useCatalogueCharge, useQuartierClient } from '@/lib/store';
-import { useClavierOuvert } from '@/lib/useClavierOuvert';
 import { useOrderCheckout } from '@/lib/useOrderCheckout';
 import OrderRecovery from '@/components/common/OrderRecovery';
 import { useOrderQuote } from '@/lib/useOrderQuote';
@@ -57,7 +57,25 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   const product = state.products.find(p => p.slug === resolvedParams.slug);
 
   const catalogueCharge = useCatalogueCharge();
-  const clavierOuvert = useClavierOuvert();
+
+  // Bloc « nom · prix · Commander » sous la photo. Tant qu'il est visible,
+  // rien d'autre n'affiche le prix ; dès qu'il sort de l'écran en défilant,
+  // le prix et « Commander » apparaissent dans la barre « Retour » collée en
+  // haut — jamais les deux à la fois (doublon signalé par capture).
+  const blocAchatRef = useRef<HTMLDivElement>(null);
+  const [blocAchatVisible, setBlocAchatVisible] = useState(true);
+  useEffect(() => {
+    const el = blocAchatRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([entree]) => setBlocAchatVisible(entree.isIntersecting),
+      // Marge haute = en-tête (64px) + barre Retour (44px) : le bloc est
+      // « sorti » dès qu'il passe sous ces barres, pas au bord de l'écran.
+      { rootMargin: '-108px 0px 0px 0px' },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [product?.id]);
 
   // « Recommandé par … » : le vrai revendeur derrière le code du lien (il
   // lisait les revendeurs de démonstration et ne s'affichait donc jamais).
@@ -300,19 +318,39 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 pb-32 md:pb-16">
+    <div className="min-h-screen flex flex-col bg-slate-50 md:pb-16">
       <Header />
 
       <div className="sticky top-16 z-40 bg-white/95 backdrop-blur-xs border-b border-slate-100">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 h-11 flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={revenirEnArriere}
-            className="h-11 -ml-1 pl-1 pr-3 inline-flex items-center gap-1.5 text-sm font-bold text-slate-700 hover:text-slate-900 active:text-slate-950"
+            className="h-11 -ml-1 pl-1 pr-3 inline-flex items-center gap-1.5 text-sm font-bold text-slate-700 hover:text-slate-900 active:text-slate-950 shrink-0"
           >
             <ArrowLeft className="w-4 h-4" />
             Retour
           </button>
+
+          {/* Téléphone, une fois le bloc prix passé : prix + Commander ici. */}
+          <div
+            aria-hidden={blocAchatVisible}
+            className={`md:hidden flex items-center gap-2.5 min-w-0 transition-all duration-200 ${
+              blocAchatVisible ? 'opacity-0 translate-y-1 pointer-events-none' : 'opacity-100 translate-y-0'
+            }`}
+          >
+            <span className="text-sm font-black text-slate-900 whitespace-nowrap">
+              {unitPrice.toLocaleString('fr-FR')} F
+            </span>
+            <button
+              type="button"
+              tabIndex={blocAchatVisible ? -1 : 0}
+              onClick={() => setCommandeOuverte(true)}
+              className="h-8 px-3.5 rounded-full bg-suguba-brand hover:bg-suguba-brand-dark text-white text-xs font-black whitespace-nowrap active:scale-95 transition-transform"
+            >
+              Commander
+            </button>
+          </div>
         </div>
       </div>
 
@@ -378,9 +416,20 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
 
             {/* Téléphone : nom et prix juste sous la photo. Ils étaient dans la
                 colonne de droite, donc SOUS la description, à ~3 écrans. */}
-            <div className="md:hidden space-y-1">
+            <div ref={blocAchatRef} className="md:hidden space-y-2">
               <h1 className="text-xl font-black text-slate-900 leading-tight">{product.name}</h1>
-              <p className="text-2xl font-black text-suguba-brand">{unitPrice.toLocaleString('fr-FR')} FCFA</p>
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-2xl font-black text-suguba-brand whitespace-nowrap">
+                  {unitPrice.toLocaleString('fr-FR')} <span className="text-base">FCFA</span>
+                </p>
+                <Button type="button" onClick={() => setCommandeOuverte(true)} className="shrink-0">
+                  <span>Commander</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+              </div>
+              <p className="text-[11px] text-slate-500">
+                Sans créer de compte · Payez à la livraison
+              </p>
             </div>
 
             {/* Réassurance : uniquement des engagements réels et vérifiables.
@@ -445,7 +494,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               quantité (le total et « Commander » vivent dans la barre fixe
               du bas) : moins d'emphase visuelle, pour ne pas rivaliser avec
               elle. Sur ordinateur, elle reste l'unique boîte d'achat. */}
-          <div className="md:sticky md:top-20 bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 shadow-xs md:border-2 md:border-suguba-brand/70 md:shadow-xl space-y-4">
+          <div className="hidden md:block md:sticky md:top-28 bg-white rounded-3xl p-6 border-2 border-suguba-brand/70 shadow-xl space-y-4">
             <div className="hidden md:block space-y-1">
               <h1 className="text-lg sm:text-xl font-black text-slate-900 leading-tight">{product.name}</h1>
               {/* Le prix barré affiché ici valait `unitPrice * 1.2` : un prix
@@ -515,26 +564,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
 
       </main>
 
-      {/* Barre d'achat fixe sur téléphone : le prix et « Commander » restent
-          toujours à portée de pouce, même une fois la boîte d'achat passée
-          en défilant la description (masquée pendant la saisie). */}
-      {!clavierOuvert && (
-        <div
-          className="md:hidden fixed inset-x-0 bottom-0 z-40 bg-white/95 backdrop-blur border-t border-slate-200 px-4 pt-3"
-          style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
-        >
-          <div className="flex items-center gap-3">
-            <div className="min-w-0">
-              <p className="text-[11px] text-slate-500">Total ({quantity} art.)</p>
-              <p className="text-lg font-black text-slate-900 whitespace-nowrap">{totalAmount.toLocaleString('fr-FR')} F</p>
-            </div>
-            <Button type="button" onClick={() => setCommandeOuverte(true)} fullWidth className="flex-1">
-              <span>Commander</span>
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      )}
+      {/* La barre de navigation reste en bas, comme sur le reste de l'app :
+          le prix et « Commander » vivent désormais sous le nom du produit,
+          puis dans la barre « Retour » une fois défilés. */}
+      <BottomNav />
 
       {/* Fenêtre de commande : feuille du bas sur téléphone, boîte centrée
           sur ordinateur (voir Sheet.tsx). Ne contient que ce qui reste à
@@ -557,6 +590,31 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             <ShieldCheck className="w-3.5 h-3.5 text-suguba-brand shrink-0" />
             Payez en espèces ou Mobile Money uniquement quand le livreur arrive chez vous.
           </p>
+
+          {/* Quantité : réglée ici sur téléphone (la boîte d'achat de la
+              page est réservée à l'ordinateur). */}
+          <div className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-2xl px-3.5 py-2.5">
+            <span className="text-xs font-bold text-slate-700">Quantité</span>
+            <div className="flex items-center gap-3">
+              <button
+                type="button"
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                aria-label="Diminuer la quantité"
+                className="w-9 h-9 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-800 flex items-center justify-center"
+              >
+                <Minus className="w-4 h-4" />
+              </button>
+              <span className="font-black text-base text-slate-900 w-6 text-center" aria-live="polite">{quantity}</span>
+              <button
+                type="button"
+                onClick={() => setQuantity(Math.min(50, quantity + 1))}
+                aria-label="Augmenter la quantité"
+                className="w-9 h-9 rounded-xl bg-white border border-slate-200 hover:bg-slate-100 text-slate-800 flex items-center justify-center"
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
 
           {/* ── Section : vos coordonnées ── */}
           <div className="space-y-3">
