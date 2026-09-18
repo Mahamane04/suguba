@@ -3,8 +3,9 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ShoppingBag, Minus, Plus, Trash2, Loader2, Truck, Store, Check, AlertTriangle } from 'lucide-react';
+import { ShoppingBag, Minus, Plus, Trash2, Loader2, Truck, Store, Check, AlertTriangle, ArrowLeft } from 'lucide-react';
 import Header from '@/components/common/Header';
+import BottomNav from '@/components/common/BottomNav';
 import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
 import Button from '@/components/ui/Button';
 import { Field, Input, Textarea } from '@/components/ui/Field';
@@ -52,6 +53,12 @@ function nouvelleCle(): string {
 
 export default function PanierPage() {
   const router = useRouter();
+  // Retour à la page précédente ; arrivé directement (lien partagé, onglet
+  // neuf), il n'y a pas d'historique : on ramène à l'accueil.
+  const retour = () => {
+    if (window.history.length > 1) router.back();
+    else router.push('/');
+  };
   const { toast } = useToast();
   const articles = usePanier();
   const quartierMemorise = useQuartierClient();
@@ -198,15 +205,17 @@ export default function PanierPage() {
     );
   }
 
+  // Panier vide : rien à confirmer, donc aucune raison de cacher le menu du bas.
   if (articles.length === 0) {
     return (
-      <div className="min-h-screen flex flex-col bg-slate-100">
+      <div className="min-h-screen flex flex-col bg-slate-100 pb-20 md:pb-0">
         <Header />
         <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-8">
           <EmptyState icone={ShoppingBag} titre="Votre panier est vide"
             texte="Ajoutez plusieurs articles depuis leur fiche, puis commandez tout en une fois."
             action={<Button href="/">Découvrir les produits</Button>} />
         </main>
+        <BottomNav />
       </div>
     );
   }
@@ -214,9 +223,21 @@ export default function PanierPage() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-100">
       <Header />
-      <form id="formulaire-panier" onSubmit={valider} className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 py-6 pb-36 md:pb-10 grid gap-5 md:grid-cols-[1fr_340px] md:items-start">
+      <form id="formulaire-panier" onSubmit={valider} className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6 pb-40 md:pb-10 grid gap-5 md:grid-cols-[1fr_340px] md:items-start">
         <div className="space-y-4 min-w-0">
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900">Mon panier</h1>
+          {/* Le menu du bas est masqué pendant la commande : le retour doit
+              rester visible et évident, en haut comme dans la barre du bas. */}
+          <div className="space-y-1">
+            <button
+              type="button"
+              onClick={retour}
+              className="-ml-2 inline-flex items-center gap-1.5 rounded-full px-2 min-h-[40px] text-sm font-bold text-slate-600 hover:text-slate-900 hover:bg-white transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Continuer mes achats
+            </button>
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900">Mon panier</h1>
+          </div>
 
           <Card padding="p-0" className="overflow-hidden divide-y divide-slate-100">
             {articles.map((a) => {
@@ -343,10 +364,24 @@ export default function PanierPage() {
         </aside>
       </form>
 
-      {/* Téléphone : total et validation toujours sous le pouce. */}
-      <div className="md:hidden fixed bottom-0 inset-x-0 z-40 bg-white border-t border-slate-200 px-4 pt-3" style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}>
-        <div className="flex items-center justify-between gap-3">
-          <div className="min-w-0">
+      {/* Téléphone : total et validation toujours sous le pouce, dans une
+          barre flottante décollée du bord (même style que le menu du bas
+          qu'elle remplace) — collée tout en bas, elle passait sous la barre
+          du navigateur et sous le geste d'accueil de l'iPhone. */}
+      <div
+        className="md:hidden fixed inset-x-3 z-40 bg-white border border-slate-200 rounded-3xl shadow-float px-3 py-2.5"
+        style={{ bottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
+      >
+        <div className="flex items-center justify-between gap-2.5">
+          <button
+            type="button"
+            onClick={retour}
+            aria-label="Retour"
+            className="w-11 h-11 shrink-0 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div className="min-w-0 flex-1">
             <p className="text-[11px] text-slate-500">
               Total{devis && devis.livraisons > 1 ? ` · ${devis.livraisons} livraisons` : ''}
             </p>
