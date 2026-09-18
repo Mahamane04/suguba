@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
 import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
@@ -19,6 +20,8 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
  * la moto, réserves — est ce qui distingue un contrôle d'un tampon.
  */
 export async function POST(req: NextRequest) {
+  const refusEquipe = await refusSansPermissionAdmin(req, 'POST /api/admin/drivers/verify');
+  if (refusEquipe) return refusEquipe;
   const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
   if (!session || session.role !== 'admin') {
     return NextResponse.json({ error: 'Authentification admin requise.' }, { status: 401 });

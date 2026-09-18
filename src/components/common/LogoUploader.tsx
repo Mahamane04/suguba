@@ -44,7 +44,7 @@ export default function LogoUploader({
       const allegee = await compresserImage(fichier);
       const donnees = new FormData();
       donnees.append('file', allegee);
-      const res = await fetch('/api/products/upload-image', { method: 'POST', body: donnees });
+      const res = await fetch('/api/reseau/upload?usage=image', { method: 'POST', body: donnees });
       const json = await res.json();
       if (res.ok && json.success) {
         setApercu(json.url);

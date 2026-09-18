@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
   await libererCommissionsEchues(admin);
 
   const [{ data: profil }, { data: commissions }, { count: ventesLivrees }] = await Promise.all([
-    admin.from('profiles').select('reseller_code, full_name, phone, metadata').eq('id', session.uid).maybeSingle(),
+    admin.from('profiles').select('reseller_code, full_name, phone, metadata, city').eq('id', session.uid).maybeSingle(),
     admin.from('commissions').select('amount, status').eq('reseller_id', session.uid),
     admin.from('orders').select('id', { count: 'exact', head: true })
       .eq('reseller_id', session.uid).eq('status', 'delivered'),
@@ -74,6 +74,49 @@ export async function GET(req: NextRequest) {
       momoNumber: metadata.momoNumber ? String(metadata.momoNumber) : null,
       momoProvider: metadata.momoProvider ? String(metadata.momoProvider) : null,
       neighborhood: metadata.neighborhood ? String(metadata.neighborhood) : null,
+      city: profil?.city || null,
+      address: metadata.address ? String(metadata.address) : null,
+      categories: Array.isArray(metadata.categories) ? metadata.categories.map(String) : [],
+      onboardingDone: Boolean(metadata.onboardingDone),
     },
   });
+}
+
+/**
+ * Mise à jour de la fiche par l'assistant de démarrage (/reseller/demarrer).
+ *
+ * Liste blanche stricte. `metadata` est FUSIONNÉ, jamais remplacé : il porte
+ * aussi le numéro Mobile Money de versement — l'écraser couperait les retraits
+ * du revendeur sans qu'il s'en aperçoive.
+ */
+export async function PATCH(req: NextRequest) {
+  const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
+  if (!session || session.role !== 'reseller') {
+    return NextResponse.json({ error: 'Session revendeur requise.' }, { status: 401 });
+  }
+  const admin = getSupabaseAdmin();
+  if (!admin) return NextResponse.json({ error: 'Base indisponible.' }, { status: 503 });
+
+  const corps = await req.json().catch(() => ({}));
+  const { data: profil } = await admin.from('profiles').select('metadata').eq('id', session.uid).maybeSingle();
+  const metadata = { ...((profil?.metadata || {}) as Record<string, unknown>) };
+  const ligne: Record<string, unknown> = {};
+
+  if (typeof corps.fullName === 'string') {
+    const nom = corps.fullName.trim().replace(/\s+/g, ' ').slice(0, 80);
+    if (nom.length < 2) return NextResponse.json({ error: 'Nom trop court.' }, { status: 400 });
+    ligne.full_name = nom;
+  }
+  if (typeof corps.city === 'string' && corps.city.trim()) ligne.city = corps.city.trim().slice(0, 60);
+  if (typeof corps.neighborhood === 'string') metadata.neighborhood = corps.neighborhood.trim().slice(0, 80) || null;
+  if (typeof corps.address === 'string') metadata.address = corps.address.trim().slice(0, 200) || null;
+  if (Array.isArray(corps.categories)) {
+    metadata.categories = corps.categories.filter((c: unknown) => typeof c === 'string').slice(0, 12);
+  }
+  if (corps.onboardingDone === true) metadata.onboardingDone = true;
+  ligne.metadata = metadata;
+
+  const { error } = await admin.from('profiles').update(ligne).eq('id', session.uid);
+  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  return NextResponse.json({ success: true });
 }

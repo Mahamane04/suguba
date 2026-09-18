@@ -32,6 +32,7 @@
  */
 
 import { trouverQuartier, distanceKm } from './bamako-quartiers';
+import { communeDuQuartier, riveDeLaCommune } from './bamako-neighborhoods';
 
 export interface LigneCoutFixe {
   libelle: string;
@@ -104,6 +105,26 @@ export interface ReglagesPlateforme {
     fraisMinimum: number;
     /** Plafond, pour qu'une erreur de coordonnées ne facture jamais une fortune. */
     fraisMaximum: number;
+  };
+  /**
+   * Mode de calcul de la livraison à Bamako (§ 20 du cahier des charges :
+   * « distance × tarif kilométrique OU zone A → zone B = tarif »). Optionnel :
+   * les réglages enregistrés avant son ajout restent en mode distance.
+   */
+  modeLivraisonBamako?: 'distance' | 'zones';
+  /**
+   * Tarifs par zones (communes). Quatre montants seulement : une matrice
+   * commune × commune (28 cases) serait illisible à régler sur un téléphone.
+   */
+  livraisonZonesBamako?: {
+    /** Fournisseur et client dans la même commune. */
+    memeCommune: number;
+    /** Communes différentes, même rive du fleuve. */
+    memeRive: number;
+    /** Il faut traverser le fleuve (rive gauche ↔ rive droite). */
+    autreRive: number;
+    /** Ajouté quand l'un des deux est en périphérie (Kati, Kalaban-Coro…). */
+    supplementPeripherie: number;
   };
   /** Points relais où le client retire lui-même son colis. */
   pointsRelais: PointRelais[];
@@ -178,6 +199,13 @@ export const REGLAGES_PAR_DEFAUT: ReglagesPlateforme = {
     fraisParKm: 150,
     fraisMinimum: 500,
     fraisMaximum: 3000,
+  },
+  modeLivraisonBamako: 'distance',
+  livraisonZonesBamako: {
+    memeCommune: 750,
+    memeRive: 1250,
+    autreRive: 2000,
+    supplementPeripherie: 1000,
   },
   pointsRelais: [
     { id: 'hub-aci', nom: 'Hub Central Suguba — Hamdallaye ACI 2000 (Derrière Clinique Pasteur)', frais: 0, horaires: '08h - 19h30' },
@@ -515,6 +543,34 @@ function fraisLivraisonDistanceBamako(
   return { frais, distanceKm: km };
 }
 
+/**
+ * Livraison à Bamako par zones (communes). `null` si l'un des quartiers est
+ * inconnu : même repli que le mode distance, le tarif plat de la ville.
+ */
+export function fraisLivraisonZonesBamako(
+  r: ReglagesPlateforme,
+  quartierFournisseur: string | undefined,
+  quartierClient: string | undefined,
+): number | null {
+  const z = r.livraisonZonesBamako;
+  if (!z) return null;
+  const ca = communeDuQuartier(quartierFournisseur);
+  const cb = communeDuQuartier(quartierClient);
+  if (!ca || !cb) return null;
+  const ra = riveDeLaCommune(ca);
+  const rb = riveDeLaCommune(cb);
+
+  let frais: number;
+  if (ca === cb) frais = z.memeCommune;
+  else if (ra === 'peripherie' || rb === 'peripherie') {
+    // La périphérie se rattache à la rive de l'autre point : Kati → Commune IV
+    // ne traverse pas le fleuve.
+    frais = z.memeRive + z.supplementPeripherie;
+  } else frais = ra === rb ? z.memeRive : z.autreRive;
+
+  return Math.round(Math.max(0, frais) / 50) * 50;
+}
+
 /** Recherche d'une ville sans tenir compte de la casse ni des espaces autour. */
 function fraisPourVille(r: ReglagesPlateforme, ville: string): { ville: string; frais: number } {
   const cherchee = ville.trim().toLowerCase();
@@ -572,10 +628,15 @@ export function calculerCommande(
     // À Bamako, un tarif à la distance réelle remplace le tarif plat dès que
     // les deux quartiers (fournisseur et client) sont reconnus.
     if (ville.trim().toLowerCase() === 'bamako') {
-      const parDistance = fraisLivraisonDistanceBamako(r, demande.quartierFournisseur, demande.quartierClient);
-      if (parDistance) {
-        fraisLivraison = parDistance.frais;
-        distanceLivraisonKm = parDistance.distanceKm;
+      if (r.modeLivraisonBamako === 'zones') {
+        const parZones = fraisLivraisonZonesBamako(r, demande.quartierFournisseur, demande.quartierClient);
+        if (parZones !== null) fraisLivraison = parZones;
+      } else {
+        const parDistance = fraisLivraisonDistanceBamako(r, demande.quartierFournisseur, demande.quartierClient);
+        if (parDistance) {
+          fraisLivraison = parDistance.frais;
+          distanceLivraisonKm = parDistance.distanceKm;
+        }
       }
     }
   }
@@ -689,6 +750,16 @@ export function validerReglages(r: ReglagesPlateforme): string[] {
       erreurs.push('Le tarif de livraison à la distance (Bamako) est invalide : vérifiez que le maximum ≥ minimum.');
     }
   }
+  if (r.modeLivraisonBamako !== undefined && !['distance', 'zones'].includes(r.modeLivraisonBamako)) {
+    erreurs.push('Le mode de livraison à Bamako doit être « distance » ou « zones ».');
+  }
+  if (r.livraisonZonesBamako !== undefined) {
+    const z = r.livraisonZonesBamako;
+    if (!z || typeof z !== 'object'
+        || ![z.memeCommune, z.memeRive, z.autreRive, z.supplementPeripherie].every((v) => Number(v) >= 0)) {
+      erreurs.push('Les tarifs de livraison par zones doivent être des montants positifs.');
+    }
+  }
   if (!Array.isArray(r.pointsRelais) || r.pointsRelais.some((p) => !p.id || !(Number(p.frais) >= 0))) {
     erreurs.push('Chaque point relais doit avoir un identifiant et des frais positifs.');
   }
@@ -716,6 +787,10 @@ export function completerReglages(partiels: Partial<ReglagesPlateforme> | null |
   }
   if (!r.livraisonDistanceBamako || typeof r.livraisonDistanceBamako !== 'object') {
     r.livraisonDistanceBamako = REGLAGES_PAR_DEFAUT.livraisonDistanceBamako;
+  }
+  if (r.modeLivraisonBamako !== 'zones') r.modeLivraisonBamako = 'distance';
+  if (!r.livraisonZonesBamako || typeof r.livraisonZonesBamako !== 'object') {
+    r.livraisonZonesBamako = REGLAGES_PAR_DEFAUT.livraisonZonesBamako;
   }
   return r;
 }

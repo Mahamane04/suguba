@@ -5,6 +5,10 @@ import Link from 'next/link';
 import ProductImage from '@/components/common/ProductImage';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
+import CarteAccesReseau from '@/components/reseau/CarteAccesReseau';
+import BandeauDemarrage from '@/components/reseau/BandeauDemarrage';
+import SectionSponsorises from '@/components/reseau/SectionSponsorises';
+import { Store as StoreIcone, Target as TargetIcone, Share2 as Share2Icone, UserPlus as UserPlusIcone, Users as UsersIcone, ShieldCheck as ShieldCheckIcone, Palette as PaletteIcone, CalendarDays as CalendarIcone, Factory as FactoryIcone } from 'lucide-react';
 import CreateOrderModal from '@/components/reseller/CreateOrderModal';
 import Button from '@/components/ui/Button';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
@@ -110,6 +114,8 @@ export default function ResellerDashboardPage() {
       <Header />
 
       <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 py-6 w-full space-y-5">
+        <BandeauDemarrage />
+
 
         {/* 1. Accueil + solde retirable : ce que le revendeur vient voir en premier */}
         <div className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -322,6 +328,23 @@ export default function ResellerDashboardPage() {
           </div>
         </div>
 
+
+        <SectionSponsorises />
+
+        <CarteAccesReseau
+          titre="Mon réseau"
+          entrees={[
+            { libelle: 'Ma boutique', href: '/reseller/boutique', icone: StoreIcone, aide: 'Votre vitrine et son lien à partager' },
+            { libelle: 'Fournisseurs', href: '/reseller/fournisseurs', icone: FactoryIcone, aide: 'Suivre et découvrir les fournisseurs' },
+            { libelle: 'Missions', href: '/reseller/missions', icone: TargetIcone, aide: 'Des objectifs, une récompense' },
+            { libelle: 'Créer un visuel', href: '/reseller/createur', icone: PaletteIcone, aide: 'Statut WhatsApp, publication, affiche avec QR' },
+            { libelle: 'Mon calendrier', href: '/reseller/calendrier', icone: CalendarIcone, aide: 'Planifier vos publications' },
+            { libelle: 'Mes partages', href: '/reseller/partages', icone: Share2Icone, aide: 'Ce que chaque lien a rapporté' },
+            { libelle: 'Mes parrainages', href: '/reseller/parrainages', icone: UserPlusIcone, aide: 'Invitez clients et revendeurs' },
+            { libelle: 'Mes clients', href: '/reseller/clients', icone: UsersIcone, aide: 'Les personnes que vous avez amenées' },
+            { libelle: 'Mon profil vérifié', href: '/reseller/verification', icone: ShieldCheckIcone, aide: 'Rassurez vos clients' },
+          ]}
+        />
       </main>
 
       {selectedProductForOrder && (

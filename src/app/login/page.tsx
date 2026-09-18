@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { memoriserApresConnexion } from '@/lib/apres-connexion';
 import Link from 'next/link';
 import Image from 'next/image';
 import { sugubaStore, useSugubaStore } from '@/lib/store';
@@ -46,6 +47,10 @@ const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';
 function LoginPageContent() {
   const searchParams = useSearchParams();
   const deniedRole = searchParams.get('denied');
+
+  // Page demandée avant la connexion (le middleware ajoute ?next=, les liens
+  // d'invitation aussi) : rouverte à la fin de la connexion par /auth/callback.
+  useEffect(() => { memoriserApresConnexion(searchParams.get('next')); }, [searchParams]);
 
   // Téléphone/OTP maison retiré (2026-08-26) : aucune passerelle SMS réelle
   // n'était branchée (voir CLAUDE.md / REPRISE.md), donc ce chemin ne

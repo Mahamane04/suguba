@@ -4,6 +4,8 @@ import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
+import CarteAccesReseau from '@/components/reseau/CarteAccesReseau';
+import { Store as StoreIcone, Users as UsersIcone, Megaphone as MegaphoneIcone, BarChart3 as BarChartIcone, UsersRound as EquipeIcone, Rocket as RocketIcone } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import PhotosProduitModal from '@/components/product/PhotosProduitModal';
 import {
@@ -206,6 +208,18 @@ export default function SupplierDashboardPage() {
           )}
         </div>
 
+
+        <CarteAccesReseau
+          titre="Mon réseau"
+          entrees={[
+            { libelle: 'Ma boutique', href: '/supplier/boutique', icone: StoreIcone, aide: 'Votre page commerciale publique' },
+            { libelle: 'Mes revendeurs', href: '/supplier/revendeurs', icone: UsersIcone, aide: 'Qui vend vos produits, et combien' },
+            { libelle: 'Analyses', href: '/supplier/analyses', icone: BarChartIcone, aide: 'Ventes, visites, conversion, retour des sponsorisations' },
+            { libelle: 'Mon équipe', href: '/supplier/equipe', icone: EquipeIcone, aide: 'Commercial, stock, marketing : chacun son accès' },
+            { libelle: 'Sponsorisation', href: '/supplier/sponsorisation', icone: MegaphoneIcone, aide: 'Mettez vos produits en avant' },
+            { libelle: 'Campagnes', href: '/supplier/campagnes', icone: RocketIcone, aide: 'Mobilisez les revendeurs autour d’un produit' },
+          ]}
+        />
       </main>
 
       {photosPour && (

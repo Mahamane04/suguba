@@ -6,9 +6,11 @@ import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import { UserRole } from '@/types';
 import { sugubaStore, useSugubaStore } from '@/lib/store';
+import ClocheNotifications from '@/components/reseau/ClocheNotifications';
+import IconePanier from '@/components/panier/IconePanier';
 import {
   ShoppingBag, Shield, Truck, Store, UserCheck,
-  ChevronDown, LogOut, Menu, X, Globe, LogIn
+  ChevronDown, LogOut, Menu, X, Globe, LogIn, Search
 } from 'lucide-react';
 
 const roleConfig: Record<UserRole, { label: string; icon: React.ElementType; path: string }> = {
@@ -137,7 +139,7 @@ export default function Header() {
             {!connecte ? (
               <Link
                 href="/login"
-                className="flex items-center gap-1.5 h-10 px-4 rounded-2xl text-sm font-bold bg-suguba-brand text-white hover:bg-suguba-brand-dark transition-colors"
+                className="hidden sm:flex items-center gap-1.5 h-10 px-4 rounded-2xl text-sm font-bold bg-suguba-brand text-white hover:bg-suguba-brand-dark transition-colors"
               >
                 <LogIn className="w-4 h-4" />
                 Se connecter
@@ -175,6 +177,13 @@ export default function Header() {
                 )}
               </div>
             )}
+
+            <Link href="/recherche" aria-label="Rechercher"
+              className="w-10 h-10 shrink-0 rounded-2xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-700 transition-colors">
+              <Search className="w-5 h-5" />
+            </Link>
+            <IconePanier />
+            {connecte && <ClocheNotifications />}
 
             <button
               className="md:hidden w-10 h-10 shrink-0 rounded-2xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-700 transition-colors"

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
 import { initierPayout, RESEAUX_MALI, type ReseauMali } from '@/lib/saspay';
 import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
@@ -30,6 +31,8 @@ const RESEAU_PAR_METHODE: Record<string, ReseauMali> = {
 };
 
 export async function POST(req: NextRequest) {
+  const refusEquipe = await refusSansPermissionAdmin(req, 'POST /api/payouts/initiate');
+  if (refusEquipe) return refusEquipe;
   try {
     // Défense en profondeur : le middleware protège déjà cette route
     // (BUG-005), mais on revérifie ici au cas où le matcher du middleware

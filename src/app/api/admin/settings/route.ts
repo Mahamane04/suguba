@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
 import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { chargerReglages } from '@/lib/platform-settings';
@@ -27,6 +28,8 @@ async function exigerAdmin(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  const refusEquipe = await refusSansPermissionAdmin(req, 'GET /api/admin/settings');
+  if (refusEquipe) return refusEquipe;
   if (!(await exigerAdmin(req))) {
     return NextResponse.json({ error: 'Authentification admin requise.' }, { status: 401 });
   }
@@ -39,6 +42,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  const refusEquipe = await refusSansPermissionAdmin(req, 'PUT /api/admin/settings');
+  if (refusEquipe) return refusEquipe;
   const session = await exigerAdmin(req);
   if (!session) {
     return NextResponse.json({ error: 'Authentification admin requise.' }, { status: 401 });

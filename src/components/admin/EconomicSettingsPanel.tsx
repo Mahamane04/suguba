@@ -213,6 +213,43 @@ export default function EconomicSettingsPanel() {
               <AjoutVille onAjout={(ville) => maj('livraisonParVille', { ...r.livraisonParVille, [ville]: r.fraisLivraisonClient })} />
             </div>
             <div className="sm:col-span-2 space-y-2 pt-2 border-t border-slate-100">
+              <p className="text-[11px] font-bold text-slate-600">Calcul de la livraison à Bamako</p>
+              <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Mode de calcul">
+                {([
+                  ['distance', 'À la distance', 'Base + prix au km'],
+                  ['zones', 'Par zones', 'Commune, rive, périphérie'],
+                ] as const).map(([valeur, libelle, aide]) => {
+                  const actif = (r.modeLivraisonBamako || 'distance') === valeur;
+                  return (
+                    <button key={valeur} type="button" role="radio" aria-checked={actif}
+                      onClick={() => maj('modeLivraisonBamako', valeur)}
+                      className={`rounded-2xl border p-2.5 text-left ${actif ? 'border-suguba-brand ring-2 ring-suguba-brand bg-suguba-brand/5' : 'border-slate-200 bg-white'}`}>
+                      <span className="block text-xs font-black text-slate-900">{libelle}</span>
+                      <span className="block text-[11px] text-slate-500">{aide}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            {r.modeLivraisonBamako === 'zones' && r.livraisonZonesBamako && (
+              <div className="sm:col-span-2 space-y-2">
+                <p className="text-[11px] text-slate-500">
+                  Rive gauche : Communes I à IV. Rive droite : Communes V et VI. S&apos;applique quand les
+                  quartiers du fournisseur et du client sont reconnus ; sinon, tarif « Bamako » ci-dessus.
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Num l="Même commune" suffixe="F" v={r.livraisonZonesBamako.memeCommune}
+                    on={(v) => maj('livraisonZonesBamako', { ...r.livraisonZonesBamako!, memeCommune: v })} />
+                  <Num l="Même rive" suffixe="F" v={r.livraisonZonesBamako.memeRive}
+                    on={(v) => maj('livraisonZonesBamako', { ...r.livraisonZonesBamako!, memeRive: v })} />
+                  <Num l="Traverser le fleuve" suffixe="F" v={r.livraisonZonesBamako.autreRive}
+                    on={(v) => maj('livraisonZonesBamako', { ...r.livraisonZonesBamako!, autreRive: v })} />
+                  <Num l="Supplément périphérie" suffixe="F" v={r.livraisonZonesBamako.supplementPeripherie}
+                    on={(v) => maj('livraisonZonesBamako', { ...r.livraisonZonesBamako!, supplementPeripherie: v })} />
+                </div>
+              </div>
+            )}
+            <div className={`sm:col-span-2 space-y-2 ${r.modeLivraisonBamako === 'zones' ? 'hidden' : ''}`}>
               <p className="text-[11px] font-bold text-slate-600">
                 Livraison à Bamako à la distance réelle (2026-09-11)
               </p>

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
+import { exigerDroitFournisseur } from '@/lib/reseau/contexte-fournisseur';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
 /**
@@ -11,10 +11,9 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
  * fournisseur connecté.
  */
 export async function POST(req: NextRequest) {
-  const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
-  if (!session || session.role !== 'supplier') {
-    return NextResponse.json({ error: 'Session fournisseur requise.' }, { status: 401 });
-  }
+  const acces = await exigerDroitFournisseur(req, 'catalogue');
+  if (!acces.ok) return NextResponse.json({ error: acces.erreur }, { status: acces.statut });
+  const fournisseurId = acces.contexte.fournisseurId;
 
   const admin = getSupabaseAdmin();
   if (!admin) return NextResponse.json({ error: 'Base indisponible.' }, { status: 503 });
@@ -29,7 +28,7 @@ export async function POST(req: NextRequest) {
     .from('products')
     .update({ stock: quantite })
     .eq('id', productId)
-    .eq('supplier_id', session.uid)
+    .eq('supplier_id', fournisseurId)
     .select('id, stock')
     .maybeSingle();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });

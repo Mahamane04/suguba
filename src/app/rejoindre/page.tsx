@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { memoriserParrain } from '@/lib/parrain';
 import Link from 'next/link';
 import Header from '@/components/common/Header';
 import Footer from '@/components/common/Footer';
 import BottomNav from '@/components/common/BottomNav';
+import BoutiquesQuiRecrutent from '@/components/reseau/BoutiquesQuiRecrutent';
 import Button from '@/components/ui/Button';
 import { supabase } from '@/lib/supabase';
 import {
@@ -99,6 +101,10 @@ const ROLES: Record<RoleKey, {
 const ORDRE: RoleKey[] = ['reseller', 'supplier', 'driver', 'diaspora'];
 
 export default function RejoindrePage() {
+  // Lien de parrainage (/rejoindre?ref=CODE) : le code est gardé 30 jours et
+  // relu à la fin de l'inscription, quel que soit le mode de connexion.
+  useEffect(() => { memoriserParrain(new URLSearchParams(window.location.search).get('ref')); }, []);
+
   const [role, setRole] = useState<RoleKey>('reseller');
   const [erreur, setErreur] = useState<string | null>(null);
 
@@ -301,6 +307,8 @@ export default function RejoindrePage() {
           </Link>
         </p>
 
+
+        <BoutiquesQuiRecrutent />
       </main>
 
       <Footer />

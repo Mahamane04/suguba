@@ -6,6 +6,7 @@ import Footer from '@/components/common/Footer';
 import BoutiqueProduits from '@/components/shop/BoutiqueProduits';
 import ShopShareBar from '@/components/shop/ShopShareBar';
 import type { Boutique } from '@/lib/shop';
+import { badge } from '@/lib/reseau/badges';
 import { ShieldCheck, Truck, KeyRound, ArrowRight, Store, Users } from 'lucide-react';
 
 /**
@@ -23,10 +24,17 @@ export default function ShopView({
   boutique,
   urlPartage,
   refCode,
+  complement,
 }: {
   boutique: Boutique;
   urlPartage: string;
   refCode: string | null;
+  /**
+   * Bloc inséré juste sous l'en-tête de la boutique — le bouton « Suivre »
+   * des boutiques du réseau (/boutique/<adresse>). Optionnel : les vitrines
+   * historiques /s/ et /r/ n'en passent pas et gardent exactement leur aspect.
+   */
+  complement?: React.ReactNode;
 }) {
   const estRevendeur = boutique.type === 'revendeur';
   const titre = estRevendeur ? `La sélection de ${boutique.nom}` : boutique.nom;
@@ -41,6 +49,10 @@ export default function ShopView({
 
       <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
         <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 text-white rounded-3xl p-5 sm:p-8 shadow-xl space-y-5">
+          {boutique.couverture && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={boutique.couverture} alt="" className="w-full h-32 sm:h-48 object-cover rounded-2xl" />
+          )}
           <div className="flex items-start space-x-4">
             {boutique.logo ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -58,6 +70,15 @@ export default function ShopView({
               <span className="inline-block px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-black uppercase tracking-wider border border-emerald-500/30">
                 {estRevendeur ? 'Revendeur partenaire Suguba' : 'Boutique sur Suguba'}
               </span>
+              {boutique.badges && boutique.badges.length > 0 && (
+                <div className="flex flex-wrap gap-1.5">
+                  {boutique.badges.map((b) => (
+                    <span key={b} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/10 text-white text-[11px] font-bold">
+                      <ShieldCheck className="w-3 h-3 text-emerald-300" />{badge(b).libelle}
+                    </span>
+                  ))}
+                </div>
+              )}
               <h1 className="text-2xl sm:text-3xl font-black leading-tight">{titre}</h1>
               <p className="text-xs text-slate-300">
                 {boutique.produits.length} article{boutique.produits.length > 1 ? 's' : ''}
@@ -71,6 +92,8 @@ export default function ShopView({
           </div>
 
           <ShopShareBar url={urlPartage} texte={texteWhatsApp} />
+
+          {complement}
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-4 border-t border-white/10 text-xs">
             <div className="flex items-center space-x-2"><Truck className="w-4 h-4 text-emerald-400 shrink-0" /><span>Livré par Suguba</span></div>

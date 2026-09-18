@@ -6,6 +6,7 @@ import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import ProductImage from '@/components/common/ProductImage';
 import Button from '@/components/ui/Button';
+import FormulaireVariante from '@/components/product/FormulaireVariante';
 import { Package, Minus, Plus, Loader2, AlertTriangle, ArrowLeft } from 'lucide-react';
 
 interface ProduitStock {
@@ -33,6 +34,13 @@ export default function SupplierInventoryPage() {
   const [produits, setProduits] = useState<ProduitStock[] | null>(null);
   const [enCours, setEnCours] = useState<string | null>(null);
   const [erreur, setErreur] = useState('');
+
+  const recharger = React.useCallback(() => {
+    fetch('/api/supplier/me')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => setProduits(Array.isArray(j?.products) ? j.products : []))
+      .catch(() => undefined);
+  }, []);
 
   useEffect(() => {
     fetch('/api/supplier/me')
@@ -121,7 +129,8 @@ export default function SupplierInventoryPage() {
             {liste.map((p) => {
               const statut = STATUT[p.status] || { libelle: p.status, classe: 'bg-slate-100 text-slate-600' };
               return (
-                <div key={p.id} className="p-3 sm:p-4 flex items-center gap-3">
+                <div key={p.id} className="p-3 sm:p-4 space-y-2">
+                <div className="flex items-center gap-3">
                   <div className="relative w-14 h-14 rounded-2xl overflow-hidden bg-slate-100 shrink-0">
                     <ProductImage src={p.images[0] || ''} alt={p.name} fill sizes="56px" className="object-cover" compact />
                   </div>
@@ -155,6 +164,8 @@ export default function SupplierInventoryPage() {
                       <Plus className="w-4 h-4" />
                     </button>
                   </div>
+                </div>
+                <FormulaireVariante produit={p} onCree={recharger} />
                 </div>
               );
             })}

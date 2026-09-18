@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { parrainageAInscription } from '@/lib/reseau/parrainage';
 import { verifySessionToken, createSessionToken, SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS, SugubaRole } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { chargerRoles, choisirRoleActif } from '@/lib/profile-roles';
@@ -146,6 +147,17 @@ export async function POST(req: NextRequest) {
         console.error('[AUTH complete-profile] Échec écriture drivers:', driverErr.message);
       }
     }
+
+    // Parrainage automatique (§ 12). Le code vient du formulaire, sinon du
+    // cookie posé à l'arrivée sur le lien de parrainage : il survit ainsi à
+    // l'aller-retour Google et au lien de connexion reçu par e-mail.
+    const codeParrain =
+      (metadata && typeof (metadata as Record<string, unknown>).referralSponsorCode === 'string'
+        ? String((metadata as Record<string, unknown>).referralSponsorCode) : '') ||
+      req.cookies.get('suguba_parrain')?.value ||
+      req.cookies.get('suguba_ref')?.value ||
+      null;
+    await parrainageAInscription({ filleulId: session.uid, telephone: phone, role: roleEffectif, codeParrain });
 
     // Réémet toujours la session : avec le vrai numéro (jusqu'ici l'email en
     // tenait lieu, et c'est ce qui signale au middleware un profil incomplet)

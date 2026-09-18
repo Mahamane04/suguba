@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
 
@@ -23,6 +24,8 @@ import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
  * /api/driver/verify-delivery-otp), le livreur n'a plus besoin de le lire.
  */
 export async function GET(req: NextRequest) {
+  const refusEquipe = await refusSansPermissionAdmin(req, 'GET /api/orders/feed');
+  if (refusEquipe) return refusEquipe;
   const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
   if (!session || !['admin', 'driver', 'reseller'].includes(session.role)) {
     return NextResponse.json({ error: 'Authentification interne requise.' }, { status: 401 });

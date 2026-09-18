@@ -17,6 +17,7 @@
  * Ne jamais importer ce fichier depuis un composant 'use client'.
  */
 import { getSupabaseAdmin } from './supabase-admin';
+import { annoncerNouveauProduit } from './reseau/notifications';
 import { chargerReglages } from './platform-settings';
 import { calculerTarif } from './pricing';
 
@@ -76,6 +77,11 @@ export async function publierAutomatiquement(admin: ClientAdmin, productId: stri
     // entre-temps (retrait par l'admin au même moment, par exemple).
     .eq('status', p.status);
   if (error) return { publie: false, raison: error.message };
+
+  // Première mise en vente : les abonnés de la boutique du fournisseur sont
+  // prévenus. C'est le chemin NORMAL de publication (validation manuelle
+  // supprimée) : sans ce rappel, aucune nouveauté n'était jamais annoncée.
+  await annoncerNouveauProduit(productId);
 
   return { publie: true, prix, commission: tarif.commission };
 }

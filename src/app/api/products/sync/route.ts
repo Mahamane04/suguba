@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
+import { contexteFournisseur } from '@/lib/reseau/contexte-fournisseur';
 import { publierAutomatiquement } from '@/lib/publication-auto';
 
 /**
@@ -39,6 +40,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Authentification fournisseur ou admin requise.' }, { status: 401 });
   }
 
+  // Un collaborateur de l'équipe agit pour SON fournisseur, avec le droit
+  // « catalogue » (voir src/lib/reseau/contexte-fournisseur.ts). Le
+  // propriétaire reste son propre fournisseur, comme avant.
+  let fournisseurId = session.uid;
+  if (session.role === 'supplier') {
+    const contexte = await contexteFournisseur(session.uid);
+    if (!contexte || !contexte.droits.includes('catalogue')) {
+      return NextResponse.json({ error: 'Votre rôle dans l’équipe ne permet pas de modifier le catalogue.' }, { status: 403 });
+    }
+    fournisseurId = contexte.fournisseurId;
+  }
+
   const admin = getSupabaseAdmin();
   if (!admin) {
     return NextResponse.json({ success: true, cloud: false });
@@ -59,7 +72,7 @@ export async function POST(req: NextRequest) {
 
     const estFournisseur = session.role === 'supplier';
 
-    if (estFournisseur && existant && existant.supplier_id !== session.uid) {
+    if (estFournisseur && existant && existant.supplier_id !== fournisseurId) {
       return NextResponse.json({ error: 'Ce produit ne vous appartient pas.' }, { status: 403 });
     }
 
@@ -69,11 +82,11 @@ export async function POST(req: NextRequest) {
     let supplierId = product.supplierId;
     let supplierName = product.supplierName;
     if (estFournisseur) {
-      supplierId = session.uid;
+      supplierId = fournisseurId;
       const { data: ownSupplier } = await admin
         .from('suppliers')
         .select('company_name')
-        .eq('profile_id', session.uid)
+        .eq('profile_id', fournisseurId)
         .maybeSingle();
       supplierName = ownSupplier?.company_name || supplierName;
     }

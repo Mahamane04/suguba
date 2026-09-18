@@ -6,6 +6,9 @@ import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import CreateOrderModal from '@/components/reseller/CreateOrderModal';
 import ProductCard, { carteDepuisProduit } from '@/components/product/ProductCard';
+import ChoicePicker from '@/components/ui/ChoicePicker';
+import { useSponsorises, compterVues } from '@/lib/sponsorises';
+import { classerAvecSponsorises } from '@/lib/reseau/sponsoring';
 import Button from '@/components/ui/Button';
 import { useSugubaStore, useCatalogueCharge } from '@/lib/store';
 import { Product } from '@/types';
@@ -22,6 +25,14 @@ export default function ResellerCatalogPage() {
   const catalogueCharge = useCatalogueCharge();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [tri, setTri] = useState<'recommandes' | 'commission' | 'nouveautes' | 'populaires' | 'sponsorises'>('recommandes');
+  const [fournisseur, setFournisseur] = useState('all');
+  const sponsorises = useSponsorises('reseller_dashboard');
+  const [popularite, setPopularite] = useState<Record<string, number>>({});
+  useEffect(() => {
+    if (tri !== 'populaires' || Object.keys(popularite).length) return;
+    fetch('/api/products/popularite').then((r) => r.json()).then((d) => setPopularite(d.livraisons || {})).catch(() => undefined);
+  }, [tri, popularite]);
   const [selectedProductForOrder, setSelectedProductForOrder] = useState<Product | null>(null);
 
   // Code revendeur et sélection de la boutique /r/<code>.
@@ -71,13 +82,33 @@ export default function ResellerCatalogPage() {
   const approvedProducts = state.products.filter(p => p.status === 'approved' && p.resellerCommission > 0);
   const categories = ['all', ...Array.from(new Set(approvedProducts.map(p => p.category)))];
 
+  const fournisseurs = Array.from(new Set(approvedProducts.map((p) => p.supplierName).filter(Boolean))).sort();
+
   const recherche = searchTerm.trim().toLowerCase();
-  const filtered = approvedProducts.filter(p => {
+  const trouves = approvedProducts.filter(p => {
     const matchesSearch = !recherche || p.name.toLowerCase().includes(recherche) ||
                           p.description.toLowerCase().includes(recherche);
     const matchesCategory = selectedCategory === 'all' || p.category === selectedCategory;
-    return matchesSearch && matchesCategory;
+    const bonFournisseur = fournisseur === 'all' || p.supplierName === fournisseur;
+    const bonSponso = tri !== 'sponsorises' || sponsorises.has(p.id);
+    return matchesSearch && matchesCategory && bonFournisseur && bonSponso;
   });
+
+  // Tri (§ page 9 : marge, popularité, nouveautés, sponsorisés). Par défaut
+  // « Recommandés » : l'ordre du catalogue, avec au plus 3 produits
+  // sponsorisés en tête, marqués comme tels.
+  const tries = [...trouves].sort((a, b) => {
+    if (tri === 'commission') return b.resellerCommission - a.resellerCommission;
+    if (tri === 'nouveautes') return String(b.createdAt).localeCompare(String(a.createdAt));
+    if (tri === 'populaires') return (popularite[b.id] || 0) - (popularite[a.id] || 0);
+    return 0;
+  });
+  const classes = tri === 'recommandes' || tri === 'sponsorises'
+    ? classerAvecSponsorises(tries, [...sponsorises.keys()], tri === 'sponsorises' ? 30 : 3)
+    : tries.map((element) => ({ element, sponsorise: sponsorises.has(element.id) }));
+  const filtered = classes.map((c) => c.element);
+  const idsAffiches = classes.filter((c) => c.sponsorise).map((c) => sponsorises.get(c.element.id)!).join(',');
+  useEffect(() => { if (idsAffiches) compterVues(idsAffiches.split(',')); }, [idsAffiches]);
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
@@ -132,6 +163,26 @@ export default function ResellerCatalogPage() {
               className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-suguba-brand/30 focus:border-suguba-brand"
             />
           </div>
+          <div className="grid grid-cols-2 gap-2">
+            <ChoicePicker
+              id="tri-catalogue"
+              valeur={tri}
+              onChange={(v) => setTri(v as typeof tri)}
+              choix={[
+                { valeur: 'recommandes', libelle: 'Recommandés' },
+                { valeur: 'commission', libelle: 'Meilleure commission' },
+                { valeur: 'populaires', libelle: 'Les plus vendus' },
+                { valeur: 'nouveautes', libelle: 'Nouveautés' },
+                { valeur: 'sponsorises', libelle: 'Sponsorisés', detail: sponsorises.size ? String(sponsorises.size) : undefined },
+              ]}
+            />
+            <ChoicePicker
+              id="fournisseur-catalogue"
+              valeur={fournisseur}
+              onChange={setFournisseur}
+              choix={[{ valeur: 'all', libelle: 'Tous les fournisseurs' }, ...fournisseurs.map((f) => ({ valeur: f, libelle: f }))]}
+            />
+          </div>
           {categories.length > 1 && (
             <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
               {categories.map((cat) => (
@@ -178,6 +229,7 @@ export default function ResellerCatalogPage() {
                 afficherCommission
                 partageEnAvant
                 priority={i < 4}
+                sponsorisationId={classes[i]?.sponsorise ? sponsorises.get(product.id) : null}
               >
                 <div className="grid grid-cols-2 gap-1.5">
                   <button

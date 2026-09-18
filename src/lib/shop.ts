@@ -35,6 +35,10 @@ export interface Boutique {
   logo: string | null;
   /** Courte présentation, si le fournisseur en a écrit une. */
   description: string | null;
+  /** Bannière de la boutique (boutiques du réseau, /boutique/<adresse>). */
+  couverture?: string | null;
+  /** Badges du propriétaire (clés, voir src/lib/reseau/badges.ts). */
+  badges?: string[];
   produits: ProduitVitrine[];
   /** Livraisons réussies des produits présentés. Affichée seulement si > 0. */
   livraisons: number;
@@ -286,4 +290,19 @@ export async function chargerProduitPublic(slug: string): Promise<ProduitPublic 
     categorie: data.category || '',
     image: Array.isArray(data.images) && data.images[0] ? String(data.images[0]) : null,
   };
+}
+
+/** Produits vendus par Suguba elle-même : créés par l'admin, sans fournisseur. */
+export async function chargerProduitsSuguba(): Promise<ProduitVitrine[]> {
+  const admin = getSupabaseAdmin();
+  if (!admin) return [];
+  const { data } = await admin
+    .from('products')
+    .select(CHAMPS_PRODUIT)
+    .eq('status', 'approved')
+    .is('supplier_id', null)
+    .gt('public_price', 0)
+    .order('created_at', { ascending: false })
+    .limit(96);
+  return (data || []).map(versVitrine);
 }

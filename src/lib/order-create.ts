@@ -14,7 +14,7 @@ function indisponible(): never {
 }
 
 /** Ne publie ni les coûts ni le snapshot économique renvoyés par PostgreSQL. */
-function recu(row: Record<string, any>): Order {
+export function recu(row: Record<string, any>): Order {
   const devis = row.pricing_snapshot.devis as Devis;
   return {
     creationConfirmed: true,

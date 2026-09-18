@@ -1,5 +1,7 @@
 'use client';
 
+import { prendreApresConnexion } from '@/lib/apres-connexion';
+
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -95,7 +97,7 @@ export default function AuthCallbackPage() {
           router.push('/pending-approval');
           return;
         }
-        router.push(DEST_BY_ROLE[json.role] || '/reseller');
+        router.push(prendreApresConnexion() || DEST_BY_ROLE[json.role] || '/reseller');
       } catch (err) {
         setError('Erreur réseau lors de la connexion.');
       }

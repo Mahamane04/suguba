@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
 import { createSessionToken, verifySessionToken, SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS, SugubaRole } from '@/lib/session';
 
 /**
@@ -38,6 +39,8 @@ const TELEPHONE_PAR_ROLE: Record<string, string> = {
 };
 
 export async function POST(req: NextRequest) {
+  const refusEquipe = await refusSansPermissionAdmin(req, 'POST /api/admin/preview-role');
+  if (refusEquipe) return refusEquipe;
   const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
   if (!session || session.role !== 'admin') {
     return NextResponse.json({ error: 'Authentification admin requise.' }, { status: 401 });

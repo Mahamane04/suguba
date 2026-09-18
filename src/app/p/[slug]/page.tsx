@@ -7,7 +7,9 @@ import BottomNav from '@/components/common/BottomNav';
 import Carrousel from '@/components/product/Carrousel';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 import Button from '@/components/ui/Button';
-import { partagerProduit, prechargerImage, useCodeRevendeur } from '@/lib/partage';
+import BoutonAjoutPanier from '@/components/panier/BoutonAjoutPanier';
+import SelecteurVariantes from '@/components/product/SelecteurVariantes';
+import { partagerProduit, prechargerImage, prechargerLienPartage, useCodeRevendeur } from '@/lib/partage';
 import { useSugubaStore, useCatalogueCharge } from '@/lib/store';
 import { useOrderQuote } from '@/lib/useOrderQuote';
 import {
@@ -242,7 +244,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                   { nom: product.name, prix: product.publicPrice, slug: product.slug, images: product.images },
                   monCode || refCode,
                 )}
-                onPointerDown={() => prechargerImage(product.images[0], product.slug)}
+                onPointerDown={() => {
+                  prechargerImage(product.images[0], product.slug);
+                  if (monCode) prechargerLienPartage(product.slug);
+                }}
                 aria-label="Partager ce produit sur WhatsApp"
                 className="absolute top-3 right-3 h-9 px-3 rounded-full bg-[#25D366] hover:bg-[#1ebe5b] text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-md active:scale-[0.97] transition-all"
               >
@@ -263,6 +268,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                   <ArrowRight className="w-4 h-4" />
                 </Button>
               </div>
+              <SelecteurVariantes slug={product.slug} />
+              <BoutonAjoutPanier productId={product.id} quantite={1} />
               <p className="text-[11px] text-slate-500">
                 Sans créer de compte · Payez à la livraison
               </p>
@@ -321,6 +328,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               <p className="text-3xl font-black text-suguba-brand">{fcfa(unitPrice)}</p>
             </div>
 
+            <SelecteurVariantes slug={product.slug} />
+
             <div className="flex items-center justify-between">
               <span className="text-sm font-bold text-slate-700">Quantité</span>
               <div className="flex items-center rounded-2xl border border-slate-200">
@@ -355,6 +364,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               <span>Commander</span>
               <ArrowRight className="w-4 h-4" />
             </Button>
+            <BoutonAjoutPanier productId={product.id} quantite={quantity} />
             <p className="text-[11px] text-slate-500 text-center">
               Livraison calculée à l&apos;étape suivante · Payez à la livraison
             </p>

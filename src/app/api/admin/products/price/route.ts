@@ -1,3 +1,5 @@
+import { annoncerBaissePrix, annoncerNouveauProduit } from '@/lib/reseau/notifications';
+import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
@@ -21,6 +23,8 @@ import { calculerTarif } from '@/lib/pricing';
  * chaque vente. La réponse donne le prix minimal et le prix recommandé.
  */
 export async function POST(req: NextRequest) {
+  const refusEquipe = await refusSansPermissionAdmin(req, 'POST /api/admin/products/price');
+  if (refusEquipe) return refusEquipe;
   const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
   if (!session || session.role !== 'admin') {
     return NextResponse.json({ error: 'Authentification admin requise.' }, { status: 401 });
@@ -37,7 +41,7 @@ export async function POST(req: NextRequest) {
 
   const { data: produit } = await admin
     .from('products')
-    .select('id, name, supplier_price, status, commission_proposee')
+    .select('id, name, supplier_price, public_price, status, commission_proposee')
     .eq('id', productId)
     .maybeSingle();
 
@@ -75,6 +79,11 @@ export async function POST(req: NextRequest) {
     .eq('id', productId);
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  // Première mise en ligne seulement : un simple changement de prix d'un
+  // produit déjà approuvé ne réveille pas les abonnés.
+  if (produit.status !== 'approved') await annoncerNouveauProduit(productId);
+  else await annoncerBaissePrix(productId, Number(produit.public_price) || 0, prixVente);
 
   return NextResponse.json({ success: true, tarif, reglagesConfirmes: confirme });
 }

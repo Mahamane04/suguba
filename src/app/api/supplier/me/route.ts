@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
+import { exigerDroitFournisseur } from '@/lib/reseau/contexte-fournisseur';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { attribuerSlugFournisseur } from '@/lib/shop';
 
@@ -13,10 +13,9 @@ import { attribuerSlugFournisseur } from '@/lib/shop';
  * /api/admin/pending-profiles (vue admin équivalente).
  */
 export async function GET(req: NextRequest) {
-  const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
-  if (!session || session.role !== 'supplier') {
-    return NextResponse.json({ error: 'Authentification fournisseur requise.' }, { status: 401 });
-  }
+  const acces = await exigerDroitFournisseur(req, null);
+  if (!acces.ok) return NextResponse.json({ error: acces.erreur }, { status: acces.statut });
+  const fournisseurId = acces.contexte.fournisseurId;
 
   const admin = getSupabaseAdmin();
   if (!admin) {
@@ -26,7 +25,7 @@ export async function GET(req: NextRequest) {
   const { data: supplierRow, error: supplierErr } = await admin
     .from('suppliers')
     .select('*')
-    .eq('profile_id', session.uid)
+    .eq('profile_id', fournisseurId)
     .maybeSingle();
 
   if (supplierErr) {
@@ -36,13 +35,13 @@ export async function GET(req: NextRequest) {
   // Fiche créée avant l'attribution automatique des adresses de boutique :
   // on lui en attribue une maintenant, une fois pour toutes.
   if (supplierRow && !supplierRow.slug) {
-    supplierRow.slug = await attribuerSlugFournisseur(admin, session.uid, supplierRow.company_name || 'Fournisseur');
+    supplierRow.slug = await attribuerSlugFournisseur(admin, fournisseurId, supplierRow.company_name || 'Fournisseur');
   }
 
   const { data: productRows, error: productsErr } = await admin
     .from('products')
     .select('*')
-    .eq('supplier_id', session.uid)
+    .eq('supplier_id', fournisseurId)
     .order('created_at', { ascending: false });
 
   if (productsErr) {
@@ -91,6 +90,9 @@ export async function GET(req: NextRequest) {
         }
       : null,
     products,
+    // Rôle de la personne connectée dans l'équipe : l'interface masque ce
+    // qu'elle n'a pas le droit de faire (les routes le refusent de toute façon).
+    equipe: { role: acces.contexte.role, droits: acces.contexte.droits },
     totalRevenue,
   });
 }
@@ -105,10 +107,9 @@ export async function GET(req: NextRequest) {
  * changer le nom affiché ne casse aucun lien déjà partagé.
  */
 export async function PATCH(req: NextRequest) {
-  const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
-  if (!session || session.role !== 'supplier') {
-    return NextResponse.json({ error: 'Authentification fournisseur requise.' }, { status: 401 });
-  }
+  const acces = await exigerDroitFournisseur(req, 'fiche');
+  if (!acces.ok) return NextResponse.json({ error: acces.erreur }, { status: acces.statut });
+  const fournisseurId = acces.contexte.fournisseurId;
 
   const admin = getSupabaseAdmin();
   if (!admin) {
@@ -151,7 +152,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Aucun champ à mettre à jour.' }, { status: 400 });
   }
 
-  const { error } = await admin.from('suppliers').update(misAJour).eq('profile_id', session.uid);
+  const { error } = await admin.from('suppliers').update(misAJour).eq('profile_id', fournisseurId);
   if (error) {
     // Cas attendu tant que migration-shop-profile.sql n'a pas été exécutée :
     // la colonne n'existe pas encore côté base.

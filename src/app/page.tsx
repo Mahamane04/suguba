@@ -1,9 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
+import SelectionReferent from '@/components/reseau/SelectionReferent';
+import ALaUne from '@/components/reseau/ALaUne';
+import { useSponsorises, compterVues } from '@/lib/sponsorises';
+import { classerAvecSponsorises } from '@/lib/reseau/sponsoring';
 import Footer from '@/components/common/Footer';
 import Button from '@/components/ui/Button';
 import ProductCard, { carteDepuisProduit } from '@/components/product/ProductCard';
@@ -32,6 +36,11 @@ export default function HomePage() {
   const state = useSugubaStore();
   const catalogueCharge = useCatalogueCharge();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  // Lien depuis la recherche globale (/?categorie=…) : catégorie présélectionnée.
+  useEffect(() => {
+    const c = new URLSearchParams(window.location.search).get('categorie');
+    if (c) setSelectedCategory(c);
+  }, []);
   const [search, setSearch] = useState('');
   // « Livrer à … » (2026-09-12, inspiré des apps de livraison à Bamako) :
   // fixé une fois ici, il pré-remplit le quartier de la fenêtre de commande
@@ -45,7 +54,7 @@ export default function HomePage() {
   const categories = ['all', ...Array.from(new Set(approvedProducts.map(p => p.category)))];
 
   const requete = search.trim().toLowerCase();
-  const filteredProducts = approvedProducts.filter((p) => {
+  const filtres = approvedProducts.filter((p) => {
     const bonneCategorie = selectedCategory === 'all' || p.category === selectedCategory;
     const correspond = !requete
       || p.name.toLowerCase().includes(requete)
@@ -53,6 +62,16 @@ export default function HomePage() {
       || p.category.toLowerCase().includes(requete);
     return bonneCategorie && correspond;
   });
+
+  // Sponsorisation (§ 17) : l'emplacement suit ce que regarde le client. Un
+  // produit sponsorisé ne remonte que s'il correspond déjà à la recherche ou
+  // à la catégorie : on ne montre jamais un produit hors sujet parce qu'il a payé.
+  const emplacement = requete ? 'search_top' : selectedCategory !== 'all' ? 'category_top' : 'home_products';
+  const sponsorises = useSponsorises(emplacement);
+  const classes = classerAvecSponsorises(filtres, [...sponsorises.keys()], 3);
+  const filteredProducts = classes.map((c) => c.element);
+  const idsAffiches = classes.filter((c) => c.sponsorise).map((c) => sponsorises.get(c.element.id)!).join(',');
+  useEffect(() => { if (idsAffiches) compterVues(idsAffiches.split(',')); }, [idsAffiches]);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f5f8f5] pb-20 md:pb-0">
@@ -108,6 +127,12 @@ export default function HomePage() {
               )}
             </div>
 
+            {search.trim().length >= 2 && (
+              <Link href={`/recherche?q=${encodeURIComponent(search.trim())}`} className="inline-flex items-center gap-1 text-xs font-bold text-emerald-100 underline underline-offset-2 min-h-[32px]">
+                Chercher aussi dans les boutiques et les fournisseurs →
+              </Link>
+            )}
+
             {/* Catégories */}
             {categories.length > 1 && (
               <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
@@ -128,6 +153,16 @@ export default function HomePage() {
             )}
           </div>
         </section>
+
+        {/* Visiteur invité par un revendeur : sa sélection passe en premier (§ 9). */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-5 empty:hidden">
+          <SelectionReferent />
+        </div>
+
+        {/* Emplacement sponsorisé « bandeau d'accueil » (§ 17). */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-5 empty:hidden">
+          <ALaUne />
+        </div>
 
         {/* ══════════════════════════════════════════════
             CATALOGUE — immédiatement sous la recherche
@@ -178,7 +213,12 @@ export default function HomePage() {
               // photos à balayer, partage WhatsApp en un clic.
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
                 {filteredProducts.map((product, i) => (
-                  <ProductCard key={product.id} produit={carteDepuisProduit(product)} priority={i < 4} />
+                  <ProductCard
+                    key={product.id}
+                    produit={carteDepuisProduit(product)}
+                    priority={i < 4}
+                    sponsorisationId={classes[i]?.sponsorise ? sponsorises.get(product.id) : null}
+                  />
                 ))}
               </div>
             )}

@@ -1,6 +1,7 @@
 'use client';
 
-import React, { Suspense } from 'react';
+import React, { useEffect, Suspense } from 'react';
+import { memoriserParrain } from '@/lib/parrain';
 import { useSearchParams } from 'next/navigation';
 import Header from '@/components/common/Header';
 import Footer from '@/components/common/Footer';
@@ -24,7 +25,10 @@ function GoogleIcon({ className }: { className?: string }) {
 
 function JoinContent() {
   const searchParams = useSearchParams();
-  const refCode = searchParams?.get('ref') || 'SG-REV-492';
+  // Plus de code de démonstration par défaut (« SG-REV-492 ») : sans lien de
+  // parrainage, personne n'est parrain.
+  const refCode = searchParams?.get('ref') || '';
+  useEffect(() => { memoriserParrain(refCode); }, [refCode]);
   const [formError, setFormError] = React.useState('');
 
   // Inscription Google seulement — plus de formulaire téléphone/OTP ici :
@@ -40,7 +44,7 @@ function JoinContent() {
     }
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback?intendedRole=reseller&ref=${encodeURIComponent(refCode)}` },
+      options: { redirectTo: `${window.location.origin}/auth/callback?intendedRole=reseller${refCode ? `&ref=${encodeURIComponent(refCode)}` : ''}` },
     });
   };
 

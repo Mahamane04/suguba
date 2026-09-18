@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation';
 import ProductImage from '@/components/common/ProductImage';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
+import CarteAccesReseau from '@/components/reseau/CarteAccesReseau';
+import { LayoutGrid as LayoutGridIcone, ShieldCheck as ShieldCheckIcone, Target as TargetIcone, Megaphone as MegaphoneIcone, UserCog as UserCogIcone, Gift as GiftIcone } from 'lucide-react';
 import CloudSyncBadge from '@/components/common/CloudSyncBadge';
 import ProductPricingModal from '@/components/admin/ProductPricingModal';
 import DriverVerificationPanel from '@/components/admin/DriverVerificationPanel';
@@ -321,7 +323,10 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Réglages économiques : coûts, marge minimale, commissions, livraison. */}
-        <EconomicSettingsPanel />
+        {/* Ancre du back-office : « Paramètres et commissions ». */}
+        <div id="reglages" className="scroll-mt-24">
+          <EconomicSettingsPanel />
+        </div>
 
         {/* Operational Queues & Priority Action Desks */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -865,6 +870,18 @@ export default function AdminDashboardPage() {
 
         </div>
 
+
+        <CarteAccesReseau
+          titre="Back-office"
+          entrees={[
+            { libelle: 'Tous les domaines', href: '/admin/backoffice', icone: LayoutGridIcone, aide: 'Commerce, utilisateurs, finance, marketing…' },
+            { libelle: 'Vérifications', href: '/admin/verifications', icone: ShieldCheckIcone, aide: 'Pièces en attente d’examen' },
+            { libelle: 'Missions', href: '/admin/missions', icone: TargetIcone, aide: 'Animer le réseau de revendeurs' },
+            { libelle: 'Récompenses', href: '/admin/recompenses', icone: GiftIcone, aide: 'Missions et parrainages à verser' },
+            { libelle: 'Sponsorisation', href: '/admin/sponsorisations', icone: MegaphoneIcone, aide: 'Packs, tarifs et demandes' },
+            { libelle: 'Équipe et permissions', href: '/admin/equipe', icone: UserCogIcone, aide: 'Qui a le droit de faire quoi' },
+          ]}
+        />
       </main>
 
       {/* Pricing Modal */}

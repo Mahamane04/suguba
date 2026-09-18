@@ -6,7 +6,8 @@ import Carrousel from '@/components/product/Carrousel';
 import AfficheModal from '@/components/product/AfficheModal';
 import Button from '@/components/ui/Button';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
-import { partagerProduit, prechargerImage, useCodeRevendeur } from '@/lib/partage';
+import { compterClic } from '@/lib/sponsorises';
+import { partagerProduit, prechargerImage, prechargerLienPartage, useCodeRevendeur } from '@/lib/partage';
 import type { Product } from '@/types';
 import { Loader2, Image as ImageIcon } from 'lucide-react';
 
@@ -53,6 +54,7 @@ export default function ProductCard({
   afficherCommission = false,
   partageEnAvant = false,
   priority = false,
+  sponsorisationId = null,
   children,
 }: {
   produit: ProduitCarte;
@@ -62,6 +64,12 @@ export default function ProductCard({
   /** Catalogue revendeur : le partage devient l'action principale. */
   partageEnAvant?: boolean;
   priority?: boolean;
+  /**
+   * Carte mise en avant par une sponsorisation payée (§ 17). Elle est
+   * MARQUÉE « Sponsorisé » : une publicité qui se fait passer pour un
+   * résultat naturel trompe le client.
+   */
+  sponsorisationId?: string | null;
   children?: React.ReactNode;
 }) {
   const monCode = useCodeRevendeur();
@@ -81,7 +89,12 @@ export default function ProductCard({
       setPreparation(false);
     }
   };
-  const precharger = () => { prechargerImage(produit.images[0], produit.slug); };
+  const precharger = () => {
+    prechargerImage(produit.images[0], produit.slug);
+    // Le lien tracké se prépare en même temps que la photo : au clic, il
+    // est déjà là et le partage reste dans le geste de l'utilisateur.
+    if (monCode) prechargerLienPartage(produit.slug);
+  };
 
   const boutonPartage = (pleineLargeur: boolean) => (
     <button
@@ -108,9 +121,19 @@ export default function ProductCard({
   );
 
   return (
-    <article className="bg-white rounded-3xl overflow-hidden border border-slate-200 hover:border-slate-300 hover:shadow-card-hover transition-all flex flex-col">
+    <article
+      className="bg-white rounded-3xl overflow-hidden border border-slate-200 hover:border-slate-300 hover:shadow-card-hover transition-all flex flex-col"
+      onClickCapture={sponsorisationId ? (e) => {
+        if ((e.target as HTMLElement).closest('a')) compterClic(sponsorisationId);
+      } : undefined}
+    >
       <div className="relative">
         <Carrousel images={produit.images} alt={produit.nom} href={lien} priority={priority} />
+        {sponsorisationId && (
+          <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-lg bg-white/95 text-slate-700 text-[10px] font-bold border border-slate-200 pointer-events-none">
+            Sponsorisé
+          </span>
+        )}
         {enRupture && (
           <span className="absolute top-2 left-2 px-2 py-0.5 rounded-lg bg-slate-900/85 text-white text-[11px] font-bold pointer-events-none">
             Rupture de stock

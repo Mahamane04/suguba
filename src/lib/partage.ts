@@ -66,6 +66,47 @@ export function prechargerImage(url: string | undefined, nom: string): Promise<F
   return promesse;
 }
 
+/**
+ * Liens trackés, préparés À L'AVANCE (2026-09-18).
+ *
+ * Le partage doit rester dans le geste de l'utilisateur : sur iOS, si une
+ * requête réseau s'intercale entre le clic et `navigator.share`, Safari refuse
+ * le partage. On lance donc la création du lien dès que le doigt touche le
+ * bouton (même moment que le préchargement de la photo), et au clic on ne fait
+ * que RÉCUPÉRER un résultat déjà là — avec un délai de garde très court.
+ *
+ * Si le lien n'est pas prêt, on partage l'URL produit habituelle : la vente
+ * reste attribuée par le code revendeur, seules les statistiques par lien
+ * manquent. Jamais l'inverse : on ne retarde pas un partage pour un compteur.
+ */
+const cacheLiens = new Map<string, Promise<string | null>>();
+
+export function prechargerLienPartage(slug: string, cible: 'product' | 'store' = 'product'): Promise<string | null> {
+  const cle = `${cible}:${slug}`;
+  let promesse = cacheLiens.get(cle);
+  if (!promesse) {
+    promesse = fetch('/api/reseau/lien', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ cible, ref: slug, canal: 'whatsapp' }),
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => j?.lien?.code || null)
+      .catch(() => null);
+    cacheLiens.set(cle, promesse);
+  }
+  return promesse;
+}
+
+/** Le lien tracké s'il est déjà prêt, sinon rien — on n'attend pas. */
+async function lienTrackeSiPret(slug: string, delaiMs = 250): Promise<string | null> {
+  const attente = new Promise<null>((resoudre) => setTimeout(() => resoudre(null), delaiMs));
+  const code = await Promise.race([prechargerLienPartage(slug), attente]);
+  if (!code) return null;
+  const base = typeof window !== 'undefined' ? window.location.origin : 'https://app.sugubaml.com';
+  return `${base}/go/${code}`;
+}
+
 export async function partagerProduit(p: ProduitAPartager, refCode?: string | null): Promise<ResultatPartage> {
   // Un produit sans prix n'est pas en vente : son lien mène à « Produit
   // introuvable » et le message annoncerait « 0 F » (bug du 2026-09-11).
@@ -76,7 +117,9 @@ export async function partagerProduit(p: ProduitAPartager, refCode?: string | nu
     }));
     return 'annule';
   }
-  const url = lienProduit(p.slug, refCode);
+  // Un lien tracké quand le revendeur est connecté ET que le lien est prêt ;
+  // l'URL produit habituelle sinon (voir lienTrackeSiPret).
+  const url = (refCode ? await lienTrackeSiPret(p.slug) : null) || lienProduit(p.slug, refCode);
   const texte = texteProduit(p, url);
   const nav = navigator as Navigator & { canShare?: (donnees: ShareData) => boolean };
 

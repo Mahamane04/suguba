@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
 import { verrouillerCommissionDeLivraison } from '@/lib/commissions';
@@ -8,6 +9,8 @@ import { verrouillerCommissionDeLivraison } from '@/lib/commissions';
 const STATUTS_VALIDES = ['pending_call', 'confirmed', 'dispatched', 'in_transit', 'delivered', 'cancelled', 'returned'];
 
 export async function POST(req: NextRequest) {
+  const refusEquipe = await refusSansPermissionAdmin(req, 'POST /api/orders/sync');
+  if (refusEquipe) return refusEquipe;
   const admin = getSupabaseAdmin();
   if (!admin) {
     return NextResponse.json({ error: 'Service indisponible.' }, { status: 503 });

@@ -1,5 +1,6 @@
 'use client';
 
+import QRCode from 'qrcode';
 import { lienProduit, type ProduitAPartager } from '@/lib/partage';
 
 /**
@@ -82,10 +83,25 @@ function ajuster(ctx: CanvasRenderingContext2D, texte: string, largeur: number, 
   }
 }
 
+export interface OptionsAffiche {
+  theme?: ThemeAffiche;
+  format?: FormatAffiche;
+  /**
+   * Adresse de commande imprimée sur l'affiche. Par défaut l'URL produit ;
+   * le créateur de contenus y passe le lien tracké (/go/<code>) pour que
+   * chaque affiche compte ses propres visites (§ 15 du cahier des charges).
+   */
+  lien?: string | null;
+  /** Ajoute le QR code de ce même lien dans le pied de l'affiche. */
+  qr?: boolean;
+  /** Bandeau promotionnel (« -10 % ce week-end »), 40 caractères max. */
+  promo?: string | null;
+}
+
 export async function genererAffiche(
   p: ProduitAPartager,
   code: string | null,
-  { theme = 'vert', format = 'story' }: { theme?: ThemeAffiche; format?: FormatAffiche } = {},
+  { theme = 'vert', format = 'story', lien = null, qr = false, promo = null }: OptionsAffiche = {},
 ): Promise<File> {
   if (!(p.prix > 0)) {
     throw new Error("Ce produit n'est pas encore en vente (prix non fixé) : pas d'affiche possible.");
@@ -147,6 +163,18 @@ export async function genererAffiche(
   }
   ctx.restore();
 
+  const textePromo = (promo || '').trim().slice(0, 40);
+  if (textePromo) {
+    ctx.font = `900 ${format === 'story' ? 40 : 34}px ${POLICE}`;
+    const lPromo = ctx.measureText(textePromo).width + 56;
+    const hPromo = format === 'story' ? 76 : 66;
+    ctx.fillStyle = '#e11d48';
+    rectangleArrondi(ctx, cadre.x + 28, cadre.y + 28, lPromo, hPromo, hPromo / 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(textePromo, cadre.x + 56, cadre.y + 28 + hPromo * 0.66);
+  }
+
   // Nom (2 lignes max)
   let y = cadre.y + cadre.h + (format === 'story' ? 110 : 90);
   ctx.fillStyle = t.texte;
@@ -185,10 +213,33 @@ export async function genererAffiche(
   const texteClair = '#ffffff';
   ctx.fillStyle = theme === 'clair' ? '#94a3b8' : t.secondaire;
   ctx.font = `600 ${format === 'story' ? 32 : 28}px ${POLICE}`;
-  ctx.fillText('Commandez ici :', marge + 40, yPied + (format === 'story' ? 64 : 50));
-  const adresse = lienProduit(p.slug, code).replace(/^https?:\/\//, '');
+  ctx.fillText(qr ? 'Scannez ou tapez :' : 'Commandez ici :', marge + 40, yPied + (format === 'story' ? 64 : 50));
+  const urlComplete = lien || lienProduit(p.slug, code);
+  const adresse = urlComplete.replace(/^https?:\/\//, '');
+
+  // QR code du même lien, à droite du pied : un client au marché scanne
+  // l'affiche imprimée au lieu de recopier une adresse.
+  let largeurQr = 0;
+  if (qr) {
+    const tailleQr = hauteurPied - 36;
+    try {
+      const donnees = await QRCode.toDataURL(urlComplete, { width: tailleQr * 2, margin: 1, color: { dark: '#0f172a', light: '#ffffff' } });
+      const imageQr = await chargerImage(donnees);
+      if (imageQr) {
+        const xQr = L - marge - 18 - tailleQr;
+        ctx.fillStyle = '#ffffff';
+        rectangleArrondi(ctx, xQr - 6, yPied + 12, tailleQr + 12, tailleQr + 12, 20);
+        ctx.fill();
+        ctx.drawImage(imageQr, xQr, yPied + 18, tailleQr, tailleQr);
+        largeurQr = tailleQr + 40;
+      }
+    } catch {
+      // QR impossible : l'affiche reste valable avec l'adresse seule.
+    }
+  }
+
   ctx.fillStyle = texteClair;
-  ajuster(ctx, adresse, L - 2 * marge - 80, format === 'story' ? 42 : 36, '800');
+  ajuster(ctx, adresse, L - 2 * marge - 80 - largeurQr, format === 'story' ? 42 : 36, '800');
   ctx.fillText(adresse, marge + 40, yPied + (format === 'story' ? 120 : 96));
   if (code) {
     ctx.fillStyle = theme === 'clair' ? '#4ade80' : t.secondaire;

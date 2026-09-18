@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
+import { contexteFournisseur } from '@/lib/reseau/contexte-fournisseur';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { publierAutomatiquement } from '@/lib/publication-auto';
 
@@ -26,6 +27,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Authentification fournisseur ou admin requise.' }, { status: 401 });
   }
 
+  // Un collaborateur de l'équipe agit pour SON fournisseur, avec le droit
+  // « catalogue » (voir src/lib/reseau/contexte-fournisseur.ts). Le
+  // propriétaire reste son propre fournisseur, comme avant.
+  let fournisseurId = session.uid;
+  if (session.role === 'supplier') {
+    const contexte = await contexteFournisseur(session.uid);
+    if (!contexte || !contexte.droits.includes('catalogue')) {
+      return NextResponse.json({ error: 'Votre rôle dans l’équipe ne permet pas de modifier le catalogue.' }, { status: 403 });
+    }
+    fournisseurId = contexte.fournisseurId;
+  }
+
   const admin = getSupabaseAdmin();
   if (!admin) return NextResponse.json({ error: 'Base indisponible.' }, { status: 503 });
 
@@ -50,7 +63,7 @@ export async function POST(req: NextRequest) {
     .maybeSingle();
   if (!produit) return NextResponse.json({ error: 'Produit introuvable.' }, { status: 404 });
 
-  if (session.role === 'supplier' && produit.supplier_id !== session.uid) {
+  if (session.role === 'supplier' && produit.supplier_id !== fournisseurId) {
     return NextResponse.json({ error: 'Ce produit ne vous appartient pas.' }, { status: 403 });
   }
 
