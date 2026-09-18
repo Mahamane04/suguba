@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ShoppingBag, Minus, Plus, Trash2, Loader2, Truck, Store, Check, AlertTriangle, ArrowLeft } from 'lucide-react';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
+import { MARGE_BAS_FLOTTANT } from '@/lib/mise-en-page';
 import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
 import Button from '@/components/ui/Button';
 import { Field, Input, Textarea } from '@/components/ui/Field';
@@ -370,7 +371,7 @@ export default function PanierPage() {
           du navigateur et sous le geste d'accueil de l'iPhone. */}
       <div
         className="md:hidden fixed inset-x-3 z-40 bg-white border border-slate-200 rounded-3xl shadow-float px-3 py-2.5"
-        style={{ bottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}
+        style={{ bottom: MARGE_BAS_FLOTTANT }}
       >
         <div className="flex items-center justify-between gap-2.5">
           <button

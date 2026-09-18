@@ -13,6 +13,7 @@ import Image from 'next/image';
 import { useOrderCheckout } from '@/lib/useOrderCheckout';
 import { useCodeRevendeur } from '@/lib/partage';
 import { useToast } from '@/components/ui/Toast';
+import { MARGE_BAS_FLOTTANT } from '@/lib/mise-en-page';
 
 interface CreateOrderModalProps {
   product: Product | null;
@@ -272,7 +273,7 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
             {/* Validation toujours sous le pouce. */}
             <div
               className="shrink-0 bg-white border-t border-slate-200 px-4 pt-3 flex items-center justify-between gap-3"
-              style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom, 0px))' }}
+              style={{ paddingBottom: MARGE_BAS_FLOTTANT }}
             >
               <div className="min-w-0">
                 <p className="text-[11px] text-slate-500">Le client paie</p>

@@ -14,6 +14,7 @@ import { Field, Input, Textarea } from '@/components/ui/Field';
 import ChoicePicker from '@/components/ui/ChoicePicker';
 import { Card, EmptyState, Skeleton } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
+import { MARGE_BAS_FLOTTANT } from '@/lib/mise-en-page';
 import {
   ArrowLeft, Minus, Plus, Bike, Store, Tag, ShieldCheck, Lock, Check,
   Navigation, Clock, PackageX, Info,
@@ -610,13 +611,15 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
       </form>
 
       {/* Téléphone : total et confirmation toujours sous le pouce. Masquée
-          pendant la saisie pour ne pas recouvrir le champ actif. */}
+          pendant la saisie pour ne pas recouvrir le champ actif.
+          Barre FLOTTANTE, décollée du bord (2026-09-18) : collée en bas, elle
+          passait sous les coins arrondis et la barre d'accueil de l'iPhone. */}
       {!clavierOuvert && (
         <div
-          className="md:hidden fixed inset-x-0 bottom-0 z-40 bg-white border-t border-slate-200 shadow-[0_-8px_24px_-12px_rgba(15,23,42,0.18)]"
-          style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+          className="md:hidden fixed inset-x-3 z-40 bg-white border border-slate-200 rounded-3xl shadow-float"
+          style={{ bottom: MARGE_BAS_FLOTTANT }}
         >
-          <div className="px-4 py-3 flex items-center gap-4">
+          <div className="px-4 py-2.5 flex items-center gap-4">
             <div className="min-w-0">
               <p className="text-[11px] text-slate-500 leading-none">Total à la livraison</p>
               <p className="text-lg font-black text-slate-900 whitespace-nowrap mt-1">
