@@ -8,6 +8,7 @@ import LogoUploader from '@/components/common/LogoUploader';
 import CouvertureEditeur from '@/components/reseau/CouvertureEditeur';
 import Button from '@/components/ui/Button';
 import { Field, Input, Textarea } from '@/components/ui/Field';
+import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
 import { Card, EmptyState, Skeleton, StatCard } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
 
@@ -44,6 +45,7 @@ export default function MaBoutiqueRevendeurPage() {
   const [description, setDescription] = useState('');
   const [logo, setLogo] = useState<string | null>(null);
   const [couverture, setCouverture] = useState<string | null>(null);
+  const [quartier, setQuartier] = useState('');
 
   useEffect(() => { setOrigine(window.location.origin); }, []);
 
@@ -60,6 +62,7 @@ export default function MaBoutiqueRevendeurPage() {
         setDescription(data.boutique.description || '');
         setLogo(data.boutique.logo || null);
         setCouverture(data.boutique.couverture || null);
+        setQuartier(data.boutique.quartier || '');
       })
       .catch(() => { if (!annule) setIndisponible(true); })
       .finally(() => { if (!annule) setChargement(false); });
@@ -72,7 +75,7 @@ export default function MaBoutiqueRevendeurPage() {
       const reponse = await fetch('/api/reseller/boutique', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nom, accroche, description, logo, couverture }),
+        body: JSON.stringify({ nom, accroche, description, logo, couverture, quartier: quartier || null }),
       });
       const data = await reponse.json();
       if (!reponse.ok) { toast(data.error || 'Enregistrement impossible.', { ton: 'erreur' }); return; }
@@ -133,6 +136,15 @@ export default function MaBoutiqueRevendeurPage() {
             <Field label="Accroche" htmlFor="accroche" aide="Une phrase courte, affichée sous le nom.">
               <Input id="accroche" value={accroche} onChange={(e) => setAccroche(e.target.value)} maxLength={90}
                 placeholder="Électroménager et mode livrés à Bamako" />
+            </Field>
+
+            <Field label="Quartier de la boutique" htmlFor="quartier-boutique" aide="Facultatif. Les clients du quartier et des alentours trouveront votre boutique. Indiquez-le seulement si vous recevez des clients.">
+              <NeighborhoodPicker id="quartier-boutique" value={quartier} onChange={(q) => setQuartier(q === 'Autre quartier' ? '' : q)} placeholder="Choisir le quartier" />
+              {quartier && (
+                <button type="button" onClick={() => setQuartier('')} className="mt-1 text-xs font-semibold text-slate-500 underline underline-offset-2 min-h-[32px]">
+                  Ne plus afficher de quartier
+                </button>
+              )}
             </Field>
 
             <Field label="Présentation" htmlFor="presentation" aide="Qui vous êtes, ce que vous vendez, comment vous livrez.">

@@ -9,6 +9,7 @@ import GalerieEditeur from '@/components/reseau/GalerieEditeur';
 import LogoUploader from '@/components/common/LogoUploader';
 import Button from '@/components/ui/Button';
 import { Field, Input, Textarea } from '@/components/ui/Field';
+import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
 import { Card, EmptyState, Skeleton, StatCard } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
 
@@ -31,6 +32,7 @@ export default function BoutiqueSugubaPage() {
   const [logo, setLogo] = useState<string | null>(null);
   const [couverture, setCouverture] = useState<string | null>(null);
   const [galerie, setGalerie] = useState<string[]>([]);
+  const [quartier, setQuartier] = useState('');
   const [envoi, setEnvoi] = useState(false);
   const [origine, setOrigine] = useState('https://app.sugubaml.com');
 
@@ -42,7 +44,7 @@ export default function BoutiqueSugubaPage() {
       setProduits(d.produits || 0); if (d.maxGalerie) setMaxGalerie(d.maxGalerie);
       if (!b) return;
       setSlug(b.slug); setAbonnes(b.abonnes); setNom(b.nom); setAccroche(b.accroche || '');
-      setDescription(b.description || ''); setLogo(b.logo); setCouverture(b.couverture); setGalerie(b.galerie || []);
+      setDescription(b.description || ''); setLogo(b.logo); setCouverture(b.couverture); setGalerie(b.galerie || []); setQuartier(b.quartier || '');
     }).catch(() => undefined).finally(() => setChargement(false));
   }, [toast]);
 
@@ -51,7 +53,7 @@ export default function BoutiqueSugubaPage() {
     try {
       const r = await fetch('/api/admin/boutique-suguba', {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nom, accroche, description, logo, couverture, galerie, ...extra }),
+        body: JSON.stringify({ nom, accroche, description, logo, couverture, galerie, quartier: quartier || null, ...extra }),
       });
       const d = await r.json();
       if (!r.ok) { toast(d.error || 'Enregistrement impossible.', { ton: 'erreur' }); return; }
@@ -81,6 +83,15 @@ export default function BoutiqueSugubaPage() {
                 <p className="text-[11px] text-slate-500">Le logo officiel de Suguba.</p>
               </div>
               <Field label="Nom" htmlFor="nom" requis><Input id="nom" value={nom} onChange={(e) => setNom(e.target.value)} maxLength={60} /></Field>
+            <Field label="Quartier de la boutique" htmlFor="quartier-boutique" aide="Le quartier du point de vente ou d’accueil Suguba, s’il y en a un.">
+              <NeighborhoodPicker id="quartier-boutique" value={quartier} onChange={(q) => setQuartier(q === 'Autre quartier' ? '' : q)} placeholder="Choisir le quartier" />
+              {quartier && (
+                <button type="button" onClick={() => setQuartier('')} className="mt-1 text-xs font-semibold text-slate-500 underline underline-offset-2 min-h-[32px]">
+                  Ne plus afficher de quartier
+                </button>
+              )}
+            </Field>
+
               <Field label="Accroche" htmlFor="accroche"><Input id="accroche" value={accroche} onChange={(e) => setAccroche(e.target.value)} maxLength={90} /></Field>
               <Field label="Présentation" htmlFor="description"><Textarea id="description" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} maxLength={1200} /></Field>
               <div className="space-y-1.5">

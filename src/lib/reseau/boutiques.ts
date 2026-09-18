@@ -7,6 +7,7 @@
 import { getSupabaseAdmin } from '../supabase-admin';
 import { slugifier } from '../shop';
 import { cleClient } from './attribution';
+import { classerParProximite, quartierReconnu, type NiveauProximite } from './proximite';
 
 type Admin = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
 
@@ -32,6 +33,10 @@ export interface BoutiqueReseau {
   recrute: boolean;
   abonnes: number;
   statut: string;
+  /** Quartier de Bamako où se trouve la boutique (recherche « près de chez moi »). */
+  quartier: string | null;
+  /** Adresse publique quand ce n'est pas /boutique/<slug> (vitrine fournisseur historique /s/<slug>). */
+  lien?: string;
 }
 
 function versBoutique(r: any): BoutiqueReseau {
@@ -51,6 +56,7 @@ function versBoutique(r: any): BoutiqueReseau {
     recrute: Boolean(r.is_recruiting),
     abonnes: Number(r.followers_count) || 0,
     statut: r.status || 'active',
+    quartier: r.neighborhood || null,
   };
 }
 
@@ -168,9 +174,29 @@ export async function majBoutique(
     ligne.categories = (champs.categories as unknown[]).filter((c) => typeof c === 'string').slice(0, 12);
   }
   if (typeof champs.recrute === 'boolean') ligne.is_recruiting = champs.recrute;
+  // Quartier : uniquement un nom de la liste canonique, sinon la boutique ne
+  // pourrait pas être située et n'apparaîtrait dans aucune recherche.
+  if ('quartier' in champs) {
+    const q = champs.quartier;
+    if (q === null || q === '') ligne.neighborhood = null;
+    else if (typeof q === 'string' && quartierReconnu(q)) ligne.neighborhood = q.trim();
+    else return { ok: false, erreur: 'Choisissez un quartier de la liste.' };
+  }
 
-  const requete = a.from('stores').update(ligne).eq('id', boutiqueId);
-  const { error } = await (proprietaireId ? requete.eq('owner_id', proprietaireId) : requete.is('owner_id', null).eq('owner_type', 'suguba'));
+  const ecrire = (valeurs: Record<string, unknown>) => {
+    const requete = a.from('stores').update(valeurs).eq('id', boutiqueId);
+    return proprietaireId ? requete.eq('owner_id', proprietaireId) : requete.is('owner_id', null).eq('owner_type', 'suguba');
+  };
+  let { error } = await ecrire(ligne);
+  // Base pas encore migrée (colonne `neighborhood` absente) : un quartier
+  // vide ne doit pas empêcher d'enregistrer le reste de la boutique.
+  if (error?.code === '42703' && 'neighborhood' in ligne) {
+    if (ligne.neighborhood !== null) {
+      return { ok: false, erreur: 'Le quartier de boutique n’est pas encore activé (mise à jour de la base à appliquer).' };
+    }
+    delete ligne.neighborhood;
+    ({ error } = await ecrire(ligne));
+  }
   if (error) return { ok: false, erreur: error.message };
   return { ok: true };
 }
@@ -252,6 +278,70 @@ export async function boutiquesQuiRecrutent(limite = 12): Promise<BoutiqueReseau
     .limit(limite);
   if (error) return [];
   return (data || []).map(versBoutique);
+}
+
+/**
+ * Boutiques situées dans un quartier ou à proximité (2026-09-18).
+ *
+ * Le quartier vient de la boutique elle-même (`stores.neighborhood`, choisi
+ * par son propriétaire) ; à défaut, pour un fournisseur, de son entrepôt
+ * déclaré à l'inscription. Celui d'un revendeur n'est JAMAIS déduit de son
+ * profil : c'est souvent son domicile, il doit choisir de l'afficher.
+ * Fonctionne aussi avant la migration (colonne absente → entrepôts seuls).
+ */
+export async function boutiquesParQuartier(
+  quartier: string,
+  limite = 40,
+): Promise<{ boutique: BoutiqueReseau; niveau: NiveauProximite; distanceKm: number }[]> {
+  const a = getSupabaseAdmin();
+  if (!a || !quartierReconnu(quartier)) return [];
+  const { data, error } = await a
+    .from('stores')
+    .select('*')
+    .eq('status', 'active')
+    .order('followers_count', { ascending: false })
+    .limit(500);
+  if (error || !data) return [];
+
+  const boutiques = data.map(versBoutique);
+  const fournisseursSansQuartier = boutiques
+    .filter((b) => !b.quartier && b.typeProprietaire === 'supplier' && b.proprietaireId)
+    .map((b) => b.proprietaireId as string);
+  if (fournisseursSansQuartier.length) {
+    const { data: entrepots } = await a
+      .from('suppliers')
+      .select('profile_id, warehouse_neighborhood')
+      .in('profile_id', fournisseursSansQuartier);
+    const parFournisseur = new Map((entrepots || []).map((e) => [e.profile_id, e.warehouse_neighborhood as string | null]));
+    for (const b of boutiques) {
+      if (!b.quartier && b.typeProprietaire === 'supplier' && b.proprietaireId) {
+        b.quartier = parFournisseur.get(b.proprietaireId) || null;
+      }
+    }
+  }
+
+  // Fournisseurs actifs qui n'ont pas encore ouvert « Ma boutique » (la
+  // fiche `stores` se crée à ce moment-là) : leur vitrine historique
+  // /s/<slug> existe déjà, ils ne doivent pas être invisibles pour autant.
+  const avecBoutique = new Set(boutiques.filter((b) => b.typeProprietaire === 'supplier').map((b) => b.proprietaireId));
+  const { data: actifs } = await a.from('profile_roles').select('profile_id').eq('role', 'supplier').eq('status', 'active');
+  const idsActifs = (actifs || []).map((r) => r.profile_id as string).filter((id) => !avecBoutique.has(id));
+  if (idsActifs.length) {
+    const { data: fournisseurs } = await a.from('suppliers').select('*').in('profile_id', idsActifs.slice(0, 500));
+    for (const f of fournisseurs || []) {
+      if (!f.slug || !f.warehouse_neighborhood) continue;
+      boutiques.push({
+        ...versBoutique({ id: `fournisseur:${f.profile_id}`, owner_type: 'supplier', owner_id: f.profile_id }),
+        slug: f.slug,
+        nom: f.shop_display_name || f.company_name || 'Boutique',
+        accroche: f.category || null,
+        logo: f.logo_url || null,
+        quartier: f.warehouse_neighborhood,
+        lien: `/s/${f.slug}`,
+      });
+    }
+  }
+  return classerParProximite(quartier, boutiques).slice(0, limite);
 }
 
 /**

@@ -424,3 +424,50 @@ test('un membre Support ne peut ni payer ni changer les réglages', () => {
   const finance = { teamRole: 'finance', permissions: [] };
   assert.equal(permissions.aLaPermission(finance, PERMISSION_PAR_ROUTE['POST /api/payouts/initiate']), true);
 });
+
+// ── Boutiques par quartier (2026-09-18) ────────────────────────────────────
+const proximite = require('../src/lib/reseau/proximite.ts');
+
+test('les boutiques du quartier passent avant celles des alentours, puis par distance', () => {
+  const boutiques = [
+    { nom: 'Loin', quartier: 'Faladié', abonnes: 900 },
+    { nom: 'Voisine', quartier: 'Lafiabougou', abonnes: 1 },
+    { nom: 'Ici', quartier: 'hamdallaye aci 2000', abonnes: 0 },
+    { nom: 'Sans quartier', quartier: null, abonnes: 50 },
+    { nom: 'Inconnu', quartier: 'Autre quartier', abonnes: 50 },
+    { nom: 'Kati', quartier: 'Kati', abonnes: 50 },
+  ];
+  const r = proximite.classerParProximite('Hamdallaye ACI 2000', boutiques);
+  assert.deepEqual(r.map((x) => x.boutique.nom), ['Ici', 'Voisine']);
+  assert.equal(r[0].niveau, 'quartier');
+  assert.equal(r[1].niveau, 'proche');
+  assert.ok(r[1].distanceKm >= 0.5 && r[1].distanceKm <= proximite.RAYON_KM);
+});
+
+test('à distance égale, la boutique la plus suivie passe devant', () => {
+  const r = proximite.classerParProximite('Missira', [
+    { nom: 'A', quartier: 'Missira', abonnes: 2 },
+    { nom: 'B', quartier: 'Missira', abonnes: 40 },
+  ]);
+  assert.deepEqual(r.map((x) => x.boutique.nom), ['B', 'A']);
+});
+
+test('un quartier non situé ne renvoie rien et n’est pas accepté', () => {
+  assert.deepEqual(proximite.classerParProximite('Autre quartier', [{ quartier: 'Missira', abonnes: 1 }]), []);
+  assert.equal(proximite.quartierReconnu('Autre quartier'), false);
+  assert.equal(proximite.quartierReconnu(''), false);
+  assert.equal(proximite.quartierReconnu('Djélibougou'), true);
+});
+
+test('le libellé de proximité reste lisible', () => {
+  assert.equal(proximite.libelleProximite({ niveau: 'quartier', distanceKm: 0 }, 'Missira'), 'Dans votre quartier');
+  assert.equal(proximite.libelleProximite({ niveau: 'proche', distanceKm: 1.5 }, 'Missira'), 'Missira · ~1,5 km');
+});
+
+test('les quartiers voisins excluent le quartier lui-même et sont triés par distance', () => {
+  const v = proximite.quartiersVoisins('Hamdallaye ACI 2000', 3);
+  assert.equal(v.length, 3);
+  assert.ok(!v.includes('Hamdallaye ACI 2000'));
+  assert.ok(v.includes('Lafiabougou'));
+  assert.deepEqual(proximite.quartiersVoisins('Autre quartier'), []);
+});

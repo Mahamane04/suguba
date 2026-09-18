@@ -9,6 +9,7 @@ import GalerieEditeur from '@/components/reseau/GalerieEditeur';
 import CouvertureEditeur from '@/components/reseau/CouvertureEditeur';
 import Button from '@/components/ui/Button';
 import { Field, Input, Textarea } from '@/components/ui/Field';
+import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
 import { Card, EmptyState, Skeleton, StatCard } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
 
@@ -44,6 +45,7 @@ export default function BoutiqueFournisseurPage() {
   const [description, setDescription] = useState('');
   const [logo, setLogo] = useState<string | null>(null);
   const [couverture, setCouverture] = useState<string | null>(null);
+  const [quartier, setQuartier] = useState('');
   const [recrute, setRecrute] = useState(false);
   const [galerie, setGalerie] = useState<string[]>([]);
   const [maxGalerie, setMaxGalerie] = useState(10);
@@ -63,6 +65,7 @@ export default function BoutiqueFournisseurPage() {
         setDescription(data.boutique.description || '');
         setLogo(data.boutique.logo || null);
         setCouverture(data.boutique.couverture || null);
+        setQuartier(data.boutique.quartier || '');
         setRecrute(Boolean(data.boutique.recrute));
         setGalerie(data.boutique.galerie || []);
         if (data.maxGalerie) setMaxGalerie(data.maxGalerie);
@@ -78,7 +81,7 @@ export default function BoutiqueFournisseurPage() {
       const reponse = await fetch('/api/supplier/boutique', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nom, accroche, description, logo, couverture, recrute, galerie, ...champsSupplementaires }),
+        body: JSON.stringify({ nom, accroche, description, logo, couverture, recrute, galerie, quartier: quartier || null, ...champsSupplementaires }),
       });
       const data = await reponse.json();
       if (!reponse.ok) { toast(data.error || 'Enregistrement impossible.', { ton: 'erreur' }); return; }
@@ -162,6 +165,15 @@ export default function BoutiqueFournisseurPage() {
 
             <Field label="Nom affiché" htmlFor="nom-boutique" requis>
               <Input id="nom-boutique" value={nom} onChange={(e) => setNom(e.target.value)} maxLength={60} />
+            </Field>
+
+            <Field label="Quartier de la boutique" htmlFor="quartier-boutique" aide="Là où les clients peuvent vous trouver. Sans choix, le quartier de votre entrepôt est utilisé.">
+              <NeighborhoodPicker id="quartier-boutique" value={quartier} onChange={(q) => setQuartier(q === 'Autre quartier' ? '' : q)} placeholder="Choisir le quartier" />
+              {quartier && (
+                <button type="button" onClick={() => setQuartier('')} className="mt-1 text-xs font-semibold text-slate-500 underline underline-offset-2 min-h-[32px]">
+                  Ne plus afficher de quartier
+                </button>
+              )}
             </Field>
 
             <Field label="Accroche" htmlFor="accroche" aide="Une phrase courte sous le nom.">

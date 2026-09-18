@@ -7,6 +7,9 @@ import { chargerBoutiqueFournisseur, chargerBoutiqueRevendeur, chargerProduitsSu
 import { boutiqueParSlug } from '@/lib/reseau/boutiques';
 import { badgesDuCompte } from '@/lib/reseau/verifications-db';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import Link from 'next/link';
+import { MapPin } from 'lucide-react';
+import { quartierReconnu } from '@/lib/reseau/proximite';
 
 /**
  * Boutique du réseau — /boutique/<adresse>.
@@ -20,7 +23,7 @@ export const dynamic = 'force-dynamic';
 
 type Params = { params: Promise<{ slug: string }> };
 
-async function charger(slug: string): Promise<{ vitrine: Boutique; slugBoutique: string; abonnes: number; galerie: string[] } | null> {
+async function charger(slug: string): Promise<{ vitrine: Boutique; slugBoutique: string; abonnes: number; galerie: string[]; quartier: string | null } | null> {
   const boutique = await boutiqueParSlug(slug);
   if (!boutique || boutique.statut !== 'active') return null;
   const enPlus = {
@@ -41,12 +44,13 @@ async function charger(slug: string): Promise<{ vitrine: Boutique; slugBoutique:
       slugBoutique: boutique.slug,
       abonnes: boutique.abonnes,
       galerie: boutique.galerie,
+      quartier: boutique.quartier,
     };
   }
 
   if (boutique.typeProprietaire === 'supplier' && boutique.proprietaireId) {
     const admin = getSupabaseAdmin();
-    const { data } = (await admin?.from('suppliers').select('slug').eq('profile_id', boutique.proprietaireId).maybeSingle()) || { data: null };
+    const { data } = (await admin?.from('suppliers').select('slug, warehouse_neighborhood').eq('profile_id', boutique.proprietaireId).maybeSingle()) || { data: null };
     if (!data?.slug) return null;
     const vitrine = await chargerBoutiqueFournisseur(data.slug);
     if (!vitrine) return null;
@@ -55,6 +59,8 @@ async function charger(slug: string): Promise<{ vitrine: Boutique; slugBoutique:
       slugBoutique: boutique.slug,
       abonnes: boutique.abonnes,
       galerie: boutique.galerie,
+      // Sans quartier choisi pour la boutique, celui de l'entrepôt (même règle que la recherche).
+      quartier: boutique.quartier || data.warehouse_neighborhood || null,
     };
   }
 
@@ -68,6 +74,7 @@ async function charger(slug: string): Promise<{ vitrine: Boutique; slugBoutique:
       slugBoutique: boutique.slug,
       abonnes: boutique.abonnes,
       galerie: boutique.galerie,
+      quartier: boutique.quartier,
     };
   }
 
@@ -108,6 +115,16 @@ export default async function BoutiqueReseauPage({ params }: Params) {
       refCode={charge.vitrine.code}
       complement={
         <div className="space-y-4">
+          {charge.quartier && quartierReconnu(charge.quartier) && (
+            <Link
+              href={`/boutiques?quartier=${encodeURIComponent(charge.quartier)}`}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 min-h-[32px]"
+            >
+              <MapPin className="w-3.5 h-3.5 text-[#078000]" />
+              {charge.quartier}
+              <span className="text-[#078000] font-bold underline underline-offset-2">· Boutiques voisines</span>
+            </Link>
+          )}
           <GalerieBoutique images={charge.galerie} nom={charge.vitrine.nom} />
           <BoutonSuivre slug={charge.slugBoutique} abonnesInitial={charge.abonnes} />
         </div>

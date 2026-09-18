@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { ChevronDown, LocateFixed, Loader2 } from 'lucide-react';
+import { ChevronDown, LocateFixed, Loader2, MapPin } from 'lucide-react';
 import { BAMAKO_NEIGHBORHOODS } from '@/lib/bamako-neighborhoods';
 import { quartierLePlusProche } from '@/lib/bamako-quartiers';
 import { useToast } from '@/components/ui/Toast';
@@ -15,6 +15,14 @@ interface NeighborhoodPickerProps {
   /** Relie le déclencheur à un <label htmlFor> et permet d'y ramener le focus. */
   id?: string;
   invalide?: boolean;
+  /**
+   * `champ` (défaut) : champ de formulaire pleine largeur.
+   * `puce` : pastille compacte « 📍 Quartier ▾ » pour un bandeau sombre
+   * (accueil), à la manière des applis de livraison.
+   */
+  variante?: 'champ' | 'puce';
+  /** Petit libellé au-dessus du quartier dans la pastille (ex. « Mon quartier »). */
+  prefixe?: string;
 }
 
 /** Au-delà, la position n'a plus rien à voir avec Bamako (test à l'étranger, GPS erratique). */
@@ -31,6 +39,7 @@ const DISTANCE_MAX_KM = 40;
  */
 export default function NeighborhoodPicker({
   value, onChange, className = '', placeholder = 'Choisir…', id, invalide = false,
+  variante = 'champ', prefixe,
 }: NeighborhoodPickerProps) {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -78,6 +87,25 @@ export default function NeighborhoodPicker({
     <div ref={ref} className={`relative ${className}`}>
       {/* Même gabarit que les champs du design system (Field.tsx) : 48 px,
           rayon 2xl, texte 16 px sur téléphone, focus au vert de marque. */}
+      {variante === 'puce' ? (
+        <button
+          id={id}
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          className="max-w-full min-h-[44px] inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 hover:bg-white/15 pl-1.5 pr-3 py-1 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-white/40"
+        >
+          <span className="w-8 h-8 rounded-full bg-suguba-brand text-white flex items-center justify-center shrink-0">
+            <MapPin className="w-4 h-4" />
+          </span>
+          <span className="min-w-0 leading-tight">
+            {prefixe && <span className="block text-[10px] font-bold uppercase tracking-wider text-emerald-100/60">{prefixe}</span>}
+            <span className={`block truncate text-sm font-bold ${value ? 'text-white' : 'text-emerald-100/80'}`}>{value || placeholder}</span>
+          </span>
+          <ChevronDown className={`w-4 h-4 text-emerald-100/70 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
+        </button>
+      ) : (
       <button
         id={id}
         type="button"
@@ -92,9 +120,10 @@ export default function NeighborhoodPicker({
         <span className={`truncate ${value ? 'text-slate-900' : 'text-slate-400'}`}>{value || placeholder}</span>
         <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
+      )}
 
       {open && (
-        <div className="absolute z-30 mt-1.5 w-full min-w-[240px] max-h-72 overflow-y-auto bg-white border border-gray-100 rounded-2xl shadow-float py-1.5 animate-slide-down">
+        <div className={`absolute z-30 mt-1.5 ${variante === 'puce' ? 'left-0 w-72 max-w-[calc(100vw-2rem)]' : 'w-full'} min-w-[240px] max-h-72 overflow-y-auto bg-white border border-gray-100 rounded-2xl shadow-float py-1.5 animate-slide-down`}>
           <button
             type="button"
             onClick={utiliserPositionActuelle}

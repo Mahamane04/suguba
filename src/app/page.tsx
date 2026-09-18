@@ -6,8 +6,10 @@ import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import SelectionReferent from '@/components/reseau/SelectionReferent';
 import ALaUne from '@/components/reseau/ALaUne';
+import BoutiquesDuQuartier from '@/components/reseau/BoutiquesDuQuartier';
 import { useSponsorises, compterVues } from '@/lib/sponsorises';
 import { classerAvecSponsorises } from '@/lib/reseau/sponsoring';
+import { quartierReconnu } from '@/lib/reseau/proximite';
 import Footer from '@/components/common/Footer';
 import Button from '@/components/ui/Button';
 import ProductCard, { carteDepuisProduit } from '@/components/product/ProductCard';
@@ -15,7 +17,7 @@ import { useSugubaStore, useCatalogueCharge, useQuartierClient, definirQuartierC
 import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
 import {
   ArrowRight, Search, Banknote,
-  ShieldCheck, Truck, TrendingUp, X
+  ShieldCheck, Truck, TrendingUp, X, Store
 } from 'lucide-react';
 
 /* Page d'accueil réorganisée le 2026-09-09 en vitrine produit.
@@ -46,6 +48,7 @@ export default function HomePage() {
   // fixé une fois ici, il pré-remplit le quartier de la fenêtre de commande
   // (voir /p/[slug]) au lieu de le redemander à chaque produit.
   const quartierClient = useQuartierClient();
+  const quartierSitue = quartierReconnu(quartierClient) ? quartierClient : null;
 
   // Prix > 0 en plus du statut : un produit sans prix n'est pas en vente, même
   // si la mémoire locale du téléphone le croit « approuvé » (bug du 2026-09-11,
@@ -84,16 +87,29 @@ export default function HomePage() {
         ══════════════════════════════════════════════ */}
         <section className="bg-[#064e3b] px-4 sm:px-6 py-6 sm:py-8">
           <div className="max-w-4xl mx-auto space-y-4">
-            {/* Livrer à … : fixé une fois, réutilisé par la fenêtre de
-                commande de chaque produit (voir DeliveryAddressBar). */}
-            <div className="max-w-xs mx-auto">
-              <span className="block text-[10px] font-bold text-emerald-100/60 uppercase tracking-wider mb-1 px-1">
-                Livrer à
-              </span>
+            {/* Mon quartier (2026-09-18) : sert d'abord à trouver les
+                boutiques voisines (section plus bas, page /boutiques). Il
+                pré-remplit aussi la fenêtre de commande, mais la livraison
+                reste confirmée au moment de commander. */}
+            {/* Une seule ligne compacte : pastille « Mon quartier » à gauche,
+                accès aux boutiques proches à droite — le produit reste
+                visible sans défiler. */}
+            <div className="flex items-center justify-between gap-2">
               <NeighborhoodPicker
-                value={quartierClient || 'Choisir mon quartier'}
+                variante="puce"
+                prefixe="Mon quartier"
+                value={quartierClient || ''}
                 onChange={definirQuartierClient}
+                placeholder="Choisir"
+                className="min-w-0"
               />
+              <Link
+                href={quartierSitue ? `/boutiques?quartier=${encodeURIComponent(quartierSitue)}` : '/boutiques'}
+                className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-white text-[#064e3b] text-xs font-black px-3.5 min-h-[40px] hover:bg-emerald-50 transition-colors"
+              >
+                <Store className="w-3.5 h-3.5" />
+                Boutiques<span className="hidden sm:inline"> proches</span>
+              </Link>
             </div>
 
             <div className="text-center">
@@ -162,6 +178,11 @@ export default function HomePage() {
         {/* Emplacement sponsorisé « bandeau d'accueil » (§ 17). */}
         <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-5 empty:hidden">
           <ALaUne />
+        </div>
+
+        {/* Boutiques du quartier choisi et des environs (2026-09-18). */}
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-5 empty:hidden">
+          <BoutiquesDuQuartier quartier={quartierClient} />
         </div>
 
         {/* ══════════════════════════════════════════════
