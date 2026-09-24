@@ -7,7 +7,9 @@ const assert = require('node:assert/strict');
 const P = require('../src/lib/pricing.ts');
 
 const base = (surcharge = {}) => P.completerReglages({
-  ...P.REGLAGES_PAR_DEFAUT, modePartSuguba: 'prelevement_revendeur', tauxPartSuguba: 1, ...surcharge,
+  ...P.REGLAGES_PAR_DEFAUT, modePartSuguba: 'prelevement_revendeur', tauxPartSuguba: 1,
+  // La provision ne pèse sur le prix que si les coûts y sont répercutés.
+  couvrirCoutsDansLePrix: true, ...surcharge,
 });
 
 test('des réglages déjà enregistrés sans la base gardent le calcul au prix', () => {

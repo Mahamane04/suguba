@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import {
   calculerTarif,
+  calculerFraisRetrait,
   calculerTarifGros,
   coutCourseRefusee,
   prixConseilleGros,
@@ -56,6 +57,7 @@ const SECTIONS = [
   ['gros', 'Prix de gros'],
   ['formules', 'Formules'],
   ['couts', 'Coûts'],
+  ['retraits', 'Retraits'],
   ['livraison', 'Livraison'],
   ['promo', 'Codes promo'],
   ['simulation', 'Simulation'],
@@ -261,6 +263,27 @@ export default function EconomicSettingsPanel() {
                 );
               })}
             </div>
+            <div className="sm:col-span-2 space-y-2 rounded-2xl bg-suguba-sauge p-3">
+              <p className="text-xs font-semibold text-slate-700 inline-flex items-center gap-1">
+                Les coûts de Suguba (Mobile Money, refus, message…)
+                <InfoBulle texte="Recommandé : « Payés sur la part Suguba ». Le client paie alors exactement prix fournisseur + part revendeur, rien de plus. Si votre part ne suffit pas à couvrir vos coûts, la marge nette apparaît en rouge dans les exemples ci-dessous : c'est votre perte sur la vente." />
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2" role="radiogroup" aria-label="Qui paie les coûts de Suguba">
+                {([
+                  [false, 'Payés sur la part Suguba', 'Le client paie fournisseur + revendeur, rien de plus'],
+                  [true, 'Ajoutés au prix client', 'Le prix est relevé jusqu’à couvrir les coûts (plancher)'],
+                ] as const).map(([valeur, libelle, detail]) => {
+                  const actif = (r.couvrirCoutsDansLePrix === true) === valeur;
+                  return (
+                    <button key={libelle} type="button" role="radio" aria-checked={actif} onClick={() => maj('couvrirCoutsDansLePrix', valeur)}
+                      className={`rounded-2xl border p-2.5 text-left bg-white ${actif ? 'border-suguba-profond ring-1 ring-suguba-profond' : 'border-slate-200'}`}>
+                      <span className="block text-xs font-semibold text-slate-900">{libelle}</span>
+                      <span className="block text-xs text-slate-500">{detail}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             {r.modePartSuguba !== 'auto' && (
               <>
                 <Num
@@ -268,13 +291,15 @@ export default function EconomicSettingsPanel() {
                     : r.modePartSuguba === 'prelevement_revendeur' ? 'Prélèvement Suguba (% de la part revendeur)'
                       : 'Part Suguba (% de la part revendeur)'}
                   suffixe="%" v={r.tauxPartSuguba} on={(v) => maj('tauxPartSuguba', v)}
-                  info="Ce taux n'est qu'une proposition. La « Marge nette minimale » (section Politique commerciale, plus bas) reste le vrai plancher : si ce taux donne moins, le prix client est relevé pour l'atteindre quand même. Pour que Suguba ne prenne vraiment rien, mettez ce taux ET la marge nette minimale à 0."
+                  info={r.modePartSuguba === 'prelevement_revendeur'
+                    ? "Suguba garde ce % de la part que le fournisseur laisse au revendeur. Rien n'est ajouté au prix client. Exemple : part revendeur 500 F à 1 % → Suguba 5 F, le revendeur reçoit 495 F."
+                    : "Attention : dans ce mode, ce % est AJOUTÉ au prix payé par le client. Pour que le client paie seulement fournisseur + revendeur, choisissez « Prélevé sur le revendeur »."}
                 />
                 {/* Pas de minimum en francs quand Suguba se sert sur le revendeur :
                     1 000 F sur une part de 500 F n'aurait aucun sens. */}
                 {r.modePartSuguba !== 'prelevement_revendeur' && (
                   <Num l="Part minimale Suguba par vente" suffixe="F" v={r.minimumPartSuguba} on={(v) => maj('minimumPartSuguba', v)}
-                    info="Un plancher en francs, en plus du taux ci-dessus : Suguba garde au moins ce montant par vente, même si le pourcentage donnerait moins. À 0, ce plancher-ci n'agit plus (la marge nette minimale peut quand même en imposer un autre)." />
+                    info="Montant ajouté au prix client si le pourcentage ci-dessus donne moins que ça. À 0, rien de plus n'est ajouté." />
                 )}
               </>
             )}
@@ -370,12 +395,12 @@ export default function EconomicSettingsPanel() {
 
           {/* ── Coûts ──────────────────────────────────────────────────── */}
           <Section id="couts" titre="Coûts variables, par commande"
-            aide="Ils forment le « plancher » : aucun prix ne descend en dessous, quel que soit votre taux.">
+            aide={r.couvrirCoutsDansLePrix
+              ? 'Ils forment le « plancher » : aucun prix ne descend en dessous, quel que soit votre taux.'
+              : 'Payés sur la part Suguba : ils ne changent pas le prix client. Ils servent à calculer votre marge nette réelle.'}>
             <Num l="Frais de paiement SasPay" suffixe="%" v={r.fraisPaiementPct} on={(v) => maj('fraisPaiementPct', v)}
               aide="Sur l'article + la livraison encaissés."
               info="Le vrai coût que SasPay facture sur l'encaissement Mobile Money. Ce n'est PAS une marge Suguba : le mettre à 0 ne fait pas disparaître ce coût, ça veut juste dire que Suguba le paierait de sa poche au lieu de le répercuter dans le prix." />
-            <Num l="Frais de versement des commissions" suffixe="%" v={r.fraisVersementPct} on={(v) => maj('fraisVersementPct', v)}
-              info="Le coût réel que SasPay facture quand Suguba verse sa commission au revendeur. Comme les frais de paiement, ce n'est pas une marge — c'est une vraie dépense." />
             <div className="sm:col-span-2 space-y-2 rounded-2xl bg-suguba-sauge p-3">
               <p className="text-xs font-semibold text-slate-700">Provision pour refus à la livraison</p>
               <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Base de la provision">
@@ -434,16 +459,43 @@ export default function EconomicSettingsPanel() {
             aide={r.modePartSuguba === 'auto'
               ? 'Mode automatique : ces valeurs calculent la commission de chaque produit.'
               : 'La part revendeur et la commission visée ne servent qu’aux produits sans part revendeur choisie par le fournisseur.'}>
-            <Num l="Marge nette minimale Suguba" suffixe="% du prix" v={r.margeNetteMinPct} on={(v) => maj('margeNetteMinPct', v)}
-              info="C'est LE vrai plancher, celui qui décide le prix client la plupart du temps — pas le taux de la section « Rémunération » au-dessus. Suguba relève le prix jusqu'à garder au moins ce % du prix de vente, une fois payés paiement, refus, message, livraison et versement. À 0, Suguba ne se garantit plus aucune marge du tout." />
+            {r.couvrirCoutsDansLePrix && (
+              <Num l="Marge nette minimale Suguba" suffixe="% du prix" v={r.margeNetteMinPct} on={(v) => maj('margeNetteMinPct', v)}
+                info="Seulement quand les coûts sont ajoutés au prix client : le prix est relevé jusqu'à ce que Suguba garde au moins ce % du prix de vente, une fois tous ses coûts payés." />
+            )}
             <Num l="Part revendeur du reste à partager" suffixe="%" v={r.partRevendeurPct} on={(v) => maj('partRevendeurPct', v)}
               info="Ne sert qu'en mode Automatique, ou pour un fournisseur qui n'a pas proposé de part revendeur : une fois les coûts et la marge minimale couverts, ce % du reste va au revendeur, le reste à Suguba." />
             <Num l="Commission minimale pour être partagé" suffixe="F" v={r.commissionMinimale} on={(v) => maj('commissionMinimale', v)}
               info="En dessous de ce montant, la commission est jugée trop faible : le produit reste vendable, mais n'est plus proposé au partage avec les revendeurs (statut « Commission trop faible » dans « Vos produits »)." />
             <Num l="Commission visée (prix recommandé)" suffixe="% du prix fourn." v={r.commissionCiblePct} on={(v) => maj('commissionCiblePct', v)}
               info="Sert seulement à calculer le « prix conseillé » suggéré au fournisseur — un objectif de commission pour le revendeur, en % du prix fournisseur. N'affecte jamais un prix déjà en ligne." />
+          </Section>
+
+          {/* ── Retraits ───────────────────────────────────────────────── */}
+          <Section id="retraits" titre="Frais de retrait (payés par le revendeur)"
+            aide="Déduits du montant retiré : le revendeur voit le détail et ce qu'il recevra avant de valider. Mobile Money : SasPay + opérateur + Suguba. Espèces au guichet : Suguba seulement.">
+            <Num l="Frais SasPay (retrait Mobile Money)" suffixe="%" v={r.fraisVersementPct} on={(v) => maj('fraisVersementPct', v)}
+              info="Ce que SasPay facture pour envoyer l'argent sur le téléphone du revendeur. Il le paie lui-même : ce n'est plus un coût pour Suguba." />
+            <Num l="Frais Suguba (tous les retraits)" suffixe="%" v={r.fraisRetraitSugubaPct ?? 0} on={(v) => maj('fraisRetraitSugubaPct', v)}
+              info="Pris sur chaque retrait, en Mobile Money comme en espèces au guichet. C'est un gain pour Suguba, en plus du % prélevé sur la part revendeur à la vente." />
+            {([['orange_money', 'Frais Orange Money'], ['moov', 'Frais Moov Money'], ['mobi_cash', 'Frais Mobi Cash']] as const).map(([cle, libelle]) => (
+              <Num key={cle} l={libelle} suffixe="%" v={r.fraisOperateurRetraitPct?.[cle] ?? 0}
+                on={(v) => maj('fraisOperateurRetraitPct', { orange_money: 0, moov: 0, mobi_cash: 0, ...r.fraisOperateurRetraitPct, [cle]: v })}
+                info="Frais propres à l'opérateur, en plus de SasPay. Laissez 0 si le taux SasPay les inclut déjà." />
+            ))}
             <Num l="Retrait minimum revendeur" suffixe="F" v={r.retraitMinimum} on={(v) => maj('retraitMinimum', v)}
-              info="Le montant minimum de commissions accumulées qu'un revendeur doit atteindre avant de pouvoir demander un retrait Mobile Money." />
+              info="Le montant minimum de commissions accumulées qu'un revendeur doit atteindre avant de pouvoir demander un retrait." />
+            <div className="sm:col-span-2 rounded-2xl bg-suguba-sauge p-3 text-xs text-slate-700 space-y-0.5">
+              <p className="font-semibold">Exemple : retrait de 10 000 F</p>
+              {([['orange_money', 'Orange Money'], ['moov', 'Moov Money'], ['cash', 'Espèces au guichet']] as const).map(([moyen, libelle]) => {
+                const d = calculerFraisRetrait(10000, moyen, r);
+                return (
+                  <p key={moyen}>
+                    {libelle} : le revendeur reçoit <strong>{enF(d.montantNet)}</strong> (frais {enF(d.fraisTotal)}, dont Suguba {enF(d.fraisSuguba)})
+                  </p>
+                );
+              })}
+            </div>
           </Section>
 
           {/* ── Livraison ──────────────────────────────────────────────── */}
@@ -566,7 +618,7 @@ export default function EconomicSettingsPanel() {
 
           {/* ── Simulation ─────────────────────────────────────────────── */}
           <Section id="simulation" titre="Simulation"
-            aide="Essayez des produits imaginaires avec les réglages en cours. Coûts = paiement, refus, message, livraison non couverte, coûts fixes et versement de la commission.">
+            aide="Essayez des produits imaginaires avec les réglages en cours. Coûts = paiement, refus, message, livraison non couverte et coûts fixes. Les frais de retrait sont payés par le revendeur.">
             <div className="sm:col-span-2 space-y-2">
               {lignesSimulation.map((l, i) => (
                 <div key={i} className="rounded-2xl border border-slate-200 p-3 space-y-2">
@@ -671,6 +723,7 @@ function venteSimulee(r: ReglagesPlateforme, fournisseur: number, part: number) 
     t.prelevementSuguba > 0 ? `${enF(t.prelevementSuguba)} prélevés sur le revendeur` : '',
     d.releveAuPlancher ? `relevé au plancher (sans lui : ${enF(d.prixCalcule)})` : '',
     t.statut === 'commission_faible' ? 'part trop faible : pas proposé au partage' : '',
+    t.margeNetteSuguba < 0 ? `Suguba perd ${enF(-t.margeNetteSuguba)} sur cette vente` : '',
   ].filter(Boolean);
   return { prix: d.prixVente, t, prixCalcule: d.prixCalcule, releve: d.releveAuPlancher, notes };
 }
@@ -682,7 +735,6 @@ function plusGrosCout(t: DetailTarif): [string, number] {
     ['les frais de paiement', t.coutPaiement],
     ['les coûts fixes', t.coutFixe],
     ['la livraison non couverte', t.deficitLivraison],
-    ['le versement de la commission', t.fraisVersement],
   ];
   return couts.sort((a, b) => b[1] - a[1])[0];
 }
@@ -750,6 +802,13 @@ function OuVaLArgent({ r, exemple, setExemple }: {
           <strong>Prix relevé au plancher.</strong> Fournisseur + revendeur{r.modePartSuguba !== 'prelevement_revendeur' ? ' + part Suguba' : ''} donnaient{' '}
           {enF(v.prixCalcule)} ; il faut {enF(prix)} pour couvrir {enF(couts)} de coûts par commande. Le plus lourd :{' '}
           {nomCout} ({enF(montantCout)}). Tant que le plancher décide, changer votre taux ne change pas le prix client.
+        </p>
+      )}
+      {marge < 0 && (
+        <p className="text-xs text-rose-800 bg-rose-50 rounded-2xl p-2.5">
+          <strong>Suguba perd {enF(-marge)} sur cette vente.</strong> Sa part ({enF(prix - t.prixFournisseur - t.commission)}) ne
+          couvre pas ses coûts ({enF(couts)}). Pour équilibrer : augmenter le % prélevé, réduire les coûts, ou choisir
+          « Ajoutés au prix client ».
         </p>
       )}
       {t.statut === 'commission_faible' && (

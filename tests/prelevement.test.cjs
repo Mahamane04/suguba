@@ -31,8 +31,8 @@ test('rien n’est ajouté au prix client pour Suguba, hors plancher de coûts',
   assert.equal(d.releveAuPlancher, false);
 });
 
-test('le plancher protège toujours Suguba : aucune vente à perte', () => {
-  const r = reglages();
+test('plancher activé : il protège toujours Suguba, aucune vente à perte', () => {
+  const r = reglages({ couvrirCoutsDansLePrix: true });
   const d = P.prixDepuisPartRevendeur(20000, 500, r);
   const t = P.calculerTarif(20000, d.prixVente, r, 500);
   assert.ok(d.prixVente >= d.prixMinimal);

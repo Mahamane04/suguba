@@ -110,12 +110,23 @@ export const FORMULES_BOUTIQUES_PAR_DEFAUT: FormuleBoutique[] = [
 /** Un article est vendu à prix fixe (commission) ou au prix de gros (prix libre du revendeur). */
 export type ModePrix = 'fixe' | 'gros';
 
+/** Moyens de retrait (valeurs de `payouts.payment_method`) : Mobile Money, ou espèces au guichet. */
+export type MoyenRetraitMobile = 'orange_money' | 'moov' | 'mobi_cash';
+export type MoyenRetrait = MoyenRetraitMobile | 'cash';
+
 export interface ReglagesPlateforme {
   // ── Coûts variables, par commande ────────────────────────────────────
   /** Frais SasPay d'encaissement, en % du montant encaissé (article + livraison). */
   fraisPaiementPct: number;
-  /** Frais SasPay de versement de la commission au revendeur, en % de la commission. */
+  /**
+   * Frais SasPay d'un retrait Mobile Money, en % du montant retiré. Payés par
+   * celui qui retire (2026-09-24) : ce n'est plus un coût de Suguba.
+   */
   fraisVersementPct: number;
+  /** Frais de l'opérateur sur un retrait, en % (0 si déjà compris dans le taux SasPay). */
+  fraisOperateurRetraitPct?: Record<MoyenRetraitMobile, number>;
+  /** Frais Suguba sur chaque retrait, Mobile Money ou espèces au guichet, en %. */
+  fraisRetraitSugubaPct?: number;
   /** SMS ou message WhatsApp envoyé au client, en FCFA. */
   coutMessageParCommande: number;
   /**
@@ -215,6 +226,14 @@ export interface ReglagesPlateforme {
   tauxPartSuguba: number;
   /** Part minimale de Suguba par article vendu, en FCFA. */
   minimumPartSuguba: number;
+  /**
+   * Faux (défaut) : le client paie prix fournisseur + part revendeur (ou le
+   * prix choisi par le revendeur pour un article au prix de gros), rien de
+   * plus. Les coûts sont payés sur la part de Suguba, qui peut devenir
+   * négative. Vrai : le prix est relevé jusqu'à couvrir les coûts et la marge
+   * nette minimale (le « plancher »).
+   */
+  couvrirCoutsDansLePrix?: boolean;
 
   /**
    * Articles au prix de gros (2026-09-24) : le fournisseur donne un prix de
@@ -302,6 +321,9 @@ export const REGLAGES_PAR_DEFAUT: ReglagesPlateforme = {
   modePartSuguba: 'prix_vente',
   tauxPartSuguba: 8,
   minimumPartSuguba: 1000,
+  couvrirCoutsDansLePrix: false,
+  fraisOperateurRetraitPct: { orange_money: 0, moov: 0, mobi_cash: 0 },
+  fraisRetraitSugubaPct: 1.5,
   prixDeGros: { modeGain: 'marge_revendeur', taux: 1, montantFixe: 0, margeConseilleePct: 15 },
   formulesBoutiques: FORMULES_BOUTIQUES_PAR_DEFAUT,
   codesPromo: [
@@ -366,6 +388,14 @@ export function coutFixeParCommande(r: ReglagesPlateforme): number {
 
 const provisionSurLaCourse = (r: ReglagesPlateforme) => r.baseProvisionRefus === 'course';
 
+/** Le prix client est-il relevé pour couvrir les coûts de Suguba ? Sinon ils sont pris sur sa part. */
+const couvreLesCouts = (r: ReglagesPlateforme) => r.couvrirCoutsDansLePrix === true;
+
+/** Part revendeur à laisser au-dessus du prix : frais de versement inclus seulement s'ils sont répercutés. */
+// Les frais de retrait sont payés par le revendeur au moment du retrait
+// (voir calculerFraisRetrait) : le versement ne coûte plus rien à Suguba.
+const avecVersement = (_r: ReglagesPlateforme, montant: number) => montant;
+
 /** Ce que coûte une livraison refusée : le livreur est payé pour l'aller et le retour du colis. */
 export function coutCourseRefusee(r: ReglagesPlateforme): number {
   return 2 * Math.max(0, Number(r.remunerationLivreur) || 0);
@@ -392,6 +422,7 @@ function chargesIndependantesDuPrix(r: ReglagesPlateforme): number {
  * Se déduit de : PV − PF − (taux × PV + charges) = reste.
  */
 function prixPourReste(r: ReglagesPlateforme, prixFournisseur: number, resteVoulu: number): number {
+  if (!couvreLesCouts(r)) return prixFournisseur + resteVoulu;
   const denominateur = 1 - tauxProportionnel(r);
   if (denominateur <= 0) return Number.POSITIVE_INFINITY;
   return (prixFournisseur + chargesIndependantesDuPrix(r) + resteVoulu) / denominateur;
@@ -420,10 +451,12 @@ export function calculerTarif(
   const coutParCommande = coutPaiement + provisionRefus + coutFixe + coutMessage + deficitLivraison;
   const margeNetteMinimale = pct(r.margeNetteMinPct) * PV;
   const plancher = coutParCommande + margeNetteMinimale;
-  const reste = PV - PF - plancher;
+  // Coûts non répercutés : ils sont payés sur la part de Suguba et ne
+  // réduisent ni le prix minimal ni ce qui est partagé avec le revendeur.
+  const reste = PV - PF - (couvreLesCouts(r) ? plancher : 0);
 
   const part = pct(r.partRevendeurPct);
-  const tauxVersement = pct(r.fraisVersementPct);
+  const tauxVersement = 0; // frais de retrait payés par le revendeur
 
   // Part revendeur CHOISIE par le fournisseur (modes « % du prix de vente » et
   // « % de la part revendeur »). En mode automatique elle est ignorée.
@@ -431,15 +464,18 @@ export function calculerTarif(
     ? arrondiInf(Number(commissionProposee), r.arrondiCommission)
     : null;
 
+  // Sans plancher, le minimal est exact (fournisseur + revendeur) : l'arrondir
+  // au pas de prix ajouterait jusqu'à 499 F au client.
+  const minimalArrondi = (v: number) => (couvreLesCouts(r) ? arrondiSup(v, r.arrondiPrix) : Math.ceil(v));
   let prixMinimal: number;
   let prixRecommande: number;
   if (imposee !== null) {
-    // Le prix doit couvrir les coûts ET la commission promise, frais de
-    // versement compris.
-    prixMinimal = arrondiSup(prixPourReste(r, PF, imposee * (1 + tauxVersement)), r.arrondiPrix);
+    // Le prix doit couvrir la commission promise (et, si les coûts sont
+    // répercutés, les coûts et les frais de versement).
+    prixMinimal = minimalArrondi(prixPourReste(r, PF, imposee * (1 + tauxVersement)));
     prixRecommande = prixDepuisPartRevendeur(PF, imposee, r).prixVente;
   } else {
-    prixMinimal = arrondiSup(prixPourReste(r, PF, 0), r.arrondiPrix);
+    prixMinimal = minimalArrondi(prixPourReste(r, PF, 0));
     // Commission visée, puis le reste nécessaire pour la verser à la part
     // revendeur choisie. Sans part revendeur, le prix recommandé est le minimal.
     const cible = arrondiSup(Math.max(r.commissionMinimale, pct(r.commissionCiblePct) * PF), r.arrondiCommission);
@@ -463,10 +499,7 @@ export function calculerTarif(
   } else if (reste < 0) {
     statut = 'sous_plancher';
   } else {
-    // Le versement de la commission coûte `fraisVersementPct` à Suguba. On
-    // plafonne donc la commission à reste ÷ (1 + frais) : au-delà, ces frais
-    // seraient pris sur le plancher.
-    const plafond = reste / (1 + pct(r.fraisVersementPct));
+    const plafond = reste / (1 + tauxVersement);
     const brute = arrondiInf(Math.min(reste * part, plafond), r.arrondiCommission);
     if (brute < r.commissionMinimale) {
       statut = 'commission_faible';
@@ -485,7 +518,7 @@ export function calculerTarif(
     : 0;
   commission = commissionBrute - prelevementSuguba;
 
-  const fraisVersement = pct(r.fraisVersementPct) * commission;
+  const fraisVersement = 0; // payé par le revendeur à son retrait
   const margeSuguba = PV - PF - commission;
   const margeNetteSuguba = margeSuguba - coutParCommande - fraisVersement;
 
@@ -558,8 +591,12 @@ export function prixDepuisPartRevendeur(
     brut = taux * p >= minimum ? p : PF + C + minimum;
   }
 
-  const prixCalcule = arrondiSup(brut, r.arrondiPrix);
-  const prixMinimal = arrondiSup(prixPourReste(r, PF, C * (1 + pct(r.fraisVersementPct))), r.arrondiPrix);
+  // Prélevé sur le revendeur : le client paie fournisseur + revendeur au franc
+  // près, sans arrondi qui ajouterait une part Suguba cachée.
+  const prixCalcule = r.modePartSuguba === 'prelevement_revendeur' ? Math.ceil(brut) : arrondiSup(brut, r.arrondiPrix);
+  const prixMinimal = couvreLesCouts(r)
+    ? arrondiSup(prixPourReste(r, PF, avecVersement(r, C)), r.arrondiPrix)
+    : PF + C;
   const prixVente = Math.max(prixCalcule, prixMinimal);
 
   return {
@@ -583,9 +620,13 @@ export function surcoutSugubaGros(prixGros: number, r: ReglagesPlateforme): numb
   return 0;
 }
 
-/** Prix minimal d'un article au prix de gros : couvre le prix de gros, le surcoût Suguba et tous les coûts. */
+/**
+ * Prix minimal d'un article au prix de gros : le prix de gros + le surcoût
+ * Suguba éventuel ; + tous les coûts s'ils sont répercutés dans le prix.
+ */
 export function prixMinimalGros(prixGros: number, r: ReglagesPlateforme): number {
   const base = Math.max(0, Number(prixGros) || 0) + surcoutSugubaGros(prixGros, r);
+  if (!couvreLesCouts(r)) return Math.ceil(base);
   return arrondiSup(prixPourReste(r, base, 0), r.arrondiPrix);
 }
 
@@ -600,7 +641,7 @@ export function prixConseilleGros(prixGros: number, r: ReglagesPlateforme, prixC
   const g = r.prixDeGros;
   const vise = pct(g?.margeConseilleePct ?? 15) * Math.max(0, prixGros);
   const base = Math.max(0, prixGros) + surcoutSugubaGros(prixGros, r);
-  return Math.max(minimal, arrondiSup(prixPourReste(r, base, vise * (1 + pct(r.fraisVersementPct))), r.arrondiPrix));
+  return Math.max(minimal, arrondiSup(prixPourReste(r, base, avecVersement(r, vise)), r.arrondiPrix));
 }
 
 /**
@@ -628,19 +669,21 @@ export function calculerTarifGros(prixGros: number, prixVente: number, r: Reglag
   const margeNetteMinimale = pct(r.margeNetteMinPct) * PV;
   const plancher = coutParCommande + margeNetteMinimale;
   const surcout = surcoutSugubaGros(PF, r);
-  const reste = PV - PF - surcout - plancher;
+  // Coûts non répercutés : toute la différence avec le prix de gros est la
+  // marge du revendeur ; Suguba paie ses coûts sur sa propre part.
+  const reste = PV - PF - surcout - (couvreLesCouts(r) ? plancher : 0);
 
   const prixMinimal = prixMinimalGros(PF, r);
   let statut: StatutTarif = 'ok';
   let commissionBrute = 0;
   if (reste < 0) statut = 'sous_plancher';
-  else commissionBrute = Math.floor(reste / (1 + pct(r.fraisVersementPct)));
+  else commissionBrute = Math.floor(reste);
 
   const prelevementSuguba = g?.modeGain === 'marge_revendeur' && commissionBrute > 0
     ? Math.min(commissionBrute, Math.ceil(pct(g.taux) * commissionBrute))
     : 0;
   const commission = commissionBrute - prelevementSuguba;
-  const fraisVersement = pct(r.fraisVersementPct) * commission;
+  const fraisVersement = 0; // payé par le revendeur à son retrait
   const margeSuguba = PV - PF - commission;
   const margeNetteSuguba = margeSuguba - coutParCommande - fraisVersement;
 
@@ -891,7 +934,7 @@ export function calculerCommande(
   // peut pas dépasser ce montant.
   const netUnitaire =
     tarif.prixVente - tarif.prixFournisseur - commissionUnitaire -
-    tarif.coutParCommande - pct(r.fraisVersementPct) * commissionUnitaire;
+    tarif.coutParCommande;
   const plafondRemise = Math.max(0, arrondiInf(netUnitaire * quantite, r.arrondiCommission));
   const remise = Math.min(remiseDemandee, plafondRemise);
 
@@ -924,6 +967,36 @@ export function calculerCommande(
   };
 }
 
+// ─────────────────────────── Retraits ───────────────────────────
+
+export interface DetailFraisRetrait {
+  /** Ce qui est retiré du solde. */
+  montantDemande: number;
+  fraisSaspay: number;
+  fraisOperateur: number;
+  fraisSuguba: number;
+  fraisTotal: number;
+  /** Ce que la personne reçoit réellement (virement ou espèces). */
+  montantNet: number;
+}
+
+/**
+ * Frais d'un retrait (2026-09-24), payés par celui qui retire, calculés sur le
+ * montant demandé. Mobile Money : frais SasPay + frais de l'opérateur + frais
+ * Suguba. Espèces au guichet : seulement les frais Suguba.
+ */
+export type TauxRetrait = Pick<ReglagesPlateforme, 'fraisVersementPct' | 'fraisOperateurRetraitPct' | 'fraisRetraitSugubaPct'>;
+
+export function calculerFraisRetrait(montant: number, moyen: MoyenRetrait | string, r: TauxRetrait): DetailFraisRetrait {
+  const M = Math.max(0, Math.floor(Number(montant) || 0));
+  const mobile = moyen === 'orange_money' || moyen === 'moov' || moyen === 'mobi_cash';
+  const fraisSaspay = mobile ? Math.ceil(pct(r.fraisVersementPct) * M) : 0;
+  const fraisOperateur = mobile ? Math.ceil(pct(Number(r.fraisOperateurRetraitPct?.[moyen as MoyenRetraitMobile]) || 0) * M) : 0;
+  const fraisSuguba = Math.ceil(pct(Number(r.fraisRetraitSugubaPct) || 0) * M);
+  const fraisTotal = fraisSaspay + fraisOperateur + fraisSuguba;
+  return { montantDemande: M, fraisSaspay, fraisOperateur, fraisSuguba, fraisTotal, montantNet: M - fraisTotal };
+}
+
 // ─────────────────────────── Réglages ───────────────────────────
 
 /**
@@ -941,12 +1014,13 @@ export function validerReglages(r: ReglagesPlateforme): string[] {
     ['partRevendeurPct', 'Part revendeur'],
     ['commissionCiblePct', 'Commission visée'],
     ['tauxPartSuguba', 'Part Suguba'],
+    ['fraisRetraitSugubaPct', 'Frais Suguba sur les retraits'],
   ];
   for (const [cle, libelle] of pourcentages) {
     const v = Number(r[cle]);
     if (!Number.isFinite(v) || v < 0 || v > 100) erreurs.push(`${libelle} : doit être entre 0 et 100 %.`);
   }
-  if (tauxProportionnel(r) >= 0.6) {
+  if (couvreLesCouts(r) && tauxProportionnel(r) >= 0.6) {
     erreurs.push(provisionSurLaCourse(r)
       ? 'Paiement + marge nette dépassent 60 % du prix de vente : aucun prix ne resterait vendable.'
       : 'Paiement + provision pour refus + marge nette dépassent 60 % du prix de vente : aucun prix ne resterait vendable.');
@@ -962,6 +1036,12 @@ export function validerReglages(r: ReglagesPlateforme): string[] {
   for (const [cle, libelle] of montants) {
     const v = Number(r[cle]);
     if (!Number.isFinite(v) || v < 0) erreurs.push(`${libelle} : doit être un montant positif.`);
+  }
+  for (const moyen of ['orange_money', 'moov', 'mobi_cash'] as const) {
+    const d = calculerFraisRetrait(10000, moyen, r);
+    if (d.montantNet <= 0) erreurs.push('Frais de retrait : leur total doit rester sous 100 %.');
+    const v = Number(r.fraisOperateurRetraitPct?.[moyen] ?? 0);
+    if (!Number.isFinite(v) || v < 0 || v > 100) erreurs.push('Frais opérateur : doivent être entre 0 et 100 %.');
   }
   if (!['auto', 'prix_vente', 'part_revendeur', 'prelevement_revendeur'].includes(r.modePartSuguba)) {
     erreurs.push('Mode de rémunération Suguba inconnu.');
@@ -1039,6 +1119,15 @@ export function completerReglages(partiels: Partial<ReglagesPlateforme> | null |
   }
   if (r.modeLivraisonBamako !== 'zones') r.modeLivraisonBamako = 'distance';
   if (r.baseProvisionRefus !== 'course') r.baseProvisionRefus = 'prix';
+  r.couvrirCoutsDansLePrix = r.couvrirCoutsDansLePrix === true;
+  {
+    const o = (r.fraisOperateurRetraitPct && typeof r.fraisOperateurRetraitPct === 'object' ? r.fraisOperateurRetraitPct : {}) as Partial<Record<MoyenRetraitMobile, number>>;
+    const lire = (v: unknown) => (Number.isFinite(Number(v)) && Number(v) >= 0 ? Number(v) : 0);
+    r.fraisOperateurRetraitPct = { orange_money: lire(o.orange_money), moov: lire(o.moov), mobi_cash: lire(o.mobi_cash) };
+    r.fraisRetraitSugubaPct = Number.isFinite(Number(r.fraisRetraitSugubaPct))
+      ? Number(r.fraisRetraitSugubaPct)
+      : (REGLAGES_PAR_DEFAUT.fraisRetraitSugubaPct as number);
+  }
   {
     const brutes = Array.isArray(r.formulesBoutiques) ? r.formulesBoutiques : [];
     const propres = brutes

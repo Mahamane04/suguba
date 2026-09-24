@@ -3,6 +3,7 @@ import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { libererCommissionsEchues } from '@/lib/commissions';
 import { chargerReglages } from '@/lib/platform-settings';
+import { calculerFraisRetrait } from '@/lib/pricing';
 
 // Le retrait minimum vit dans les réglages de la plateforme (écran admin),
 // plus en dur ici : voir src/lib/pricing.ts, `retraitMinimum`.
@@ -47,10 +48,19 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { withdrawalCode, resellerName, amount, payoutProvider, payoutPhone } = body;
 
-    const parsedAmount = Number(amount);
-    const minimum = (await chargerReglages()).reglages.retraitMinimum;
+    const parsedAmount = Math.floor(Number(amount));
+    const { reglages } = await chargerReglages();
+    const minimum = reglages.retraitMinimum;
     if (!Number.isFinite(parsedAmount) || parsedAmount < minimum) {
       return NextResponse.json({ error: `Le montant minimum de retrait est de ${minimum} FCFA.` }, { status: 400 });
+    }
+    // Frais payés par le revendeur (2026-09-24) : SasPay + opérateur + Suguba
+    // en Mobile Money, Suguba seul en espèces. Le solde baisse du montant
+    // demandé ; `amount` est ce qui part réellement (virement ou guichet).
+    const moyen = PROVIDER_MAP[payoutProvider] || 'orange_money';
+    const frais = calculerFraisRetrait(parsedAmount, moyen, reglages);
+    if (frais.montantNet <= 0) {
+      return NextResponse.json({ error: 'Montant trop faible une fois les frais déduits.' }, { status: 400 });
     }
     if (!payoutPhone || !withdrawalCode) {
       return NextResponse.json({ error: 'Champs requis manquants.' }, { status: 400 });
@@ -76,15 +86,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Solde disponible insuffisant.' }, { status: 400 });
     }
 
-    const { error } = await admin.from('payouts').insert({
+    const ligne = {
       id: withdrawalCode, // aligné sur le format WTH-xxxx déjà utilisé côté client/webhook
       reseller_id: session.uid,
       reseller_name: resellerName || session.phone,
-      amount: parsedAmount,
-      payment_method: PROVIDER_MAP[payoutProvider] || 'orange_money',
+      amount: frais.montantNet,
+      payment_method: moyen,
       phone_number: payoutPhone,
       status: 'pending',
+    };
+    let { error } = await admin.from('payouts').insert({
+      ...ligne,
+      montant_demande: frais.montantDemande,
+      frais_retrait: frais.fraisTotal,
+      detail_frais: { saspay: frais.fraisSaspay, operateur: frais.fraisOperateur, suguba: frais.fraisSuguba },
     });
+    // Colonnes des frais pas encore créées en base : le retrait part quand
+    // même, frais déduits, seul le détail n'est pas conservé.
+    if (error?.code === '42703' || error?.code === 'PGRST204') {
+      ({ error } = await admin.from('payouts').insert(ligne));
+    }
 
     if (error) {
       // La réservation a réussi mais l'écriture du retrait a échoué (id déjà
@@ -94,7 +115,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, cloud: true });
+    return NextResponse.json({ success: true, cloud: true, frais });
   } catch (error: any) {
     console.error('[API payouts/create ERROR]', error);
     return NextResponse.json({ error: error.message || 'Erreur serveur.' }, { status: 500 });

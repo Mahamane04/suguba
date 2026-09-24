@@ -8,6 +8,7 @@ import { useSugubaStore } from '@/lib/store';
 import EmptyState from '@/components/ui/EmptyState';
 import PaymentLogo, { moyenDepuisCode } from '@/components/ui/PaymentLogo';
 import { Wallet, Clock, CheckCircle2, History, AlertCircle, Building2, Loader2, Check } from 'lucide-react';
+import { calculerFraisRetrait, type DetailFraisRetrait, type TauxRetrait } from '@/lib/pricing';
 
 type Moyen = 'Orange Money' | 'Moov Money' | 'Mobi Cash' | 'Agence Suguba';
 
@@ -19,7 +20,17 @@ interface Retrait {
   statut: string;
   reference: string | null;
   creeLe: string;
+  montantDemande?: number | null;
+  frais?: number | null;
 }
+
+/** Moyen affiché → valeur enregistrée (`payouts.payment_method`), qui fixe les frais. */
+const CODE_MOYEN: Record<Moyen, string> = {
+  'Orange Money': 'orange_money',
+  'Moov Money': 'moov',
+  'Mobi Cash': 'mobi_cash',
+  'Agence Suguba': 'cash',
+};
 
 const MOYENS: { id: Moyen; libelle: string; detail: string }[] = [
   { id: 'Orange Money', libelle: 'Orange Money', detail: 'Virement' },
@@ -64,6 +75,7 @@ export default function ResellerPayoutsPage() {
   const [soldes, setSoldes] = useState<{ disponible: number; attente: number; verse: number } | null>(null);
   const [retraits, setRetraits] = useState<Retrait[]>([]);
   const [retraitMinimum, setRetraitMinimum] = useState(5000);
+  const [taux, setTaux] = useState<TauxRetrait | null>(null);
   const [chargement, setChargement] = useState(true);
 
   const [moyen, setMoyen] = useState<Moyen>('Orange Money');
@@ -71,7 +83,7 @@ export default function ResellerPayoutsPage() {
   const [montant, setMontant] = useState<number>(0);
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState('');
-  const [succes, setSucces] = useState<{ code: string; montant: number; moyen: Moyen; telephone: string } | null>(null);
+  const [succes, setSucces] = useState<{ code: string; montant: number; net: number; moyen: Moyen; telephone: string } | null>(null);
 
   const charger = useCallback(async () => {
     const [moi, hist, reglages] = await Promise.all([
@@ -87,6 +99,13 @@ export default function ResellerPayoutsPage() {
     });
     setRetraits(Array.isArray(hist?.retraits) ? hist.retraits : []);
     if (reglages?.retraitMinimum) setRetraitMinimum(Number(reglages.retraitMinimum));
+    if (reglages?.fraisRetrait) {
+      setTaux({
+        fraisVersementPct: Number(reglages.fraisRetrait.saspayPct) || 0,
+        fraisOperateurRetraitPct: reglages.fraisRetrait.operateurPct,
+        fraisRetraitSugubaPct: Number(reglages.fraisRetrait.sugubaPct) || 0,
+      });
+    }
     setChargement(false);
   }, []);
 
@@ -99,6 +118,8 @@ export default function ResellerPayoutsPage() {
 
   const disponible = soldes?.disponible ?? 0;
   const assez = disponible >= retraitMinimum;
+  // Même calcul que le serveur (/api/payouts/create) : ce qui est affiché est ce qui sera retenu.
+  const frais: DetailFraisRetrait | null = taux && montant > 0 ? calculerFraisRetrait(montant, CODE_MOYEN[moyen], taux) : null;
 
   const demander = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -126,7 +147,7 @@ export default function ResellerPayoutsPage() {
         setErreur(json.error || "La demande n'a pas pu être enregistrée.");
         return;
       }
-      setSucces({ code, montant, moyen, telephone });
+      setSucces({ code, montant, net: Number(json.frais?.montantNet) || montant, moyen, telephone });
       setMontant(0);
       await charger();
     } catch {
@@ -185,6 +206,7 @@ export default function ResellerPayoutsPage() {
               {succes.moyen === 'Agence Suguba' ? (
                 <>
                   <p className="font-bold text-slate-900">Retrait de {enF(succes.montant)} enregistré</p>
+                  <p className="text-sm text-slate-600">Vous recevrez <strong>{enF(succes.net)}</strong> en espèces, frais déduits.</p>
                   <p className="text-sm text-slate-600">
                     Présentez ce numéro au guichet Suguba (Hamdallaye ACI 2000, Bamako), avec votre pièce d&apos;identité :
                   </p>
@@ -194,7 +216,8 @@ export default function ResellerPayoutsPage() {
                 <>
                   <p className="font-bold text-slate-900">Demande de {enF(succes.montant)} envoyée</p>
                   <p className="text-sm text-slate-600">
-                    Virement vers {succes.moyen} ({succes.telephone}). Suivez son état dans l&apos;historique ci-dessous.
+                    Vous recevrez <strong>{enF(succes.net)}</strong> sur {succes.moyen} ({succes.telephone}), frais déduits.
+                    Suivez son état dans l&apos;historique ci-dessous.
                   </p>
                 </>
               )}
@@ -278,6 +301,21 @@ export default function ResellerPayoutsPage() {
                 </label>
               </div>
 
+              {frais && (
+                <div className="rounded-2xl bg-slate-50 p-3 text-xs text-slate-600 space-y-1">
+                  <p className="font-bold text-slate-700">Frais de retrait (à votre charge)</p>
+                  {frais.fraisSaspay > 0 && <p className="flex justify-between"><span>Frais de virement SasPay</span><span>− {enF(frais.fraisSaspay)}</span></p>}
+                  {frais.fraisOperateur > 0 && <p className="flex justify-between"><span>Frais {moyen}</span><span>− {enF(frais.fraisOperateur)}</span></p>}
+                  {frais.fraisSuguba > 0 && <p className="flex justify-between"><span>Frais Suguba</span><span>− {enF(frais.fraisSuguba)}</span></p>}
+                  <p className="flex justify-between pt-1 border-t border-slate-200 text-sm font-bold text-slate-900">
+                    <span>Vous recevrez</span><span>{enF(Math.max(0, frais.montantNet))}</span>
+                  </p>
+                  {moyen !== 'Agence Suguba' && frais.fraisSaspay + frais.fraisOperateur > 0 && (
+                    <p>En espèces au guichet, seuls les frais Suguba s&apos;appliquent.</p>
+                  )}
+                </div>
+              )}
+
               {erreur && (
                 <p className="rounded-2xl bg-rose-50 border border-rose-100 p-3 text-xs font-bold text-rose-700 flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />{erreur}
@@ -314,6 +352,9 @@ export default function ResellerPayoutsPage() {
                       <PaymentLogo moyen={/agence|cash|esp/i.test(r.moyen) ? 'especes' : moyenDepuisCode(r.moyen)} taille="md" />
                       <div className="min-w-0">
                         <p className="text-sm font-bold text-slate-900">{enF(r.montant)} · {r.moyen}</p>
+                        {(r.frais ?? 0) > 0 && (
+                          <p className="text-xs text-slate-500">Demandé {enF(r.montantDemande ?? r.montant)}, frais {enF(r.frais as number)}</p>
+                        )}
                         <p className="text-xs text-slate-500 truncate">
                           {new Date(r.creeLe).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
                           {' · '}<span className="font-mono">{r.id}</span>

@@ -38,6 +38,9 @@ export async function GET(req: NextRequest) {
     retraits: (data || []).map((p) => ({
       id: p.id,
       montant: Number(p.amount) || 0,
+      // Colonnes ajoutées le 2026-09-24 : absentes des anciens retraits.
+      montantDemande: p.montant_demande != null ? Number(p.montant_demande) : null,
+      frais: p.frais_retrait != null ? Number(p.frais_retrait) : null,
       moyen: LIBELLE_MOYEN[p.payment_method] || p.payment_method || '—',
       telephone: p.phone_number || '',
       statut: p.status,

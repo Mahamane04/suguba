@@ -191,6 +191,35 @@
  "journal": [
   {
    "date": "2026-09-24",
+   "titre": "Prix client = fournisseur + revendeur, frais de retrait payés par le revendeur, bulles d’aide",
+   "demande": "« met des petit icons de (i) pour les infos des reglages » puis « la part de suguba … ne rajoute pas sur le prix : la part est soit proposée par le fournisseur (suguba gagne un pourcentage prédéfini), soit le fournisseur donne le prix de gros et le revendeur vend au prix qu’il a choisi (suguba gagne sur cette marge) … explique moi pourquoi le prix de départ fournisseur explose à l’arrivée chez le client et règle cela ». Puis : « si cela doit se faire par Orange Money il faut calculer le frais de retrait SasPay, Orange Money, Moov Money + les 1,5 % de Suguba ; si c’est retrait en liquide ces frais ne seront pas inclus … côté commission revendeur il aura aussi la possibilité de retirer en cash à l’agence mais le pourcentage de Suguba sera quand même pris ». Choix validés : frais Suguba sur chaque retrait ; retraits revendeur d’abord ; taux réglables dans l’admin.",
+   "realise": [
+    "Bulles (i) sur les réglages peu évidents : elles s’ouvrent au toucher et se ferment en touchant ailleurs.",
+    "Cause de la hausse expliquée : le mode « % du prix de vente » ajoutait la part Suguba au prix, puis le « plancher » ajoutait les coûts de Suguba (refus 4 % du prix, coûts fixes provisoires 600 F, Mobile Money…) : 5 000 F + 500 F devenaient 7 000 F.",
+    "Nouveau choix « Les coûts de Suguba » : « Payés sur la part Suguba » (par défaut) ou « Ajoutés au prix client ». Par défaut, le client paie exactement fournisseur + revendeur ; au prix de gros, toute la différence avec le prix de gros est la marge du revendeur, dont Suguba garde son %.",
+    "Quand la part Suguba ne couvre pas ses coûts, la perte s’affiche en rouge (« Suguba perd … F sur cette vente ») dans « Où va l’argent » et la simulation.",
+    "Une vente sous « fournisseur + revendeur » reste refusée ; messages d’erreur corrigés.",
+    "Retraits revendeur : les frais sont déduits du montant demandé et payés par le revendeur. Mobile Money : SasPay + opérateur (Orange, Moov, Mobi Cash) + Suguba ; espèces au guichet : Suguba seulement. Le détail et « Vous recevrez … F » s’affichent avant de valider.",
+    "Réglages économiques › Retraits : taux SasPay, Suguba (1,5 % par défaut) et de chaque opérateur (0 par défaut), retrait minimum, exemple sur 10 000 F. Les frais de versement ne sont plus comptés comme un coût de Suguba.",
+    "Admin › Retraits : montant à verser (net), montant demandé et frais déduits."
+   ],
+   "ecarts": [
+    "Le mode actif reste « % du prix de vente » tant que l’admin ne choisit pas « Prélevé sur le revendeur » puis Enregistrer : ce mode ajoute encore 1 % (arrondi) au prix.",
+    "Les prix des produits déjà en ligne ne changent pas tout seuls : « Vos produits en ligne » montre le prix conseillé (ex. Encre 205A : 20 500 F au lieu de 24 000 F).",
+    "Avec 1 % de la part revendeur, Suguba perd de l’argent sur chaque vente tant que ses coûts ne sont pas couverts autrement.",
+    "Fichier supabase/A-EXECUTER-2026-09-24-frais-retrait.sql à exécuter pour garder le détail des frais sur chaque retrait (sans lui, les frais sont déjà déduits mais le détail n’est pas enregistré).",
+    "Pas encore fait (étape suivante choisie) : paiement Mobile Money à la commande avec frais à la charge du client, et solde / retraits des fournisseurs.",
+    "Taux des opérateurs à 0 tant que l’admin ne les renseigne pas."
+   ],
+   "pages": [
+    "adm-vue",
+    "rev-gains"
+   ],
+   "commit": "",
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-24",
    "titre": "Nouveaux logos, admin nettoyé, ramassage prouvé, livraison au GPS, prix de gros, plusieurs boutiques",
    "demande": "« les icons logo de mobile money (2) orange money et moovmoney, et aussi les nouveau logo de suguba, ensuite test les reglage admin … enlèver les outils non utilisable, permetre d'ajouter de nouvelle boutique pour les revendeurs et aussi les fournisseurs » ; question « si je veux changer mon profil avec un fournisseur » ; prix de gros avec prix conseillé et négociation ; attester la récupération chez le fournisseur ; livraison calculée de la boutique au client avec « ma position actuelle ». Choix validés : boutiques gratuites 1, Pro 1 500 F (2), Pro+ 5 000 F (5) ; gain Suguba sur le prix de gros réglable par l’admin ; prix du revendeur partout ; code du fournisseur.",
    "realise": [
@@ -1595,7 +1624,7 @@
     },
     {
      "nom": "Numéro · Montant",
-     "role": "Minimum 5 000 F."
+     "role": "Minimum 5 000 F. En dessous, le détail des frais (SasPay, opérateur, Suguba ; Suguba seulement en espèces) et « Vous recevrez … F »."
     },
     {
      "nom": "Demander le virement",
@@ -1603,7 +1632,7 @@
     },
     {
      "nom": "Historique des retraits",
-     "role": "Toutes les demandes et leur état."
+     "role": "Toutes les demandes, leur état, et les frais déduits."
     }
    ],
    "suite": [
@@ -2544,7 +2573,7 @@
     },
     {
      "nom": "Réglages économiques",
-     "role": "Tout l’argent de Suguba au même endroit. **Mode de rémunération** (« Prélevé sur le revendeur », % du prix de vente, % ajouté au prix, automatique). **Où va l’argent d’une vente** : barre fournisseur / revendeur / coûts / Suguba, et pourquoi le prix est relevé au plancher. **Vos produits en ligne** : effet des réglages en cours sur chaque produit avant d’enregistrer. Coûts (provision pour refus sur la course ou sur le prix), coûts fixes, livraison, codes promo, simulation. Barre « Enregistrer / Annuler » en bas. **Prix de gros** : comment Suguba gagne sur ces articles (% de la marge du revendeur, % ajouté au prix de gros, montant fixe ou rien), avec exemple. **Formules boutiques** : prix et nombre de boutiques de chaque formule."
+     "role": "Tout l’argent de Suguba au même endroit. Une bulle **(i)** explique chaque réglage peu évident. **Mode de rémunération** (« Prélevé sur le revendeur », % du prix de vente, % ajouté au prix, automatique). **Les coûts de Suguba** : « Payés sur la part Suguba » (le client paie fournisseur + revendeur, rien de plus ; une perte s’affiche en rouge) ou « Ajoutés au prix client » (prix relevé au plancher). **Où va l’argent d’une vente** : barre fournisseur / revendeur / coûts / Suguba, et pourquoi le prix est relevé au plancher. **Vos produits en ligne** : effet des réglages en cours sur chaque produit avant d’enregistrer. Coûts (provision pour refus sur la course ou sur le prix), coûts fixes, livraison, codes promo, simulation. Barre « Enregistrer / Annuler » en bas. **Prix de gros** : comment Suguba gagne sur ces articles (% de la marge du revendeur, % ajouté au prix de gros, montant fixe ou rien), avec exemple. **Formules boutiques** : prix et nombre de boutiques de chaque formule."
     },
     {
      "nom": "Livreurs — guichet",

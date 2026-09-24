@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
   if (tarif.statut === 'sous_plancher') {
     return NextResponse.json(
       {
-        error: `Prix trop bas : Suguba perdrait de l'argent sur chaque vente. Prix minimal : ${tarif.prixMinimal.toLocaleString('fr-FR')} F.`,
+        error: `Prix trop bas : ${reglages.couvrirCoutsDansLePrix ? 'il ne couvre pas les coûts de Suguba et la part revendeur' : 'il ne couvre pas le prix fournisseur et la part revendeur'}. Prix minimal : ${tarif.prixMinimal.toLocaleString('fr-FR')} F.`,
         prixMinimal: tarif.prixMinimal,
         prixRecommande: tarif.prixRecommande,
         tarif,

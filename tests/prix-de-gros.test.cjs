@@ -41,8 +41,8 @@ test('mode montant fixe et mode aucun', () => {
   assert.equal(P.calculerTarifGros(20000, 25000, sansCouts({ modeGain: 'aucun' })).commission, 5000);
 });
 
-test('sous le prix minimal, la vente est refusée (sous le plancher)', () => {
-  const r = P.completerReglages({ ...P.REGLAGES_PAR_DEFAUT });
+test('plancher activé : sous le prix minimal, la vente est refusée', () => {
+  const r = P.completerReglages({ ...P.REGLAGES_PAR_DEFAUT, couvrirCoutsDansLePrix: true });
   const min = P.prixMinimalGros(20000, r);
   assert.equal(P.calculerTarifGros(20000, min - 500, r).statut, 'sous_plancher');
   const auMin = P.calculerTarifGros(20000, min, r);

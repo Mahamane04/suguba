@@ -36,6 +36,8 @@ const ROLES_APERCU: { role: string; libelle: string; chemin: string }[] = [
 interface RetraitAdmin {
   id: string; revendeur: string; montant: number; moyen: string;
   telephone: string; statut: string; creeLe: string;
+  /** Retiré du solde, et frais payés par le revendeur (null pour les retraits d'avant le 2026-09-24). */
+  montantDemande?: number | null; frais?: number | null;
 }
 
 const LIBELLE_MOYEN: Record<string, string> = {
@@ -150,7 +152,7 @@ export default function AdminDashboardPage() {
       },
       rejeter: {
         titre: `Refuser le retrait de ${r.revendeur} ?`,
-        message: `${fmt(r.montant)} retournent sur son solde disponible.`,
+        message: `${fmt(r.montantDemande ?? r.montant)} retournent sur son solde disponible.`,
         confirmer: 'Refuser',
       },
     }[action];
@@ -643,6 +645,11 @@ export default function AdminDashboardPage() {
                     <p className="font-bold text-sm text-slate-900">
                       {fmt(r.montant)} pour {r.revendeur}
                     </p>
+                    {(r.frais ?? 0) > 0 && (
+                      <p className="text-xs text-slate-500">
+                        Demandé {fmt(r.montantDemande ?? r.montant)} · frais {fmt(r.frais as number)} déduits
+                      </p>
+                    )}
                     <p className="text-xs text-slate-500">
                       {LIBELLE_MOYEN[r.moyen] || r.moyen}{r.moyen !== 'cash' ? ` · ${r.telephone}` : ''} · code <span className="font-mono">{r.id}</span>
                       {' · '}{new Date(r.creeLe).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}

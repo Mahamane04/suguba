@@ -38,7 +38,7 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await admin
     .from('payouts')
-    .select('id, reseller_name, amount, payment_method, phone_number, status, created_at')
+    .select('*')
     .in('status', ['pending', 'processing'])
     .order('created_at', { ascending: true })
     .limit(200);
@@ -50,6 +50,8 @@ export async function GET(req: NextRequest) {
       id: r.id,
       revendeur: r.reseller_name || 'Revendeur',
       montant: Number(r.amount) || 0,
+      montantDemande: r.montant_demande != null ? Number(r.montant_demande) : null,
+      frais: r.frais_retrait != null ? Number(r.frais_retrait) : null,
       moyen: r.payment_method,
       telephone: r.phone_number,
       statut: r.status,

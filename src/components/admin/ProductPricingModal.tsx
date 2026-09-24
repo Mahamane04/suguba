@@ -97,7 +97,7 @@ export default function ProductPricingModal({ product, isOpen, onClose }: Produc
   const statutLibelle: Record<string, { texte: string; classe: string }> = {
     ok: { texte: 'Rentable et proposé aux revendeurs', classe: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
     commission_faible: { texte: 'Vendable, mais commission trop faible pour être proposée au partage', classe: 'bg-amber-100 text-amber-900 border-amber-300' },
-    sous_plancher: { texte: 'Sous le plancher : Suguba perdrait de l\'argent', classe: 'bg-rose-100 text-rose-800 border-rose-300' },
+    sous_plancher: { texte: 'Prix trop bas : sous le prix minimal', classe: 'bg-rose-100 text-rose-800 border-rose-300' },
   };
 
   return (
