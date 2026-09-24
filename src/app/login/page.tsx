@@ -5,10 +5,10 @@ import { useSearchParams } from 'next/navigation';
 import { memoriserApresConnexion, prendreApresConnexion } from '@/lib/apres-connexion';
 import { rafraichirIdentite } from '@/lib/identite';
 import Link from 'next/link';
-import Image from 'next/image';
 import { sugubaStore, useSugubaStore } from '@/lib/store';
 import { supabase } from '@/lib/supabase';
 import Button from '@/components/ui/Button';
+import LogoSuguba from '@/components/ui/LogoSuguba';
 import { UserRole } from '@/types';
 import {
   ArrowRight,
@@ -146,19 +146,8 @@ function LoginPageContent() {
 
       {/* Top bar */}
       <div className="flex items-center justify-between px-4 py-4 sm:px-6">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="relative w-9 h-9 rounded-xl overflow-hidden shrink-0">
-            <Image
-              src="/images/logo.png"
-              alt="Logo Suguba"
-              fill
-              className="object-contain"
-              priority
-            />
-          </div>
-          <span className="font-bold text-gray-900 text-lg tracking-tight">
-            SUGUBA<span className="text-suguba-brand-dark">.ML</span>
-          </span>
+        <Link href="/" className="flex items-center">
+          <LogoSuguba className="h-8" />
         </Link>
         <Link href="/" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
           Retour à l&apos;accueil
@@ -174,11 +163,8 @@ function LoginPageContent() {
 
             {/* Header */}
             <div className="text-center mb-6">
-              <div
-                className="w-14 h-14 rounded-2xl flex items-center justify-center text-white font-bold text-2xl mx-auto mb-3 shadow-brand-md"
-                style={{ background: 'linear-gradient(135deg, #09b500 0%, #16a34a 100%)' }}
-              >
-                S
+              <div className="flex justify-center mb-3">
+                <LogoSuguba variante="icone" className="h-14" />
               </div>
               <h1 className="text-xl font-bold text-gray-900">
                 Connexion Suguba

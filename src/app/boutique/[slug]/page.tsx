@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import ShopView from '@/components/shop/ShopView';
 import BoutonSuivre from '@/components/shop/BoutonSuivre';
 import GalerieBoutique from '@/components/shop/GalerieBoutique';
-import { chargerBoutiqueFournisseur, chargerBoutiqueRevendeur, chargerProduitsSuguba, URL_APP, type Boutique } from '@/lib/shop';
+import { chargerBoutiqueFournisseur, chargerBoutiqueRevendeur, chargerProduitsDeLaBoutique, chargerProduitsSuguba, URL_APP, type Boutique } from '@/lib/shop';
 import { boutiqueParSlug } from '@/lib/reseau/boutiques';
 import { badgesDuCompte } from '@/lib/reseau/verifications-db';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
@@ -37,6 +37,11 @@ async function charger(slug: string): Promise<{ vitrine: Boutique; slugBoutique:
     if (!data?.reseller_code) return null;
     const vitrine = await chargerBoutiqueRevendeur(data.reseller_code);
     if (!vitrine) return null;
+    // Boutique supplémentaire (formule Pro) : sa propre sélection d'articles.
+    if (!boutique.principale) {
+      vitrine.produits = await chargerProduitsDeLaBoutique(boutique.id, boutique.proprietaireId);
+      vitrine.selectionVide = false;
+    }
     // Le nom et le logo choisis dans « Ma boutique » l'emportent sur le nom
     // du compte : c'est bien l'enseigne que le revendeur a décidé d'afficher.
     return {
@@ -54,6 +59,10 @@ async function charger(slug: string): Promise<{ vitrine: Boutique; slugBoutique:
     if (!data?.slug) return null;
     const vitrine = await chargerBoutiqueFournisseur(data.slug);
     if (!vitrine) return null;
+    if (!boutique.principale) {
+      vitrine.produits = await chargerProduitsDeLaBoutique(boutique.id);
+      vitrine.selectionVide = false;
+    }
     return {
       vitrine: { ...vitrine, ...enPlus, nom: boutique.nom || vitrine.nom, logo: boutique.logo || vitrine.logo, description: boutique.description || vitrine.description },
       slugBoutique: boutique.slug,

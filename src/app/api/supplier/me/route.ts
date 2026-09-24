@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { exigerDroitFournisseur } from '@/lib/reseau/contexte-fournisseur';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { positionValide } from '@/lib/bamako-quartiers';
 import { attribuerSlugFournisseur } from '@/lib/shop';
 
 /**
@@ -78,6 +79,10 @@ export async function GET(req: NextRequest) {
           contactPhone: supplierRow.contact_phone,
           warehouseAddress: supplierRow.warehouse_address,
           warehouseNeighborhood: supplierRow.warehouse_neighborhood,
+          // Position GPS exacte du dépôt (2026-09-24), null si non enregistrée.
+          positionDepot: typeof supplierRow.warehouse_lat === 'number' && typeof supplierRow.warehouse_lng === 'number'
+            ? { lat: supplierRow.warehouse_lat, lng: supplierRow.warehouse_lng } : null,
+          positionDepotDisponible: 'warehouse_lat' in supplierRow,
           category: supplierRow.category,
           // Réglages de boutique (2026-09-11, voir migration-shop-profile.sql) :
           // `undefined` tant que la migration n'est pas appliquée en base — le
@@ -148,8 +153,30 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Adresse e-mail invalide.' }, { status: 400 });
   }
 
-  if (Object.keys(misAJour).length === 0) {
+  // Position GPS du dépôt (2026-09-24) : point de départ exact du livreur et
+  // du calcul de livraison. null = effacer ; position hors Bamako refusée.
+  let position: { lat: number; lng: number } | null | undefined;
+  if ('positionDepot' in body) {
+    if (body.positionDepot === null) position = null;
+    else {
+      position = positionValide(body.positionDepot);
+      if (!position) return NextResponse.json({ error: 'Position hors de Bamako : placez-vous au dépôt et réessayez.' }, { status: 400 });
+    }
+  }
+
+  if (Object.keys(misAJour).length === 0 && position === undefined) {
     return NextResponse.json({ error: 'Aucun champ à mettre à jour.' }, { status: 400 });
+  }
+  if (position !== undefined) {
+    const { error: posErr } = await admin.from('suppliers')
+      .update({ warehouse_lat: position?.lat ?? null, warehouse_lng: position?.lng ?? null })
+      .eq('profile_id', fournisseurId);
+    if (posErr) {
+      return NextResponse.json({
+        error: posErr.code === '42703' ? 'La position du dépôt sera disponible après la mise à jour de la base par Suguba.' : posErr.message,
+      }, { status: posErr.code === '42703' ? 503 : 500 });
+    }
+    if (Object.keys(misAJour).length === 0) return NextResponse.json({ success: true });
   }
 
   const { error } = await admin.from('suppliers').update(misAJour).eq('profile_id', fournisseurId);

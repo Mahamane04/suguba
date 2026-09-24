@@ -191,6 +191,41 @@
  "journal": [
   {
    "date": "2026-09-24",
+   "titre": "Nouveaux logos, admin nettoyé, ramassage prouvé, livraison au GPS, prix de gros, plusieurs boutiques",
+   "demande": "« les icons logo de mobile money (2) orange money et moovmoney, et aussi les nouveau logo de suguba, ensuite test les reglage admin … enlèver les outils non utilisable, permetre d'ajouter de nouvelle boutique pour les revendeurs et aussi les fournisseurs » ; question « si je veux changer mon profil avec un fournisseur » ; prix de gros avec prix conseillé et négociation ; attester la récupération chez le fournisseur ; livraison calculée de la boutique au client avec « ma position actuelle ». Choix validés : boutiques gratuites 1, Pro 1 500 F (2), Pro+ 5 000 F (5) ; gain Suguba sur le prix de gros réglable par l’admin ; prix du revendeur partout ; code du fournisseur.",
+   "realise": [
+    "Logos : Orange Money (symbole) et Moov Money dans les choix de paiement et de retrait ; nouveau logo Suguba (en-tête, connexion, pied de page, badge, B2B) ; icônes de l’application et de l’onglet régénérées.",
+    "Admin : Checklist factice retirée ; Diffusion réelle (nombre de comptes lus en base, notification dans l’application, copie pour WhatsApp) ; filtres de statut des commandes corrigés.",
+    "Profils : page « Mes profils » — un revendeur devient fournisseur ou livreur sur le même compte, avec sa fiche, sans perdre son historique.",
+    "Ramassage : code à 4 chiffres par commande, visible par le fournisseur (nouvelle page Commandes) et l’admin ; le livreur le saisit en prenant le colis ; le code du client n’est accepté qu’après ; étape « Colis récupéré chez le vendeur » dans le suivi.",
+    "Livraison : distance calculée depuis la position exacte du dépôt (enregistrée par le fournisseur) jusqu’à la position du client (« Utiliser ma position actuelle ») ; itinéraire précis pour le livreur.",
+    "Prix de gros : le fournisseur choisit « Prix de gros » ; le revendeur fixe son prix (page Mes prix), appliqué dans sa boutique, ses liens, le devis et la commande, ou le négocie dans « + Vente » ; jamais sous le minimum ; gain Suguba réglable (4 modes).",
+    "Boutiques : plusieurs boutiques par compte selon la formule, chacune avec ses articles ; demandes de formule payées par Mobile Money et activées par l’admin ; l’admin peut créer une boutique pour un compte existant ou un nouveau compte."
+   ],
+   "ecarts": [
+    "Tout ce qui touche la base (codes de ramassage, positions GPS du dépôt, prix de gros, boutiques supplémentaires) ne marchera qu’après exécution du fichier supabase/A-EXECUTER-2026-09-24-ramassage-gps-gros-boutiques.sql ; avant, l’application reste fonctionnelle et l’indique.",
+    "La formule Pro se paie hors application (Mobile Money avec référence) puis s’active à la main par l’admin ; pas de paiement automatique ni de renouvellement automatique.",
+    "La position GPS donnée par le client n’est pas vérifiée : un client pourrait la fausser ; les frais restent bornés par le minimum et le maximum.",
+    "Pas de prix négocié dans le panier multi-articles (uniquement dans « + Vente »).",
+    "La page Checklist de lancement n’existe plus : ses anciennes mentions dans le journal ont été retirées."
+   ],
+   "pages": [
+    "rev-prix",
+    "mes-boutiques",
+    "compte-profils",
+    "fou-commandes",
+    "liv-courses",
+    "adm-diffusion",
+    "adm-boutiques",
+    "fou-ajouter",
+    "commander",
+    "adm-vue"
+   ],
+   "commit": "",
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-24",
    "titre": "Connexion reconnue du premier coup, Réglages économiques testés et améliorés",
    "demande": "« peux tu fixer ce problème je suis obliger de me connecter 2 fois des reconnaitre la statut de connecté surtout quand on ciique sur connecté avec google » et « voir aussi réellement les paramètres reglage economique teste le et ameliore le au maximum possible ».",
    "realise": [
@@ -304,7 +339,6 @@
    ],
    "pages": [
     "adm-diffusion",
-    "adm-lancement",
     "b2b-partenaire"
    ],
    "statut": "en ligne"
@@ -627,6 +661,10 @@
     {
      "nom": "Barre flottante",
      "role": "« Total à la livraison » et « Confirmer ». Elle se cache pendant la saisie pour ne pas masquer le champ."
+    },
+    {
+     "nom": "Utiliser ma position actuelle",
+     "role": "Livraison calculée à la distance exacte depuis le dépôt du vendeur ; le livreur est guidé jusqu’à vous."
     }
    ],
    "suite": [
@@ -1342,6 +1380,10 @@
     {
      "nom": "Outils de vente",
      "role": "Affiches statut · Ma carte & QR · Simulateur · Ma boutique · Fournisseurs · Missions · Créer un visuel · Mon calendrier · Mes partages · Mes parrainages · Mes clients · Mon profil vérifié."
+    },
+    {
+     "nom": "Mes prix · Mes boutiques",
+     "role": "Prix des articles au prix de gros ; boutiques supplémentaires avec la formule Pro."
     }
    ],
    "suite": [
@@ -1489,6 +1531,10 @@
     {
      "nom": "Valider la vente",
      "role": "Enregistre la commande ; l’écran suivant affiche le numéro et le montant à encaisser."
+    },
+    {
+     "nom": "Prix de vente au client",
+     "role": "Pour un article au prix de gros : le prix négocié avec votre client (minimum et conseillé indiqués). Votre gain se recalcule."
     }
    ],
    "suite": [
@@ -1638,6 +1684,104 @@
    "note": "Le compte démo n’a pas de vrai profil : la capture montre « Boutique pas encore disponible ». Avec un vrai compte, la boutique se crée à la première ouverture.",
    "capture": {
     "chemin": "/reseller/boutique"
+   }
+  },
+  {
+   "id": "rev-prix",
+   "role": "revendeur",
+   "titre": "Mes prix",
+   "chemin": "/reseller/prix",
+   "but": "Fixer votre prix de vente sur les articles au prix de gros.",
+   "elements": [
+    {
+     "nom": "Prix de gros · minimum · conseillé",
+     "role": "Le fournisseur donne son prix de gros ; le minimum couvre ce prix et tous les frais ; le conseillé est une aide."
+    },
+    {
+     "nom": "Votre prix de vente",
+     "role": "Affiché dans votre boutique et sur vos liens partagés. Jamais sous le minimum."
+    },
+    {
+     "nom": "Vous gagnez",
+     "role": "Ce qui vous reste par article à votre prix, une fois la part Suguba retirée."
+    },
+    {
+     "nom": "Revenir au prix conseillé",
+     "role": "Efface votre prix."
+    }
+   ],
+   "suite": [
+    {
+     "id": "rev-vente",
+     "libelle": "Négocier au moment de la vente (+ Vente)"
+    }
+   ],
+   "capture": {
+    "chemin": "/reseller/prix"
+   }
+  },
+  {
+   "id": "mes-boutiques",
+   "role": "revendeur",
+   "titre": "Mes boutiques",
+   "chemin": "/compte/boutiques",
+   "but": "Ouvrir plusieurs boutiques (une par type de clients) avec les formules Pro. Même page pour les fournisseurs.",
+   "elements": [
+    {
+     "nom": "Formule",
+     "role": "Gratuit : 1 boutique. Pro : 1 500 F/mois pour 2. Pro+ : 5 000 F/mois pour 5 (réglables par l’admin)."
+    },
+    {
+     "nom": "Choisir une formule",
+     "role": "Donne une référence : payez par Orange Money ou Moov Money au +223 89 46 00 00, Suguba active la formule pour 30 jours."
+    },
+    {
+     "nom": "Créer une boutique",
+     "role": "Nom et quartier, dans la limite de la formule."
+    },
+    {
+     "nom": "Choisir les articles",
+     "role": "Chaque boutique supplémentaire a sa propre sélection. La principale se gère dans « Ma boutique »."
+    }
+   ],
+   "suite": [
+    {
+     "id": "rev-boutique",
+     "libelle": "Ma boutique principale"
+    }
+   ],
+   "capture": {
+    "chemin": "/compte/boutiques"
+   }
+  },
+  {
+   "id": "compte-profils",
+   "role": "revendeur",
+   "titre": "Mes profils",
+   "chemin": "/compte/profils",
+   "but": "Ajouter une activité à votre compte (revendeur, fournisseur, livreur) sans créer de nouveau compte. Accessible à tout compte depuis le menu.",
+   "elements": [
+    {
+     "nom": "Vos profils",
+     "role": "Les espaces que vous avez ; touchez pour y aller."
+    },
+    {
+     "nom": "Devenir fournisseur",
+     "role": "Nom de l’entreprise, quartier du dépôt : votre espace fournisseur s’ouvre aussitôt."
+    },
+    {
+     "nom": "Devenir livreur / revendeur",
+     "role": "Même principe ; votre historique et vos gains restent."
+    }
+   ],
+   "suite": [
+    {
+     "id": "fou-accueil",
+     "libelle": "Espace fournisseur"
+    }
+   ],
+   "capture": {
+    "chemin": "/compte/profils"
    }
   },
   {
@@ -1977,6 +2121,10 @@
     {
      "nom": "Mon réseau",
      "role": "Ma boutique · Mes revendeurs · Analyses · Mon équipe · Sponsorisation · Campagnes."
+    },
+    {
+     "nom": "Commandes à préparer",
+     "role": "Vers la page Commandes, avec les codes de ramassage."
     }
    ],
    "suite": [
@@ -2028,12 +2176,51 @@
    }
   },
   {
+   "id": "fou-commandes",
+   "role": "fournisseur",
+   "titre": "Commandes à préparer",
+   "chemin": "/supplier/commandes",
+   "but": "Voir les commandes de vos produits et remettre le colis au livreur avec le code de ramassage.",
+   "elements": [
+    {
+     "nom": "À préparer · En livraison · Terminées",
+     "role": "Les commandes de vos produits, par étape."
+    },
+    {
+     "nom": "Code de ramassage",
+     "role": "À donner au livreur quand il a le colis en main : c’est la preuve que le colis a quitté votre dépôt."
+    },
+    {
+     "nom": "Vous recevez",
+     "role": "Votre prix fournisseur × la quantité."
+    }
+   ],
+   "suite": [
+    {
+     "id": "fou-accueil",
+     "libelle": "Tableau de bord"
+    }
+   ],
+   "note": "Nom et téléphone du client ne sont pas affichés : la livraison passe par Suguba.",
+   "capture": {
+    "chemin": "/supplier/commandes"
+   }
+  },
+  {
    "id": "fou-ajouter",
    "role": "fournisseur",
    "titre": "Ajouter un produit",
    "chemin": "/supplier/products/new",
    "but": "Déposer un nouvel article : le fournisseur fixe son prix ET la part du revendeur. Avec au moins une photo, le produit est mis en vente aussitôt, au prix calculé par Suguba.",
    "elements": [
+    {
+     "nom": "Comment les revendeurs vendent cet article ?",
+     "role": "**Prix fixe + part revendeur** (vous fixez la part du revendeur) ou **Prix de gros** : vous donnez votre prix de gros, le revendeur vend au prix qu’il veut et peut négocier, jamais sous le minimum."
+    },
+    {
+     "nom": "Prix conseillé (prix de gros)",
+     "role": "Facultatif : affiché aux clients sans revendeur. Aperçu : minimum de revente, conseillé, gain du revendeur."
+    },
     {
      "nom": "Ajouter des photos",
      "role": "Plusieurs photos ; la première sert de vignette. Sans photo, le produit attend."
@@ -2145,6 +2332,10 @@
     {
      "nom": "Message de recrutement",
      "role": "« Copier le message » pour le poster dans des groupes."
+    },
+    {
+     "nom": "Quartier de mon entrepôt · position exacte",
+     "role": "Depuis votre dépôt, « Utiliser ma position actuelle » enregistre le point de départ exact des livraisons."
     }
    ],
    "suite": [
@@ -2276,12 +2467,16 @@
      "role": "Véhicule et zone, si manquants."
     },
     {
-     "nom": "Mes courses en cours",
-     "role": "Adresse, repère, téléphone du client, montant à encaisser."
+     "nom": "1. Récupérer le colis",
+     "role": "Adresse du fournisseur, bouton Appeler et Y aller. Saisissez le **code donné par le fournisseur** puis « Colis récupéré »."
     },
     {
-     "nom": "Code secret",
-     "role": "À la remise, le client donne son code : la commande passe « livrée »."
+     "nom": "2. Livrer au client",
+     "role": "Adresse, repère, téléphone ; « Itinéraire » va jusqu’à la position GPS du client quand il l’a donnée."
+    },
+    {
+     "nom": "Code client",
+     "role": "Accepté seulement après le ramassage : le client donne son code, la commande passe « livrée »."
     },
     {
      "nom": "Livraisons effectuées",
@@ -2337,7 +2532,7 @@
    "elements": [
     {
      "nom": "Raccourcis",
-     "role": "Produits · SAV & retours · Analyses · Rapport du soir · Diffusion · Checklist."
+     "role": "Produits · SAV & retours · Analyses · Rapport du soir · Diffusion."
     },
     {
      "nom": "Tester un profil",
@@ -2349,7 +2544,7 @@
     },
     {
      "nom": "Réglages économiques",
-     "role": "Tout l’argent de Suguba au même endroit. **Mode de rémunération** (« Prélevé sur le revendeur », % du prix de vente, % ajouté au prix, automatique). **Où va l’argent d’une vente** : barre fournisseur / revendeur / coûts / Suguba, et pourquoi le prix est relevé au plancher. **Vos produits en ligne** : effet des réglages en cours sur chaque produit avant d’enregistrer. Coûts (provision pour refus sur la course ou sur le prix), coûts fixes, livraison, codes promo, simulation. Barre « Enregistrer / Annuler » en bas."
+     "role": "Tout l’argent de Suguba au même endroit. **Mode de rémunération** (« Prélevé sur le revendeur », % du prix de vente, % ajouté au prix, automatique). **Où va l’argent d’une vente** : barre fournisseur / revendeur / coûts / Suguba, et pourquoi le prix est relevé au plancher. **Vos produits en ligne** : effet des réglages en cours sur chaque produit avant d’enregistrer. Coûts (provision pour refus sur la course ou sur le prix), coûts fixes, livraison, codes promo, simulation. Barre « Enregistrer / Annuler » en bas. **Prix de gros** : comment Suguba gagne sur ces articles (% de la marge du revendeur, % ajouté au prix de gros, montant fixe ou rien), avec exemple. **Formules boutiques** : prix et nombre de boutiques de chaque formule."
     },
     {
      "nom": "Livreurs — guichet",
@@ -2647,15 +2842,23 @@
    "role": "admin",
    "titre": "Boutiques",
    "chemin": "/admin/boutiques",
-   "but": "Toutes les vitrines, pour les modérer.",
+   "but": "Toutes les vitrines, les formules Pro et la création de boutiques.",
    "elements": [
     {
-     "nom": "Filtres",
-     "role": "Toutes · Fournisseurs · Revendeurs · Suguba."
+     "nom": "Créer une boutique",
+     "role": "Pour un compte existant (recherche par nom, e-mail ou téléphone) ou pour un nouveau compte : la personne se connecte ensuite avec l’e-mail saisi."
     },
     {
-     "nom": "Masquer · Suspendre",
-     "role": "Retire une boutique de la vue publique."
+     "nom": "Formules Pro",
+     "role": "Demandes à activer après réception du paiement (référence BQ-…) : Activer 30 jours, Refuser, Prolonger."
+    },
+    {
+     "nom": "Filtres",
+     "role": "Fournisseurs, revendeurs, Suguba."
+    },
+    {
+     "nom": "Rendre publique · Masquer · Suspendre",
+     "role": "Une boutique masquée ou suspendue n’est plus visible."
     }
    ],
    "suite": [
@@ -2868,27 +3071,27 @@
    "role": "admin",
    "titre": "Diffusion",
    "chemin": "/admin/broadcast",
-   "but": "Préparer un message pour tout le réseau (revendeurs, livreurs, grossistes).",
+   "but": "Prévenir tout un groupe du réseau en une fois, par notification dans l’application.",
    "elements": [
+    {
+     "nom": "À qui ?",
+     "role": "Revendeurs, fournisseurs, livreurs ou tout le réseau, avec le nombre RÉEL de comptes actifs."
+    },
     {
      "nom": "Modèles",
-     "role": "Arrivage stock flash, défi du week-end…"
+     "role": "Nouveaux produits, ajoutez vos nouveautés, livreurs disponibles."
     },
     {
-     "nom": "Cible",
-     "role": "Revendeurs · Livreurs · Grossistes."
+     "nom": "Titre, message, lien",
+     "role": "Le lien s’ouvre quand on touche la notification."
     },
     {
-     "nom": "Canal",
-     "role": "WhatsApp VIP · SMS · Push."
+     "nom": "Envoyer la notification",
+     "role": "Après confirmation, chaque compte du groupe la reçoit dans la cloche."
     },
     {
-     "nom": "Copier texte",
-     "role": "Copie le message."
-    },
-    {
-     "nom": "Diffuser",
-     "role": "Voir la note."
+     "nom": "Copier pour WhatsApp",
+     "role": "À poster vous-même dans vos groupes ou votre statut (pas d’envoi en masse : risque de bannissement)."
     }
    ],
    "suite": [
@@ -2897,42 +3100,8 @@
      "libelle": "Vue globale"
     }
    ],
-   "note": "**Maquette :** « Diffuser » n’envoie rien, et les nombres de destinataires (142 / 18 / 12) sont écrits en dur. Seuls « Copier » et le lien WhatsApp servent réellement.",
-   "attention": true,
    "capture": {
     "chemin": "/admin/broadcast"
-   }
-  },
-  {
-   "id": "adm-lancement",
-   "role": "admin",
-   "titre": "Checklist de lancement",
-   "chemin": "/admin/launch-checklist",
-   "but": "Liste de contrôle avant le lancement officiel : sécurité, finance, logistique, croissance.",
-   "elements": [
-    {
-     "nom": "Points par domaine",
-     "role": "Cases cochées ou non."
-    },
-    {
-     "nom": "Exporter sauvegarde JSON",
-     "role": "Télécharge les données affichées."
-    },
-    {
-     "nom": "Purger données de test",
-     "role": "Voir la note."
-    }
-   ],
-   "suite": [
-    {
-     "id": "adm-vue",
-     "libelle": "Vue globale"
-    }
-   ],
-   "note": "**À savoir :** « Purger » ne remet à zéro que l’affichage de ce téléphone, pas la base. Le score « 15 / 16 » n’est pas calculé automatiquement.",
-   "attention": true,
-   "capture": {
-    "chemin": "/admin/launch-checklist"
    }
   },
   {

@@ -31,7 +31,7 @@
  * donc surestimés — là encore dans le sens de la prudence.
  */
 
-import { trouverQuartier, distanceKm } from './bamako-quartiers';
+import { trouverQuartier, distanceKm, positionValide } from './bamako-quartiers';
 import { communeDuQuartier, riveDeLaCommune } from './bamako-neighborhoods';
 
 export interface LigneCoutFixe {
@@ -74,6 +74,41 @@ export interface CodePromo {
  * les coûts : aucun mode ne peut faire vendre à perte.
  */
 export type ModePartSuguba = 'auto' | 'prix_vente' | 'part_revendeur' | 'prelevement_revendeur';
+
+/** Comment Suguba gagne sur un article vendu au prix de gros. */
+export type ModeGainGros = 'marge_revendeur' | 'ajout_prix_gros' | 'montant_fixe' | 'aucun';
+
+export interface ReglagesPrixDeGros {
+  /**
+   * `marge_revendeur` : Suguba garde `taux` % de ce que gagne le revendeur.
+   * `ajout_prix_gros` : le prix d'achat du revendeur = prix de gros + `taux` %.
+   * `montant_fixe`    : `montantFixe` F par article vendu.
+   * `aucun`           : rien au-delà des coûts couverts (lancement).
+   */
+  modeGain: ModeGainGros;
+  taux: number;
+  montantFixe: number;
+  /** Prix conseillé calculé quand le fournisseur n'en donne pas : marge revendeur visée, en % du prix de gros. */
+  margeConseilleePct: number;
+}
+
+export interface FormuleBoutique {
+  id: string;
+  nom: string;
+  /** Prix par mois, en FCFA. 0 = gratuite. */
+  prixMensuel: number;
+  /** Nombre de boutiques autorisées. */
+  boutiques: number;
+}
+
+export const FORMULES_BOUTIQUES_PAR_DEFAUT: FormuleBoutique[] = [
+  { id: 'gratuit', nom: 'Gratuit', prixMensuel: 0, boutiques: 1 },
+  { id: 'pro', nom: 'Pro', prixMensuel: 1500, boutiques: 2 },
+  { id: 'pro_plus', nom: 'Pro+', prixMensuel: 5000, boutiques: 5 },
+];
+
+/** Un article est vendu à prix fixe (commission) ou au prix de gros (prix libre du revendeur). */
+export type ModePrix = 'fixe' | 'gros';
 
 export interface ReglagesPlateforme {
   // ── Coûts variables, par commande ────────────────────────────────────
@@ -181,6 +216,21 @@ export interface ReglagesPlateforme {
   /** Part minimale de Suguba par article vendu, en FCFA. */
   minimumPartSuguba: number;
 
+  /**
+   * Articles au prix de gros (2026-09-24) : le fournisseur donne un prix de
+   * gros, le revendeur vend au prix qu'il veut. Réglage DYNAMIQUE : l'admin
+   * choisit comment Suguba se rémunère sur ces ventes, et peut en changer.
+   * Optionnel : absent des réglages déjà enregistrés, complété par défaut.
+   */
+  prixDeGros?: ReglagesPrixDeGros;
+
+  /**
+   * Formules d'abonnement boutiques (2026-09-24) : le nombre de boutiques
+   * qu'un revendeur ou un fournisseur peut ouvrir. La première formule (prix
+   * 0) est la version gratuite. Modifiables par l'admin.
+   */
+  formulesBoutiques?: FormuleBoutique[];
+
   /** Codes promo acceptés au moment de la commande. */
   codesPromo: CodePromo[];
 }
@@ -252,6 +302,8 @@ export const REGLAGES_PAR_DEFAUT: ReglagesPlateforme = {
   modePartSuguba: 'prix_vente',
   tauxPartSuguba: 8,
   minimumPartSuguba: 1000,
+  prixDeGros: { modeGain: 'marge_revendeur', taux: 1, montantFixe: 0, margeConseilleePct: 15 },
+  formulesBoutiques: FORMULES_BOUTIQUES_PAR_DEFAUT,
   codesPromo: [
     { code: 'RAMADAN', remise: 2000, actif: true },
     { code: 'TABASKI', remise: 2000, actif: true },
@@ -520,6 +572,123 @@ export function prixDepuisPartRevendeur(
   };
 }
 
+// ─────────────────────────── Prix de gros ───────────────────────────
+
+/** Surcoût Suguba intégré au prix d'achat du revendeur (modes « ajout » et « montant fixe »). */
+export function surcoutSugubaGros(prixGros: number, r: ReglagesPlateforme): number {
+  const g = r.prixDeGros;
+  if (!g) return 0;
+  if (g.modeGain === 'ajout_prix_gros') return Math.ceil(pct(g.taux) * Math.max(0, prixGros));
+  if (g.modeGain === 'montant_fixe') return Math.max(0, Math.round(g.montantFixe));
+  return 0;
+}
+
+/** Prix minimal d'un article au prix de gros : couvre le prix de gros, le surcoût Suguba et tous les coûts. */
+export function prixMinimalGros(prixGros: number, r: ReglagesPlateforme): number {
+  const base = Math.max(0, Number(prixGros) || 0) + surcoutSugubaGros(prixGros, r);
+  return arrondiSup(prixPourReste(r, base, 0), r.arrondiPrix);
+}
+
+/**
+ * Prix conseillé : celui du fournisseur s'il couvre le minimal, sinon le
+ * minimal + la marge revendeur visée par l'admin (% du prix de gros).
+ */
+export function prixConseilleGros(prixGros: number, r: ReglagesPlateforme, prixConseilleFournisseur?: number | null): number {
+  const minimal = prixMinimalGros(prixGros, r);
+  const propose = Number(prixConseilleFournisseur) || 0;
+  if (propose >= minimal) return propose;
+  const g = r.prixDeGros;
+  const vise = pct(g?.margeConseilleePct ?? 15) * Math.max(0, prixGros);
+  const base = Math.max(0, prixGros) + surcoutSugubaGros(prixGros, r);
+  return Math.max(minimal, arrondiSup(prixPourReste(r, base, vise * (1 + pct(r.fraisVersementPct))), r.arrondiPrix));
+}
+
+/**
+ * Tarif d'un article au prix de gros, vendu `prixVente` (2026-09-24).
+ *
+ * Le revendeur choisit son prix. Tout ce qui reste au-dessus du prix de gros,
+ * des coûts et du surcoût Suguba est SA marge (moins les frais de versement),
+ * puis Suguba en prélève `taux` % en mode « marge revendeur ». Aucun arrondi
+ * au pas de commission : le revendeur a fixé son prix au franc près.
+ *
+ * Même structure de retour que calculerTarif : la commande, le panier et
+ * l'admin l'utilisent sans distinguer les deux sortes d'articles.
+ */
+export function calculerTarifGros(prixGros: number, prixVente: number, r: ReglagesPlateforme): DetailTarif {
+  const PF = Math.max(0, Number(prixGros) || 0);
+  const PV = Math.max(0, Number(prixVente) || 0);
+  const g = r.prixDeGros;
+
+  const coutPaiement = pct(r.fraisPaiementPct) * (PV + r.fraisLivraisonClient);
+  const provisionRefus = pct(r.provisionRefusPct) * (r.baseProvisionRefus === 'course' ? coutCourseRefusee(r) : PV);
+  const coutFixe = coutFixeParCommande(r);
+  const coutMessage = r.coutMessageParCommande;
+  const deficitLivraison = Math.max(0, r.remunerationLivreur - r.fraisLivraisonClient);
+  const coutParCommande = coutPaiement + provisionRefus + coutFixe + coutMessage + deficitLivraison;
+  const margeNetteMinimale = pct(r.margeNetteMinPct) * PV;
+  const plancher = coutParCommande + margeNetteMinimale;
+  const surcout = surcoutSugubaGros(PF, r);
+  const reste = PV - PF - surcout - plancher;
+
+  const prixMinimal = prixMinimalGros(PF, r);
+  let statut: StatutTarif = 'ok';
+  let commissionBrute = 0;
+  if (reste < 0) statut = 'sous_plancher';
+  else commissionBrute = Math.floor(reste / (1 + pct(r.fraisVersementPct)));
+
+  const prelevementSuguba = g?.modeGain === 'marge_revendeur' && commissionBrute > 0
+    ? Math.min(commissionBrute, Math.ceil(pct(g.taux) * commissionBrute))
+    : 0;
+  const commission = commissionBrute - prelevementSuguba;
+  const fraisVersement = pct(r.fraisVersementPct) * commission;
+  const margeSuguba = PV - PF - commission;
+  const margeNetteSuguba = margeSuguba - coutParCommande - fraisVersement;
+
+  return {
+    prixFournisseur: PF,
+    prixVente: PV,
+    coutPaiement: franc(coutPaiement),
+    provisionRefus: franc(provisionRefus),
+    coutFixe: franc(coutFixe),
+    coutMessage: franc(coutMessage),
+    deficitLivraison: franc(deficitLivraison),
+    coutParCommande: franc(coutParCommande),
+    margeNetteMinimale: franc(margeNetteMinimale),
+    plancher: franc(plancher),
+    reste: franc(reste),
+    commission,
+    commissionBrute,
+    prelevementSuguba,
+    fraisVersement: franc(fraisVersement),
+    margeSuguba: franc(margeSuguba),
+    margeNetteSuguba: franc(margeNetteSuguba),
+    statut,
+    partageable: statut === 'ok',
+    prixMinimal,
+    prixRecommande: prixConseilleGros(PF, r),
+  };
+}
+
+/** Un article, quelle que soit sa sorte : prix fixe + commission, ou prix de gros. */
+export interface ProduitTarifable {
+  prixFournisseur: number;
+  prixVente: number;
+  commissionProposee?: number | null;
+  modePrix?: ModePrix | null;
+}
+
+/**
+ * Tarif d'un article. `prixRevendeur` : prix choisi par le revendeur, pris en
+ * compte seulement pour un article au prix de gros (sinon le prix est fixe).
+ */
+export function tarifProduit(p: ProduitTarifable, r: ReglagesPlateforme, prixRevendeur?: number | null): DetailTarif {
+  if (p.modePrix === 'gros') {
+    const prix = Number(prixRevendeur) > 0 ? Number(prixRevendeur) : p.prixVente;
+    return calculerTarifGros(p.prixFournisseur, prix, r);
+  }
+  return calculerTarif(p.prixFournisseur, p.prixVente, r, p.commissionProposee);
+}
+
 // ─────────────────────────── Devis de commande ───────────────────────────
 
 export interface DemandeDevis {
@@ -535,11 +704,25 @@ export interface DemandeDevis {
   quartierClient?: string;
   /** Quartier du FOURNISSEUR du produit commandé (`suppliers.warehouse_neighborhood`). */
   quartierFournisseur?: string;
+  /**
+   * Positions GPS réelles (2026-09-24) : le dépôt du fournisseur
+   * (`suppliers.warehouse_lat/lng`) et le client (« Utiliser ma position
+   * actuelle »). Plus précises que le centre du quartier ; ignorées si
+   * absentes ou hors de Bamako (voir positionValide).
+   */
+  positionFournisseur?: { lat: number; lng: number } | null;
+  positionClient?: { lat: number; lng: number } | null;
   /** Si renseigné et valide, le client retire son colis à ce point relais. */
   pointRelaisId?: string;
   codePromo?: string;
   /** La commande vient-elle d'un lien revendeur reconnu ? Sinon, pas de commission. */
   revendeurAttribue: boolean;
+  /**
+   * Prix unitaire choisi par le revendeur pour un article au prix de gros :
+   * son prix enregistré, ou le prix négocié saisi dans « + Vente ». Ignoré
+   * pour un article à prix fixe. Le serveur le résout ; jamais le navigateur.
+   */
+  prixRevendeur?: number | null;
 }
 
 export interface Devis {
@@ -552,6 +735,8 @@ export interface Devis {
   fraisLivraison: number;
   /** Distance estimée (km, à vol d'oiseau) ayant servi au calcul ci-dessus. null hors Bamako ou quartiers inconnus. */
   distanceLivraisonKm: number | null;
+  /** Le calcul a utilisé la position GPS du client plutôt que le centre de son quartier. */
+  positionClientUtilisee: boolean;
   codePromo: string | null;
   remiseDemandee: number;
   remise: number;
@@ -577,11 +762,14 @@ function fraisLivraisonDistanceBamako(
   r: ReglagesPlateforme,
   quartierFournisseur: string | undefined,
   quartierClient: string | undefined,
+  positionFournisseur?: unknown,
+  positionClient?: unknown,
 ): { frais: number; distanceKm: number } | null {
-  const a = trouverQuartier(quartierFournisseur);
-  const b = trouverQuartier(quartierClient);
+  // Position GPS réelle d'abord, sinon le centre du quartier (2026-09-24).
+  const a = positionValide(positionFournisseur) || trouverQuartier(quartierFournisseur);
+  const b = positionValide(positionClient) || trouverQuartier(quartierClient);
   if (!a || !b) return null;
-  const km = distanceKm(a, b);
+  const km = Math.round(distanceKm(a, b) * 10) / 10;
   const d = r.livraisonDistanceBamako;
   const brut = d.fraisBase + d.fraisParKm * km;
   const frais = Math.round(Math.min(d.fraisMaximum, Math.max(d.fraisMinimum, brut)) / 50) * 50;
@@ -641,14 +829,16 @@ function fraisPourVille(r: ReglagesPlateforme, ville: string): { ville: string; 
  * — et le devis le dit (`avisPromo: 'plafonnee'`) plutôt que de le cacher.
  */
 export function calculerCommande(
-  produit: { prixFournisseur: number; prixVente: number; commissionProposee?: number | null },
+  produit: ProduitTarifable,
   demande: DemandeDevis,
   r: ReglagesPlateforme,
 ): Devis {
   const quantite = Math.min(QUANTITE_MAX, Math.max(1, Math.floor(Number(demande.quantite) || 1)));
   // La part revendeur choisie par le fournisseur doit suivre jusqu'à la
   // commande : sinon la commission enregistrée différerait de celle affichée.
-  const tarif = calculerTarif(produit.prixFournisseur, produit.prixVente, r, produit.commissionProposee);
+  // Prix de gros (2026-09-24) : le prix est celui du revendeur attribué,
+  // sinon le prix conseillé.
+  const tarif = tarifProduit(produit, r, demande.revendeurAttribue ? demande.prixRevendeur : null);
 
   const prixUnitaire = tarif.prixVente;
   const montantArticles = prixUnitaire * quantite;
@@ -677,7 +867,9 @@ export function calculerCommande(
         const parZones = fraisLivraisonZonesBamako(r, demande.quartierFournisseur, demande.quartierClient);
         if (parZones !== null) fraisLivraison = parZones;
       } else {
-        const parDistance = fraisLivraisonDistanceBamako(r, demande.quartierFournisseur, demande.quartierClient);
+        const parDistance = fraisLivraisonDistanceBamako(
+          r, demande.quartierFournisseur, demande.quartierClient, demande.positionFournisseur, demande.positionClient,
+        );
         if (parDistance) {
           fraisLivraison = parDistance.frais;
           distanceLivraisonKm = parDistance.distanceKm;
@@ -719,6 +911,7 @@ export function calculerCommande(
     pointRelais: relais ? { id: relais.id, nom: relais.nom } : null,
     fraisLivraison,
     distanceLivraisonKm,
+    positionClientUtilisee: distanceLivraisonKm !== null && Boolean(positionValide(demande.positionClient)),
     codePromo: promo ? promo.code : null,
     remiseDemandee,
     remise,
@@ -785,6 +978,12 @@ export function validerReglages(r: ReglagesPlateforme): string[] {
   if (!(r.arrondiCommission > 0) || !(r.arrondiPrix > 0)) {
     erreurs.push('Les pas d\'arrondi doivent être strictement positifs.');
   }
+  if (r.prixDeGros) {
+    const g = r.prixDeGros;
+    if (!(g.taux >= 0 && g.taux <= 100)) erreurs.push('Prix de gros : le taux Suguba doit être entre 0 et 100 %.');
+    if (!(g.montantFixe >= 0)) erreurs.push('Prix de gros : le montant fixe doit être positif.');
+    if (!(g.margeConseilleePct >= 0 && g.margeConseilleePct <= 300)) erreurs.push('Prix de gros : la marge conseillée doit être entre 0 et 300 %.');
+  }
   if (!Array.isArray(r.coutsFixesMensuels) || r.coutsFixesMensuels.some((l) => !(Number(l.montant) >= 0))) {
     erreurs.push('Chaque coût fixe doit être un montant positif.');
   }
@@ -840,6 +1039,28 @@ export function completerReglages(partiels: Partial<ReglagesPlateforme> | null |
   }
   if (r.modeLivraisonBamako !== 'zones') r.modeLivraisonBamako = 'distance';
   if (r.baseProvisionRefus !== 'course') r.baseProvisionRefus = 'prix';
+  {
+    const brutes = Array.isArray(r.formulesBoutiques) ? r.formulesBoutiques : [];
+    const propres = brutes
+      .filter((f) => f && typeof f.id === 'string' && f.id.trim())
+      .map((f) => ({
+        id: String(f.id).trim().slice(0, 40),
+        nom: String(f.nom || f.id).trim().slice(0, 40),
+        prixMensuel: Math.max(0, Math.round(Number(f.prixMensuel) || 0)),
+        boutiques: Math.max(1, Math.min(50, Math.round(Number(f.boutiques) || 1))),
+      }));
+    r.formulesBoutiques = propres.length ? propres : FORMULES_BOUTIQUES_PAR_DEFAUT;
+  }
+  {
+    const g = (r.prixDeGros && typeof r.prixDeGros === 'object' ? r.prixDeGros : {}) as Partial<ReglagesPrixDeGros>;
+    const defaut = REGLAGES_PAR_DEFAUT.prixDeGros as ReglagesPrixDeGros;
+    r.prixDeGros = {
+      modeGain: ['marge_revendeur', 'ajout_prix_gros', 'montant_fixe', 'aucun'].includes(g.modeGain as string) ? g.modeGain as ModeGainGros : defaut.modeGain,
+      taux: Number.isFinite(Number(g.taux)) ? Number(g.taux) : defaut.taux,
+      montantFixe: Number.isFinite(Number(g.montantFixe)) ? Number(g.montantFixe) : defaut.montantFixe,
+      margeConseilleePct: Number.isFinite(Number(g.margeConseilleePct)) ? Number(g.margeConseilleePct) : defaut.margeConseilleePct,
+    };
+  }
   if (!r.livraisonZonesBamako || typeof r.livraisonZonesBamako !== 'object') {
     r.livraisonZonesBamako = REGLAGES_PAR_DEFAUT.livraisonZonesBamako;
   }

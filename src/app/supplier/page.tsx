@@ -9,7 +9,7 @@ import { Store as StoreIcone, Users as UsersIcone, Megaphone as MegaphoneIcone, 
 import Button from '@/components/ui/Button';
 import PhotosProduitModal from '@/components/product/PhotosProduitModal';
 import {
-  Plus, ShieldCheck, Clock, Store, Package, Users, XCircle, Camera
+  Plus, ShieldCheck, Clock, Store, Package, Users, XCircle, Camera, ClipboardList
 } from 'lucide-react';
 
 interface SupplierProduct {
@@ -114,6 +114,10 @@ export default function SupplierDashboardPage() {
               <Plus className="w-4 h-4 stroke-[3]" />
               <span>Ajouter un produit</span>
             </Button>
+            <Button href="/supplier/commandes" variant="ghost">
+              <ClipboardList className="w-4 h-4" />
+              <span>Commandes à préparer</span>
+            </Button>
             <Button href="/supplier/inventory" variant="ghost">
               <Package className="w-4 h-4" />
               <span>Gérer les stocks</span>
@@ -213,6 +217,7 @@ export default function SupplierDashboardPage() {
           titre="Mon réseau"
           entrees={[
             { libelle: 'Ma boutique', href: '/supplier/boutique', icone: StoreIcone, aide: 'Votre page commerciale publique' },
+            { libelle: 'Mes boutiques', href: '/compte/boutiques', icone: StoreIcone, aide: 'Plusieurs boutiques avec la formule Pro' },
             { libelle: 'Mes revendeurs', href: '/supplier/revendeurs', icone: UsersIcone, aide: 'Qui vend vos produits, et combien' },
             { libelle: 'Analyses', href: '/supplier/analyses', icone: BarChartIcone, aide: 'Ventes, visites, conversion, retour des sponsorisations' },
             { libelle: 'Mon équipe', href: '/supplier/equipe', icone: EquipeIcone, aide: 'Commercial, stock, marketing : chacun son accès' },

@@ -73,6 +73,8 @@ export default function PanierPage() {
   const [relaisId, setRelaisId] = useState('');
   const [ville, setVille] = useState('Bamako');
   const [quartier, setQuartier] = useState('');
+  // Position GPS exacte du client (2026-09-24), voir /p/[slug]/commander.
+  const [positionClient, setPositionClient] = useState<{ lat: number; lng: number } | null>(null);
   const [repere, setRepere] = useState('');
   const [instructions, setInstructions] = useState('');
   const [promo, setPromo] = useState('');
@@ -100,6 +102,7 @@ export default function PanierPage() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           lignes: articles, city: ville, neighborhood: quartier,
+          positionClient: mode === 'relais' ? null : positionClient,
           pickupPointId: mode === 'relais' ? relais?.id : undefined, promoCode: promoSoumis || undefined,
         }),
       })
@@ -109,7 +112,7 @@ export default function PanierPage() {
         .finally(() => { if (numero === requete.current) setDevisEnCours(false); });
     }, 250);
     return () => clearTimeout(minuterie);
-  }, [articles, ville, quartier, mode, relais?.id, promoSoumis]);
+  }, [articles, ville, quartier, positionClient, mode, relais?.id, promoSoumis]);
 
   const villes = useMemo(() => {
     const liste = Object.entries(reglages?.livraisonParVille || { Bamako: 1500 });
@@ -149,6 +152,7 @@ export default function PanierPage() {
       deliveryNotes: instructions || undefined,
       pickupPointId: mode === 'relais' ? relais?.id : undefined,
       promoCode: promoSoumis || undefined,
+      positionClient: mode === 'relais' ? undefined : positionClient || undefined,
     };
 
     // Même panier = même clé : une réponse perdue se rattrape sans doublon.
@@ -303,11 +307,11 @@ export default function PanierPage() {
             {mode === 'domicile' ? (
               <>
                 <Field label="Ville" htmlFor="ville">
-                  <ChoicePicker id="ville" valeur={ville} choix={villes} onChange={setVille} />
+                  <ChoicePicker id="ville" valeur={ville} choix={villes} onChange={(v) => { setVille(v); setPositionClient(null); }} />
                 </Field>
                 <Field label="Quartier" htmlFor="quartier" erreur={voir(erreurs.quartier)} requis>
                   {ville === 'Bamako' ? (
-                    <NeighborhoodPicker id="quartier" value={quartier} onChange={setQuartier} placeholder="Choisir mon quartier" invalide={Boolean(voir(erreurs.quartier))} />
+                    <NeighborhoodPicker id="quartier" value={quartier} onChange={setQuartier} onPosition={setPositionClient} placeholder="Choisir mon quartier" invalide={Boolean(voir(erreurs.quartier))} />
                   ) : (
                     <Input id="quartier" value={quartier} onChange={(e) => setQuartier(e.target.value)} aria-invalid={Boolean(voir(erreurs.quartier))} />
                   )}

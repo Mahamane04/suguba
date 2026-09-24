@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { calculerCommande, completerReglages, QUANTITE_MAX } from '@/lib/pricing';
+import { depotsFournisseurs } from '@/lib/depot-fournisseur';
+import { positionValide } from '@/lib/bamako-quartiers';
+import { resoudrePrixRevendeur } from '@/lib/prix-revendeur';
+import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
 
 /**
  * Devis d'une commande, pour affichage sur la page produit — publique.
@@ -19,7 +23,7 @@ import { calculerCommande, completerReglages, QUANTITE_MAX } from '@/lib/pricing
  */
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
-  const { productId, quantity, city, neighborhood, pickupPointId, promoCode, resellerCode } = body || {};
+  const { productId, quantity, city, neighborhood, pickupPointId, promoCode, resellerCode, positionClient, prixNegocie } = body || {};
 
   if (!productId || typeof productId !== 'string') {
     return NextResponse.json({ error: 'Produit requis.' }, { status: 400 });
@@ -34,7 +38,7 @@ export async function POST(req: NextRequest) {
 
   const { data: produit, error: produitErreur } = await admin
     .from('products')
-    .select('supplier_price, public_price, status, commission_proposee, supplier_id')
+    .select('*')
     .eq('id', productId)
     .maybeSingle();
 
@@ -46,19 +50,13 @@ export async function POST(req: NextRequest) {
   // Quartier du fournisseur de CE produit — pour le tarif de livraison à la
   // distance réelle (2026-09-11, voir livraisonDistanceBamako). Une commande
   // reste calculable sans ça : repli sur le tarif plat, jamais une erreur.
-  let quartierFournisseur: string | undefined;
-  if (produit.supplier_id) {
-    const { data: fournisseur } = await admin
-      .from('suppliers')
-      .select('warehouse_neighborhood')
-      .eq('profile_id', produit.supplier_id)
-      .maybeSingle();
-    quartierFournisseur = fournisseur?.warehouse_neighborhood || undefined;
-  }
+  // Depuis le 2026-09-24 : aussi la position GPS du dépôt, si connue.
+  const depot = (await depotsFournisseurs(admin, [produit.supplier_id])).get(produit.supplier_id) || {};
 
   // Seul effet de l'attribution sur le devis : le plafond de la remise promo,
   // qui doit laisser la commission du revendeur intacte.
   let revendeurAttribue = false;
+  let revendeurId: string | null = null;
   if (resellerCode && typeof resellerCode === 'string') {
     const { data: revendeur, error: revendeurErreur } = await admin
       .from('profiles')
@@ -68,7 +66,17 @@ export async function POST(req: NextRequest) {
     if (revendeurErreur) return NextResponse.json({ error: 'Service indisponible.' }, { status: 503 });
     if (!revendeur) return NextResponse.json({ error: 'Code revendeur introuvable. Vérifiez le lien partagé.' }, { status: 400 });
     revendeurAttribue = true;
+    revendeurId = revendeur.id;
   }
+
+  // Article au prix de gros : prix négocié (revendeur connecté) ou prix
+  // enregistré par le revendeur — exactement comme à la création.
+  const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
+  const prixRevendeur = await resoudrePrixRevendeur({
+    admin, modePrix: produit.mode_prix, productId, resellerId: revendeurId,
+    sessionUid: session?.uid || null,
+    prixNegocie: Number.isInteger(prixNegocie) && prixNegocie > 0 ? prixNegocie : null,
+  });
 
   const { data: settings, error: settingsError } = await admin.from('platform_settings')
     .select('valeurs, updated_at').eq('id', 1).maybeSingle();
@@ -79,18 +87,28 @@ export async function POST(req: NextRequest) {
       prixFournisseur: Number(produit.supplier_price),
       prixVente: Number(produit.public_price),
       commissionProposee: produit.commission_proposee,
+      modePrix: produit.mode_prix,
     },
     {
       quantite: Number(quantity) || 1,
       ville: typeof city === 'string' ? city : undefined,
       quartierClient: typeof neighborhood === 'string' ? neighborhood : undefined,
-      quartierFournisseur,
+      positionClient: positionValide(positionClient),
+      quartierFournisseur: depot.quartier,
+      positionFournisseur: depot.position,
       pointRelaisId: typeof pickupPointId === 'string' ? pickupPointId : undefined,
       codePromo: typeof promoCode === 'string' ? promoCode : undefined,
       revendeurAttribue,
+      prixRevendeur,
     },
     reglages,
   );
+  if (produit.mode_prix === 'gros' && d.tarif.statut === 'sous_plancher') {
+    return NextResponse.json({
+      error: `Prix trop bas : minimum ${d.tarif.prixMinimal.toLocaleString('fr-FR')} F.`,
+      prixMinimal: d.tarif.prixMinimal,
+    }, { status: 409 });
+  }
 
   if (d.tarif.statut === 'sous_plancher' || !Number.isFinite(d.total) || d.total <= 0) {
     return NextResponse.json({ error: 'Le prix de ce produit doit être actualisé.' }, { status: 409 });
@@ -105,10 +123,21 @@ export async function POST(req: NextRequest) {
       pointRelais: d.pointRelais,
       fraisLivraison: d.fraisLivraison,
       distanceLivraisonKm: d.distanceLivraisonKm,
+      positionClientUtilisee: d.positionClientUtilisee,
       codePromo: d.codePromo,
       remise: d.remise,
       avisPromo: d.avisPromo,
       total: d.total,
     },
+    // Réservé au revendeur de la vente (« + Vente ») : son gain, et pour un
+    // article au prix de gros, les bornes de son prix. Jamais au client.
+    ...(session?.uid && session.uid === revendeurId ? {
+      pourLeRevendeur: {
+        gain: d.commissionTotale,
+        modePrix: produit.mode_prix === 'gros' ? 'gros' : 'fixe',
+        prixMinimal: d.tarif.prixMinimal,
+        prixConseille: produit.mode_prix === 'gros' ? Number(produit.public_price) : d.prixUnitaire,
+      },
+    } : {}),
   }, { headers: { 'Cache-Control': 'no-store' } });
 }

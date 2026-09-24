@@ -4,6 +4,9 @@ import type { Order } from '@/types';
 import { calculerCommande, completerReglages, type Devis } from './pricing';
 import { normaliserCommande } from './order-input';
 import { genererNumeroCommande } from './order-number';
+import { depotsFournisseurs } from './depot-fournisseur';
+import { resoudrePrixRevendeur } from './prix-revendeur';
+import { prixMinimalGros } from './pricing';
 
 export class OrderCreationError extends Error {
   constructor(message: string, public status: number) { super(message); }
@@ -36,7 +39,11 @@ export function recu(row: Record<string, any>): Order {
 }
 
 /** REQ-013 : le succès signifie commande ET commission validées en base. */
-export async function creerCommande(admin: SupabaseClient | null, value: unknown, key: string | null) {
+/**
+ * `sessionUid` : la personne connectée (ou null). Sert uniquement à accepter
+ * un prix négocié quand elle EST le revendeur de la commande.
+ */
+export async function creerCommande(admin: SupabaseClient | null, value: unknown, key: string | null, sessionUid: string | null = null) {
   if (!admin) indisponible();
   if (!key || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(key)) {
     throw new OrderCreationError('Référence de demande invalide. Rechargez la page.', 400);
@@ -61,8 +68,9 @@ export async function creerCommande(admin: SupabaseClient | null, value: unknown
     return { created: false, order: recu(previous.receipt) };
   }
 
+  // `*` : lit mode_prix / prix_conseille dès que la base les a, sans casser avant.
   const { data: product, error: productError } = await admin.from('products')
-    .select('id, name, images, supplier_price, public_price, status, commission_proposee, supplier_id')
+    .select('*')
     .eq('id', input.productId).maybeSingle();
   if (productError) indisponible();
   if (!product || product.status !== 'approved' || Number(product.public_price) <= 0) {
@@ -71,15 +79,7 @@ export async function creerCommande(admin: SupabaseClient | null, value: unknown
 
   // Quartier du fournisseur — voir /api/orders/quote pour le détail : sans
   // lui, repli sur le tarif plat, jamais un blocage de la commande.
-  let quartierFournisseur: string | undefined;
-  if (product.supplier_id) {
-    const { data: fournisseur } = await admin
-      .from('suppliers')
-      .select('warehouse_neighborhood')
-      .eq('profile_id', product.supplier_id)
-      .maybeSingle();
-    quartierFournisseur = fournisseur?.warehouse_neighborhood || undefined;
-  }
+  const depot = (await depotsFournisseurs(admin, [product.supplier_id])).get(product.supplier_id) || {};
   let reseller: { id: string; full_name: string; reseller_code: string } | null = null;
   if (input.resellerCode) {
     const result = await admin.from('profiles').select('id, full_name, reseller_code')
@@ -93,15 +93,25 @@ export async function creerCommande(admin: SupabaseClient | null, value: unknown
   const { data: settings, error: settingsError } = await admin.from('platform_settings')
     .select('valeurs, updated_at').eq('id', 1).maybeSingle();
   if (settingsError) indisponible();
+  const reglages = completerReglages(settings?.valeurs || {});
+  const prixRevendeur = await resoudrePrixRevendeur({
+    admin, modePrix: product.mode_prix, productId: product.id,
+    resellerId: reseller?.id, sessionUid, prixNegocie: input.prixNegocie,
+  });
   const devis = calculerCommande({
     prixFournisseur: Number(product.supplier_price), prixVente: Number(product.public_price),
-    commissionProposee: product.commission_proposee,
+    commissionProposee: product.commission_proposee, modePrix: product.mode_prix,
   }, {
     quantite: input.quantity, ville: input.city,
-    quartierClient: input.neighborhood, quartierFournisseur,
+    quartierClient: input.neighborhood, positionClient: input.positionClient,
+    quartierFournisseur: depot.quartier, positionFournisseur: depot.position,
     pointRelaisId: input.pickupPointId,
-    codePromo: input.promoCode, revendeurAttribue: Boolean(reseller),
-  }, completerReglages(settings?.valeurs || {}));
+    codePromo: input.promoCode, revendeurAttribue: Boolean(reseller), prixRevendeur,
+  }, reglages);
+  if (product.mode_prix === 'gros' && devis.tarif.statut === 'sous_plancher') {
+    const minimal = prixMinimalGros(Number(product.supplier_price), reglages);
+    throw new OrderCreationError(`Prix trop bas : ce produit ne peut pas être vendu moins de ${minimal.toLocaleString('fr-FR')} F.`, 409);
+  }
   if (devis.tarif.statut === 'sous_plancher' || !Number.isFinite(devis.total) || devis.total <= 0) {
     throw new OrderCreationError('Le prix de ce produit doit être actualisé avant la commande.', 409);
   }
@@ -115,7 +125,11 @@ export async function creerCommande(admin: SupabaseClient | null, value: unknown
     quantity: devis.quantite, unit_price: devis.prixUnitaire,
     total_product_amount: devis.montantArticles, delivery_fee: devis.fraisLivraison,
     total_amount: devis.total, platform_margin: devis.margeSuguba,
-    pricing_snapshot: { devis, reglagesDu: settings?.updated_at || null, calculeLe: now },
+    pricing_snapshot: {
+      devis, reglagesDu: settings?.updated_at || null, calculeLe: now,
+      // Position GPS du client pour le livreur (voir /api/orders/feed).
+      livraison: { position: input.positionClient || null },
+    },
     customer_name: input.customerName, customer_phone: input.customerPhone,
     city: devis.ville, neighborhood: devis.pointRelais ? 'Point Relais Partenaire' : input.neighborhood,
     landmark: devis.pointRelais?.nom || input.landmark, delivery_notes: input.deliveryNotes || null,

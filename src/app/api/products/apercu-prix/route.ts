@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
 import { chargerReglages } from '@/lib/platform-settings';
-import { calculerTarif, prixDepuisPartRevendeur } from '@/lib/pricing';
+import { calculerTarif, calculerTarifGros, prixConseilleGros, prixDepuisPartRevendeur, prixMinimalGros, surcoutSugubaGros } from '@/lib/pricing';
 
 /**
  * Aperçu du prix client pour le fournisseur, pendant qu'il remplit sa fiche
@@ -24,6 +24,27 @@ export async function GET(req: NextRequest) {
   }
 
   const { reglages: r } = await chargerReglages();
+
+  // Prix de gros (2026-09-24) : bornes du prix du revendeur et partage au
+  // prix conseillé, selon le mode de gain choisi par l'admin.
+  if (req.nextUrl.searchParams.get('modePrix') === 'gros') {
+    const conseilFournisseur = Number(req.nextUrl.searchParams.get('prixConseille')) || null;
+    const prixMinimal = prixMinimalGros(prixFournisseur, r);
+    const prixConseille = prixConseilleGros(prixFournisseur, r, conseilFournisseur);
+    const t = calculerTarifGros(prixFournisseur, prixConseille, r);
+    return NextResponse.json({
+      mode: 'gros',
+      prixMinimal,
+      prixConseille,
+      conseilFournisseurRetenu: Boolean(conseilFournisseur && conseilFournisseur === prixConseille),
+      gainRevendeurAuConseil: t.commission,
+      prelevementSuguba: t.prelevementSuguba,
+      surcoutSuguba: surcoutSugubaGros(prixFournisseur, r),
+      modeGain: r.prixDeGros?.modeGain,
+      taux: r.prixDeGros?.taux,
+      montantFixe: r.prixDeGros?.montantFixe,
+    });
+  }
 
   // Mode automatique, ou aucune part indiquée : le moteur décide.
   if (r.modePartSuguba === 'auto' || !(partRevendeur > 0)) {

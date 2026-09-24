@@ -1,5 +1,6 @@
 import { QUANTITE_MAX, calculerCommande, type Devis, type ReglagesPlateforme } from './pricing';
 import { normaliserCommande, type OrderInput } from './order-input';
+import type { DepotFournisseur } from './depot-fournisseur';
 
 /**
  * Panier multi-articles — seules les INTENTIONS du client traversent le
@@ -53,6 +54,8 @@ export interface ProduitPanier {
   public_price: number | string;
   commission_proposee: number | string | null;
   supplier_id: string | null;
+  /** 'gros' : article au prix de gros, vendu au prix du revendeur (2026-09-24). */
+  mode_prix?: string | null;
 }
 
 export interface LigneCalculee {
@@ -76,8 +79,13 @@ export interface LigneCalculee {
 export function calculerLignesPanier(
   lignes: LignePanier[],
   produits: ProduitPanier[],
-  quartiersFournisseurs: Map<string, string | undefined>,
-  demande: { ville: string; quartierClient?: string; pointRelaisId?: string; codePromo?: string; revendeurAttribue: boolean },
+  depots: Map<string, DepotFournisseur>,
+  demande: {
+    ville: string; quartierClient?: string; positionClient?: { lat: number; lng: number } | null;
+    pointRelaisId?: string; codePromo?: string; revendeurAttribue: boolean;
+    /** Prix enregistrés par le revendeur attribué, par produit (articles au prix de gros). */
+    prixRevendeur?: Map<string, number>;
+  },
   reglages: ReglagesPlateforme,
 ): LigneCalculee[] {
   const groupesLivres = new Set<string>();
@@ -86,13 +94,17 @@ export function calculerLignesPanier(
     const devis = calculerCommande({
       prixFournisseur: Number(p.supplier_price), prixVente: Number(p.public_price),
       commissionProposee: p.commission_proposee == null ? null : Number(p.commission_proposee),
+      modePrix: p.mode_prix === 'gros' ? 'gros' : 'fixe',
     }, {
       quantite: ligne.quantity, ville: demande.ville,
       quartierClient: demande.quartierClient,
-      quartierFournisseur: p.supplier_id ? quartiersFournisseurs.get(p.supplier_id) : undefined,
+      positionClient: demande.positionClient,
+      quartierFournisseur: p.supplier_id ? depots.get(p.supplier_id)?.quartier : undefined,
+      positionFournisseur: p.supplier_id ? depots.get(p.supplier_id)?.position : undefined,
       pointRelaisId: demande.pointRelaisId,
       codePromo: i === 0 ? demande.codePromo : undefined,
       revendeurAttribue: demande.revendeurAttribue,
+      prixRevendeur: demande.prixRevendeur?.get(p.id) ?? null,
     }, reglages);
     const groupe = devis.pointRelais ? 'relais' : `f:${p.supplier_id || 'suguba'}`;
     const porteLaLivraison = !groupesLivres.has(groupe);

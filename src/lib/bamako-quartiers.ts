@@ -143,3 +143,25 @@ export function distanceKm(a: Coord, b: Coord): number {
     Math.cos((a.lat * Math.PI) / 180) * Math.cos((b.lat * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
 }
+
+export type { Coord };
+
+/** Centre de Bamako (place de l'Indépendance), repère des contrôles de position. */
+const CENTRE_BAMAKO: Coord = { lat: 12.6392, lng: -8.0029 };
+/** Au-delà, une position GPS n'a plus rien à voir avec une livraison à Bamako. */
+export const RAYON_BAMAKO_KM = 40;
+
+/**
+ * Position GPS exploitable pour une livraison à Bamako (2026-09-24) : deux
+ * nombres finis, à moins de 40 km du centre. Tout le reste (position
+ * absente, envoyée depuis l'étranger, GPS erratique) renvoie `null` et le
+ * calcul retombe sur le centre du quartier choisi.
+ */
+export function positionValide(p: unknown): Coord | null {
+  if (!p || typeof p !== 'object') return null;
+  const lat = Number((p as Record<string, unknown>).lat);
+  const lng = Number((p as Record<string, unknown>).lng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  const c = { lat: Math.round(lat * 1e5) / 1e5, lng: Math.round(lng * 1e5) / 1e5 };
+  return distanceKm(c, CENTRE_BAMAKO) <= RAYON_BAMAKO_KM ? c : null;
+}

@@ -215,7 +215,6 @@ export default function AdminDashboardPage() {
               { href: '/admin/analytics', label: 'Analyses', Icone: TrendingUp },
               { href: '/admin/reports/daily', label: 'Rapport du soir', Icone: BarChart3 },
               { href: '/admin/broadcast', label: 'Diffusion', Icone: Radio },
-              { href: '/admin/launch-checklist', label: 'Checklist', Icone: ShieldCheck },
             ].map(({ href, label, Icone }) => (
               <Link
                 key={href}

@@ -24,7 +24,9 @@ const adapter = {
     assert.match(table, /^[a-z_]+$/);
     let columns, field, value;
     return {
-      select(names) { columns = names; assert.match(columns, /^[a-z_, ]+$/); return this; },
+      // `*` accepté (2026-09-24) : la fiche produit est lue en entier pour
+      // prendre mode_prix / prix_conseille dès que la base les a.
+      select(names) { columns = names; assert.match(columns, /^(\*|[a-z_, ]+)$/); return this; },
       eq(name, v) { field = name; value = v; assert.match(field, /^[a-z_]+$/); return this; },
       async maybeSingle() {
         if (failTable === table) return { data: null, error: { code: 'TEST_FAILURE' } };

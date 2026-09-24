@@ -2,9 +2,9 @@
 
 import React from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { ShieldCheck, Globe, Handshake, FileText, Phone } from 'lucide-react';
+import LogoSuguba from '@/components/ui/LogoSuguba';
 
 const legalLinks = [
   { href: '/legal/terms',              label: 'Conditions générales' },
@@ -66,19 +66,9 @@ export default function Footer() {
 
           {/* Brand */}
           <div className="space-y-3">
-            <div className="flex items-center gap-2.5">
-              <div className="relative w-9 h-9 rounded-xl overflow-hidden shrink-0">
-                <Image 
-                  src="/images/logo.png" 
-                  alt="Logo Suguba" 
-                  fill 
-                  className="object-contain"
-                />
-              </div>
-              <div>
-                <span className="text-white font-bold text-lg tracking-tight">SUGUBA<span className="text-suguba-brand">.ML</span></span>
-                <p className="text-xs text-gray-500 font-semibold tracking-wider uppercase">Plateforme SaaS B2B2C Mali</p>
-              </div>
+            <div className="space-y-1.5">
+              <LogoSuguba clair className="h-9" />
+              <p className="text-xs text-gray-500 font-semibold tracking-wider uppercase">Plateforme SaaS B2B2C Mali</p>
             </div>
             <p className="text-xs text-gray-500 leading-relaxed max-w-xs">
               La plateforme de social commerce N°1 au Mali. Vendez sans stock via WhatsApp et TikTok. Commissions garanties par Mobile Money.

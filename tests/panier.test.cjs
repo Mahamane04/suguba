@@ -23,6 +23,17 @@ const adapter = {
     return {
       select(names) { columns = names; return this; },
       eq(name, v) { field = name; value = v; return this; },
+      // Lecture groupée des dépôts fournisseurs (src/lib/depot-fournisseur.ts,
+      // 2026-09-24) : `await admin.from(t).select('*').in(col, ids)`.
+      in(name, valeurs) {
+        const requete = async () => {
+          try {
+            const { rows } = await db.query(`SELECT ${columns} FROM public.${table} WHERE ${name} = ANY($1)`, [valeurs]);
+            return { data: rows, error: null };
+          } catch (error) { return { data: null, error }; }
+        };
+        return { then: (ok, ko) => requete().then(ok, ko) };
+      },
       async maybeSingle() {
         try {
           const { rows } = await db.query(`SELECT ${columns} FROM public.${table} WHERE ${field} = $1`, [value]);

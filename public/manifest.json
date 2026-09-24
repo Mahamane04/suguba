@@ -10,7 +10,10 @@
   "dir": "ltr",
   "background_color": "#ffffff",
   "theme_color": "#09b500",
-  "categories": ["shopping", "business"],
+  "categories": [
+    "shopping",
+    "business"
+  ],
   "icons": [
     {
       "src": "/icon-192.png",
@@ -25,7 +28,7 @@
       "purpose": "any"
     },
     {
-      "src": "/icon-512.png",
+      "src": "/icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"

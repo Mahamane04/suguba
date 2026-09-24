@@ -35,6 +35,9 @@ export async function GET(req: NextRequest) {
       client: o.customer_name, telephone: o.customer_phone, ville: o.city, quartier: o.neighborhood,
       revendeur: o.reseller_name || null, livreur: o.assigned_driver_name || null,
       panier: o.cart_id || null, lien: o.link_code || null, creeLe: o.created_at,
+      // Ramassage (2026-09-24) : l'admin peut donner le code pour le stock Suguba.
+      codeRamassage: ['confirmed', 'dispatched'].includes(o.status) && !o.picked_up_at ? o.pickup_code || null : null,
+      recupereeLe: o.picked_up_at || null,
     }));
   return NextResponse.json({ commandes, compteurs });
 }

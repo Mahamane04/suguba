@@ -178,15 +178,25 @@ export default function OrderTrackingPage() {
     },
     {
       id: 'step-3',
-      title: 'Livreur en Route',
-      desc: order.driverName ? `${order.driverName} (${order.driverPhone})` : 'Assignation en cours',
+      title: 'Livreur assigné',
+      desc: order.driverName ? `${order.driverName}${order.driverPhone ? ` (${order.driverPhone})` : ''}` : 'Assignation en cours',
+      done: ['dispatched', 'in_transit', 'delivered'].includes(order.status),
+      current: order.status === 'dispatched',
+    },
+    // Ramassage prouvé par le code du vendeur (2026-09-24).
+    {
+      id: 'step-ramassage',
+      title: 'Colis récupéré chez le vendeur',
+      desc: order.pickedUpAt
+        ? `Le ${new Date(order.pickedUpAt).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · en route vers vous`
+        : 'Le livreur récupère votre article',
       done: ['in_transit', 'delivered'].includes(order.status),
-      current: order.status === 'dispatched' || order.status === 'in_transit',
+      current: order.status === 'in_transit',
     },
     {
       id: 'step-4',
       title: 'Livré & Encaissé',
-      desc: order.deliveredAt ? 'Validation par Code OTP' : 'Remise physique du colis',
+      desc: order.deliveredAt ? 'Remis contre votre code secret' : 'Remise physique du colis',
       done: order.status === 'delivered',
       current: order.status === 'delivered',
     },

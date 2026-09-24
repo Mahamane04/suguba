@@ -14,8 +14,11 @@ import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface'
  */
 
 const STATUTS: [string, string, 'succes' | 'attente' | 'danger' | 'neutre' | 'info'][] = [
-  ['pending_call', 'À confirmer', 'attente'], ['confirmed', 'Confirmée', 'info'], ['assigned_driver', 'Livreur assigné', 'info'],
-  ['in_delivery', 'En livraison', 'info'], ['delivered', 'Livrée', 'succes'], ['cancelled', 'Annulée', 'danger'], ['returned', 'Retournée', 'neutre'],
+  // Noms réels des statuts en base (migration-order-status.sql) : les anciens
+  // 'assigned_driver' et 'in_delivery' ne correspondaient plus à rien, les
+  // deux filtres restaient toujours vides (corrigé le 2026-09-24).
+  ['pending_call', 'À confirmer', 'attente'], ['confirmed', 'Confirmée', 'info'], ['dispatched', 'Livreur en route', 'info'],
+  ['in_transit', 'Récupérée · en livraison', 'info'], ['delivered', 'Livrée', 'succes'], ['cancelled', 'Annulée', 'danger'], ['returned', 'Retournée', 'neutre'],
 ];
 const fcfa = (v: number) => `${Math.round(v).toLocaleString('fr-FR')} F`;
 
@@ -88,9 +91,18 @@ export default function CommandesAdminPage() {
                     {lignes.map((l) => {
                       const s = STATUTS.find(([v]) => v === l.statut);
                       return (
-                        <div key={l.id} className="py-1.5 flex items-center justify-between gap-2 text-xs">
-                          <span className="min-w-0 truncate text-slate-700"><strong className="text-slate-900">{l.numero}</strong> · {l.quantite} × {l.produit}</span>
-                          <StatusPill ton={s?.[2] || 'neutre'}>{s?.[1] || l.statut}</StatusPill>
+                        <div key={l.id}>
+                          <div className="py-1.5 flex items-center justify-between gap-2 text-xs">
+                            <span className="min-w-0 truncate text-slate-700"><strong className="text-slate-900">{l.numero}</strong> · {l.quantite} × {l.produit}</span>
+                            <StatusPill ton={s?.[2] || 'neutre'}>{s?.[1] || l.statut}</StatusPill>
+                          </div>
+                          {(l.codeRamassage || l.recupereeLe) && (
+                            <p className="pb-1.5 text-xs text-slate-500">
+                              {l.recupereeLe
+                                ? `Récupérée chez le fournisseur le ${new Date(l.recupereeLe).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}`
+                                : <>Code de ramassage : <strong className="text-slate-900 tabular-nums tracking-widest">{l.codeRamassage}</strong></>}
+                            </p>
+                          )}
                         </div>
                       );
                     })}

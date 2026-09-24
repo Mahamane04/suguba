@@ -12,6 +12,7 @@ import {
   ShieldCheck, ArrowLeft, Download, Printer,
   Share2, Sparkles, Award, CheckCircle2, User, Phone, MapPin, Copy, Check
 } from 'lucide-react';
+import LogoSuguba from '@/components/ui/LogoSuguba';
 
 export default function ResellerBadgePage() {
   const state = useSugubaStore();
@@ -99,13 +100,8 @@ export default function ResellerBadgePage() {
           {/* Top Header of the Badge */}
           <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-4">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-700 flex items-center justify-center font-bold text-xl text-white shadow-md border border-white/20 shrink-0">
-                S
-              </div>
-              <div className="min-w-0">
-                <span className="text-sm font-bold tracking-tight text-white block">
-                  SUGUBA<span className="text-emerald-400">.ML</span>
-                </span>
+              <div className="min-w-0 space-y-1">
+                <LogoSuguba clair className="h-7" />
                 <span className="text-xs block font-bold text-emerald-300 uppercase tracking-wider truncate">
                   Réseau officiel Mali
                 </span>

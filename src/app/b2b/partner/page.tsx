@@ -9,6 +9,7 @@ import {
   Building2, Users, Truck, ShieldCheck, Printer, 
   Share2, ArrowRight, CheckCircle2, Phone, Mail, MapPin, Sparkles, DollarSign
 } from 'lucide-react';
+import LogoSuguba from '@/components/ui/LogoSuguba';
 
 export default function B2BPartnerPitchPage() {
   const handlePrint = () => {
@@ -66,14 +67,7 @@ export default function B2BPartnerPitchPage() {
           {/* Header with Official Corporate Info */}
           <div className="flex flex-col sm:flex-row justify-between items-start border-b-2 border-slate-900 pb-6 gap-4">
             <div className="space-y-1">
-              <div className="flex items-center space-x-2">
-                <div className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-lg">
-                  S
-                </div>
-                <span className="text-2xl font-bold tracking-tight text-slate-900">
-                  SUGUBA<span className="text-emerald-600">.ML</span>
-                </span>
-              </div>
+              <LogoSuguba className="h-10" />
               <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
                 Plateforme B2B2C de Distribution & Social Commerce au Mali
               </p>

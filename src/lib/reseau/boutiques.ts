@@ -37,6 +37,12 @@ export interface BoutiqueReseau {
   quartier: string | null;
   /** Adresse publique quand ce n'est pas /boutique/<slug> (vitrine fournisseur historique /s/<slug>). */
   lien?: string;
+  /**
+   * Boutique principale du compte (2026-09-24). Les boutiques supplémentaires
+   * (formules Pro) ont leur propre sélection d'articles (store_products).
+   * Toujours vrai tant que la base n'a pas la colonne.
+   */
+  principale: boolean;
 }
 
 function versBoutique(r: any): BoutiqueReseau {
@@ -57,6 +63,7 @@ function versBoutique(r: any): BoutiqueReseau {
     abonnes: Number(r.followers_count) || 0,
     statut: r.status || 'active',
     quartier: r.neighborhood || null,
+    principale: r.principale !== false,
   };
 }
 
@@ -77,14 +84,19 @@ export async function boutiqueDuProprietaire(
 ): Promise<BoutiqueReseau | null> {
   const a = getSupabaseAdmin();
   if (!a) return null;
+  // Plusieurs boutiques possibles depuis le 2026-09-24 : on prend la
+  // principale (la plus ancienne si la colonne n'existe pas encore). Un
+  // maybeSingle() échouerait dès la deuxième boutique.
   const { data, error } = await a
     .from('stores')
     .select('*')
     .eq('owner_type', typeProprietaire)
     .eq('owner_id', proprietaireId)
-    .maybeSingle();
-  if (error || !data) return null;
-  return versBoutique(data);
+    .order('created_at', { ascending: true })
+    .limit(10);
+  if (error || !data || data.length === 0) return null;
+  const principale = data.find((b: any) => b.principale !== false) || data[0];
+  return versBoutique(principale);
 }
 
 /**

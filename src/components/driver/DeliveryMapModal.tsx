@@ -21,13 +21,16 @@ export default function DeliveryMapModal({ order, isOpen, onClose }: DeliveryMap
   const isRiveDroite = riveDroiteQuartiers.some(q => order.neighborhood.toLowerCase().includes(q.toLowerCase()));
   const zoneName = isRiveDroite ? 'Rive Droite (Communes V & VI)' : 'Rive Gauche (Communes I à IV - Centre & ACI)';
 
-  const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-    `${order.landmark} ${order.neighborhood} Bamako Mali`
-  )}`;
+  // Position GPS donnée par le client à la commande (2026-09-24) : guidage
+  // jusqu'à la porte. Sans elle, recherche par repère + quartier comme avant.
+  const pos = order.clientPosition;
+  const googleMapsUrl = pos
+    ? `https://www.google.com/maps/dir/?api=1&destination=${pos.lat},${pos.lng}`
+    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${order.landmark} ${order.neighborhood} Bamako Mali`)}`;
 
-  const wazeUrl = `https://waze.com/ul?q=${encodeURIComponent(
-    `${order.landmark} ${order.neighborhood} Bamako`
-  )}`;
+  const wazeUrl = pos
+    ? `https://waze.com/ul?ll=${pos.lat},${pos.lng}&navigate=yes`
+    : `https://waze.com/ul?q=${encodeURIComponent(`${order.landmark} ${order.neighborhood} Bamako`)}`;
 
   const customerWhatsappUrl = `https://api.whatsapp.com/send?phone=${order.customerPhone.replace(/\D/g, '')}&text=${encodeURIComponent(
     `Bonjour ${order.customerName}, je suis votre livreur partenaire Suguba 🛵.\n\nJe suis en route pour vous livrer votre colis #${order.orderNumber} (${order.productName}) au repère : ${order.landmark} (${order.neighborhood}).\n\n💰 Montant à préparer : ${order.totalAmount.toLocaleString('fr-FR')} FCFA\n🔑 Merci de préparer votre Code Secret OTP.`

@@ -55,10 +55,39 @@ export async function GET(req: NextRequest) {
   // Le code de livraison ne sort que pour l'admin : ni le livreur (qui le
   // fait saisir au client puis vérifier par le serveur) ni le revendeur
   // (qui n'a rien à voir avec la remise du colis) n'ont à le connaître.
+  // Point de retrait pour le livreur (2026-09-24) : le dépôt du fournisseur
+  // de chaque produit — il affichait seulement « Chez <nom> », sans adresse.
+  const retraits = new Map<string, Record<string, unknown>>();
+  if (session.role === 'driver' && data && data.length) {
+    const idsProduits = Array.from(new Set(data.map((o: any) => o.product_id).filter(Boolean)));
+    const { data: produits } = await admin.from('products').select('id, supplier_id').in('id', idsProduits);
+    const idsFournisseurs = Array.from(new Set((produits || []).map((p: any) => p.supplier_id).filter(Boolean)));
+    const { data: fournisseurs } = idsFournisseurs.length
+      ? await admin.from('suppliers').select('*').in('profile_id', idsFournisseurs)
+      : { data: [] as any[] };
+    const parFournisseur = new Map((fournisseurs || []).map((f: any) => [f.profile_id, f]));
+    for (const p of produits || []) {
+      const f: any = parFournisseur.get((p as any).supplier_id);
+      if (!f) continue;
+      retraits.set((p as any).id, {
+        nom: f.shop_display_name || f.company_name || null,
+        quartier: f.warehouse_neighborhood || null,
+        adresse: f.warehouse_address || null,
+        telephone: f.contact_phone || null,
+        lat: typeof f.warehouse_lat === 'number' ? f.warehouse_lat : null,
+        lng: typeof f.warehouse_lng === 'number' ? f.warehouse_lng : null,
+      });
+    }
+  }
+
   const orders = (data || []).map((o) => {
     if (session.role === 'admin') return o;
-    const { delivery_otp, ...sansOtp } = o;
-    return sansOtp;
+    // Le code de ramassage appartient au FOURNISSEUR : le livreur doit le lui
+    // demander, sinon il pourrait valider un ramassage qui n'a pas eu lieu.
+    const { delivery_otp, pickup_code, pricing_snapshot, ...sansCodes } = o;
+    if (session.role !== 'driver') return sansCodes;
+    const livraison = pricing_snapshot?.livraison || null;
+    return { ...sansCodes, pickup_location: retraits.get(o.product_id) || null, client_position: livraison?.position || null };
   });
 
   return NextResponse.json({ orders, cloud: true });

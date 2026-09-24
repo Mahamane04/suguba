@@ -344,7 +344,7 @@ const { cheminInterne } = require('../src/lib/apres-connexion.ts');
 
 test('le propriétaire a tous les droits, y compris gérer l’équipe', () => {
   const d = equipe.droitsDuRole('proprietaire');
-  for (const x of ['catalogue', 'boutique', 'revendeurs', 'sponsorisation', 'analyses', 'fiche', 'equipe']) assert.ok(d.includes(x), x);
+  for (const x of ['catalogue', 'boutique', 'revendeurs', 'sponsorisation', 'analyses', 'fiche', 'equipe', 'commandes']) assert.ok(d.includes(x), x);
 });
 
 test('aucun collaborateur ne peut gérer l’équipe ni la fiche officielle', () => {
@@ -356,7 +356,8 @@ test('aucun collaborateur ne peut gérer l’équipe ni la fiche officielle', ()
 });
 
 test('chaque métier n’a que ses droits', () => {
-  assert.deepEqual(equipe.droitsDuRole('stock'), ['catalogue'], 'le stock ne dépense pas en sponsorisation');
+  // Le stock prépare les colis : il voit les commandes et le code de ramassage (2026-09-24).
+  assert.deepEqual(equipe.droitsDuRole('stock'), ['catalogue', 'commandes'], 'le stock ne dépense pas en sponsorisation');
   assert.ok(!equipe.droitsDuRole('commercial').includes('catalogue'), 'le commercial ne touche pas aux prix');
   assert.ok(equipe.droitsDuRole('marketing').includes('sponsorisation'));
   assert.deepEqual(equipe.droitsDuRole('inconnu'), [], 'un rôle inventé n’a aucun droit');

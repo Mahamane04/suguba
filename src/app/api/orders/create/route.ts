@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { creerCommande, OrderCreationError } from '@/lib/order-create';
 import { normaliserCodeLien } from '@/lib/reseau/codes';
 import { apresCommande, corpsAvecReferent } from '@/lib/reseau/attribution-commande';
+import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
 
 export const runtime = 'nodejs';
 
@@ -32,7 +33,9 @@ export async function POST(req: NextRequest) {
   body = await corpsAvecReferent(body, codeCookie);
 
   try {
-    const result = await creerCommande(getSupabaseAdmin(), body, req.headers.get('Idempotency-Key'));
+    // Qui est connecté : un prix négocié n'est accepté que du revendeur lui-même.
+    const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
+    const result = await creerCommande(getSupabaseAdmin(), body, req.headers.get('Idempotency-Key'), session?.uid || null);
 
     if (result.created) await apresCommande(result.order, codeLien);
 

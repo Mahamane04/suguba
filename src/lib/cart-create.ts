@@ -5,6 +5,8 @@ import { completerReglages } from './pricing';
 import { calculerLignesPanier, normaliserPanier, type PanierInput } from './cart-input';
 import { genererNumeroCommande } from './order-number';
 import { OrderCreationError, recu } from './order-create';
+import { depotsFournisseurs } from './depot-fournisseur';
+import { prixEnregistres } from './prix-revendeur';
 
 /**
  * Création d'un panier multi-articles — SERVEUR.
@@ -64,7 +66,7 @@ export async function creerPanier(admin: SupabaseClient | null, value: unknown, 
   const produits: any[] = [];
   for (const ligne of input.lignes) {
     const { data, error } = await admin.from('products')
-      .select('id, name, images, supplier_price, public_price, status, commission_proposee, supplier_id')
+      .select('*')
       .eq('id', ligne.productId).maybeSingle();
     if (error) indisponible();
     if (!data || data.status !== 'approved' || Number(data.public_price) <= 0) {
@@ -76,12 +78,7 @@ export async function creerPanier(admin: SupabaseClient | null, value: unknown, 
     produits.push(data);
   }
 
-  const quartiers = new Map<string, string | undefined>();
-  for (const p of produits) {
-    if (!p.supplier_id || quartiers.has(p.supplier_id)) continue;
-    const { data } = await admin.from('suppliers').select('warehouse_neighborhood').eq('profile_id', p.supplier_id).maybeSingle();
-    quartiers.set(p.supplier_id, data?.warehouse_neighborhood || undefined);
-  }
+  const depots = await depotsFournisseurs(admin, produits.map((p) => p.supplier_id));
 
   let reseller: { id: string; full_name: string; reseller_code: string } | null = null;
   if (input.resellerCode) {
@@ -100,9 +97,11 @@ export async function creerPanier(admin: SupabaseClient | null, value: unknown, 
   const cartId = randomUUID();
   const now = new Date().toISOString();
   const otpParGroupe = new Map<string, string>();
-  const calcul = calculerLignesPanier(input.lignes, produits, quartiers, {
-    ville: input.city, quartierClient: input.neighborhood, pointRelaisId: input.pickupPointId,
+  const calcul = calculerLignesPanier(input.lignes, produits, depots, {
+    ville: input.city, quartierClient: input.neighborhood, positionClient: input.positionClient,
+    pointRelaisId: input.pickupPointId,
     codePromo: input.promoCode, revendeurAttribue: Boolean(reseller),
+    prixRevendeur: await prixEnregistres(admin, reseller?.id, produits.filter((p) => p.mode_prix === 'gros').map((p) => p.id)),
   }, reglages);
 
   const items = input.lignes.map((ligne, i) => {
@@ -126,6 +125,8 @@ export async function creerPanier(admin: SupabaseClient | null, value: unknown, 
       pricing_snapshot: {
         devis, reglagesDu: settings?.updated_at || null, calculeLe: now,
         panier: { cartId, position: i, groupeLivraison: groupe, livraisonPortee: porteLaLivraison },
+        // Position GPS du client pour le livreur (voir /api/orders/feed).
+        livraison: { position: input.positionClient || null },
       },
       customer_name: input.customerName, customer_phone: input.customerPhone,
       city: devis.ville, neighborhood: devis.pointRelais ? 'Point Relais Partenaire' : input.neighborhood,

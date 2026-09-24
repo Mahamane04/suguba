@@ -8,7 +8,7 @@ import { useClavierOuvert } from '@/lib/useClavierOuvert';
 import {
   Home, Grid3X3, ShoppingCart, Wallet, TrendingUp,
   PackagePlus, ShieldCheck, Truck, Store, Users,
-  BarChart3, LifeBuoy, LogIn, PackageSearch, Boxes
+  BarChart3, LifeBuoy, LogIn, PackageSearch, Boxes, ClipboardList
 } from 'lucide-react';
 
 type NavItem = { label: string; href: string; icon: React.ElementType };
@@ -38,8 +38,9 @@ function getNavItems(role: string | null): NavItem[] {
         // et du catalogue du fournisseur vit sur /supplier/inventory.
         { label: 'Stocks',      href: '/supplier/inventory',    icon: Boxes      },
         { label: 'Ajouter',     href: '/supplier/products/new', icon: PackagePlus},
-        // Anciennement /supplier/orders (inexistant).
-        { label: 'Réseau',      href: '/supplier/ambassadors',  icon: Users      },
+        // Commandes à préparer et code de ramassage (2026-09-24). Le réseau
+        // reste accessible depuis le tableau de bord.
+        { label: 'Commandes',   href: '/supplier/commandes',    icon: ClipboardList },
       ];
     case 'driver':
       return [

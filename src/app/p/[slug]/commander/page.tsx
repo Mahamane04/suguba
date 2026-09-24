@@ -99,6 +99,9 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
   const [pickupPointId, setPickupPointId] = useState('');
   const [city, setCity] = useState('Bamako');
   const [neighborhood, setNeighborhood] = useState('');
+  // Position GPS exacte (« Utiliser ma position actuelle »), 2026-09-24 :
+  // livraison calculée jusqu'à la porte et itinéraire précis pour le livreur.
+  const [positionClient, setPositionClient] = useState<{ lat: number; lng: number } | null>(null);
   const [landmark, setLandmark] = useState('');
   const [deliveryNotes, setDeliveryNotes] = useState('');
   const [promoOuvert, setPromoOuvert] = useState(Boolean(promoParam));
@@ -133,6 +136,7 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
     quantity,
     city,
     neighborhood,
+    positionClient: mode === 'pickup_point' ? null : positionClient,
     pickupPointId: mode === 'pickup_point' ? relais?.id : undefined,
     promoCode: promoSoumis || undefined,
     resellerCode: refCode || undefined,
@@ -213,6 +217,7 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
       resellerCode: refCode || undefined,
       pickupPointId: retrait?.id,
       promoCode: devis.codePromo || undefined,
+      positionClient: retrait ? undefined : positionClient || undefined,
     });
   };
 
@@ -391,7 +396,7 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
                   <ChoicePicker
                     id="champ-ville"
                     valeur={city}
-                    onChange={(v) => { setCity(v); setNeighborhood(''); }}
+                    onChange={(v) => { setCity(v); setNeighborhood(''); setPositionClient(null); }}
                     // Bamako en tête (livraison la plus demandée, prix au
                     // quartier) ; les autres villes : livraison en gare.
                     choix={Object.entries(villes)
@@ -412,6 +417,7 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
                       placeholder="Choisir votre quartier"
                       invalide={Boolean(afficher(erreurs.quartier))}
                       onChange={(q) => { setNeighborhood(q); definirQuartierClient(q); }}
+                      onPosition={setPositionClient}
                     />
                   ) : (
                     <Input
@@ -562,6 +568,7 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
                     {devis.distanceLivraisonKm !== null && (
                       <span className="ml-1.5 inline-flex items-center gap-0.5 text-xs text-slate-400">
                         <Navigation className="w-3 h-3" />~{devis.distanceLivraisonKm.toFixed(1)} km
+                        {devis.positionClientUtilisee ? ' depuis votre position' : ''}
                       </span>
                     )}
                   </dt>

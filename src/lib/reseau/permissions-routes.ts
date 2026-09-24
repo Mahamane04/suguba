@@ -54,6 +54,7 @@ export const ROUTES_CONTROLE_INTERNE = [
   '/api/admin/boutiques',
   '/api/admin/commandes',
   '/api/admin/boutique-suguba',
+  '/api/admin/diffusion',
   // Guide des parcours : administrateur général seulement
   // (sessionAdministrateurGeneral), plus strict qu'une permission d'équipe.
   '/api/admin/guide/capture/[id]',

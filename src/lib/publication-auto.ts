@@ -19,7 +19,7 @@
 import { getSupabaseAdmin } from './supabase-admin';
 import { annoncerNouveauProduit } from './reseau/notifications';
 import { chargerReglages } from './platform-settings';
-import { calculerTarif } from './pricing';
+import { calculerTarif, calculerTarifGros, prixConseilleGros } from './pricing';
 
 type ClientAdmin = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
 
@@ -34,7 +34,7 @@ export interface ResultatPublication {
 export async function publierAutomatiquement(admin: ClientAdmin, productId: string): Promise<ResultatPublication> {
   const { data: p } = await admin
     .from('products')
-    .select('id, status, supplier_price, images, commission_proposee')
+    .select('*')
     .eq('id', productId)
     .maybeSingle();
 
@@ -56,9 +56,16 @@ export async function publierAutomatiquement(admin: ClientAdmin, productId: stri
   // Prix recommandé : si le fournisseur a fixé la part du revendeur, prix
   // fournisseur + cette part + part Suguba (mode choisi par l'admin) ; sinon
   // calcul automatique. Ne dépend jamais du prix de vente actuel.
+  // Prix de gros (2026-09-24) : prix affiché = prix conseillé (celui du
+  // fournisseur s'il couvre le minimal) ; chaque revendeur fixe ensuite le sien.
+  const gros = p.mode_prix === 'gros';
   const partChoisie = Number(p.commission_proposee) || null;
-  const prix = calculerTarif(prixFournisseur, 0, reglages, partChoisie).prixRecommande;
-  const tarif = calculerTarif(prixFournisseur, prix, reglages, partChoisie);
+  const prix = gros
+    ? prixConseilleGros(prixFournisseur, reglages, p.prix_conseille)
+    : calculerTarif(prixFournisseur, 0, reglages, partChoisie).prixRecommande;
+  const tarif = gros
+    ? calculerTarifGros(prixFournisseur, prix, reglages)
+    : calculerTarif(prixFournisseur, prix, reglages, partChoisie);
   if (!(prix > 0) || tarif.statut === 'sous_plancher') {
     return { publie: false, raison: 'Aucun prix de vente rentable trouvé : un administrateur doit fixer le prix.' };
   }

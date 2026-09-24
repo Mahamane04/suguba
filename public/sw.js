@@ -20,8 +20,10 @@
  *
  * Changer VERSION supprime tous les anciens caches à l'activation — y compris
  * ceux de la v2 qui contenaient des réponses d'API.
+ *
+ * v4 (2026-09-24) : nouveau logo — les anciennes icônes préchargées sont purgées.
  */
-const VERSION = 'v3';
+const VERSION = 'v4';
 const CACHE_PAGES = `suguba-pages-${VERSION}`;
 const CACHE_STATIQUE = `suguba-statique-${VERSION}`;
 const CACHE_IMAGES = `suguba-images-${VERSION}`;

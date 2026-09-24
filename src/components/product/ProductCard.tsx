@@ -20,6 +20,8 @@ export interface ProduitCarte {
   images: string[];
   enStock?: boolean;
   commission?: number;
+  /** Article au prix de gros : le revendeur fixe son prix (2026-09-24). */
+  prixLibre?: boolean;
 }
 
 export function carteDepuisProduit(p: Product): ProduitCarte {
@@ -32,6 +34,7 @@ export function carteDepuisProduit(p: Product): ProduitCarte {
     images: p.images,
     enStock: p.stockQuantity > 0,
     commission: p.resellerCommission,
+    prixLibre: p.modePrix === 'gros',
   };
 }
 
@@ -141,7 +144,7 @@ export default function ProductCard({
         )}
         {afficherCommission && (produit.commission ?? 0) > 0 && (
           <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-suguba-citron text-suguba-profond text-xs font-bold shadow pointer-events-none">
-            +{produit.commission!.toLocaleString('fr-FR')} F
+            {produit.prixLibre ? 'Prix libre · ' : ''}+{produit.commission!.toLocaleString('fr-FR')} F
           </span>
         )}
       </div>

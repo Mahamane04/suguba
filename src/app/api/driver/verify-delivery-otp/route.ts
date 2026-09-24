@@ -56,6 +56,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Cette commande n\'est pas prête pour la livraison.' }, { status: 409 });
     }
 
+    // Ramassage d'abord (2026-09-24) : le code du client n'est accepté qu'une
+    // fois le colis récupéré chez le fournisseur avec SON code. Base pas
+    // encore mise à jour (colonne absente, 42703) : on ne bloque pas.
+    if (order.status === 'dispatched') {
+      const { data: ramassage, error: ramassageErr } = await admin
+        .from('orders').select('picked_up_at').eq('id', orderId).maybeSingle();
+      if (!ramassageErr && ramassage && !ramassage.picked_up_at) {
+        return NextResponse.json(
+          { error: 'Saisissez d’abord le code du fournisseur pour confirmer que vous avez récupéré le colis.' },
+          { status: 409 },
+        );
+      }
+    }
+
     const attempts = order.failed_otp_attempts || 0;
     if (attempts >= MAX_ATTEMPTS) {
       return NextResponse.json(

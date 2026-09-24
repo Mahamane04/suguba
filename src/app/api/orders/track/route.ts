@@ -109,6 +109,10 @@ export async function POST(req: NextRequest) {
       .select('customer_name, customer_phone, quantity, product_image, assigned_driver_name')
       .eq('order_number', numero)
       .maybeSingle();
+    // Heure du ramassage chez le vendeur (2026-09-24). Lue à part : si la base
+    // n'a pas encore la colonne, le reste du suivi s'affiche quand même.
+    const { data: ramassage } = await admin
+      .from('orders').select('picked_up_at').eq('order_number', numero).maybeSingle();
 
     return NextResponse.json({
       success: true,
@@ -129,6 +133,7 @@ export async function POST(req: NextRequest) {
         deliveryOtp: commande.delivery_otp,
         createdAt: commande.created_at,
         deliveredAt: commande.delivered_at,
+        pickedUpAt: ramassage?.picked_up_at || undefined,
       },
     });
   } catch (error: any) {

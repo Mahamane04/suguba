@@ -9,6 +9,7 @@ import {
 } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { chargerRoles } from '@/lib/profile-roles';
+import { attribuerSlugFournisseur } from '@/lib/shop';
 
 /**
  * Demande d'un rôle supplémentaire sur un compte existant.
@@ -32,7 +33,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { role } = await req.json().catch(() => ({}));
+    const { role, fiche } = await req.json().catch(() => ({}));
     if (!ROLES_DEMANDABLES.includes(role)) {
       return NextResponse.json({ error: 'Rôle non disponible à la demande.' }, { status: 400 });
     }
@@ -50,26 +51,67 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Base indisponible.' }, { status: 503 });
     }
 
+    // Fiche métier du nouveau profil (2026-09-24, page « Mes profils ») :
+    // sans elle, un revendeur devenu fournisseur arrivait dans un espace
+    // fournisseur vide, sans nom de boutique ni quartier de dépôt.
+    const f = (fiche && typeof fiche === 'object' ? fiche : {}) as Record<string, unknown>;
+    const texte = (v: unknown, max = 120) => (typeof v === 'string' && v.trim() ? v.trim().slice(0, max) : null);
+    if (role === 'supplier' && !texte(f.companyName)) {
+      return NextResponse.json({ error: 'Indiquez le nom de votre entreprise ou boutique.' }, { status: 400 });
+    }
+
     const { error } = await admin.from('profile_roles').insert({
       profile_id: session.uid,
       role,
       status: 'active',
+      approved_at: new Date().toISOString(),
     });
     if (error) {
       console.error('[ROLES] Ajout impossible:', error);
       return NextResponse.json({ error: 'Impossible d\'ajouter ce rôle.' }, { status: 500 });
     }
 
+    const { data: profil } = await admin.from('profiles')
+      .select('full_name, phone, reseller_code').eq('id', session.uid).maybeSingle();
+    if (role === 'reseller' && profil && !profil.reseller_code) {
+      await admin.from('profiles')
+        .update({ reseller_code: `SG-${session.uid.replace(/-/g, '').slice(0, 6).toUpperCase()}` })
+        .eq('id', session.uid);
+    }
+    if (role === 'supplier') {
+      const nom = texte(f.companyName) as string;
+      const { error: ficheErr } = await admin.from('suppliers').upsert({
+        profile_id: session.uid,
+        company_name: nom,
+        manager_name: profil?.full_name || null,
+        contact_phone: profil?.phone || null,
+        warehouse_address: texte(f.warehouseAddress, 200),
+        warehouse_neighborhood: texte(f.warehouseNeighborhood, 80),
+        category: texte(f.category, 80),
+      });
+      if (ficheErr) console.error('[ROLES] Fiche fournisseur non écrite:', ficheErr.message);
+      else await attribuerSlugFournisseur(admin, session.uid, nom);
+    }
+    if (role === 'driver') {
+      const { error: ficheErr } = await admin.from('drivers').upsert({
+        profile_id: session.uid,
+        vehicle_type: texte(f.vehicleType, 40),
+        license_plate: texte(f.licensePlate, 20),
+        zone: texte(f.zone, 80),
+      });
+      if (ficheErr) console.error('[ROLES] Fiche livreur non écrite:', ficheErr.message);
+    }
+
     // La session doit refléter le nouveau rôle immédiatement, sinon
     // l'utilisateur devrait se déconnecter pour le voir apparaître. Le rôle
-    // ACTIF ne change pas : le nouveau rôle n'est pas encore validé, et
-    // basculer dessus mènerait droit sur /pending-approval.
-    const carte = await chargerRoles(session.uid, session.role, session.status);
+    // naît actif : on bascule directement dessus, pour que la
+    // personne arrive dans son nouvel espace sans se reconnecter.
+    const carte = await chargerRoles(session.uid, role, 'active');
     const token = await createSessionToken({
       uid: session.uid,
       phone: session.phone,
-      role: session.role,
-      status: session.status,
+      role,
+      status: 'active',
       roles: carte,
     });
 

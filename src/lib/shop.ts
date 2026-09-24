@@ -9,6 +9,7 @@
  * Ne jamais importer ce fichier depuis un composant 'use client'.
  */
 import { getSupabaseAdmin } from './supabase-admin';
+import { prixEnregistres } from './prix-revendeur';
 
 type ClientAdmin = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
 
@@ -250,7 +251,14 @@ export async function chargerBoutiqueRevendeur(codeBrut: string): Promise<Boutiq
     produits = (data || []).filter(partageable);
   }
 
-  const liste = produits.map(versVitrine);
+  // Prix de gros (2026-09-24) : le prix choisi par CE revendeur remplace le
+  // prix conseillé. Seuls les articles au prix de gros peuvent en avoir un
+  // (voir /api/reseller/prix), les autres gardent leur prix fixe.
+  const sesPrix = await prixEnregistres(admin, profil.id, produits.map((p) => p.id));
+  const liste = produits.map((p) => {
+    const v = versVitrine(p);
+    return sesPrix.has(p.id) ? { ...v, prix: sesPrix.get(p.id) as number } : v;
+  });
   return {
     type: 'revendeur',
     nom: nomPublic(profil.full_name),
@@ -305,4 +313,26 @@ export async function chargerProduitsSuguba(): Promise<ProduitVitrine[]> {
     .order('created_at', { ascending: false })
     .limit(96);
   return (data || []).map(versVitrine);
+}
+
+/**
+ * Articles d'une boutique SUPPLÉMENTAIRE (2026-09-24, formules Pro) : sa
+ * propre sélection (store_products), dans l'ordre choisi. Pour un revendeur,
+ * ses prix enregistrés remplacent le prix conseillé des articles au prix de gros.
+ */
+export async function chargerProduitsDeLaBoutique(storeId: string, revendeurId?: string | null): Promise<ProduitVitrine[]> {
+  const admin = getSupabaseAdmin();
+  if (!admin) return [];
+  const { data: selection, error } = await admin.from('store_products')
+    .select('product_id, position').eq('store_id', storeId).order('position', { ascending: true });
+  if (error || !selection?.length) return [];
+  const ids = selection.map((s: any) => s.product_id);
+  const { data } = await admin.from('products').select(CHAMPS_PRODUIT).in('id', ids).eq('status', 'approved');
+  const ordre = new Map(ids.map((id: string, i: number) => [id, i]));
+  const produits = (data || []).sort((a: any, b: any) => (ordre.get(a.id) ?? 0) - (ordre.get(b.id) ?? 0));
+  const sesPrix = revendeurId ? await prixEnregistres(admin, revendeurId, produits.map((p: any) => p.id)) : new Map<string, number>();
+  return produits.map((p: any) => {
+    const v = versVitrine(p);
+    return sesPrix.has(p.id) ? { ...v, prix: sesPrix.get(p.id) as number } : v;
+  });
 }

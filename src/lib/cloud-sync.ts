@@ -100,6 +100,8 @@ class CloudSyncService {
           publicPrice: Number(p.public_price || 0),
           resellerCommission: Number(p.reseller_commission || 0),
           resellerCommissionProposee: Number(p.commission_proposee) || 0,
+          modePrix: p.mode_prix === 'gros' ? 'gros' : 'fixe',
+          prixConseille: p.prix_conseille == null ? null : Number(p.prix_conseille),
           sugubaMargin: Math.max(0, Number(p.public_price || 0) - Number(p.supplier_price || 0) - Number(p.reseller_commission || 0)),
           stockQuantity: Number(p.stock || 10),
           warrantyMonths: 0, // Aucune colonne garantie en base : ne jamais en afficher une inventée.
@@ -177,6 +179,9 @@ class CloudSyncService {
           driverName: o.assigned_driver_name,
           createdAt: o.created_at || new Date().toISOString(),
           deliveredAt: o.delivered_at,
+          pickedUpAt: o.picked_up_at || undefined,
+          pickupLocation: o.pickup_location || null,
+          clientPosition: o.client_position || null,
         }));
 
         sugubaStore.setOrdersFromCloud(cloudOrders);
@@ -363,6 +368,8 @@ class CloudSyncService {
       publicPrice: Number(cloudProduct.public_price || 0),
       resellerCommission: Number(cloudProduct.reseller_commission || 0),
       resellerCommissionProposee: Number(cloudProduct.commission_proposee) || 0,
+      modePrix: cloudProduct.mode_prix === 'gros' ? 'gros' : 'fixe',
+      prixConseille: cloudProduct.prix_conseille == null ? null : Number(cloudProduct.prix_conseille),
       sugubaMargin: Math.max(0, Number(cloudProduct.public_price || 0) - Number(cloudProduct.supplier_price || 0) - Number(cloudProduct.reseller_commission || 0)),
       stockQuantity: Number(cloudProduct.stock || 10),
       warrantyMonths: 0, // Aucune colonne garantie en base : ne jamais en afficher une inventée.

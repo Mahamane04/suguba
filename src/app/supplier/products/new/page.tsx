@@ -49,22 +49,36 @@ export default function NewSupplierProductPage() {
   // client en découle, calculé par le SERVEUR (/api/products/apercu-prix) : la
   // structure de coûts de Suguba ne part pas dans le navigateur.
   const [partRevendeur, setPartRevendeur] = useState<number>(3000);
+  // Vente au prix de gros (2026-09-24) : le revendeur fixe son propre prix
+  // (jamais sous le minimal) et peut négocier avec son client.
+  const [modePrix, setModePrix] = useState<'fixe' | 'gros'>('fixe');
+  const [prixConseille, setPrixConseille] = useState<number>(0);
+  const [apercuGros, setApercuGros] = useState<{
+    prixMinimal: number; prixConseille: number; conseilFournisseurRetenu: boolean;
+    gainRevendeurAuConseil: number; modeGain?: string; taux?: number; montantFixe?: number;
+  } | null>(null);
   const [apercu, setApercu] = useState<{
     prixVente: number; commission: number; partChoisieUtilisee: boolean; mode: string;
     releveAuPlancher?: boolean; commissionFaible?: boolean; commissionMinimale: number;
     commissionBrute?: number; prelevementSuguba?: number; tauxPrelevement?: number; partSuguba?: number;
   } | null>(null);
   useEffect(() => {
-    if (!(supplierPrice > 0)) { setApercu(null); return; }
+    if (!(supplierPrice > 0)) { setApercu(null); setApercuGros(null); return; }
     const controle = new AbortController();
     const minuteur = setTimeout(() => {
-      fetch(`/api/products/apercu-prix?prixFournisseur=${supplierPrice}&partRevendeur=${partRevendeur || 0}`, { signal: controle.signal })
+      const url = modePrix === 'gros'
+        ? `/api/products/apercu-prix?prixFournisseur=${supplierPrice}&modePrix=gros&prixConseille=${prixConseille || 0}`
+        : `/api/products/apercu-prix?prixFournisseur=${supplierPrice}&partRevendeur=${partRevendeur || 0}`;
+      fetch(url, { signal: controle.signal })
         .then((r) => (r.ok ? r.json() : null))
-        .then((j) => setApercu(j && typeof j.prixVente === 'number' ? j : null))
+        .then((j) => {
+          if (modePrix === 'gros') setApercuGros(j && j.mode === 'gros' ? j : null);
+          else setApercu(j && typeof j.prixVente === 'number' ? j : null);
+        })
         .catch(() => {});
     }, 350);
     return () => { clearTimeout(minuteur); controle.abort(); };
-  }, [supplierPrice, partRevendeur]);
+  }, [supplierPrice, partRevendeur, modePrix, prixConseille]);
   const fmt = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -90,7 +104,9 @@ export default function NewSupplierProductPage() {
       description,
       images,
       supplierPrice: Number(supplierPrice),
-      resellerCommissionProposee: Number(partRevendeur) || 0,
+      resellerCommissionProposee: modePrix === 'gros' ? 0 : Number(partRevendeur) || 0,
+      modePrix,
+      prixConseille: modePrix === 'gros' ? Number(prixConseille) || null : null,
       stockQuantity: Number(stockQuantity),
     });
 
@@ -239,11 +255,31 @@ export default function NewSupplierProductPage() {
               <PhotosUploader value={images} onChange={setImages} onUploadingChange={setIsUploadingImage} />
             </div>
 
+            {/* Comment le revendeur vend cet article (2026-09-24) */}
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-slate-700">Comment les revendeurs vendent cet article ?</p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2" role="radiogroup" aria-label="Mode de prix">
+                {([
+                  ['fixe', 'Prix fixe + part revendeur', 'Vous fixez votre prix et ce que vous laissez au revendeur. Le prix client est calculé.'],
+                  ['gros', 'Prix de gros', 'Vous donnez votre prix de gros. Le revendeur vend au prix qu’il veut et peut négocier avec son client.'],
+                ] as const).map(([valeur, titre, detail]) => {
+                  const actif = modePrix === valeur;
+                  return (
+                    <button key={valeur} type="button" role="radio" aria-checked={actif} onClick={() => setModePrix(valeur)}
+                      className={`text-left p-3 rounded-2xl border ${actif ? 'border-suguba-profond bg-suguba-menthe ring-1 ring-suguba-profond' : 'border-slate-200 bg-white'}`}>
+                      <span className="block text-sm font-semibold text-slate-900">{titre}</span>
+                      <span className="block text-xs text-slate-600 mt-0.5">{detail}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {/* Prix Fournisseur & Stock */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Prix Fournisseur Plancher Garanti (FCFA) *
+                  {modePrix === 'gros' ? 'Prix de gros (FCFA) *' : 'Prix Fournisseur Plancher Garanti (FCFA) *'}
                 </label>
                 <input
                   type="number"
@@ -276,8 +312,43 @@ export default function NewSupplierProductPage() {
               </div>
             </div>
 
+            {/* Prix de gros : prix conseillé facultatif + bornes calculées par le serveur */}
+            {modePrix === 'gros' && (
+              <div className="rounded-2xl border border-slate-200 p-4 space-y-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Prix conseillé au client (facultatif)
+                  </label>
+                  <input
+                    type="number" min={0} step={500} placeholder="Ex : 35000"
+                    value={prixConseille || ''}
+                    onChange={(e) => setPrixConseille(parseInt(e.target.value) || 0)}
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:bg-white"
+                  />
+                  <span className="text-xs text-slate-500 mt-1 block">
+                    Affiché aux clients qui achètent sans revendeur, et proposé aux revendeurs. Sans prix, Suguba en calcule un.
+                  </span>
+                </div>
+                {apercuGros && (
+                  <div className="bg-slate-50 rounded-xl p-3 text-xs space-y-1.5">
+                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500 pb-0.5">Sur chaque vente</p>
+                    <div className="flex justify-between"><span className="text-slate-600">Vous touchez toujours</span><strong className="text-slate-900">{fmt(supplierPrice)}</strong></div>
+                    <div className="flex justify-between"><span className="text-slate-600">Prix minimal de revente</span><strong className="text-slate-900">{fmt(apercuGros.prixMinimal)}</strong></div>
+                    <div className="flex justify-between"><span className="text-slate-600">Prix conseillé</span><strong className="text-slate-900 text-sm">{fmt(apercuGros.prixConseille)}</strong></div>
+                    <div className="flex justify-between"><span className="text-slate-600">Le revendeur gagne (au prix conseillé)</span><strong className="text-suguba-brand-dark">{fmt(apercuGros.gainRevendeurAuConseil)}</strong></div>
+                    {prixConseille > 0 && !apercuGros.conseilFournisseurRetenu && (
+                      <p className="text-xs text-amber-700 pt-1">Votre prix conseillé ne couvre pas la livraison et les frais : il a été relevé.</p>
+                    )}
+                    <p className="text-xs text-slate-500 pt-1">
+                      Le revendeur peut vendre plus cher (il gagne plus), jamais moins que le prix minimal. Vous touchez votre prix de gros dans tous les cas.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Part revendeur fixée par le fournisseur + aperçu du prix client */}
-            <div className="rounded-2xl border border-slate-200 p-4 space-y-3">
+            <div className={`rounded-2xl border border-slate-200 p-4 space-y-3 ${modePrix === 'gros' ? 'hidden' : ''}`}>
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
                   Part du revendeur par vente (FCFA)

@@ -6,7 +6,13 @@ import {
 } from 'lucide-react';
 import {
   calculerTarif,
+  calculerTarifGros,
   coutCourseRefusee,
+  prixConseilleGros,
+  prixMinimalGros,
+  tarifProduit,
+  type ModeGainGros,
+  type ReglagesPrixDeGros,
   coutFixeParCommande,
   prixDepuisPartRevendeur,
   totalCoutsFixes,
@@ -26,7 +32,16 @@ interface ProduitEnLigne {
   public_price: number;
   reseller_commission: number | null;
   commission_proposee: number | null;
+  mode_prix?: string | null;
+  prix_conseille?: number | null;
 }
+
+const MODES_GROS: [ModeGainGros, string, string][] = [
+  ['marge_revendeur', '% de la marge du revendeur', 'Le revendeur vend au prix qu’il veut ; Suguba garde un % de ce qu’il gagne.'],
+  ['ajout_prix_gros', '% ajouté au prix de gros', 'Le revendeur achète au prix de gros + ce % ; tout ce qu’il vend au-dessus est pour lui.'],
+  ['montant_fixe', 'Montant fixe par article', 'Suguba prend la même somme sur chaque article vendu.'],
+  ['aucun', 'Aucun gain (lancement)', 'Suguba ne prend rien au-delà de ses coûts couverts.'],
+];
 
 const MODES: [ModePartSuguba, string, string][] = [
   ['prelevement_revendeur', 'Prélevé sur le revendeur', 'Le client paie prix fournisseur + part revendeur. Suguba garde un % de la part revendeur (ex. 1 % au lancement).'],
@@ -38,6 +53,8 @@ const MODES: [ModePartSuguba, string, string][] = [
 const SECTIONS = [
   ['modele', 'Rémunération'],
   ['impact', 'Vos produits'],
+  ['gros', 'Prix de gros'],
+  ['formules', 'Formules'],
   ['couts', 'Coûts'],
   ['livraison', 'Livraison'],
   ['promo', 'Codes promo'],
@@ -123,10 +140,13 @@ export default function EconomicSettingsPanel() {
     return produits.map((p) => {
       const pf = Number(p.supplier_price) || 0;
       const pv = Number(p.public_price) || 0;
-      const t = calculerTarif(pf, pv, r, p.commission_proposee);
-      const conseille = r.modePartSuguba !== 'auto' && Number(p.commission_proposee) > 0
-        ? prixDepuisPartRevendeur(pf, Number(p.commission_proposee), r).prixVente
-        : t.prixRecommande;
+      const gros = p.mode_prix === 'gros';
+      const t = tarifProduit({ prixFournisseur: pf, prixVente: pv, commissionProposee: p.commission_proposee, modePrix: gros ? 'gros' : 'fixe' }, r);
+      const conseille = gros
+        ? prixConseilleGros(pf, r, p.prix_conseille)
+        : r.modePartSuguba !== 'auto' && Number(p.commission_proposee) > 0
+          ? prixDepuisPartRevendeur(pf, Number(p.commission_proposee), r).prixVente
+          : t.prixRecommande;
       return { p, t, avant: Number(p.reseller_commission) || 0, conseille };
     });
   }, [r, produits]);
@@ -164,7 +184,10 @@ export default function EconomicSettingsPanel() {
       setAlertes(json.alertes || []);
       // Les commissions affichées « avant » deviennent celles qu'on vient d'écrire.
       setProduits((liste) => liste.map((p) => {
-        const t = calculerTarif(Number(p.supplier_price), Number(p.public_price), r, p.commission_proposee);
+        const t = tarifProduit({
+          prixFournisseur: Number(p.supplier_price), prixVente: Number(p.public_price),
+          commissionProposee: p.commission_proposee, modePrix: p.mode_prix === 'gros' ? 'gros' : 'fixe',
+        }, r);
         return { ...p, reseller_commission: t.commission };
       }));
       setMessage(`Réglages enregistrés. Commission recalculée sur ${json.recalcules} produit(s) en ligne.`);
@@ -275,7 +298,10 @@ export default function EconomicSettingsPanel() {
                     {impact.map(({ p, t, avant, conseille }) => (
                       <li key={p.id} className="p-3 space-y-1">
                         <div className="flex items-start justify-between gap-2">
-                          <p className="text-sm font-semibold text-slate-900 min-w-0 truncate">{p.name}</p>
+                          <p className="text-sm font-semibold text-slate-900 min-w-0 truncate">
+                            {p.name}
+                            {p.mode_prix === 'gros' && <span className="ml-1.5 align-middle rounded-full bg-suguba-citron text-suguba-profond text-xs font-semibold px-2 py-0.5">Prix de gros</span>}
+                          </p>
                           <PastilleStatut statut={t.statut} />
                         </div>
                         <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-slate-600 [&>span]:whitespace-nowrap">
@@ -299,6 +325,44 @@ export default function EconomicSettingsPanel() {
                   </ul>
                 </>
               )}
+            </div>
+          </Section>
+
+          {/* ── Prix de gros ──────────────────────────────────────────── */}
+          <Section id="gros" titre="Articles au prix de gros"
+            aide="Le fournisseur donne son prix de gros, le revendeur vend au prix qu’il veut (jamais sous le minimal). Choisissez comment Suguba se rémunère sur ces ventes : vous pouvez changer à tout moment.">
+            <PrixDeGrosReglages g={r.prixDeGros as ReglagesPrixDeGros} r={r} onChange={(g) => maj('prixDeGros', g)} />
+          </Section>
+
+          {/* ── Formules boutiques ─────────────────────────────────────── */}
+          <Section id="formules" titre="Formules boutiques"
+            aide="Combien de boutiques un revendeur ou un fournisseur peut ouvrir. La formule à 0 F est la version gratuite. Les demandes Pro s’activent dans Back-office › Boutiques.">
+            <div className="sm:col-span-2 space-y-2">
+              {(r.formulesBoutiques || []).map((f, i) => (
+                <div key={f.id} className="flex gap-2 items-end">
+                  <label className="flex-1 min-w-0 text-xs font-semibold text-slate-700">Nom
+                    <input value={f.nom} aria-label="Nom de la formule" onChange={(e) => {
+                      const l = [...(r.formulesBoutiques || [])]; l[i] = { ...l[i], nom: e.target.value }; maj('formulesBoutiques', l);
+                    }} className={`${CHAMP} w-full mt-1`} />
+                  </label>
+                  <label className="w-28 shrink-0 text-xs font-semibold text-slate-700">F / mois
+                    <Montant large valeur={f.prixMensuel} libelle={`Prix de ${f.nom}`} onChange={(v) => {
+                      const l = [...(r.formulesBoutiques || [])]; l[i] = { ...l[i], prixMensuel: v }; maj('formulesBoutiques', l);
+                    }} />
+                  </label>
+                  <label className="w-20 shrink-0 text-xs font-semibold text-slate-700">Boutiques
+                    <Montant large valeur={f.boutiques} libelle={`Boutiques de ${f.nom}`} onChange={(v) => {
+                      const l = [...(r.formulesBoutiques || [])]; l[i] = { ...l[i], boutiques: Math.max(1, Math.round(v)) }; maj('formulesBoutiques', l);
+                    }} />
+                  </label>
+                  {f.prixMensuel > 0 && (
+                    <BoutonSupprimer libelle={`Supprimer ${f.nom}`} onClick={() => maj('formulesBoutiques', (r.formulesBoutiques || []).filter((_, j) => j !== i))} />
+                  )}
+                </div>
+              ))}
+              <BoutonAjouter onClick={() => maj('formulesBoutiques', [...(r.formulesBoutiques || []), { id: `formule_${Date.now().toString(36)}`, nom: 'Nouvelle formule', prixMensuel: 10000, boutiques: 10 }])}>
+                Ajouter une formule
+              </BoutonAjouter>
             </div>
           </Section>
 
@@ -676,6 +740,53 @@ function OuVaLArgent({ r, exemple, setExemple }: {
         <p className="text-xs text-amber-800">Part revendeur sous le minimum ({enF(r.commissionMinimale)}) : ce produit ne serait pas proposé au partage.</p>
       )}
     </div>
+  );
+}
+
+// ─────────────────────────── Prix de gros ───────────────────────────
+
+function PrixDeGrosReglages({ g, r, onChange }: { g: ReglagesPrixDeGros; r: ReglagesPlateforme; onChange: (g: ReglagesPrixDeGros) => void }) {
+  const [gros, setGros] = useState(20000);
+  const conseille = prixConseilleGros(gros, r);
+  const minimal = prixMinimalGros(gros, r);
+  const t = calculerTarifGros(gros, conseille, r);
+  return (
+    <>
+      <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-2" role="radiogroup" aria-label="Gain de Suguba sur le prix de gros">
+        {MODES_GROS.map(([cle, titre, detail]) => {
+          const actif = g.modeGain === cle;
+          return (
+            <button key={cle} type="button" role="radio" aria-checked={actif} onClick={() => onChange({ ...g, modeGain: cle })}
+              className={`text-left p-3 rounded-2xl border transition-colors ${actif ? 'border-suguba-profond bg-suguba-menthe ring-1 ring-suguba-profond' : 'border-slate-200 hover:bg-suguba-sauge'}`}>
+              <p className="text-sm font-semibold text-slate-900">{titre}</p>
+              <p className="text-xs text-slate-600 mt-0.5">{detail}</p>
+            </button>
+          );
+        })}
+      </div>
+      {(g.modeGain === 'marge_revendeur' || g.modeGain === 'ajout_prix_gros') && (
+        <Num l={g.modeGain === 'marge_revendeur' ? 'Part Suguba (% de la marge du revendeur)' : 'Ajout Suguba (% du prix de gros)'}
+          suffixe="%" v={g.taux} on={(v) => onChange({ ...g, taux: v })} />
+      )}
+      {g.modeGain === 'montant_fixe' && (
+        <Num l="Montant Suguba par article" suffixe="F" v={g.montantFixe} on={(v) => onChange({ ...g, montantFixe: v })} />
+      )}
+      <Num l="Prix conseillé (si le fournisseur n’en donne pas)" suffixe="% de marge revendeur" v={g.margeConseilleePct}
+        on={(v) => onChange({ ...g, margeConseilleePct: v })} />
+      <div className="sm:col-span-2 rounded-2xl bg-suguba-sauge p-3 space-y-2">
+        <label className="flex items-center gap-2 text-xs font-semibold text-slate-700">
+          Exemple : prix de gros
+          <span className="w-32"><Montant valeur={gros} libelle="Prix de gros de l'exemple" onChange={setGros} /></span>
+        </label>
+        <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-slate-600 [&>span]:whitespace-nowrap">
+          <span>Prix minimal <strong className="text-slate-900">{enF(minimal)}</strong></span>
+          <span>Prix conseillé <strong className="text-slate-900">{enF(conseille)}</strong></span>
+          <span>Revendeur gagne <strong className="text-slate-900">{enF(t.commission)}</strong></span>
+          <span>Suguba (net) <strong className={t.margeNetteSuguba < 0 ? 'text-rose-700' : 'text-slate-900'}>{enF(t.margeNetteSuguba)}</strong></span>
+        </div>
+        <p className="text-xs text-slate-500">Au prix conseillé. Le revendeur peut vendre plus cher (il gagne plus) mais jamais sous le prix minimal.</p>
+      </div>
+    </>
   );
 }
 

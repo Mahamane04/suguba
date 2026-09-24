@@ -77,7 +77,6 @@ const DOMAINES: Domaine[] = [
     entrees: [
       { libelle: 'Équipe et permissions', href: '/admin/equipe', icone: UserCog, aide: 'Qui a le droit de faire quoi' },
       { libelle: 'Paramètres et commissions', href: '/admin#reglages', icone: Settings, aide: 'Frais, commissions, livraison, points relais' },
-      { libelle: 'Checklist de lancement', href: '/admin/launch-checklist', icone: ShieldCheck, aide: 'Ce qui reste à faire avant d’ouvrir' },
     ],
   },
 ];

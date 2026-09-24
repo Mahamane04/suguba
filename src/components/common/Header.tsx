@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import { UserRole } from '@/types';
 import { sugubaStore, useSugubaStore } from '@/lib/store';
@@ -10,8 +9,9 @@ import ClocheNotifications from '@/components/reseau/ClocheNotifications';
 import IconePanier from '@/components/panier/IconePanier';
 import {
   ShoppingBag, Shield, Truck, Store, UserCheck,
-  ChevronDown, LogOut, Menu, X, Globe, LogIn, Search
+  ChevronDown, LogOut, Menu, X, Globe, LogIn, Search, Users
 } from 'lucide-react';
+import LogoSuguba from '@/components/ui/LogoSuguba';
 
 const roleConfig: Record<UserRole, { label: string; icon: React.ElementType; path: string }> = {
   reseller: { label: 'Revendeur', icon: Store, path: '/reseller' },
@@ -105,10 +105,7 @@ export default function Header() {
 
           {/* Logo — c'est le libellé qui cède (min-w-0), jamais les commandes. */}
           <Link href="/" className="flex items-center gap-2.5 min-w-0">
-            <div className="relative w-9 h-9 rounded-xl overflow-hidden shrink-0">
-              <Image src="/images/logo.png" alt="Logo Suguba" fill className="object-contain" priority />
-            </div>
-            <span className="text-lg font-bold tracking-tight text-slate-900 whitespace-nowrap">SUGUBA</span>
+            <LogoSuguba className="h-8" />
           </Link>
 
           <nav className="hidden md:flex items-center gap-1 text-sm ml-4">
@@ -168,6 +165,11 @@ export default function Header() {
                       {IconeRole && <IconeRole className="w-4 h-4 text-slate-400" />}
                       Mon espace
                     </Link>
+                    <Link href="/compte/profils" onClick={() => setMenuCompte(false)} role="menuitem"
+                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-slate-700 hover:bg-slate-50">
+                      <Users className="w-4 h-4 text-slate-400" />
+                      Mes profils
+                    </Link>
                     <button onClick={seDeconnecter} role="menuitem"
                       className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-left text-sm text-slate-700 hover:bg-slate-50">
                       <LogOut className="w-4 h-4 text-slate-400" />
@@ -209,6 +211,11 @@ export default function Header() {
                 className="flex items-center gap-3 px-3 py-3 rounded-xl bg-slate-100 text-slate-900 font-semibold">
                 <IconeRole className="w-4 h-4" />
                 Mon espace
+              </Link>
+              <Link href="/compte/profils" onClick={() => setMenuMobile(false)}
+                className="flex items-center gap-3 px-3 py-3 rounded-xl text-slate-700 hover:bg-slate-50">
+                <Users className="w-4 h-4" />
+                Mes profils · ajouter une activité
               </Link>
               <button onClick={seDeconnecter}
                 className="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-slate-700 hover:bg-slate-50">

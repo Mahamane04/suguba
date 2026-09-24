@@ -54,8 +54,14 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
   // code d'un revendeur fictif, ou aucun — et le vrai revendeur perdait sa
   // commission.
   const codeRevendeur = useCodeRevendeur();
-  const { devis, loading: devisEnCours, error: erreurDevis } = useOrderQuote(isOpen && product ? {
+  // Article au prix de gros (2026-09-24) : le revendeur saisit le prix
+  // négocié avec son client. Vide = son prix enregistré, sinon le conseillé.
+  const estGros = product?.modePrix === 'gros';
+  const [prixSaisi, setPrixSaisi] = useState('');
+  const prixNegocie = estGros && parseInt(prixSaisi, 10) > 0 ? parseInt(prixSaisi, 10) : undefined;
+  const { devis, pourLeRevendeur, loading: devisEnCours, error: erreurDevis } = useOrderQuote(isOpen && product ? {
     productId: product.id, quantity, city, neighborhood: neighborhood || undefined, resellerCode: codeRevendeur || undefined,
+    prixNegocie,
   } : null);
 
   // Plein écran : la page du dessous ne doit pas défiler en même temps.
@@ -69,9 +75,11 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
   if (!isOpen || !product) return null;
 
   const unitPrice = devis?.prixUnitaire ?? product.publicPrice;
-  const commissionPerUnit = product.resellerCommission;
+  // Gain RÉEL calculé par le serveur pour ce revendeur (prix négocié compris),
+  // sinon la commission affichée au catalogue.
+  const totalCommission = pourLeRevendeur ? pourLeRevendeur.gain : product.resellerCommission * quantity;
+  const commissionPerUnit = Math.round(totalCommission / Math.max(1, quantity));
   const totalAmount = devis?.total;
-  const totalCommission = commissionPerUnit * quantity;
   const fcfa = (n: number) => `${n.toLocaleString('fr-FR')} F`;
 
   const finishOrder = async (data?: OrderInput) => {
@@ -106,6 +114,7 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
         landmark,
         deliveryNotes,
         resellerCode: codeRevendeur || undefined,
+        prixNegocie,
       });
   };
 
@@ -119,6 +128,7 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
     setLandmark('');
     setDeliveryNotes('');
     setQuantity(1);
+    setPrixSaisi('');
     onClose();
   };
 
@@ -209,6 +219,20 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
                   </button>
                 </div>
               </div>
+
+              {/* Prix négocié : articles au prix de gros uniquement */}
+              {estGros && (
+                <section className="bg-white rounded-3xl border border-slate-200 p-4 space-y-2">
+                  <h3 className="text-sm font-bold text-slate-900">Prix de vente au client</h3>
+                  <Field label="Prix par article (F)" htmlFor="vente-prix"
+                    aide={pourLeRevendeur
+                      ? `Minimum ${fcfa(pourLeRevendeur.prixMinimal)} · conseillé ${fcfa(pourLeRevendeur.prixConseille)}. Laissez vide pour votre prix habituel.`
+                      : 'Le prix sur lequel vous vous êtes mis d’accord avec votre client.'}>
+                    <Input id="vente-prix" inputMode="numeric" autoComplete="off" placeholder={pourLeRevendeur ? String(pourLeRevendeur.prixConseille) : 'Ex. : 25000'}
+                      value={prixSaisi} onChange={(e) => setPrixSaisi(e.target.value.replace(/\D/g, ''))} />
+                  </Field>
+                </section>
+              )}
 
               {/* Client */}
               <section className="bg-white rounded-3xl border border-slate-200 p-4 space-y-4">

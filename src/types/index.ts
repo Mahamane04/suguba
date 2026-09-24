@@ -124,6 +124,10 @@ export interface Product {
   publicPrice: number;         // Prix public fixé par Suguba (ex: 40 000 F)
   resellerCommission: number;  // Gain revendeur fixe par vente (ex: 4 000 F)
   resellerCommissionProposee?: number; // Part revendeur choisie par le fournisseur (voir modePartSuguba)
+  /** 'gros' : vendu au prix de gros, chaque revendeur fixe son prix (2026-09-24). supplierPrice = prix de gros, publicPrice = prix conseillé. */
+  modePrix?: 'fixe' | 'gros';
+  /** Prix conseillé proposé par le fournisseur (articles au prix de gros). */
+  prixConseille?: number | null;
   sugubaMargin: number;        // Marge nette Suguba (ex: 6 000 F)
   stockQuantity: number;
   warrantyMonths: number;
@@ -178,6 +182,12 @@ export interface Order {
   callVerifiedAt?: string;
   deliveredAt?: string;
   createdAt: string;
+  /** Heure du ramassage chez le fournisseur, prouvé par son code (2026-09-24). */
+  pickedUpAt?: string;
+  /** Dépôt du fournisseur où récupérer le colis (livreur uniquement). */
+  pickupLocation?: { nom?: string | null; quartier?: string | null; adresse?: string | null; telephone?: string | null; lat?: number | null; lng?: number | null } | null;
+  /** Position GPS donnée par le client à la commande (livreur uniquement). */
+  clientPosition?: { lat: number; lng: number } | null;
 }
 
 export interface Commission {

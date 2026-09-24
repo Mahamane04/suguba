@@ -8,6 +8,7 @@ import BottomNav from '@/components/common/BottomNav';
 import CloudSyncBadge from '@/components/common/CloudSyncBadge';
 import OtpValidationModal from '@/components/driver/OtpValidationModal';
 import DeliveryMapModal from '@/components/driver/DeliveryMapModal';
+import RamassageColis from '@/components/driver/RamassageColis';
 import PrintableReceiptModal from '@/components/common/PrintableReceiptModal';
 import { useSugubaStore, sugubaStore } from '@/lib/store';
 import { cloudSyncService } from '@/lib/cloud-sync';
@@ -159,19 +160,8 @@ export default function DriverDashboardPage() {
                       </div>
                     </div>
 
-                    {/* Step 1: Pickup Location */}
-                    {/* Retrait : le fournisseur réel. L'ancien texte affichait
-                        « Hub Central Suguba (ACI 2000) », ou l'adresse de stock
-                        — toujours « Bamako », la base ne l'enregistre pas. */}
-                    <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-1">
-                      <div className="flex items-center space-x-1.5 text-slate-900 font-bold">
-                        <Package className="w-4 h-4 text-slate-600" />
-                        <span>1. Récupérer le colis</span>
-                      </div>
-                      <p className="text-slate-700 pl-5">
-                        Chez <strong>{product?.supplierName || 'le fournisseur'}</strong>
-                      </p>
-                    </div>
+                    {/* Étape 1 : ramassage prouvé par le code du fournisseur (2026-09-24). */}
+                    <RamassageColis order={order} nomRepli={product?.supplierName} />
 
                     {/* Step 2: Dropoff Location & Landmark */}
                     <div className="p-3 bg-emerald-50/60 rounded-2xl border border-emerald-100 text-xs space-y-1">
@@ -223,7 +213,9 @@ export default function DriverDashboardPage() {
 
                       <button
                         onClick={() => setSelectedOrderForOtp(order)}
-                        className="py-3 px-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-2xl text-xs shadow-md shadow-amber-600/20 flex items-center justify-center space-x-1 transition-transform active:scale-95"
+                        disabled={order.status === 'dispatched' && !order.pickedUpAt}
+                        title={order.status === 'dispatched' && !order.pickedUpAt ? 'Récupérez d’abord le colis' : undefined}
+                        className="py-3 px-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-2xl text-xs shadow-md shadow-amber-600/20 flex items-center justify-center space-x-1 transition-transform active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
                       >
                         <KeyRound className="w-4 h-4 stroke-[2.5]" />
                         {/* « OTP » : jargon. Le client parle de son « code secret ». */}

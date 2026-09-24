@@ -16,8 +16,11 @@ import { Banknote, CreditCard } from 'lucide-react';
 export type MoyenPaiement = 'orange_money' | 'moov_money' | 'mobi_cash' | 'carte' | 'especes';
 
 const LOGOS_OFFICIELS: Partial<Record<MoyenPaiement, string>> = {
-  // orange_money: '/images/paiement/orange-money.svg',
-  // moov_money: '/images/paiement/moov-money.svg',
+  // Fichiers de la marque fournis le 2026-09-24. Orange : le symbole seul
+  // (les deux flèches), le nom étant toujours écrit à côté de la vignette ;
+  // le logo complet reste dans orange-money.svg. Moov : logo complet recadré.
+  orange_money: '/images/paiement/orange-money-symbole.svg',
+  moov_money: '/images/paiement/moov-money.svg',
   // mobi_cash: '/images/paiement/mobi-cash.svg',
 };
 
@@ -33,6 +36,13 @@ const TAILLES = {
   sm: 'w-8 h-8 rounded-lg text-xs',
   md: 'w-10 h-10 rounded-xl text-xs',
   lg: 'w-12 h-12 rounded-xl text-xs',
+};
+
+/** Les logos officiels sont plus larges que hauts : vignette élargie, même hauteur. */
+const TAILLES_OFFICIEL = {
+  sm: 'w-12 h-8 rounded-lg p-1',
+  md: 'w-14 h-10 rounded-xl p-1.5',
+  lg: 'w-[4.5rem] h-12 rounded-xl p-1.5',
 };
 
 /** Correspondance avec les codes réseau SasPay et les libellés de retrait. */
@@ -64,7 +74,7 @@ export default function PaymentLogo({
 
   if (officiel) {
     return (
-      <span className={`${base} bg-white border border-slate-200`}>
+      <span className={`${TAILLES_OFFICIEL[taille]} shrink-0 overflow-hidden flex items-center justify-center bg-white border border-slate-200 ${className}`}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src={officiel} alt={marque.nom} className="w-full h-full object-contain" />
       </span>

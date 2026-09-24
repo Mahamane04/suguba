@@ -66,7 +66,7 @@ export async function POST(req: NextRequest) {
 
     const { data: existant } = await admin
       .from('products')
-      .select('id, supplier_id, supplier_price, status, commission_proposee')
+      .select('*')
       .eq('id', product.id)
       .maybeSingle();
 
@@ -114,12 +114,30 @@ export async function POST(req: NextRequest) {
       partProposee = v > 0 ? v : null;
     }
 
+    // Prix de gros (2026-09-24) : le revendeur fixera son prix. Colonnes
+    // envoyées SEULEMENT quand elles servent, pour qu'un produit à prix fixe
+    // s'enregistre même si la base n'a pas encore ces colonnes.
+    let prixDeGros: { mode_prix: 'fixe' | 'gros'; prix_conseille: number | null } | undefined;
+    if (product.modePrix === 'gros' || product.modePrix === 'fixe') {
+      const conseil = Number(product.prixConseille);
+      prixDeGros = {
+        mode_prix: product.modePrix,
+        prix_conseille: product.modePrix === 'gros' && Number.isFinite(conseil) && conseil > 0 && conseil <= 100_000_000 ? Math.round(conseil) : null,
+      };
+      if (prixDeGros.mode_prix === 'gros') partProposee = null;
+    }
+    const avecPrixDeGros = (ligne: Record<string, unknown>) =>
+      prixDeGros && (prixDeGros.mode_prix === 'gros' || existant?.mode_prix === 'gros') ? { ...ligne, ...prixDeGros } : ligne;
+    const erreurColonne = (e: { code?: string; message: string }) => (e.code === '42703' || /mode_prix|prix_conseille/.test(e.message))
+      ? NextResponse.json({ error: 'La vente au prix de gros sera disponible après la mise à jour de la base par Suguba.' }, { status: 503 })
+      : NextResponse.json({ error: e.message }, { status: 500 });
+
     // ── Création ──────────────────────────────────────────────────────────
     if (!existant) {
       // Aucun produit ne naît approuvé : l'approbation passe par la
       // tarification admin, qui calcule la commission.
       const statut = estFournisseur || product.status === 'approved' ? 'submitted' : (product.status || 'submitted');
-      const { error } = await admin.from('products').insert({
+      const { error } = await admin.from('products').insert(avecPrixDeGros({
         id: product.id,
         slug: product.slug,
         ...descriptif,
@@ -131,8 +149,8 @@ export async function POST(req: NextRequest) {
         supplier_id: supplierId,
         supplier_name: supplierName,
         created_at: product.createdAt,
-      });
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      }));
+      if (error) return erreurColonne(error);
 
       // Dépôt fournisseur : publication automatique. L'admin, lui, publie avec
       // SON prix juste après (voir /admin/products/new).
@@ -180,9 +198,21 @@ export async function POST(req: NextRequest) {
       if (demande && demande !== 'approved' && existant.status !== 'approved') statut = demande;
     }
 
+    // Passage au prix de gros, ou nouveau prix conseillé : retarifé comme un nouveau prix.
+    if (prixDeGros && (prixDeGros.mode_prix !== (existant.mode_prix || 'fixe')
+        || (prixDeGros.prix_conseille ?? null) !== (existant.prix_conseille == null ? null : Number(existant.prix_conseille)))) {
+      Object.assign(maj, prixDeGros);
+      if (prixDeGros.mode_prix === 'gros') maj.commission_proposee = null;
+      if (existant.status === 'approved') {
+        statut = 'submitted';
+        maj.reseller_commission = 0;
+        maj.pricing_status = null;
+      }
+    }
+
     maj.status = statut;
     const { error } = await admin.from('products').update(maj).eq('id', product.id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return erreurColonne(error);
 
     // Revenu en attente (prix fournisseur changé) ou jamais publié : on
     // retente la publication automatique au nouveau prix recommandé.

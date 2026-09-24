@@ -1,4 +1,5 @@
 import { QUANTITE_MAX } from './pricing';
+import { positionValide } from './bamako-quartiers';
 
 /** REQ-013 : seules les intentions du client traversent le réseau. */
 export interface OrderInput {
@@ -13,6 +14,14 @@ export interface OrderInput {
   resellerCode?: string;
   pickupPointId?: string;
   promoCode?: string;
+  /** Position GPS du client (« Utiliser ma position actuelle »), 2026-09-24. */
+  positionClient?: { lat: number; lng: number };
+  /**
+   * Prix unitaire négocié par le revendeur avec son client, pour un article au
+   * prix de gros (2026-09-24). Pris en compte seulement si la personne
+   * connectée est ce revendeur (voir src/lib/prix-revendeur.ts).
+   */
+  prixNegocie?: number;
 }
 
 export function normaliserCommande(value: unknown): OrderInput {
@@ -45,5 +54,9 @@ export function normaliserCommande(value: unknown): OrderInput {
     resellerCode: texte('resellerCode', 'Code revendeur', 80, false).toUpperCase() || undefined,
     pickupPointId: texte('pickupPointId', 'Point relais', 100, false) || undefined,
     promoCode: texte('promoCode', 'Code promo', 80, false).toUpperCase() || undefined,
+    // Hors de Bamako ou mal formée : ignorée, le quartier suffit au calcul.
+    positionClient: positionValide(input.positionClient) || undefined,
+    prixNegocie: Number.isInteger(input.prixNegocie) && Number(input.prixNegocie) > 0 && Number(input.prixNegocie) <= 100_000_000
+      ? Number(input.prixNegocie) : undefined,
   };
 }

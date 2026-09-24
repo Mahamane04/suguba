@@ -4,7 +4,7 @@ import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { chargerReglages } from '@/lib/platform-settings';
 import {
-  calculerTarif,
+  tarifProduit,
   completerReglages,
   coutFixeParCommande,
   totalCoutsFixes,
@@ -40,7 +40,8 @@ export async function GET(req: NextRequest) {
   const { data: produits } = admin
     ? await admin
       .from('products')
-      .select('id, name, supplier_price, public_price, reseller_commission, commission_proposee')
+      // `*` : inclut mode_prix dès que la base l'a (articles au prix de gros).
+      .select('*')
       .eq('status', 'approved')
       .order('created_at', { ascending: false })
       .limit(300)
@@ -84,7 +85,7 @@ export async function PUT(req: NextRequest) {
   // ── Recalcul des commissions de tous les produits approuvés ─────────────
   const { data: produits } = await admin
     .from('products')
-    .select('id, name, supplier_price, public_price, reseller_commission, commission_proposee')
+    .select('*')
     .eq('status', 'approved');
 
   const alertes: { id: string; nom: string; statut: string; prixVente: number; prixMinimal: number }[] = [];
@@ -93,7 +94,12 @@ export async function PUT(req: NextRequest) {
 
   for (const p of produits || []) {
     // La part revendeur choisie par le fournisseur est conservée (sauf en mode automatique).
-    const t = calculerTarif(Number(p.supplier_price), Number(p.public_price), reglages, p.commission_proposee);
+    // Prix de gros : commission indicative au prix conseillé (le revendeur
+    // fixe ensuite son propre prix).
+    const t = tarifProduit({
+      prixFournisseur: Number(p.supplier_price), prixVente: Number(p.public_price),
+      commissionProposee: p.commission_proposee, modePrix: p.mode_prix,
+    }, reglages);
     if (t.statut !== 'ok') {
       alertes.push({ id: p.id, nom: p.name, statut: t.statut, prixVente: t.prixVente, prixMinimal: t.prixMinimal });
     }

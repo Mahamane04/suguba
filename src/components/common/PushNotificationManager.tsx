@@ -49,8 +49,8 @@ export default function PushNotificationManager() {
       try {
         new Notification(title, {
           body,
-          icon: '/icons/icon-192x192.png',
-          badge: '/icons/icon-192x192.png',
+          icon: '/icon-192.png',
+          badge: '/icon-192.png',
         });
       } catch (e) {
         // Fallback to in-app toast

@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { completerReglages, QUANTITE_MAX } from '@/lib/pricing';
 import { calculerLignesPanier, LIGNES_MAX, type ProduitPanier } from '@/lib/cart-input';
+import { depotsFournisseurs } from '@/lib/depot-fournisseur';
+import { prixEnregistres } from '@/lib/prix-revendeur';
+import { positionValide } from '@/lib/bamako-quartiers';
 
 /**
  * Devis d'un panier, calculé par le serveur avec la MÊME fonction que la
@@ -23,7 +26,7 @@ export async function POST(req: NextRequest) {
 
   const { data: produits } = await admin
     .from('products')
-    .select('id, name, slug, images, supplier_price, public_price, commission_proposee, supplier_id, status')
+    .select('*')
     .in('id', lignes.map((l: any) => l.productId));
   const index = new Map((produits || []).map((p: any) => [p.id, p]));
 
@@ -35,24 +38,33 @@ export async function POST(req: NextRequest) {
   });
   const indisponibles = lignes.filter((l: any) => !valides.includes(l)).map((l: any) => l.productId);
 
-  const fournisseurs = [...new Set(valides.map((l: any) => index.get(l.productId).supplier_id).filter(Boolean))] as string[];
-  const quartiers = new Map<string, string | undefined>();
-  if (fournisseurs.length) {
-    const { data } = await admin.from('suppliers').select('profile_id, warehouse_neighborhood').in('profile_id', fournisseurs);
-    for (const f of data || []) quartiers.set(f.profile_id, f.warehouse_neighborhood || undefined);
+  const depots = await depotsFournisseurs(admin, valides.map((l: any) => index.get(l.productId).supplier_id));
+
+  // Revendeur du panier (lien partagé) : ses prix pour les articles au prix
+  // de gros, exactement comme à la création (2026-09-24).
+  const code = (typeof corps.resellerCode === 'string' ? corps.resellerCode : req.cookies.get('suguba_ref')?.value || '').trim().toUpperCase();
+  let revendeurId: string | null = null;
+  if (code) {
+    const { data: revendeur } = await admin.from('profiles').select('id').eq('reseller_code', code).maybeSingle();
+    revendeurId = revendeur?.id || null;
   }
+  const prixRevendeur = await prixEnregistres(
+    admin, revendeurId, valides.map((l: any) => index.get(l.productId)).filter((p: any) => p.mode_prix === 'gros').map((p: any) => p.id),
+  );
 
   const { data: settings } = await admin.from('platform_settings').select('valeurs').eq('id', 1).maybeSingle();
   const calcul = calculerLignesPanier(
     valides,
     valides.map((l: any) => index.get(l.productId) as ProduitPanier),
-    quartiers,
+    depots,
     {
       ville: typeof corps.city === 'string' ? corps.city : 'Bamako',
       quartierClient: typeof corps.neighborhood === 'string' ? corps.neighborhood : undefined,
+      positionClient: positionValide(corps.positionClient),
       pointRelaisId: typeof corps.pickupPointId === 'string' ? corps.pickupPointId : undefined,
       codePromo: typeof corps.promoCode === 'string' ? corps.promoCode : undefined,
-      revendeurAttribue: false,
+      revendeurAttribue: Boolean(revendeurId),
+      prixRevendeur,
     },
     completerReglages(settings?.valeurs || {}),
   );

@@ -23,6 +23,13 @@ interface NeighborhoodPickerProps {
   variante?: 'champ' | 'puce';
   /** Petit libellé au-dessus du quartier dans la pastille (ex. « Mon quartier »). */
   prefixe?: string;
+  /**
+   * Position GPS exacte (2026-09-24) : appelée avec les coordonnées quand la
+   * personne utilise « Ma position actuelle », avec `null` quand elle choisit
+   * un quartier dans la liste. Sert au tarif de livraison à la distance réelle
+   * et à guider le livreur jusqu'à la porte.
+   */
+  onPosition?: (position: { lat: number; lng: number } | null) => void;
 }
 
 /** Au-delà, la position n'a plus rien à voir avec Bamako (test à l'étranger, GPS erratique). */
@@ -39,7 +46,7 @@ const DISTANCE_MAX_KM = 40;
  */
 export default function NeighborhoodPicker({
   value, onChange, className = '', placeholder = 'Choisir…', id, invalide = false,
-  variante = 'champ', prefixe,
+  variante = 'champ', prefixe, onPosition,
 }: NeighborhoodPickerProps) {
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
@@ -73,13 +80,14 @@ export default function NeighborhoodPicker({
           return;
         }
         onChange(trouve.nom);
+        onPosition?.({ lat: position.coords.latitude, lng: position.coords.longitude });
         setOpen(false);
       },
       () => {
         setLocalisationEnCours(false);
         toast('Localisation refusée ou indisponible — choisissez votre quartier dans la liste.', { ton: 'erreur' });
       },
-      { timeout: 8000, maximumAge: 60_000 },
+      { timeout: 10_000, maximumAge: 60_000, enableHighAccuracy: Boolean(onPosition) },
     );
   };
 
@@ -142,7 +150,7 @@ export default function NeighborhoodPicker({
                 <button
                   key={q}
                   type="button"
-                  onClick={() => { onChange(q); setOpen(false); }}
+                  onClick={() => { onChange(q); onPosition?.(null); setOpen(false); }}
                   className={`w-full text-left px-3.5 py-2 text-xs transition-colors ${
                     q === value ? 'bg-suguba-brand/10 text-suguba-brand font-bold' : 'text-gray-700 hover:bg-gray-50 font-medium'
                   }`}
@@ -154,7 +162,7 @@ export default function NeighborhoodPicker({
           ))}
           <button
             type="button"
-            onClick={() => { onChange('Autre quartier'); setOpen(false); }}
+            onClick={() => { onChange('Autre quartier'); onPosition?.(null); setOpen(false); }}
             className={`w-full text-left px-3.5 py-2 text-xs mt-1 border-t border-gray-50 transition-colors ${
               value === 'Autre quartier' ? 'bg-suguba-brand/10 text-suguba-brand font-bold' : 'text-gray-500 hover:bg-gray-50 font-medium'
             }`}

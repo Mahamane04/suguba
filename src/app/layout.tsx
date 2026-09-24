@@ -26,8 +26,10 @@ export const metadata: Metadata = {
   title: 'SUGUBA — Vendez Sans Stock au Mali | Social Commerce & Commissions Mobile Money',
   description: 'Plateforme B2B2C Mobile-First au Mali : connectez-vous avec les grossistes, partagez les produits sur WhatsApp, gagnez des commissions garanties et retirez par Orange Money, Moov ou Mobi Cash.',
   manifest: '/manifest.json',
+  // Nouveau logo (2026-09-24) : icônes régénérées depuis public/images/logo.svg.
   icons: {
-    icon: '/favicon.ico',
+    icon: [{ url: '/favicon.ico', sizes: 'any' }, { url: '/images/logo.svg', type: 'image/svg+xml' }],
+    apple: '/apple-touch-icon.png',
   }
 };
 

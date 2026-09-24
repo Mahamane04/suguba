@@ -52,6 +52,10 @@ export default function SupplierBoutiquePage() {
   // course. Vide par défaut plutôt que pré-rempli — un fournisseur qui ne le
   // touche jamais reste sur le tarif plat, jamais un mauvais quartier facturé.
   const [warehouseNeighborhood, setWarehouseNeighborhood] = useState('');
+  // Position GPS exacte du dépôt (2026-09-24) : envoyée seulement si elle a
+  // changé, pour ne pas bloquer l'enregistrement tant que la base n'a pas la colonne.
+  const [positionDepot, setPositionDepot] = useState<{ lat: number; lng: number } | null>(null);
+  const [positionChangee, setPositionChangee] = useState(false);
   const [sauvegardeEnCours, setSauvegardeEnCours] = useState(false);
 
   useEffect(() => {
@@ -67,6 +71,7 @@ export default function SupplierBoutiquePage() {
         setManagerName(j?.supplier?.managerName || '');
         setContactPhone(j?.supplier?.contactPhone || '');
         setWarehouseNeighborhood(j?.supplier?.warehouseNeighborhood || '');
+        setPositionDepot(j?.supplier?.positionDepot || null);
       })
       .catch(() => {})
       .finally(() => setChargement(false));
@@ -86,6 +91,7 @@ export default function SupplierBoutiquePage() {
           managerName,
           contactPhone,
           warehouseNeighborhood,
+          ...(positionChangee ? { positionDepot } : {}),
         }),
       });
       const json = await res.json();
@@ -93,6 +99,7 @@ export default function SupplierBoutiquePage() {
         toast(json.error || 'Échec de la sauvegarde.', { ton: 'erreur' });
         return;
       }
+      setPositionChangee(false);
       toast('Réglages enregistrés.', { ton: 'succes' });
     } catch {
       toast('Erreur réseau — réessayez.', { ton: 'erreur' });
@@ -256,11 +263,17 @@ export default function SupplierBoutiquePage() {
                     <NeighborhoodPicker
                       value={warehouseNeighborhood || 'Choisir…'}
                       onChange={setWarehouseNeighborhood}
+                      onPosition={(p) => { setPositionDepot(p); setPositionChangee(true); }}
                     />
                     <span className="text-xs text-slate-500 mt-1 block">
                       Point de départ des livraisons de vos produits : sert à calculer un tarif de
-                      livraison juste selon la distance jusqu&apos;au quartier du client, plutôt qu&apos;un
-                      tarif unique pour tout Bamako.
+                      livraison juste selon la distance jusqu&apos;au client, et guide le livreur jusqu&apos;à vous.
+                      <strong className="text-slate-700"> Le plus précis : depuis votre dépôt, touchez « Utiliser ma position actuelle ».</strong>
+                    </span>
+                    <span className={`text-xs mt-1 block font-semibold ${positionDepot ? 'text-suguba-profond' : 'text-amber-700'}`}>
+                      {positionDepot
+                        ? `Position exacte enregistrée${positionChangee ? ' (à enregistrer)' : ''}`
+                        : 'Position exacte non enregistrée : le centre du quartier est utilisé.'}
                     </span>
                   </div>
                 </div>
