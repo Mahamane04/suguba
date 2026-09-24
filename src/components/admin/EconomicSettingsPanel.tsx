@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Calculator, ChevronDown, ChevronUp, Loader2, Plus, Trash2, AlertCircle, CheckCircle2, RotateCcw, ArrowRight,
+  Calculator, ChevronDown, ChevronUp, Loader2, Plus, Trash2, AlertCircle, CheckCircle2, RotateCcw, ArrowRight, Info,
 } from 'lucide-react';
 import {
   calculerTarif,
@@ -268,11 +268,13 @@ export default function EconomicSettingsPanel() {
                     : r.modePartSuguba === 'prelevement_revendeur' ? 'Prélèvement Suguba (% de la part revendeur)'
                       : 'Part Suguba (% de la part revendeur)'}
                   suffixe="%" v={r.tauxPartSuguba} on={(v) => maj('tauxPartSuguba', v)}
+                  info="Ce taux n'est qu'une proposition. La « Marge nette minimale » (section Politique commerciale, plus bas) reste le vrai plancher : si ce taux donne moins, le prix client est relevé pour l'atteindre quand même. Pour que Suguba ne prenne vraiment rien, mettez ce taux ET la marge nette minimale à 0."
                 />
                 {/* Pas de minimum en francs quand Suguba se sert sur le revendeur :
                     1 000 F sur une part de 500 F n'aurait aucun sens. */}
                 {r.modePartSuguba !== 'prelevement_revendeur' && (
-                  <Num l="Part minimale Suguba par vente" suffixe="F" v={r.minimumPartSuguba} on={(v) => maj('minimumPartSuguba', v)} />
+                  <Num l="Part minimale Suguba par vente" suffixe="F" v={r.minimumPartSuguba} on={(v) => maj('minimumPartSuguba', v)}
+                    info="Un plancher en francs, en plus du taux ci-dessus : Suguba garde au moins ce montant par vente, même si le pourcentage donnerait moins. À 0, ce plancher-ci n'agit plus (la marge nette minimale peut quand même en imposer un autre)." />
                 )}
               </>
             )}
@@ -370,8 +372,10 @@ export default function EconomicSettingsPanel() {
           <Section id="couts" titre="Coûts variables, par commande"
             aide="Ils forment le « plancher » : aucun prix ne descend en dessous, quel que soit votre taux.">
             <Num l="Frais de paiement SasPay" suffixe="%" v={r.fraisPaiementPct} on={(v) => maj('fraisPaiementPct', v)}
-              aide="Sur l'article + la livraison encaissés." />
-            <Num l="Frais de versement des commissions" suffixe="%" v={r.fraisVersementPct} on={(v) => maj('fraisVersementPct', v)} />
+              aide="Sur l'article + la livraison encaissés."
+              info="Le vrai coût que SasPay facture sur l'encaissement Mobile Money. Ce n'est PAS une marge Suguba : le mettre à 0 ne fait pas disparaître ce coût, ça veut juste dire que Suguba le paierait de sa poche au lieu de le répercuter dans le prix." />
+            <Num l="Frais de versement des commissions" suffixe="%" v={r.fraisVersementPct} on={(v) => maj('fraisVersementPct', v)}
+              info="Le coût réel que SasPay facture quand Suguba verse sa commission au revendeur. Comme les frais de paiement, ce n'est pas une marge — c'est une vraie dépense." />
             <div className="sm:col-span-2 space-y-2 rounded-2xl bg-suguba-sauge p-3">
               <p className="text-xs font-semibold text-slate-700">Provision pour refus à la livraison</p>
               <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Base de la provision">
@@ -390,14 +394,16 @@ export default function EconomicSettingsPanel() {
                 })}
               </div>
               <Num l={r.baseProvisionRefus === 'course' ? 'Part des livraisons refusées' : 'Provision (% du prix de vente)'}
-                suffixe="%" v={r.provisionRefusPct} on={(v) => maj('provisionRefusPct', v)} />
+                suffixe="%" v={r.provisionRefusPct} on={(v) => maj('provisionRefusPct', v)}
+                info="Une réserve mise de côté sur chaque vente pour absorber les livraisons refusées à la porte (fréquent en paiement à la livraison : 10 à 20 % de refus est courant). Sans elle, chaque refus serait une perte sèche pour Suguba." />
               <p className="text-xs text-slate-600">
                 {r.baseProvisionRefus === 'course'
                   ? <>Soit <strong>{enF((r.provisionRefusPct / 100) * coutCourseRefusee(r))}</strong> par commande ({r.provisionRefusPct} % × {enF(coutCourseRefusee(r))}, livreur aller + retour). En paiement à la livraison, 10 à 20 % de refus sont courants : mettez votre taux réel.</>
                   : <>Soit <strong>{enF(r.provisionRefusPct * 1000)}</strong> sur un article à 100 000 F, <strong>{enF(r.provisionRefusPct * 4000)}</strong> sur un article à 400 000 F.</>}
               </p>
             </div>
-            <Num l="Message au client (SMS / WhatsApp)" suffixe="F" v={r.coutMessageParCommande} on={(v) => maj('coutMessageParCommande', v)} />
+            <Num l="Message au client (SMS / WhatsApp)" suffixe="F" v={r.coutMessageParCommande} on={(v) => maj('coutMessageParCommande', v)}
+              info="Le coût du message envoyé au client pour chaque commande (confirmation, suivi). Compté comme un coût variable, donc inclus dans le plancher de prix de chaque vente." />
           </Section>
 
           <Section titre="Coûts fixes mensuels" aide="Répartis sur le volume de référence : c'est un objectif, pas le volume constaté.">
@@ -417,7 +423,8 @@ export default function EconomicSettingsPanel() {
                 Ajouter un coût
               </BoutonAjouter>
             </div>
-            <Num l="Volume de référence (commandes/mois)" v={r.volumeReference} on={(v) => maj('volumeReference', v)} />
+            <Num l="Volume de référence (commandes/mois)" v={r.volumeReference} on={(v) => maj('volumeReference', v)}
+              info="Le total des coûts fixes ci-dessus (hébergement, salaires…) est divisé par ce nombre pour obtenir le coût fixe ajouté à chaque commande. Ce n'est pas le volume réellement constaté, juste un objectif : trop bas, ce coût explose et fait grimper tous les prix ; trop haut, il devient presque nul." />
             <div className="bg-suguba-sauge rounded-2xl p-3 text-xs text-slate-700 self-end">
               Total : <strong>{enF(totalCoutsFixes(r))}</strong> / mois, soit <strong>{enF(coutFixeParCommande(r))}</strong> par commande.
             </div>
@@ -427,18 +434,25 @@ export default function EconomicSettingsPanel() {
             aide={r.modePartSuguba === 'auto'
               ? 'Mode automatique : ces valeurs calculent la commission de chaque produit.'
               : 'La part revendeur et la commission visée ne servent qu’aux produits sans part revendeur choisie par le fournisseur.'}>
-            <Num l="Marge nette minimale Suguba" suffixe="% du prix" v={r.margeNetteMinPct} on={(v) => maj('margeNetteMinPct', v)} />
-            <Num l="Part revendeur du reste à partager" suffixe="%" v={r.partRevendeurPct} on={(v) => maj('partRevendeurPct', v)} />
-            <Num l="Commission minimale pour être partagé" suffixe="F" v={r.commissionMinimale} on={(v) => maj('commissionMinimale', v)} />
-            <Num l="Commission visée (prix recommandé)" suffixe="% du prix fourn." v={r.commissionCiblePct} on={(v) => maj('commissionCiblePct', v)} />
-            <Num l="Retrait minimum revendeur" suffixe="F" v={r.retraitMinimum} on={(v) => maj('retraitMinimum', v)} />
+            <Num l="Marge nette minimale Suguba" suffixe="% du prix" v={r.margeNetteMinPct} on={(v) => maj('margeNetteMinPct', v)}
+              info="C'est LE vrai plancher, celui qui décide le prix client la plupart du temps — pas le taux de la section « Rémunération » au-dessus. Suguba relève le prix jusqu'à garder au moins ce % du prix de vente, une fois payés paiement, refus, message, livraison et versement. À 0, Suguba ne se garantit plus aucune marge du tout." />
+            <Num l="Part revendeur du reste à partager" suffixe="%" v={r.partRevendeurPct} on={(v) => maj('partRevendeurPct', v)}
+              info="Ne sert qu'en mode Automatique, ou pour un fournisseur qui n'a pas proposé de part revendeur : une fois les coûts et la marge minimale couverts, ce % du reste va au revendeur, le reste à Suguba." />
+            <Num l="Commission minimale pour être partagé" suffixe="F" v={r.commissionMinimale} on={(v) => maj('commissionMinimale', v)}
+              info="En dessous de ce montant, la commission est jugée trop faible : le produit reste vendable, mais n'est plus proposé au partage avec les revendeurs (statut « Commission trop faible » dans « Vos produits »)." />
+            <Num l="Commission visée (prix recommandé)" suffixe="% du prix fourn." v={r.commissionCiblePct} on={(v) => maj('commissionCiblePct', v)}
+              info="Sert seulement à calculer le « prix conseillé » suggéré au fournisseur — un objectif de commission pour le revendeur, en % du prix fournisseur. N'affecte jamais un prix déjà en ligne." />
+            <Num l="Retrait minimum revendeur" suffixe="F" v={r.retraitMinimum} on={(v) => maj('retraitMinimum', v)}
+              info="Le montant minimum de commissions accumulées qu'un revendeur doit atteindre avant de pouvoir demander un retrait Mobile Money." />
           </Section>
 
           {/* ── Livraison ──────────────────────────────────────────────── */}
           <Section id="livraison" titre="Livraison">
-            <Num l="Frais par défaut (ville sans tarif)" suffixe="F" v={r.fraisLivraisonClient} on={(v) => maj('fraisLivraisonClient', v)} />
+            <Num l="Frais par défaut (ville sans tarif)" suffixe="F" v={r.fraisLivraisonClient} on={(v) => maj('fraisLivraisonClient', v)}
+              info="Le tarif de livraison facturé au client quand sa ville n'a pas de tarif spécifique ci-dessous (ou, à Bamako, quand les quartiers ne sont pas reconnus pour le calcul à la distance)." />
             <Num l="Rémunération du livreur" suffixe="F" v={r.remunerationLivreur} on={(v) => maj('remunerationLivreur', v)}
-              aide={r.remunerationLivreur > r.fraisLivraisonClient ? `${enF(r.remunerationLivreur - r.fraisLivraisonClient)} non couverts par le client, ajoutés au plancher.` : undefined} />
+              aide={r.remunerationLivreur > r.fraisLivraisonClient ? `${enF(r.remunerationLivreur - r.fraisLivraisonClient)} non couverts par le client, ajoutés au plancher.` : undefined}
+              info="Ce que Suguba paie au livreur par course. Si c'est plus que les frais de livraison facturés au client, la différence n'est pas couverte par le client : elle est ajoutée au plancher de coûts, ce qui relève le prix ailleurs." />
             <div className="sm:col-span-2 space-y-2">
               <p className="text-xs font-semibold text-slate-700">Frais par ville</p>
               {Object.entries(r.livraisonParVille).map(([ville, frais]) => (
@@ -497,9 +511,11 @@ export default function EconomicSettingsPanel() {
                 </p>
                 <div className="grid grid-cols-2 gap-2">
                   <Num l="Frais de base" suffixe="F" v={r.livraisonDistanceBamako.fraisBase}
-                    on={(v) => maj('livraisonDistanceBamako', { ...r.livraisonDistanceBamako, fraisBase: v })} />
+                    on={(v) => maj('livraisonDistanceBamako', { ...r.livraisonDistanceBamako, fraisBase: v })}
+                    info="Le montant de départ du calcul, avant d'ajouter la distance. Formule : base + (frais/km × distance), plafonné entre le minimum et le maximum ci-dessous." />
                   <Num l="Frais par km" suffixe="F" v={r.livraisonDistanceBamako.fraisParKm}
-                    on={(v) => maj('livraisonDistanceBamako', { ...r.livraisonDistanceBamako, fraisParKm: v })} />
+                    on={(v) => maj('livraisonDistanceBamako', { ...r.livraisonDistanceBamako, fraisParKm: v })}
+                    info="Ajouté au frais de base pour chaque kilomètre à vol d'oiseau entre le dépôt du fournisseur et le client." />
                   <Num l="Minimum" suffixe="F" v={r.livraisonDistanceBamako.fraisMinimum}
                     on={(v) => maj('livraisonDistanceBamako', { ...r.livraisonDistanceBamako, fraisMinimum: v })} />
                   <Num l="Maximum" suffixe="F" v={r.livraisonDistanceBamako.fraisMaximum}
@@ -766,13 +782,18 @@ function PrixDeGrosReglages({ g, r, onChange }: { g: ReglagesPrixDeGros; r: Regl
       </div>
       {(g.modeGain === 'marge_revendeur' || g.modeGain === 'ajout_prix_gros') && (
         <Num l={g.modeGain === 'marge_revendeur' ? 'Part Suguba (% de la marge du revendeur)' : 'Ajout Suguba (% du prix de gros)'}
-          suffixe="%" v={g.taux} on={(v) => onChange({ ...g, taux: v })} />
+          suffixe="%" v={g.taux} on={(v) => onChange({ ...g, taux: v })}
+          info={g.modeGain === 'marge_revendeur'
+            ? "Le revendeur fixe librement son prix de vente. Suguba prend ce % de ce que le revendeur gagne (son prix moins le prix de gros). À 0, le revendeur garde tout."
+            : "Le revendeur achète au fournisseur au prix de gros majoré de ce %. Tout ce qu'il revend au-dessus de ce prix majoré est pour lui, Suguba ne touche rien de plus."} />
       )}
       {g.modeGain === 'montant_fixe' && (
-        <Num l="Montant Suguba par article" suffixe="F" v={g.montantFixe} on={(v) => onChange({ ...g, montantFixe: v })} />
+        <Num l="Montant Suguba par article" suffixe="F" v={g.montantFixe} on={(v) => onChange({ ...g, montantFixe: v })}
+          info="Suguba prend cette même somme en francs sur chaque article vendu en gros, quel que soit son prix." />
       )}
       <Num l="Prix conseillé (si le fournisseur n’en donne pas)" suffixe="% de marge revendeur" v={g.margeConseilleePct}
-        on={(v) => onChange({ ...g, margeConseilleePct: v })} />
+        on={(v) => onChange({ ...g, margeConseilleePct: v })}
+        info="Si le fournisseur ne suggère pas de prix conseillé, Suguba en calcule un en visant cette marge (%) pour le revendeur au-dessus du prix de gros. Le revendeur reste libre de vendre plus cher ou moins cher (jamais sous le prix minimal)." />
       <div className="sm:col-span-2 rounded-2xl bg-suguba-sauge p-3 space-y-2">
         <label className="flex items-center gap-2 text-xs font-semibold text-slate-700">
           Exemple : prix de gros
@@ -837,16 +858,59 @@ function Section({ id, titre, aide, children }: { id?: string; titre: string; ai
   );
 }
 
-function Num({ l, v, on, suffixe, aide }: { l: string; v: number; on: (v: number) => void; suffixe?: string; aide?: string }) {
+function Num({ l, v, on, suffixe, aide, info }: { l: string; v: number; on: (v: number) => void; suffixe?: string; aide?: string; info?: string }) {
   return (
     <label className="block text-xs font-semibold text-slate-700">
-      {l}
+      <span className="inline-flex items-center gap-1">{l}{info && <InfoBulle texte={info} />}</span>
       <div className="flex items-center mt-1">
         <ChampNombre valeur={v} onChange={on} className="flex-1 min-w-0" />
         {suffixe && <span className="ml-2 text-xs font-normal text-slate-500 whitespace-nowrap">{suffixe}</span>}
       </div>
       {aide && <span className="block mt-1 text-xs font-normal text-slate-500">{aide}</span>}
     </label>
+  );
+}
+
+/**
+ * Petite icône (i) : au clic (pas au survol, pour marcher au doigt sur
+ * téléphone), affiche une bulle expliquant à quoi sert le réglage voisin.
+ * `stopPropagation` évite que le clic ne remonte au <label> englobant, qui
+ * sinon donnerait le focus au champ au lieu de juste ouvrir la bulle.
+ */
+function InfoBulle({ texte }: { texte: string }) {
+  const [ouvert, setOuvert] = useState(false);
+  const conteneur = React.useRef<HTMLSpanElement>(null);
+
+  // Un tap/clic n'importe où ailleurs referme la bulle. Écouteur document
+  // standard plutôt qu'un calque plein écran superposé : plus fiable, et
+  // n'intercepte pas les clics destinés au reste de la page pendant que la
+  // bulle est fermée.
+  useEffect(() => {
+    if (!ouvert) return;
+    const dehors = (e: MouseEvent) => {
+      if (!conteneur.current?.contains(e.target as Node)) setOuvert(false);
+    };
+    document.addEventListener('mousedown', dehors);
+    return () => document.removeEventListener('mousedown', dehors);
+  }, [ouvert]);
+
+  return (
+    <span ref={conteneur} className="relative inline-flex">
+      <button
+        type="button"
+        aria-label="Explication de ce réglage"
+        aria-expanded={ouvert}
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOuvert((o) => !o); }}
+        className="w-4 h-4 rounded-full bg-slate-200 text-slate-600 hover:bg-suguba-menthe hover:text-suguba-profond inline-flex items-center justify-center shrink-0"
+      >
+        <Info className="w-3 h-3" strokeWidth={2.5} />
+      </button>
+      {ouvert && (
+        <span role="tooltip" className="absolute z-20 left-0 top-6 w-60 max-w-[80vw] rounded-xl bg-slate-900 text-white text-xs font-normal leading-snug p-2.5 shadow-lg">
+          {texte}
+        </span>
+      )}
+    </span>
   );
 }
 
