@@ -322,3 +322,21 @@ export async function adminPeut(profileId: string, permission: Permission): Prom
   const membre = await membreEquipe(profileId);
   return permissionsEffectives(membre).includes(permission);
 }
+
+/**
+ * Administrateur GÉNÉRAL (2026-09-19) : admin sans rôle d'équipe restreint,
+ * ou « Super Admin ». Seul à voir le guide des parcours (/admin/guide).
+ * Strict, contrairement à membreEquipe : une erreur de lecture REFUSE
+ * l'accès — sauf table d'équipe absente, où tous les admins sont généraux.
+ */
+export async function estAdministrateurGeneral(profileId: string): Promise<boolean> {
+  const a = admin();
+  if (!a) return false;
+  const { data, error } = await a
+    .from('admin_team_members')
+    .select('team_role')
+    .eq('profile_id', profileId)
+    .maybeSingle();
+  if (error) return schemaIncomplet(error);
+  return !data || data.team_role === 'super_admin';
+}

@@ -39,7 +39,7 @@ export function PageHeader({
       )}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900">{titre}</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">{titre}</h1>
           {sousTitre && <p className="text-xs sm:text-sm text-slate-500 mt-0.5">{sousTitre}</p>}
         </div>
         {action && <div className="shrink-0">{action}</div>}
@@ -64,12 +64,12 @@ export function StatCard({
 }) {
   return (
     <div className="bg-white rounded-3xl border border-slate-200 p-4 space-y-1">
-      <p className="text-[11px] font-bold text-slate-500 uppercase flex items-center gap-1.5">
+      <p className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1.5">
         {Icone && <Icone className="w-3.5 h-3.5" />}
         <span>{label}</span>
       </p>
-      <p className={`text-xl sm:text-2xl font-black ${accent ? 'text-suguba-brand' : 'text-slate-900'}`}>{valeur}</p>
-      {aide && <p className="text-[11px] text-slate-500">{aide}</p>}
+      <p className={`text-xl sm:text-2xl font-bold ${accent ? 'text-suguba-brand' : 'text-slate-900'}`}>{valeur}</p>
+      {aide && <p className="text-xs text-slate-500">{aide}</p>}
     </div>
   );
 }
@@ -94,7 +94,7 @@ export function EmptyState({
         </div>
       )}
       <div className="space-y-1">
-        <p className="text-sm font-black text-slate-900">{titre}</p>
+        <p className="text-sm font-bold text-slate-900">{titre}</p>
         {texte && <p className="text-sm text-slate-500 max-w-sm mx-auto">{texte}</p>}
       </div>
       {action && <div className="pt-1 flex justify-center">{action}</div>}
@@ -104,18 +104,21 @@ export function EmptyState({
 
 type TonPastille = 'succes' | 'attente' | 'danger' | 'neutre' | 'info';
 
+// Charte verte du 2026-09-23 : tout en vert, le rouge pour les seules
+// erreurs. L'ancien « succès » (vert de marque sur vert pâle) plafonnait à
+// 2,47:1 : illisible. Un point de couleur précède chaque état.
 const TONS: Record<TonPastille, string> = {
-  succes: 'bg-suguba-brand/10 text-suguba-brand',
-  attente: 'bg-amber-50 text-amber-800',
+  succes: 'bg-suguba-brand text-suguba-profond',
+  attente: 'bg-[#F1EFE6] text-[#5C5236]',
   danger: 'bg-rose-50 text-rose-700',
   neutre: 'bg-slate-100 text-slate-700',
-  info: 'bg-sky-50 text-sky-800',
+  info: 'bg-suguba-menthe text-suguba-profond-2',
 };
 
 /** Pastille de statut (commande, produit, retrait…). */
 export function StatusPill({ ton = 'neutre', children }: { ton?: TonPastille; children: React.ReactNode }) {
   return (
-    <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap ${TONS[ton]}`}>
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap before:content-[''] before:w-1.5 before:h-1.5 before:rounded-full before:bg-current ${TONS[ton]}`}>
       {children}
     </span>
   );

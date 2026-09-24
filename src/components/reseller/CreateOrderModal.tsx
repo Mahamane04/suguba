@@ -145,7 +145,7 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
             <ArrowLeft className="w-5 h-5 sm:hidden" />
             <X className="w-5 h-5 hidden sm:block" />
           </button>
-          <h2 id="titre-vente" className="text-base font-black text-slate-900 truncate">
+          <h2 id="titre-vente" className="text-base font-bold text-slate-900 truncate">
             {createdOrder ? 'Commande enregistrée' : 'Nouvelle vente'}
           </h2>
         </header>
@@ -156,7 +156,7 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
               <CheckCircle className="w-9 h-9" />
             </div>
             <div className="space-y-1">
-              <h3 className="text-xl font-black text-slate-900">Commande {createdOrder.orderNumber} créée</h3>
+              <h3 className="text-xl font-bold text-slate-900">Commande {createdOrder.orderNumber} créée</h3>
               <p className="text-sm text-slate-600 max-w-sm mx-auto">
                 Suguba va appeler <strong>{createdOrder.customerName}</strong> pour confirmer avant d’envoyer le livreur.
               </p>
@@ -176,8 +176,8 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
                 <span className="font-bold text-slate-900 tabular-nums">{fcfa(createdOrder.totalAmount)}</span>
               </div>
               <div className="flex justify-between gap-3 pt-2.5 border-t border-slate-100">
-                <span className="text-[#078000] font-bold">Ta commission</span>
-                <span className="font-black text-[#078000] tabular-nums">+{fcfa(createdOrder.resellerCommission)}</span>
+                <span className="text-suguba-brand-dark font-bold">Ta commission</span>
+                <span className="font-bold text-suguba-brand-dark tabular-nums">+{fcfa(createdOrder.resellerCommission)}</span>
               </div>
             </div>
 
@@ -195,14 +195,14 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-sm text-slate-900 line-clamp-2">{product.name}</p>
-                  <p className="text-xs text-[#078000] font-bold">+{fcfa(commissionPerUnit)} / unité pour toi</p>
+                  <p className="text-xs text-suguba-brand-dark font-bold">+{fcfa(commissionPerUnit)} / unité pour toi</p>
                 </div>
                 <div className="flex items-center rounded-full border border-slate-200 shrink-0" aria-label="Quantité">
                   <button type="button" onClick={() => setQuantity((q) => Math.max(1, q - 1))} disabled={quantity <= 1}
                     aria-label="Retirer un" className="w-10 h-10 flex items-center justify-center text-slate-700 disabled:text-slate-300">
                     <Minus className="w-4 h-4" />
                   </button>
-                  <span className="w-6 text-center text-sm font-black tabular-nums">{quantity}</span>
+                  <span className="w-6 text-center text-sm font-bold tabular-nums">{quantity}</span>
                   <button type="button" onClick={() => setQuantity((q) => Math.min(QUANTITE_MAX, q + 1))} disabled={quantity >= QUANTITE_MAX}
                     aria-label="Ajouter un" className="w-10 h-10 flex items-center justify-center text-slate-700 disabled:text-slate-300">
                     <Plus className="w-4 h-4" />
@@ -212,7 +212,7 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
 
               {/* Client */}
               <section className="bg-white rounded-3xl border border-slate-200 p-4 space-y-4">
-                <h3 className="text-sm font-black text-slate-900">Le client</h3>
+                <h3 className="text-sm font-bold text-slate-900">Le client</h3>
                 <Field label="Nom et prénom" htmlFor="vente-nom" requis>
                   <Input id="vente-nom" required autoComplete="off" placeholder="Ex. : Ibrahim Keita"
                     value={customerName} onChange={(e) => setCustomerName(e.target.value)} />
@@ -225,7 +225,7 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
 
               {/* Livraison */}
               <section className="bg-white rounded-3xl border border-slate-200 p-4 space-y-4">
-                <h3 className="text-sm font-black text-slate-900">Livraison</h3>
+                <h3 className="text-sm font-bold text-slate-900">Livraison</h3>
                 <Field label="Ville" htmlFor="vente-ville" requis>
                   <Select id="vente-ville" value={city} onChange={(e) => setCity(e.target.value)}>
                     <option value="Bamako">Bamako</option>
@@ -248,7 +248,7 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
 
               {/* Récapitulatif */}
               <section className="bg-white rounded-3xl border border-slate-200 p-4 space-y-2 text-sm">
-                <h3 className="text-sm font-black text-slate-900 mb-1">Récapitulatif</h3>
+                <h3 className="text-sm font-bold text-slate-900 mb-1">Récapitulatif</h3>
                 <div className="flex justify-between text-slate-600">
                   <span>Article{quantity > 1 ? `s (${quantity})` : ''}</span>
                   <span className="font-semibold tabular-nums">{fcfa(unitPrice * quantity)}</span>
@@ -257,11 +257,11 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
                   <span>Livraison</span>
                   <span className="font-semibold tabular-nums">{devis ? fcfa(devis.fraisLivraison) : '…'}</span>
                 </div>
-                <div className="flex justify-between font-black text-slate-900 pt-2 border-t border-slate-100">
+                <div className="flex justify-between font-bold text-slate-900 pt-2 border-t border-slate-100">
                   <span>Le client paie</span>
                   <span className="tabular-nums">{totalAmount !== undefined ? fcfa(totalAmount) : '…'}</span>
                 </div>
-                <div className="flex justify-between font-bold text-[#078000]">
+                <div className="flex justify-between font-bold text-suguba-brand-dark">
                   <span>Ta commission</span>
                   <span className="tabular-nums">+{fcfa(totalCommission)}</span>
                 </div>
@@ -276,8 +276,8 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
               style={{ paddingBottom: MARGE_BAS_FLOTTANT }}
             >
               <div className="min-w-0">
-                <p className="text-[11px] text-slate-500">Le client paie</p>
-                <p className="text-lg font-black text-slate-900 tabular-nums">
+                <p className="text-xs text-slate-500">Le client paie</p>
+                <p className="text-lg font-bold text-slate-900 tabular-nums">
                   {totalAmount !== undefined ? fcfa(totalAmount) : '…'}
                   {devisEnCours && <Loader2 className="inline w-3.5 h-3.5 ml-1 animate-spin text-slate-400" />}
                 </p>

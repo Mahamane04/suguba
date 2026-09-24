@@ -99,7 +99,7 @@ export default function AdminAnalyticsPage() {
               <ArrowLeft className="w-4 h-4" />
               <span>Retour à la console Suguba Ops</span>
             </Link>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
               Tableau de Bord Financier & Trésorerie
             </h1>
             <p className="text-xs text-slate-500">
@@ -122,57 +122,57 @@ export default function AdminAnalyticsPage() {
           {/* Marge Nette Suguba */}
           <div className="bg-white p-5 rounded-3xl border border-emerald-200 shadow-xs space-y-1 relative overflow-hidden">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Marge Nette Suguba</span>
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Marge Nette Suguba</span>
               <div className="w-7 h-7 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center">
                 <TrendingUp className="w-4 h-4" />
               </div>
             </div>
-            <p className="text-2xl font-black text-emerald-700">
+            <p className="text-2xl font-bold text-emerald-700">
               {totalSugubaMargin.toLocaleString('fr-FR')} <span className="text-xs font-bold text-slate-500">FCFA</span>
             </p>
-            <p className="text-[11px] text-emerald-600 font-bold">Bénéfice net plateforme</p>
+            <p className="text-xs text-emerald-600 font-bold">Bénéfice net plateforme</p>
           </div>
 
           {/* Volume d'Affaires Total (GMV) */}
           <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-1">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Volume d&apos;Affaires (GMV)</span>
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Volume d&apos;Affaires (GMV)</span>
               <div className="w-7 h-7 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center">
                 <ShoppingBag className="w-4 h-4" />
               </div>
             </div>
-            <p className="text-2xl font-black text-slate-900">
+            <p className="text-2xl font-bold text-slate-900">
               {totalGmv.toLocaleString('fr-FR')} <span className="text-xs font-bold text-slate-500">FCFA</span>
             </p>
-            <p className="text-[11px] text-slate-500">{deliveredOrders.length} commandes encaissées</p>
+            <p className="text-xs text-slate-500">{deliveredOrders.length} commandes encaissées</p>
           </div>
 
           {/* Commissions Revendeurs Distribuées */}
           <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-1">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Commissions Revendeurs</span>
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Commissions Revendeurs</span>
               <div className="w-7 h-7 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center">
                 <Wallet className="w-4 h-4" />
               </div>
             </div>
-            <p className="text-2xl font-black text-amber-700">
+            <p className="text-2xl font-bold text-amber-700">
               {totalCommissionsPaid.toLocaleString('fr-FR')} <span className="text-xs font-bold text-slate-500">FCFA</span>
             </p>
-            <p className="text-[11px] text-slate-500">Rémunération réseau</p>
+            <p className="text-xs text-slate-500">Rémunération réseau</p>
           </div>
 
           {/* Frais de Livraison Encaissés */}
           <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-1">
             <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Frais de Course</span>
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Frais de Course</span>
               <div className="w-7 h-7 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center">
                 <Truck className="w-4 h-4" />
               </div>
             </div>
-            <p className="text-2xl font-black text-slate-900">
+            <p className="text-2xl font-bold text-slate-900">
               {totalDeliveryFees.toLocaleString('fr-FR')} <span className="text-xs font-bold text-slate-500">FCFA</span>
             </p>
-            <p className="text-[11px] text-slate-500">Budget logistique</p>
+            <p className="text-xs text-slate-500">Budget logistique</p>
           </div>
 
         </div>
@@ -180,10 +180,10 @@ export default function AdminAnalyticsPage() {
         {/* Transactions Table for Accounting */}
         <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h2 className="font-black text-sm text-slate-900">
+            <h2 className="font-bold text-sm text-slate-900">
               Registre des Transactions & Répartition Financière
             </h2>
-            <span className="text-[11px] font-bold text-slate-500">
+            <span className="text-xs font-bold text-slate-500">
               {state.orders.length} transactions enregistrées
             </span>
           </div>
@@ -191,7 +191,7 @@ export default function AdminAnalyticsPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-slate-200 text-slate-500 font-bold uppercase text-[11px]">
+                <tr className="border-b border-slate-200 text-slate-500 font-bold uppercase text-xs">
                   <th className="pb-2">Commande</th>
                   <th className="pb-2">Produit</th>
                   <th className="pb-2">Client & Quartier</th>
@@ -213,19 +213,19 @@ export default function AdminAnalyticsPage() {
                       <td className="py-3 font-medium text-slate-700 max-w-[180px] truncate">{o.productName}</td>
                       <td className="py-3 text-slate-600">
                         <span className="font-bold block text-slate-900">{o.customerName}</span>
-                        <span className="text-[11px] text-slate-500">{o.neighborhood}</span>
+                        <span className="text-xs text-slate-500">{o.neighborhood}</span>
                       </td>
-                      <td className="py-3 font-black text-slate-900 text-right">
+                      <td className="py-3 font-bold text-slate-900 text-right">
                         {o.totalAmount.toLocaleString('fr-FR')} F
                       </td>
                       <td className="py-3 font-bold text-emerald-600 text-right">
                         +{o.resellerCommission.toLocaleString('fr-FR')} F
                       </td>
-                      <td className="py-3 font-black text-emerald-800 text-right">
+                      <td className="py-3 font-bold text-emerald-800 text-right">
                         +{Math.max(0, margin).toLocaleString('fr-FR')} F
                       </td>
                       <td className="py-3 text-center">
-                        <span className={`px-2 py-0.5 rounded-full text-[11px] font-black ${
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-bold ${
                           o.status === 'delivered' ? 'bg-emerald-100 text-emerald-800' :
                           'bg-amber-100 text-amber-800'
                         }`}>

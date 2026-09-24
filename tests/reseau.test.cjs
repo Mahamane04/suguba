@@ -394,7 +394,9 @@ test('chaque gestionnaire de /api/admin applique une permission d’équipe', ()
     const chemin = '/' + cheminNode.relative(racine, cheminNode.dirname(fichier)).split(cheminNode.sep).join('/');
     const source = lire(fichier, 'utf8');
     if (ROUTES_CONTROLE_INTERNE.includes(chemin)) {
-      if (!source.includes('adminPeut(')) oublis.push(`${chemin} (déclarée interne mais sans adminPeut)`);
+      if (!source.includes('adminPeut(') && !source.includes('sessionAdministrateurGeneral(')) {
+        oublis.push(`${chemin} (déclarée interne mais sans adminPeut ni contrôle administrateur général)`);
+      }
       continue;
     }
     for (const [, methode] of source.matchAll(/export async function (GET|POST|PUT|PATCH|DELETE)\(/g)) {

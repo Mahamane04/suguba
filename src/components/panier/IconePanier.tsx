@@ -17,7 +17,7 @@ export default function IconePanier() {
       className="relative w-10 h-10 shrink-0 rounded-2xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-700 transition-colors"
     >
       <ShoppingBag className="w-5 h-5" />
-      <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-suguba-brand text-white text-[10px] font-black flex items-center justify-center tabular-nums">
+      <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-suguba-profond text-white text-xs font-bold flex items-center justify-center tabular-nums">
         {total > 9 ? '9+' : total}
       </span>
     </Link>

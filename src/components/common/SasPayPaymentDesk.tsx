@@ -153,12 +153,12 @@ export default function SasPayPaymentDesk({ amount, orderNumber, defaultPhone = 
       // aucune confirmation chiffrée de ce qu'il a payé.
       <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 text-left space-y-3">
         <div className="flex items-center gap-2.5">
-          <span className="w-9 h-9 rounded-full bg-suguba-brand/10 text-suguba-brand flex items-center justify-center shrink-0">
+          <span className="w-9 h-9 rounded-full bg-suguba-brand/10 text-suguba-brand-dark flex items-center justify-center shrink-0">
             <CheckCircle2 className="w-5 h-5" />
           </span>
-          <h3 className="font-black text-base text-slate-900">Paiement reçu</h3>
+          <h3 className="font-bold text-base text-slate-900">Paiement reçu</h3>
         </div>
-        <p className="text-3xl font-black text-slate-900 tabular-nums">{fcfa(amount)}</p>
+        <p className="text-3xl font-bold text-slate-900 tabular-nums">{fcfa(amount)}</p>
         <div className="space-y-1">
           <p className="text-xs font-bold text-slate-700">Commande #{orderNumber} réglée.</p>
           <p className="text-xs text-slate-500">Le livreur ne vous redemandera rien à la remise du colis.</p>
@@ -172,8 +172,8 @@ export default function SasPayPaymentDesk({ amount, orderNumber, defaultPhone = 
   return (
     <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 text-left space-y-5">
       <div className="space-y-1">
-        <h3 className="text-sm font-black text-slate-900">Payer maintenant par Mobile Money</h3>
-        <p className="text-3xl font-black text-slate-900 tabular-nums">{fcfa(amount)}</p>
+        <h3 className="text-sm font-bold text-slate-900">Payer maintenant par Mobile Money</h3>
+        <p className="text-3xl font-bold text-slate-900 tabular-nums">{fcfa(amount)}</p>
         <p className="text-xs text-slate-500">Commande #{orderNumber} · ou payez en espèces au livreur</p>
       </div>
 
@@ -183,7 +183,7 @@ export default function SasPayPaymentDesk({ amount, orderNumber, defaultPhone = 
             <PaymentLogo moyen={choisi.moyen} taille="md" />
             <div className="min-w-0">
               <p className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                <Loader2 className="w-4 h-4 text-suguba-brand animate-spin shrink-0" />
+                <Loader2 className="w-4 h-4 text-suguba-brand-dark animate-spin shrink-0" />
                 Validez sur votre téléphone
               </p>
               <p className="text-xs text-slate-500">
@@ -191,7 +191,7 @@ export default function SasPayPaymentDesk({ amount, orderNumber, defaultPhone = 
               </p>
             </div>
           </div>
-          <p className="text-[11px] text-slate-500">
+          <p className="text-xs text-slate-500">
             Cet écran se met à jour tout seul dès que le paiement est confirmé. Ne fermez pas la page.
           </p>
         </div>
@@ -214,9 +214,9 @@ export default function SasPayPaymentDesk({ amount, orderNumber, defaultPhone = 
                   }`}
                 >
                   <PaymentLogo moyen={r.moyen} taille="lg" />
-                  <span className="text-[11px] font-bold text-slate-900 leading-tight text-center">{r.label}</span>
+                  <span className="text-xs font-bold text-slate-900 leading-tight text-center">{r.label}</span>
                   {actif && (
-                    <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-suguba-brand text-white flex items-center justify-center">
+                    <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-suguba-profond text-white flex items-center justify-center">
                       <Check className="w-2.5 h-2.5" strokeWidth={3} />
                     </span>
                   )}
@@ -257,8 +257,8 @@ export default function SasPayPaymentDesk({ amount, orderNumber, defaultPhone = 
         </>
       )}
 
-      <p className="flex items-center gap-1.5 text-[11px] text-slate-500">
-        <ShieldCheck className="w-3.5 h-3.5 text-suguba-brand shrink-0" />
+      <p className="flex items-center gap-1.5 text-xs text-slate-500">
+        <ShieldCheck className="w-3.5 h-3.5 text-suguba-brand-dark shrink-0" />
         Paiement sécurisé par SasPay. Suguba ne voit jamais votre code secret.
       </p>
     </div>

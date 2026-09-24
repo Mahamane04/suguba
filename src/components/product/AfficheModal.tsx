@@ -63,7 +63,7 @@ export default function AfficheModal({ produit, onClose }: { produit: ProduitAPa
       >
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h2 className="font-black text-base text-slate-900">Affiche pour mon statut</h2>
+            <h2 className="font-bold text-base text-slate-900">Affiche pour mon statut</h2>
             <p className="text-xs text-slate-500 line-clamp-1">{produit.nom}</p>
           </div>
           <button type="button" onClick={onClose} aria-label="Fermer"
@@ -79,7 +79,7 @@ export default function AfficheModal({ produit, onClose }: { produit: ProduitAPa
               {libelle}
             </button>
           ))}
-          {([['vert', 'bg-[#09b500]'], ['clair', 'bg-white'], ['nuit', 'bg-slate-900']] as const).map(([cle, fond]) => (
+          {([['vert', 'bg-suguba-profond'], ['clair', 'bg-white'], ['nuit', 'bg-slate-900']] as const).map(([cle, fond]) => (
             <button key={cle} type="button" onClick={() => setTheme(cle)} aria-label={`Thème ${cle}`}
               className={`w-9 h-9 rounded-full border-2 shrink-0 ${fond} ${theme === cle ? 'border-suguba-brand ring-2 ring-suguba-brand/30' : 'border-slate-200'}`} />
           ))}
@@ -97,14 +97,14 @@ export default function AfficheModal({ produit, onClose }: { produit: ProduitAPa
         </div>
 
         {!code && (
-          <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-2xl p-2.5">
+          <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-2xl p-2.5">
             Aucun code revendeur : les ventes de cette affiche ne vous seront pas attribuées. Connectez-vous avec votre compte revendeur.
           </p>
         )}
 
         <div className="grid grid-cols-[1fr_auto] gap-2">
           <button type="button" onClick={partager} disabled={!fichier}
-            className="h-11 rounded-2xl bg-[#25D366] hover:bg-[#1ebe5b] text-white text-sm font-bold inline-flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98] transition-all">
+            className="h-11 rounded-2xl bg-suguba-wa hover:bg-[#1fbf5b] text-suguba-profond text-sm font-bold inline-flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98] transition-all">
             <WhatsAppIcon className="w-5 h-5" />
             <span>Partager</span>
           </button>
@@ -114,7 +114,7 @@ export default function AfficheModal({ produit, onClose }: { produit: ProduitAPa
             <Download className="w-5 h-5" />
           </button>
         </div>
-        <p className="text-[11px] text-slate-500 text-center">
+        <p className="text-xs text-slate-500 text-center">
           {message || 'Dans WhatsApp, choisissez « Mon statut » pour la publier en statut. Le lien de commande part avec.'}
         </p>
       </div>

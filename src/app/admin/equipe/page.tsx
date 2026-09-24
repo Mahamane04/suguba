@@ -91,8 +91,8 @@ export default function EquipeAdminPage() {
               <Card key={m.id} className="space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-sm font-black text-slate-900 truncate">{m.nom}</p>
-                    <p className="text-[11px] text-slate-500">{m.contact || '—'}</p>
+                    <p className="text-sm font-bold text-slate-900 truncate">{m.nom}</p>
+                    <p className="text-xs text-slate-500">{m.contact || '—'}</p>
                   </div>
                   <StatusPill ton={m.teamRole ? 'info' : 'succes'}>
                     {m.teamRole ? roles.find((r) => r.valeur === m.teamRole)?.libelle || m.teamRole : 'Tous les droits'}
@@ -100,7 +100,7 @@ export default function EquipeAdminPage() {
                 </div>
 
                 {m.estMoi ? (
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-xs text-slate-500">
                     C’est votre compte : vous ne pouvez pas modifier vos propres droits.
                   </p>
                 ) : (
@@ -114,7 +114,7 @@ export default function EquipeAdminPage() {
                       {enCours === m.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserCog className="w-4 h-4" />}
                       Appliquer ce rôle
                     </Button>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-xs text-slate-500">
                       {m.permissions.length} permission{m.permissions.length > 1 ? 's' : ''} actuellement.
                     </p>
                   </>

@@ -68,21 +68,21 @@ export default function ClientsRevendeurPage() {
             <div key={`${c.telephoneMasque}-${i}`} className="p-4 flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm font-bold text-slate-900 truncate">{c.prenom}</p>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-xs text-slate-500">
                   {c.telephoneMasque} · depuis le{' '}
                   {new Date(c.depuis).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: '2-digit' })}
                 </p>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-sm font-black text-slate-900 tabular-nums">{c.chiffreAffaires.toLocaleString('fr-FR')} F</p>
-                <p className="text-[11px] text-slate-500">{c.commandes} commande{c.commandes > 1 ? 's' : ''}</p>
+                <p className="text-sm font-bold text-slate-900 tabular-nums">{c.chiffreAffaires.toLocaleString('fr-FR')} F</p>
+                <p className="text-xs text-slate-500">{c.commandes} commande{c.commandes > 1 ? 's' : ''}</p>
               </div>
             </div>
           ))}
         </Card>
       )}
 
-      <p className="text-[11px] text-slate-500 px-1">
+      <p className="text-xs text-slate-500 px-1">
         Les numéros sont masqués : c’est Suguba qui appelle et livre. Vous touchez votre commission
         sur chaque commande de ces clients, même quand ils commandent sans repasser par votre lien.
       </p>

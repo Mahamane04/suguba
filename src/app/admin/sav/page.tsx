@@ -86,7 +86,7 @@ export default function AdminSavPage() {
               <ArrowLeft className="w-4 h-4" />
               <span>Retour à la console Suguba Ops</span>
             </Link>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
               Desk SAV, Garantie & Gestion des Échanges 72h
             </h1>
             <p className="text-xs text-slate-500">
@@ -106,27 +106,27 @@ export default function AdminSavPage() {
         {/* Stats Grid */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="bg-white p-4 rounded-3xl border border-rose-200 shadow-xs space-y-1">
-            <span className="text-[11px] font-bold text-rose-700 uppercase">Dossiers Ouverts</span>
-            <p className="text-2xl font-black text-rose-600">{openTickets.length}</p>
-            <p className="text-[11px] text-slate-500">À traiter en priorité</p>
+            <span className="text-xs font-bold text-rose-700 uppercase">Dossiers Ouverts</span>
+            <p className="text-2xl font-bold text-rose-600">{openTickets.length}</p>
+            <p className="text-xs text-slate-500">À traiter en priorité</p>
           </div>
 
           <div className="bg-white p-4 rounded-3xl border border-amber-200 shadow-xs space-y-1">
-            <span className="text-[11px] font-bold text-amber-700 uppercase">Échanges en Cours</span>
-            <p className="text-2xl font-black text-amber-600">{inProgressTickets.length}</p>
-            <p className="text-[11px] text-slate-500">Livreur moto en mission</p>
+            <span className="text-xs font-bold text-amber-700 uppercase">Échanges en Cours</span>
+            <p className="text-2xl font-bold text-amber-600">{inProgressTickets.length}</p>
+            <p className="text-xs text-slate-500">Livreur moto en mission</p>
           </div>
 
           <div className="bg-white p-4 rounded-3xl border border-emerald-200 shadow-xs space-y-1">
-            <span className="text-[11px] font-bold text-emerald-700 uppercase">Dossiers Résolus</span>
-            <p className="text-2xl font-black text-emerald-600">{resolvedTickets.length}</p>
-            <p className="text-[11px] text-slate-500">Échanges réussis sous 72h</p>
+            <span className="text-xs font-bold text-emerald-700 uppercase">Dossiers Résolus</span>
+            <p className="text-2xl font-bold text-emerald-600">{resolvedTickets.length}</p>
+            <p className="text-xs text-slate-500">Échanges réussis sous 72h</p>
           </div>
 
           <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs space-y-1">
-            <span className="text-[11px] font-bold text-slate-500 uppercase">Taux de Résolution</span>
-            <p className="text-2xl font-black text-slate-900">100%</p>
-            <p className="text-[11px] text-slate-500">Engagement Qualité Suguba</p>
+            <span className="text-xs font-bold text-slate-500 uppercase">Taux de Résolution</span>
+            <p className="text-2xl font-bold text-slate-900">100%</p>
+            <p className="text-xs text-slate-500">Engagement Qualité Suguba</p>
           </div>
         </div>
 
@@ -135,11 +135,11 @@ export default function AdminSavPage() {
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center space-x-2">
               <ShieldAlert className="w-5 h-5 text-rose-600" />
-              <h2 className="font-black text-sm text-slate-900">
+              <h2 className="font-bold text-sm text-slate-900">
                 File des Réclamations & Échanges sous Garantie ({tickets.length})
               </h2>
             </div>
-            <span className="text-[11px] font-bold text-slate-500">
+            <span className="text-xs font-bold text-slate-500">
               Garantie Certifiée
             </span>
           </div>
@@ -170,7 +170,7 @@ export default function AdminSavPage() {
                     {/* Top Row */}
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-3">
                       <div className="flex items-center space-x-2">
-                        <span className="font-mono font-black text-xs px-2.5 py-1 bg-slate-900 text-white rounded-lg">
+                        <span className="font-mono font-bold text-xs px-2.5 py-1 bg-slate-900 text-white rounded-lg">
                           #{ticket.ticketNumber}
                         </span>
                         <span className="font-bold text-xs text-slate-900">
@@ -179,7 +179,7 @@ export default function AdminSavPage() {
                       </div>
 
                       <div className="flex items-center space-x-2">
-                        <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-black flex items-center gap-1 ${
+                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold flex items-center gap-1 ${
                           isResolved ? 'bg-emerald-100 text-emerald-800' :
                           isDispatched ? 'bg-amber-100 text-amber-900 animate-pulse' :
                           'bg-rose-100 text-rose-900'
@@ -195,7 +195,7 @@ export default function AdminSavPage() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                       <div className="space-y-1">
                         <p className="text-slate-600">Client : <strong className="text-slate-900">{ticket.customerName}</strong> ({ticket.customerPhone})</p>
-                        <p className="text-slate-600">Résolution : <strong className="text-rose-800 uppercase font-black">{ticket.resolutionType === 'swap_new' ? 'Échange Neuf 72h' : ticket.resolutionType}</strong></p>
+                        <p className="text-slate-600">Résolution : <strong className="text-rose-800 uppercase font-bold">{ticket.resolutionType === 'swap_new' ? 'Échange Neuf 72h' : ticket.resolutionType}</strong></p>
                         <p className="text-slate-600 font-medium">Panne déclarée : <span className="text-slate-900 font-bold bg-white p-1 rounded-md border border-slate-200 block mt-1">{ticket.issueDescription}</span></p>
                       </div>
 
@@ -206,7 +206,7 @@ export default function AdminSavPage() {
                             <p className="text-xs text-slate-700">Code Secret Échange OTP : <strong className="font-mono text-rose-700">{ticket.swapOtp}</strong></p>
                           </>
                         )}
-                        {ticket.notes && <p className="text-[11px] text-slate-500 italic">Notes : {ticket.notes}</p>}
+                        {ticket.notes && <p className="text-xs text-slate-500 italic">Notes : {ticket.notes}</p>}
                       </div>
                     </div>
 
@@ -215,7 +215,7 @@ export default function AdminSavPage() {
                       <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200/60">
                         <a
                           href={`tel:${ticket.customerPhone}`}
-                          className="py-2 px-3 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-[11px] flex items-center space-x-1"
+                          className="py-2 px-3 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-xs flex items-center space-x-1"
                         >
                           <Phone className="w-3.5 h-3.5" />
                           <span>Appeler Client</span>
@@ -225,7 +225,7 @@ export default function AdminSavPage() {
                           href={whatsappClientUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="py-2 px-3 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold rounded-xl text-[11px] flex items-center space-x-1"
+                          className="py-2 px-3 bg-suguba-wa hover:bg-[#20bd5a] text-suguba-profond font-bold rounded-xl text-xs flex items-center space-x-1"
                         >
                           <MessageCircle className="w-3.5 h-3.5 fill-current" />
                           <span>WhatsApp Suivi</span>
@@ -236,14 +236,14 @@ export default function AdminSavPage() {
                             envoyait `state.drivers[0]`, un livreur fictif. */}
                         {ticket.status === 'open' && (
                           livreurs.length === 0 ? (
-                            <span className="py-2 px-3 text-[11px] text-slate-500 italic">
+                            <span className="py-2 px-3 text-xs text-slate-500 italic">
                               Aucun livreur actif à assigner
                             </span>
                           ) : (
                             <div className="flex items-center gap-1.5">
                               <select
                                 id={`sav-driver-${ticket.id}`}
-                                className="bg-white border border-slate-300 rounded-xl px-2 py-1.5 text-[11px] font-bold text-slate-900"
+                                className="bg-white border border-slate-300 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-900"
                               >
                                 {livreurs.map((d) => (
                                   <option key={d.id} value={d.id}>{d.fullName}</option>
@@ -254,7 +254,7 @@ export default function AdminSavPage() {
                                   const select = document.getElementById(`sav-driver-${ticket.id}`) as HTMLSelectElement;
                                   if (select?.value) handleDispatchCourier(ticket.id, select.value);
                                 }}
-                                className="py-2 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-xl text-[11px] flex items-center space-x-1 shadow-xs"
+                                className="py-2 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs flex items-center space-x-1 shadow-xs"
                               >
                                 <Truck className="w-3.5 h-3.5" />
                                 <span>Assigner</span>
@@ -266,7 +266,7 @@ export default function AdminSavPage() {
                         {isDispatched && (
                           <button
                             onClick={() => handleResolveTicket(ticket.id)}
-                            className="py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-[11px] flex items-center space-x-1 shadow-xs"
+                            className="py-2 px-3 bg-suguba-profond hover:bg-suguba-profond-2 text-white font-bold rounded-xl text-xs flex items-center space-x-1 shadow-xs"
                           >
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             <span>Valider Échange Réussi & Clôturer</span>

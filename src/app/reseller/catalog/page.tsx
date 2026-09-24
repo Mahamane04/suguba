@@ -118,7 +118,7 @@ export default function ResellerCatalogPage() {
 
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
           <div className="space-y-1">
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900">Catalogue à partager</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Catalogue à partager</h1>
             <p className="text-xs text-slate-500">
               Un clic sur « Partager sur WhatsApp » envoie la photo, le prix et votre lien. Chaque vente livrée vous rapporte la commission affichée.
             </p>
@@ -135,8 +135,8 @@ export default function ResellerCatalogPage() {
             <div className="flex items-center gap-3">
               <Store className="w-6 h-6 text-slate-700 shrink-0" />
               <div>
-                <p className="text-sm font-black text-slate-900">Ma boutique — {maSelection.size} article{maSelection.size > 1 ? 's' : ''}</p>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-sm font-bold text-slate-900">Ma boutique — {maSelection.size} article{maSelection.size > 1 ? 's' : ''}</p>
+                <p className="text-xs text-slate-500">
                   Ajoutez des articles ci-dessous, puis partagez votre boutique : chaque vente vous est attribuée.
                 </p>
               </div>
@@ -148,7 +148,7 @@ export default function ResellerCatalogPage() {
           </div>
         )}
         {erreurBoutique && (
-          <p className="text-[11px] font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-2xl p-3">{erreurBoutique}</p>
+          <p className="text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-2xl p-3">{erreurBoutique}</p>
         )}
 
         {/* Recherche et catégories */}
@@ -234,7 +234,7 @@ export default function ResellerCatalogPage() {
                 <div className="grid grid-cols-2 gap-1.5">
                   <button
                     onClick={() => setSelectedProductForOrder(product)}
-                    className="h-8 rounded-xl border border-slate-200 hover:bg-slate-50 text-[11px] font-bold text-slate-700 inline-flex items-center justify-center gap-1"
+                    className="h-8 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-700 inline-flex items-center justify-center gap-1"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Vente</span>
@@ -243,7 +243,7 @@ export default function ResellerCatalogPage() {
                     <button
                       onClick={() => basculerBoutique(product.id)}
                       disabled={enCours === product.id}
-                      className={`h-8 rounded-xl border text-[11px] font-bold inline-flex items-center justify-center gap-1 transition-colors disabled:opacity-60 ${
+                      className={`h-8 rounded-xl border text-xs font-bold inline-flex items-center justify-center gap-1 transition-colors disabled:opacity-60 ${
                         maSelection.has(product.id)
                           ? 'bg-suguba-brand/10 border-suguba-brand/30 text-suguba-brand'
                           : 'border-slate-200 text-slate-700 hover:bg-slate-50'
@@ -255,7 +255,7 @@ export default function ResellerCatalogPage() {
                   ) : (
                     <Link
                       href={`/p/${product.slug}`}
-                      className="h-8 rounded-xl border border-slate-200 hover:bg-slate-50 text-[11px] font-bold text-slate-700 inline-flex items-center justify-center"
+                      className="h-8 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-700 inline-flex items-center justify-center"
                     >
                       Voir
                     </Link>

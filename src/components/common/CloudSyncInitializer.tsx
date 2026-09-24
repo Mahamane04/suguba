@@ -2,7 +2,8 @@
 
 import { useEffect } from 'react';
 import { cloudSyncService } from '@/lib/cloud-sync';
-import { sugubaStore, definirApercuAdmin } from '@/lib/store';
+import { sugubaStore } from '@/lib/store';
+import { rafraichirIdentite } from '@/lib/identite';
 
 export default function CloudSyncInitializer() {
   useEffect(() => {
@@ -21,24 +22,27 @@ export default function CloudSyncInitializer() {
     // Identité RÉELLE de la personne connectée (2026-09-11). La mémoire locale
     // démarrait sur le compte de démonstration « Moussa Coulibaly », affiché
     // tel quel par 12 écrans (« Bonjour, Moussa », nom du livreur…).
-    fetch('/api/auth/me')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((moi) => {
-        sugubaStore.definirUtilisateur(
-          moi?.authenticated
-            ? { id: moi.uid, fullName: moi.fullName, phone: moi.phone, role: moi.role, city: moi.city }
-            : null,
-        );
-        // Bandeau « aperçu admin » (voir PreviewBanner.tsx).
-        definirApercuAdmin(Boolean(moi?.authenticated && moi.apercu));
-        // Seuls admin/livreur/revendeur ont des commandes à lire ici (voir
-        // /api/orders/feed) : un client, fournisseur ou diaspora déclenchait
-        // sinon un 401 sur CHAQUE page (constaté en vérification phase 9).
-        cloudSyncService.fetchOrdersFromCloudSiEligible(moi?.authenticated ? moi.role : null);
-      })
-      .catch(() => {});
+    rafraichirIdentite({ forcer: true }).then((moi) => {
+      // Seuls admin/livreur/revendeur ont des commandes à lire ici (voir
+      // /api/orders/feed) : un client, fournisseur ou diaspora déclenchait
+      // sinon un 401 sur CHAQUE page (constaté en vérification phase 9).
+      cloudSyncService.fetchOrdersFromCloudSiEligible(moi?.authenticated ? (moi.role ?? null) : null);
+    });
 
-    return () => clearTimeout(filet);
+    // Relecture au retour sur l'app (2026-09-24) : après une connexion Google
+    // ouverte dans un autre onglet, ou une page restaurée depuis le cache du
+    // navigateur (iPhone), le layout ne remonte pas et l'identité restait
+    // figée sur « visiteur » — d'où la double connexion signalée.
+    const auRetour = () => { if (document.visibilityState === 'visible') rafraichirIdentite(); };
+    const aLaRestauration = (e: PageTransitionEvent) => { if (e.persisted) rafraichirIdentite({ forcer: true }); };
+    document.addEventListener('visibilitychange', auRetour);
+    window.addEventListener('pageshow', aLaRestauration);
+
+    return () => {
+      clearTimeout(filet);
+      document.removeEventListener('visibilitychange', auRetour);
+      window.removeEventListener('pageshow', aLaRestauration);
+    };
   }, []);
 
   return null;

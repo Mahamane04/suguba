@@ -28,12 +28,12 @@ export default function ResellerCalculatorPage() {
             <span>Retour à l&apos;Espace Revendeur</span>
           </Link>
 
-          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-black">
+          <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
             <Sparkles className="w-4 h-4 text-emerald-600" />
             <span>Opportunité Social Commerce Mali</span>
           </div>
 
-          <h1 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
+          <h1 className="text-2xl sm:text-4xl font-bold text-slate-900 tracking-tight">
             Combien pouvez-vous gagner par mois avec Suguba ?
           </h1>
           <p className="text-xs sm:text-sm text-slate-600">
@@ -46,7 +46,7 @@ export default function ResellerCalculatorPage() {
 
         {/* 3 Real Testimonial Case Studies from Bamako */}
         <div className="space-y-4">
-          <h2 className="text-base font-black text-slate-900 text-center">
+          <h2 className="text-base font-bold text-slate-900 text-center">
             Exemples Réels de Revendeurs à Bamako
           </h2>
 
@@ -58,7 +58,7 @@ export default function ResellerCalculatorPage() {
                 </div>
                 <div>
                   <strong className="block text-slate-900">Fatoumata D. (22 ans)</strong>
-                  <span className="text-[11px] text-slate-500">Étudiante à la FSEG (Badalabougou)</span>
+                  <span className="text-xs text-slate-500">Étudiante à la FSEG (Badalabougou)</span>
                 </div>
               </div>
               <p className="text-slate-600 leading-relaxed">
@@ -73,7 +73,7 @@ export default function ResellerCalculatorPage() {
                 </div>
                 <div>
                   <strong className="block text-slate-900">Oumar T. (27 ans)</strong>
-                  <span className="text-[11px] text-slate-500">Créateur TikTok (Hamdallaye ACI)</span>
+                  <span className="text-xs text-slate-500">Créateur TikTok (Hamdallaye ACI)</span>
                 </div>
               </div>
               <p className="text-slate-600 leading-relaxed">
@@ -88,7 +88,7 @@ export default function ResellerCalculatorPage() {
                 </div>
                 <div>
                   <strong className="block text-slate-900">Mariam C. (34 ans)</strong>
-                  <span className="text-[11px] text-slate-500">Mère au foyer (Kalaban-Coro)</span>
+                  <span className="text-xs text-slate-500">Mère au foyer (Kalaban-Coro)</span>
                 </div>
               </div>
               <p className="text-slate-600 leading-relaxed">

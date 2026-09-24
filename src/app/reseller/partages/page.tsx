@@ -96,10 +96,10 @@ export default function PartagesPage() {
             <Card key={l.code} className="space-y-2.5">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-sm font-black text-slate-900 truncate">
+                  <p className="text-sm font-bold text-slate-900 truncate">
                     {l.libelle || l.ref || LIBELLE_CIBLE[l.cible] || 'Partage'}
                   </p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
+                  <p className="text-xs text-slate-500 mt-0.5">
                     {LIBELLE_CIBLE[l.cible] || l.cible} · {nomCanal(l.canal)} ·{' '}
                     {new Date(l.creeLe).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                   </p>
@@ -109,18 +109,18 @@ export default function PartagesPage() {
 
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="rounded-2xl bg-slate-50 py-2">
-                  <p className="text-base font-black text-slate-900 tabular-nums">{l.clics}</p>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase">Visites</p>
+                  <p className="text-base font-bold text-slate-900 tabular-nums">{l.clics}</p>
+                  <p className="text-xs font-bold text-slate-500 uppercase">Visites</p>
                 </div>
                 <div className="rounded-2xl bg-slate-50 py-2">
-                  <p className="text-base font-black text-slate-900 tabular-nums">{l.commandes}</p>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase">Commandes</p>
+                  <p className="text-base font-bold text-slate-900 tabular-nums">{l.commandes}</p>
+                  <p className="text-xs font-bold text-slate-500 uppercase">Commandes</p>
                 </div>
                 <div className="rounded-2xl bg-slate-50 py-2">
-                  <p className="text-base font-black text-suguba-brand tabular-nums">
+                  <p className="text-base font-bold text-suguba-brand-dark tabular-nums">
                     {l.chiffreAffaires.toLocaleString('fr-FR')}
                   </p>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase">FCFA</p>
+                  <p className="text-xs font-bold text-slate-500 uppercase">FCFA</p>
                 </div>
               </div>
             </Card>

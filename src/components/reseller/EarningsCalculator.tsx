@@ -56,11 +56,11 @@ export default function EarningsCalculator({ showCta = true }: EarningsCalculato
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
         <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white flex items-center justify-center font-black shadow-md shadow-emerald-500/20">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white flex items-center justify-center font-bold shadow-md shadow-emerald-500/20">
             <Calculator className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="font-black text-base sm:text-lg text-slate-900">
+            <h3 className="font-bold text-base sm:text-lg text-slate-900">
               Simulateur de Revenus Mensuels Suguba
             </h3>
             <p className="text-xs text-slate-500">
@@ -69,7 +69,7 @@ export default function EarningsCalculator({ showCta = true }: EarningsCalculato
           </div>
         </div>
 
-        <span className="px-3 py-1 bg-amber-50 text-amber-800 text-[11px] font-black rounded-full border border-amber-200 self-start sm:self-auto">
+        <span className="px-3 py-1 bg-amber-50 text-amber-800 text-xs font-bold rounded-full border border-amber-200 self-start sm:self-auto">
           0 FCFA d&apos;Investissement
         </span>
       </div>
@@ -84,7 +84,7 @@ export default function EarningsCalculator({ showCta = true }: EarningsCalculato
               <ShoppingBagIcon className="w-4 h-4 text-emerald-600" />
               <span>Nombre de ventes réalisées par jour :</span>
             </span>
-            <span className="font-black text-emerald-700 font-mono text-sm bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200">
+            <span className="font-bold text-emerald-700 font-mono text-sm bg-emerald-50 px-2.5 py-0.5 rounded-lg border border-emerald-200">
               {salesPerDay} {salesPerDay > 1 ? 'articles / jour' : 'article / jour'}
             </span>
           </div>
@@ -98,7 +98,7 @@ export default function EarningsCalculator({ showCta = true }: EarningsCalculato
             aria-label="Nombre de ventes réalisées par jour"
             className="suguba-range text-emerald-600"
           />
-          <div className="flex justify-between text-[11px] text-slate-500 font-semibold">
+          <div className="flex justify-between text-xs text-slate-500 font-semibold">
             <span>1 / jour (Débutant)</span>
             <span>5 / jour (Actif)</span>
             <span>10 / jour (Pro TikTok)</span>
@@ -112,7 +112,7 @@ export default function EarningsCalculator({ showCta = true }: EarningsCalculato
               <DollarSign className="w-4 h-4 text-amber-500" />
               <span>Commission moyenne par produit :</span>
             </span>
-            <span className="font-black text-slate-900 font-mono text-sm bg-slate-100 px-2.5 py-0.5 rounded-lg">
+            <span className="font-bold text-slate-900 font-mono text-sm bg-slate-100 px-2.5 py-0.5 rounded-lg">
               {avgCommission.toLocaleString('fr-FR')} FCFA
             </span>
           </div>
@@ -126,7 +126,7 @@ export default function EarningsCalculator({ showCta = true }: EarningsCalculato
             aria-label="Commission moyenne par produit, en FCFA"
             className="suguba-range text-amber-500"
           />
-          <div className="flex justify-between text-[11px] text-slate-500 font-semibold">
+          <div className="flex justify-between text-xs text-slate-500 font-semibold">
             <span>2 000 F (Accessoires)</span>
             <span>4 000 F (Mode & Beauté)</span>
             <span>8 000 F (Électro & Solaire)</span>
@@ -140,7 +140,7 @@ export default function EarningsCalculator({ showCta = true }: EarningsCalculato
               <Users className="w-4 h-4 text-slate-600" />
               <span>Amis parrainés dans votre équipe :</span>
             </span>
-            <span className="font-black text-slate-700 font-mono text-sm bg-slate-50 px-2.5 py-0.5 rounded-lg border border-slate-200">
+            <span className="font-bold text-slate-700 font-mono text-sm bg-slate-50 px-2.5 py-0.5 rounded-lg border border-slate-200">
               {referralsCount} {referralsCount > 1 ? 'filleuls actifs' : 'filleul actif'}
             </span>
           </div>
@@ -154,7 +154,7 @@ export default function EarningsCalculator({ showCta = true }: EarningsCalculato
             aria-label="Nombre d'amis parrainés dans votre équipe"
             className="suguba-range text-slate-600"
           />
-          <div className="flex justify-between text-[11px] text-slate-500 font-semibold">
+          <div className="flex justify-between text-xs text-slate-500 font-semibold">
             <span>0 filleul</span>
             <span>10 filleuls</span>
             <span>20 filleuls</span>
@@ -167,10 +167,10 @@ export default function EarningsCalculator({ showCta = true }: EarningsCalculato
       <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <span className="text-[11px] font-bold text-emerald-300 uppercase tracking-widest block">
+            <span className="text-xs font-bold text-emerald-300 uppercase tracking-widest block">
               Revenu Mensuel Net Estimé
             </span>
-            <div className="text-3xl sm:text-4xl font-black text-amber-400 font-mono tracking-tight">
+            <div className="text-3xl sm:text-4xl font-bold text-amber-400 font-mono tracking-tight">
               {totalMonthlyIncome.toLocaleString('fr-FR')} <span className="text-xl font-normal text-white">FCFA / mois</span>
             </div>
           </div>
@@ -204,7 +204,7 @@ export default function EarningsCalculator({ showCta = true }: EarningsCalculato
         <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <Link
             href="/reseller/join"
-            className="flex-1 py-4 px-6 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl text-sm shadow-xl shadow-emerald-600/30 flex items-center justify-center space-x-2 transition-transform active:scale-95 text-center"
+            className="flex-1 py-4 px-6 bg-suguba-profond hover:bg-suguba-profond-2 text-white font-bold rounded-2xl text-sm shadow-xl shadow-emerald-600/30 flex items-center justify-center space-x-2 transition-transform active:scale-95 text-center"
           >
             <span>Commencer à Gagner Dès Aujourd&apos;hui (Gratuit)</span>
             <ArrowRight className="w-4 h-4" />
@@ -216,7 +216,7 @@ export default function EarningsCalculator({ showCta = true }: EarningsCalculato
             )}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="py-4 px-5 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold rounded-2xl text-xs flex items-center justify-center space-x-2 transition-all shadow-xs"
+            className="py-4 px-5 bg-suguba-wa hover:bg-[#20bd5a] text-suguba-profond font-bold rounded-2xl text-xs flex items-center justify-center space-x-2 transition-all shadow-xs"
           >
             <Share2 className="w-4 h-4" />
             <span>Partager sur WhatsApp</span>

@@ -78,8 +78,8 @@ export default function VerificationsAdminPage() {
             <Card key={d.id} className="space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-sm font-black text-slate-900 truncate">{d.nom || 'Compte sans nom'}</p>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-sm font-bold text-slate-900 truncate">{d.nom || 'Compte sans nom'}</p>
+                  <p className="text-xs text-slate-500">
                     {d.telephone || '—'} · déposé le{' '}
                     {new Date(d.creeLe).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
                   </p>

@@ -9,19 +9,30 @@
  *  mélangées (slate 1477× / gray 397×), 7 rayons et 12 tailles de texte.
  *  D'où ces règles, et surtout le composant qui les applique.
  *
- *  1. COULEUR D'ACTION — un seul vert : `suguba-brand` (#09b500).
- *     `emerald-*` est réservé aux fonds et badges, JAMAIS à un bouton.
- *     Ne jamais écrire #09b500 en dur : le jeton existe.
+ *  1. PALETTE VERTE (refonte du 2026-09-23, audit UI « un seul vert, bien
+ *     utilisé ») — chaque vert a UN rôle :
+ *       suguba-profond  #0B3B2C  en-têtes, menu du bas, bouton principal
+ *                                (texte blanc, 12,5:1), textes forts
+ *       suguba-brand    #09B500  marque, icônes, succès. JAMAIS de texte
+ *                                blanc dessus : 2,76:1, illisible au soleil.
+ *                                Texte posé dessus : suguba-profond.
+ *       suguba-wa       #25D366  uniquement les boutons qui ouvrent WhatsApp
+ *       suguba-citron   #C7F464  ce qui compte : gains, solde, onglet actif,
+ *                                action sur fond profond (texte profond)
+ *       suguba-menthe / suguba-sauge   fonds clairs
+ *     Texte vert sur fond blanc : `suguba-brand-dark` (5,1:1), pas `brand`.
+ *     Rouge : erreurs et annulations seulement.
  *
  *  2. NEUTRES — une seule échelle : `slate`. Ne pas introduire `gray`.
  *
- *  3. RAYONS — trois seulement :
- *       rounded-xl   champs, badges, petites pastilles
- *       rounded-2xl  boutons et cartes internes
+ *  3. RAYONS — boutons en pilule (`rounded-full`, via <Button>) ;
+ *       rounded-xl   champs, petites pastilles
+ *       rounded-2xl  cartes internes
  *       rounded-3xl  cartes de page
  *
- *  4. TEXTE — rien sous 11px : illisible sur un téléphone en plein soleil.
- *     Pas de nouveaux `text-[9px]` / `text-[7px]`.
+ *  4. TEXTE — `text-xs` vaut 13 px (surchargé plus bas) : c'est le minimum.
+ *     Pas de `text-[11px]`, `text-[10px]`… Graisse maximale : `font-bold`
+ *     (pas de `font-black`) — quand tout est extra-gras, rien ne ressort.
  *
  *  5. BOUTONS — passer par <Button> (src/components/ui/Button.tsx), pas par
  *     des classes à la main. C'est lui qui tient les règles ci-dessus.
@@ -62,10 +73,22 @@ module.exports = {
           brand:   '#09b500',   /* ✅ Couleur officielle sugubaml.com */
           'brand-dark': '#078000',
           'brand-light': '#e6fee6',
+          /* Palette verte du 2026-09-23 (voir règle 1 en tête de fichier). */
+          profond:   '#0B3B2C',
+          'profond-2': '#145A43',
+          citron:    '#C7F464',
+          wa:        '#25D366',
+          menthe:    '#E9F5E6',
+          sauge:     '#F3F7F1',
           dark:    '#0f172a',
           orange:  '#f97316',
           gold:    '#f59e0b',
         }
+      },
+      // `text-xs` passe de 12 à 13 px : c'est désormais le plus petit texte
+      // de l'app (les text-[9..11px] ont été ramenés à text-xs).
+      fontSize: {
+        xs: ['0.8125rem', { lineHeight: '1.15rem' }],
       },
       borderRadius: {
         '4xl': '2rem',

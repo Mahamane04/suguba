@@ -90,7 +90,7 @@ export default function AdminDailyReportPage() {
               <ArrowLeft className="w-4 h-4" />
               <span>Retour à la console Suguba Ops</span>
             </Link>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
               Rapport Flash Quotidien du Fondateur
             </h1>
             <p className="text-xs text-slate-500 capitalize">
@@ -102,7 +102,7 @@ export default function AdminDailyReportPage() {
             href={whatsappUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center space-x-2 px-4 py-2.5 bg-[#25D366] hover:bg-[#20bd5a] text-white font-black rounded-2xl text-xs shadow-md transition-all self-start sm:self-auto active:scale-95"
+            className="flex items-center space-x-2 px-4 py-2.5 bg-suguba-wa hover:bg-[#20bd5a] text-suguba-profond font-bold rounded-2xl text-xs shadow-md transition-all self-start sm:self-auto active:scale-95"
           >
             <MessageCircle className="w-4 h-4 fill-current" />
             <span>Envoyer Rapport sur WhatsApp (+223 89 46 00 00)</span>
@@ -112,33 +112,33 @@ export default function AdminDailyReportPage() {
         {/* 4 Key Executive Metrics */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white p-5 rounded-3xl border border-emerald-200 shadow-xs space-y-1">
-            <span className="text-[11px] font-bold text-emerald-800 uppercase">Marge Nette Suguba</span>
-            <p className="text-2xl font-black text-emerald-700">
+            <span className="text-xs font-bold text-emerald-800 uppercase">Marge Nette Suguba</span>
+            <p className="text-2xl font-bold text-emerald-700">
               {totalSugubaMargin.toLocaleString('fr-FR')} <span className="text-xs font-normal">F</span>
             </p>
-            <p className="text-[11px] text-emerald-600 font-bold">Bénéfice net du jour</p>
+            <p className="text-xs text-emerald-600 font-bold">Bénéfice net du jour</p>
           </div>
 
           <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-1">
-            <span className="text-[11px] font-bold text-slate-500 uppercase">Volume Global (GMV)</span>
-            <p className="text-2xl font-black text-slate-900">
+            <span className="text-xs font-bold text-slate-500 uppercase">Volume Global (GMV)</span>
+            <p className="text-2xl font-bold text-slate-900">
               {totalGmv.toLocaleString('fr-FR')} <span className="text-xs font-normal">F</span>
             </p>
-            <p className="text-[11px] text-slate-500">Total encaissé</p>
+            <p className="text-xs text-slate-500">Total encaissé</p>
           </div>
 
           <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-1">
-            <span className="text-[11px] font-bold text-slate-500 uppercase">Colis Livrés</span>
-            <p className="text-2xl font-black text-slate-900">{deliveredOrders.length}</p>
-            <p className="text-[11px] text-emerald-600 font-bold">100% avec OTP validé</p>
+            <span className="text-xs font-bold text-slate-500 uppercase">Colis Livrés</span>
+            <p className="text-2xl font-bold text-slate-900">{deliveredOrders.length}</p>
+            <p className="text-xs text-emerald-600 font-bold">100% avec OTP validé</p>
           </div>
 
           <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-1">
-            <span className="text-[11px] font-bold text-slate-800 uppercase">Commissions Réseau</span>
-            <p className="text-2xl font-black text-slate-700">
+            <span className="text-xs font-bold text-slate-800 uppercase">Commissions Réseau</span>
+            <p className="text-2xl font-bold text-slate-700">
               {totalCommissions.toLocaleString('fr-FR')} <span className="text-xs font-normal">F</span>
             </p>
-            <p className="text-[11px] text-slate-600 font-medium">Distribuées aux revendeurs</p>
+            <p className="text-xs text-slate-600 font-medium">Distribuées aux revendeurs</p>
           </div>
         </div>
 
@@ -147,7 +147,7 @@ export default function AdminDailyReportPage() {
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <div className="flex items-center space-x-2">
               <Calendar className="w-5 h-5 text-emerald-600" />
-              <h2 className="font-black text-sm text-slate-900">
+              <h2 className="font-bold text-sm text-slate-900">
                 Aperçu du Rapport Télégram / WhatsApp du Soir
               </h2>
             </div>

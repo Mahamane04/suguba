@@ -28,7 +28,7 @@ export default function PrivacyPage() {
               <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900">
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
                 Politique de Confidentialité & Données Personnelles
               </h1>
               <p className="text-xs text-slate-500">
@@ -40,7 +40,7 @@ export default function PrivacyPage() {
           <div className="prose prose-slate max-w-none text-xs text-slate-700 space-y-4 leading-relaxed">
             
             <section className="space-y-2">
-              <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                 1. Données Collectées & Finalités
               </h2>
               <p>
@@ -54,7 +54,7 @@ export default function PrivacyPage() {
             </section>
 
             <section className="space-y-2">
-              <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                 2. Non-Divulgation & Sécurité des Données
               </h2>
               <p>
@@ -63,7 +63,7 @@ export default function PrivacyPage() {
             </section>
 
             <section className="space-y-2">
-              <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                 3. Vos Droits d&apos;Accès, Rectification & Suppression
               </h2>
               <p>

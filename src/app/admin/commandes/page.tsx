@@ -75,13 +75,13 @@ export default function CommandesAdminPage() {
                 <Card key={cle} className="space-y-2">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-sm font-black text-slate-900 truncate">{tete.client} · {tete.telephone}</p>
-                      <p className="text-[11px] text-slate-500">
+                      <p className="text-sm font-bold text-slate-900 truncate">{tete.client} · {tete.telephone}</p>
+                      <p className="text-xs text-slate-500">
                         {new Date(tete.creeLe).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · {tete.ville}{tete.quartier ? `, ${tete.quartier}` : ''}
                         {tete.revendeur ? ` · via ${tete.revendeur}` : ''}
                       </p>
                     </div>
-                    <span className="text-sm font-black text-slate-900 tabular-nums shrink-0">{fcfa(total)}</span>
+                    <span className="text-sm font-bold text-slate-900 tabular-nums shrink-0">{fcfa(total)}</span>
                   </div>
                   {lignes.length > 1 && <StatusPill ton="info"><ShoppingCart className="w-3 h-3" />Panier de {lignes.length} articles</StatusPill>}
                   <div className="divide-y divide-slate-100">

@@ -82,8 +82,8 @@ export default function EquipeFournisseurPage() {
         <>
           <Card className="space-y-4">
             <div>
-              <p className="text-sm font-black text-slate-900">Inviter un collaborateur</p>
-              <p className="text-[11px] text-slate-500 mt-0.5">Il se connecte avec son propre compte, accepte, puis vous confirmez. Il n’a accès qu’à ce que son rôle permet.</p>
+              <p className="text-sm font-bold text-slate-900">Inviter un collaborateur</p>
+              <p className="text-xs text-slate-500 mt-0.5">Il se connecte avec son propre compte, accepte, puis vous confirmez. Il n’a accès qu’à ce que son rôle permet.</p>
             </div>
             <Field label="Numéro WhatsApp" htmlFor="tel-collab" requis>
               <Input id="tel-collab" type="tel" inputMode="tel" value={telephone} onChange={(e) => setTelephone(e.target.value)} placeholder="76 12 34 56" />
@@ -92,8 +92,8 @@ export default function EquipeFournisseurPage() {
               {roles.map((r) => (
                 <button key={r.valeur} type="button" role="radio" aria-checked={role === r.valeur} onClick={() => setRole(r.valeur)}
                   className={`w-full rounded-2xl border p-3 text-left ${role === r.valeur ? 'border-suguba-brand ring-2 ring-suguba-brand bg-suguba-brand/5' : 'border-slate-200 bg-white'}`}>
-                  <span className="block text-xs font-black text-slate-900">{r.libelle}</span>
-                  <span className="block text-[11px] text-slate-500">{r.description}</span>
+                  <span className="block text-xs font-bold text-slate-900">{r.libelle}</span>
+                  <span className="block text-xs text-slate-500">{r.description}</span>
                 </button>
               ))}
             </div>
@@ -113,7 +113,7 @@ export default function EquipeFournisseurPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-sm font-bold text-slate-900">{m.nom || m.telephone}</p>
-                      <p className="text-[11px] text-slate-500">{libelle(m.role)}{m.nom ? ` · ${m.telephone}` : ''}</p>
+                      <p className="text-xs text-slate-500">{libelle(m.role)}{m.nom ? ` · ${m.telephone}` : ''}</p>
                     </div>
                     <StatusPill ton={m.statut === 'active' ? 'succes' : m.statut === 'accepted' ? 'info' : 'attente'}>
                       {m.statut === 'active' ? 'Actif' : m.statut === 'accepted' ? 'À confirmer' : 'Invité'}

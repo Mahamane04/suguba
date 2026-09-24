@@ -28,7 +28,7 @@ export default function TermsPage() {
               <Scale className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900">
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
                 Conditions Générales d&apos;Utilisation & de Vente
               </h1>
               <p className="text-xs text-slate-500">
@@ -40,7 +40,7 @@ export default function TermsPage() {
           <div className="prose prose-slate max-w-none text-xs text-slate-700 space-y-4 leading-relaxed">
             
             <section className="space-y-2">
-              <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                 1. Objet & Rôle de la Plateforme Suguba
               </h2>
               <p>
@@ -52,7 +52,7 @@ export default function TermsPage() {
             </section>
 
             <section className="space-y-2">
-              <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                 2. Commandes & Validation par Code OTP
               </h2>
               <p>
@@ -68,7 +68,7 @@ export default function TermsPage() {
             </section>
 
             <section className="space-y-2">
-              <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                 3. Prix, Devises et Modalités de Règlement
               </h2>
               <p>
@@ -77,7 +77,7 @@ export default function TermsPage() {
             </section>
 
             <section className="space-y-2">
-              <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                 4. Droit Applicable & Règlement des Différends
               </h2>
               <p>
@@ -87,7 +87,7 @@ export default function TermsPage() {
 
           </div>
 
-          <div className="pt-4 border-t border-slate-100 flex flex-wrap gap-2 text-[11px] font-bold text-emerald-700">
+          <div className="pt-4 border-t border-slate-100 flex flex-wrap gap-2 text-xs font-bold text-emerald-700">
             <Link href="/legal/reseller-agreement" className="hover:underline">Contrat Revendeur</Link>
             <span>•</span>
             <Link href="/legal/privacy" className="hover:underline">Protection des Données (APDP)</Link>

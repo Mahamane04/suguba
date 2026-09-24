@@ -49,8 +49,8 @@ export default function SelectionReferent() {
     <section className="space-y-3" aria-labelledby="titre-selection-referent">
       <div className="flex items-end justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[11px] font-bold text-suguba-brand uppercase flex items-center gap-1"><Sparkles className="w-3.5 h-3.5" />Recommandé pour vous</p>
-          <h2 id="titre-selection-referent" className="text-lg font-black text-slate-900 truncate">La sélection de {selection.nom}</h2>
+          <p className="text-xs font-bold text-suguba-brand-dark uppercase flex items-center gap-1"><Sparkles className="w-3.5 h-3.5" />Recommandé pour vous</p>
+          <h2 id="titre-selection-referent" className="text-lg font-bold text-slate-900 truncate">La sélection de {selection.nom}</h2>
         </div>
         <Link href={selection.lienBoutique} className="shrink-0 inline-flex items-center gap-1 text-xs font-bold text-slate-700 min-h-[40px]">
           Tout voir <ChevronRight className="w-4 h-4" />
@@ -64,7 +64,7 @@ export default function SelectionReferent() {
             {p.image ? <img src={p.image} alt="" className="w-full aspect-square object-cover" loading="lazy" /> : <div className="w-full aspect-square bg-slate-100" />}
             <div className="p-2.5 space-y-0.5">
               <p className="text-xs font-bold text-slate-800 line-clamp-2 leading-tight">{p.nom}</p>
-              <p className="text-sm font-black text-slate-900 tabular-nums">{p.prix.toLocaleString('fr-FR')} F</p>
+              <p className="text-sm font-bold text-slate-900 tabular-nums">{p.prix.toLocaleString('fr-FR')} F</p>
             </div>
           </Link>
         ))}

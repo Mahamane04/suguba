@@ -68,7 +68,7 @@ export default function PwaInstallPrompt() {
         <div className="flex items-center space-x-2 shrink-0">
           <button
             onClick={handleInstallClick}
-            className="px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black rounded-lg text-[11px] transition-transform active:scale-95 shadow-xs"
+            className="px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold rounded-lg text-xs transition-transform active:scale-95 shadow-xs"
           >
             Installer
           </button>
@@ -91,7 +91,7 @@ export default function PwaInstallPrompt() {
             <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
               <Download className="w-6 h-6" />
             </div>
-            <h3 className="font-black text-base">Installer sur iPhone / iPad</h3>
+            <h3 className="font-bold text-base">Installer sur iPhone / iPad</h3>
             <p className="text-xs text-slate-600 text-left space-y-2">
               1. Appuyez sur le bouton de <strong>Partage</strong> en bas de Safari.<br />
               2. Faites défiler et appuyez sur <strong>&quot;Sur l&apos;écran d&apos;accueil&quot;</strong>.<br />

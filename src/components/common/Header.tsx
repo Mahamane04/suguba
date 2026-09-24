@@ -108,7 +108,7 @@ export default function Header() {
             <div className="relative w-9 h-9 rounded-xl overflow-hidden shrink-0">
               <Image src="/images/logo.png" alt="Logo Suguba" fill className="object-contain" priority />
             </div>
-            <span className="text-lg font-black tracking-tight text-slate-900 whitespace-nowrap">SUGUBA</span>
+            <span className="text-lg font-bold tracking-tight text-slate-900 whitespace-nowrap">SUGUBA</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-1 text-sm ml-4">
@@ -139,7 +139,7 @@ export default function Header() {
             {!connecte ? (
               <Link
                 href="/login"
-                className="hidden sm:flex items-center gap-1.5 h-10 px-4 rounded-2xl text-sm font-bold bg-suguba-brand text-white hover:bg-suguba-brand-dark transition-colors"
+                className="hidden sm:flex items-center gap-1.5 h-10 px-4 rounded-2xl text-sm font-bold bg-suguba-profond text-white hover:bg-suguba-profond-2 transition-colors"
               >
                 <LogIn className="w-4 h-4" />
                 Se connecter
@@ -157,7 +157,7 @@ export default function Header() {
                   </span>
                   <span className="leading-tight text-left">
                     <span className="block text-sm font-bold text-slate-900">{nomAffiche}</span>
-                    <span className="block text-[11px] text-slate-500">{conf?.label}</span>
+                    <span className="block text-xs text-slate-500">{conf?.label}</span>
                   </span>
                   <ChevronDown className={`w-4 h-4 text-slate-500 transition-transform ${menuCompte ? 'rotate-180' : ''}`} />
                 </button>
@@ -202,8 +202,8 @@ export default function Header() {
           {connecte && conf && IconeRole ? (
             <>
               <div className="px-3 py-2">
-                <p className="text-sm font-black text-slate-900">{nomAffiche}</p>
-                <p className="text-[11px] text-slate-500">{conf.label}</p>
+                <p className="text-sm font-bold text-slate-900">{nomAffiche}</p>
+                <p className="text-xs text-slate-500">{conf.label}</p>
               </div>
               <Link href={conf.path} onClick={() => setMenuMobile(false)}
                 className="flex items-center gap-3 px-3 py-3 rounded-xl bg-slate-100 text-slate-900 font-semibold">
@@ -219,7 +219,7 @@ export default function Header() {
           ) : (
             <>
               <Link href="/login" onClick={() => setMenuMobile(false)}
-                className="flex items-center gap-3 px-3 py-3 rounded-xl bg-suguba-brand text-white font-bold">
+                className="flex items-center gap-3 px-3 py-3 rounded-xl bg-suguba-profond text-white font-bold">
                 <LogIn className="w-4 h-4" />
                 Se connecter
               </Link>
@@ -234,12 +234,12 @@ export default function Header() {
           {/* Liens légaux : leur seul chemin sur mobile (le pied de page est
               réservé à l'accueil sur ordinateur). */}
           <div className="pt-3 mt-1 border-t border-slate-100">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 text-[11px] text-slate-500">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 text-xs text-slate-500">
               <Link href="/legal/terms" onClick={() => setMenuMobile(false)} className="hover:text-slate-700">Conditions</Link>
               <Link href="/legal/privacy" onClick={() => setMenuMobile(false)} className="hover:text-slate-700">Confidentialité</Link>
               <Link href="/legal/warranty" onClick={() => setMenuMobile(false)} className="hover:text-slate-700">Garantie &amp; SAV</Link>
             </div>
-            <p className="px-3 mt-1.5 text-[11px] text-slate-500">
+            <p className="px-3 mt-1.5 text-xs text-slate-500">
               Suguba Technologies Mali · <a href="tel:+22389460000" className="hover:text-slate-700">+223 89 46 00 00</a>
             </p>
           </div>

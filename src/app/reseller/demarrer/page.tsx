@@ -133,7 +133,7 @@ export default function DemarrerPage() {
       <Header />
       <main className="flex-1 w-full max-w-md mx-auto px-4 py-6 space-y-5">
         <div className="space-y-2">
-          <div className="flex items-center justify-between text-[11px] font-bold text-slate-500">
+          <div className="flex items-center justify-between text-xs font-bold text-slate-500">
             <span>Étape {etape + 1} sur {ETAPES.length}</span>
             <button type="button" onClick={() => router.push('/reseller')} className="underline min-h-[32px]">Terminer plus tard</button>
           </div>
@@ -142,7 +142,7 @@ export default function DemarrerPage() {
               <span key={e} className={`h-1.5 flex-1 rounded-full ${i <= etape ? 'bg-suguba-brand' : 'bg-slate-200'}`} />
             ))}
           </div>
-          <h1 className="text-xl font-black text-slate-900 pt-1">{ETAPES[etape]}</h1>
+          <h1 className="text-xl font-bold text-slate-900 pt-1">{ETAPES[etape]}</h1>
         </div>
 
         <Card className="space-y-4">
@@ -157,7 +157,7 @@ export default function DemarrerPage() {
               <span className="w-10 h-10 rounded-2xl bg-slate-100 text-slate-600 flex items-center justify-center shrink-0"><Phone className="w-5 h-5" /></span>
               <div>
                 <p className="text-sm font-bold text-slate-900">{telephone || 'Numéro non renseigné'}</p>
-                <p className="text-[11px] text-slate-500">C’est à ce numéro que Suguba vous appelle et vous verse vos gains. Vous pourrez le faire vérifier dans « Mon profil vérifié ».</p>
+                <p className="text-xs text-slate-500">C’est à ce numéro que Suguba vous appelle et vous verse vos gains. Vous pourrez le faire vérifier dans « Mon profil vérifié ».</p>
               </div>
             </div>
           )}
@@ -209,7 +209,7 @@ export default function DemarrerPage() {
 
           {etape === 6 && (
             <div className="space-y-2">
-              <p className="text-[11px] text-slate-500">Ce que vous voulez vendre. Suguba vous proposera d’abord ces produits.</p>
+              <p className="text-xs text-slate-500">Ce que vous voulez vendre. Suguba vous proposera d’abord ces produits.</p>
               <div className="flex flex-wrap gap-2">
                 {FAMILLES_CATEGORIES.map((f) => {
                   const actif = categories.includes(f.famille);

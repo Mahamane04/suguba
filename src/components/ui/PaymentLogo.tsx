@@ -30,9 +30,9 @@ const MARQUES: Record<MoyenPaiement, { nom: string; fond: string; texte: string;
 };
 
 const TAILLES = {
-  sm: 'w-8 h-8 rounded-lg text-[9px]',
-  md: 'w-10 h-10 rounded-xl text-[10px]',
-  lg: 'w-12 h-12 rounded-xl text-[11px]',
+  sm: 'w-8 h-8 rounded-lg text-xs',
+  md: 'w-10 h-10 rounded-xl text-xs',
+  lg: 'w-12 h-12 rounded-xl text-xs',
 };
 
 /** Correspondance avec les codes réseau SasPay et les libellés de retrait. */
@@ -78,7 +78,7 @@ export default function PaymentLogo({
       ) : moyen === 'especes' ? (
         <Banknote className="w-1/2 h-1/2" />
       ) : (
-        <span className="font-black lowercase tracking-tight leading-none">{marque.mot}</span>
+        <span className="font-bold lowercase tracking-tight leading-none">{marque.mot}</span>
       )}
     </span>
   );

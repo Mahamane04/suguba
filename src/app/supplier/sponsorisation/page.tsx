@@ -126,8 +126,8 @@ export default function SponsorisationPage() {
               <Card key={p.id} className={`space-y-2 ${packChoisi === p.id ? 'ring-2 ring-suguba-brand border-suguba-brand' : ''}`}>
                 <button type="button" onClick={() => setPackChoisi(p.id)} className="w-full text-left space-y-2">
                   <div className="flex items-start justify-between gap-3">
-                    <p className="text-sm font-black text-slate-900">{p.nom}</p>
-                    <p className="text-lg font-black text-suguba-brand tabular-nums shrink-0">
+                    <p className="text-sm font-bold text-slate-900">{p.nom}</p>
+                    <p className="text-lg font-bold text-suguba-brand-dark tabular-nums shrink-0">
                       {p.prix.toLocaleString('fr-FR')} F
                     </p>
                   </div>
@@ -143,7 +143,7 @@ export default function SponsorisationPage() {
           </div>
 
           <Card className="space-y-4">
-            <p className="text-sm font-black text-slate-900">Demander une sponsorisation</p>
+            <p className="text-sm font-bold text-slate-900">Demander une sponsorisation</p>
             <form onSubmit={demander} className="space-y-3">
               <Field label="Produit à mettre en avant" htmlFor="produit" requis>
                 <Select id="produit" value={produitChoisi} onChange={(e) => setProduitChoisi(e.target.value)} required>
@@ -161,7 +161,7 @@ export default function SponsorisationPage() {
                 {envoi ? <Loader2 className="w-4 h-4 animate-spin" /> : <Megaphone className="w-4 h-4" />}
                 Envoyer la demande
               </Button>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-xs text-slate-500">
                 Votre demande part en attente. Suguba vous contacte pour le règlement, puis l’active.
               </p>
             </form>
@@ -175,7 +175,7 @@ export default function SponsorisationPage() {
                     <p className="text-sm font-bold text-slate-900 truncate">{s.libelle || 'Sponsorisation'}</p>
                     <StatusPill ton={TON_STATUT[s.statut] || 'neutre'}>{LIBELLE_STATUT[s.statut] || s.statut}</StatusPill>
                   </div>
-                  <p className="text-[11px] text-slate-500 flex items-center gap-3">
+                  <p className="text-xs text-slate-500 flex items-center gap-3">
                     <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{s.impressions}</span>
                     <span className="flex items-center gap-1"><MousePointerClick className="w-3 h-3" />{s.clics}</span>
                     <span>{s.budget.toLocaleString('fr-FR')} F</span>

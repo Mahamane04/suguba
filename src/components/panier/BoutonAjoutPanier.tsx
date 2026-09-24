@@ -19,7 +19,7 @@ export default function BoutonAjoutPanier({ productId, quantite }: { productId: 
   if (ajoute) {
     return (
       <Button href="/panier" variant="ghost" fullWidth>
-        <Check className="w-4 h-4 text-suguba-brand" />
+        <Check className="w-4 h-4 text-suguba-brand-dark" />
         Dans le panier — voir mon panier
       </Button>
     );

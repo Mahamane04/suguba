@@ -39,7 +39,7 @@ export default function ResellerOrdersPage() {
         
         {/* Page Title */}
         <div className="space-y-1">
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
             Mes Ventes & Suivi des Commandes
           </h1>
           <p className="text-xs text-slate-500">
@@ -88,8 +88,8 @@ export default function ResellerOrdersPage() {
                       <span className="font-mono text-xs font-bold text-slate-900">
                         #{order.orderNumber}
                       </span>
-                      <span className="text-[11px] text-slate-500">•</span>
-                      <span className="text-[11px] text-slate-500 flex items-center">
+                      <span className="text-xs text-slate-500">•</span>
+                      <span className="text-xs text-slate-500 flex items-center">
                         <Calendar className="w-3 h-3 mr-1" />
                         {new Date(order.createdAt).toLocaleDateString('fr-FR')}
                       </span>
@@ -98,25 +98,25 @@ export default function ResellerOrdersPage() {
                     {/* Status Badge */}
                     <div>
                       {order.status === 'delivered' && (
-                        <span className="px-2.5 py-1 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 text-[11px] font-black flex items-center space-x-1">
+                        <span className="px-2.5 py-1 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs font-bold flex items-center space-x-1">
                           <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                           <span>Livré & Encaissé</span>
                         </span>
                       )}
                       {order.status === 'in_transit' && (
-                        <span className="px-2.5 py-1 rounded-full bg-slate-100 border border-slate-300 text-slate-800 text-[11px] font-black flex items-center space-x-1">
+                        <span className="px-2.5 py-1 rounded-full bg-slate-100 border border-slate-300 text-slate-800 text-xs font-bold flex items-center space-x-1">
                           <Truck className="w-3 h-3 text-slate-600" />
                           <span>En cours de livraison</span>
                         </span>
                       )}
                       {order.status === 'dispatched' && (
-                        <span className="px-2.5 py-1 rounded-full bg-slate-100 border border-slate-300 text-slate-800 text-[11px] font-black flex items-center space-x-1">
+                        <span className="px-2.5 py-1 rounded-full bg-slate-100 border border-slate-300 text-slate-800 text-xs font-bold flex items-center space-x-1">
                           <Bike className="w-3 h-3 text-slate-600" />
                           <span>Livreur assigné</span>
                         </span>
                       )}
                       {order.status === 'pending_call' && (
-                        <span className="px-2.5 py-1 rounded-full bg-amber-100 border border-amber-300 text-amber-800 text-[11px] font-black flex items-center space-x-1">
+                        <span className="px-2.5 py-1 rounded-full bg-amber-100 border border-amber-300 text-amber-800 text-xs font-bold flex items-center space-x-1">
                           <Phone className="w-3 h-3 text-amber-600" />
                           <span>Appel Suguba en attente</span>
                         </span>
@@ -134,10 +134,10 @@ export default function ResellerOrdersPage() {
                       </div>
                       <div className="min-w-0 space-y-0.5">
                         <h4 className="font-bold text-xs text-slate-900 truncate">{order.productName}</h4>
-                        <p className="text-[11px] text-slate-500">
+                        <p className="text-xs text-slate-500">
                           Quantité : <strong>{order.quantity}</strong> • Montant : <strong>{order.totalAmount.toLocaleString('fr-FR')} FCFA</strong>
                         </p>
-                        <p className="text-[11px] text-emerald-700 font-black">
+                        <p className="text-xs text-emerald-700 font-bold">
                           Ta Commission : +{order.resellerCommission.toLocaleString('fr-FR')} FCFA
                         </p>
                       </div>
@@ -154,7 +154,7 @@ export default function ResellerOrdersPage() {
                         <span>{order.neighborhood} — {order.landmark}</span>
                       </p>
                       {order.driverName && (
-                        <p className="text-slate-600 text-[11px] pt-1 border-t border-slate-200">
+                        <p className="text-slate-600 text-xs pt-1 border-t border-slate-200">
                           Livreur : <strong>{order.driverName}</strong>
                         </p>
                       )}
@@ -173,7 +173,7 @@ export default function ResellerOrdersPage() {
                         {commission?.status === 'potential' && 'Commission potentielle (en attente confirmation commande).'}
                       </span>
                     </div>
-                    <span className="font-black text-emerald-800 text-xs">
+                    <span className="font-bold text-emerald-800 text-xs">
                       +{order.resellerCommission.toLocaleString('fr-FR')} FCFA
                     </span>
                   </div>

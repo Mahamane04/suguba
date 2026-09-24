@@ -136,7 +136,7 @@ export default function AdminProductsPage() {
 
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
           <div>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900">Produits</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Produits</h1>
             <p className="text-xs text-slate-500">
               Les dépôts des fournisseurs partent en vente automatiquement au prix recommandé. Vérifiez-les ici après coup.
             </p>
@@ -191,7 +191,7 @@ export default function AdminProductsPage() {
                   <div className="relative w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 shrink-0">
                     <ProductImage src={p.images[0] || ''} alt={p.nom} fill sizes="64px" className="object-cover" compact />
                     {p.images.length > 1 && (
-                      <span className="absolute bottom-1 right-1 px-1.5 rounded-md bg-slate-900/80 text-white text-[11px] font-bold">
+                      <span className="absolute bottom-1 right-1 px-1.5 rounded-md bg-slate-900/80 text-white text-xs font-bold">
                         {p.images.length}
                       </span>
                     )}
@@ -200,15 +200,15 @@ export default function AdminProductsPage() {
                     <Link href={`/p/${p.slug}`} target="_blank" className="font-bold text-sm text-slate-900 line-clamp-1 hover:underline">
                       {p.nom}
                     </Link>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-xs text-slate-500">
                       {p.prix ? `${p.prix.toLocaleString('fr-FR')} F` : 'Sans prix'}
                       {p.prixFournisseur ? ` (fournisseur ${p.prixFournisseur.toLocaleString('fr-FR')} F)` : ''}
                     </p>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-xs text-slate-500">
                       Revendeur : {p.commission.toLocaleString('fr-FR')} F
                       {p.partProposee > 0 ? ' (part choisie par le fournisseur)' : ' (calculée par Suguba)'}
                     </p>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-xs text-slate-500">
                       <span className={p.statut === 'approved' ? 'text-suguba-brand font-bold' : p.statut === 'rejected' ? 'text-rose-600 font-bold' : 'text-amber-700 font-bold'}>
                         {LIBELLE_STATUT[p.statut] || p.statut}
                       </span>

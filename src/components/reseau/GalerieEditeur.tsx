@@ -52,7 +52,7 @@ export default function GalerieEditeur({
           <div key={url} className="relative aspect-square rounded-2xl overflow-hidden border border-slate-200 bg-slate-100">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={url} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
-            {i === 0 && <span className="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded-full bg-slate-900/80 text-white text-[10px] font-bold">Principale</span>}
+            {i === 0 && <span className="absolute bottom-1.5 left-1.5 px-2 py-0.5 rounded-full bg-slate-900/80 text-white text-xs font-bold">Principale</span>}
             <button
               type="button"
               onClick={() => onChange(images.filter((_, j) => j !== i))}
@@ -76,13 +76,13 @@ export default function GalerieEditeur({
         {images.length < max && (
           <label className="aspect-square rounded-2xl border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center gap-1 text-slate-500 cursor-pointer active:scale-[0.98]">
             {envoi ? <Loader2 className="w-5 h-5 animate-spin" /> : <ImagePlus className="w-5 h-5" />}
-            <span className="text-[11px] font-bold">{envoi ? 'Envoi…' : 'Ajouter'}</span>
+            <span className="text-xs font-bold">{envoi ? 'Envoi…' : 'Ajouter'}</span>
             <input type="file" accept="image/*" multiple className="hidden" disabled={envoi}
               onChange={(e) => { ajouter(e.target.files); e.target.value = ''; }} />
           </label>
         )}
       </div>
-      <p className="text-[11px] text-slate-500">{images.length} / {max} photos · la première s’affiche en grand.</p>
+      <p className="text-xs text-slate-500">{images.length} / {max} photos · la première s’affiche en grand.</p>
       {erreur && <p className="text-xs font-semibold text-rose-600">{erreur}</p>}
     </div>
   );

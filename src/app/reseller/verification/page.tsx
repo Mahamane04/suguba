@@ -8,6 +8,7 @@ import { Card, Skeleton, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
 import { compresserImage } from '@/lib/compression-image';
 import { badge } from '@/lib/reseau/badges';
+import BadgeConfiance from '@/components/ui/BadgeConfiance';
 
 /**
  * Vérification du compte (§ 5 des écrans).
@@ -120,17 +121,15 @@ export default function VerificationPage() {
         <>
           <Card className="space-y-3">
             <div className="flex items-end justify-between">
-              <p className="text-sm font-black text-slate-900">Profil vérifié</p>
-              <p className="text-2xl font-black text-suguba-brand tabular-nums">{pourcentage} %</p>
+              <p className="text-sm font-bold text-slate-900">Profil vérifié</p>
+              <p className="text-2xl font-bold text-suguba-brand-dark tabular-nums">{pourcentage} %</p>
             </div>
             <div className="h-2.5 rounded-full bg-slate-100 overflow-hidden">
               <div className="h-full bg-suguba-brand transition-all" style={{ width: `${pourcentage}%` }} />
             </div>
             {badges.length > 0 && (
               <div className="flex flex-wrap gap-1.5 pt-1">
-                {badges.map((b) => (
-                  <StatusPill key={b} ton="succes"><ShieldCheck className="w-3 h-3" />{badge(b).libelle}</StatusPill>
-                ))}
+                {badges.map((b) => <BadgeConfiance key={b} cle={b} />)}
               </div>
             )}
           </Card>
@@ -149,7 +148,7 @@ export default function VerificationPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-sm font-bold text-slate-900">{etape.libelle}</p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">{etape.aide}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">{etape.aide}</p>
                     </div>
                     {pastille(etat)}
                   </div>
@@ -175,7 +174,7 @@ export default function VerificationPage() {
                   )}
 
                   {automatique && etat !== 'approved' && (
-                    <p className="text-[11px] text-slate-500">Validée automatiquement quand vous vous connectez avec votre e-mail ou Google.</p>
+                    <p className="text-xs text-slate-500">Validée automatiquement quand vous vous connectez avec votre e-mail ou Google.</p>
                   )}
 
                   {modifiable && !automatique && !parAppel && !parQuartier && (
@@ -203,7 +202,7 @@ export default function VerificationPage() {
             })}
           </div>
 
-          <p className="text-[11px] text-slate-500 px-1">
+          <p className="text-xs text-slate-500 px-1">
             Vos documents ne sont visibles que par l’équipe Suguba chargée des vérifications.
             Ils ne sont jamais affichés sur votre boutique ni communiqués aux clients.
           </p>

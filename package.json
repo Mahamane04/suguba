@@ -11,7 +11,8 @@
     "test:legacy": "node scripts/verify-invariants.js",
     "create-admin": "node scripts/create-admin.js",
     "setup-storage": "node scripts/setup-storage.js",
-    "migrate-images": "node scripts/migrate-product-images.js"
+    "migrate-images": "node scripts/migrate-product-images.js",
+    "guide:captures": "node scripts/guide/capturer.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",
@@ -31,6 +32,7 @@
     "@types/react-dom": "^19.0.1",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
+    "puppeteer-core": "^25.11.0",
     "tailwindcss": "^3.4.16",
     "typescript": "^5.7.2"
   }

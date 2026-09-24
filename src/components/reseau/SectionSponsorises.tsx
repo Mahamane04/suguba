@@ -23,7 +23,7 @@ export default function SectionSponsorises() {
   if (produits.length === 0) return null;
   return (
     <section className="space-y-3" aria-labelledby="titre-sponsorises">
-      <h2 id="titre-sponsorises" className="text-sm font-black text-slate-900 flex items-center gap-1.5">
+      <h2 id="titre-sponsorises" className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
         <Megaphone className="w-4 h-4 text-slate-500" />Produits sponsorisés
       </h2>
       <div className="flex gap-3 overflow-x-auto snap-x pb-1 -mx-4 px-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">

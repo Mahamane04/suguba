@@ -97,7 +97,7 @@ export default function AdminBroadcastPage() {
               <ArrowLeft className="w-4 h-4" />
               <span>Retour à l&apos;Espace Admin Ops</span>
             </Link>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center space-x-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center space-x-2">
               <Radio className="w-6 h-6 text-slate-600 animate-pulse" />
               <span>Console de Diffusion & Alertes en Masse (Broadcast)</span>
             </h1>
@@ -114,7 +114,7 @@ export default function AdminBroadcastPage() {
 
         {/* Quick Presets Carousel */}
         <div className="space-y-2">
-          <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block">
             Modèles de Messages Rapides Prêts à l&apos;Emploi :
           </span>
 
@@ -125,11 +125,11 @@ export default function AdminBroadcastPage() {
                 onClick={() => handleApplyPreset(preset)}
                 className="p-3 bg-white hover:bg-slate-50/50 border border-slate-200 hover:border-slate-300 rounded-2xl text-left transition-all shadow-2xs group"
               >
-                <strong className="flex items-center gap-1.5 text-xs font-black text-slate-900 group-hover:text-slate-950 truncate">
+                <strong className="flex items-center gap-1.5 text-xs font-bold text-slate-900 group-hover:text-slate-950 truncate">
                   <preset.icon className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                   {preset.title}
                 </strong>
-                <span className="text-[11px] text-slate-500 block capitalize">
+                <span className="text-xs text-slate-500 block capitalize">
                   Cible : {preset.target === 'resellers' ? 'Revendeurs (142)' : 'Livreurs (18)'}
                 </span>
               </button>
@@ -152,40 +152,40 @@ export default function AdminBroadcastPage() {
                 <button
                   type="button"
                   onClick={() => setTargetGroup('resellers')}
-                  className={`p-3 rounded-2xl text-xs font-black transition-all flex flex-col items-center space-y-1 ${
+                  className={`p-3 rounded-2xl text-xs font-bold transition-all flex flex-col items-center space-y-1 ${
                     targetGroup === 'resellers'
                       ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/20'
                       : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
                   }`}
                 >
                   <span>📲 Revendeurs</span>
-                  <span className="text-[11px] opacity-80">142 inscrits</span>
+                  <span className="text-xs opacity-80">142 inscrits</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setTargetGroup('drivers')}
-                  className={`p-3 rounded-2xl text-xs font-black transition-all flex flex-col items-center space-y-1 ${
+                  className={`p-3 rounded-2xl text-xs font-bold transition-all flex flex-col items-center space-y-1 ${
                     targetGroup === 'drivers'
                       ? 'bg-amber-600 text-white shadow-md shadow-amber-600/20'
                       : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
                   }`}
                 >
                   <span>🛵 Livreurs Moto</span>
-                  <span className="text-[11px] opacity-80">18 coursiers</span>
+                  <span className="text-xs opacity-80">18 coursiers</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setTargetGroup('suppliers')}
-                  className={`p-3 rounded-2xl text-xs font-black transition-all flex flex-col items-center space-y-1 ${
+                  className={`p-3 rounded-2xl text-xs font-bold transition-all flex flex-col items-center space-y-1 ${
                     targetGroup === 'suppliers'
                       ? 'bg-slate-600 text-white shadow-md shadow-slate-600/20'
                       : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
                   }`}
                 >
                   <span>🏬 Grossistes</span>
-                  <span className="text-[11px] opacity-80">12 partenaires</span>
+                  <span className="text-xs opacity-80">12 partenaires</span>
                 </button>
               </div>
             </div>
@@ -264,10 +264,10 @@ export default function AdminBroadcastPage() {
             {sentSuccess ? (
               <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-center space-y-1">
                 <CheckCircle2 className="w-6 h-6 text-emerald-600 mx-auto" />
-                <strong className="block text-xs font-black text-emerald-950">
+                <strong className="block text-xs font-bold text-emerald-950">
                   Diffusion Réussie avec Succès !
                 </strong>
-                <p className="text-[11px] text-emerald-700">
+                <p className="text-xs text-emerald-700">
                   Message envoyé à {audienceCounts[targetGroup]} destinataires via le canal {selectedChannel.toUpperCase()}.
                 </p>
               </div>
@@ -275,7 +275,7 @@ export default function AdminBroadcastPage() {
               <div className="flex items-center space-x-2 pt-2">
                 <button
                   onClick={handleSendBroadcast}
-                  className="flex-1 py-3.5 bg-slate-600 hover:bg-slate-700 text-white font-black rounded-2xl text-xs flex items-center justify-center space-x-2 shadow-lg shadow-slate-600/30 transition-transform active:scale-98"
+                  className="flex-1 py-3.5 bg-slate-600 hover:bg-slate-700 text-white font-bold rounded-2xl text-xs flex items-center justify-center space-x-2 shadow-lg shadow-slate-600/30 transition-transform active:scale-98"
                 >
                   <Send className="w-4 h-4" />
                   <span>Diffuser aux {audienceCounts[targetGroup]} {targetGroup.toUpperCase()}</span>
@@ -285,7 +285,7 @@ export default function AdminBroadcastPage() {
                   href={`https://api.whatsapp.com/send?text=${encodeURIComponent(messageText)}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-3.5 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-2xl transition-colors"
+                  className="p-3.5 bg-suguba-wa hover:bg-[#20bd5a] text-suguba-profond rounded-2xl transition-colors"
                   title="Ouvrir dans WhatsApp"
                 >
                   <MessageCircle className="w-4 h-4" />
@@ -297,7 +297,7 @@ export default function AdminBroadcastPage() {
 
           {/* Right: Real-Time Smartphone Mockup (5 cols) */}
           <div className="lg:col-span-5 space-y-4">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 block">
               Aperçu en Direct sur Smartphone :
             </span>
 
@@ -309,27 +309,27 @@ export default function AdminBroadcastPage() {
               <div className="bg-[#EFEAE2] rounded-3xl p-4 min-h-[380px] flex flex-col justify-between space-y-3">
                 {/* Chat Top Bar */}
                 <div className="flex items-center space-x-2 bg-white/90 backdrop-blur-xs p-2 rounded-2xl shadow-2xs">
-                  <div className="w-7 h-7 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-black text-xs">
+                  <div className="w-7 h-7 rounded-xl bg-suguba-profond text-white flex items-center justify-center font-bold text-xs">
                     S
                   </div>
                   <div>
-                    <strong className="block text-[11px] font-bold text-slate-900 leading-tight">
+                    <strong className="block text-xs font-bold text-slate-900 leading-tight">
                       Suguba Mali Official 🇲🇱
                     </strong>
-                    <span className="text-[11px] text-emerald-600 font-semibold">Canal de Diffusion VIP</span>
+                    <span className="text-xs text-emerald-600 font-semibold">Canal de Diffusion VIP</span>
                   </div>
                 </div>
 
                 {/* Message Bubble */}
                 <div className="bg-white p-3.5 rounded-2xl rounded-tl-xs shadow-xs text-xs text-slate-900 space-y-2 whitespace-pre-line leading-relaxed border border-slate-100 font-sans">
                   {messageText}
-                  <div className="text-[11px] text-slate-500 text-right font-medium">
+                  <div className="text-xs text-slate-500 text-right font-medium">
                     12:30 • Envoyé par Suguba Ops
                   </div>
                 </div>
 
                 {/* Quick Reply Bar */}
-                <div className="bg-white/80 backdrop-blur-xs p-2 rounded-xl text-[11px] text-slate-500 text-center">
+                <div className="bg-white/80 backdrop-blur-xs p-2 rounded-xl text-xs text-slate-500 text-center">
                   📱 Réception instantanée sur smartphone
                 </div>
               </div>

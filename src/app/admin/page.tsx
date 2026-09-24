@@ -201,7 +201,7 @@ export default function AdminDashboardPage() {
         <div className="bg-white border border-slate-200 p-5 sm:p-6 rounded-3xl space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div className="space-y-1">
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900">Tableau de bord</h1>
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Tableau de bord</h1>
               <p className="text-xs text-slate-500">
                 Appels à passer, livraisons à assigner, retraits à payer : ce qui attend une action aujourd&apos;hui.
               </p>
@@ -245,8 +245,8 @@ export default function AdminDashboardPage() {
               <Eye className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-sm font-black text-amber-950">Tester un profil</h2>
-              <p className="text-[11px] text-amber-800">
+              <h2 className="text-sm font-bold text-amber-950">Tester un profil</h2>
+              <p className="text-xs text-amber-800">
                 Ouvre l&apos;espace choisi avec un compte de test dédié (jamais le vôtre). ⚠️ Les
                 actions faites en aperçu écrivent pour de vrai — à nettoyer vous-même après coup.
               </p>
@@ -290,35 +290,35 @@ export default function AdminDashboardPage() {
         {/* Global Financial Metrics */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs space-y-1">
-            <span className="text-[11px] font-bold text-slate-500 uppercase">Volume Global (GMV)</span>
-            <p className="text-xl sm:text-2xl font-black text-slate-900">
+            <span className="text-xs font-bold text-slate-500 uppercase">Volume Global (GMV)</span>
+            <p className="text-xl sm:text-2xl font-bold text-slate-900">
               {totalGMV.toLocaleString('fr-FR')} <span className="text-xs font-normal">F</span>
             </p>
-            <p className="text-[11px] text-slate-500">{state.orders.length} commandes totales</p>
+            <p className="text-xs text-slate-500">{state.orders.length} commandes totales</p>
           </div>
 
           <div className="bg-white p-4 rounded-3xl border border-emerald-200 shadow-xs space-y-1">
-            <span className="text-[11px] font-bold text-emerald-700 uppercase">Commissions Générées</span>
-            <p className="text-xl sm:text-2xl font-black text-emerald-600">
+            <span className="text-xs font-bold text-emerald-700 uppercase">Commissions Générées</span>
+            <p className="text-xl sm:text-2xl font-bold text-emerald-600">
               {totalCommissionsPaid.toLocaleString('fr-FR')} <span className="text-xs font-normal">F</span>
             </p>
-            <p className="text-[11px] text-slate-500">Pour le réseau revendeurs</p>
+            <p className="text-xs text-slate-500">Pour le réseau revendeurs</p>
           </div>
 
           <div className="bg-white p-4 rounded-3xl border border-amber-200 shadow-xs space-y-1">
-            <span className="text-[11px] font-bold text-amber-700 uppercase">Appels à passer</span>
-            <p className="text-xl sm:text-2xl font-black text-amber-600">
+            <span className="text-xs font-bold text-amber-700 uppercase">Appels à passer</span>
+            <p className="text-xl sm:text-2xl font-bold text-amber-600">
               {pendingCallOrders.length}
             </p>
-            <p className="text-[11px] text-slate-500">Confirmations clients requises</p>
+            <p className="text-xs text-slate-500">Confirmations clients requises</p>
           </div>
 
           <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs space-y-1">
-            <span className="text-[11px] font-bold text-slate-700 uppercase">Retraits en attente</span>
-            <p className="text-xl sm:text-2xl font-black text-slate-600">
+            <span className="text-xs font-bold text-slate-700 uppercase">Retraits en attente</span>
+            <p className="text-xl sm:text-2xl font-bold text-slate-600">
               {pendingPayouts.length}
             </p>
-            <p className="text-[11px] text-slate-500">Virements Mobile Money à exécuter</p>
+            <p className="text-xs text-slate-500">Virements Mobile Money à exécuter</p>
           </div>
         </div>
 
@@ -341,11 +341,11 @@ export default function AdminDashboardPage() {
                   <PhoneCall className="w-4 h-4" />
                 </div>
                 <div>
-                  <h2 className="font-black text-sm text-slate-900">Desk Appel Confirmation</h2>
-                  <p className="text-[11px] text-slate-500">Validation téléphonique préalable obligatoire</p>
+                  <h2 className="font-bold text-sm text-slate-900">Desk Appel Confirmation</h2>
+                  <p className="text-xs text-slate-500">Validation téléphonique préalable obligatoire</p>
                 </div>
               </div>
-              <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[11px] font-black">
+              <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-bold">
                 {pendingCallOrders.length} en attente
               </span>
             </div>
@@ -364,20 +364,20 @@ export default function AdminDashboardPage() {
                         <p className="font-bold text-xs text-slate-900">
                           {order.customerName} • <strong className="text-amber-800 font-mono">{order.customerPhone}</strong>
                         </p>
-                        <p className="text-[11px] text-slate-600">
+                        <p className="text-xs text-slate-600">
                           {order.productName} ({order.quantity}x) — {order.totalAmount.toLocaleString('fr-FR')} FCFA
                         </p>
-                        <p className="text-[11px] text-slate-500">
+                        <p className="text-xs text-slate-500">
                           📍 {order.neighborhood} ({order.landmark})
                         </p>
                       </div>
-                      <span className="font-mono text-[11px] font-bold text-slate-500">#{order.orderNumber}</span>
+                      <span className="font-mono text-xs font-bold text-slate-500">#{order.orderNumber}</span>
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 pt-1">
                       <a
                         href={`tel:${order.customerPhone}`}
-                        className="py-2 px-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-[11px] font-bold flex items-center justify-center space-x-1 shadow-2xs"
+                        className="py-2 px-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold flex items-center justify-center space-x-1 shadow-2xs"
                       >
                         <PhoneCall className="w-3 h-3" />
                         <span>Appeler</span>
@@ -387,7 +387,7 @@ export default function AdminDashboardPage() {
                         href={whatsappHelper.getUnreachableFollowUpLink(order)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="py-2 px-2 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl text-[11px] font-bold flex items-center justify-center space-x-1 shadow-2xs"
+                        className="py-2 px-2 bg-suguba-wa hover:bg-[#20bd5a] text-suguba-profond rounded-xl text-xs font-bold flex items-center justify-center space-x-1 shadow-2xs"
                       >
                         <MessageCircle className="w-3 h-3 fill-current" />
                         <span>Relance FR</span>
@@ -397,7 +397,7 @@ export default function AdminDashboardPage() {
                         href={whatsappHelper.getBambaraFollowUpLink(order)}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="py-2 px-2 bg-[#128C7E] hover:bg-[#0e7064] text-white rounded-xl text-[11px] font-bold flex items-center justify-center space-x-1 shadow-2xs"
+                        className="py-2 px-2 bg-[#128C7E] hover:bg-[#0e7064] text-suguba-profond rounded-xl text-xs font-bold flex items-center justify-center space-x-1 shadow-2xs"
                       >
                         <MessageCircle className="w-3 h-3 fill-current" />
                         <span>Bambara</span>
@@ -405,7 +405,7 @@ export default function AdminDashboardPage() {
 
                       <button
                         onClick={() => sugubaStore.confirmOrderCall(order.id, state.currentUser.fullName)}
-                        className="py-2 px-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-[11px] font-black flex items-center justify-center space-x-1 shadow-2xs"
+                        className="py-2 px-2 bg-suguba-profond hover:bg-suguba-profond-2 text-white rounded-xl text-xs font-bold flex items-center justify-center space-x-1 shadow-2xs"
                       >
                         <CheckCircle2 className="w-3 h-3" />
                         <span>Valider</span>
@@ -425,8 +425,8 @@ export default function AdminDashboardPage() {
                   <ShieldCheck className="w-4 h-4" />
                 </div>
                 <div>
-                  <h2 className="font-black text-sm text-slate-900">Modération Catalogue & Marges</h2>
-                  <p className="text-[11px] text-slate-500">Suguba fixe le prix public et la commission fixe</p>
+                  <h2 className="font-bold text-sm text-slate-900">Modération Catalogue & Marges</h2>
+                  <p className="text-xs text-slate-500">Suguba fixe le prix public et la commission fixe</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -434,17 +434,17 @@ export default function AdminDashboardPage() {
                     produit existant (voir /admin/products). */}
                 <Link
                   href="/admin/products"
-                  className="px-2.5 py-1 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-800 text-[11px] font-black whitespace-nowrap"
+                  className="px-2.5 py-1 rounded-xl border border-slate-200 hover:bg-slate-50 text-slate-800 text-xs font-bold whitespace-nowrap"
                 >
                   Produits & photos
                 </Link>
                 <Link
                   href="/admin/products/new"
-                  className="px-2.5 py-1 rounded-xl bg-slate-700 hover:bg-slate-800 text-white text-[11px] font-black whitespace-nowrap"
+                  className="px-2.5 py-1 rounded-xl bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold whitespace-nowrap"
                 >
                   + Ajouter
                 </Link>
-                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-800 text-[11px] font-black">
+                <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-800 text-xs font-bold">
                   {pendingProducts.length} soumis
                 </span>
               </div>
@@ -467,8 +467,8 @@ export default function AdminDashboardPage() {
                       </div>
                       <div className="min-w-0">
                         <h4 className="font-bold text-xs text-slate-900 truncate">{product.name}</h4>
-                        <p className="text-[11px] text-slate-500">Fournisseur : {product.supplierName}</p>
-                        <p className="text-[11px] font-black text-slate-700">
+                        <p className="text-xs text-slate-500">Fournisseur : {product.supplierName}</p>
+                        <p className="text-xs font-bold text-slate-700">
                           Prix Fournisseur : {product.supplierPrice.toLocaleString('fr-FR')} FCFA
                         </p>
                       </div>
@@ -496,11 +496,11 @@ export default function AdminDashboardPage() {
                 <Truck className="w-4 h-4" />
               </div>
               <div>
-                <h2 className="font-black text-sm text-slate-900">Dispatch & Assignation des Livreurs</h2>
-                <p className="text-[11px] text-slate-500">Commandes confirmées prêtes pour la course</p>
+                <h2 className="font-bold text-sm text-slate-900">Dispatch & Assignation des Livreurs</h2>
+                <p className="text-xs text-slate-500">Commandes confirmées prêtes pour la course</p>
               </div>
             </div>
-            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-800 text-[11px] font-black">
+            <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-800 text-xs font-bold">
               {confirmedOrders.length} à dispatcher
             </span>
           </div>
@@ -516,15 +516,15 @@ export default function AdminDashboardPage() {
                   <div>
                     <div className="flex justify-between text-xs">
                       <span className="font-bold text-slate-900">Commande #{order.orderNumber}</span>
-                      <span className="font-black text-emerald-700">{order.totalAmount.toLocaleString('fr-FR')} F</span>
+                      <span className="font-bold text-emerald-700">{order.totalAmount.toLocaleString('fr-FR')} F</span>
                     </div>
                     <p className="text-xs text-slate-700 mt-1">{order.productName}</p>
-                    <p className="text-[11px] text-slate-500">📍 Destination : {order.neighborhood} ({order.landmark})</p>
+                    <p className="text-xs text-slate-500">📍 Destination : {order.neighborhood} ({order.landmark})</p>
                   </div>
 
                   <div className="flex items-center space-x-2">
                     {activeDrivers.length === 0 ? (
-                      <p className="flex-1 text-[11px] text-slate-500 italic">Aucun livreur actif pour l&apos;instant.</p>
+                      <p className="flex-1 text-xs text-slate-500 italic">Aucun livreur actif pour l&apos;instant.</p>
                     ) : (
                       <>
                         <select
@@ -567,11 +567,11 @@ export default function AdminDashboardPage() {
                 <Wallet className="w-4 h-4" />
               </div>
               <div>
-                <h2 className="font-black text-sm text-slate-900">Retraits des revendeurs</h2>
-                <p className="text-[11px] text-slate-500">Virement Orange Money, Moov ou Mobi Cash via SasPay, ou espèces au guichet</p>
+                <h2 className="font-bold text-sm text-slate-900">Retraits des revendeurs</h2>
+                <p className="text-xs text-slate-500">Virement Orange Money, Moov ou Mobi Cash via SasPay, ou espèces au guichet</p>
               </div>
             </div>
-            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-black">
+            <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
               {pendingPayouts.length} en attente
             </span>
           </div>
@@ -644,7 +644,7 @@ export default function AdminDashboardPage() {
                     <p className="font-bold text-sm text-slate-900">
                       {fmt(r.montant)} pour {r.revendeur}
                     </p>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-xs text-slate-500">
                       {LIBELLE_MOYEN[r.moyen] || r.moyen}{r.moyen !== 'cash' ? ` · ${r.telephone}` : ''} · code <span className="font-mono">{r.id}</span>
                       {' · '}{new Date(r.creeLe).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                     </p>
@@ -663,7 +663,7 @@ export default function AdminDashboardPage() {
                       <button
                         onClick={() => agirSurRetrait(r, 'virer')}
                         disabled={retraitEnCours === r.id || r.moyen === 'wave'}
-                        className="h-10 px-4 bg-suguba-brand hover:bg-suguba-brand-dark disabled:opacity-50 text-white rounded-xl text-xs font-bold whitespace-nowrap"
+                        className="h-10 px-4 bg-suguba-profond hover:bg-suguba-profond-2 disabled:opacity-50 text-white rounded-xl text-xs font-bold whitespace-nowrap"
                       >
                         Envoyer le virement
                       </button>
@@ -682,7 +682,7 @@ export default function AdminDashboardPage() {
           )}
 
           {enCoursDeVirement.length > 0 && (
-            <p className="text-[11px] text-slate-500 pt-2 border-t border-slate-100">
+            <p className="text-xs text-slate-500 pt-2 border-t border-slate-100">
               {enCoursDeVirement.length} virement{enCoursDeVirement.length > 1 ? 's' : ''} en cours chez SasPay : marqué{enCoursDeVirement.length > 1 ? 's' : ''} payé{enCoursDeVirement.length > 1 ? 's' : ''} automatiquement à la confirmation du réseau.
             </p>
           )}
@@ -696,8 +696,8 @@ export default function AdminDashboardPage() {
                 <ShieldAlert className="w-4 h-4" />
               </div>
               <div>
-                <h2 className="font-black text-sm text-slate-900">Sécurité Antifraude & Déblocage des Commissions</h2>
-                <p className="text-[11px] text-slate-500">Supervision des alertes OTP et transfert des commissions verrouillées (J+7 / J+14)</p>
+                <h2 className="font-bold text-sm text-slate-900">Sécurité Antifraude & Déblocage des Commissions</h2>
+                <p className="text-xs text-slate-500">Supervision des alertes OTP et transfert des commissions verrouillées (J+7 / J+14)</p>
               </div>
             </div>
           </div>
@@ -717,7 +717,7 @@ export default function AdminDashboardPage() {
                       <p className="font-bold text-xs text-slate-900">
                         {com.resellerName} — +{com.amount.toLocaleString('fr-FR')} FCFA ({com.productName})
                       </p>
-                      <p className="text-[11px] text-slate-500">
+                      <p className="text-xs text-slate-500">
                         Période de garantie : J+{com.safetyWindowDays} • Déblocage prévu : {new Date(com.unlockAt).toLocaleDateString('fr-FR')}
                       </p>
                     </div>
@@ -754,8 +754,8 @@ export default function AdminDashboardPage() {
                 <UserCheck className="w-4 h-4" />
               </div>
               <div>
-                <h2 className="font-black text-sm text-slate-900">Validation des Inscriptions & Onboarding</h2>
-                <p className="text-[11px] text-slate-500">Valider les nouveaux Fournisseurs, Livreurs et gérer les paliers Revendeurs & Diaspora</p>
+                <h2 className="font-bold text-sm text-slate-900">Validation des Inscriptions & Onboarding</h2>
+                <p className="text-xs text-slate-500">Valider les nouveaux Fournisseurs, Livreurs et gérer les paliers Revendeurs & Diaspora</p>
               </div>
             </div>
 
@@ -829,7 +829,7 @@ export default function AdminDashboardPage() {
               </p>
               {activeDrivers.length > 0 && (
                 <div className="pt-2 border-t border-slate-100">
-                  <p className="text-[11px] font-bold text-slate-500 uppercase mb-2">Livreurs actifs ({activeDrivers.length})</p>
+                  <p className="text-xs font-bold text-slate-500 uppercase mb-2">Livreurs actifs ({activeDrivers.length})</p>
                   <div className="divide-y divide-slate-100">
                     {activeDrivers.map((d) => (
                       <div key={d.id} className="py-2 text-xs text-slate-700">
@@ -852,7 +852,7 @@ export default function AdminDashboardPage() {
                 Les paliers sont <strong>automatiques</strong> : « Vérifié » dès 10 ventes livrées (commissions débloquées à 7 jours),
                 « VIP » dès 30 (3 jours). Un nouveau revendeur attend 14 jours.
               </p>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-xs text-slate-500">
                 Les nouvelles inscriptions revendeur apparaissent dans « Comptes en attente de validation ».
               </p>
             </div>
@@ -905,7 +905,7 @@ export default function AdminDashboardPage() {
                   <UserCog className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-black text-base text-gray-900">Compte Admin & Nettoyage Données</h3>
+                  <h3 className="font-bold text-base text-gray-900">Compte Admin & Nettoyage Données</h3>
                   <p className="text-xs text-gray-500">Paramétrer vos accès et purger les données fantômes</p>
                 </div>
               </div>
@@ -919,11 +919,11 @@ export default function AdminDashboardPage() {
 
             {/* Section 1bis: Promouvoir un nouvel Admin (accès réel, pas la démo) */}
             <div className="space-y-3.5 bg-slate-50/70 p-4 rounded-2xl border border-slate-200">
-              <h4 className="font-black text-xs text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+              <h4 className="font-bold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
                 <UserCog className="w-4 h-4 text-slate-700" />
                 <span>Donner l'accès admin</span>
               </h4>
-              <p className="text-[11px] text-slate-800">
+              <p className="text-xs text-slate-800">
                 Donne le rôle admin (accès immédiat, sans validation) à un numéro déjà inscrit sur Suguba.
                 Le tout premier compte admin, lui, se crée uniquement en ligne de commande — voir <code className="font-mono">scripts/create-admin.js</code>.
               </p>
@@ -959,7 +959,7 @@ export default function AdminDashboardPage() {
                       setPromoteBusy(false);
                     }
                   }}
-                  className="px-4 py-2 bg-slate-700 hover:bg-slate-800 disabled:opacity-50 text-white rounded-xl text-xs font-black shadow-xs transition-colors whitespace-nowrap"
+                  className="px-4 py-2 bg-slate-700 hover:bg-slate-800 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs transition-colors whitespace-nowrap"
                 >
                   {promoteBusy ? '...' : 'Promouvoir'}
                 </button>
@@ -968,7 +968,7 @@ export default function AdminDashboardPage() {
 
             {/* Section 2: Purge des Données Fantômes */}
             <div className="space-y-3.5 bg-rose-50/70 p-4 rounded-2xl border border-rose-200">
-              <div className="flex items-center gap-1.5 text-rose-900 font-black text-xs uppercase tracking-wider">
+              <div className="flex items-center gap-1.5 text-rose-900 font-bold text-xs uppercase tracking-wider">
                 <Trash2 className="w-4 h-4 text-rose-600" />
                 <span>2. Vider l&apos;affichage local de cet appareil</span>
               </div>
@@ -977,7 +977,7 @@ export default function AdminDashboardPage() {
                   la base Supabase reste intacte. Un admin pouvait croire avoir
                   purgé la production. Libellés corrigés le 2026-09-09 pour dire
                   ce qu'ils font réellement. */}
-              <p className="text-[11px] text-rose-800 leading-relaxed">
+              <p className="text-xs text-rose-800 leading-relaxed">
                 Efface les données de démonstration <strong>affichées sur cet appareil</strong>,
                 pour repartir d&apos;un écran propre. La base Supabase n&apos;est pas modifiée :
                 les vraies commandes, retraits et commissions restent intacts et
@@ -1002,7 +1002,7 @@ export default function AdminDashboardPage() {
                       setShowConfigModal(false);
                     }
                   }}
-                  className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-black shadow-xs transition-transform active:scale-95 flex items-center justify-center gap-1.5"
+                  className="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-xs transition-transform active:scale-95 flex items-center justify-center gap-1.5"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   <span>Vider l&apos;affichage local (garder les produits)</span>

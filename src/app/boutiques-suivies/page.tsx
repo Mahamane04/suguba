@@ -63,13 +63,13 @@ export default function BoutiquesSuiviesPage() {
                 // eslint-disable-next-line @next/next/no-img-element
                 <img src={b.logo} alt="" className="w-12 h-12 rounded-2xl object-cover shrink-0" />
               ) : (
-                <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-500 font-black flex items-center justify-center shrink-0">
+                <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-500 font-bold flex items-center justify-center shrink-0">
                   {b.nom.charAt(0).toUpperCase()}
                 </div>
               )}
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold text-slate-900 truncate">{b.nom}</p>
-                <p className="text-[11px] text-slate-500 truncate">
+                <p className="text-xs text-slate-500 truncate">
                   {b.accroche || (b.type === 'supplier' ? 'Fournisseur' : 'Revendeur')} · {b.abonnes} abonné{b.abonnes > 1 ? 's' : ''}
                 </p>
               </div>

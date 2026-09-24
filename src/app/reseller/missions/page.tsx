@@ -144,8 +144,8 @@ export default function MissionsRevendeurPage() {
               <Card key={m.id} className="space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-sm font-black text-slate-900">{m.titre}</p>
-                    <p className="text-[11px] text-slate-500 mt-0.5">
+                    <p className="text-sm font-bold text-slate-900">{m.titre}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">
                       {libelleType(m.type)} · objectif {m.objectif} {verbeType(m.type)}
                     </p>
                   </div>
@@ -175,7 +175,7 @@ export default function MissionsRevendeurPage() {
                     <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
                       <div className="h-full bg-suguba-brand transition-all" style={{ width: `${pourcent}%` }} />
                     </div>
-                    <p className="text-[11px] font-bold text-slate-600">
+                    <p className="text-xs font-bold text-slate-600">
                       {p.avancement} / {m.objectif} {verbeType(m.type)} · {pourcent}%
                     </p>
                   </div>

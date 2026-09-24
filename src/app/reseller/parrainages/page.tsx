@@ -104,8 +104,8 @@ export default function ParrainagesPage() {
 
       <Card className="space-y-4">
         <div>
-          <p className="text-sm font-black text-slate-900">Ajouter un filleul</p>
-          <p className="text-[11px] text-slate-500 mt-0.5">
+          <p className="text-sm font-bold text-slate-900">Ajouter un filleul</p>
+          <p className="text-xs text-slate-500 mt-0.5">
             Vous avez convaincu quelqu’un de vive voix ? Enregistrez son numéro ici pour ne pas perdre le parrainage.
           </p>
         </div>
@@ -144,7 +144,7 @@ export default function ParrainagesPage() {
             <div key={p.id} className="p-4 flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm font-bold text-slate-900">{LIBELLE_TYPE[p.type] || p.type}</p>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-xs text-slate-500">
                   {p.telephone ? `${p.telephone.slice(0, -4)}••` : 'Par lien'} ·{' '}
                   {new Date(p.creeLe).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                 </p>

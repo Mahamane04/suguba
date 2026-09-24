@@ -34,7 +34,7 @@ function Pastille({ actif, onClick, children }: { actif: boolean; onClick: () =>
       onClick={onClick}
       aria-pressed={actif}
       className={`px-3.5 min-h-[36px] rounded-full text-xs font-bold whitespace-nowrap transition-all ${
-        actif ? 'bg-[#09b500] text-white' : 'bg-white/10 border border-white/15 text-emerald-100/80 hover:bg-white/20'
+        actif ? 'bg-suguba-citron text-suguba-profond' :'bg-white/10 border border-white/15 text-emerald-100/80 hover:bg-white/20'
       }`}
     >
       {children}
@@ -76,10 +76,10 @@ function Contenu() {
 
   return (
     <>
-      <section className="bg-[#064e3b] px-4 sm:px-6 pt-5 pb-5">
+      <section className="bg-suguba-profond px-4 sm:px-6 pt-5 pb-5">
         <div className="max-w-5xl mx-auto space-y-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">Boutiques près de chez vous</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Boutiques près de chez vous</h1>
             <p className="text-xs sm:text-sm text-emerald-100/70 mt-0.5">
               Les vendeurs de votre quartier et des alentours (moins de {RAYON_KM} km environ).
             </p>
@@ -121,17 +121,17 @@ function Contenu() {
           </div>
         ) : boutiques.length === 0 ? (
           <div className="bg-white rounded-3xl border border-slate-200 p-6 text-center space-y-3">
-            <div className="w-12 h-12 mx-auto rounded-2xl bg-emerald-50 text-[#078000] flex items-center justify-center">
+            <div className="w-12 h-12 mx-auto rounded-2xl bg-emerald-50 text-suguba-brand-dark flex items-center justify-center">
               <MapPin className="w-5 h-5" />
             </div>
-            <p className="text-sm font-black text-slate-900">Pas encore de boutique près de {quartier}</p>
+            <p className="text-sm font-bold text-slate-900">Pas encore de boutique près de {quartier}</p>
             <p className="text-xs text-slate-500">Essayez un quartier voisin :</p>
             <div className="flex justify-center"><QuartiersVoisins quartier={quartier} onChoisir={choisir} /></div>
           </div>
         ) : filtrees.length === 0 ? (
           <div className="bg-white rounded-3xl border border-slate-200 p-6 text-center space-y-2">
-            <p className="text-sm font-black text-slate-900">Aucune boutique avec ces filtres</p>
-            <button type="button" onClick={() => { setDistance('toutes'); setCategorie(null); }} className="text-xs font-bold text-[#078000] underline underline-offset-2 min-h-[36px]">
+            <p className="text-sm font-bold text-slate-900">Aucune boutique avec ces filtres</p>
+            <button type="button" onClick={() => { setDistance('toutes'); setCategorie(null); }} className="text-xs font-bold text-suguba-brand-dark underline underline-offset-2 min-h-[36px]">
               Voir toutes les boutiques
             </button>
           </div>
@@ -153,11 +153,11 @@ function Contenu() {
           href="/rejoindre"
           className="flex items-center gap-3 rounded-3xl bg-white border border-slate-200 p-4 hover:border-slate-300 transition-colors"
         >
-          <div className="w-11 h-11 rounded-2xl bg-[#064e3b] text-white flex items-center justify-center shrink-0">
+          <div className="w-11 h-11 rounded-2xl bg-suguba-profond text-white flex items-center justify-center shrink-0">
             <Store className="w-5 h-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-black text-slate-900">Vous vendez{valide ? ` à ${quartier}` : ''} ?</p>
+            <p className="text-sm font-bold text-slate-900">Vous vendez{valide ? ` à ${quartier}` : ''} ?</p>
             <p className="text-xs text-slate-500">Ouvrez votre boutique Suguba et soyez trouvé par les clients du quartier.</p>
           </div>
           <ArrowRight className="w-4 h-4 text-slate-400 shrink-0" />
@@ -170,10 +170,10 @@ function Contenu() {
 function Invitation({ titre, texte }: { titre: string; texte: string }) {
   return (
     <div className="bg-white rounded-3xl border border-slate-200 p-6 text-center space-y-2">
-      <div className="w-12 h-12 mx-auto rounded-2xl bg-emerald-50 text-[#078000] flex items-center justify-center">
+      <div className="w-12 h-12 mx-auto rounded-2xl bg-emerald-50 text-suguba-brand-dark flex items-center justify-center">
         <MapPin className="w-5 h-5" />
       </div>
-      <p className="text-sm font-black text-slate-900">{titre}</p>
+      <p className="text-sm font-bold text-slate-900">{titre}</p>
       <p className="text-xs text-slate-500 max-w-xs mx-auto">{texte}</p>
     </div>
   );
@@ -184,7 +184,7 @@ export default function BoutiquesParQuartierPage() {
     <div className="min-h-screen flex flex-col bg-[#f5f8f5] pb-20 md:pb-0">
       <Header />
       <main className="flex-1">
-        <Suspense fallback={<div className="h-40 bg-[#064e3b]" />}>
+        <Suspense fallback={<div className="h-40 bg-suguba-profond" />}>
           <Contenu />
         </Suspense>
       </main>

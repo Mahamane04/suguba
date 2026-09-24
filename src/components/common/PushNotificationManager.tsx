@@ -71,18 +71,18 @@ export default function PushNotificationManager() {
         <div className="fixed top-4 left-4 right-4 max-w-md mx-auto z-50 animate-in slide-in-from-top-4 duration-300">
           <div className="bg-slate-900 text-white p-4 rounded-3xl shadow-2xl border border-slate-700 flex items-start justify-between gap-3 text-xs">
             <div className="flex items-start space-x-3">
-              <div className="w-8 h-8 rounded-xl bg-emerald-600 flex items-center justify-center text-white shrink-0 mt-0.5">
+              <div className="w-8 h-8 rounded-xl bg-suguba-profond flex items-center justify-center text-white shrink-0 mt-0.5">
                 <Bell className="w-4 h-4" />
               </div>
               <div className="space-y-1">
-                <p className="font-black text-sm text-white">Activer les Alertes en Direct ?</p>
-                <p className="text-[11px] text-slate-300 leading-tight">
+                <p className="font-bold text-sm text-white">Activer les Alertes en Direct ?</p>
+                <p className="text-xs text-slate-300 leading-tight">
                   Recevez immédiatement une notification sur votre smartphone dès qu&apos;une commission est versée ou qu&apos;un colis est livré.
                 </p>
                 <div className="flex items-center space-x-2 pt-1.5">
                   <button
                     onClick={handleRequestPermission}
-                    className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-xl text-xs shadow-xs transition-colors"
+                    className="px-3.5 py-1.5 bg-suguba-profond hover:bg-suguba-profond-2 text-white font-bold rounded-xl text-xs shadow-xs transition-colors"
                   >
                     Activer
                   </button>
@@ -113,7 +113,7 @@ export default function PushNotificationManager() {
             <CheckCircle2 className="w-4 h-4 text-emerald-300 shrink-0 mt-0.5" />
             <div className="space-y-0.5 flex-1">
               <strong className="block text-white font-bold">{activeToast.title}</strong>
-              <p className="text-[11px] text-emerald-100">{activeToast.body}</p>
+              <p className="text-xs text-emerald-100">{activeToast.body}</p>
             </div>
             <button onClick={() => setActiveToast(null)} className="text-emerald-300 hover:text-white">
               <X className="w-3.5 h-3.5" />

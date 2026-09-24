@@ -80,7 +80,7 @@ export default function BoutiqueSugubaPage() {
               <CouvertureEditeur valeur={couverture} onChange={setCouverture} />
               <div className="flex items-center gap-4">
                 <LogoUploader value={logo} onChange={setLogo} nomPourInitiale={nom} />
-                <p className="text-[11px] text-slate-500">Le logo officiel de Suguba.</p>
+                <p className="text-xs text-slate-500">Le logo officiel de Suguba.</p>
               </div>
               <Field label="Nom" htmlFor="nom" requis><Input id="nom" value={nom} onChange={(e) => setNom(e.target.value)} maxLength={60} /></Field>
             <Field label="Quartier de la boutique" htmlFor="quartier-boutique" aide="Le quartier du point de vente ou d’accueil Suguba, s’il y en a un.">

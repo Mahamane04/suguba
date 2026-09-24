@@ -96,7 +96,7 @@ export default function BackOfficePage() {
         {DOMAINES.map((domaine) => (
           <Card key={domaine.titre} padding="p-0" className="overflow-hidden">
             <div className="px-4 py-3 border-b border-slate-100">
-              <span className={`inline-flex px-2.5 py-1 rounded-full text-[11px] font-black uppercase ${domaine.couleur}`}>
+              <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-bold uppercase ${domaine.couleur}`}>
                 {domaine.titre}
               </span>
             </div>
@@ -114,7 +114,7 @@ export default function BackOfficePage() {
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-bold text-slate-900">{entree.libelle}</p>
-                      <p className="text-[11px] text-slate-500 truncate">{entree.aide}</p>
+                      <p className="text-xs text-slate-500 truncate">{entree.aide}</p>
                     </div>
                     <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />
                   </Link>

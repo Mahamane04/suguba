@@ -61,10 +61,10 @@ export default function TrackIndexPage() {
       <main className="flex-1 max-w-lg mx-auto px-4 sm:px-6 py-8 w-full space-y-5">
 
         <div className="text-center space-y-2">
-          <div className="w-14 h-14 rounded-2xl bg-suguba-50 text-suguba-brand flex items-center justify-center mx-auto">
+          <div className="w-14 h-14 rounded-2xl bg-suguba-50 text-suguba-brand-dark flex items-center justify-center mx-auto">
             <PackageSearch className="w-7 h-7" />
           </div>
-          <h1 className="text-xl font-black text-slate-900">Suivre ma commande</h1>
+          <h1 className="text-xl font-bold text-slate-900">Suivre ma commande</h1>
           <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
             Entrez le numéro reçu au moment de la commande pour voir où en est votre colis.
           </p>
@@ -81,7 +81,7 @@ export default function TrackIndexPage() {
               >
                 <span className="min-w-0">
                   <span className="block text-sm font-bold text-slate-900 truncate">{o.productName}</span>
-                  <span className="block text-[11px] text-slate-500">#{o.orderNumber} · {o.totalAmount.toLocaleString('fr-FR')} F</span>
+                  <span className="block text-xs text-slate-500">#{o.orderNumber} · {o.totalAmount.toLocaleString('fr-FR')} F</span>
                 </span>
                 <ArrowRight className="w-4 h-4 text-slate-400 shrink-0" />
               </Link>
@@ -102,7 +102,7 @@ export default function TrackIndexPage() {
               placeholder="SG-K7M3P9RX"
               value={numero}
               onChange={(e) => setNumero(e.target.value)}
-              className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-center text-lg font-black tracking-wide text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-suguba-brand/30"
+              className="w-full px-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-center text-lg font-bold tracking-wide text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-suguba-brand/30"
             />
           </div>
 
@@ -114,7 +114,7 @@ export default function TrackIndexPage() {
 
           <button
             type="submit"
-            className="w-full py-3.5 bg-[#09b500] hover:bg-[#078000] text-white font-bold rounded-2xl text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
+            className="w-full py-3.5 bg-suguba-profond hover:bg-suguba-profond-2 text-white font-bold rounded-2xl text-sm flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
           >
             Voir ma commande
             <ArrowRight className="w-4 h-4" />
@@ -140,7 +140,7 @@ export default function TrackIndexPage() {
         </div>
 
         <p className="text-center text-xs text-slate-500">
-          <Link href="/" className="font-bold text-suguba-brand hover:underline">
+          <Link href="/" className="font-bold text-suguba-brand-dark hover:underline">
             Retour au catalogue
           </Link>
         </p>

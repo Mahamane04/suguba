@@ -3,8 +3,8 @@
 import { prendreApresConnexion } from '@/lib/apres-connexion';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import type { Session } from '@supabase/supabase-js';
 import { Loader2, ShieldAlert } from 'lucide-react';
 
 const DEST_BY_ROLE: Record<string, string> = {
@@ -24,7 +24,6 @@ const DEST_BY_ROLE: Record<string, string> = {
  * — exactement le même point d'entrée que pour la connexion par email.
  */
 export default function AuthCallbackPage() {
-  const router = useRouter();
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -38,8 +37,24 @@ export default function AuthCallbackPage() {
 
     const finish = async () => {
       // Laisse au SDK le temps de traiter le fragment d'URL (#access_token=...)
-      const { data, error: sessionErr } = await client.auth.getSession();
+      let { data, error: sessionErr } = await client.auth.getSession();
       if (cancelled) return;
+
+      // Sur un téléphone lent, le jeton Google peut n'être lu qu'un instant
+      // après ce premier appel : on attend l'événement de connexion (8 s max)
+      // au lieu d'afficher aussitôt « connexion incomplète » — ce qui
+      // obligeait à tout recommencer alors que Google avait bien répondu.
+      if (!data.session) {
+        const session = await new Promise<Session | null>((resolve) => {
+          const minuterie = setTimeout(() => { abonnement.unsubscribe(); resolve(null); }, 8000);
+          const { data: { subscription: abonnement } } = client.auth.onAuthStateChange((_evt, s) => {
+            if (s) { clearTimeout(minuterie); abonnement.unsubscribe(); resolve(s); }
+          });
+        });
+        if (cancelled) return;
+        data = { session };
+        sessionErr = null;
+      }
 
       if (sessionErr || !data.session) {
         setError('Connexion Google incomplète. Réessayez depuis la page de connexion.');
@@ -62,12 +77,20 @@ export default function AuthCallbackPage() {
           body: JSON.stringify({ intendedRole }),
         });
         const json = await res.json();
+        // Rechargement COMPLET, et non router.push (2026-09-24) : l'identité
+        // affichée par l'en-tête et la barre du bas n'était lue qu'au
+        // chargement de l'app. Une navigation « douce » gardait l'état
+        // visiteur alors que la session venait d'être posée : l'utilisateur
+        // voyait « Se connecter » et devait recommencer la connexion Google.
+        // `replace` retire aussi cette page de l'historique (le bouton retour
+        // ne relance pas l'échange).
+        const aller = (chemin: string) => window.location.replace(chemin);
         const refCode = new URLSearchParams(window.location.search).get('ref') || '';
         const versCompletion = () => {
           const params = new URLSearchParams({ fullName: json.fullName || '' });
           if (intendedRole) params.set('intendedRole', intendedRole);
           if (refCode) params.set('ref', refCode);
-          router.replace(`/register/complete?${params.toString()}`);
+          aller(`/register/complete?${params.toString()}`);
         };
 
         // Adresse inconnue et aucun rôle choisi (connexion depuis /login) :
@@ -94,10 +117,10 @@ export default function AuthCallbackPage() {
         }
 
         if (json.status !== 'active') {
-          router.push('/pending-approval');
+          aller('/pending-approval');
           return;
         }
-        router.push(prendreApresConnexion() || DEST_BY_ROLE[json.role] || '/reseller');
+        aller(prendreApresConnexion() || DEST_BY_ROLE[json.role] || '/reseller');
       } catch (err) {
         setError('Erreur réseau lors de la connexion.');
       }
@@ -105,7 +128,7 @@ export default function AuthCallbackPage() {
 
     finish();
     return () => { cancelled = true; };
-  }, [router]);
+  }, []);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#f5f8f5] p-4">

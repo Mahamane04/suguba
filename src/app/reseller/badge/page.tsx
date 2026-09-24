@@ -74,7 +74,7 @@ export default function ResellerBadgePage() {
               )}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-3.5 py-2 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold rounded-2xl text-xs flex items-center space-x-1.5 transition-all shadow-xs"
+              className="px-3.5 py-2 bg-suguba-wa hover:bg-[#20bd5a] text-suguba-profond font-bold rounded-2xl text-xs flex items-center space-x-1.5 transition-all shadow-xs"
             >
               <Share2 className="w-3.5 h-3.5" />
               <span>Partager</span>
@@ -85,7 +85,7 @@ export default function ResellerBadgePage() {
         {/* Title */}
         <div className="text-center space-y-1 print:hidden">
           <Award className="w-6 h-6 text-amber-500 mx-auto" />
-          <h1 className="text-xl font-black text-slate-900 text-balance">
+          <h1 className="text-xl font-bold text-slate-900 text-balance">
             Votre carte professionnelle Suguba
           </h1>
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
@@ -99,14 +99,14 @@ export default function ResellerBadgePage() {
           {/* Top Header of the Badge */}
           <div className="flex items-center justify-between gap-3 border-b border-white/10 pb-4">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-700 flex items-center justify-center font-black text-xl text-white shadow-md border border-white/20 shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-green-700 flex items-center justify-center font-bold text-xl text-white shadow-md border border-white/20 shrink-0">
                 S
               </div>
               <div className="min-w-0">
-                <span className="text-sm font-black tracking-tight text-white block">
+                <span className="text-sm font-bold tracking-tight text-white block">
                   SUGUBA<span className="text-emerald-400">.ML</span>
                 </span>
-                <span className="text-[11px] block font-bold text-emerald-300 uppercase tracking-wider truncate">
+                <span className="text-xs block font-bold text-emerald-300 uppercase tracking-wider truncate">
                   Réseau officiel Mali
                 </span>
               </div>
@@ -114,7 +114,7 @@ export default function ResellerBadgePage() {
 
             {/* Pastille sur une seule ligne : elle se coupait en deux blocs
                 décalés « REVENDEUR / AGRÉÉ » sur téléphone (capture). */}
-            <span className="shrink-0 whitespace-nowrap px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-black uppercase tracking-wide border border-emerald-500/30">
+            <span className="shrink-0 whitespace-nowrap px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold uppercase tracking-wide border border-emerald-500/30">
               Agréé
             </span>
           </div>
@@ -125,8 +125,8 @@ export default function ResellerBadgePage() {
             {/* Left: Reseller Identity */}
             <div className="space-y-3 text-center sm:text-left flex-1">
               <div className="space-y-0.5">
-                <span className="text-[11px] uppercase font-bold text-slate-500">Titulaire de la Carte</span>
-                <h2 className="text-xl font-black text-white">{currentUser.fullName}</h2>
+                <span className="text-xs uppercase font-bold text-slate-500">Titulaire de la Carte</span>
+                <h2 className="text-xl font-bold text-white">{currentUser.fullName}</h2>
                 <p className="text-xs text-emerald-300 font-medium flex items-center justify-center sm:justify-start space-x-1">
                   <MapPin className="w-3.5 h-3.5 text-emerald-400" />
                   <span>Secteur : Hamdallaye ACI 2000 (Bamako)</span>
@@ -134,9 +134,9 @@ export default function ResellerBadgePage() {
               </div>
 
               <div className="p-3 bg-white/10 rounded-2xl border border-white/10 space-y-1 inline-block sm:block text-xs">
-                <span className="text-[11px] text-slate-500 block font-bold uppercase">Code Affilié Unique</span>
+                <span className="text-xs text-slate-500 block font-bold uppercase">Code Affilié Unique</span>
                 <div className="flex items-center space-x-2">
-                  <strong className="text-amber-400 font-mono text-base font-black tracking-wider">
+                  <strong className="text-amber-400 font-mono text-base font-bold tracking-wider">
                     {reseller.referralCode}
                   </strong>
                   <button
@@ -155,7 +155,7 @@ export default function ResellerBadgePage() {
                 revendeur à un service tiers pour chaque affichage. */}
             <div className="bg-white p-3 rounded-2xl shadow-lg text-center space-y-1.5 shrink-0">
               <QrCode value={personalCatalogUrl} size={128} />
-              <span className="text-[11px] font-black text-slate-900 uppercase block tracking-wider">
+              <span className="text-xs font-bold text-slate-900 uppercase block tracking-wider">
                 Scanner pour Commander
               </span>
             </div>
@@ -163,7 +163,7 @@ export default function ResellerBadgePage() {
           </div>
 
           {/* Footer Security Hologram */}
-          <div className="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 text-[11px] text-slate-400">
+          <div className="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 text-xs text-slate-400">
             <div className="flex items-center gap-1.5 min-w-0">
               <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
               <span>Certifié par Suguba Technologies Mali SAS</span>
@@ -175,7 +175,7 @@ export default function ResellerBadgePage() {
 
         {/* Instructions Box */}
         <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs space-y-3 text-xs print:hidden">
-          <h3 className="font-black text-sm text-slate-900 flex items-center space-x-2">
+          <h3 className="font-bold text-sm text-slate-900 flex items-center space-x-2">
             <Sparkles className="w-4 h-4 text-amber-500" />
             <span>Comment utiliser votre Carte sur le Terrain à Bamako ?</span>
           </h3>

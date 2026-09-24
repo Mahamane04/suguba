@@ -88,7 +88,7 @@ export default function PendingApprovalPage() {
           <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
             <CheckCircle2 className="w-7 h-7" />
           </div>
-          <h1 className="text-lg font-black text-gray-900">Compte activé !</h1>
+          <h1 className="text-lg font-bold text-gray-900">Compte activé !</h1>
           <p className="text-sm text-gray-500">
             Votre dossier vient d&apos;être validé par l&apos;équipe Suguba. Ouverture de votre
             espace...
@@ -107,7 +107,7 @@ export default function PendingApprovalPage() {
           <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
             <Clock className="w-7 h-7" />
           </div>
-          <h1 className="text-lg font-black text-gray-900">Dossier envoyé, en cours d&apos;examen</h1>
+          <h1 className="text-lg font-bold text-gray-900">Dossier envoyé, en cours d&apos;examen</h1>
           {/* La version précédente promettait « vous recevrez un SMS » : aucune
               passerelle SMS n'est branchée, ce message ne pouvait donc pas être
               tenu. On annonce ce qui se passe réellement — la page se met à jour
@@ -121,7 +121,7 @@ export default function PendingApprovalPage() {
         {/* Récapitulatif de ce qui est examiné */}
         {dossier && (
           <div className="bg-gray-50 border border-gray-100 rounded-2xl p-3 text-left space-y-1">
-            <p className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
               Ce que Suguba examine
             </p>
             <p className="text-xs text-gray-700">
@@ -132,7 +132,7 @@ export default function PendingApprovalPage() {
             )}
           </div>
         )}
-        <div className="flex items-center justify-center gap-2 text-[11px] text-emerald-700 bg-emerald-50 rounded-xl py-2 px-3">
+        <div className="flex items-center justify-center gap-2 text-xs text-emerald-700 bg-emerald-50 rounded-xl py-2 px-3">
           <ShieldCheck className="w-3.5 h-3.5" />
           <span>Gardez cette page ouverte : elle s&apos;ouvrira toute seule dès validation.</span>
         </div>

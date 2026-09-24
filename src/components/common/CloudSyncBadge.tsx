@@ -30,7 +30,7 @@ export default function CloudSyncBadge() {
   }, []);
 
   return (
-    <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-[11px] font-bold border transition-all shadow-2xs">
+    <div className="inline-flex items-center space-x-1.5 px-3 py-1 rounded-full text-xs font-bold border transition-all shadow-2xs">
       {cloudActive ? (
         <span className="flex items-center space-x-1.5 text-emerald-800 bg-emerald-50 border-emerald-200">
           <span className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse"></span>

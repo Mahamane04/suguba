@@ -45,7 +45,7 @@ export default function ClocheNotifications() {
     >
       <Bell className="w-5 h-5" />
       {nonLues > 0 && (
-        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white text-[10px] font-black flex items-center justify-center tabular-nums">
+        <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-600 text-white text-xs font-bold flex items-center justify-center tabular-nums">
           {nonLues > 9 ? '9+' : nonLues}
         </span>
       )}

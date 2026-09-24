@@ -6,7 +6,7 @@ import Footer from '@/components/common/Footer';
 import BoutiqueProduits from '@/components/shop/BoutiqueProduits';
 import ShopShareBar from '@/components/shop/ShopShareBar';
 import type { Boutique } from '@/lib/shop';
-import { badge } from '@/lib/reseau/badges';
+import BadgeConfiance from '@/components/ui/BadgeConfiance';
 import { ShieldCheck, Truck, KeyRound, ArrowRight, Store, Users } from 'lucide-react';
 
 /**
@@ -62,24 +62,20 @@ export default function ShopView({
                 className="w-16 h-16 rounded-2xl object-cover border-2 border-white/20 shrink-0"
               />
             ) : (
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center font-black text-2xl border-2 border-white/20 shrink-0">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center font-bold text-2xl border-2 border-white/20 shrink-0">
                 {boutique.nom.charAt(0).toUpperCase()}
               </div>
             )}
             <div className="space-y-1 min-w-0">
-              <span className="inline-block px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-black uppercase tracking-wider border border-emerald-500/30">
+              <span className="inline-block px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold uppercase tracking-wider border border-emerald-500/30">
                 {estRevendeur ? 'Revendeur partenaire Suguba' : 'Boutique sur Suguba'}
               </span>
               {boutique.badges && boutique.badges.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
-                  {boutique.badges.map((b) => (
-                    <span key={b} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/10 text-white text-[11px] font-bold">
-                      <ShieldCheck className="w-3 h-3 text-emerald-300" />{badge(b).libelle}
-                    </span>
-                  ))}
+                  {boutique.badges.map((b) => <BadgeConfiance key={b} cle={b} />)}
                 </div>
               )}
-              <h1 className="text-2xl sm:text-3xl font-black leading-tight">{titre}</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold leading-tight">{titre}</h1>
               <p className="text-xs text-slate-300">
                 {boutique.produits.length} article{boutique.produits.length > 1 ? 's' : ''}
                 {boutique.categorie ? ` · ${boutique.categorie}` : ''}
@@ -122,11 +118,11 @@ export default function ShopView({
           <div className="flex items-center space-x-3">
             <Users className="w-6 h-6 text-emerald-600 shrink-0" />
             <div>
-              <p className="text-sm font-black text-slate-900">Vous aussi, gagnez en partageant</p>
+              <p className="text-sm font-bold text-slate-900">Vous aussi, gagnez en partageant</p>
               <p className="text-xs text-slate-500">Sans stock : Suguba livre, vous touchez une commission sur chaque vente.</p>
             </div>
           </div>
-          <Link href="/rejoindre" className="h-11 px-5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black flex items-center justify-center">
+          <Link href="/rejoindre" className="h-11 px-5 rounded-2xl bg-suguba-profond hover:bg-suguba-profond-2 text-white text-xs font-bold flex items-center justify-center">
             Devenir revendeur
           </Link>
         </div>

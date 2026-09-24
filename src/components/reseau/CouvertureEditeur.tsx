@@ -51,7 +51,7 @@ export default function CouvertureEditeur({ valeur, onChange }: { valeur: string
           )}
         </div>
       </div>
-      <p className="text-[11px] text-slate-500">Image en largeur (paysage), affichée en haut de votre boutique.</p>
+      <p className="text-xs text-slate-500">Image en largeur (paysage), affichée en haut de votre boutique.</p>
       {erreur && <p className="text-xs font-semibold text-rose-600">{erreur}</p>}
     </div>
   );

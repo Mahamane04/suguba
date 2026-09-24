@@ -107,10 +107,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
         <Header />
         <main className="flex-1 flex items-center justify-center px-4 py-16">
           <div className="max-w-md w-full text-center bg-white rounded-3xl border border-slate-200 shadow-sm p-8 space-y-4">
-            <div className="w-14 h-14 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center mx-auto text-2xl font-black">
+            <div className="w-14 h-14 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center mx-auto text-2xl font-bold">
               !
             </div>
-            <h1 className="text-lg font-black text-slate-900">Produit introuvable</h1>
+            <h1 className="text-lg font-bold text-slate-900">Produit introuvable</h1>
             <p className="text-sm text-slate-500">
               Ce lien ne correspond à aucun produit disponible sur Suguba — il a peut-être expiré ou été mal recopié.
             </p>
@@ -132,7 +132,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
               <Clock className="w-7 h-7" />
             </div>
-            <h1 className="text-lg font-black text-slate-900">Pas encore en vente</h1>
+            <h1 className="text-lg font-bold text-slate-900">Pas encore en vente</h1>
             <p className="text-sm text-slate-500">
               « {product.name} » attend son prix de vente. Tant qu&apos;il n&apos;est pas publié, il ne peut être ni commandé ni partagé.
             </p>
@@ -185,14 +185,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               blocAchatVisible ? 'opacity-0 translate-y-1 pointer-events-none' : 'opacity-100 translate-y-0'
             }`}
           >
-            <span className="text-sm font-black text-slate-900 whitespace-nowrap">
+            <span className="text-sm font-bold text-slate-900 whitespace-nowrap">
               {Math.round(unitPrice).toLocaleString('fr-FR')} F
             </span>
             <button
               type="button"
               tabIndex={blocAchatVisible ? -1 : 0}
               onClick={allerCommander}
-              className="h-8 px-3.5 rounded-full bg-suguba-brand hover:bg-suguba-brand-dark text-white text-xs font-black whitespace-nowrap active:scale-95 transition-transform"
+              className="h-8 px-3.5 rounded-full bg-suguba-profond hover:bg-suguba-profond-2 text-white text-xs font-bold whitespace-nowrap active:scale-95 transition-transform"
             >
               Commander
             </button>
@@ -204,19 +204,19 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
         {nomRecommandeur && (
           <div className="bg-emerald-50 border border-emerald-300 rounded-2xl p-3.5 flex items-center justify-between">
             <div className="flex items-center space-x-2.5">
-              <div className="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">
+              <div className="w-8 h-8 rounded-full bg-suguba-profond text-white flex items-center justify-center font-bold text-xs">
                 {nomRecommandeur.charAt(0)}
               </div>
               <div>
                 <p className="text-xs font-bold text-emerald-950">
                   Recommandé par {nomRecommandeur}
                 </p>
-                <p className="text-[11px] text-emerald-700">
+                <p className="text-xs text-emerald-700">
                   Partenaire revendeur officiel Suguba
                 </p>
               </div>
             </div>
-            <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-black">
+            <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
               Code : {refCode}
             </span>
           </div>
@@ -249,7 +249,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                   if (monCode) prechargerLienPartage(product.slug);
                 }}
                 aria-label="Partager ce produit sur WhatsApp"
-                className="absolute top-3 right-3 h-9 px-3 rounded-full bg-[#25D366] hover:bg-[#1ebe5b] text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-md active:scale-[0.97] transition-all"
+                className="absolute top-3 right-3 h-9 px-3 rounded-full bg-suguba-wa hover:bg-[#1fbf5b] text-suguba-profond text-xs font-bold inline-flex items-center gap-1.5 shadow-md active:scale-[0.97] transition-all"
               >
                 <WhatsAppIcon className="w-4 h-4" />
                 <span>Partager</span>
@@ -258,9 +258,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
 
             {/* Téléphone : nom, prix et Commander juste sous la photo. */}
             <div ref={blocAchatRef} className="md:hidden space-y-2">
-              <h1 className="text-xl font-black text-slate-900 leading-tight">{product.name}</h1>
+              <h1 className="text-xl font-bold text-slate-900 leading-tight">{product.name}</h1>
               <div className="flex items-center justify-between gap-3">
-                <p className="text-2xl font-black text-suguba-brand whitespace-nowrap">
+                <p className="text-2xl font-bold text-suguba-brand whitespace-nowrap">
                   {Math.round(unitPrice).toLocaleString('fr-FR')} <span className="text-base">FCFA</span>
                 </p>
                 <Button type="button" onClick={allerCommander} className="shrink-0">
@@ -270,7 +270,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               </div>
               <SelecteurVariantes slug={product.slug} />
               <BoutonAjoutPanier productId={product.id} quantite={1} />
-              <p className="text-[11px] text-slate-500">
+              <p className="text-xs text-slate-500">
                 Sans créer de compte · Payez à la livraison
               </p>
             </div>
@@ -283,16 +283,16 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 { Icone: Truck, titre: 'Livré par Suguba', detail: 'Bamako et régions' },
               ].map(({ Icone, titre, detail }) => (
                 <div key={titre} className="bg-white p-3 rounded-2xl border border-slate-200 text-slate-800 space-y-1">
-                  <Icone className="w-5 h-5 mx-auto text-suguba-brand" />
-                  <p className="font-bold text-[11px] leading-tight">{titre}</p>
-                  <p className="text-[11px] text-slate-500 leading-tight">{detail}</p>
+                  <Icone className="w-5 h-5 mx-auto text-suguba-brand-dark" />
+                  <p className="font-bold text-xs leading-tight">{titre}</p>
+                  <p className="text-xs text-slate-500 leading-tight">{detail}</p>
                 </div>
               ))}
             </div>
 
             {livraisons > 0 && (
               <p className="text-xs text-slate-700 bg-white border border-slate-200 rounded-2xl px-3 py-2.5 flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-suguba-brand shrink-0" />
+                <CheckCircle2 className="w-4 h-4 text-suguba-brand-dark shrink-0" />
                 <span>
                   <strong>{livraisons}</strong> livraison{livraisons > 1 ? 's' : ''} réussie{livraisons > 1 ? 's' : ''} de ce produit
                 </span>
@@ -324,8 +324,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
           {/* Ordinateur : boîte d'achat collée à droite pendant le défilement. */}
           <div className="hidden md:block md:sticky md:top-28 bg-white rounded-3xl p-6 border border-slate-200 shadow-float space-y-5">
             <div className="space-y-1">
-              <h1 className="text-xl font-black text-slate-900 leading-tight">{product.name}</h1>
-              <p className="text-3xl font-black text-suguba-brand">{fcfa(unitPrice)}</p>
+              <h1 className="text-xl font-bold text-slate-900 leading-tight">{product.name}</h1>
+              <p className="text-3xl font-bold text-suguba-brand-dark">{fcfa(unitPrice)}</p>
             </div>
 
             <SelecteurVariantes slug={product.slug} />
@@ -342,7 +342,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 >
                   <Minus className="w-4 h-4" />
                 </button>
-                <span className="w-8 text-center text-sm font-black text-slate-900" aria-live="polite">{quantity}</span>
+                <span className="w-8 text-center text-sm font-bold text-slate-900" aria-live="polite">{quantity}</span>
                 <button
                   type="button"
                   onClick={() => setQuantity((q) => Math.min(50, q + 1))}
@@ -357,7 +357,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
 
             <div className="flex items-center justify-between text-sm border-t border-slate-100 pt-4">
               <span className="text-slate-600">Sous-total</span>
-              <span className="font-black text-slate-900">{fcfa(unitPrice * quantity)}</span>
+              <span className="font-bold text-slate-900">{fcfa(unitPrice * quantity)}</span>
             </div>
 
             <Button type="button" onClick={allerCommander} size="lg" fullWidth>
@@ -365,7 +365,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               <ArrowRight className="w-4 h-4" />
             </Button>
             <BoutonAjoutPanier productId={product.id} quantite={quantity} />
-            <p className="text-[11px] text-slate-500 text-center">
+            <p className="text-xs text-slate-500 text-center">
               Livraison calculée à l&apos;étape suivante · Payez à la livraison
             </p>
           </div>

@@ -85,7 +85,7 @@ export default function HomePage() {
         {/* ══════════════════════════════════════════════
             BANDEAU DE RECHERCHE — compact, le produit d'abord
         ══════════════════════════════════════════════ */}
-        <section className="bg-[#064e3b] px-4 sm:px-6 py-6 sm:py-8">
+        <section className="bg-suguba-profond px-4 sm:px-6 py-6 sm:py-8">
           <div className="max-w-4xl mx-auto space-y-4">
             {/* Mon quartier (2026-09-18) : sert d'abord à trouver les
                 boutiques voisines (section plus bas, page /boutiques). Il
@@ -105,7 +105,7 @@ export default function HomePage() {
               />
               <Link
                 href={quartierSitue ? `/boutiques?quartier=${encodeURIComponent(quartierSitue)}` : '/boutiques'}
-                className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-white text-[#064e3b] text-xs font-black px-3.5 min-h-[40px] hover:bg-emerald-50 transition-colors"
+                className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-white text-suguba-profond text-xs font-bold px-3.5 min-h-[40px] hover:bg-emerald-50 transition-colors"
               >
                 <Store className="w-3.5 h-3.5" />
                 Boutiques<span className="hidden sm:inline"> proches</span>
@@ -113,7 +113,7 @@ export default function HomePage() {
             </div>
 
             <div className="text-center">
-              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
                 Achetez à Bamako, payez à la livraison
               </h1>
               <p className="text-xs sm:text-sm text-emerald-100/70 mt-1">
@@ -129,7 +129,7 @@ export default function HomePage() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Rechercher un produit (ventilateur, téléphone, solaire...)"
-                className="w-full pl-11 pr-10 py-3.5 rounded-full bg-white text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#09b500]"
+                className="w-full pl-11 pr-10 py-3.5 rounded-full bg-white text-sm font-medium text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-suguba-brand"
               />
               {search && (
                 <button
@@ -158,7 +158,7 @@ export default function HomePage() {
                     onClick={() => setSelectedCategory(cat)}
                     className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all ${
                       selectedCategory === cat
-                        ? 'bg-[#09b500] text-white'
+                        ? 'bg-suguba-citron text-suguba-profond'
                         : 'bg-white/10 border border-white/15 text-emerald-100/80 hover:bg-white/20'
                     }`}
                   >
@@ -207,7 +207,7 @@ export default function HomePage() {
               </div>
             ) : approvedProducts.length === 0 ? (
               <div className="bg-white rounded-3xl border border-slate-100 shadow-card p-10 text-center space-y-2">
-                <p className="text-sm font-black text-slate-900">Catalogue en cours de constitution</p>
+                <p className="text-sm font-bold text-slate-900">Catalogue en cours de constitution</p>
                 <p className="text-xs text-slate-500 max-w-sm mx-auto">
                   Nos fournisseurs partenaires référencent actuellement leurs produits.
                   Revenez très bientôt pour découvrir les premiers articles.
@@ -215,7 +215,7 @@ export default function HomePage() {
               </div>
             ) : filteredProducts.length === 0 ? (
               <div className="bg-white rounded-3xl border border-slate-100 shadow-card p-10 text-center space-y-2">
-                <p className="text-sm font-black text-slate-900">Aucun produit ne correspond</p>
+                <p className="text-sm font-bold text-slate-900">Aucun produit ne correspond</p>
                 <p className="text-xs text-slate-500">
                   Essayez un autre mot, ou parcourez toutes les catégories.
                 </p>
@@ -258,10 +258,10 @@ export default function HomePage() {
             >
               <div className="flex items-center gap-4">
                 <div className="w-11 h-11 rounded-2xl bg-suguba-50 flex items-center justify-center shrink-0">
-                  <TrendingUp className="w-5 h-5 text-suguba-brand" />
+                  <TrendingUp className="w-5 h-5 text-suguba-brand-dark" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h2 className="font-black text-sm sm:text-base text-slate-900">
+                  <h2 className="font-bold text-sm sm:text-base text-slate-900">
                     Gagner de l&apos;argent avec Suguba
                   </h2>
                   <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">
@@ -286,7 +286,7 @@ export default function HomePage() {
                     icon: Banknote,
                     title: 'Payez à la livraison',
                     desc: 'Espèces ou Mobile Money, seulement quand le livreur arrive chez vous.',
-                    color: 'text-suguba-brand',
+                    color: 'text-suguba-brand-dark',
                     bg: 'bg-suguba-50',
                   },
                   {
@@ -300,7 +300,7 @@ export default function HomePage() {
                     icon: ShieldCheck,
                     title: 'Code secret à la remise',
                     desc: 'Vous ne donnez votre code qu\'après avoir vérifié le colis.',
-                    color: 'text-suguba-brand',
+                    color: 'text-suguba-brand-dark',
                     bg: 'bg-suguba-50',
                   },
                 ].map(({ icon: Icon, title, desc, color, bg }) => (

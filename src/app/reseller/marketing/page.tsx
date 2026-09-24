@@ -49,14 +49,14 @@ export default function ResellerMarketingPage() {
 
       <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
         <div className="space-y-1">
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900">Affiches pour vos statuts</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Affiches pour vos statuts</h1>
           <p className="text-xs text-slate-500">
             Touchez un produit : l&apos;affiche est prête en une seconde, avec le prix et votre lien de commande.
           </p>
         </div>
 
         <section className="space-y-3">
-          <h2 className="font-black text-sm text-slate-900 flex items-center gap-1.5">
+          <h2 className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
             <ImageIcon className="w-4 h-4" />
             <span>Choisissez un produit</span>
           </h2>
@@ -77,8 +77,8 @@ export default function ResellerMarketingPage() {
                     <ProductImage src={p.images[0] || ''} alt={p.name} fill sizes="(max-width: 640px) 33vw, 25vw" className="object-cover" compact />
                   </div>
                   <div className="p-2">
-                    <p className="text-[11px] font-bold text-slate-900 line-clamp-1">{p.name}</p>
-                    <p className="text-[11px] font-black text-slate-700">{p.publicPrice.toLocaleString('fr-FR')} F</p>
+                    <p className="text-xs font-bold text-slate-900 line-clamp-1">{p.name}</p>
+                    <p className="text-xs font-bold text-slate-700">{p.publicPrice.toLocaleString('fr-FR')} F</p>
                   </div>
                 </button>
               ))}
@@ -87,7 +87,7 @@ export default function ResellerMarketingPage() {
         </section>
 
         <section className="bg-white rounded-3xl border border-slate-200 p-5 space-y-3">
-          <h2 className="font-black text-sm text-slate-900 flex items-center gap-1.5">
+          <h2 className="font-bold text-sm text-slate-900 flex items-center gap-1.5">
             <Lightbulb className="w-4 h-4 text-amber-500" />
             <span>Les 3 réflexes des revendeurs qui vendent</span>
           </h2>
@@ -109,13 +109,13 @@ export default function ResellerMarketingPage() {
 
         <section className="bg-white rounded-3xl border border-slate-200 p-5 space-y-3">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="font-black text-sm text-slate-900">Idée de vidéo courte</h2>
+            <h2 className="font-bold text-sm text-slate-900">Idée de vidéo courte</h2>
             <button
               type="button"
               onClick={copierIdee}
               className="h-8 px-3 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-700 inline-flex items-center gap-1.5"
             >
-              {copie ? <Check className="w-3.5 h-3.5 text-suguba-brand" /> : <Copy className="w-3.5 h-3.5" />}
+              {copie ? <Check className="w-3.5 h-3.5 text-suguba-brand-dark" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copie ? 'Copié' : 'Copier'}</span>
             </button>
           </div>

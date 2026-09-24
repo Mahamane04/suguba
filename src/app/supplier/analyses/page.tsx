@@ -59,7 +59,7 @@ export default function AnalysesFournisseurPage() {
           {d.ca.length > 0 && <GraphiqueBarres titre="Chiffre d’affaires livré" points={d.ca} unite=" F" formater={k} />}
 
           <Card className="space-y-2.5">
-            <p className="text-sm font-black text-slate-900">Vos produits les plus vendus</p>
+            <p className="text-sm font-bold text-slate-900">Vos produits les plus vendus</p>
             {d.topProduits.length === 0 ? (
               <p className="text-xs text-slate-500">Aucune commande sur la période.</p>
             ) : d.topProduits.map((p, i) => (
@@ -72,7 +72,7 @@ export default function AnalysesFournisseurPage() {
 
           {d.sponsorisations.length > 0 && (
             <Card className="space-y-2.5">
-              <p className="text-sm font-black text-slate-900">Retour de vos sponsorisations</p>
+              <p className="text-sm font-bold text-slate-900">Retour de vos sponsorisations</p>
               {d.sponsorisations.map((s, i) => (
                 <div key={s.libelle + i} className="flex items-center justify-between gap-3 text-xs">
                   <span className="truncate text-slate-700">{s.libelle}</span>

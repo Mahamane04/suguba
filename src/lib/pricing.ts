@@ -61,12 +61,19 @@ export interface CodePromo {
  *  - 'auto'           : le fournisseur ne fixe rien, le moteur calcule la
  *                       commission (part revendeur du reste, comme avant) ;
  *  - 'prix_vente'     : Suguba prend `tauxPartSuguba` % du prix de vente ;
- *  - 'part_revendeur' : Suguba prend `tauxPartSuguba` % de la part revendeur.
- * Dans les deux derniers cas, un produit sans part indiquée retombe sur le
- * calcul automatique, et le prix est TOUJOURS relevé au plancher s'il ne
- * couvre pas les coûts : aucun mode ne peut faire vendre à perte.
+ *  - 'part_revendeur' : Suguba prend `tauxPartSuguba` % de la part revendeur,
+ *                       AJOUTÉS au prix payé par le client ;
+ *  - 'prelevement_revendeur' (2026-09-23, choix du fondateur) : Suguba prend
+ *                       `tauxPartSuguba` % de la part revendeur, PRÉLEVÉS sur
+ *                       le revendeur. Le client paie prix fournisseur + part
+ *                       revendeur, rien de plus ; le revendeur reçoit sa part
+ *                       moins le prélèvement. Taux bas au lancement (1 %) pour
+ *                       attirer fournisseurs et revendeurs.
+ * Hors mode automatique, un produit sans part indiquée retombe sur le calcul
+ * automatique, et le prix est TOUJOURS relevé au plancher s'il ne couvre pas
+ * les coûts : aucun mode ne peut faire vendre à perte.
  */
-export type ModePartSuguba = 'auto' | 'prix_vente' | 'part_revendeur';
+export type ModePartSuguba = 'auto' | 'prix_vente' | 'part_revendeur' | 'prelevement_revendeur';
 
 export interface ReglagesPlateforme {
   // ── Coûts variables, par commande ────────────────────────────────────
@@ -82,6 +89,15 @@ export interface ReglagesPlateforme {
    * colis, c'est une course payée pour rien et un article à rapatrier.
    */
   provisionRefusPct: number;
+  /**
+   * Base de la provision pour refus (2026-09-24). `prix` (historique) : % du
+   * prix de vente — 4 % d'un article à 400 000 F font 16 000 F de « coût »
+   * ajoutés au prix client, alors qu'un colis refusé revient au stock : ce que
+   * Suguba perd réellement, c'est la course. `course` : % × coût d'une course
+   * refusée (rémunération du livreur, aller + retour). Absent = `prix`, pour
+   * que des réglages déjà enregistrés ne changent pas de sens en silence.
+   */
+  baseProvisionRefus?: 'prix' | 'course';
 
   // ── Livraison ────────────────────────────────────────────────────────
   /** Frais de livraison facturés au client quand sa ville n'a pas de tarif propre, en FCFA. */
@@ -185,6 +201,7 @@ export const REGLAGES_PAR_DEFAUT: ReglagesPlateforme = {
   fraisVersementPct: 1.5,
   coutMessageParCommande: 20,
   provisionRefusPct: 4,
+  baseProvisionRefus: 'prix',
   fraisLivraisonClient: 1500,
   livraisonParVille: {
     Bamako: 1500,
@@ -260,7 +277,12 @@ export interface DetailTarif {
   plancher: number;
   // Partage
   reste: number;
+  /** Ce que le revendeur REÇOIT (après prélèvement Suguba éventuel). */
   commission: number;
+  /** Part revendeur avant prélèvement : celle fixée par le fournisseur, ou calculée. */
+  commissionBrute: number;
+  /** Prélevé par Suguba sur la part revendeur (mode 'prelevement_revendeur'), sinon 0. */
+  prelevementSuguba: number;
   fraisVersement: number;
   /** Prix de vente − prix fournisseur − commission. */
   margeSuguba: number;
@@ -290,9 +312,16 @@ export function coutFixeParCommande(r: ReglagesPlateforme): number {
   return totalCoutsFixes(r) / Math.max(1, r.volumeReference);
 }
 
-/** Part des coûts qui croît avec le prix de vente (paiement, refus, marge nette). */
+const provisionSurLaCourse = (r: ReglagesPlateforme) => r.baseProvisionRefus === 'course';
+
+/** Ce que coûte une livraison refusée : le livreur est payé pour l'aller et le retour du colis. */
+export function coutCourseRefusee(r: ReglagesPlateforme): number {
+  return 2 * Math.max(0, Number(r.remunerationLivreur) || 0);
+}
+
+/** Part des coûts qui croît avec le prix de vente (paiement, refus s'il est au prix, marge nette). */
 function tauxProportionnel(r: ReglagesPlateforme): number {
-  return pct(r.fraisPaiementPct) + pct(r.provisionRefusPct) + pct(r.margeNetteMinPct);
+  return pct(r.fraisPaiementPct) + (provisionSurLaCourse(r) ? 0 : pct(r.provisionRefusPct)) + pct(r.margeNetteMinPct);
 }
 
 /** Part du plancher qui ne dépend pas du prix de vente, en FCFA. */
@@ -300,6 +329,7 @@ function chargesIndependantesDuPrix(r: ReglagesPlateforme): number {
   return (
     pct(r.fraisPaiementPct) * r.fraisLivraisonClient +
     coutFixeParCommande(r) +
+    (provisionSurLaCourse(r) ? pct(r.provisionRefusPct) * coutCourseRefusee(r) : 0) +
     r.coutMessageParCommande +
     Math.max(0, r.remunerationLivreur - r.fraisLivraisonClient)
   );
@@ -331,7 +361,7 @@ export function calculerTarif(
   const PV = Math.max(0, Number(prixVente) || 0);
 
   const coutPaiement = pct(r.fraisPaiementPct) * (PV + r.fraisLivraisonClient);
-  const provisionRefus = pct(r.provisionRefusPct) * PV;
+  const provisionRefus = pct(r.provisionRefusPct) * (provisionSurLaCourse(r) ? coutCourseRefusee(r) : PV);
   const coutFixe = coutFixeParCommande(r);
   const coutMessage = r.coutMessageParCommande;
   const deficitLivraison = Math.max(0, r.remunerationLivreur - r.fraisLivraisonClient);
@@ -394,6 +424,15 @@ export function calculerTarif(
     }
   }
 
+  // Prélèvement Suguba sur la part revendeur (mode 'prelevement_revendeur') :
+  // le revendeur reçoit sa part moins ce prélèvement, au franc près (pas
+  // d'arrondi au pas de commission : 1 % de 500 F font 5 F, pas 250 F).
+  const commissionBrute = commission;
+  const prelevementSuguba = r.modePartSuguba === 'prelevement_revendeur' && commission > 0
+    ? Math.min(commission, Math.ceil(pct(r.tauxPartSuguba) * commission))
+    : 0;
+  commission = commissionBrute - prelevementSuguba;
+
   const fraisVersement = pct(r.fraisVersementPct) * commission;
   const margeSuguba = PV - PF - commission;
   const margeNetteSuguba = margeSuguba - coutParCommande - fraisVersement;
@@ -411,6 +450,8 @@ export function calculerTarif(
     plancher: franc(plancher),
     reste: franc(reste),
     commission,
+    commissionBrute,
+    prelevementSuguba,
     fraisVersement: franc(fraisVersement),
     margeSuguba: franc(margeSuguba),
     margeNetteSuguba: franc(margeNetteSuguba),
@@ -452,7 +493,11 @@ export function prixDepuisPartRevendeur(
   const minimum = Math.max(0, Number(r.minimumPartSuguba) || 0);
 
   let brut: number;
-  if (r.modePartSuguba === 'part_revendeur') {
+  if (r.modePartSuguba === 'prelevement_revendeur') {
+    // Suguba se sert sur la part revendeur : rien n'est ajouté pour le client
+    // (seul le plancher de coûts peut relever le prix, plus bas).
+    brut = PF + C;
+  } else if (r.modePartSuguba === 'part_revendeur') {
     brut = PF + C + Math.max(minimum, taux * C);
   } else {
     // % du prix de vente : P = (PF + C) / (1 − taux), sauf si la part qui en
@@ -709,7 +754,9 @@ export function validerReglages(r: ReglagesPlateforme): string[] {
     if (!Number.isFinite(v) || v < 0 || v > 100) erreurs.push(`${libelle} : doit être entre 0 et 100 %.`);
   }
   if (tauxProportionnel(r) >= 0.6) {
-    erreurs.push('Paiement + provision pour refus + marge nette dépassent 60 % du prix de vente : aucun prix ne resterait vendable.');
+    erreurs.push(provisionSurLaCourse(r)
+      ? 'Paiement + marge nette dépassent 60 % du prix de vente : aucun prix ne resterait vendable.'
+      : 'Paiement + provision pour refus + marge nette dépassent 60 % du prix de vente : aucun prix ne resterait vendable.');
   }
   const montants: [keyof ReglagesPlateforme, string][] = [
     ['coutMessageParCommande', 'Coût du message'],
@@ -723,8 +770,11 @@ export function validerReglages(r: ReglagesPlateforme): string[] {
     const v = Number(r[cle]);
     if (!Number.isFinite(v) || v < 0) erreurs.push(`${libelle} : doit être un montant positif.`);
   }
-  if (!['auto', 'prix_vente', 'part_revendeur'].includes(r.modePartSuguba)) {
+  if (!['auto', 'prix_vente', 'part_revendeur', 'prelevement_revendeur'].includes(r.modePartSuguba)) {
     erreurs.push('Mode de rémunération Suguba inconnu.');
+  }
+  if (r.modePartSuguba === 'prelevement_revendeur' && Number(r.tauxPartSuguba) > 100) {
+    erreurs.push('Prélèvement sur la part revendeur : 100 % au maximum.');
   }
   if (r.modePartSuguba === 'prix_vente' && Number(r.tauxPartSuguba) >= 90) {
     erreurs.push('Part Suguba sur le prix de vente : au-delà de 90 %, aucun prix ne serait raisonnable.');
@@ -789,6 +839,7 @@ export function completerReglages(partiels: Partial<ReglagesPlateforme> | null |
     r.livraisonDistanceBamako = REGLAGES_PAR_DEFAUT.livraisonDistanceBamako;
   }
   if (r.modeLivraisonBamako !== 'zones') r.modeLivraisonBamako = 'distance';
+  if (r.baseProvisionRefus !== 'course') r.baseProvisionRefus = 'prix';
   if (!r.livraisonZonesBamako || typeof r.livraisonZonesBamako !== 'object') {
     r.livraisonZonesBamako = REGLAGES_PAR_DEFAUT.livraisonZonesBamako;
   }

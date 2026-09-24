@@ -112,12 +112,12 @@ export default function PhotosUploader({
               </div>
             )}
             {p.erreur && (
-              <div className="absolute inset-x-0 bottom-0 bg-rose-600 text-white text-[11px] font-bold p-1 text-center leading-tight">
+              <div className="absolute inset-x-0 bottom-0 bg-rose-600 text-white text-xs font-bold p-1 text-center leading-tight">
                 {p.erreur}
               </div>
             )}
             {i === 0 && p.url && (
-              <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded-md bg-slate-900/80 text-white text-[11px] font-bold">
+              <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded-md bg-slate-900/80 text-white text-xs font-bold">
                 Principale
               </span>
             )}
@@ -149,13 +149,13 @@ export default function PhotosUploader({
             className="aspect-square rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50 hover:bg-slate-100 flex flex-col items-center justify-center gap-1 text-slate-500 transition-colors"
           >
             <ImagePlus className="w-5 h-5" />
-            <span className="text-[11px] font-bold text-center px-1">
+            <span className="text-xs font-bold text-center px-1">
               {photos.length === 0 ? 'Ajouter des photos' : 'Ajouter'}
             </span>
           </button>
         )}
       </div>
-      <p className="text-[11px] text-slate-500">
+      <p className="text-xs text-slate-500">
         Jusqu&apos;à {max} photos, allégées automatiquement avant l&apos;envoi. La première est la photo
         principale : c&apos;est elle qui part avec le partage WhatsApp. Touchez l&apos;étoile pour en changer.
       </p>

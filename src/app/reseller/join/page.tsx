@@ -58,7 +58,7 @@ function JoinContent() {
           <span>Rejoignez le Réseau Officiel Suguba Mali</span>
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-black text-slate-900 leading-tight">
+        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight">
           Gagnez des Revenus depuis votre Smartphone à Bamako
         </h1>
 
@@ -69,7 +69,7 @@ function JoinContent() {
 
         {refCode && (
           <div className="inline-block p-2 px-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-900">
-            🎁 Parrainé par le code Partenaire : <span className="font-mono font-black">{refCode}</span>
+            🎁 Parrainé par le code Partenaire : <span className="font-mono font-bold">{refCode}</span>
           </div>
         )}
       </div>
@@ -78,40 +78,40 @@ function JoinContent() {
       <div className="grid grid-cols-3 gap-2">
         <div className="bg-white p-3 rounded-2xl border border-slate-200 text-center space-y-1">
           <Wallet className="w-5 h-5 text-emerald-600 mx-auto" />
-          <span className="font-black text-[11px] text-slate-900 block">0 FCFA</span>
-          <span className="text-[11px] text-slate-500 block leading-tight">Zéro capital requis</span>
+          <span className="font-bold text-xs text-slate-900 block">0 FCFA</span>
+          <span className="text-xs text-slate-500 block leading-tight">Zéro capital requis</span>
         </div>
 
         <div className="bg-white p-3 rounded-2xl border border-slate-200 text-center space-y-1">
           <ShieldCheck className="w-5 h-5 text-slate-600 mx-auto" />
-          <span className="font-black text-[11px] text-slate-900 block">Garantie 12M</span>
-          <span className="text-[11px] text-slate-500 block leading-tight">Produits certifiés</span>
+          <span className="font-bold text-xs text-slate-900 block">Garantie 12M</span>
+          <span className="text-xs text-slate-500 block leading-tight">Produits certifiés</span>
         </div>
 
         {/* Wave retiré : SasPay ne le couvre pas au Mali, aucun gain ne peut y être versé. */}
         <div className="bg-white p-3 rounded-2xl border border-slate-200 text-center space-y-1">
           <Wallet className="w-5 h-5 text-slate-600 mx-auto" />
-          <span className="font-black text-[11px] text-slate-900 block">Mobile Money</span>
-          <span className="text-[11px] text-slate-500 block leading-tight">Orange · Moov · Mobi Cash</span>
+          <span className="font-bold text-xs text-slate-900 block">Mobile Money</span>
+          <span className="text-xs text-slate-500 block leading-tight">Orange · Moov · Mobi Cash</span>
         </div>
       </div>
 
       {/* Registration Card — Google seulement */}
       <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 shadow-xl space-y-5">
         <div className="border-b border-slate-100 pb-3">
-          <h2 className="font-black text-base text-slate-900">Créer mon Compte Revendeur Gratuit</h2>
-          <p className="text-[11px] text-slate-500">Accès immédiat au catalogue de produits rémunérés</p>
+          <h2 className="font-bold text-base text-slate-900">Créer mon Compte Revendeur Gratuit</h2>
+          <p className="text-xs text-slate-500">Accès immédiat au catalogue de produits rémunérés</p>
         </div>
 
         <button
           type="button"
           onClick={handleGoogleJoin}
-          className="w-full py-4 bg-white border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-800 font-black rounded-2xl text-sm flex items-center justify-center gap-2.5 transition-all active:scale-[0.98]"
+          className="w-full py-4 bg-white border-2 border-slate-200 hover:border-slate-300 hover:bg-slate-50 text-slate-800 font-bold rounded-2xl text-sm flex items-center justify-center gap-2.5 transition-all active:scale-[0.98]"
         >
           <GoogleIcon className="w-5 h-5" />
           S&apos;inscrire avec Google
         </button>
-        <p className="text-[11px] text-slate-500 text-center -mt-3">
+        <p className="text-xs text-slate-500 text-center -mt-3">
           Sans code, sans mot de passe. Il ne restera qu&apos;à confirmer votre numéro et votre
           quartier à Bamako.
         </p>

@@ -28,7 +28,7 @@ export default function B2BPartnerPitchPage() {
         {/* Top Control Bar (Hidden on Print) */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
           <div className="space-y-1">
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center space-x-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center space-x-2">
               <Building2 className="w-6 h-6 text-emerald-600" />
               <span>Dossier de Partenariat Commercial B2B</span>
             </h1>
@@ -52,7 +52,7 @@ export default function B2BPartnerPitchPage() {
               )}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-4 py-2.5 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold rounded-2xl text-xs flex items-center space-x-2 transition-all shadow-xs"
+              className="px-4 py-2.5 bg-suguba-wa hover:bg-[#20bd5a] text-suguba-profond font-bold rounded-2xl text-xs flex items-center space-x-2 transition-all shadow-xs"
             >
               <Share2 className="w-4 h-4" />
               <span>Envoyer sur WhatsApp</span>
@@ -67,10 +67,10 @@ export default function B2BPartnerPitchPage() {
           <div className="flex flex-col sm:flex-row justify-between items-start border-b-2 border-slate-900 pb-6 gap-4">
             <div className="space-y-1">
               <div className="flex items-center space-x-2">
-                <div className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-lg">
+                <div className="w-9 h-9 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-lg">
                   S
                 </div>
-                <span className="text-2xl font-black tracking-tight text-slate-900">
+                <span className="text-2xl font-bold tracking-tight text-slate-900">
                   SUGUBA<span className="text-emerald-600">.ML</span>
                 </span>
               </div>
@@ -79,7 +79,7 @@ export default function B2BPartnerPitchPage() {
               </p>
             </div>
 
-            <div className="text-right text-[11px] text-slate-600 space-y-0.5 sm:max-w-xs">
+            <div className="text-right text-xs text-slate-600 space-y-0.5 sm:max-w-xs">
               <p className="font-bold text-slate-900">SUGUBA MALI SAS</p>
               <p>Hamdallaye ACI 2000, Rue 314, Porte 88, Bamako</p>
               <p>NIF : <strong>086419208K</strong> • RCCM : <strong>MA.BKO.2026.B.14820</strong></p>
@@ -89,10 +89,10 @@ export default function B2BPartnerPitchPage() {
 
           {/* Headline Proposition */}
           <div className="bg-emerald-50 rounded-2xl p-6 border border-emerald-200 space-y-2">
-            <span className="px-3 py-1 bg-emerald-600 text-white text-[11px] font-black rounded-full uppercase tracking-wider">
+            <span className="px-3 py-1 bg-suguba-profond text-white text-xs font-bold rounded-full uppercase tracking-wider">
               Offre Partenaire Distribution Exclusive
             </span>
-            <h2 className="text-xl sm:text-2xl font-black text-emerald-950">
+            <h2 className="text-xl sm:text-2xl font-bold text-emerald-950">
               Multipliez vos ventes au Mali grâce à une force de vente de +500 revendeurs digitaux, sans recruter un seul salarié supplémentaire.
             </h2>
             <p className="text-xs text-emerald-800 leading-relaxed">
@@ -104,7 +104,7 @@ export default function B2BPartnerPitchPage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             
             <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
-              <div className="flex items-center space-x-2 text-slate-900 font-black text-sm">
+              <div className="flex items-center space-x-2 text-slate-900 font-bold text-sm">
                 <Users className="w-5 h-5 text-emerald-600" />
                 <span>1. Force de Vente Dédiée</span>
               </div>
@@ -114,7 +114,7 @@ export default function B2BPartnerPitchPage() {
             </div>
 
             <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
-              <div className="flex items-center space-x-2 text-slate-900 font-black text-sm">
+              <div className="flex items-center space-x-2 text-slate-900 font-bold text-sm">
                 <Truck className="w-5 h-5 text-slate-600" />
                 <span>2. Logistique 24h & Flotte Moto</span>
               </div>
@@ -124,7 +124,7 @@ export default function B2BPartnerPitchPage() {
             </div>
 
             <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
-              <div className="flex items-center space-x-2 text-slate-900 font-black text-sm">
+              <div className="flex items-center space-x-2 text-slate-900 font-bold text-sm">
                 <ShieldCheck className="w-5 h-5 text-slate-600" />
                 <span>3. Sécurité Anti-Fraude par Code OTP</span>
               </div>
@@ -134,7 +134,7 @@ export default function B2BPartnerPitchPage() {
             </div>
 
             <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
-              <div className="flex items-center space-x-2 text-slate-900 font-black text-sm">
+              <div className="flex items-center space-x-2 text-slate-900 font-bold text-sm">
                 <DollarSign className="w-5 h-5 text-amber-600" />
                 <span>4. Reversement Garanti & Zéro Frais Fixes</span>
               </div>
@@ -147,27 +147,27 @@ export default function B2BPartnerPitchPage() {
 
           {/* Process Timeline */}
           <div className="space-y-4 pt-2">
-            <h3 className="font-black text-sm text-slate-900 uppercase tracking-wider">
+            <h3 className="font-bold text-sm text-slate-900 uppercase tracking-wider">
               Déploiement de Votre Canal en 3 Étapes Simples (24h Chrono)
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
               <div className="p-4 bg-slate-900 text-white rounded-2xl space-y-1">
-                <span className="font-black text-amber-400 block">Étape 1 : Référencement</span>
+                <span className="font-bold text-amber-400 block">Étape 1 : Référencement</span>
                 <p className="text-slate-300">
                   Dépôt de vos fiches produits, prix de gros et stocks disponibles dans votre console Suguba Business.
                 </p>
               </div>
 
               <div className="p-4 bg-slate-900 text-white rounded-2xl space-y-1">
-                <span className="font-black text-emerald-400 block">Étape 2 : Mobilisation</span>
+                <span className="font-bold text-emerald-400 block">Étape 2 : Mobilisation</span>
                 <p className="text-slate-300">
                   Votre canal est ouvert aux revendeurs avec les affiches marketing générées par le Studio Suguba.
                 </p>
               </div>
 
               <div className="p-4 bg-slate-900 text-white rounded-2xl space-y-1">
-                <span className="font-black text-slate-500 block">Étape 3 : Ventes & Reversements</span>
+                <span className="font-bold text-slate-500 block">Étape 3 : Ventes & Reversements</span>
                 <p className="text-slate-300">
                   Les commandes affluent, Suguba livre et vous encaissez votre chiffre d&apos;affaires sans vous déplacer.
                 </p>
@@ -185,8 +185,8 @@ export default function B2BPartnerPitchPage() {
             </div>
 
             <div className="text-center border border-slate-300 rounded-2xl p-4 w-48 space-y-4">
-              <p className="text-[11px] text-slate-500 uppercase font-bold">Cachet & Signature Suguba</p>
-              <div className="text-emerald-800 font-serif italic text-sm font-black py-2">
+              <p className="text-xs text-slate-500 uppercase font-bold">Cachet & Signature Suguba</p>
+              <div className="text-emerald-800 font-serif italic text-sm font-bold py-2">
                 Direction Générale<br />Suguba Mali SAS
               </div>
             </div>

@@ -42,8 +42,8 @@ export default function CarteLien({
     <Card className="space-y-3">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-sm font-black text-slate-900">{titre}</p>
-          {aide && <p className="text-[11px] text-slate-500 mt-0.5">{aide}</p>}
+          <p className="text-sm font-bold text-slate-900">{titre}</p>
+          {aide && <p className="text-xs text-slate-500 mt-0.5">{aide}</p>}
         </div>
         <button
           type="button"
@@ -64,7 +64,7 @@ export default function CarteLien({
           className="flex-1 min-w-0 h-11 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-xs text-slate-700 font-mono"
         />
         <Button variant="ghost" size="sm" onClick={copier} aria-label="Copier le lien">
-          {copie ? <Check className="w-4 h-4 text-suguba-brand" /> : <Copy className="w-4 h-4" />}
+          {copie ? <Check className="w-4 h-4 text-suguba-brand-dark" /> : <Copy className="w-4 h-4" />}
         </Button>
       </div>
 

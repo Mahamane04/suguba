@@ -237,7 +237,7 @@ export default function PanierPage() {
               <ArrowLeft className="w-4 h-4" />
               Continuer mes achats
             </button>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900">Mon panier</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Mon panier</h1>
           </div>
 
           <Card padding="p-0" className="overflow-hidden divide-y divide-slate-100">
@@ -259,13 +259,13 @@ export default function PanierPage() {
                         <button type="button" onClick={() => changerQuantite(a.productId, a.quantity - 1)} aria-label="Diminuer la quantité" className="w-9 h-9 flex items-center justify-center text-slate-700">
                           <Minus className="w-3.5 h-3.5" />
                         </button>
-                        <span className="w-7 text-center text-sm font-black tabular-nums">{a.quantity}</span>
+                        <span className="w-7 text-center text-sm font-bold tabular-nums">{a.quantity}</span>
                         <button type="button" onClick={() => changerQuantite(a.productId, a.quantity + 1)} disabled={a.quantity >= 50} aria-label="Augmenter la quantité" className="w-9 h-9 flex items-center justify-center text-slate-700 disabled:text-slate-300">
                           <Plus className="w-3.5 h-3.5" />
                         </button>
                       </div>
                       <div className="flex items-center gap-2">
-                        {ligne && <span className="text-sm font-black text-slate-900 tabular-nums">{fcfa(ligne.montantArticles)}</span>}
+                        {ligne && <span className="text-sm font-bold text-slate-900 tabular-nums">{fcfa(ligne.montantArticles)}</span>}
                         <button type="button" onClick={() => retirerDuPanier(a.productId)} aria-label="Retirer du panier" className="w-9 h-9 rounded-2xl flex items-center justify-center text-slate-400 hover:text-rose-600">
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -278,7 +278,7 @@ export default function PanierPage() {
           </Card>
 
           <Card className="space-y-4">
-            <p className="text-sm font-black text-slate-900">Vos coordonnées</p>
+            <p className="text-sm font-bold text-slate-900">Vos coordonnées</p>
             <Field label="Nom et prénom" htmlFor="nom" erreur={voir(erreurs.nom)} requis>
               <Input id="nom" value={nom} onChange={(e) => setNom(e.target.value)} autoComplete="name" aria-invalid={Boolean(voir(erreurs.nom))} />
             </Field>
@@ -288,15 +288,15 @@ export default function PanierPage() {
           </Card>
 
           <Card className="space-y-4">
-            <p className="text-sm font-black text-slate-900">Livraison</p>
+            <p className="text-sm font-bold text-slate-900">Livraison</p>
             <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Mode de livraison">
               <button type="button" role="radio" aria-checked={mode === 'domicile'} onClick={() => setMode('domicile')} className={`rounded-2xl border p-3 text-left ${mode === 'domicile' ? ACTIF : INACTIF}`}>
                 <Truck className="w-4 h-4 text-slate-700" />
-                <span className="block text-xs font-black text-slate-900 mt-1">À domicile</span>
+                <span className="block text-xs font-bold text-slate-900 mt-1">À domicile</span>
               </button>
               <button type="button" role="radio" aria-checked={mode === 'relais'} onClick={() => setMode('relais')} disabled={!reglages?.pointsRelais.length} className={`rounded-2xl border p-3 text-left disabled:opacity-50 ${mode === 'relais' ? ACTIF : INACTIF}`}>
                 <Store className="w-4 h-4 text-slate-700" />
-                <span className="block text-xs font-black text-slate-900 mt-1">Point relais</span>
+                <span className="block text-xs font-bold text-slate-900 mt-1">Point relais</span>
               </button>
             </div>
 
@@ -326,9 +326,9 @@ export default function PanierPage() {
                     className={`w-full rounded-2xl border p-3 text-left flex items-start justify-between gap-3 ${relais?.id === p.id ? ACTIF : INACTIF}`}>
                     <span className="min-w-0">
                       <span className="block text-xs font-bold text-slate-900">{p.nom}</span>
-                      {p.horaires && <span className="block text-[11px] text-slate-500">{p.horaires}</span>}
+                      {p.horaires && <span className="block text-xs text-slate-500">{p.horaires}</span>}
                     </span>
-                    <span className="text-xs font-black text-slate-900 shrink-0">{p.frais === 0 ? 'Gratuit' : fcfa(p.frais)}</span>
+                    <span className="text-xs font-bold text-slate-900 shrink-0">{p.frais === 0 ? 'Gratuit' : fcfa(p.frais)}</span>
                   </button>
                 ))}
               </div>
@@ -360,7 +360,7 @@ export default function PanierPage() {
               {envoi ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
               Confirmer la commande
             </Button>
-            <p className="text-[11px] text-slate-500 text-center">Rien à payer maintenant · Payez à la livraison</p>
+            <p className="text-xs text-slate-500 text-center">Rien à payer maintenant · Payez à la livraison</p>
           </Card>
         </aside>
       </form>
@@ -383,10 +383,10 @@ export default function PanierPage() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500">
               Total{devis && devis.livraisons > 1 ? ` · ${devis.livraisons} livraisons` : ''}
             </p>
-            <p className="text-lg font-black text-slate-900 tabular-nums">
+            <p className="text-lg font-bold text-slate-900 tabular-nums">
               {devis ? fcfa(devis.total) : '…'}{devisEnCours && <Loader2 className="inline w-3.5 h-3.5 ml-1 animate-spin text-slate-400" />}
             </p>
           </div>
@@ -404,16 +404,16 @@ function Recapitulatif({ devis, enCours }: { devis: Devis | null; enCours: boole
   if (!devis) return <Skeleton className="h-28" />;
   return (
     <div className={`space-y-2 text-sm ${enCours ? 'opacity-60' : ''}`}>
-      <p className="text-sm font-black text-slate-900">Récapitulatif</p>
+      <p className="text-sm font-bold text-slate-900">Récapitulatif</p>
       <div className="flex justify-between"><span className="text-slate-600">Articles</span><span className="font-bold tabular-nums">{fcfa(devis.articles)}</span></div>
       <div className="flex justify-between">
         <span className="text-slate-600">Livraison{devis.livraisons > 1 ? ` (${devis.livraisons} fournisseurs)` : ''}</span>
         <span className="font-bold tabular-nums">{devis.livraison === 0 ? 'Gratuite' : fcfa(devis.livraison)}</span>
       </div>
-      {devis.remise > 0 && <div className="flex justify-between text-suguba-brand"><span>Remise</span><span className="font-bold tabular-nums">-{fcfa(devis.remise)}</span></div>}
-      <div className="flex justify-between border-t border-slate-100 pt-2"><span className="font-black">Total</span><span className="font-black text-lg tabular-nums">{fcfa(devis.total)}</span></div>
+      {devis.remise > 0 && <div className="flex justify-between text-suguba-brand-dark"><span>Remise</span><span className="font-bold tabular-nums">-{fcfa(devis.remise)}</span></div>}
+      <div className="flex justify-between border-t border-slate-100 pt-2"><span className="font-bold">Total</span><span className="font-bold text-lg tabular-nums">{fcfa(devis.total)}</span></div>
       {devis.livraisons > 1 && (
-        <p className="text-[11px] text-slate-500">Vos articles viennent de {devis.livraisons} fournisseurs : ils arrivent en {devis.livraisons} livraisons, chacune avec son code.</p>
+        <p className="text-xs text-slate-500">Vos articles viennent de {devis.livraisons} fournisseurs : ils arrivent en {devis.livraisons} livraisons, chacune avec son code.</p>
       )}
     </div>
   );

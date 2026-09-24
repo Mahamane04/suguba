@@ -28,7 +28,7 @@ export default function ProductImage({ compact = false, ...props }: Omit<ImagePr
         aria-label="Photo indisponible"
       >
         <ImageOff className={compact ? 'w-5 h-5' : 'w-8 h-8'} />
-        {!compact && <span className="text-[11px] font-semibold uppercase tracking-wide">Photo indisponible</span>}
+        {!compact && <span className="text-xs font-semibold uppercase tracking-wide">Photo indisponible</span>}
       </div>
     );
   }

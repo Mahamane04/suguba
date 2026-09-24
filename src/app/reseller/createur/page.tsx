@@ -102,7 +102,7 @@ export default function CreateurContenusPage() {
       retour={{ href: '/reseller', libelle: 'Espace revendeur' }}
     >
       <Card className="space-y-3">
-        <p className="text-sm font-black text-slate-900">1. Le produit</p>
+        <p className="text-sm font-bold text-slate-900">1. Le produit</p>
         <div className="relative">
           <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
           <Input value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder="Rechercher un produit" className="pl-10" aria-label="Rechercher un produit" />
@@ -123,10 +123,10 @@ export default function CreateurContenusPage() {
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 {p.images[0] ? <img src={p.images[0]} alt="" className="w-full aspect-square object-cover" /> : <div className="w-full aspect-square bg-slate-100" />}
-                <p className="text-[11px] font-bold text-slate-800 px-2 pt-1 line-clamp-2 leading-tight">{p.name}</p>
-                <p className="text-[11px] font-black text-suguba-brand px-2 pb-1.5 tabular-nums">{p.publicPrice.toLocaleString('fr-FR')} F</p>
+                <p className="text-xs font-bold text-slate-800 px-2 pt-1 line-clamp-2 leading-tight">{p.name}</p>
+                <p className="text-xs font-bold text-suguba-brand-dark px-2 pb-1.5 tabular-nums">{p.publicPrice.toLocaleString('fr-FR')} F</p>
                 {produitId === p.id && (
-                  <span className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-suguba-brand text-white flex items-center justify-center">
+                  <span className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-suguba-profond text-white flex items-center justify-center">
                     <Check className="w-3.5 h-3.5" />
                   </span>
                 )}
@@ -137,7 +137,7 @@ export default function CreateurContenusPage() {
       </Card>
 
       <Card className="space-y-3">
-        <p className="text-sm font-black text-slate-900">2. Le format</p>
+        <p className="text-sm font-bold text-slate-900">2. Le format</p>
         <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Format">
           {FORMATS.map((f) => (
             <button
@@ -148,15 +148,15 @@ export default function CreateurContenusPage() {
               onClick={() => setFormat(f.valeur)}
               className={`rounded-2xl border p-3 text-left ${format === f.valeur ? 'border-suguba-brand ring-2 ring-suguba-brand bg-suguba-brand/5' : 'border-slate-200 bg-white'}`}
             >
-              <p className="text-xs font-black text-slate-900">{f.libelle}</p>
-              <p className="text-[11px] text-slate-500 mt-0.5">{f.aide}</p>
+              <p className="text-xs font-bold text-slate-900">{f.libelle}</p>
+              <p className="text-xs text-slate-500 mt-0.5">{f.aide}</p>
             </button>
           ))}
         </div>
       </Card>
 
       <Card className="space-y-3">
-        <p className="text-sm font-black text-slate-900">3. Le style</p>
+        <p className="text-sm font-bold text-slate-900">3. Le style</p>
         <div className="flex gap-2" role="radiogroup" aria-label="Style">
           {THEMES.map((t) => (
             <button

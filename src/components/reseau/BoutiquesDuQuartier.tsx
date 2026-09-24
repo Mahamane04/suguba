@@ -55,13 +55,13 @@ export function useBoutiquesDuQuartier(quartier: string | null) {
 export function BadgeProximite({ b }: { b: Pick<BoutiqueProche, 'niveau' | 'distanceKm'> }) {
   if (b.niveau === 'quartier') {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-[#078000] text-[11px] font-bold px-2 py-0.5">
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 text-suguba-brand-dark text-xs font-bold px-2 py-0.5">
         <MapPin className="w-3 h-3" /> Votre quartier
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 text-slate-600 text-[11px] font-bold px-2 py-0.5">
+    <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 text-slate-600 text-xs font-bold px-2 py-0.5">
       <MapPin className="w-3 h-3" /> ~{String(b.distanceKm).replace('.', ',')} km
     </span>
   );
@@ -77,7 +77,7 @@ export function CarteBoutiqueProche({ b, carrousel = false }: { b: BoutiqueProch
         carrousel ? 'w-[216px] shrink-0 snap-start' : ''
       }`}
     >
-      <div className="relative h-20 bg-gradient-to-br from-[#064e3b] to-[#09b500]">
+      <div className="relative h-20 bg-gradient-to-br from-suguba-profond to-[#09b500]">
         {b.couverture && (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={b.couverture} alt="" className="absolute inset-0 w-full h-full object-cover" />
@@ -87,22 +87,22 @@ export function CarteBoutiqueProche({ b, carrousel = false }: { b: BoutiqueProch
             // eslint-disable-next-line @next/next/no-img-element
             <img src={b.logo} alt="" className="w-12 h-12 rounded-2xl object-cover bg-white ring-4 ring-white" />
           ) : (
-            <div className="w-12 h-12 rounded-2xl bg-white ring-4 ring-white text-[#064e3b] text-lg font-black flex items-center justify-center">
+            <div className="w-12 h-12 rounded-2xl bg-white ring-4 ring-white text-suguba-profond text-lg font-bold flex items-center justify-center">
               {b.nom.charAt(0).toUpperCase()}
             </div>
           )}
         </div>
       </div>
       <div className="px-3 pt-7 pb-3 space-y-1.5">
-        <p className="text-sm font-black text-slate-900 truncate">{b.nom}</p>
-        {sousTitre && <p className="text-[11px] text-slate-500 truncate">{sousTitre}</p>}
+        <p className="text-sm font-bold text-slate-900 truncate">{b.nom}</p>
+        {sousTitre && <p className="text-xs text-slate-500 truncate">{sousTitre}</p>}
         <div className="flex items-center gap-1.5 flex-wrap">
           <BadgeProximite b={b} />
           {b.niveau === 'proche' && b.quartier && (
-            <span className="text-[11px] text-slate-500 truncate max-w-[120px]">{b.quartier}</span>
+            <span className="text-xs text-slate-500 truncate max-w-[120px]">{b.quartier}</span>
           )}
           {b.abonnes > 0 && (
-            <span className="inline-flex items-center gap-0.5 text-[11px] text-slate-400">
+            <span className="inline-flex items-center gap-0.5 text-xs text-slate-400">
               <Users className="w-3 h-3" /> {b.abonnes}
             </span>
           )}
@@ -142,13 +142,13 @@ export default function BoutiquesDuQuartier({ quartier }: { quartier: string | n
     <section className="space-y-3" aria-label={`Boutiques près de ${situe}`}>
       <div className="flex items-end justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="text-base font-black text-slate-900">Boutiques près de chez vous</h2>
+          <h2 className="text-base font-bold text-slate-900">Boutiques près de chez vous</h2>
           <p className="text-xs text-slate-500 truncate">
-            <MapPin className="w-3 h-3 inline -mt-0.5 text-[#078000]" /> {situe} et alentours
+            <MapPin className="w-3 h-3 inline -mt-0.5 text-suguba-brand-dark" /> {situe} et alentours
           </p>
         </div>
         {boutiques.length > 0 && (
-          <Link href={lienTout} className="shrink-0 inline-flex items-center gap-1 text-xs font-bold text-[#078000] min-h-[36px]">
+          <Link href={lienTout} className="shrink-0 inline-flex items-center gap-1 text-xs font-bold text-suguba-brand-dark min-h-[36px]">
             Tout voir <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         )}
@@ -172,7 +172,7 @@ export default function BoutiquesDuQuartier({ quartier }: { quartier: string | n
           {boutiques.length > visibles.length && (
             <Link
               href={lienTout}
-              className="w-[140px] shrink-0 snap-start rounded-3xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-1 text-xs font-bold text-[#078000] hover:border-[#09b500]"
+              className="w-[140px] shrink-0 snap-start rounded-3xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-1 text-xs font-bold text-suguba-brand-dark hover:border-suguba-brand"
             >
               <ArrowRight className="w-5 h-5" />
               {boutiques.length - visibles.length} de plus

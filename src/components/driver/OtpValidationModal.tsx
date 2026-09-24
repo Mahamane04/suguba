@@ -97,13 +97,13 @@ export default function OtpValidationModal({ order, isOpen, onClose, onSuccess }
                 <CheckCircle2 className="w-10 h-10" />
               </div>
               <div>
-                <h4 className="text-xl font-black text-slate-900">
+                <h4 className="text-xl font-bold text-slate-900">
                   Livraison Validée !
                 </h4>
                 <p className="text-xs text-slate-600 mt-1">
                   Le paiement de <strong>{order.totalAmount.toLocaleString('fr-FR')} FCFA</strong> est enregistré comme encaissé.
                 </p>
-                <div className="mt-3 p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-[11px] text-emerald-800 font-medium space-y-1">
+                <div className="mt-3 p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-800 font-medium space-y-1">
                   <p className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 shrink-0" />Statut commande : <strong>LIVRÉ</strong></p>
                   <p className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 shrink-0" />Commission revendeur ({order.resellerCommission.toLocaleString('fr-FR')} F) : <strong>VERROUILLÉE EN SÉCURITÉ</strong></p>
                 </div>
@@ -128,13 +128,13 @@ export default function OtpValidationModal({ order, isOpen, onClose, onSuccess }
                 <div className="bg-emerald-50 border border-emerald-300/80 rounded-2xl p-4 flex items-start space-x-3">
                   <ShieldCheck className="w-6 h-6 text-emerald-700 shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">
+                    <p className="text-xs font-bold uppercase tracking-wider text-emerald-800">
                       Déjà payé en ligne
                     </p>
-                    <p className="text-xl font-black text-emerald-900 mt-0.5">
+                    <p className="text-xl font-bold text-emerald-900 mt-0.5">
                       Ne rien encaisser
                     </p>
-                    <p className="text-[11px] text-slate-600 mt-0.5">
+                    <p className="text-xs text-slate-600 mt-0.5">
                       Remettez simplement le colis à {order.customerName} ({order.customerPhone}).
                     </p>
                   </div>
@@ -143,13 +143,13 @@ export default function OtpValidationModal({ order, isOpen, onClose, onSuccess }
                 <div className="bg-amber-50 border border-amber-300/80 rounded-2xl p-4 flex items-start space-x-3">
                   <Banknote className="w-6 h-6 text-amber-700 shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-amber-800">
+                    <p className="text-xs font-bold uppercase tracking-wider text-amber-800">
                       Montant total à encaisser au client :
                     </p>
-                    <p className="text-xl font-black text-slate-900 mt-0.5">
+                    <p className="text-xl font-bold text-slate-900 mt-0.5">
                       {order.totalAmount.toLocaleString('fr-FR')} FCFA
                     </p>
-                    <p className="text-[11px] text-slate-600 mt-0.5">
+                    <p className="text-xs text-slate-600 mt-0.5">
                       Client : {order.customerName} ({order.customerPhone})
                     </p>
                   </div>
@@ -163,7 +163,7 @@ export default function OtpValidationModal({ order, isOpen, onClose, onSuccess }
                     Demandez au client son Code Secret *
                   </label>
                   {attempts > 0 && (
-                    <span className="text-[11px] font-black text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
+                    <span className="text-xs font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
                       Tentative {attempts} / 3
                     </span>
                   )}
@@ -179,10 +179,10 @@ export default function OtpValidationModal({ order, isOpen, onClose, onSuccess }
                     placeholder="Ex: 5832"
                     value={otpInput}
                     onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ''))}
-                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border-2 border-slate-300 focus:border-amber-500 rounded-2xl text-center text-2xl tracking-[0.5em] font-black text-slate-900 focus:bg-white focus:outline-hidden disabled:bg-slate-200 disabled:opacity-60"
+                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border-2 border-slate-300 focus:border-amber-500 rounded-2xl text-center text-2xl tracking-[0.5em] font-bold text-slate-900 focus:bg-white focus:outline-hidden disabled:bg-slate-200 disabled:opacity-60"
                   />
                 </div>
-                <p className="text-[11px] text-slate-500 mt-1 text-center">
+                <p className="text-xs text-slate-500 mt-1 text-center">
                   Le client a reçu ce code par SMS/WhatsApp lors de la commande.
                 </p>
               </div>
@@ -212,7 +212,7 @@ export default function OtpValidationModal({ order, isOpen, onClose, onSuccess }
                   disabled={otpInput.length < 4 || isSubmitting}
                   className={`w-full disabled:opacity-50 text-white font-bold py-3.5 px-4 rounded-2xl text-xs shadow-lg flex items-center justify-center space-x-2 transition-transform active:scale-[0.98] ${
                     order.paymentCollected
-                      ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-600/20'
+                      ? 'bg-suguba-profond hover:bg-suguba-profond-2 shadow-emerald-600/20'
                       : 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/20'
                   }`}
                 >

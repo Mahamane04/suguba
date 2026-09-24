@@ -124,7 +124,7 @@ export default function LaunchChecklistPage() {
               <ArrowLeft className="w-4 h-4" />
               <span>Retour à l&apos;Espace Admin Ops</span>
             </Link>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center space-x-2">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center space-x-2">
               <ShieldCheck className="w-6 h-6 text-emerald-600" />
               <span>Audit de Sécurité & Checklist de Lancement Officiel</span>
             </h1>
@@ -156,24 +156,24 @@ export default function LaunchChecklistPage() {
         <div className="bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 text-white rounded-3xl p-6 sm:p-8 shadow-xl space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">
-              <span className={`px-3 py-1 font-black text-[11px] rounded-full uppercase tracking-wider border ${
+              <span className={`px-3 py-1 font-bold text-xs rounded-full uppercase tracking-wider border ${
                 pointsValides === totalPoints
                   ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
                   : 'bg-amber-500/20 text-amber-300 border-amber-500/30'
               }`}>
                 {pointsValides === totalPoints ? 'Tous les points sont vérifiés' : `${totalPoints - pointsValides} point${totalPoints - pointsValides > 1 ? 's' : ''} à traiter`}
               </span>
-              <h2 className="text-2xl font-black text-white">{pointsValides} / {totalPoints} points validés</h2>
+              <h2 className="text-2xl font-bold text-white">{pointsValides} / {totalPoints} points validés</h2>
               <p className="text-xs text-slate-300">
                 Chaque point est vérifié un par un ci-dessous, avec ce qui reste à faire quand il ne l&apos;est pas.
               </p>
             </div>
 
-            <div className={`w-20 h-20 rounded-2xl text-slate-950 flex flex-col items-center justify-center font-black shadow-lg shrink-0 ${
+            <div className={`w-20 h-20 rounded-2xl text-slate-950 flex flex-col items-center justify-center font-bold shadow-lg shrink-0 ${
               pointsValides === totalPoints ? 'bg-emerald-500' : 'bg-amber-400'
             }`}>
               <span className="text-2xl">{pourcentage}%</span>
-              <span className="text-[11px] uppercase tracking-wider">Vérifié</span>
+              <span className="text-xs uppercase tracking-wider">Vérifié</span>
             </div>
           </div>
         </div>
@@ -189,7 +189,7 @@ export default function LaunchChecklistPage() {
                   <div className={`p-2 rounded-xl ${category.bg}`}>
                     <Icon className={`w-5 h-5 ${category.color}`} />
                   </div>
-                  <h3 className="font-black text-base text-slate-900">{category.category}</h3>
+                  <h3 className="font-bold text-base text-slate-900">{category.category}</h3>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -205,7 +205,7 @@ export default function LaunchChecklistPage() {
                         : <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />}
                       <div className="space-y-0.5">
                         <strong className="text-xs font-bold text-slate-900 block">{check.title}</strong>
-                        <p className="text-[11px] text-slate-500 leading-snug">{check.desc}</p>
+                        <p className="text-xs text-slate-500 leading-snug">{check.desc}</p>
                       </div>
                     </div>
                   ))}

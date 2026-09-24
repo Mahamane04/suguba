@@ -40,15 +40,15 @@ export default function GraphiqueBarres({
     <figure className="bg-white rounded-3xl border border-slate-200 p-4 space-y-3">
       <figcaption className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-black text-slate-900">{titre}</p>
-          <p className="text-[11px] text-slate-500">
+          <p className="text-sm font-bold text-slate-900">{titre}</p>
+          <p className="text-xs text-slate-500">
             {formater(total)}{unite} sur {points.length} jours
           </p>
         </div>
         <button
           type="button"
           onClick={() => setTableau((v) => !v)}
-          className="text-[11px] font-bold text-slate-600 underline underline-offset-2 min-h-[32px]"
+          className="text-xs font-bold text-slate-600 underline underline-offset-2 min-h-[32px]"
         >
           {tableau ? 'Voir le graphique' : 'Voir les chiffres'}
         </button>
@@ -106,7 +106,7 @@ export default function GraphiqueBarres({
           </svg>
           {actif !== null && points[actif] && (
             <div
-              className="absolute top-0 -translate-x-1/2 px-2.5 py-1.5 rounded-xl bg-slate-900 text-white text-[11px] font-bold whitespace-nowrap pointer-events-none"
+              className="absolute top-0 -translate-x-1/2 px-2.5 py-1.5 rounded-xl bg-slate-900 text-white text-xs font-bold whitespace-nowrap pointer-events-none"
               style={{ left: `${Math.min(88, Math.max(12, ((actif + 0.5) / points.length) * 100))}%` }}
             >
               {jourCourt(points[actif].jour)} · {formater(points[actif].valeur)}{unite}

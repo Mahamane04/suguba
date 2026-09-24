@@ -50,13 +50,13 @@ export default function BoutiquesAdminPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-slate-900 truncate">{b.nom}</p>
-                    <p className="text-[11px] text-slate-500">{TYPE[b.type] || b.type} · /{b.slug} · {b.abonnes} abonné{b.abonnes > 1 ? 's' : ''}</p>
+                    <p className="text-xs text-slate-500">{TYPE[b.type] || b.type} · /{b.slug} · {b.abonnes} abonné{b.abonnes > 1 ? 's' : ''}</p>
                   </div>
                   <StatusPill ton={ton}>{libelle}</StatusPill>
                 </div>
                 <div className="flex flex-wrap items-center gap-3 text-xs font-bold">
                   <Link href={`/boutique/${b.slug}`} target="_blank" className="inline-flex items-center gap-1 text-slate-600 min-h-[32px]"><ExternalLink className="w-3.5 h-3.5" />Voir</Link>
-                  {b.statut !== 'active' && <button onClick={() => changer(b.id, 'active')} className="text-suguba-brand min-h-[32px]">Rendre publique</button>}
+                  {b.statut !== 'active' && <button onClick={() => changer(b.id, 'active')} className="text-suguba-brand-dark min-h-[32px]">Rendre publique</button>}
                   {b.statut !== 'hidden' && <button onClick={() => changer(b.id, 'hidden')} className="text-amber-700 min-h-[32px]">Masquer</button>}
                   {b.statut !== 'suspended' && <button onClick={() => changer(b.id, 'suspended')} className="text-rose-700 min-h-[32px]">Suspendre</button>}
                 </div>

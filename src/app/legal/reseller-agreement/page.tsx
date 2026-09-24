@@ -28,7 +28,7 @@ export default function ResellerAgreementPage() {
               <Award className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900">
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
                 Contrat-Cadre d&apos;Apporteur d&apos;Affaires Revendeur
               </h1>
               <p className="text-xs text-slate-500">
@@ -40,7 +40,7 @@ export default function ResellerAgreementPage() {
           <div className="prose prose-slate max-w-none text-xs text-slate-700 space-y-4 leading-relaxed">
             
             <section className="space-y-2">
-              <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                 1. Statut Juridique d&apos;Indépendance
               </h2>
               <p>
@@ -52,7 +52,7 @@ export default function ResellerAgreementPage() {
             </section>
 
             <section className="space-y-2">
-              <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                 2. Calcul & Conditions d&apos;Exigibilité des Commissions
               </h2>
               <p>
@@ -70,7 +70,7 @@ export default function ResellerAgreementPage() {
             </section>
 
             <section className="space-y-2">
-              <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                 3. Barème des Délais de Sécurité (Réputation)
               </h2>
               <ul className="list-disc pl-5 space-y-1">
@@ -81,7 +81,7 @@ export default function ResellerAgreementPage() {
             </section>
 
             <section className="space-y-2">
-              <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                 4. Retraits Mobile Money
               </h2>
               <p>
@@ -90,7 +90,7 @@ export default function ResellerAgreementPage() {
             </section>
 
             <section className="space-y-2">
-              <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                 5. Règles Déontologiques & Interdiction de Fraude
               </h2>
               <p>

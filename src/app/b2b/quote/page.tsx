@@ -86,7 +86,7 @@ export default function B2BQuotePage() {
               <ArrowLeft className="w-4 h-4" />
               <span>Retour à l&apos;accueil</span>
             </Link>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
               Devis & Factures Proforma B2B (Commandes Groupées)
             </h1>
             <p className="text-xs text-slate-500">
@@ -110,7 +110,7 @@ export default function B2BQuotePage() {
           <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-6">
             
             <div className="border-b border-slate-100 pb-4">
-              <h2 className="font-black text-sm text-slate-900 flex items-center space-x-2">
+              <h2 className="font-bold text-sm text-slate-900 flex items-center space-x-2">
                 <Building2 className="w-4 h-4 text-emerald-600" />
                 <span>1. Informations de l&apos;Entreprise / Acheteur B2B</span>
               </h2>
@@ -166,7 +166,7 @@ export default function B2BQuotePage() {
             </div>
 
             <div className="border-b border-slate-100 pb-4 pt-2">
-              <h2 className="font-black text-sm text-slate-900 flex items-center space-x-2">
+              <h2 className="font-bold text-sm text-slate-900 flex items-center space-x-2">
                 <Sparkles className="w-4 h-4 text-emerald-600" />
                 <span>2. Choix du Produit & Quantité Groupée</span>
               </h2>
@@ -200,7 +200,7 @@ export default function B2BQuotePage() {
                       onClick={() => setQuantity(qty)}
                       className={`flex-1 py-2 rounded-xl font-bold border transition-colors ${
                         quantity === qty 
-                          ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs' 
+                          ? 'bg-suguba-profond text-white border-emerald-600 shadow-xs' 
                           : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
                       }`}
                     >
@@ -235,15 +235,15 @@ export default function B2BQuotePage() {
                 <span className="font-bold">{deliveryFee === 0 ? 'OFFERTE (Dès 20 pcs)' : `${deliveryFee.toLocaleString('fr-FR')} FCFA`}</span>
               </div>
 
-              <div className="pt-3 border-t border-white/20 flex justify-between items-center text-base font-black text-white">
+              <div className="pt-3 border-t border-white/20 flex justify-between items-center text-base font-bold text-white">
                 <span>Total Net Devis :</span>
-                <span className="text-amber-400 text-xl font-black">{totalAmount.toLocaleString('fr-FR')} FCFA</span>
+                <span className="text-amber-400 text-xl font-bold">{totalAmount.toLocaleString('fr-FR')} FCFA</span>
               </div>
             </div>
 
             <button
               onClick={() => setShowInvoicePreview(true)}
-              className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl text-sm shadow-xl shadow-emerald-600/30 flex items-center justify-center space-x-2 transition-transform active:scale-98"
+              className="w-full py-4 bg-suguba-profond hover:bg-suguba-profond-2 text-white font-bold rounded-2xl text-sm shadow-xl shadow-emerald-600/30 flex items-center justify-center space-x-2 transition-transform active:scale-98"
             >
               <FileText className="w-4 h-4" />
               <span>Générer la Facture Proforma Officielle</span>
@@ -269,7 +269,7 @@ export default function B2BQuotePage() {
                 </button>
                 <button
                   onClick={handleSendWhatsapp}
-                  className="px-4 py-2 bg-[#25D366] hover:bg-[#20bd5a] text-white rounded-xl text-xs font-black flex items-center space-x-1.5 transition-colors"
+                  className="px-4 py-2 bg-suguba-wa hover:bg-[#20bd5a] text-suguba-profond rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-colors"
                 >
                   <MessageCircle className="w-3.5 h-3.5 fill-current" />
                   <span>Envoyer sur WhatsApp</span>
@@ -283,15 +283,15 @@ export default function B2BQuotePage() {
               {/* Header Document */}
               <div className="flex justify-between items-start border-b-2 border-slate-900 pb-6">
                 <div>
-                  <h1 className="text-2xl font-black tracking-tight text-slate-900">SUGUBA MALI SAS</h1>
+                  <h1 className="text-2xl font-bold tracking-tight text-slate-900">SUGUBA MALI SAS</h1>
                   <p className="text-xs text-slate-600">Plateforme de Distribution & Social Commerce</p>
                   <p className="text-xs text-slate-600">Hamdallaye ACI 2000, Rue 314, Porte 88, Bamako, Mali</p>
                   <p className="text-xs text-slate-600">Tél : <strong>+223 89 46 00 00</strong> • Email : ops@sugubaml.com</p>
-                  <p className="text-[11px] text-slate-500 font-mono mt-1">NIF : 086419208K • RCCM : MA.BKO.2026.B.14820</p>
+                  <p className="text-xs text-slate-500 font-mono mt-1">NIF : 086419208K • RCCM : MA.BKO.2026.B.14820</p>
                 </div>
 
                 <div className="text-right">
-                  <span className="px-3 py-1 bg-slate-900 text-white font-mono font-black text-xs rounded-lg uppercase">
+                  <span className="px-3 py-1 bg-slate-900 text-white font-mono font-bold text-xs rounded-lg uppercase">
                     FACTURE PROFORMA
                   </span>
                   <p className="text-xs font-mono font-bold text-slate-900 mt-2">N° {quoteNumber}</p>
@@ -303,14 +303,14 @@ export default function B2BQuotePage() {
               {/* Client Info Card */}
               <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 grid grid-cols-2 gap-4 text-xs">
                 <div>
-                  <span className="text-[11px] font-bold text-slate-500 uppercase block mb-1">Destinataire / Acheteur B2B</span>
-                  <p className="font-black text-sm text-slate-900">{companyName || 'Société Partenaire'}</p>
+                  <span className="text-xs font-bold text-slate-500 uppercase block mb-1">Destinataire / Acheteur B2B</span>
+                  <p className="font-bold text-sm text-slate-900">{companyName || 'Société Partenaire'}</p>
                   {nifNumber && <p className="font-mono text-slate-600">{nifNumber}</p>}
                   <p className="text-slate-700 mt-1">Attn : {contactName || 'Responsable Achats'}</p>
                 </div>
 
                 <div className="text-right">
-                  <span className="text-[11px] font-bold text-slate-500 uppercase block mb-1">Lieu & Modalités de Livraison</span>
+                  <span className="text-xs font-bold text-slate-500 uppercase block mb-1">Lieu & Modalités de Livraison</span>
                   <p className="font-bold text-slate-900">{deliveryCity} (Mali)</p>
                   <p className="text-slate-600">Contact : {contactPhone || '+223 -- -- -- --'}</p>
                   <p className="text-slate-600 font-medium mt-1">Conditions : {paymentTerms}</p>
@@ -320,7 +320,7 @@ export default function B2BQuotePage() {
               {/* Items Table */}
               <table className="w-full text-xs text-left">
                 <thead>
-                  <tr className="border-b-2 border-slate-900 text-slate-900 font-black">
+                  <tr className="border-b-2 border-slate-900 text-slate-900 font-bold">
                     <th className="py-2.5">Désignation de l&apos;Article</th>
                     <th className="py-2.5 text-center">Qté</th>
                     <th className="py-2.5 text-right">Prix Unitaire</th>
@@ -336,13 +336,13 @@ export default function B2BQuotePage() {
                           base n'a pas de colonne garantie, le « 6 mois certifiés »
                           d'avant était écrit en dur (voir cloud-sync.ts). */}
                       {(selectedProduct?.warrantyMonths ?? 0) > 0 && (
-                        <span className="text-[11px] text-slate-500">Garantie {selectedProduct?.warrantyMonths} mois</span>
+                        <span className="text-xs text-slate-500">Garantie {selectedProduct?.warrantyMonths} mois</span>
                       )}
                     </td>
                     <td className="py-3 text-center font-bold">{quantity}</td>
                     <td className="py-3 text-right font-mono">{unitPrice.toLocaleString('fr-FR')} F</td>
                     <td className="py-3 text-right font-mono text-emerald-700">-{discountPercent}%</td>
-                    <td className="py-3 text-right font-black font-mono">{subtotalAfterDiscount.toLocaleString('fr-FR')} F</td>
+                    <td className="py-3 text-right font-bold font-mono">{subtotalAfterDiscount.toLocaleString('fr-FR')} F</td>
                   </tr>
                   <tr>
                     <td className="py-2.5 text-slate-600">Livraison & Manutention sur site ({deliveryCity})</td>
@@ -354,8 +354,8 @@ export default function B2BQuotePage() {
                 </tbody>
                 <tfoot>
                   <tr className="border-t-2 border-slate-900">
-                    <td colSpan={4} className="py-3 text-right font-black text-sm">TOTAL NET À PAYER :</td>
-                    <td className="py-3 text-right font-black text-base text-emerald-700 font-mono">
+                    <td colSpan={4} className="py-3 text-right font-bold text-sm">TOTAL NET À PAYER :</td>
+                    <td className="py-3 text-right font-bold text-base text-emerald-700 font-mono">
                       {totalAmount.toLocaleString('fr-FR')} FCFA
                     </td>
                   </tr>
@@ -373,11 +373,11 @@ export default function B2BQuotePage() {
                 </div>
 
                 <div className="text-center flex flex-col justify-between h-28 border border-dashed border-slate-300 p-3 rounded-xl">
-                  <span className="text-[11px] text-slate-500 font-bold">Cachet & Signature de la Direction</span>
+                  <span className="text-xs text-slate-500 font-bold">Cachet & Signature de la Direction</span>
                   <div className="font-serif italic text-emerald-800 text-sm font-bold">
                     Pour Accord — Direction Générale Suguba
                   </div>
-                  <span className="text-[11px] text-slate-500">Document généré électroniquement • Fait foi</span>
+                  <span className="text-xs text-slate-500">Document généré électroniquement • Fait foi</span>
                 </div>
               </div>
 

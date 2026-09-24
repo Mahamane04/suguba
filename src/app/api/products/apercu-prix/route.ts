@@ -44,7 +44,14 @@ export async function GET(req: NextRequest) {
     mode: r.modePartSuguba,
     partChoisieUtilisee: true,
     prixVente: d.prixVente,
+    // Ce que le revendeur reçoit, et le détail du partage (2026-09-23) : le
+    // fournisseur doit voir qui touche quoi. Aucun coût interne n'est exposé,
+    // seulement les montants de la vente.
     commission: t.commission,
+    commissionBrute: t.commissionBrute,
+    prelevementSuguba: t.prelevementSuguba,
+    tauxPrelevement: r.modePartSuguba === 'prelevement_revendeur' ? r.tauxPartSuguba : 0,
+    partSuguba: d.prixVente - prixFournisseur - t.commission,
     releveAuPlancher: d.releveAuPlancher,
     commissionFaible: t.statut === 'commission_faible',
     commissionMinimale: r.commissionMinimale,

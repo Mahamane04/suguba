@@ -194,7 +194,7 @@ export default function CalendrierPage() {
         <div className="space-y-4">
           {jours.map(([jour, contenu]) => (
             <section key={jour} className="space-y-2">
-              <h2 className={`text-xs font-black uppercase tracking-wide px-1 ${jour === aujourdhui() ? 'text-suguba-brand' : jour < aujourdhui() ? 'text-slate-400' : 'text-slate-600'}`}>
+              <h2 className={`text-xs font-bold uppercase tracking-wide px-1 ${jour === aujourdhui() ? 'text-suguba-brand' : jour < aujourdhui() ? 'text-slate-400' : 'text-slate-600'}`}>
                 {libelleJour(jour)}
               </h2>
               {contenu.echeances.map((e) => (
@@ -208,7 +208,7 @@ export default function CalendrierPage() {
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className={`text-sm font-bold ${p.statut === 'planned' ? 'text-slate-900' : 'text-slate-400 line-through'}`}>{p.titre}</p>
-                      <p className="text-[11px] text-slate-500">{CANAUX.find((c) => c.valeur === p.canal)?.libelle || p.canal}{p.note ? ` · ${p.note}` : ''}</p>
+                      <p className="text-xs text-slate-500">{CANAUX.find((c) => c.valeur === p.canal)?.libelle || p.canal}{p.note ? ` · ${p.note}` : ''}</p>
                     </div>
                     {p.statut === 'published' && <StatusPill ton="succes"><Check className="w-3 h-3" />Fait</StatusPill>}
                     {p.statut === 'skipped' && <StatusPill ton="neutre">Ignoré</StatusPill>}

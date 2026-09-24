@@ -69,9 +69,9 @@ export default function NotificationsPage() {
               <div className="flex items-start gap-3 p-4">
                 <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${n.lue ? 'bg-transparent' : 'bg-suguba-brand'}`} aria-hidden="true" />
                 <div className="min-w-0 flex-1">
-                  <p className={`text-sm text-slate-900 ${n.lue ? 'font-semibold' : 'font-black'}`}>{n.titre}</p>
+                  <p className={`text-sm text-slate-900 ${n.lue ? 'font-semibold' : 'font-bold'}`}>{n.titre}</p>
                   {n.texte && <p className="text-xs text-slate-600 mt-0.5">{n.texte}</p>}
-                  <p className="text-[11px] text-slate-400 mt-1">{quand(n.creeLe)}</p>
+                  <p className="text-xs text-slate-400 mt-1">{quand(n.creeLe)}</p>
                 </div>
                 {n.lien && <ChevronRight className="w-4 h-4 text-slate-300 shrink-0 mt-1" />}
               </div>

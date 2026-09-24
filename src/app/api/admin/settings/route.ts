@@ -34,8 +34,20 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Authentification admin requise.' }, { status: 401 });
   }
   const etat = await chargerReglages();
+  // Produits en ligne (2026-09-24) : le panneau calcule en direct l'effet des
+  // réglages en cours d'édition sur chacun, AVANT d'enregistrer.
+  const admin = getSupabaseAdmin();
+  const { data: produits } = admin
+    ? await admin
+      .from('products')
+      .select('id, name, supplier_price, public_price, reseller_commission, commission_proposee')
+      .eq('status', 'approved')
+      .order('created_at', { ascending: false })
+      .limit(300)
+    : { data: [] };
   return NextResponse.json({
     ...etat,
+    produits: produits || [],
     totalCoutsFixes: totalCoutsFixes(etat.reglages),
     coutFixeParCommande: Math.round(coutFixeParCommande(etat.reglages)),
   });

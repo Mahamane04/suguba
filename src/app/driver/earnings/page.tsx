@@ -55,7 +55,7 @@ export default function DriverEarningsPage() {
             <ArrowLeft className="w-4 h-4" />
             <span>Mes courses</span>
           </Link>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900">Mon portefeuille</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Mon portefeuille</h1>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -75,7 +75,7 @@ export default function DriverEarningsPage() {
         </div>
 
         <div className="bg-white rounded-3xl p-5 border border-slate-200 space-y-3">
-          <h2 className="font-black text-sm text-slate-900">Remettre les espèces</h2>
+          <h2 className="font-bold text-sm text-slate-900">Remettre les espèces</h2>
           <p className="text-sm text-slate-600">
             Les espèces encaissées se remettent à l&apos;équipe Suguba, et votre rémunération est réglée avec elle.
             Une question sur un montant ? Écrivez-nous.
@@ -92,7 +92,7 @@ export default function DriverEarningsPage() {
         </div>
 
         <div className="bg-white rounded-3xl p-5 border border-slate-200 space-y-3">
-          <h2 className="font-black text-sm text-slate-900">Mes livraisons ({livrees.length})</h2>
+          <h2 className="font-bold text-sm text-slate-900">Mes livraisons ({livrees.length})</h2>
           {livrees.length === 0 ? (
             <EmptyState icon={Package} title="Aucune livraison effectuée pour le moment." />
           ) : (
@@ -101,15 +101,15 @@ export default function DriverEarningsPage() {
                 <div key={o.id} className="py-3 flex items-center justify-between gap-3">
                   <div className="min-w-0">
                     <p className="font-bold text-sm text-slate-900 truncate">{o.productName}</p>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-xs text-slate-500">
                       #{o.orderNumber} · {o.neighborhood}
                       {o.deliveredAt ? ` · ${new Date(o.deliveredAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}` : ''}
                     </p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="text-right">
-                      <p className="text-sm font-black text-slate-900">{fmt(o.totalAmount)}</p>
-                      <p className={`text-[11px] font-bold ${o.paymentCollected ? 'text-slate-500' : 'text-emerald-700'}`}>
+                      <p className="text-sm font-bold text-slate-900">{fmt(o.totalAmount)}</p>
+                      <p className={`text-xs font-bold ${o.paymentCollected ? 'text-slate-500' : 'text-emerald-700'}`}>
                         {o.paymentCollected ? 'Payé en ligne' : 'Encaissé'}
                       </p>
                     </div>
@@ -144,10 +144,10 @@ function Carte({ icone, titre, note, accent, children }: {
     <div className={`p-4 rounded-3xl border space-y-1 ${accent ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-slate-200'}`}>
       <div className={`flex items-center gap-1.5 ${accent ? 'text-slate-300' : 'text-slate-500'}`}>
         {icone}
-        <span className="text-[11px] font-bold uppercase">{titre}</span>
+        <span className="text-xs font-bold uppercase">{titre}</span>
       </div>
-      <p className={`text-2xl font-black ${accent ? 'text-white' : 'text-slate-900'}`}>{children}</p>
-      <p className={`text-[11px] ${accent ? 'text-slate-300' : 'text-slate-500'}`}>{note}</p>
+      <p className={`text-2xl font-bold ${accent ? 'text-white' : 'text-slate-900'}`}>{children}</p>
+      <p className={`text-xs ${accent ? 'text-slate-300' : 'text-slate-500'}`}>{note}</p>
     </div>
   );
 }

@@ -154,7 +154,7 @@ export default function BottomNav() {
                 href={item.href}
                 className={`flex flex-col items-center justify-center flex-1 py-2 px-1 rounded-xl transition-colors duration-150 active:scale-95 ${
                   isActive
-                    ? 'text-suguba-brand'
+                    ? 'text-suguba-brand-dark'
                     : 'text-gray-400 hover:text-gray-600'
                 }`}
               >
@@ -175,7 +175,7 @@ export default function BottomNav() {
                   />
                 </div>
                 <span
-                  className={`text-[11px] mt-0.5 tracking-tight font-medium truncate max-w-[56px] leading-none transition-all duration-150 ${
+                  className={`text-xs mt-0.5 tracking-tight font-medium truncate max-w-[56px] leading-none transition-all duration-150 ${
                     isActive ? 'font-bold' : ''
                   }`}
                 >

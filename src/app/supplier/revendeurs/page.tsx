@@ -76,7 +76,7 @@ export default function RevendeursFournisseurPage() {
         <>
           {produitsPhares.length > 0 && (
             <Card className="space-y-2.5">
-              <p className="text-sm font-black text-slate-900 flex items-center gap-1.5">
+              <p className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
                 <Trophy className="w-4 h-4 text-amber-500" />
                 Vos produits les plus repris
               </p>
@@ -96,7 +96,7 @@ export default function RevendeursFournisseurPage() {
               <div key={r.id} className="p-4 flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-slate-900 truncate">{r.nom}</p>
-                  <p className="text-[11px] text-slate-500 flex items-center gap-1.5">
+                  <p className="text-xs text-slate-500 flex items-center gap-1.5">
                     <Package className="w-3 h-3" />
                     {r.articles} article{r.articles > 1 ? 's' : ''}
                     {r.ville && <span>· {r.ville}</span>}
@@ -106,8 +106,8 @@ export default function RevendeursFournisseurPage() {
                   </p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-sm font-black text-slate-900 tabular-nums">{r.chiffreAffaires.toLocaleString('fr-FR')} F</p>
-                  <p className="text-[11px] text-slate-500">{r.commandes} commande{r.commandes > 1 ? 's' : ''}</p>
+                  <p className="text-sm font-bold text-slate-900 tabular-nums">{r.chiffreAffaires.toLocaleString('fr-FR')} F</p>
+                  <p className="text-xs text-slate-500">{r.commandes} commande{r.commandes > 1 ? 's' : ''}</p>
                 </div>
               </div>
             ))}

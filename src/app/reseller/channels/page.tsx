@@ -71,7 +71,7 @@ export default function BoutiquesFournisseursPage() {
           <Link href="/reseller" className="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-600 hover:text-slate-900">
             <ArrowLeft className="w-4 h-4" /><span>Retour à l&apos;espace revendeur</span>
           </Link>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center space-x-2">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center space-x-2">
             <Store className="w-6 h-6 text-emerald-600" /><span>Boutiques fournisseurs</span>
           </h1>
           <p className="text-xs text-slate-500">
@@ -97,23 +97,23 @@ export default function BoutiquesFournisseursPage() {
             {boutiques.map((b) => (
               <div key={b.slug} className="bg-white rounded-3xl border border-slate-200 shadow-xs p-5 space-y-4">
                 <div className="flex items-center space-x-3">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white flex items-center justify-center font-black text-xl shrink-0">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-700 text-white flex items-center justify-center font-bold text-xl shrink-0">
                     {b.nom.charAt(0).toUpperCase()}
                   </div>
                   <div className="min-w-0">
-                    <h3 className="font-black text-sm text-slate-900 truncate">{b.nom}</h3>
-                    <p className="text-[11px] text-slate-500">
+                    <h3 className="font-bold text-sm text-slate-900 truncate">{b.nom}</h3>
+                    <p className="text-xs text-slate-500">
                       {b.articles} article{b.articles > 1 ? 's' : ''} en vente{b.categorie ? ` · ${b.categorie}` : ''}
                     </p>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <a href={lien(b.slug)} target="_blank" rel="noopener noreferrer"
-                    className="h-11 rounded-2xl bg-slate-900 hover:bg-black text-white text-xs font-black flex items-center justify-center space-x-1.5">
+                    className="h-11 rounded-2xl bg-slate-900 hover:bg-black text-white text-xs font-bold flex items-center justify-center space-x-1.5">
                     <ExternalLink className="w-4 h-4" /><span>Voir</span>
                   </a>
                   <button type="button" onClick={() => copier(b.slug)}
-                    className="h-11 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-black flex items-center justify-center space-x-1.5">
+                    className="h-11 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold flex items-center justify-center space-x-1.5">
                     {copie === b.slug ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                     <span>{copie === b.slug ? 'Lien copié' : 'Copier mon lien'}</span>
                   </button>

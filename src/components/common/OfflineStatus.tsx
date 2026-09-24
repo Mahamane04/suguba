@@ -41,7 +41,7 @@ export default function OfflineStatus() {
           <span>Mode Hors-Ligne actif (Réseau 3G/4G faible) • Données locales sauvegardées</span>
         </div>
       ) : (
-        <div className="bg-emerald-600 text-white px-4 py-2 rounded-2xl shadow-xl backdrop-blur-md flex items-center space-x-2 text-xs font-bold pointer-events-auto">
+        <div className="bg-suguba-profond text-white px-4 py-2 rounded-2xl shadow-xl backdrop-blur-md flex items-center space-x-2 text-xs font-bold pointer-events-auto">
           <Wifi className="w-4 h-4 text-emerald-200" />
           <span>Connexion rétablie • Données synchronisées</span>
         </div>

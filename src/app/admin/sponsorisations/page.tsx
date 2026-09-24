@@ -80,8 +80,8 @@ export default function SponsorisationsAdminPage() {
         <>
           <Card className="space-y-4">
             <div>
-              <p className="text-sm font-black text-slate-900">Packs de visibilité</p>
-              <p className="text-[11px] text-slate-500 mt-0.5">Le prix et les quotas restent entièrement modifiables ici.</p>
+              <p className="text-sm font-bold text-slate-900">Packs de visibilité</p>
+              <p className="text-xs text-slate-500 mt-0.5">Le prix et les quotas restent entièrement modifiables ici.</p>
             </div>
             {packs.length === 0 ? (
               <p className="text-xs text-slate-500">Aucun pack. Appliquez la migration réseau pour installer les packs de départ.</p>
@@ -93,7 +93,7 @@ export default function SponsorisationsAdminPage() {
                       <p className="text-sm font-bold text-slate-900">{p.nom}</p>
                       <StatusPill ton={p.actif ? 'succes' : 'neutre'}>{p.actif ? 'Actif' : 'Désactivé'}</StatusPill>
                     </div>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-xs text-slate-500">
                       {p.dureeJours} jours · {p.partagesVises} partages visés · {p.maxRevendeurs} revendeurs max
                     </p>
                     <div className="flex items-end gap-2">
@@ -131,15 +131,15 @@ export default function SponsorisationsAdminPage() {
                 <Card key={s.id} className="space-y-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                      <p className="text-sm font-black text-slate-900 truncate">{s.libelle || 'Sponsorisation'}</p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
+                      <p className="text-sm font-bold text-slate-900 truncate">{s.libelle || 'Sponsorisation'}</p>
+                      <p className="text-xs text-slate-500 mt-0.5">
                         {nomEmplacement(s.emplacement)} · {s.budget.toLocaleString('fr-FR')} F
                       </p>
                     </div>
                     <StatusPill ton={TON[s.statut] || 'neutre'}>{LIBELLE_STATUT[s.statut] || s.statut}</StatusPill>
                   </div>
 
-                  <p className="text-[11px] text-slate-500 flex items-center gap-3">
+                  <p className="text-xs text-slate-500 flex items-center gap-3">
                     <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{s.impressions} vues</span>
                     <span className="flex items-center gap-1"><MousePointerClick className="w-3 h-3" />{s.clics} clics</span>
                   </p>

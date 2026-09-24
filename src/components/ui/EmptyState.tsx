@@ -27,13 +27,13 @@ export default function EmptyState({
         <Icon className="w-7 h-7" />
       </div>
       <div>
-        <p className="text-sm font-black text-slate-700">{title}</p>
+        <p className="text-sm font-bold text-slate-700">{title}</p>
         {description && <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">{description}</p>}
       </div>
       {action && (
         <Link
           href={action.href}
-          className="inline-flex items-center justify-center h-10 px-5 rounded-2xl bg-slate-900 hover:bg-black text-white text-xs font-black transition-colors"
+          className="inline-flex items-center justify-center h-10 px-5 rounded-2xl bg-slate-900 hover:bg-black text-white text-xs font-bold transition-colors"
         >
           {action.label}
         </Link>

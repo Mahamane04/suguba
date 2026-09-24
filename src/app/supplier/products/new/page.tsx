@@ -52,6 +52,7 @@ export default function NewSupplierProductPage() {
   const [apercu, setApercu] = useState<{
     prixVente: number; commission: number; partChoisieUtilisee: boolean; mode: string;
     releveAuPlancher?: boolean; commissionFaible?: boolean; commissionMinimale: number;
+    commissionBrute?: number; prelevementSuguba?: number; tauxPrelevement?: number; partSuguba?: number;
   } | null>(null);
   useEffect(() => {
     if (!(supplierPrice > 0)) { setApercu(null); return; }
@@ -125,7 +126,7 @@ export default function NewSupplierProductPage() {
 
         {/* Page Title */}
         <div className="space-y-1">
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
             Ajouter un produit
           </h1>
           <p className="text-xs text-slate-500">
@@ -136,10 +137,10 @@ export default function NewSupplierProductPage() {
         {/* Workflow reminder card */}
         <div className="bg-white border border-slate-200 rounded-2xl p-4 text-xs text-slate-900 space-y-1">
           <p className="font-bold flex items-center">
-            <ShieldCheck className="w-4 h-4 mr-1.5 text-suguba-brand" />
+            <ShieldCheck className="w-4 h-4 mr-1.5 text-suguba-brand-dark" />
             Comment ça marche :
           </p>
-          <p className="text-[11px] text-slate-600">
+          <p className="text-xs text-slate-600">
             Vous déposez → Suguba calcule le prix de vente et la commission des revendeurs → le produit est en vente
             aussitôt. Suguba peut ajuster le prix ou retirer un produit après coup.
           </p>
@@ -157,7 +158,7 @@ export default function NewSupplierProductPage() {
               <CheckCircle2 className="w-10 h-10" />
             </div>
             <div>
-              <h2 className="text-xl font-black text-slate-900">
+              <h2 className="text-xl font-bold text-slate-900">
                 {publication?.publie ? 'Produit en vente !' : 'Produit enregistré'}
               </h2>
               <p className="text-xs text-slate-600 mt-1 max-w-md mx-auto">
@@ -252,9 +253,9 @@ export default function NewSupplierProductPage() {
                   placeholder="Ex: 30000"
                   value={supplierPrice}
                   onChange={(e) => setSupplierPrice(parseInt(e.target.value) || 0)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-black text-slate-900 focus:bg-white"
+                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:bg-white"
                 />
-                <span className="text-[11px] text-slate-500 mt-1 block">
+                <span className="text-xs text-slate-500 mt-1 block">
                   Montant exact que vous toucherez sur chaque vente livrée.
                 </span>
               </div>
@@ -289,26 +290,43 @@ export default function NewSupplierProductPage() {
                   onChange={(e) => setPartRevendeur(parseInt(e.target.value) || 0)}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:bg-white"
                 />
-                <span className="text-[11px] text-slate-500 mt-1 block">
-                  Ce que vous laissez au revendeur qui vend votre produit. Plus elle est élevée, plus les revendeurs le partageront.
+                <span className="text-xs text-slate-500 mt-1 block">
+                  C’est vous qui décidez : ce que vous laissez au revendeur qui vend votre produit, en plus de votre prix.
+                  Plus elle est élevée, plus les revendeurs le partageront.
                 </span>
               </div>
 
+              {/* Détail du partage (2026-09-23) : qui touche quoi sur chaque vente. */}
               {apercu && (
                 <div className="bg-slate-50 rounded-xl p-3 text-xs space-y-1.5">
-                  <div className="flex justify-between"><span className="text-slate-600">Prix payé par le client</span><strong className="text-slate-900 text-sm">{fmt(apercu.prixVente)}</strong></div>
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500 pb-0.5">Sur chaque vente</p>
+                  <div className="flex justify-between"><span className="text-slate-600">Le client paie</span><strong className="text-slate-900 text-sm">{fmt(apercu.prixVente)}</strong></div>
                   <div className="flex justify-between"><span className="text-slate-600">Vous touchez</span><strong className="text-slate-900">{fmt(supplierPrice)}</strong></div>
-                  <div className="flex justify-between"><span className="text-slate-600">Le revendeur touche</span><strong className="text-suguba-brand">{fmt(apercu.commission)}</strong></div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-600">Le revendeur reçoit</span>
+                    <strong className="text-suguba-brand-dark">{fmt(apercu.commission)}</strong>
+                  </div>
+                  {(apercu.prelevementSuguba ?? 0) > 0 && (
+                    <p className="text-xs text-slate-500 -mt-1 text-right">
+                      soit votre part de {fmt(apercu.commissionBrute ?? 0)} moins {apercu.tauxPrelevement} % pour Suguba ({fmt(apercu.prelevementSuguba ?? 0)})
+                    </p>
+                  )}
+                  {typeof apercu.partSuguba === 'number' && (
+                    <div className="flex justify-between gap-3 border-t border-slate-200 pt-1.5">
+                      <span className="text-slate-600">Suguba (livraison, paiement, service)</span>
+                      <strong className="text-slate-900 whitespace-nowrap">{fmt(apercu.partSuguba)}</strong>
+                    </div>
+                  )}
                   {!apercu.partChoisieUtilisee && (
-                    <p className="text-[11px] text-slate-500 pt-1">
+                    <p className="text-xs text-slate-500 pt-1">
                       {apercu.mode === 'auto' ? 'La part du revendeur est actuellement calculée par Suguba.' : 'Sans part indiquée, Suguba la calcule.'}
                     </p>
                   )}
                   {apercu.releveAuPlancher && (
-                    <p className="text-[11px] text-amber-700 pt-1">Prix ajusté pour couvrir la livraison et les frais de service.</p>
+                    <p className="text-xs text-amber-700 pt-1">Prix ajusté pour couvrir la livraison et les frais de service.</p>
                   )}
                   {apercu.commissionFaible && (
-                    <p className="text-[11px] text-amber-700 pt-1">
+                    <p className="text-xs text-amber-700 pt-1">
                       Part inférieure à {fmt(apercu.commissionMinimale)} : le produit sera en vente, mais pas proposé au partage des revendeurs.
                     </p>
                   )}

@@ -120,9 +120,9 @@ export default async function BoutiqueReseauPage({ params }: Params) {
               href={`/boutiques?quartier=${encodeURIComponent(charge.quartier)}`}
               className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 min-h-[32px]"
             >
-              <MapPin className="w-3.5 h-3.5 text-[#078000]" />
+              <MapPin className="w-3.5 h-3.5 text-suguba-brand-dark" />
               {charge.quartier}
-              <span className="text-[#078000] font-bold underline underline-offset-2">· Boutiques voisines</span>
+              <span className="text-suguba-brand-dark font-bold underline underline-offset-2">· Boutiques voisines</span>
             </Link>
           )}
           <GalerieBoutique images={charge.galerie} nom={charge.vitrine.nom} />

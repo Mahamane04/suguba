@@ -28,7 +28,7 @@ export default function WarrantyPage() {
               <RefreshCw className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-black text-slate-900">
+              <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
                 Garantie, SAV & Politique de Retour
               </h1>
               <p className="text-xs text-slate-500">
@@ -40,7 +40,7 @@ export default function WarrantyPage() {
           <div className="prose prose-slate max-w-none text-xs text-slate-700 space-y-4 leading-relaxed">
             
             <section className="space-y-2">
-              <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                 1. Vérification à la Réception
               </h2>
               <p>
@@ -52,7 +52,7 @@ export default function WarrantyPage() {
             </section>
 
             <section className="space-y-2">
-              <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                 2. Durée de Garantie Fournisseur
               </h2>
               <p>
@@ -64,7 +64,7 @@ export default function WarrantyPage() {
             </section>
 
             <section className="space-y-2">
-              <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">
+              <h2 className="text-sm font-bold text-slate-900 uppercase tracking-wider">
                 3. Procédure de SAV (Service Après-Vente)
               </h2>
               <p>

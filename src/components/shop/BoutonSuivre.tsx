@@ -107,9 +107,9 @@ export default function BoutonSuivre({ slug, abonnesInitial }: { slug: string; a
         </div>
       )}
 
-      {message && <p className="text-[11px] text-amber-300">{message}</p>}
+      {message && <p className="text-xs text-amber-300">{message}</p>}
       {suit && (
-        <p className="text-[11px] text-slate-300">
+        <p className="text-xs text-slate-300">
           Vous serez prévenu des nouveautés et des promotions.{' '}
           <a href="/boutiques-suivies" className="underline font-bold text-white">Mes boutiques suivies</a>
         </p>

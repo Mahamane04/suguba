@@ -48,7 +48,7 @@ export default function DialCodePicker({ value, onChange, className = '' }: Dial
               type="button"
               onClick={() => { onChange(d.code); setOpen(false); }}
               className={`w-full flex items-center gap-2.5 px-3.5 py-2 text-left text-xs transition-colors ${
-                d.code === value ? 'bg-suguba-brand/10 text-suguba-brand font-bold' : 'text-gray-700 hover:bg-gray-50 font-medium'
+                d.code === value ? 'bg-suguba-brand/10 text-suguba-brand-dark font-bold' : 'text-gray-700 hover:bg-gray-50 font-medium'
               }`}
             >
               <span className="text-base leading-none">{d.flag}</span>

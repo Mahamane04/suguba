@@ -132,8 +132,8 @@ export default function SupplierBoutiquePage() {
           <Link href="/supplier" className="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-600 hover:text-slate-900">
             <ArrowLeft className="w-4 h-4" /><span>Retour à l&apos;espace fournisseur</span>
           </Link>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900 flex items-center space-x-2">
-            <Users className="w-6 h-6 text-suguba-brand" /><span>Ma boutique et mes revendeurs</span>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 flex items-center space-x-2">
+            <Users className="w-6 h-6 text-suguba-brand-dark" /><span>Ma boutique et mes revendeurs</span>
           </h1>
           <p className="text-xs text-slate-500">
             Partagez votre boutique, et invitez des revendeurs à vendre vos articles sans stock.
@@ -152,7 +152,7 @@ export default function SupplierBoutiquePage() {
                 aussitôt sur la boutique publique ci-dessous. */}
             <div className="bg-white rounded-3xl border border-slate-200 shadow-xs overflow-hidden">
               <div className="p-5 pb-4">
-                <h2 className="font-black text-sm text-slate-900 flex items-center space-x-2">
+                <h2 className="font-bold text-sm text-slate-900 flex items-center space-x-2">
                   <Settings className="w-4 h-4 text-slate-700" /><span>Réglages de ma boutique</span>
                 </h2>
                 <p className="text-xs text-slate-500">
@@ -182,7 +182,7 @@ export default function SupplierBoutiquePage() {
                     placeholder={nom || 'Ex: Chez Awa Électro'}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white focus:outline-emerald-600"
                   />
-                  <span className="text-[11px] text-slate-500 mt-1 block">
+                  <span className="text-xs text-slate-500 mt-1 block">
                     Affiché à la place de la raison sociale.
                     {urlBoutique ? ` L'adresse de la boutique (${urlBoutique}) ne change pas.` : ''}
                   </span>
@@ -203,7 +203,7 @@ export default function SupplierBoutiquePage() {
                     Suguba), pas ce que montre la boutique — la distinction
                     visuelle évite qu'on le confonde avec le nom/logo publics. */}
                 <div className="pt-1 border-t border-slate-100 space-y-4">
-                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider pt-4">
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-wider pt-4">
                     Vos coordonnées (usage interne)
                   </p>
 
@@ -244,7 +244,7 @@ export default function SupplierBoutiquePage() {
                       placeholder="contact@monentreprise.ml"
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white focus:outline-emerald-600"
                     />
-                    <span className="text-[11px] text-slate-500 mt-1 block">
+                    <span className="text-xs text-slate-500 mt-1 block">
                       Jamais affiché sur votre boutique publique.
                     </span>
                   </div>
@@ -257,7 +257,7 @@ export default function SupplierBoutiquePage() {
                       value={warehouseNeighborhood || 'Choisir…'}
                       onChange={setWarehouseNeighborhood}
                     />
-                    <span className="text-[11px] text-slate-500 mt-1 block">
+                    <span className="text-xs text-slate-500 mt-1 block">
                       Point de départ des livraisons de vos produits : sert à calculer un tarif de
                       livraison juste selon la distance jusqu&apos;au quartier du client, plutôt qu&apos;un
                       tarif unique pour tout Bamako.
@@ -279,7 +279,7 @@ export default function SupplierBoutiquePage() {
 
             <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs space-y-4">
               <div>
-                <h2 className="font-black text-sm text-slate-900 flex items-center space-x-2">
+                <h2 className="font-bold text-sm text-slate-900 flex items-center space-x-2">
                   <Store className="w-4 h-4 text-emerald-600" /><span>Ma boutique publique</span>
                 </h2>
                 <p className="text-xs text-slate-500">
@@ -295,12 +295,12 @@ export default function SupplierBoutiquePage() {
                   </div>
                   <div className="grid grid-cols-2 gap-2">
                     <button type="button" onClick={() => copier(urlBoutique, 'boutique')}
-                      className="h-11 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black flex items-center justify-center space-x-1.5">
+                      className="h-11 rounded-2xl bg-suguba-profond hover:bg-suguba-profond-2 text-white text-xs font-bold flex items-center justify-center space-x-1.5">
                       {copie === 'boutique' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                       <span>{copie === 'boutique' ? 'Lien copié' : 'Copier le lien'}</span>
                     </button>
                     <a href={urlBoutique} target="_blank" rel="noopener noreferrer"
-                      className="h-11 rounded-2xl bg-slate-900 hover:bg-black text-white text-xs font-black flex items-center justify-center space-x-1.5">
+                      className="h-11 rounded-2xl bg-slate-900 hover:bg-black text-white text-xs font-bold flex items-center justify-center space-x-1.5">
                       <ExternalLink className="w-4 h-4" /><span>Voir ma boutique</span>
                     </a>
                   </div>
@@ -316,13 +316,13 @@ export default function SupplierBoutiquePage() {
             <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <h2 className="font-black text-sm text-slate-900 flex items-center space-x-2">
+                  <h2 className="font-bold text-sm text-slate-900 flex items-center space-x-2">
                     <MessageCircle className="w-4 h-4 text-[#25D366]" /><span>Message de recrutement</span>
                   </h2>
                   <p className="text-xs text-slate-500">À poster sur vos statuts pour trouver des revendeurs.</p>
                 </div>
                 <button type="button" onClick={() => copier(message, 'message')}
-                  className="h-11 px-4 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-black flex items-center justify-center space-x-1.5 self-start sm:self-auto">
+                  className="h-11 px-4 rounded-2xl bg-suguba-wa hover:bg-[#20bd5a] text-suguba-profond text-xs font-bold flex items-center justify-center space-x-1.5 self-start sm:self-auto">
                   {copie === 'message' ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                   <span>{copie === 'message' ? 'Texte copié' : 'Copier le message'}</span>
                 </button>

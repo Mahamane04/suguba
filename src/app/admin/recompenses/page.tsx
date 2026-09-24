@@ -107,7 +107,7 @@ export default function RecompensesAdminPage() {
       ) : (
         <>
           <Card className="space-y-3">
-            <p className="text-sm font-black text-slate-900">Primes de parrainage</p>
+            <p className="text-sm font-bold text-slate-900">Primes de parrainage</p>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Filleul client (FCFA)" htmlFor="prime-client">
                 <Input id="prime-client" type="number" inputMode="numeric" min={0} step={50} value={primeClient} onChange={(e) => setPrimeClient(e.target.value)} />
@@ -123,15 +123,15 @@ export default function RecompensesAdminPage() {
           </Card>
 
           <section className="space-y-2.5">
-            <h2 className="text-xs font-black uppercase tracking-wide text-slate-600 px-1 flex items-center gap-1.5"><Target className="w-3.5 h-3.5" />Missions atteintes ({missions.length})</h2>
+            <h2 className="text-xs font-bold uppercase tracking-wide text-slate-600 px-1 flex items-center gap-1.5"><Target className="w-3.5 h-3.5" />Missions atteintes ({missions.length})</h2>
             {missions.length === 0 ? (
               <EmptyState icone={Gift} titre="Aucune mission à valider" />
             ) : missions.map((m) => (
               <Card key={m.id} className="space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-sm font-black text-slate-900 truncate">{m.mission}</p>
-                    <p className="text-[11px] text-slate-500">{m.revendeur}{m.code ? ` · ${m.code}` : ''} · {m.avancement}/{m.objectif}</p>
+                    <p className="text-sm font-bold text-slate-900 truncate">{m.mission}</p>
+                    <p className="text-xs text-slate-500">{m.revendeur}{m.code ? ` · ${m.code}` : ''} · {m.avancement}/{m.objectif}</p>
                   </div>
                   <StatusPill ton="succes">{m.recompense.toLocaleString('fr-FR')} F</StatusPill>
                 </div>
@@ -146,21 +146,21 @@ export default function RecompensesAdminPage() {
           </section>
 
           <section className="space-y-2.5">
-            <h2 className="text-xs font-black uppercase tracking-wide text-slate-600 px-1 flex items-center gap-1.5"><UserPlus className="w-3.5 h-3.5" />Parrainages en attente ({parrainages.length})</h2>
+            <h2 className="text-xs font-bold uppercase tracking-wide text-slate-600 px-1 flex items-center gap-1.5"><UserPlus className="w-3.5 h-3.5" />Parrainages en attente ({parrainages.length})</h2>
             {parrainages.length === 0 ? (
               <EmptyState icone={UserPlus} titre="Aucun parrainage en attente" />
             ) : parrainages.map((p) => (
               <Card key={p.id} className="space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-sm font-black text-slate-900 truncate">{p.parrain}{p.code ? ` · ${p.code}` : ''}</p>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-sm font-bold text-slate-900 truncate">{p.parrain}{p.code ? ` · ${p.code}` : ''}</p>
+                    <p className="text-xs text-slate-500">
                       Filleul {TYPE[p.type] || p.type} · {p.telephone || 'par lien'} · {new Date(p.creeLe).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                     </p>
                   </div>
                   <StatusPill ton="succes">{p.primePrevue.toLocaleString('fr-FR')} F</StatusPill>
                 </div>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-xs text-slate-500">
                   Vérifiez que le filleul est réel : compte validé pour un revendeur, première commande livrée pour un client.
                 </p>
                 <div className="flex gap-2">

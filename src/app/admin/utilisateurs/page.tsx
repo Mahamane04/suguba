@@ -65,11 +65,11 @@ export default function UtilisateursPage() {
             <div key={c.telephone} className="p-4 flex items-center justify-between gap-3">
               <div className="min-w-0">
                 <p className="text-sm font-bold text-slate-900 truncate">{c.nom}</p>
-                <p className="text-[11px] text-slate-500">{c.telephone}{c.referent ? ` · via ${c.referent}` : ''}</p>
+                <p className="text-xs text-slate-500">{c.telephone}{c.referent ? ` · via ${c.referent}` : ''}</p>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-sm font-black text-slate-900 tabular-nums">{fcfa(c.montant)}</p>
-                <p className="text-[11px] text-slate-500">{c.livrees}/{c.commandes} livrée{c.commandes > 1 ? 's' : ''}</p>
+                <p className="text-sm font-bold text-slate-900 tabular-nums">{fcfa(c.montant)}</p>
+                <p className="text-xs text-slate-500">{c.livrees}/{c.commandes} livrée{c.commandes > 1 ? 's' : ''}</p>
               </div>
             </div>
           ))}
@@ -80,11 +80,11 @@ export default function UtilisateursPage() {
             <Card key={u.id} className="space-y-2">
               <button type="button" className="w-full text-left flex items-start justify-between gap-3" onClick={() => setOuvert(ouvert === u.id ? null : u.id)} aria-expanded={ouvert === u.id}>
                 <div className="min-w-0">
-                  <p className="text-sm font-black text-slate-900 truncate">{u.nom || 'Sans nom'}</p>
-                  <p className="text-[11px] text-slate-500 truncate">
+                  <p className="text-sm font-bold text-slate-900 truncate">{u.nom || 'Sans nom'}</p>
+                  <p className="text-xs text-slate-500 truncate">
                     {[u.telephone, u.email, u.code, u.ville].filter(Boolean).join(' · ')}
                   </p>
-                  <p className="text-[11px] text-slate-600 mt-0.5">
+                  <p className="text-xs text-slate-600 mt-0.5">
                     {onglet === 'revendeurs' && `${u.stats.ventes || 0} vente(s) · ${fcfa(u.stats.commissions)} de commissions`}
                     {onglet === 'fournisseurs' && `${u.stats.produits || 0} produit(s) · ${u.stats.enVente || 0} en vente`}
                     {onglet === 'livreurs' && `${u.stats.livraisons || 0} livraison(s)`}
@@ -104,7 +104,7 @@ export default function UtilisateursPage() {
                       const a = u.badges.includes(b.cle);
                       return (
                         <button key={b.cle} type="button" onClick={() => action({ action: 'badge', profileId: u.id, badge: b.cle, retirer: a }, a ? 'Badge retiré.' : 'Badge attribué.')}
-                          className={`px-3 min-h-[36px] rounded-full text-[11px] font-bold border ${a ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200'}`}>
+                          className={`px-3 min-h-[36px] rounded-full text-xs font-bold border ${a ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200'}`}>
                           {a ? '✓ ' : '+ '}{b.libelle}
                         </button>
                       );

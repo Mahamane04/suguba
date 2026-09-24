@@ -120,28 +120,28 @@ export default function ResellerDashboardPage() {
         {/* 1. Accueil + solde retirable : ce que le revendeur vient voir en premier */}
         <div className="bg-white border border-slate-200 rounded-3xl p-5 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="space-y-3">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-[11px] font-bold">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-bold">
               <ShieldCheck className="w-3.5 h-3.5" />
               <span>{palier.nom}</span>
             </div>
-            <h1 className="text-2xl font-black text-slate-900">
+            <h1 className="text-2xl font-bold text-slate-900">
               Bonjour{prenom ? `, ${prenom}` : ''} 👋
             </h1>
             <div className="space-y-1">
-              <span className="text-[11px] font-bold text-slate-500 uppercase block">Mon code revendeur</span>
+              <span className="text-xs font-bold text-slate-500 uppercase block">Mon code revendeur</span>
               <button
                 onClick={handleCopyRefCode}
                 disabled={!referralCode}
                 className="inline-flex items-center gap-2 px-3 py-2 rounded-2xl bg-slate-50 border border-slate-200 hover:border-slate-300 transition-colors disabled:opacity-60"
               >
-                <span className="font-mono text-base font-black text-slate-900 tracking-wider">
+                <span className="font-mono text-base font-bold text-slate-900 tracking-wider">
                   {referralCode || '—'}
                 </span>
                 {copiedRef
-                  ? <Check className="w-4 h-4 text-suguba-brand" />
+                  ? <Check className="w-4 h-4 text-suguba-brand-dark" />
                   : <Copy className="w-4 h-4 text-slate-400" />}
               </button>
-              <p className="text-[11px] text-slate-500">
+              <p className="text-xs text-slate-500">
                 {copiedRef ? 'Code copié.' : 'Il est déjà inclus dans chaque lien que vous partagez.'}
               </p>
             </div>
@@ -149,8 +149,8 @@ export default function ResellerDashboardPage() {
 
           <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4 flex flex-col justify-between gap-3">
             <div>
-              <p className="text-[11px] font-bold text-slate-500 uppercase">Disponible au retrait</p>
-              <p className="text-3xl font-black text-slate-900">
+              <p className="text-xs font-bold text-slate-500 uppercase">Disponible au retrait</p>
+              <p className="text-3xl font-bold text-slate-900">
                 {charge
                   ? <>{availableBalance.toLocaleString('fr-FR')} <span className="text-sm font-bold text-slate-500">F</span></>
                   : <span className="inline-block h-8 w-32 rounded-lg bg-slate-200 animate-pulse align-middle" aria-label="Chargement du solde" />}
@@ -180,7 +180,7 @@ export default function ResellerDashboardPage() {
         <div className="bg-white rounded-3xl p-5 border border-slate-200 space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h2 className="font-black text-sm text-slate-900">
+              <h2 className="font-bold text-sm text-slate-900">
                 Vos commissions sont débloquées {palier.jours} jours après la livraison
               </h2>
               <p className="text-xs text-slate-500">
@@ -198,7 +198,7 @@ export default function ResellerDashboardPage() {
           <div className="bg-slate-100 rounded-full h-2 overflow-hidden">
             <div className="h-2 rounded-full bg-suguba-brand transition-all duration-500" style={{ width: `${progression}%` }} />
           </div>
-          <p className="text-[11px] text-slate-500">
+          <p className="text-xs text-slate-500">
             14 jours pour un nouveau revendeur, 7 jours dès 10 ventes livrées, 3 jours dès 30. Ce délai protège contre les retours.
           </p>
         </div>
@@ -222,10 +222,10 @@ export default function ResellerDashboardPage() {
         <div className="space-y-3">
           <div className="flex items-end justify-between gap-3">
             <div>
-              <h2 className="text-base font-black text-slate-900">À partager aujourd&apos;hui</h2>
+              <h2 className="text-base font-bold text-slate-900">À partager aujourd&apos;hui</h2>
               <p className="text-xs text-slate-500">Sur votre statut WhatsApp ou directement à un client.</p>
             </div>
-            <Link href="/reseller/catalog" className="text-xs font-bold text-suguba-brand hover:underline flex items-center gap-0.5 shrink-0">
+            <Link href="/reseller/catalog" className="text-xs font-bold text-suguba-brand-dark hover:underline flex items-center gap-0.5 shrink-0">
               <span>Voir tout</span>
               <ChevronRight className="w-3.5 h-3.5" />
             </Link>
@@ -251,10 +251,10 @@ export default function ResellerDashboardPage() {
                     </div>
                     <div className="flex-1 min-w-0 space-y-0.5">
                       <h3 className="font-bold text-sm text-slate-900 truncate">{product.name}</h3>
-                      <p className="text-xs font-black text-slate-900">
-                        {product.publicPrice.toLocaleString('fr-FR')} <span className="text-[11px] font-bold text-slate-500">F</span>
+                      <p className="text-xs font-bold text-slate-900">
+                        {product.publicPrice.toLocaleString('fr-FR')} <span className="text-xs font-bold text-slate-500">F</span>
                       </p>
-                      <span className="inline-block px-2 py-0.5 bg-suguba-brand/10 text-suguba-brand text-[11px] font-bold rounded-full">
+                      <span className="inline-block px-2 py-0.5 bg-suguba-brand/10 text-suguba-brand-dark text-xs font-bold rounded-full">
                         Vous gagnez {product.resellerCommission.toLocaleString('fr-FR')} F
                       </span>
                     </div>
@@ -268,7 +268,7 @@ export default function ResellerDashboardPage() {
                         { nom: product.name, prix: product.publicPrice, slug: product.slug, images: product.images },
                         referralCode,
                       )}
-                      className="flex-1 h-9 rounded-2xl bg-[#25D366] hover:bg-[#1ebe5b] text-white text-xs font-bold inline-flex items-center justify-center gap-1.5 active:scale-[0.97] transition-all"
+                      className="flex-1 h-9 rounded-2xl bg-suguba-wa hover:bg-[#1fbf5b] text-suguba-profond text-xs font-bold inline-flex items-center justify-center gap-1.5 active:scale-[0.97] transition-all"
                     >
                       <WhatsAppIcon className="w-4 h-4" />
                       <span>Partager</span>
@@ -286,8 +286,8 @@ export default function ResellerDashboardPage() {
         {/* 6. Dernières ventes — en liste, lisible sur téléphone (l'ancien tableau à 7 colonnes défilait) */}
         <div className="bg-white rounded-3xl p-5 border border-slate-200 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="font-black text-sm text-slate-900">Dernières ventes</h2>
-            <Link href="/reseller/orders" className="text-xs font-bold text-suguba-brand hover:underline">Voir tout</Link>
+            <h2 className="font-bold text-sm text-slate-900">Dernières ventes</h2>
+            <Link href="/reseller/orders" className="text-xs font-bold text-suguba-brand-dark hover:underline">Voir tout</Link>
           </div>
 
           {myOrders.length === 0 ? (
@@ -303,13 +303,13 @@ export default function ResellerDashboardPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-sm text-slate-900 truncate">{order.productName}</p>
-                    <p className="text-[11px] text-slate-500">
+                    <p className="text-xs text-slate-500">
                       {new Date(order.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                       {' • '}{order.totalAmount.toLocaleString('fr-FR')} F
                     </p>
                   </div>
                   <div className="text-right shrink-0 space-y-1">
-                    <p className="text-xs font-black text-suguba-brand">+{order.resellerCommission.toLocaleString('fr-FR')} F</p>
+                    <p className="text-xs font-bold text-suguba-brand-dark">+{order.resellerCommission.toLocaleString('fr-FR')} F</p>
                     <StatutVente status={order.status} />
                   </div>
                 </div>
@@ -320,7 +320,7 @@ export default function ResellerDashboardPage() {
 
         {/* 7. Outils de vente */}
         <div className="space-y-2.5">
-          <h2 className="font-black text-sm text-slate-900">Outils de vente</h2>
+          <h2 className="font-bold text-sm text-slate-900">Outils de vente</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Raccourci href="/reseller/marketing" icone={<Sparkles className="w-5 h-5" />} titre="Affiches statut" sousTitre="Prêtes à publier" />
             <Raccourci href="/reseller/badge" icone={<QrCode className="w-5 h-5" />} titre="Ma carte & QR" sousTitre="Votre carte revendeur" />
@@ -367,10 +367,10 @@ function Indicateur({ icone, titre, note, children }: {
     <div className="bg-white p-4 rounded-3xl border border-slate-200 space-y-1.5">
       <div className="flex items-center gap-1.5 text-slate-500">
         {icone}
-        <span className="text-[11px] font-bold uppercase">{titre}</span>
+        <span className="text-xs font-bold uppercase">{titre}</span>
       </div>
-      <p className="text-xl sm:text-2xl font-black text-slate-900">{children}</p>
-      <p className="text-[11px] text-slate-500">{note}</p>
+      <p className="text-xl sm:text-2xl font-bold text-slate-900">{children}</p>
+      <p className="text-xs text-slate-500">{note}</p>
     </div>
   );
 }
@@ -386,7 +386,7 @@ function Raccourci({ href, onClick, disabled, icone, titre, sousTitre }: {
       </div>
       <div className="min-w-0 flex-1">
         <p className="font-bold text-sm text-slate-900 truncate">{titre}</p>
-        <p className="text-[11px] text-slate-500 truncate">{sousTitre}</p>
+        <p className="text-xs text-slate-500 truncate">{sousTitre}</p>
       </div>
       <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />
     </>
@@ -400,13 +400,13 @@ function Raccourci({ href, onClick, disabled, icone, titre, sousTitre }: {
 
 function StatutVente({ status }: { status: string }) {
   if (status === 'delivered') {
-    return <span className="inline-block px-2 py-0.5 rounded-full bg-suguba-brand/10 text-suguba-brand font-bold text-[11px]">Livrée</span>;
+    return <span className="inline-block px-2 py-0.5 rounded-full bg-suguba-brand/10 text-suguba-brand-dark font-bold text-xs">Livrée</span>;
   }
   if (status === 'in_transit' || status === 'dispatched') {
-    return <span className="inline-block px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-bold text-[11px]">En route</span>;
+    return <span className="inline-block px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-bold text-xs">En route</span>;
   }
   if (status === 'cancelled' || status === 'returned') {
-    return <span className="inline-block px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 font-bold text-[11px]">Annulée</span>;
+    return <span className="inline-block px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 font-bold text-xs">Annulée</span>;
   }
-  return <span className="inline-block px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-bold text-[11px]">En attente</span>;
+  return <span className="inline-block px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-bold text-xs">En attente</span>;
 }

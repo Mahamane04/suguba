@@ -79,12 +79,12 @@ export default function RegisterPage() {
         <EtapesInscription etapeActuelle={1} />
 
         <div className="text-center space-y-1">
-          <h1 className="text-2xl font-black text-slate-900">Créer mon compte</h1>
+          <h1 className="text-2xl font-bold text-slate-900">Créer mon compte</h1>
           <p className="text-sm text-slate-500">Choisissez votre profil, puis connectez-vous en un clic.</p>
         </div>
 
         <section className="space-y-2">
-          <h2 className="font-black text-sm text-slate-900">1. Vous êtes…</h2>
+          <h2 className="font-bold text-sm text-slate-900">1. Vous êtes…</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {ROLES.map(({ cle, titre, detail, icone: Icone }) => {
               const choisi = role === cle;
@@ -98,12 +98,12 @@ export default function RegisterPage() {
                     choisi ? 'border-suguba-brand ring-2 ring-suguba-brand/30' : 'border-slate-200 hover:border-slate-300'
                   }`}
                 >
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${choisi ? 'bg-suguba-brand text-white' : 'bg-slate-100 text-slate-600'}`}>
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${choisi ? 'bg-suguba-profond text-white' : 'bg-slate-100 text-slate-600'}`}>
                     {choisi ? <Check className="w-4 h-4" /> : <Icone className="w-4 h-4" />}
                   </div>
                   <div>
                     <p className="font-bold text-sm text-slate-900">{titre}</p>
-                    <p className="text-[11px] text-slate-500">{detail}</p>
+                    <p className="text-xs text-slate-500">{detail}</p>
                   </div>
                 </button>
               );
@@ -115,14 +115,14 @@ export default function RegisterPage() {
             </div>
             <div className="flex-1">
               <p className="font-bold text-sm text-slate-900">Client</p>
-              <p className="text-[11px] text-slate-500">Pas besoin de compte pour acheter : commandez directement, vous payez à la livraison.</p>
+              <p className="text-xs text-slate-500">Pas besoin de compte pour acheter : commandez directement, vous payez à la livraison.</p>
             </div>
             <ArrowRight className="w-4 h-4 text-slate-400 shrink-0" />
           </Link>
         </section>
 
         <section className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 space-y-4">
-          <h2 className="font-black text-sm text-slate-900">2. Vérifiez votre identité</h2>
+          <h2 className="font-bold text-sm text-slate-900">2. Vérifiez votre identité</h2>
 
           <button
             type="button"
@@ -135,18 +135,18 @@ export default function RegisterPage() {
 
           <div className="flex items-center gap-3">
             <div className="h-px flex-1 bg-slate-100" />
-            <span className="text-[11px] font-bold text-slate-500 uppercase">ou</span>
+            <span className="text-xs font-bold text-slate-500 uppercase">ou</span>
             <div className="h-px flex-1 bg-slate-100" />
           </div>
 
           {lienEnvoye ? (
             <div className="text-center space-y-2 py-2">
-              <Mail className="w-6 h-6 text-suguba-brand mx-auto" />
+              <Mail className="w-6 h-6 text-suguba-brand-dark mx-auto" />
               <p className="text-sm font-bold text-slate-900">Vérifiez votre boîte mail</p>
               <p className="text-xs text-slate-500">
                 Un lien a été envoyé à <strong>{email}</strong>. Ouvrez-le depuis ce même appareil.
               </p>
-              <button type="button" onClick={() => setLienEnvoye(false)} className="text-xs font-bold text-suguba-brand hover:underline">
+              <button type="button" onClick={() => setLienEnvoye(false)} className="text-xs font-bold text-suguba-brand-dark hover:underline">
                 Utiliser une autre adresse
               </button>
             </div>
@@ -173,15 +173,15 @@ export default function RegisterPage() {
             </div>
           )}
 
-          <p className="text-[11px] text-slate-500 text-center">
+          <p className="text-xs text-slate-500 text-center">
             En créant un compte, vous acceptez les{' '}
-            <Link href="/legal/terms" className="text-suguba-brand underline">conditions générales</Link>.
+            <Link href="/legal/terms" className="text-suguba-brand-dark underline">conditions générales</Link>.
           </p>
         </section>
 
         <p className="text-center text-xs text-slate-500">
           Vous avez déjà un compte ?{' '}
-          <Link href="/login" className="font-bold text-suguba-brand hover:underline">Se connecter</Link>
+          <Link href="/login" className="font-bold text-suguba-brand-dark hover:underline">Se connecter</Link>
         </p>
       </main>
 

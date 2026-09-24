@@ -38,8 +38,8 @@ export default function SelecteurVariantes({ slug }: { slug: string }) {
                 actif ? 'border-suguba-brand ring-2 ring-suguba-brand bg-suguba-brand/5' : 'border-slate-200 bg-white'
               } ${v.enStock ? '' : 'opacity-50'}`}
             >
-              <span className="text-xs font-black text-slate-900">{v.libelle}</span>
-              <span className="text-[11px] text-slate-500 tabular-nums">{v.enStock ? `${v.prix.toLocaleString('fr-FR')} F` : 'Épuisé'}</span>
+              <span className="text-xs font-bold text-slate-900">{v.libelle}</span>
+              <span className="text-xs text-slate-500 tabular-nums">{v.enStock ? `${v.prix.toLocaleString('fr-FR')} F` : 'Épuisé'}</span>
             </Link>
           );
         })}

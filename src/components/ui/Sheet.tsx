@@ -74,7 +74,7 @@ export default function Sheet({
         </div>
         <div className="flex items-start justify-between gap-3 px-5 pt-3 sm:pt-5 pb-3 shrink-0">
           <div className="min-w-0">
-            <h2 id={idTitre} className="text-base font-black text-slate-900">{titre}</h2>
+            <h2 id={idTitre} className="text-base font-bold text-slate-900">{titre}</h2>
             {sousTitre && <p className="text-xs text-slate-500 line-clamp-2">{sousTitre}</p>}
           </div>
           <button

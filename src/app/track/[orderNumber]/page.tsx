@@ -23,7 +23,7 @@ const STATUT: Record<string, { libelle: string; classe: string }> = {
   confirmed: { libelle: 'Confirmée', classe: 'bg-emerald-50 text-emerald-800' },
   dispatched: { libelle: 'Livreur assigné', classe: 'bg-emerald-50 text-emerald-800' },
   in_transit: { libelle: 'En route vers vous', classe: 'bg-emerald-100 text-emerald-800' },
-  delivered: { libelle: 'Livrée', classe: 'bg-emerald-600 text-white' },
+  delivered: { libelle: 'Livrée', classe: 'bg-suguba-profond text-white' },
   cancelled: { libelle: 'Annulée', classe: 'bg-rose-100 text-rose-800' },
   returned: { libelle: 'Retournée', classe: 'bg-rose-100 text-rose-800' },
 };
@@ -108,7 +108,7 @@ export default function OrderTrackingPage() {
             <div className="w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center mx-auto">
               <ShieldCheck className="w-6 h-6" />
             </div>
-            <h1 className="text-xl font-black text-slate-900">Confirmez que c&apos;est bien vous</h1>
+            <h1 className="text-xl font-bold text-slate-900">Confirmez que c&apos;est bien vous</h1>
             <p className="text-xs text-slate-600">
               Entrez le numéro de téléphone donné lors de la commande
               <strong className="text-slate-900"> #{orderNumber}</strong>.
@@ -117,7 +117,7 @@ export default function OrderTrackingPage() {
 
           <form onSubmit={rechercher} className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-4">
             <div className="space-y-2">
-              <label htmlFor="tel-suivi" className="text-[11px] font-bold text-slate-600 uppercase tracking-wide">
+              <label htmlFor="tel-suivi" className="text-xs font-bold text-slate-600 uppercase tracking-wide">
                 Votre numéro de téléphone
               </label>
               <input
@@ -134,19 +134,19 @@ export default function OrderTrackingPage() {
             {erreurSuivi && (
               <div className="flex items-start space-x-2 bg-red-50 border border-red-200 rounded-2xl p-3">
                 <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
-                <p className="text-[11px] text-red-800 font-medium">{erreurSuivi}</p>
+                <p className="text-xs text-red-800 font-medium">{erreurSuivi}</p>
               </div>
             )}
 
             <button
               type="submit"
               disabled={recherche || telephone.replace(/\D/g, '').length < 8}
-              className="w-full h-[52px] bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] disabled:bg-slate-300 disabled:active:scale-100 text-white font-black px-4 rounded-2xl text-sm transition-all"
+              className="w-full h-[52px] bg-suguba-profond hover:bg-suguba-profond-2 active:scale-[0.98] disabled:bg-slate-300 disabled:active:scale-100 text-white font-bold px-4 rounded-2xl text-sm transition-all"
             >
               {recherche ? 'Recherche…' : 'Voir ma commande'}
             </button>
 
-            <p className="text-[11px] text-slate-500 text-center">
+            <p className="text-xs text-slate-500 text-center">
               Ce numéro nous sert uniquement à vérifier que la commande est la vôtre.
             </p>
           </form>
@@ -218,12 +218,12 @@ export default function OrderTrackingPage() {
                 type="button"
                 onClick={() => order.customerPhone && actualiser(order.customerPhone)}
                 disabled={actualisation || !order.customerPhone}
-                className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 hover:text-slate-900 disabled:opacity-60"
+                className="inline-flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-900 disabled:opacity-60"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${actualisation ? 'animate-spin' : ''}`} />
                 {actualisation ? 'Mise à jour…' : 'Actualiser'}
               </button>
-              <h1 className="text-xl font-black text-slate-900">
+              <h1 className="text-xl font-bold text-slate-900">
                 Commande #{order.orderNumber}
               </h1>
             </div>
@@ -252,8 +252,8 @@ export default function OrderTrackingPage() {
             </div>
             <div className="min-w-0 flex-1">
               <h3 className="font-bold text-xs text-slate-900 truncate">{order.productName}</h3>
-              <p className="text-[11px] text-slate-500">Quantité : <strong>{order.quantity}</strong></p>
-              <p className="text-xs font-black text-emerald-700">Total : {order.totalAmount.toLocaleString('fr-FR')} FCFA</p>
+              <p className="text-xs text-slate-500">Quantité : <strong>{order.quantity}</strong></p>
+              <p className="text-xs font-bold text-emerald-700">Total : {order.totalAmount.toLocaleString('fr-FR')} FCFA</p>
             </div>
           </div>
 
@@ -265,11 +265,11 @@ export default function OrderTrackingPage() {
               <span>Votre Code Secret de Livraison</span>
             </div>
             
-            <div className="text-4xl font-black tracking-[0.4em] text-white py-1">
+            <div className="text-4xl font-bold tracking-[0.4em] text-white py-1">
               {order.deliveryOtp}
             </div>
 
-            <p className="text-[11px] text-amber-100/90 leading-tight">
+            <p className="text-xs text-amber-100/90 leading-tight">
               À donner <strong>UNIQUEMENT</strong> au livreur lors de la remise physique de votre colis.
             </p>
           </div>
@@ -277,7 +277,7 @@ export default function OrderTrackingPage() {
 
           {/* Timeline */}
           <div className="space-y-4 pt-2">
-            <h3 className="text-xs font-black text-slate-900 uppercase tracking-wider">
+            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
               Étapes d&apos;Acheminement
             </h3>
 
@@ -293,7 +293,7 @@ export default function OrderTrackingPage() {
                     <h4 className={`text-xs font-bold ${step.done ? 'text-slate-900' : 'text-slate-500'}`}>
                       {step.title}
                     </h4>
-                    <p className="text-[11px] text-slate-500">{step.desc}</p>
+                    <p className="text-xs text-slate-500">{step.desc}</p>
                   </div>
                 </div>
               ))}
@@ -316,7 +316,7 @@ export default function OrderTrackingPage() {
               href={whatsappReceiptLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="py-3 px-3 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold rounded-2xl text-xs flex items-center justify-center space-x-1.5 shadow-xs"
+              className="py-3 px-3 bg-suguba-wa hover:bg-[#20bd5a] text-suguba-profond font-bold rounded-2xl text-xs flex items-center justify-center space-x-1.5 shadow-xs"
             >
               <MessageCircle className="w-4 h-4 fill-current" />
               <span>Recevoir Reçu WhatsApp</span>

@@ -28,7 +28,7 @@ export default function FormulaireVariante({
 
   if (!ouvert) {
     return (
-      <button type="button" onClick={() => setOuvert(true)} className="inline-flex items-center gap-1.5 text-[11px] font-bold text-slate-600 hover:text-slate-900 min-h-[32px]">
+      <button type="button" onClick={() => setOuvert(true)} className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 min-h-[32px]">
         <Layers className="w-3.5 h-3.5" />Créer une variante (taille, couleur…)
       </button>
     );
@@ -53,7 +53,7 @@ export default function FormulaireVariante({
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 space-y-3">
-      <p className="text-xs font-black text-slate-900">Nouvelle variante de « {produit.name} »</p>
+      <p className="text-xs font-bold text-slate-900">Nouvelle variante de « {produit.name} »</p>
       <div className="grid grid-cols-2 gap-2">
         <Field label="Ce produit-ci est" htmlFor={`orig-${produit.id}`} aide="Ex. : 43 pouces">
           <Input id={`orig-${produit.id}`} value={libelleOriginal} onChange={(e) => setLibelleOriginal(e.target.value)} maxLength={40} />

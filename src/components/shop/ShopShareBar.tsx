@@ -44,20 +44,20 @@ export default function ShopShareBar({ url, texte }: { url: string; texte: strin
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
       <a href={whatsapp} target="_blank" rel="noopener noreferrer"
-        className="h-11 rounded-2xl bg-[#25D366] hover:bg-[#20bd5a] text-white text-xs font-black flex items-center justify-center space-x-1.5 transition-transform active:scale-[0.98]">
+        className="h-11 rounded-2xl bg-suguba-wa hover:bg-[#20bd5a] text-suguba-profond text-xs font-bold flex items-center justify-center space-x-1.5 transition-transform active:scale-[0.98]">
         <MessageCircle className="w-4 h-4 fill-current" /><span>WhatsApp</span>
       </a>
       <a href={facebook} target="_blank" rel="noopener noreferrer"
-        className="h-11 rounded-2xl bg-[#1877F2] hover:bg-[#166fe0] text-white text-xs font-black flex items-center justify-center transition-transform active:scale-[0.98]">
+        className="h-11 rounded-2xl bg-[#1877F2] hover:bg-[#166fe0] text-white text-xs font-bold flex items-center justify-center transition-transform active:scale-[0.98]">
         Facebook
       </a>
       <button type="button" onClick={copier}
-        className="h-11 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-black flex items-center justify-center space-x-1.5 transition-transform active:scale-[0.98]">
+        className="h-11 rounded-2xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold flex items-center justify-center space-x-1.5 transition-transform active:scale-[0.98]">
         {copie ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
         <span>{copie ? 'Lien copié' : 'Copier le lien'}</span>
       </button>
       <button type="button" onClick={partagerNatif}
-        className="h-11 rounded-2xl bg-white text-slate-900 text-xs font-black flex items-center justify-center space-x-1.5 transition-transform active:scale-[0.98]">
+        className="h-11 rounded-2xl bg-white text-slate-900 text-xs font-bold flex items-center justify-center space-x-1.5 transition-transform active:scale-[0.98]">
         <Share2 className="w-4 h-4" /><span>Partager</span>
       </button>
     </div>

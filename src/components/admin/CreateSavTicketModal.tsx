@@ -186,7 +186,7 @@ export default function CreateSavTicketModal({ orders, isOpen, onClose, onCreate
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white font-black rounded-2xl text-xs flex items-center justify-center space-x-2 shadow-lg shadow-rose-600/20 active:scale-98 transition-all"
+            className="w-full py-3.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-2xl text-xs flex items-center justify-center space-x-2 shadow-lg shadow-rose-600/20 active:scale-98 transition-all"
           >
             <span>{isSubmitting ? 'Création en cours...' : 'Ouvrir le Ticket SAV & Déclencher la Procédure'}</span>
             <ArrowRight className="w-4 h-4" />

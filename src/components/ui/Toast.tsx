@@ -121,7 +121,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="space-y-1">
-              <h2 id="confirmation-titre" className="text-base font-black text-slate-900">{demande.titre}</h2>
+              <h2 id="confirmation-titre" className="text-base font-bold text-slate-900">{demande.titre}</h2>
               {demande.message && <p className="text-sm text-slate-600">{demande.message}</p>}
             </div>
             <div className="grid grid-cols-2 gap-2">

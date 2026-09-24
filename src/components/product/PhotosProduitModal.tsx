@@ -58,7 +58,7 @@ export default function PhotosProduitModal({
       >
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h2 className="font-black text-base text-slate-900">Photos du produit</h2>
+            <h2 className="font-bold text-base text-slate-900">Photos du produit</h2>
             <p className="text-xs text-slate-500 line-clamp-1">{produit.nom}</p>
           </div>
           <button type="button" onClick={onClose} aria-label="Fermer"
@@ -67,7 +67,7 @@ export default function PhotosProduitModal({
           </button>
         </div>
 
-        <div className="rounded-2xl bg-slate-50 border border-slate-200 p-3 text-[11px] text-slate-600 space-y-1">
+        <div className="rounded-2xl bg-slate-50 border border-slate-200 p-3 text-xs text-slate-600 space-y-1">
           <p className="font-bold text-slate-800">Pour des photos qui font vendre :</p>
           <p>• Lumière du jour, produit sur un fond uni et clair.</p>
           <p>• La première photo montre le produit entier, de face.</p>

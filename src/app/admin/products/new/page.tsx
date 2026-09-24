@@ -162,7 +162,7 @@ export default function AdminNewProductPage() {
         </Link>
 
         <div className="space-y-1">
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
             Ajouter un produit au catalogue
           </h1>
           <p className="text-xs text-slate-500">
@@ -176,7 +176,7 @@ export default function AdminNewProductPage() {
               <CheckCircle2 className="w-10 h-10" />
             </div>
             <div>
-              <h2 className="text-xl font-black text-slate-900">
+              <h2 className="text-xl font-bold text-slate-900">
                 {publieOk ? 'Produit publié !' : 'Produit enregistré, pas encore publié'}
               </h2>
               <p className="text-xs text-slate-600 mt-1">
@@ -265,7 +265,7 @@ export default function AdminNewProductPage() {
 
             {/* Économie du produit */}
             <div className="pt-2 border-t border-slate-100 space-y-4">
-              <p className="text-xs font-black text-slate-900 flex items-center gap-1.5">
+              <p className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
                 <ShieldCheck className="w-4 h-4 text-slate-700" />
                 Économie du produit
               </p>
@@ -292,13 +292,13 @@ export default function AdminNewProductPage() {
                     step={500}
                     value={publicPrice}
                     onChange={(e) => setPublicPrice(parseInt(e.target.value) || 0)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-black text-slate-700 focus:bg-white"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-700 focus:bg-white"
                   />
                 </div>
 
               </div>
 
-              <p className="p-3 rounded-2xl bg-slate-50 border border-slate-200 text-[11px] text-slate-600 flex items-start gap-1.5">
+              <p className="p-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-start gap-1.5">
                 <AlertTriangle className="w-4 h-4 text-slate-400 shrink-0" />
                 <span>
                   La commission revendeur est calculée automatiquement à partir des réglages économiques.

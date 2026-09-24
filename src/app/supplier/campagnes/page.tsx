@@ -115,12 +115,12 @@ export default function CampagnesPage() {
             </Field>
             <div className="rounded-2xl bg-slate-50 border border-slate-200 p-3 flex items-center justify-between">
               <span className="text-xs text-slate-600">Budget maximum</span>
-              <span className="text-lg font-black text-slate-900 tabular-nums">{fcfa(budget)}</span>
+              <span className="text-lg font-bold text-slate-900 tabular-nums">{fcfa(budget)}</span>
             </div>
             <Button type="submit" fullWidth disabled={envoi || !produitId}>
               {envoi ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}Envoyer la campagne
             </Button>
-            <p className="text-[11px] text-slate-500">Suguba vous contacte pour le règlement du budget, puis ouvre la campagne aux revendeurs.</p>
+            <p className="text-xs text-slate-500">Suguba vous contacte pour le règlement du budget, puis ouvre la campagne aux revendeurs.</p>
           </form>
         </Card>
       )}
@@ -140,7 +140,7 @@ export default function CampagnesPage() {
             return (
               <Card key={c.id} className="space-y-2.5">
                 <div className="flex items-start justify-between gap-3">
-                  <p className="text-sm font-black text-slate-900 min-w-0 truncate">{c.titre}</p>
+                  <p className="text-sm font-bold text-slate-900 min-w-0 truncate">{c.titre}</p>
                   <StatusPill ton={ton}>{libelle}</StatusPill>
                 </div>
                 <div className="flex flex-wrap gap-1.5">
@@ -149,7 +149,7 @@ export default function CampagnesPage() {
                   <StatusPill ton="neutre">{fcfa(c.recompense)} / revendeur</StatusPill>
                 </div>
                 <div className="h-2 rounded-full bg-slate-100 overflow-hidden"><div className="h-full bg-suguba-brand" style={{ width: `${pct}%` }} /></div>
-                <p className="text-[11px] text-slate-500">{c.avancementTotal} / {vise} au total · budget {fcfa(c.budget)}</p>
+                <p className="text-xs text-slate-500">{c.avancementTotal} / {vise} au total · budget {fcfa(c.budget)}</p>
               </Card>
             );
           })}

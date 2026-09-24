@@ -77,7 +77,7 @@ export default function LogoUploader({
           type="button"
           onClick={() => input.current?.click()}
           aria-label={apercu ? 'Changer le logo' : 'Ajouter un logo'}
-          className="w-20 h-20 rounded-full overflow-hidden border-2 border-slate-200 bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-white font-black text-2xl hover:opacity-90 transition-opacity"
+          className="w-20 h-20 rounded-full overflow-hidden border-2 border-slate-200 bg-gradient-to-br from-emerald-500 to-teal-700 flex items-center justify-center text-white font-bold text-2xl hover:opacity-90 transition-opacity"
         >
           {apercu ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -112,8 +112,8 @@ export default function LogoUploader({
       </div>
       <div className="min-w-0">
         <p className="text-xs font-bold text-slate-700">{apercu ? 'Logo de la boutique' : 'Aucun logo'}</p>
-        <p className="text-[11px] text-slate-500">JPEG, PNG ou WebP — allégé automatiquement.</p>
-        {erreur && <p className="text-[11px] text-rose-600 font-bold mt-0.5">{erreur}</p>}
+        <p className="text-xs text-slate-500">JPEG, PNG ou WebP — allégé automatiquement.</p>
+        {erreur && <p className="text-xs text-rose-600 font-bold mt-0.5">{erreur}</p>}
       </div>
       <input
         ref={input}

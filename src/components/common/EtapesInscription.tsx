@@ -35,17 +35,17 @@ export default function EtapesInscription({ etapeActuelle }: { etapeActuelle: 1 
               <span
                 aria-hidden="true"
                 className={`absolute top-3.5 right-1/2 w-full h-0.5 ${
-                  faite || active ? 'bg-suguba-brand' : 'bg-gray-200'
+                  faite || active ? 'bg-suguba-profond' : 'bg-gray-200'
                 }`}
               />
             )}
 
             <span
-              className={`relative z-10 w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-black ${
+              className={`relative z-10 w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
                 faite
-                  ? 'bg-suguba-brand text-white'
+                  ? 'bg-suguba-profond text-white'
                   : active
-                  ? 'bg-suguba-brand text-white ring-4 ring-suguba-brand/20'
+                  ? 'bg-suguba-profond text-white ring-4 ring-suguba-brand/20'
                   : 'bg-gray-200 text-gray-500'
               }`}
             >
@@ -53,15 +53,15 @@ export default function EtapesInscription({ etapeActuelle }: { etapeActuelle: 1 
             </span>
 
             <span
-              className={`mt-1.5 text-[11px] leading-tight ${
-                active ? 'font-black text-gray-900' : faite ? 'font-semibold text-gray-600' : 'text-gray-400'
+              className={`mt-1.5 text-xs leading-tight ${
+                active ? 'font-bold text-gray-900' : faite ? 'font-semibold text-gray-600' : 'text-gray-400'
               }`}
             >
               {etape.titre}
             </span>
 
             {active && (
-              <span className="text-[11px] font-bold text-suguba-brand uppercase tracking-wider mt-0.5">
+              <span className="text-xs font-bold text-suguba-brand uppercase tracking-wider mt-0.5">
                 Vous êtes ici
               </span>
             )}

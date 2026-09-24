@@ -118,13 +118,13 @@ export default function MaBoutiqueRevendeurPage() {
           />
 
           <Card className="space-y-4">
-            <p className="text-sm font-black text-slate-900">Personnaliser</p>
+            <p className="text-sm font-bold text-slate-900">Personnaliser</p>
 
             <CouvertureEditeur valeur={couverture} onChange={setCouverture} />
 
             <div className="flex items-center gap-4">
               <LogoUploader value={logo} onChange={setLogo} nomPourInitiale={nom} />
-              <p className="text-[11px] text-slate-500">
+              <p className="text-xs text-slate-500">
                 Une photo de vous ou votre logo. C’est ce que vos clients verront en premier.
               </p>
             </div>
@@ -158,7 +158,7 @@ export default function MaBoutiqueRevendeurPage() {
           </Card>
 
           <Card className="space-y-2">
-            <p className="text-sm font-black text-slate-900">Les articles de ma boutique</p>
+            <p className="text-sm font-bold text-slate-900">Les articles de ma boutique</p>
             <p className="text-xs text-slate-500">
               Vous choisissez vos articles dans le catalogue des fournisseurs. Pas de stock à acheter,
               pas d’avance : Suguba livre et encaisse, vous touchez votre commission.

@@ -19,7 +19,7 @@ interface ProduitStock {
 }
 
 const STATUT: Record<string, { libelle: string; classe: string }> = {
-  approved: { libelle: 'En vente', classe: 'bg-suguba-brand/10 text-suguba-brand' },
+  approved: { libelle: 'En vente', classe: 'bg-suguba-brand/10 text-suguba-brand-dark' },
   submitted: { libelle: 'En attente', classe: 'bg-amber-50 text-amber-800' },
   rejected: { libelle: 'Retiré', classe: 'bg-rose-50 text-rose-700' },
 };
@@ -89,22 +89,22 @@ export default function SupplierInventoryPage() {
         </Link>
 
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900">Mes stocks</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Mes stocks</h1>
           <p className="text-xs text-slate-500">Tenez vos quantités à jour pour ne jamais vendre un article absent.</p>
         </div>
 
         <div className="grid grid-cols-3 gap-3">
           <div className="bg-white rounded-3xl border border-slate-200 p-3">
-            <p className="text-[11px] font-bold text-slate-500 uppercase">Unités</p>
-            <p className="text-lg font-black text-slate-900">{unites}</p>
+            <p className="text-xs font-bold text-slate-500 uppercase">Unités</p>
+            <p className="text-lg font-bold text-slate-900">{unites}</p>
           </div>
           <div className="bg-white rounded-3xl border border-slate-200 p-3">
-            <p className="text-[11px] font-bold text-slate-500 uppercase">Valeur</p>
-            <p className="text-lg font-black text-slate-900">{valeur.toLocaleString('fr-FR')} F</p>
+            <p className="text-xs font-bold text-slate-500 uppercase">Valeur</p>
+            <p className="text-lg font-bold text-slate-900">{valeur.toLocaleString('fr-FR')} F</p>
           </div>
           <div className="bg-white rounded-3xl border border-slate-200 p-3">
-            <p className="text-[11px] font-bold text-slate-500 uppercase">Stock faible</p>
-            <p className={`text-lg font-black ${faibles > 0 ? 'text-amber-700' : 'text-slate-900'}`}>{faibles}</p>
+            <p className="text-xs font-bold text-slate-500 uppercase">Stock faible</p>
+            <p className={`text-lg font-bold ${faibles > 0 ? 'text-amber-700' : 'text-slate-900'}`}>{faibles}</p>
           </div>
         </div>
 
@@ -136,9 +136,9 @@ export default function SupplierInventoryPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-slate-900 line-clamp-1">{p.name}</p>
-                    <span className={`inline-block mt-0.5 px-2 py-0.5 rounded-full text-[11px] font-bold ${statut.classe}`}>{statut.libelle}</span>
+                    <span className={`inline-block mt-0.5 px-2 py-0.5 rounded-full text-xs font-bold ${statut.classe}`}>{statut.libelle}</span>
                     {p.stockQuantity <= 5 && (
-                      <span className="ml-1.5 inline-block px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-50 text-amber-800">
+                      <span className="ml-1.5 inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800">
                         {p.stockQuantity === 0 ? 'Rupture' : 'Stock faible'}
                       </span>
                     )}
@@ -153,7 +153,7 @@ export default function SupplierInventoryPage() {
                     >
                       <Minus className="w-4 h-4" />
                     </button>
-                    <span className="w-10 text-center text-base font-black text-slate-900">{p.stockQuantity}</span>
+                    <span className="w-10 text-center text-base font-bold text-slate-900">{p.stockQuantity}</span>
                     <button
                       type="button"
                       onClick={() => changerStock(p, p.stockQuantity + 1)}

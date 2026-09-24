@@ -46,7 +46,7 @@ export default function Footer() {
         className="py-10 px-4 sm:px-6 text-center"
         style={{ background: 'linear-gradient(135deg, #09b500 0%, #16a34a 60%, #065f46 100%)' }}
       >
-        <p className="text-white font-black text-xl sm:text-2xl tracking-tight mb-2">
+        <p className="text-white font-bold text-xl sm:text-2xl tracking-tight mb-2">
           Prêt à vendre sans stock ?
         </p>
         <p className="text-green-100 text-sm mb-5">
@@ -54,7 +54,7 @@ export default function Footer() {
         </p>
         <Link
           href="/login"
-          className="inline-flex items-center gap-2 bg-white text-suguba-brand font-bold px-6 py-2.5 rounded-full hover:bg-green-50 transition-colors shadow-float text-sm"
+          className="inline-flex items-center gap-2 bg-white text-suguba-brand-dark font-bold px-6 py-2.5 rounded-full hover:bg-green-50 transition-colors shadow-float text-sm"
         >
           Commencer gratuitement
         </Link>
@@ -76,19 +76,19 @@ export default function Footer() {
                 />
               </div>
               <div>
-                <span className="text-white font-black text-lg tracking-tight">SUGUBA<span className="text-suguba-brand">.ML</span></span>
-                <p className="text-[11px] text-gray-500 font-semibold tracking-wider uppercase">Plateforme SaaS B2B2C Mali</p>
+                <span className="text-white font-bold text-lg tracking-tight">SUGUBA<span className="text-suguba-brand">.ML</span></span>
+                <p className="text-xs text-gray-500 font-semibold tracking-wider uppercase">Plateforme SaaS B2B2C Mali</p>
               </div>
             </div>
             <p className="text-xs text-gray-500 leading-relaxed max-w-xs">
               La plateforme de social commerce N°1 au Mali. Vendez sans stock via WhatsApp et TikTok. Commissions garanties par Mobile Money.
             </p>
             <div className="flex items-center gap-1.5 text-xs text-gray-500">
-              <Phone className="w-3 h-3 text-suguba-brand" />
+              <Phone className="w-3 h-3 text-suguba-brand-dark" />
               <a href="tel:+22389460000" className="hover:text-white transition-colors">+223 89 46 00 00</a>
             </div>
             {/* Legal IDs */}
-            <div className="text-[11px] text-gray-600 space-y-0.5">
+            <div className="text-xs text-gray-600 space-y-0.5">
               <p>NIF : 086419208K</p>
               <p>RCCM : MA.BKO.2026.B.14820</p>
               <p>Hamdallaye ACI 2000, Rue 314 P.88, Bamako</p>
@@ -132,7 +132,7 @@ export default function Footer() {
               ))}
             </ul>
             {/* Trust badge */}
-            <div className="mt-5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-900 border border-gray-800 text-[11px] text-suguba-brand font-semibold">
+            <div className="mt-5 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gray-900 border border-gray-800 text-xs text-suguba-brand font-semibold">
               <ShieldCheck className="w-3.5 h-3.5" />
               Zone UEMOA / Mali
             </div>
@@ -143,11 +143,11 @@ export default function Footer() {
 
       {/* ── Bottom Bar ── */}
       <div className="border-t border-gray-900 px-4 sm:px-6 py-4">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-gray-600">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-600">
           <p>© 2026 Suguba Technologies Mali — Tous droits réservés</p>
           <p className="flex items-center gap-1">
             Conçu à
-            <span className="text-suguba-brand font-bold mx-0.5">Bamako</span>
+            <span className="text-suguba-brand-dark font-bold mx-0.5">Bamako</span>
             pour le Mali et la diaspora
           </p>
         </div>

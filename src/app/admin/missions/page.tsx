@@ -161,8 +161,8 @@ export default function MissionsAdminPage() {
             <Card key={m.id} className="space-y-3">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="text-sm font-black text-slate-900 truncate">{m.titre}</p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
+                  <p className="text-sm font-bold text-slate-900 truncate">{m.titre}</p>
+                  <p className="text-xs text-slate-500 mt-0.5">
                     {libelleType(m.type)} · objectif {m.objectif} {verbeType(m.type)} ·{' '}
                     {m.recompense.toLocaleString('fr-FR')} F · {m.participants} participant{m.participants > 1 ? 's' : ''}
                   </p>
@@ -170,7 +170,7 @@ export default function MissionsAdminPage() {
                 <StatusPill ton={TON[m.statut] || 'neutre'}>{LIBELLE_STATUT[m.statut] || m.statut}</StatusPill>
               </div>
               {m.supplierId && (
-                <p className="text-[11px] font-bold text-amber-800 bg-amber-50 rounded-2xl px-3 py-2">
+                <p className="text-xs font-bold text-amber-800 bg-amber-50 rounded-2xl px-3 py-2">
                   Campagne fournisseur · budget {(m.recompense * (m.maxParticipants || 0)).toLocaleString('fr-FR')} F à encaisser avant activation
                 </p>
               )}

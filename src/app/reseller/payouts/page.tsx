@@ -31,7 +31,7 @@ const MOYENS: { id: Moyen; libelle: string; detail: string }[] = [
 const STATUTS: Record<string, { libelle: string; classe: string }> = {
   pending: { libelle: 'En attente', classe: 'bg-amber-50 text-amber-800' },
   processing: { libelle: 'Virement en cours', classe: 'bg-amber-50 text-amber-800' },
-  completed: { libelle: 'Versé', classe: 'bg-suguba-brand/10 text-suguba-brand' },
+  completed: { libelle: 'Versé', classe: 'bg-suguba-brand/10 text-suguba-brand-dark' },
   rejected: { libelle: 'Refusé', classe: 'bg-rose-50 text-rose-700' },
 };
 
@@ -142,7 +142,7 @@ export default function ResellerPayoutsPage() {
 
       <main className="flex-1 max-w-3xl mx-auto px-4 sm:px-6 py-6 w-full space-y-5">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-slate-900">Mes gains</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Mes gains</h1>
           <p className="text-xs text-slate-500">Vos commissions, et leur retrait par Mobile Money ou en espèces au guichet.</p>
         </div>
 
@@ -154,19 +154,19 @@ export default function ResellerPayoutsPage() {
         ) : (
           <div className="bg-white rounded-3xl border border-slate-200 p-5 space-y-4">
             <div>
-              <p className="text-[11px] font-bold text-slate-500 uppercase">Disponible au retrait</p>
-              <p className="text-3xl font-black text-slate-900">{enF(disponible)}</p>
+              <p className="text-xs font-bold text-slate-500 uppercase">Disponible au retrait</p>
+              <p className="text-3xl font-bold text-slate-900">{enF(disponible)}</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-2xl bg-slate-50 p-3">
-                <p className="text-[11px] font-bold text-slate-500 uppercase flex items-center gap-1"><Clock className="w-3.5 h-3.5" />En attente</p>
-                <p className="text-lg font-black text-slate-900">{enF(soldes?.attente ?? 0)}</p>
-                <p className="text-[11px] text-slate-500">Disponible après le délai de sécurité qui suit la livraison</p>
+                <p className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1"><Clock className="w-3.5 h-3.5" />En attente</p>
+                <p className="text-lg font-bold text-slate-900">{enF(soldes?.attente ?? 0)}</p>
+                <p className="text-xs text-slate-500">Disponible après le délai de sécurité qui suit la livraison</p>
               </div>
               <div className="rounded-2xl bg-slate-50 p-3">
-                <p className="text-[11px] font-bold text-slate-500 uppercase flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" />Déjà versé</p>
-                <p className="text-lg font-black text-slate-900">{enF(soldes?.verse ?? 0)}</p>
-                <p className="text-[11px] text-slate-500">Depuis votre inscription</p>
+                <p className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" />Déjà versé</p>
+                <p className="text-lg font-bold text-slate-900">{enF(soldes?.verse ?? 0)}</p>
+                <p className="text-xs text-slate-500">Depuis votre inscription</p>
               </div>
             </div>
           </div>
@@ -174,7 +174,7 @@ export default function ResellerPayoutsPage() {
 
         {/* Retrait */}
         <div className="bg-white rounded-3xl border border-slate-200 p-5 space-y-4">
-          <h2 className="font-black text-base text-slate-900 flex items-center gap-2">
+          <h2 className="font-bold text-base text-slate-900 flex items-center gap-2">
             <Wallet className="w-5 h-5 text-suguba-brand" />
             <span>Retirer mes gains</span>
           </h2>
@@ -184,15 +184,15 @@ export default function ResellerPayoutsPage() {
               <CheckCircle2 className="w-10 h-10 text-suguba-brand mx-auto" />
               {succes.moyen === 'Agence Suguba' ? (
                 <>
-                  <p className="font-black text-slate-900">Retrait de {enF(succes.montant)} enregistré</p>
+                  <p className="font-bold text-slate-900">Retrait de {enF(succes.montant)} enregistré</p>
                   <p className="text-sm text-slate-600">
                     Présentez ce numéro au guichet Suguba (Hamdallaye ACI 2000, Bamako), avec votre pièce d&apos;identité :
                   </p>
-                  <p className="font-mono text-2xl font-black text-slate-900 tracking-wider">{succes.code}</p>
+                  <p className="font-mono text-2xl font-bold text-slate-900 tracking-wider">{succes.code}</p>
                 </>
               ) : (
                 <>
-                  <p className="font-black text-slate-900">Demande de {enF(succes.montant)} envoyée</p>
+                  <p className="font-bold text-slate-900">Demande de {enF(succes.montant)} envoyée</p>
                   <p className="text-sm text-slate-600">
                     Virement vers {succes.moyen} ({succes.telephone}). Suivez son état dans l&apos;historique ci-dessous.
                   </p>
@@ -223,7 +223,7 @@ export default function ResellerPayoutsPage() {
                         <PaymentLogo moyen={m.id === 'Agence Suguba' ? 'especes' : moyenDepuisCode(m.id)} taille="md" />
                         <span className="min-w-0">
                           <span className="block text-sm font-bold text-slate-900 leading-tight">{m.libelle}</span>
-                          <span className="block text-[11px] text-slate-500">{m.detail}</span>
+                          <span className="block text-xs text-slate-500">{m.detail}</span>
                         </span>
                         {actif && (
                           <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-suguba-brand text-white flex items-center justify-center">
@@ -259,7 +259,7 @@ export default function ResellerPayoutsPage() {
                   <span className="flex items-center justify-between">
                     <span>Montant (F)</span>
                     {disponible > 0 && (
-                      <button type="button" onClick={() => setMontant(disponible)} className="text-[11px] font-bold text-suguba-brand">
+                      <button type="button" onClick={() => setMontant(disponible)} className="text-xs font-bold text-suguba-brand">
                         Tout retirer
                       </button>
                     )}
@@ -274,7 +274,7 @@ export default function ResellerPayoutsPage() {
                     placeholder={String(retraitMinimum)}
                     className="mt-1 w-full h-12 px-3.5 rounded-2xl border border-slate-200 bg-slate-50 text-base font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-suguba-brand/30 focus:border-suguba-brand"
                   />
-                  <span className="text-[11px] font-normal text-slate-500 mt-1 block">Minimum {enF(retraitMinimum)}</span>
+                  <span className="text-xs font-normal text-slate-500 mt-1 block">Minimum {enF(retraitMinimum)}</span>
                 </label>
               </div>
 
@@ -288,7 +288,7 @@ export default function ResellerPayoutsPage() {
                 {envoi ? 'Envoi…' : moyen === 'Agence Suguba' ? 'Obtenir mon numéro de retrait' : 'Demander le virement'}
               </Button>
               {!chargement && !assez && (
-                <p className="text-[11px] text-slate-500 text-center">
+                <p className="text-xs text-slate-500 text-center">
                   Vous pourrez retirer dès que votre solde disponible atteint {enF(retraitMinimum)}.
                 </p>
               )}
@@ -298,7 +298,7 @@ export default function ResellerPayoutsPage() {
 
         {/* Historique */}
         <div className="bg-white rounded-3xl border border-slate-200 p-5 space-y-3">
-          <h2 className="font-black text-base text-slate-900 flex items-center gap-2">
+          <h2 className="font-bold text-base text-slate-900 flex items-center gap-2">
             <History className="w-5 h-5 text-slate-500" />
             <span>Historique des retraits</span>
           </h2>
@@ -314,13 +314,13 @@ export default function ResellerPayoutsPage() {
                       <PaymentLogo moyen={/agence|cash|esp/i.test(r.moyen) ? 'especes' : moyenDepuisCode(r.moyen)} taille="md" />
                       <div className="min-w-0">
                         <p className="text-sm font-bold text-slate-900">{enF(r.montant)} · {r.moyen}</p>
-                        <p className="text-[11px] text-slate-500 truncate">
+                        <p className="text-xs text-slate-500 truncate">
                           {new Date(r.creeLe).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
                           {' · '}<span className="font-mono">{r.id}</span>
                         </p>
                       </div>
                     </div>
-                    <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold shrink-0 ${s.classe}`}>{s.libelle}</span>
+                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold shrink-0 ${s.classe}`}>{s.libelle}</span>
                   </div>
                 );
               })}

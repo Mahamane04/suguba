@@ -37,7 +37,7 @@ export function Field({
       {erreur ? (
         <p className="text-xs font-semibold text-rose-600">{erreur}</p>
       ) : aide ? (
-        <p className="text-[11px] text-slate-500">{aide}</p>
+        <p className="text-xs text-slate-500">{aide}</p>
       ) : null}
     </div>
   );

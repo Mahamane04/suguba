@@ -1,0 +1,2965 @@
+{
+ "majLe": "2026-09-24",
+ "roles": [
+  {
+   "cle": "visiteur",
+   "titre": "Client / visiteur",
+   "lettre": "V",
+   "acces": "Sans compte",
+   "intro": "Ce que voit toute personne qui ouvre app.sugubaml.com : acheter, suivre sa commande, découvrir les boutiques, et devenir partenaire.",
+   "sessionDemo": null
+  },
+  {
+   "cle": "revendeur",
+   "titre": "Revendeur",
+   "lettre": "R",
+   "acces": "Connecté comme revendeur",
+   "intro": "Le revendeur partage des produits avec son lien personnel et touche une commission sur chaque vente livrée. Menu du bas : Accueil · Catalogue · Ventes · Gains · Marketing.",
+   "sessionDemo": "reseller"
+  },
+  {
+   "cle": "fournisseur",
+   "titre": "Fournisseur",
+   "lettre": "F",
+   "acces": "Connecté comme fournisseur validé",
+   "intro": "Le fournisseur dépose ses produits, gère son stock et s’appuie sur le réseau de revendeurs. Menu du bas : Dashboard · Stocks · Ajouter · Réseau.",
+   "sessionDemo": "supplier"
+  },
+  {
+   "cle": "livreur",
+   "titre": "Livreur",
+   "lettre": "L",
+   "acces": "Connecté comme livreur validé",
+   "intro": "Le livreur voit ses courses, remet la commande contre le code secret du client, puis dépose les espèces au guichet. Menu du bas : Courses · Portefeuille.",
+   "sessionDemo": "driver"
+  },
+  {
+   "cle": "admin",
+   "titre": "Admin Suguba",
+   "lettre": "A",
+   "acces": "Connecté comme admin (ou membre d’équipe)",
+   "intro": "L’équipe Suguba confirme les commandes, assigne les livreurs, modère le catalogue, paie les revendeurs et anime le réseau. Menu du bas : Vue globale · Produits · Analyses · SAV.",
+   "sessionDemo": "admin"
+  }
+ ],
+ "communs": [
+  {
+   "titre": "En haut de chaque page",
+   "points": [
+    "**Bandeau « Installer l’application »** : ajoute Suguba sur l’écran d’accueil du téléphone, comme une vraie appli. La croix le masque.",
+    "**Logo SUGUBA** : retour à l’accueil.",
+    "**Loupe** : recherche de produits et de boutiques.",
+    "**Sac + pastille verte** : le panier et son nombre d’articles.",
+    "**Cloche** : les notifications (nouveautés des boutiques suivies, ventes…).",
+    "**☰ Menu** : connexion ou « Mon espace », « Gagner avec Suguba », pages légales, téléphone du support, « Se déconnecter »."
+   ]
+  },
+  {
+   "titre": "En bas de chaque page",
+   "points": [
+    "**Menu du bas**, qui change selon le profil. Visiteur : Boutique · Suivi · Gagner · Connexion. Revendeur : Accueil · Catalogue · Ventes · Gains · Marketing. Fournisseur : Dashboard · Stocks · Ajouter · Réseau. Livreur : Courses · Portefeuille. Admin : Vue globale · Produits · Analyses · SAV.",
+    "**Bulle WhatsApp verte** : écrit directement au support Suguba (+223 89 46 00 00).",
+    "**Pendant une commande**, le menu du bas est remplacé par la barre flottante « Total + Confirmer »."
+   ]
+  },
+  {
+   "titre": "Comment les captures sont faites",
+   "alerte": true,
+   "points": [
+    "Téléphone de 390 px de large (taille iPhone), sur la vraie base, **sans rien enregistrer** : aucun formulaire envoyé, aucune commande passée.",
+    "Les espaces pro sont vus avec les **comptes de démonstration** : leurs listes sont vides et certaines pages affichent « pas encore disponible ».",
+    "Sur toutes les captures, **noms, téléphones et e-mails des vrais utilisateurs sont masqués**.",
+    "Les longues pages s’affichent dans un téléphone qu’on peut faire défiler."
+   ]
+  }
+ ],
+ "parcours": [
+  {
+   "titre": "Un client achète",
+   "etapes": [
+    {
+     "texte": "Accueil",
+     "page": "accueil"
+    },
+    {
+     "texte": "Recherche ou boutiques proches (facultatif)",
+     "page": "recherche"
+    },
+    {
+     "texte": "Fiche produit",
+     "page": "fiche-produit"
+    },
+    {
+     "texte": "« Commander » ou « Ajouter au panier »",
+     "page": "commander"
+    },
+    {
+     "texte": "Confirmer : numéro de commande + code secret",
+     "page": "panier-confirmation"
+    },
+    {
+     "texte": "Suivi de la commande",
+     "page": "suivi"
+    },
+    {
+     "texte": "Remise : le client donne son code au livreur"
+    }
+   ]
+  },
+  {
+   "titre": "Un revendeur vend",
+   "etapes": [
+    {
+     "texte": "Rejoindre puis inscription",
+     "page": "rejoindre"
+    },
+    {
+     "texte": "Démarrage en 8 étapes",
+     "page": "rev-demarrer"
+    },
+    {
+     "texte": "Catalogue : « Partager » (lien suivi) ou « + Vente »",
+     "page": "rev-catalogue"
+    },
+    {
+     "texte": "Le client commande",
+     "page": "commander"
+    },
+    {
+     "texte": "Mes ventes",
+     "page": "rev-ventes"
+    },
+    {
+     "texte": "Livrée + 14 jours : commission disponible",
+     "page": "rev-gains"
+    },
+    {
+     "texte": "Retrait Mobile Money ou espèces"
+    }
+   ]
+  },
+  {
+   "titre": "Une commande côté Suguba",
+   "etapes": [
+    {
+     "texte": "Appel de confirmation",
+     "page": "adm-vue"
+    },
+    {
+     "texte": "Assignation d’un livreur",
+     "page": "adm-vue"
+    },
+    {
+     "texte": "Course du livreur",
+     "page": "liv-courses"
+    },
+    {
+     "texte": "Livrée contre le code secret du client"
+    },
+    {
+     "texte": "Espèces remises au guichet",
+     "page": "liv-portefeuille"
+    },
+    {
+     "texte": "Commission débloquée puis retrait payé",
+     "page": "adm-vue"
+    }
+   ]
+  }
+ ],
+ "aSavoir": [
+  {
+   "titre": "Pages de démonstration, pas encore branchées",
+   "alerte": true,
+   "points": [
+    "**Admin › Diffusion** : « Diffuser » n’envoie **aucun** message, et les chiffres affichés (142 revendeurs, 18 livreurs, 12 grossistes) sont écrits en dur, pas lus en base.",
+    "**Admin › Checklist** : « Purger données de test » ne remet à zéro que l’affichage du téléphone, pas la base. Le score « 15 / 16 » n’est pas calculé automatiquement.",
+    "**Dossier partenaire B2B** : il annonce « +500 revendeurs », un chiffre commercial à mettre à jour."
+   ]
+  },
+  {
+   "titre": "Pages volontairement non capturées",
+   "points": [
+    "`/admin/boutique-suguba` : l’ouvrir **crée** la boutique officielle de Suguba. À ouvrir par vous le moment venu.",
+    "`/boutique/<adresse>` : aucune boutique réseau n’existe encore en base ; elles se créent quand un revendeur ou un fournisseur ouvre « Ma boutique ».",
+    "`/order-success/<n°>` et `/track/<n°>` : il faut une vraie commande.",
+    "`/r/<code>` et `/go/<code>` : liens courts de partage, qui redirigent en mémorisant le revendeur.",
+    "`/auth/callback` : page technique de retour après la connexion Google."
+   ]
+  }
+ ],
+ "journal": [
+  {
+   "date": "2026-09-24",
+   "titre": "Connexion reconnue du premier coup, Réglages économiques testés et améliorés",
+   "demande": "« peux tu fixer ce problème je suis obliger de me connecter 2 fois des reconnaitre la statut de connecté surtout quand on ciique sur connecté avec google » et « voir aussi réellement les paramètres reglage economique teste le et ameliore le au maximum possible ».",
+   "realise": [
+    "Connexion : après Google, l’app recharge complètement la page d’arrivée au lieu d’un changement de page « en douceur » qui laissait l’en-tête sur « Se connecter » alors que la session était posée.",
+    "Connexion : la session est relue au retour sur l’app (autre onglet, page restaurée sur iPhone), et la page de retour Google attend jusqu’à 8 s que le jeton soit lu au lieu d’afficher « connexion incomplète ».",
+    "Connexion : ouvrir /login en étant déjà connecté mène directement à son espace (« Vous êtes déjà connecté »).",
+    "Réglages économiques testés sur les réglages et les 5 produits réels : dans tous les modes, le taux Suguba (1 %) ne changeait pas le prix client, fixé par le « plancher » de coûts, surtout la provision pour refus (4 % du prix, soit 16 000 F sur un article à 400 000 F).",
+    "Nouveau choix : provision pour refus « sur la course perdue » (taux de refus × livreur aller + retour) ou « sur le prix du produit » (ancien calcul, gardé par défaut). Exemple : à 15 % de refus, l’article à 400 000 F passe de 427 500 F à 410 500 F conseillés, sans vente à perte.",
+    "Panneau refait : « Où va l’argent d’une vente » (barre fournisseur / revendeur / coûts / Suguba) et explication claire quand le prix est relevé au plancher, avec le coût le plus lourd.",
+    "Impact en direct sur les produits en ligne avant d’enregistrer : commission avant → après, rentable ou non, prix conseillé avec les nouveaux réglages.",
+    "Barre « Enregistrer / Annuler » fixe au-dessus du menu, alerte si on quitte la page sans enregistrer, champs à 16 px (plus de zoom iPhone), virgule acceptée (« 2,5 »), avertissement quand la ligne « estimation provisoire » de 300 000 F/mois est encore comptée."
+   ],
+   "ecarts": [
+    "La connexion Google elle-même n’a pas pu être testée de bout en bout en local (elle exige le vrai compte Google) : testés la relecture de session, le renvoi depuis /login et la page de retour.",
+    "Rien n’a été enregistré dans les réglages réels : la provision « sur la course » et le taux de refus sont à choisir par l’admin.",
+    "Les prix des produits déjà en ligne ne changent pas tout seuls : le panneau montre le prix conseillé, sans bouton pour l’appliquer (à décider).",
+    "Les frais SasPay (1,5 %) sont comptés sur chaque commande, même payée en espèces à la livraison : à confirmer."
+   ],
+   "pages": [
+    "connexion",
+    "adm-vue"
+   ],
+   "commit": "",
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-23",
+   "titre": "Charte verte, étape 1 : couleurs, boutons, badges, textes",
+   "demande": "Fais-moi une analyse de l’UI/UX de mon SaaS et une proposition pour améliorer tout le design : charte des couleurs, boutons, boutiques revendeur / fournisseur, badges. Garde la couleur verte. — Après la première proposition : non, je n’aime pas ce style, il faut rester dans le thème vert de WhatsApp, minimaliste, en te référant aux palettes de mes références. — Puis : ok, commençons.",
+   "realise": [
+    "Audit publié (version 2, tout en vert) : lisibilité, cohérence, boutons, boutiques, badges, plan en 4 étapes.",
+    "Nouvelle palette en jetons : vert profond #0B3B2C, vert Suguba #09B500, vert WhatsApp #25D366, citron #C7F464, menthe, sauge.",
+    "Boutons : pilule, 40 à 52 px de haut ; action principale en vert profond avec texte blanc (12,5:1 au lieu de 2,76:1) ; nouvelles variantes WhatsApp et citron.",
+    "58 boutons faits main corrigés : blanc sur vert de marque, blanc sur emerald, blanc sur vert WhatsApp.",
+    "Textes : plus rien sous 13 px (489 textes de 9 à 11 px remontés) ; extra-gras supprimé (468 éléments).",
+    "Badges de confiance redessinés (sceau : menthe vérifié, citron performance, vert profond premium) ; états de commande avec un point de couleur.",
+    "Gain du revendeur en pastille citron ; catégorie active en citron sur les bandeaux vert profond."
+   ],
+   "ecarts": [
+    "Étape 1 seulement : le menu du bas, les en-têtes des espaces pro et les vitrines (bleu Facebook, bloc sombre) changent aux étapes 2 et 3.",
+    "Le bandeau « Installer l’application » reste permanent (étape 2)."
+   ],
+   "pages": [
+    "accueil",
+    "fiche-produit",
+    "rev-catalogue",
+    "vitrine-fournisseur",
+    "boutiques-quartier"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-23",
+   "titre": "Le fournisseur fixe la commission, Suguba prélève un % réglable",
+   "demande": "Je voudrais que ce soit le fournisseur qui décide de la commission reversée au revendeur en cas de vente, et que ce soit clair lors de l’insertion de l’article. Comment Suguba va gagner ? Il faut que l’administrateur puisse le gérer dans son panneau admin (exemple : 10 % de ce que va gagner le revendeur). — Réponse aux questions : (c), la part de Suguba est prélevée sur le revendeur ; les 1 % pourront être modifiés dans l’admin. Au départ, Suguba doit attirer le plus de monde ; on gagnera plus une fois les 100 000 utilisateurs atteints.",
+   "realise": [
+    "Constat : le fournisseur fixait DÉJÀ la part du revendeur depuis le 11/09 ; ce qui manquait, c’était la clarté et le prélèvement sur le revendeur.",
+    "Nouveau mode admin « Prélevé sur le revendeur » (Réglages économiques) : Suguba garde un % de la part revendeur, réglable (1 % pour le lancement). Le revendeur reçoit sa part moins ce %, au franc près (500 F → 495 F).",
+    "Le client paie prix fournisseur + part revendeur : Suguba n’ajoute plus son % au prix client dans ce mode.",
+    "Formulaire fournisseur : « C’est vous qui décidez », et détail en direct de chaque vente (client, fournisseur, revendeur avec le prélèvement, Suguba).",
+    "Tableau de simulation admin : colonne « Revendeur reçoit » et montant prélevé.",
+    "Commandes : la commission enregistrée et versée est la part nette ; le prélèvement revient à Suguba."
+   ],
+   "ecarts": [
+    "À FAIRE PAR VOUS : choisir « Prélevé sur le revendeur » et mettre 1 % dans Vue globale › Réglages économiques, puis Enregistrer. Le code est prêt, mais le réglage en vigueur reste « % du prix de vente ».",
+    "Les prix clients ne baissent PAS pour autant : sur vos 4 produits, le prix est fixé par le plancher de coûts (provision refus 4 %, coûts fixes 600 F/commande…), pas par le % de Suguba. Pour attirer par les prix, c’est ce plancher qu’il faut revoir (à décider).",
+    "Les prix déjà publiés ne sont pas recalculés quand on change de mode (seule la commission l’est) : Encre 205A reste à 24 000 F alors que le calcul actuel donne 23 000 F. À corriger produit par produit (Produits › Fixer le prix) ou par un recalcul global (à décider).",
+    "Sans revendeur (vente directe), Suguba garde toute la part revendeur, comme avant."
+   ],
+   "pages": [
+    "fou-ajouter",
+    "adm-vue"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-19",
+   "titre": "Le guide des parcours devient une page cachée du back-office",
+   "demande": "J’aime tellement cette idée que j’aimerais vraiment que tu inclues ça sur le saas, mais que ça ne soit pas visible pour tout le monde, uniquement pour l’administrateur général. Cela serait une page cachée. À chaque mise à jour ou à chaque modification, tu mets à jour la page avec les fonctionnalités, les explications, tout.",
+   "realise": [
+    "Nouvelle page /admin/guide, lue depuis docs/guide/guide.json (une seule source pour la page, les captures et les tests).",
+    "Accès : administrateur général uniquement (admin sans rôle d’équipe restreint, ou « Super Admin »). Tout autre visiteur reçoit « page introuvable » : la page n’existe pas pour lui.",
+    "Captures servies par une adresse elle aussi réservée à l’administrateur général : elles ne sont pas publiques.",
+    "Journal des demandes (cette section) : chaque future modification y ajoute ta demande, ce qui a été fait et les écarts.",
+    "Script de capture intégré au projet (npm run guide:captures), avec masquage automatique des noms, téléphones et e-mails.",
+    "Règle écrite dans les instructions du projet : toute modification met à jour le guide et le journal."
+   ],
+   "ecarts": [
+    "Aucun lien visible vers la page : c’est voulu (page cachée). Adresse à garder en favori."
+   ],
+   "pages": [
+    "adm-guide"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-18",
+   "titre": "Guide illustré de toutes les pages",
+   "demande": "Donne-moi la capture d’écran de toutes les pages actuellement disponibles sur l’app Suguba, dans l’ordre cette fois-ci, avec l’explication écrite de chaque bouton, fonctionnalité et autre nécessaire qui pourra me guider sur les parcours entre les pages.",
+   "realise": [
+    "77 pages décrites, 75 capturées en taille iPhone, rangées par profil et dans l’ordre des parcours.",
+    "Données personnelles masquées sur les captures admin.",
+    "Signalé : Diffusion admin et Purger (checklist) sont des maquettes ; « +500 revendeurs » sur le dossier B2B."
+   ],
+   "ecarts": [
+    "/admin/boutique-suguba non capturée : l’ouvrir crée la boutique officielle.",
+    "Les maquettes signalées ne sont pas encore corrigées : à décider."
+   ],
+   "pages": [
+    "adm-diffusion",
+    "adm-lancement",
+    "b2b-partenaire"
+   ],
+   "statut": "en ligne"
+  },
+  {
+   "date": "2026-09-18",
+   "titre": "Barres « Confirmer » remontées sur iPhone",
+   "demande": "Vérifie la carte « Confirmer · Total à la livraison », c’est trop en bas (j’utilise un iPhone). C’est à toi de voir comment la faire monter et l’adapter à l’écran utilisé.",
+   "realise": [
+    "Barre flottante décollée du bord (20 px minimum, ou marge iPhone + 12 px), à 12 px des côtés, coins arrondis.",
+    "Même règle sur la commande d’un produit, le panier et « + Vente » (une seule constante partagée)."
+   ],
+   "ecarts": [],
+   "pages": [
+    "commander",
+    "panier",
+    "rev-vente"
+   ],
+   "commit": "f0ff6f3",
+   "statut": "en ligne"
+  },
+  {
+   "date": "2026-09-18",
+   "titre": "Panier et « + Vente » pensés pour le téléphone",
+   "demande": "Ici le menu du bas est masqué, y a-t-il une raison ? — Même s’il faut masquer, il faut faire monter la colonne prix et commander car elle est trop en bas ; et s’il faut masquer le menu du bas, il faut toujours faire voir le bouton retour. — Sur « + Vente », je voudrais que ça s’affiche en plein écran au lieu d’un pop-up : quand le clavier apparaît, ça fait un zoom qui ne correspond pas à l’UI smartphone.",
+   "realise": [
+    "Panier : barre Total/Confirmer flottante et remontée, bouton retour en haut et dans la barre, menu du bas réaffiché quand le panier est vide.",
+    "« + Vente » : plein écran sur téléphone, retour en haut, validation fixée en bas, champs en 16 px (fin du zoom au clavier).",
+    "Correction trouvée en chemin : « + Vente » calculait la livraison sans le quartier (1 500 F affichés au lieu de 900 F pour Sikoroni)."
+   ],
+   "ecarts": [
+    "Le menu du bas reste masqué pendant une commande (choix expliqué) : remplacé par la barre de validation."
+   ],
+   "pages": [
+    "panier",
+    "panier-vide",
+    "rev-vente"
+   ],
+   "commit": "d22d744",
+   "statut": "en ligne"
+  },
+  {
+   "date": "2026-09-18",
+   "titre": "Boutiques par quartier",
+   "demande": "Vérifier le choix du quartier. On peut ajouter une fonctionnalité : chercher les boutiques par quartier, savoir les boutiques qui sont sur ce quartier ou à proximité — pas pour être livré, la livraison se fait au niveau de la commande. — Puis : c’est bon, mais essaie de refaire le design UI/UX pour l’améliorer.",
+   "realise": [
+    "Accueil : pastille « Mon quartier » et bouton « Boutiques », carrousel « Boutiques près de chez vous ».",
+    "Page /boutiques : boutiques du quartier puis à moins de 5 km, filtres (mon quartier, 2 km, catégories), quartiers voisins.",
+    "Quartier de boutique modifiable (revendeur, fournisseur, Suguba) ; repli sur l’entrepôt du fournisseur, jamais le domicile d’un revendeur."
+   ],
+   "ecarts": [
+    "Requête SQL supabase/migration-quartier-boutiques.sql à lancer dans Supabase pour que les boutiques enregistrent leur propre quartier.",
+    "Distances approximatives (centres de quartiers)."
+   ],
+   "pages": [
+    "accueil",
+    "boutiques-quartier",
+    "rev-boutique",
+    "fou-boutique"
+   ],
+   "commit": "cf26ea0",
+   "statut": "en ligne"
+  },
+  {
+   "date": "2026-09-18",
+   "titre": "Réseau Suguba (cahier des charges officiel)",
+   "demande": "Mettre en place le « Cahier des charges officiel SUGUBA – Évolution fonctionnelle » : suivi des partages et attribution, commissions, boutiques et abonnements, QR codes, parrainage, missions, calendrier, créateur de visuels, sponsorisation, livraison par distance ou par zones, tableaux de bord, back-office par domaine, équipe admin et permissions, Suguba vendeuse.",
+   "realise": [
+    "Liens de partage suivis (/go/<code>), attribution « le premier revendeur garde le client », commissions et primes.",
+    "Boutiques, abonnements, notifications, recherche globale, panier multi-articles, variantes.",
+    "Missions, parrainages, calendrier, créateur de visuels, vérifications et badges, sponsorisation.",
+    "Back-office par domaine, équipe admin avec rôles et permissions, équipe fournisseur, boutique Suguba."
+   ],
+   "ecarts": [
+    "Pas de vérification par SMS (retirée du projet) : le téléphone est vérifié par un appel de l’équipe.",
+    "Pas de publication automatique sur les réseaux sociaux."
+   ],
+   "pages": [
+    "rev-accueil",
+    "rev-missions",
+    "rev-parrainages",
+    "fou-sponsorisation",
+    "adm-backoffice",
+    "adm-equipe"
+   ],
+   "commit": "3908eb9",
+   "statut": "en ligne"
+  }
+ ],
+ "pages": [
+  {
+   "id": "accueil",
+   "role": "visiteur",
+   "titre": "Accueil",
+   "chemin": "/",
+   "but": "La vitrine : les produits en vente, tout de suite, sans créer de compte. Point de départ de presque tous les parcours.",
+   "elements": [
+    {
+     "nom": "Mon quartier",
+     "role": "Pastille en haut à gauche. Choisir son quartier (ou « Utiliser ma position »). Sert à afficher les boutiques proches, et pré-remplit le quartier lors d’une commande."
+    },
+    {
+     "nom": "Boutiques",
+     "role": "Ouvre la page des boutiques proches du quartier choisi."
+    },
+    {
+     "nom": "Barre de recherche",
+     "role": "Filtre les produits pendant la frappe. À partir de 2 lettres, un lien propose de chercher aussi dans les boutiques et les fournisseurs."
+    },
+    {
+     "nom": "Catégories",
+     "role": "Pastilles « Tous les produits », « Informatique & Bureautique »… : filtrent la liste."
+    },
+    {
+     "nom": "Boutiques près de chez vous",
+     "role": "Carrousel qui apparaît quand un quartier est choisi : boutiques du quartier puis des environs, avec la distance."
+    },
+    {
+     "nom": "Carte produit",
+     "role": "Photo et nom ouvrent la fiche. « Acheter » ouvre aussi la fiche. Le bouton WhatsApp partage le produit."
+    },
+    {
+     "nom": "Badge « Sponsorisé »",
+     "role": "Produit mis en avant par un fournisseur ; il n’apparaît que s’il correspond à la recherche ou à la catégorie."
+    },
+    {
+     "nom": "Gagner de l’argent avec Suguba",
+     "role": "Encart vers la page « Rejoindre » (revendeur, fournisseur, livreur, diaspora)."
+    },
+    {
+     "nom": "Garanties",
+     "role": "Payez à la livraison · Livraison 24 h à Bamako · Code secret à la remise."
+    }
+   ],
+   "suite": [
+    {
+     "id": "fiche-produit",
+     "libelle": "Fiche produit"
+    },
+    {
+     "id": "recherche",
+     "libelle": "Recherche"
+    },
+    {
+     "id": "boutiques-quartier",
+     "libelle": "Boutiques proches"
+    },
+    {
+     "id": "rejoindre",
+     "libelle": "Rejoindre"
+    },
+    {
+     "id": "menu-visiteur",
+     "libelle": "Menu ☰"
+    }
+   ],
+   "note": "Si le visiteur arrive par le lien d’un revendeur, la sélection de ce revendeur s’affiche en premier, et la vente lui est attribuée.",
+   "capture": {
+    "chemin": "/"
+   }
+  },
+  {
+   "id": "menu-visiteur",
+   "role": "visiteur",
+   "titre": "Menu ☰ (visiteur)",
+   "chemin": "/ · menu ouvert",
+   "but": "Le menu déroulant de l’en-tête, pour un visiteur non connecté.",
+   "elements": [
+    {
+     "nom": "Se connecter",
+     "role": "Page de connexion."
+    },
+    {
+     "nom": "Gagner avec Suguba",
+     "role": "Page « Rejoindre »."
+    },
+    {
+     "nom": "Conditions · Confidentialité · Garantie & SAV",
+     "role": "Pages légales."
+    },
+    {
+     "nom": "+223 89 46 00 00",
+     "role": "Appelle le support Suguba."
+    }
+   ],
+   "suite": [
+    {
+     "id": "connexion",
+     "libelle": "Connexion"
+    },
+    {
+     "id": "rejoindre",
+     "libelle": "Rejoindre"
+    },
+    {
+     "id": "cgu",
+     "libelle": "Conditions"
+    }
+   ],
+   "capture": {
+    "chemin": "/",
+    "geste": "menu"
+   }
+  },
+  {
+   "id": "recherche",
+   "role": "visiteur",
+   "titre": "Recherche",
+   "chemin": "/recherche?q=…",
+   "but": "Recherche globale : produits, boutiques et fournisseurs en un seul endroit.",
+   "elements": [
+    {
+     "nom": "Champ de recherche",
+     "role": "Tapez un mot (« encre », « ventilateur »…). Les résultats se mettent à jour."
+    },
+    {
+     "nom": "Résultats « Produits (n) »",
+     "role": "Chaque ligne ouvre la fiche du produit."
+    },
+    {
+     "nom": "Boutiques / Fournisseurs",
+     "role": "Apparaissent sous les produits quand le mot correspond à une boutique."
+    }
+   ],
+   "suite": [
+    {
+     "id": "fiche-produit",
+     "libelle": "Fiche produit"
+    },
+    {
+     "id": "vitrine-fournisseur",
+     "libelle": "Vitrine boutique"
+    }
+   ],
+   "capture": {
+    "chemin": "/recherche?q=encre"
+   }
+  },
+  {
+   "id": "fiche-produit",
+   "role": "visiteur",
+   "titre": "Fiche produit",
+   "chemin": "/p/<produit>",
+   "but": "Tout sur un article : photos, prix, description, et les deux façons de l’acheter.",
+   "elements": [
+    {
+     "nom": "Retour",
+     "role": "Revient à la page précédente."
+    },
+    {
+     "nom": "Photos",
+     "role": "Faire glisser pour voir les autres photos."
+    },
+    {
+     "nom": "Sélecteur de variante",
+     "role": "Quand le produit existe en plusieurs versions (couleur, taille…), on choisit ici."
+    },
+    {
+     "nom": "Commander",
+     "role": "Achat direct de cet article seul : ouvre « Finaliser la commande »."
+    },
+    {
+     "nom": "Ajouter au panier",
+     "role": "Pour acheter plusieurs articles en une seule commande."
+    },
+    {
+     "nom": "Partager (WhatsApp)",
+     "role": "Envoie le produit à un contact."
+    },
+    {
+     "nom": "Une question ? Écrivez-nous",
+     "role": "Ouvre WhatsApp avec le nom du produit déjà écrit."
+    }
+   ],
+   "suite": [
+    {
+     "id": "commander",
+     "libelle": "Finaliser la commande"
+    },
+    {
+     "id": "panier",
+     "libelle": "Panier"
+    }
+   ],
+   "capture": {
+    "chemin": "/p/encre-205a-hp"
+   }
+  },
+  {
+   "id": "commander",
+   "role": "visiteur",
+   "titre": "Finaliser la commande",
+   "chemin": "/p/<produit>/commander",
+   "but": "Commande d’un article, sans compte, en 3 blocs. Rien à payer avant la livraison.",
+   "elements": [
+    {
+     "nom": "← (en haut)",
+     "role": "Retour à la fiche produit."
+    },
+    {
+     "nom": "1 · Votre article",
+     "role": "Quantité avec − / +."
+    },
+    {
+     "nom": "2 · Vos coordonnées",
+     "role": "Nom et téléphone : le livreur appelle ou écrit sur WhatsApp avant de passer."
+    },
+    {
+     "nom": "3 · Livraison",
+     "role": "« À domicile » (frais selon le quartier) ou « Point relais » (gratuit à Bamako). Puis ville, quartier, repère pour le livreur, instructions."
+    },
+    {
+     "nom": "Ajouter un code promo",
+     "role": "Applique une remise si le code est valide."
+    },
+    {
+     "nom": "Récapitulatif",
+     "role": "Article + livraison = total à payer à la livraison."
+    },
+    {
+     "nom": "Barre flottante",
+     "role": "« Total à la livraison » et « Confirmer ». Elle se cache pendant la saisie pour ne pas masquer le champ."
+    }
+   ],
+   "suite": [
+    {
+     "id": "suivi",
+     "libelle": "Suivi de commande"
+    }
+   ],
+   "note": "Après « Confirmer », la page de réussite affiche le numéro de commande et le **code secret** à donner au livreur à la remise.",
+   "capture": {
+    "chemin": "/p/encre-205a-hp/commander"
+   }
+  },
+  {
+   "id": "panier-vide",
+   "role": "visiteur",
+   "titre": "Panier vide",
+   "chemin": "/panier",
+   "but": "Ce que voit le client tant qu’il n’a rien ajouté. Le menu du bas reste visible.",
+   "elements": [
+    {
+     "nom": "Découvrir les produits",
+     "role": "Retour à l’accueil."
+    }
+   ],
+   "suite": [
+    {
+     "id": "accueil",
+     "libelle": "Accueil"
+    }
+   ],
+   "capture": {
+    "chemin": "/panier"
+   }
+  },
+  {
+   "id": "panier",
+   "role": "visiteur",
+   "titre": "Panier",
+   "chemin": "/panier (avec des articles)",
+   "but": "Commander plusieurs articles en une fois, avec une seule saisie des coordonnées.",
+   "elements": [
+    {
+     "nom": "← Continuer mes achats",
+     "role": "Revient à la page précédente sans perdre le panier."
+    },
+    {
+     "nom": "Articles",
+     "role": "Quantité − / + et corbeille pour retirer."
+    },
+    {
+     "nom": "Coordonnées",
+     "role": "Nom, téléphone (WhatsApp)."
+    },
+    {
+     "nom": "Livraison",
+     "role": "À domicile ou point relais, ville, quartier, repère, instructions."
+    },
+    {
+     "nom": "Code promo",
+     "role": "« Appliquer » vérifie le code."
+    },
+    {
+     "nom": "Récapitulatif",
+     "role": "Si les articles viennent de plusieurs fournisseurs, le nombre de livraisons est indiqué."
+    },
+    {
+     "nom": "Barre flottante",
+     "role": "← Retour · Total · Confirmer."
+    }
+   ],
+   "suite": [
+    {
+     "id": "panier-confirmation",
+     "libelle": "Confirmation"
+    },
+    {
+     "id": "accueil",
+     "libelle": "Accueil"
+    }
+   ],
+   "capture": {
+    "chemin": "/panier",
+    "geste": "panier"
+   }
+  },
+  {
+   "id": "panier-confirmation",
+   "role": "visiteur",
+   "titre": "Confirmation du panier",
+   "chemin": "/panier/confirmation",
+   "but": "Après la commande d’un panier : les numéros de commande et les codes secrets. Sans commande récente (cas de la capture), un message renvoie vers le suivi.",
+   "elements": [
+    {
+     "nom": "Suivre une commande",
+     "role": "Ouvre la page de suivi."
+    }
+   ],
+   "suite": [
+    {
+     "id": "suivi",
+     "libelle": "Suivi"
+    }
+   ],
+   "capture": {
+    "chemin": "/panier/confirmation"
+   }
+  },
+  {
+   "id": "suivi",
+   "role": "visiteur",
+   "titre": "Suivre ma commande",
+   "chemin": "/track",
+   "but": "Le client retrouve l’état de sa commande avec son numéro (ex. SG-5BC5XBDT).",
+   "elements": [
+    {
+     "nom": "Numéro de commande",
+     "role": "À saisir, puis « Voir ma commande » : ouvre /track/ avec les étapes (à confirmer, confirmée, livreur assigné, en livraison, livrée)."
+    },
+    {
+     "nom": "Contacter Suguba sur WhatsApp",
+     "role": "Aide en direct."
+    },
+    {
+     "nom": "Retour au catalogue",
+     "role": "Accueil."
+    }
+   ],
+   "suite": [
+    {
+     "id": "accueil",
+     "libelle": "Accueil"
+    }
+   ],
+   "capture": {
+    "chemin": "/track"
+   }
+  },
+  {
+   "id": "boutiques-quartier",
+   "role": "visiteur",
+   "titre": "Boutiques près de chez vous",
+   "chemin": "/boutiques?quartier=…",
+   "but": "Trouver les vendeurs d’un quartier et des alentours (moins de 5 km environ). Sert à découvrir des boutiques, pas à la livraison.",
+   "elements": [
+    {
+     "nom": "Pastille « Quartier »",
+     "role": "Changer de quartier (ou utiliser sa position)."
+    },
+    {
+     "nom": "Filtres",
+     "role": "Toutes · Mon quartier · À 2 km · catégories."
+    },
+    {
+     "nom": "Carte boutique",
+     "role": "Nom, spécialité, badge « Votre quartier » ou distance. Ouvre la vitrine."
+    },
+    {
+     "nom": "Explorer un quartier voisin",
+     "role": "Raccourcis vers les 4 quartiers les plus proches."
+    },
+    {
+     "nom": "Vous vendez à … ?",
+     "role": "Invite un vendeur à ouvrir sa boutique (page Rejoindre)."
+    }
+   ],
+   "suite": [
+    {
+     "id": "vitrine-fournisseur",
+     "libelle": "Vitrine boutique"
+    },
+    {
+     "id": "rejoindre",
+     "libelle": "Rejoindre"
+    }
+   ],
+   "capture": {
+    "chemin": "/boutiques?quartier=Korofina%20Nord"
+   }
+  },
+  {
+   "id": "vitrine-fournisseur",
+   "role": "visiteur",
+   "titre": "Vitrine d’une boutique",
+   "chemin": "/s/<boutique>",
+   "but": "La page publique d’un fournisseur : ses produits, son nom, son quartier.",
+   "elements": [
+    {
+     "nom": "Copier le lien · Partager",
+     "role": "Diffuser la boutique (WhatsApp, Facebook)."
+    },
+    {
+     "nom": "Produits",
+     "role": "Chaque carte ouvre la fiche produit."
+    },
+    {
+     "nom": "Devenir revendeur",
+     "role": "Pour vendre les produits de cette boutique."
+    }
+   ],
+   "suite": [
+    {
+     "id": "fiche-produit",
+     "libelle": "Fiche produit"
+    },
+    {
+     "id": "rejoindre",
+     "libelle": "Rejoindre"
+    }
+   ],
+   "note": "Les boutiques du réseau (/boutique/) ajoutent le bouton **Suivre**, la galerie, la couverture et le lien « Boutiques voisines ».",
+   "capture": {
+    "chemin": "/s/micro-office"
+   }
+  },
+  {
+   "id": "boutiques-suivies",
+   "role": "visiteur",
+   "titre": "Boutiques suivies",
+   "chemin": "/boutiques-suivies",
+   "but": "Les boutiques que le client suit, pour voir leurs nouveautés en premier. Fonctionne sans compte (le numéro est mémorisé sur le téléphone).",
+   "elements": [
+    {
+     "nom": "Liste des boutiques",
+     "role": "Chaque ligne ouvre la boutique."
+    },
+    {
+     "nom": "Découvrir les produits",
+     "role": "Retour à l’accueil quand la liste est vide."
+    }
+   ],
+   "suite": [
+    {
+     "id": "accueil",
+     "libelle": "Accueil"
+    }
+   ],
+   "capture": {
+    "chemin": "/boutiques-suivies"
+   }
+  },
+  {
+   "id": "notifications",
+   "role": "visiteur",
+   "titre": "Notifications",
+   "chemin": "/notifications",
+   "but": "Les messages reçus : nouveaux produits et baisses de prix des boutiques suivies ; pour les pros, les ventes et les récompenses.",
+   "elements": [
+    {
+     "nom": "Mes boutiques suivies",
+     "role": "Accès direct à la liste."
+    }
+   ],
+   "suite": [
+    {
+     "id": "boutiques-suivies",
+     "libelle": "Boutiques suivies"
+    }
+   ],
+   "capture": {
+    "chemin": "/notifications"
+   }
+  },
+  {
+   "id": "diaspora",
+   "role": "visiteur",
+   "titre": "Diaspora",
+   "chemin": "/diaspora",
+   "but": "Un proche à l’étranger commande pour sa famille à Bamako, avec les prix affichés dans sa devise.",
+   "elements": [
+    {
+     "nom": "€ EUR · $ USD · FCFA",
+     "role": "Change la devise d’affichage."
+    },
+    {
+     "nom": "Choix de l’article",
+     "role": "Touchez un produit pour le sélectionner."
+    },
+    {
+     "nom": "Formulaire",
+     "role": "E-mail de l’acheteur, nom et téléphone du destinataire à Bamako, adresse et repère."
+    },
+    {
+     "nom": "Régler … par carte",
+     "role": "Paiement en ligne par carte bancaire."
+    }
+   ],
+   "suite": [
+    {
+     "id": "suivi",
+     "libelle": "Suivi"
+    }
+   ],
+   "capture": {
+    "chemin": "/diaspora"
+   }
+  },
+  {
+   "id": "b2b-devis",
+   "role": "visiteur",
+   "titre": "Devis entreprise (B2B)",
+   "chemin": "/b2b/quote",
+   "but": "Une entreprise ou une ONG demande un devis pour une commande groupée.",
+   "elements": [
+    {
+     "nom": "1 · Informations de l’entreprise",
+     "role": "Raison sociale, NIF/RCCM, contact, téléphone."
+    },
+    {
+     "nom": "2 · Produit & quantité",
+     "role": "Paliers de remise : 10 pcs −5 %, 20 pcs −10 %, 50 pcs et plus −15 %."
+    },
+    {
+     "nom": "Aperçu du devis",
+     "role": "Montants calculés en direct."
+    },
+    {
+     "nom": "Générer la facture proforma",
+     "role": "Produit le document à imprimer ou transmettre."
+    }
+   ],
+   "suite": [
+    {
+     "id": "b2b-partenaire",
+     "libelle": "Dossier partenaire"
+    }
+   ],
+   "capture": {
+    "chemin": "/b2b/quote"
+   }
+  },
+  {
+   "id": "b2b-partenaire",
+   "role": "visiteur",
+   "titre": "Dossier partenaire (B2B)",
+   "chemin": "/b2b/partner",
+   "but": "Présentation commerciale pour les grandes enseignes et les grossistes qui voudraient vendre via le réseau Suguba.",
+   "elements": [
+    {
+     "nom": "Imprimer en A4 / Exporter PDF",
+     "role": "Version imprimable."
+    },
+    {
+     "nom": "Envoyer sur WhatsApp",
+     "role": "Partage le lien du dossier."
+    }
+   ],
+   "suite": [
+    {
+     "id": "b2b-devis",
+     "libelle": "Devis B2B"
+    }
+   ],
+   "note": "Le texte annonce « +500 revendeurs » : chiffre commercial à mettre à jour selon la réalité.",
+   "attention": true,
+   "capture": {
+    "chemin": "/b2b/partner"
+   }
+  },
+  {
+   "id": "rejoindre",
+   "role": "visiteur",
+   "titre": "Gagner avec Suguba",
+   "chemin": "/rejoindre",
+   "but": "La porte d’entrée des partenaires. Un onglet par profil, avec les étapes expliquées.",
+   "elements": [
+    {
+     "nom": "Revendeur · Fournisseur · Livreur · Diaspora",
+     "role": "Onglets : chacun explique comment ça marche et ce qu’on gagne."
+    },
+    {
+     "nom": "Devenir revendeur (ou équivalent)",
+     "role": "Lance l’inscription du profil choisi."
+    },
+    {
+     "nom": "Se connecter",
+     "role": "Pour ceux qui ont déjà un compte."
+    }
+   ],
+   "suite": [
+    {
+     "id": "revendeur-inscription",
+     "libelle": "Inscription revendeur"
+    },
+    {
+     "id": "inscription",
+     "libelle": "Créer un compte"
+    },
+    {
+     "id": "connexion",
+     "libelle": "Connexion"
+    }
+   ],
+   "capture": {
+    "chemin": "/rejoindre"
+   }
+  },
+  {
+   "id": "revendeur-inscription",
+   "role": "visiteur",
+   "titre": "Inscription revendeur",
+   "chemin": "/reseller/join",
+   "but": "Page d’arrivée des liens de parrainage : inscription revendeur en un bouton.",
+   "elements": [
+    {
+     "nom": "Code de parrainage",
+     "role": "S’affiche quand on arrive par le lien d’un parrain ; il est mémorisé."
+    },
+    {
+     "nom": "S’inscrire avec Google",
+     "role": "Crée le compte ; il restera à confirmer le numéro et le quartier."
+    },
+    {
+     "nom": "Simulateur de revenus",
+     "role": "Curseurs pour estimer les gains du mois."
+    }
+   ],
+   "suite": [
+    {
+     "id": "rev-demarrer",
+     "libelle": "Démarrage revendeur"
+    }
+   ],
+   "capture": {
+    "chemin": "/reseller/join"
+   }
+  },
+  {
+   "id": "connexion",
+   "role": "visiteur",
+   "titre": "Connexion",
+   "chemin": "/login",
+   "but": "Se connecter à un compte pro (revendeur, fournisseur, livreur, admin). Les clients n’en ont pas besoin.",
+   "elements": [
+    {
+     "nom": "Continuer avec Google",
+     "role": "Connexion en un geste."
+    },
+    {
+     "nom": "Recevoir mon lien de connexion",
+     "role": "Saisir son e-mail : un lien de connexion arrive par e-mail (sans mot de passe)."
+    },
+    {
+     "nom": "Revendeur · Fournisseur · Livreur · Admin",
+     "role": "Connexion rapide aux comptes de démonstration, visible seulement en mode démo (test local)."
+    },
+    {
+     "nom": "Créer un compte pro",
+     "role": "Vers l’inscription."
+    }
+   ],
+   "suite": [
+    {
+     "id": "inscription",
+     "libelle": "Créer un compte"
+    }
+   ],
+   "note": "Après connexion, on revient automatiquement à la page qu’on voulait ouvrir. Déjà connecté ? /login mène directement à son espace.",
+   "capture": {
+    "chemin": "/login"
+   }
+  },
+  {
+   "id": "inscription",
+   "role": "visiteur",
+   "titre": "Créer mon compte",
+   "chemin": "/register",
+   "but": "Inscription d’un partenaire en 2 étapes.",
+   "elements": [
+    {
+     "nom": "1 · Vous êtes…",
+     "role": "Revendeur, Fournisseur, Livreur ou Diaspora. Une ligne rappelle que le client n’a pas besoin de compte."
+    },
+    {
+     "nom": "2 · Vérifiez votre identité",
+     "role": "Google, ou lien reçu par e-mail."
+    }
+   ],
+   "suite": [
+    {
+     "id": "inscription-fin",
+     "libelle": "Finaliser l’inscription"
+    },
+    {
+     "id": "connexion",
+     "libelle": "Connexion"
+    }
+   ],
+   "capture": {
+    "chemin": "/register"
+   }
+  },
+  {
+   "id": "inscription-fin",
+   "role": "visiteur",
+   "titre": "Finaliser l’inscription",
+   "chemin": "/register/complete",
+   "but": "Juste après Google ou le lien e-mail : numéro de téléphone, quartier, code de parrainage et, selon le profil, les infos métier (entreprise et entrepôt du fournisseur, véhicule et zone du livreur).",
+   "elements": [
+    {
+     "nom": "Enregistrer",
+     "role": "Envoie le dossier. Revendeur : accès immédiat. Fournisseur et livreur : validation par Suguba."
+    }
+   ],
+   "suite": [
+    {
+     "id": "attente-validation",
+     "libelle": "Dossier en examen"
+    },
+    {
+     "id": "rev-demarrer",
+     "libelle": "Démarrage revendeur"
+    }
+   ],
+   "note": "Sans être connecté, cette adresse renvoie vers « Créer mon compte » : c’est ce que montre le test, d’où l’absence de capture.",
+   "capture": null
+  },
+  {
+   "id": "attente-validation",
+   "role": "visiteur",
+   "titre": "Dossier en examen",
+   "chemin": "/pending-approval",
+   "but": "Ce que voit un fournisseur ou un livreur tant que Suguba n’a pas validé son dossier.",
+   "elements": [
+    {
+     "nom": "Se déconnecter",
+     "role": "Quitte le compte."
+    },
+    {
+     "nom": "Retour à l’accueil",
+     "role": "Vitrine."
+    }
+   ],
+   "suite": [
+    {
+     "id": "accueil",
+     "libelle": "Accueil"
+    }
+   ],
+   "capture": {
+    "chemin": "/pending-approval"
+   }
+  },
+  {
+   "id": "invitation-equipe",
+   "role": "visiteur",
+   "titre": "Invitation d’équipe",
+   "chemin": "/equipe/invitation?…",
+   "but": "Un fournisseur invite un collaborateur (commercial, stock, marketing). Le lien reçu mène ici.",
+   "elements": [
+    {
+     "nom": "Se connecter",
+     "role": "L’invité se connecte ou crée son compte, puis accepte. Le fournisseur confirme ensuite l’accès."
+    }
+   ],
+   "suite": [
+    {
+     "id": "fou-equipe",
+     "libelle": "Mon équipe (fournisseur)"
+    }
+   ],
+   "capture": {
+    "chemin": "/equipe/invitation"
+   }
+  },
+  {
+   "id": "cgu",
+   "role": "visiteur",
+   "titre": "Conditions générales",
+   "chemin": "/legal/terms",
+   "but": "Règles d’utilisation et de vente : rôle de Suguba, validation par code, prix, droit applicable.",
+   "elements": [
+    {
+     "nom": "Liens en bas",
+     "role": "Contrat revendeur · Protection des données · Garantie & SAV."
+    }
+   ],
+   "suite": [
+    {
+     "id": "contrat-revendeur",
+     "libelle": "Contrat revendeur"
+    },
+    {
+     "id": "confidentialite",
+     "libelle": "Confidentialité"
+    },
+    {
+     "id": "garantie",
+     "libelle": "Garantie"
+    }
+   ],
+   "capture": {
+    "chemin": "/legal/terms"
+   }
+  },
+  {
+   "id": "confidentialite",
+   "role": "visiteur",
+   "titre": "Confidentialité",
+   "chemin": "/legal/privacy",
+   "but": "Données collectées, sécurité, droits d’accès et de suppression (APDP).",
+   "elements": [],
+   "suite": [
+    {
+     "id": "cgu",
+     "libelle": "Conditions"
+    }
+   ],
+   "capture": {
+    "chemin": "/legal/privacy"
+   }
+  },
+  {
+   "id": "garantie",
+   "role": "visiteur",
+   "titre": "Garantie & SAV",
+   "chemin": "/legal/warranty",
+   "but": "Vérification à la réception, durée de garantie, procédure de service après-vente.",
+   "elements": [],
+   "suite": [
+    {
+     "id": "cgu",
+     "libelle": "Conditions"
+    }
+   ],
+   "capture": {
+    "chemin": "/legal/warranty"
+   }
+  },
+  {
+   "id": "contrat-revendeur",
+   "role": "visiteur",
+   "titre": "Contrat revendeur",
+   "chemin": "/legal/reseller-agreement",
+   "but": "Statut du revendeur, calcul des commissions, délai de sécurité, retraits Mobile Money, règles anti-fraude.",
+   "elements": [
+    {
+     "nom": "Retour à l’espace revendeur",
+     "role": "Pour un revendeur connecté."
+    }
+   ],
+   "suite": [
+    {
+     "id": "rev-accueil",
+     "libelle": "Accueil revendeur"
+    }
+   ],
+   "capture": {
+    "chemin": "/legal/reseller-agreement"
+   }
+  },
+  {
+   "id": "rev-demarrer",
+   "role": "revendeur",
+   "titre": "Démarrage en 8 étapes",
+   "chemin": "/reseller/demarrer",
+   "but": "Guide de premier lancement : nom, quartier, boutique, premier partage… une étape à la fois.",
+   "elements": [
+    {
+     "nom": "Barre d’étapes",
+     "role": "Progression « Étape 1 sur 8 »."
+    },
+    {
+     "nom": "Continuer",
+     "role": "Enregistre l’étape et passe à la suivante."
+    },
+    {
+     "nom": "Terminer plus tard",
+     "role": "Reprise possible depuis l’accueil revendeur."
+    }
+   ],
+   "suite": [
+    {
+     "id": "rev-accueil",
+     "libelle": "Accueil revendeur"
+    }
+   ],
+   "capture": {
+    "chemin": "/reseller/demarrer"
+   }
+  },
+  {
+   "id": "rev-accueil",
+   "role": "revendeur",
+   "titre": "Accueil revendeur",
+   "chemin": "/reseller",
+   "but": "Le tableau de bord : ce qu’il faut partager aujourd’hui, les dernières ventes, et tous les outils.",
+   "elements": [
+    {
+     "nom": "Bandeau commissions",
+     "role": "Rappel : une commission est débloquée 14 jours après la livraison."
+    },
+    {
+     "nom": "Terminez votre démarrage",
+     "role": "Reprend le guide en 8 étapes."
+    },
+    {
+     "nom": "Retirer mes gains",
+     "role": "Vers « Mes gains »."
+    },
+    {
+     "nom": "Raccourcis",
+     "role": "Catalogue · Créer une commande · Mes ventes · Boutiques."
+    },
+    {
+     "nom": "À partager aujourd’hui",
+     "role": "Produits conseillés : « Partager » (lien suivi) ou « Créer une commande »."
+    },
+    {
+     "nom": "Dernières ventes",
+     "role": "Les ventes récentes ; « Voir tout » ouvre Mes ventes."
+    },
+    {
+     "nom": "Outils de vente",
+     "role": "Affiches statut · Ma carte & QR · Simulateur · Ma boutique · Fournisseurs · Missions · Créer un visuel · Mon calendrier · Mes partages · Mes parrainages · Mes clients · Mon profil vérifié."
+    }
+   ],
+   "suite": [
+    {
+     "id": "rev-catalogue",
+     "libelle": "Catalogue"
+    },
+    {
+     "id": "rev-ventes",
+     "libelle": "Mes ventes"
+    },
+    {
+     "id": "rev-gains",
+     "libelle": "Mes gains"
+    },
+    {
+     "id": "rev-boutique",
+     "libelle": "Ma boutique"
+    },
+    {
+     "id": "rev-missions",
+     "libelle": "Missions"
+    }
+   ],
+   "capture": {
+    "chemin": "/reseller"
+   }
+  },
+  {
+   "id": "rev-menu",
+   "role": "revendeur",
+   "titre": "Menu ☰ (connecté)",
+   "chemin": "/reseller · menu ouvert",
+   "but": "Le menu quand on est connecté.",
+   "elements": [
+    {
+     "nom": "Mon espace",
+     "role": "Accueil de son profil."
+    },
+    {
+     "nom": "Pages légales · support",
+     "role": "Comme pour le visiteur."
+    },
+    {
+     "nom": "Se déconnecter",
+     "role": "Ferme la session."
+    }
+   ],
+   "suite": [
+    {
+     "id": "rev-accueil",
+     "libelle": "Accueil revendeur"
+    }
+   ],
+   "capture": {
+    "chemin": "/reseller",
+    "geste": "menu"
+   }
+  },
+  {
+   "id": "rev-catalogue",
+   "role": "revendeur",
+   "titre": "Catalogue à partager",
+   "chemin": "/reseller/catalog",
+   "but": "Tous les produits qu’on peut vendre, avec la commission de chacun.",
+   "elements": [
+    {
+     "nom": "Recommandés · Tous les fournisseurs",
+     "role": "Ses fournisseurs suivis d’abord, ou tout le catalogue."
+    },
+    {
+     "nom": "Recherche · catégories",
+     "role": "Filtrent la liste."
+    },
+    {
+     "nom": "Badge vert « +3 000 F »",
+     "role": "Commission gagnée sur une vente."
+    },
+    {
+     "nom": "Partager (WhatsApp)",
+     "role": "Envoie le produit avec **son** lien : la vente lui est attribuée automatiquement."
+    },
+    {
+     "nom": "Icône image",
+     "role": "Crée une affiche du produit pour le statut WhatsApp."
+    },
+    {
+     "nom": "+ Vente",
+     "role": "Le client a commandé en direct : saisir la commande pour lui."
+    },
+    {
+     "nom": "Voir",
+     "role": "Fiche produit publique."
+    },
+    {
+     "nom": "Studio affiches",
+     "role": "Vers Marketing."
+    }
+   ],
+   "suite": [
+    {
+     "id": "rev-vente",
+     "libelle": "Nouvelle vente"
+    },
+    {
+     "id": "rev-marketing",
+     "libelle": "Marketing"
+    },
+    {
+     "id": "fiche-produit",
+     "libelle": "Fiche produit"
+    }
+   ],
+   "capture": {
+    "chemin": "/reseller/catalog"
+   }
+  },
+  {
+   "id": "rev-vente",
+   "role": "revendeur",
+   "titre": "Nouvelle vente (+ Vente)",
+   "chemin": "/reseller/catalog · + Vente",
+   "but": "Écran plein écran pour enregistrer la commande d’un client à sa place.",
+   "elements": [
+    {
+     "nom": "← Retour",
+     "role": "Ferme sans rien enregistrer."
+    },
+    {
+     "nom": "Produit",
+     "role": "Quantité − / + et commission par unité."
+    },
+    {
+     "nom": "Le client",
+     "role": "Nom et téléphone : Suguba l’appelle pour confirmer."
+    },
+    {
+     "nom": "Livraison",
+     "role": "Ville, quartier (liste officielle), repère, instructions."
+    },
+    {
+     "nom": "Récapitulatif",
+     "role": "Le client paie : articles + livraison (selon le quartier) · ta commission."
+    },
+    {
+     "nom": "Valider la vente",
+     "role": "Enregistre la commande ; l’écran suivant affiche le numéro et le montant à encaisser."
+    }
+   ],
+   "suite": [
+    {
+     "id": "rev-ventes",
+     "libelle": "Mes ventes"
+    }
+   ],
+   "capture": {
+    "chemin": "/reseller/catalog",
+    "geste": "vente"
+   }
+  },
+  {
+   "id": "rev-ventes",
+   "role": "revendeur",
+   "titre": "Mes ventes",
+   "chemin": "/reseller/orders",
+   "but": "Suivi de toutes ses commandes, qu’elles viennent d’un lien partagé ou d’une vente saisie.",
+   "elements": [
+    {
+     "nom": "Filtres",
+     "role": "Toutes · Livrées & payées · En cours de livraison · À confirmer."
+    },
+    {
+     "nom": "Carte commande",
+     "role": "Client, produit, statut, commission."
+    }
+   ],
+   "suite": [
+    {
+     "id": "rev-gains",
+     "libelle": "Mes gains"
+    }
+   ],
+   "capture": {
+    "chemin": "/reseller/orders"
+   }
+  },
+  {
+   "id": "rev-gains",
+   "role": "revendeur",
+   "titre": "Mes gains",
+   "chemin": "/reseller/payouts",
+   "but": "Solde des commissions et demande de retrait.",
+   "elements": [
+    {
+     "nom": "Disponible au retrait",
+     "role": "Commissions débloquées (livrées depuis plus de 14 jours)."
+    },
+    {
+     "nom": "En attente · Déjà versé",
+     "role": "Commissions encore bloquées, et total déjà reçu."
+    },
+    {
+     "nom": "Mode de retrait",
+     "role": "Orange Money · Moov Money · Mobi Cash (virement) ou Espèces au guichet."
+    },
+    {
+     "nom": "Numéro · Montant",
+     "role": "Minimum 5 000 F."
+    },
+    {
+     "nom": "Demander le virement",
+     "role": "Crée la demande ; Suguba la paie depuis l’admin."
+    },
+    {
+     "nom": "Historique des retraits",
+     "role": "Toutes les demandes et leur état."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-vue",
+     "libelle": "Côté admin : retraits"
+    }
+   ],
+   "capture": {
+    "chemin": "/reseller/payouts"
+   }
+  },
+  {
+   "id": "rev-marketing",
+   "role": "revendeur",
+   "titre": "Marketing (affiches statut)",
+   "chemin": "/reseller/marketing",
+   "but": "Affiches prêtes à publier et conseils de vente.",
+   "elements": [
+    {
+     "nom": "Choisissez un produit",
+     "role": "Génère l’affiche du produit avec prix et lien."
+    },
+    {
+     "nom": "Copier",
+     "role": "Copie le texte à poster avec l’affiche."
+    },
+    {
+     "nom": "Les 3 réflexes · Idée de vidéo",
+     "role": "Conseils concrets pour vendre plus."
+    }
+   ],
+   "suite": [
+    {
+     "id": "rev-createur",
+     "libelle": "Créer un visuel"
+    }
+   ],
+   "note": "L’ancienne adresse /reseller/story-generator renvoie ici : les deux outils ont été fusionnés.",
+   "capture": {
+    "chemin": "/reseller/marketing"
+   }
+  },
+  {
+   "id": "rev-boutique",
+   "role": "revendeur",
+   "titre": "Ma boutique",
+   "chemin": "/reseller/boutique",
+   "but": "Sa vitrine personnelle /boutique/ : logo, couverture, nom, accroche, quartier, présentation, avec le lien et le QR code à partager.",
+   "elements": [
+    {
+     "nom": "Logo · Couverture",
+     "role": "Photos de la vitrine."
+    },
+    {
+     "nom": "Nom · Accroche · Présentation",
+     "role": "Textes affichés sur la vitrine."
+    },
+    {
+     "nom": "Quartier de la boutique",
+     "role": "Facultatif : la rend visible dans « Boutiques près de chez vous ». « Ne plus afficher de quartier » le retire."
+    },
+    {
+     "nom": "Enregistrer",
+     "role": "Met la vitrine à jour."
+    },
+    {
+     "nom": "Lien / QR",
+     "role": "Carte à copier ou partager."
+    }
+   ],
+   "suite": [
+    {
+     "id": "boutiques-quartier",
+     "libelle": "Boutiques proches"
+    }
+   ],
+   "note": "Le compte démo n’a pas de vrai profil : la capture montre « Boutique pas encore disponible ». Avec un vrai compte, la boutique se crée à la première ouverture.",
+   "capture": {
+    "chemin": "/reseller/boutique"
+   }
+  },
+  {
+   "id": "rev-missions",
+   "role": "revendeur",
+   "titre": "Missions",
+   "chemin": "/reseller/missions",
+   "but": "Objectifs proposés par Suguba (ex. 5 ventes d’un produit cette semaine), avec une prime à la clé.",
+   "elements": [
+    {
+     "nom": "Disponibles · En cours · Terminées",
+     "role": "Onglets."
+    },
+    {
+     "nom": "Participer",
+     "role": "Rejoint une mission ; la progression avance à chaque vente concernée."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-missions",
+     "libelle": "Côté admin : Missions"
+    }
+   ],
+   "capture": {
+    "chemin": "/reseller/missions"
+   }
+  },
+  {
+   "id": "rev-partages",
+   "role": "revendeur",
+   "titre": "Mes partages",
+   "chemin": "/reseller/partages",
+   "but": "Ce que chaque lien partagé a rapporté : clics, commandes, taux de conversion.",
+   "elements": [
+    {
+     "nom": "Partager un produit",
+     "role": "Vers le catalogue quand la liste est vide."
+    }
+   ],
+   "suite": [
+    {
+     "id": "rev-catalogue",
+     "libelle": "Catalogue"
+    }
+   ],
+   "capture": {
+    "chemin": "/reseller/partages"
+   }
+  },
+  {
+   "id": "rev-clients",
+   "role": "revendeur",
+   "titre": "Mes clients",
+   "chemin": "/reseller/clients",
+   "but": "Les clients qu’il a amenés : le premier revendeur qui amène un client le garde pour ses commandes suivantes.",
+   "elements": [
+    {
+     "nom": "Partager ma boutique",
+     "role": "Vers Ma boutique quand la liste est vide."
+    }
+   ],
+   "suite": [
+    {
+     "id": "rev-boutique",
+     "libelle": "Ma boutique"
+    }
+   ],
+   "capture": {
+    "chemin": "/reseller/clients"
+   }
+  },
+  {
+   "id": "rev-parrainages",
+   "role": "revendeur",
+   "titre": "Mes parrainages",
+   "chemin": "/reseller/parrainages",
+   "but": "Inviter des clients et d’autres revendeurs, et toucher une prime.",
+   "elements": [
+    {
+     "nom": "Lien de parrainage",
+     "role": "« Copier le lien » · « Partager sur WhatsApp » · « Afficher le QR code »."
+    },
+    {
+     "nom": "Enregistrer le filleul",
+     "role": "Numéro WhatsApp du filleul et son profil (client ou revendeur)."
+    },
+    {
+     "nom": "Liste des filleuls",
+     "role": "Avec l’état de la prime (en attente, versée)."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-recompenses",
+     "libelle": "Côté admin : Récompenses"
+    }
+   ],
+   "capture": {
+    "chemin": "/reseller/parrainages"
+   }
+  },
+  {
+   "id": "rev-calendrier",
+   "role": "revendeur",
+   "titre": "Mon calendrier",
+   "chemin": "/reseller/calendrier",
+   "but": "Planifier ses publications (quel produit, quel jour) pour ne pas oublier de poster.",
+   "elements": [
+    {
+     "nom": "Planifier une publication",
+     "role": "Choisir le produit, la date et le message ; un rappel arrive le jour venu."
+    }
+   ],
+   "suite": [
+    {
+     "id": "rev-createur",
+     "libelle": "Créer un visuel"
+    }
+   ],
+   "capture": {
+    "chemin": "/reseller/calendrier"
+   }
+  },
+  {
+   "id": "rev-createur",
+   "role": "revendeur",
+   "titre": "Créer un visuel",
+   "chemin": "/reseller/createur",
+   "but": "Studio de création d’images pour les réseaux.",
+   "elements": [
+    {
+     "nom": "Produit",
+     "role": "Rechercher et choisir l’article."
+    },
+    {
+     "nom": "Format",
+     "role": "Statut WhatsApp (vertical) ou Publication (carré)."
+    },
+    {
+     "nom": "Thème",
+     "role": "Suguba · Clair · Nuit."
+    },
+    {
+     "nom": "Bandeau promo · options",
+     "role": "Texte promo, affichage du lien ou du QR code."
+    },
+    {
+     "nom": "Télécharger / Partager",
+     "role": "Récupérer l’image une fois le produit choisi."
+    }
+   ],
+   "suite": [
+    {
+     "id": "rev-calendrier",
+     "libelle": "Calendrier"
+    }
+   ],
+   "capture": {
+    "chemin": "/reseller/createur"
+   }
+  },
+  {
+   "id": "rev-canaux",
+   "role": "revendeur",
+   "titre": "Boutiques fournisseurs",
+   "chemin": "/reseller/channels",
+   "but": "Partager la vitrine entière d’un fournisseur avec son propre lien.",
+   "elements": [
+    {
+     "nom": "Copier mon lien",
+     "role": "Lien de la boutique avec son code revendeur."
+    },
+    {
+     "nom": "Voir",
+     "role": "Ouvre la vitrine."
+    }
+   ],
+   "suite": [
+    {
+     "id": "vitrine-fournisseur",
+     "libelle": "Vitrine"
+    }
+   ],
+   "capture": {
+    "chemin": "/reseller/channels"
+   }
+  },
+  {
+   "id": "rev-badge",
+   "role": "revendeur",
+   "titre": "Carte revendeur",
+   "chemin": "/reseller/badge",
+   "but": "Carte professionnelle avec QR code, à montrer ou à imprimer pour vendre sur le terrain.",
+   "elements": [
+    {
+     "nom": "Imprimer mon badge",
+     "role": "Version papier."
+    },
+    {
+     "nom": "Partager",
+     "role": "Envoie la carte sur WhatsApp."
+    }
+   ],
+   "suite": [
+    {
+     "id": "rev-accueil",
+     "libelle": "Accueil revendeur"
+    }
+   ],
+   "note": "Le compte démo n’a pas de code revendeur : la carte affiche « — » à la place.",
+   "capture": {
+    "chemin": "/reseller/badge"
+   }
+  },
+  {
+   "id": "rev-calculateur",
+   "role": "revendeur",
+   "titre": "Simulateur de gains",
+   "chemin": "/reseller/calculator",
+   "but": "Estimer ses revenus mensuels selon le nombre de ventes.",
+   "elements": [
+    {
+     "nom": "Curseurs",
+     "role": "Ventes par jour, commission moyenne…"
+    },
+    {
+     "nom": "Partager sur WhatsApp",
+     "role": "Envoie la simulation (utile pour recruter)."
+    },
+    {
+     "nom": "Commencer à gagner",
+     "role": "Vers l’inscription revendeur."
+    }
+   ],
+   "suite": [
+    {
+     "id": "revendeur-inscription",
+     "libelle": "Inscription revendeur"
+    }
+   ],
+   "capture": {
+    "chemin": "/reseller/calculator"
+   }
+  },
+  {
+   "id": "rev-fournisseurs",
+   "role": "revendeur",
+   "titre": "Fournisseurs",
+   "chemin": "/reseller/fournisseurs",
+   "but": "Suivre les fournisseurs dont on veut vendre les produits : leurs articles passent en tête du catalogue.",
+   "elements": [
+    {
+     "nom": "Mes fournisseurs · Découvrir",
+     "role": "Onglets."
+    },
+    {
+     "nom": "Rechercher un fournisseur",
+     "role": "Filtre."
+    },
+    {
+     "nom": "Suivre",
+     "role": "Ajoute le fournisseur à ses recommandés."
+    },
+    {
+     "nom": "Voir le catalogue",
+     "role": "Vitrine du fournisseur."
+    }
+   ],
+   "suite": [
+    {
+     "id": "rev-catalogue",
+     "libelle": "Catalogue"
+    }
+   ],
+   "capture": {
+    "chemin": "/reseller/fournisseurs"
+   }
+  },
+  {
+   "id": "rev-verification",
+   "role": "revendeur",
+   "titre": "Mon profil vérifié",
+   "chemin": "/reseller/verification",
+   "but": "Obtenir des badges de confiance affichés sur sa boutique.",
+   "elements": [
+    {
+     "nom": "Badges",
+     "role": "Téléphone, identité, quartier, e-mail… chacun avec son état."
+    },
+    {
+     "nom": "Demander un appel de vérification",
+     "role": "Le téléphone est vérifié par un appel de l’équipe Suguba (pas de SMS)."
+    },
+    {
+     "nom": "Pièce d’identité",
+     "role": "Envoyée de façon privée ; seule l’équipe Suguba la voit."
+    },
+    {
+     "nom": "Renseigner mon quartier",
+     "role": "Vers le démarrage."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-verifications",
+     "libelle": "Côté admin : Vérifications"
+    }
+   ],
+   "capture": {
+    "chemin": "/reseller/verification"
+   }
+  },
+  {
+   "id": "fou-accueil",
+   "role": "fournisseur",
+   "titre": "Dashboard fournisseur",
+   "chemin": "/supplier",
+   "but": "Vue d’ensemble du fournisseur : dossier, catalogue, réseau.",
+   "elements": [
+    {
+     "nom": "Dossier incomplet",
+     "role": "Rappelle les infos manquantes (entrepôt…)."
+    },
+    {
+     "nom": "Ajouter un produit · Gérer les stocks · Ma boutique & mes revendeurs",
+     "role": "Actions principales."
+    },
+    {
+     "nom": "Compteurs",
+     "role": "Produits déposés · En vente · En attente (photo ou prix manquant) · Sans photo."
+    },
+    {
+     "nom": "Mon catalogue",
+     "role": "Ses produits ; « Déposer mon premier produit » s’il n’y en a aucun."
+    },
+    {
+     "nom": "Mon réseau",
+     "role": "Ma boutique · Mes revendeurs · Analyses · Mon équipe · Sponsorisation · Campagnes."
+    }
+   ],
+   "suite": [
+    {
+     "id": "fou-ajouter",
+     "libelle": "Ajouter un produit"
+    },
+    {
+     "id": "fou-stocks",
+     "libelle": "Stocks"
+    },
+    {
+     "id": "fou-reseau",
+     "libelle": "Ma boutique & revendeurs"
+    }
+   ],
+   "capture": {
+    "chemin": "/supplier"
+   }
+  },
+  {
+   "id": "fou-stocks",
+   "role": "fournisseur",
+   "titre": "Mes stocks",
+   "chemin": "/supplier/inventory",
+   "but": "Gérer les quantités, les prix et les variantes de chaque produit.",
+   "elements": [
+    {
+     "nom": "Quantité en stock",
+     "role": "Modifiable par produit."
+    },
+    {
+     "nom": "Créer une variante",
+     "role": "Même produit en une autre couleur ou taille."
+    },
+    {
+     "nom": "Ajouter un produit",
+     "role": "Vers le formulaire."
+    }
+   ],
+   "suite": [
+    {
+     "id": "fou-ajouter",
+     "libelle": "Ajouter un produit"
+    }
+   ],
+   "capture": {
+    "chemin": "/supplier/inventory"
+   }
+  },
+  {
+   "id": "fou-ajouter",
+   "role": "fournisseur",
+   "titre": "Ajouter un produit",
+   "chemin": "/supplier/products/new",
+   "but": "Déposer un nouvel article : le fournisseur fixe son prix ET la part du revendeur. Avec au moins une photo, le produit est mis en vente aussitôt, au prix calculé par Suguba.",
+   "elements": [
+    {
+     "nom": "Ajouter des photos",
+     "role": "Plusieurs photos ; la première sert de vignette. Sans photo, le produit attend."
+    },
+    {
+     "nom": "Nom · Catégorie · Description",
+     "role": "Fiche produit."
+    },
+    {
+     "nom": "Prix fournisseur · Stock",
+     "role": "Ce que le fournisseur touche sur chaque vente, et la quantité disponible."
+    },
+    {
+     "nom": "Part du revendeur par vente",
+     "role": "**Le fournisseur décide** combien il laisse au revendeur (en FCFA), en plus de son prix."
+    },
+    {
+     "nom": "Sur chaque vente (aperçu)",
+     "role": "Détail calculé en direct : le client paie · vous touchez · le revendeur reçoit (part moins le prélèvement Suguba, ex. 1 %) · Suguba (livraison, paiement, service)."
+    },
+    {
+     "nom": "Enregistrer",
+     "role": "Mise en vente immédiate si une photo est présente ; Suguba peut ajuster le prix ou retirer le produit après coup."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-produits",
+     "libelle": "Côté admin : Produits"
+    }
+   ],
+   "capture": {
+    "chemin": "/supplier/products/new"
+   },
+   "note": "Le prix client est au minimum le prix fournisseur + la part revendeur ; il est relevé si ça ne couvre pas les frais de la commande (plancher), pour que Suguba ne vende jamais à perte."
+  },
+  {
+   "id": "fou-boutique",
+   "role": "fournisseur",
+   "titre": "Ma boutique",
+   "chemin": "/supplier/boutique",
+   "but": "Vitrine du fournisseur : logo, couverture, galerie, quartier, recrutement de revendeurs.",
+   "elements": [
+    {
+     "nom": "Quartier de la boutique",
+     "role": "Par défaut, celui de l’entrepôt."
+    },
+    {
+     "nom": "Recrute des revendeurs",
+     "role": "Fait apparaître la boutique dans « Ces boutiques recherchent des revendeurs »."
+    },
+    {
+     "nom": "Galerie",
+     "role": "Jusqu’à 10 photos."
+    }
+   ],
+   "suite": [
+    {
+     "id": "fou-revendeurs",
+     "libelle": "Mes revendeurs"
+    }
+   ],
+   "note": "Compte démo : la capture montre l’état « pas encore disponible ».",
+   "capture": {
+    "chemin": "/supplier/boutique"
+   }
+  },
+  {
+   "id": "fou-revendeurs",
+   "role": "fournisseur",
+   "titre": "Mes revendeurs",
+   "chemin": "/supplier/revendeurs",
+   "but": "Qui vend ses produits, et combien chacun a vendu.",
+   "elements": [
+    {
+     "nom": "Recruter des revendeurs",
+     "role": "Vers Ma boutique quand la liste est vide."
+    }
+   ],
+   "suite": [
+    {
+     "id": "fou-boutique",
+     "libelle": "Ma boutique"
+    }
+   ],
+   "capture": {
+    "chemin": "/supplier/revendeurs"
+   }
+  },
+  {
+   "id": "fou-reseau",
+   "role": "fournisseur",
+   "titre": "Ma boutique et mes revendeurs",
+   "chemin": "/supplier/ambassadors",
+   "but": "Réglages de la vitrine publique historique (/s/) et message de recrutement.",
+   "elements": [
+    {
+     "nom": "Logo",
+     "role": "Ajouter ou changer."
+    },
+    {
+     "nom": "Nom affiché · Description · Contacts",
+     "role": "Ce que voient clients et revendeurs."
+    },
+    {
+     "nom": "Enregistrer",
+     "role": "Met la vitrine à jour."
+    },
+    {
+     "nom": "Message de recrutement",
+     "role": "« Copier le message » pour le poster dans des groupes."
+    }
+   ],
+   "suite": [
+    {
+     "id": "vitrine-fournisseur",
+     "libelle": "Vitrine publique"
+    }
+   ],
+   "capture": {
+    "chemin": "/supplier/ambassadors"
+   }
+  },
+  {
+   "id": "fou-campagnes",
+   "role": "fournisseur",
+   "titre": "Campagnes",
+   "chemin": "/supplier/campagnes",
+   "but": "Mobiliser les revendeurs autour d’un produit pendant une période.",
+   "elements": [
+    {
+     "nom": "Nouvelle",
+     "role": "Créer une campagne : produit, message, durée."
+    }
+   ],
+   "suite": [
+    {
+     "id": "fou-revendeurs",
+     "libelle": "Mes revendeurs"
+    }
+   ],
+   "capture": {
+    "chemin": "/supplier/campagnes"
+   }
+  },
+  {
+   "id": "fou-sponsorisation",
+   "role": "fournisseur",
+   "titre": "Sponsorisation",
+   "chemin": "/supplier/sponsorisation",
+   "but": "Payer pour mettre un produit ou sa boutique en avant.",
+   "elements": [
+    {
+     "nom": "Visibilité Starter · 10 000 F",
+     "role": "7 jours en tête du catalogue revendeur."
+    },
+    {
+     "nom": "Visibilité Boost · 25 000 F",
+     "role": "14 jours sur l’accueil et en tête de la recherche."
+    },
+    {
+     "nom": "Recrutement revendeurs · 15 000 F",
+     "role": "30 jours dans « Ces boutiques recherchent des revendeurs »."
+    },
+    {
+     "nom": "Produit · Où l’afficher",
+     "role": "Choix du produit et de l’emplacement."
+    },
+    {
+     "nom": "Envoyer la demande",
+     "role": "Demande en attente : Suguba contacte pour le paiement, puis active."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-sponsorisations",
+     "libelle": "Côté admin : Sponsorisation"
+    }
+   ],
+   "capture": {
+    "chemin": "/supplier/sponsorisation"
+   }
+  },
+  {
+   "id": "fou-analyses",
+   "role": "fournisseur",
+   "titre": "Analyses",
+   "chemin": "/supplier/analyses",
+   "but": "Ventes, visites, conversion et retour des sponsorisations.",
+   "elements": [],
+   "suite": [
+    {
+     "id": "fou-sponsorisation",
+     "libelle": "Sponsorisation"
+    }
+   ],
+   "capture": {
+    "chemin": "/supplier/analyses"
+   }
+  },
+  {
+   "id": "fou-equipe",
+   "role": "fournisseur",
+   "titre": "Mon équipe",
+   "chemin": "/supplier/equipe",
+   "but": "Donner accès à ses collaborateurs, chacun avec son rôle.",
+   "elements": [
+    {
+     "nom": "Inviter",
+     "role": "Numéro et rôle : commercial, stock ou marketing. Un lien d’invitation est créé."
+    },
+    {
+     "nom": "Confirmer",
+     "role": "Une fois l’invitation acceptée, le fournisseur confirme la personne (le numéro n’est pas vérifié par SMS)."
+    },
+    {
+     "nom": "Retirer",
+     "role": "Supprime l’accès."
+    }
+   ],
+   "suite": [
+    {
+     "id": "invitation-equipe",
+     "libelle": "Invitation (côté invité)"
+    }
+   ],
+   "capture": {
+    "chemin": "/supplier/equipe"
+   }
+  },
+  {
+   "id": "liv-courses",
+   "role": "livreur",
+   "titre": "Mes courses",
+   "chemin": "/driver",
+   "but": "Les livraisons assignées par Suguba, et l’historique.",
+   "elements": [
+    {
+     "nom": "Compléter mon dossier",
+     "role": "Véhicule et zone, si manquants."
+    },
+    {
+     "nom": "Mes courses en cours",
+     "role": "Adresse, repère, téléphone du client, montant à encaisser."
+    },
+    {
+     "nom": "Code secret",
+     "role": "À la remise, le client donne son code : la commande passe « livrée »."
+    },
+    {
+     "nom": "Livraisons effectuées",
+     "role": "Historique."
+    }
+   ],
+   "suite": [
+    {
+     "id": "liv-portefeuille",
+     "libelle": "Portefeuille"
+    }
+   ],
+   "capture": {
+    "chemin": "/driver"
+   }
+  },
+  {
+   "id": "liv-portefeuille",
+   "role": "livreur",
+   "titre": "Mon portefeuille",
+   "chemin": "/driver/earnings",
+   "but": "Espèces encaissées à remettre, et gains du livreur.",
+   "elements": [
+    {
+     "nom": "Remettre les espèces",
+     "role": "Montant à déposer au guichet Suguba."
+    },
+    {
+     "nom": "Mes livraisons",
+     "role": "Détail par course."
+    },
+    {
+     "nom": "Contacter Suguba",
+     "role": "WhatsApp."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-vue",
+     "libelle": "Côté admin : vérification au guichet"
+    }
+   ],
+   "capture": {
+    "chemin": "/driver/earnings"
+   }
+  },
+  {
+   "id": "adm-vue",
+   "role": "admin",
+   "titre": "Vue globale (tableau de bord)",
+   "chemin": "/admin",
+   "but": "Le poste de pilotage quotidien : tout ce qui attend une action aujourd’hui.",
+   "elements": [
+    {
+     "nom": "Raccourcis",
+     "role": "Produits · SAV & retours · Analyses · Rapport du soir · Diffusion · Checklist."
+    },
+    {
+     "nom": "Tester un profil",
+     "role": "Ouvre l’espace Client, Revendeur, Fournisseur ou Diaspora avec un compte test (bandeau jaune « Aperçu admin », bouton « Quitter l’aperçu »). Les actions faites en aperçu sont réelles."
+    },
+    {
+     "nom": "Chiffres clés",
+     "role": "Volume (GMV) · Commissions · Appels à passer · Retraits en attente."
+    },
+    {
+     "nom": "Réglages économiques",
+     "role": "Tout l’argent de Suguba au même endroit. **Mode de rémunération** (« Prélevé sur le revendeur », % du prix de vente, % ajouté au prix, automatique). **Où va l’argent d’une vente** : barre fournisseur / revendeur / coûts / Suguba, et pourquoi le prix est relevé au plancher. **Vos produits en ligne** : effet des réglages en cours sur chaque produit avant d’enregistrer. Coûts (provision pour refus sur la course ou sur le prix), coûts fixes, livraison, codes promo, simulation. Barre « Enregistrer / Annuler » en bas."
+    },
+    {
+     "nom": "Livreurs — guichet",
+     "role": "Espèces remises par les livreurs, à vérifier."
+    },
+    {
+     "nom": "Desk appel confirmation",
+     "role": "Commandes à confirmer par téléphone."
+    },
+    {
+     "nom": "Modération catalogue",
+     "role": "Produits en attente de validation et de prix."
+    },
+    {
+     "nom": "Dispatch",
+     "role": "Assigner un livreur aux commandes confirmées."
+    },
+    {
+     "nom": "Retraits des revendeurs",
+     "role": "Payer par Mobile Money, ou « Payer en espèces » avec le code du retrait (WTH-…)."
+    },
+    {
+     "nom": "Sécurité antifraude",
+     "role": "Commissions bloquées pendant la période de sécurité, et leur déblocage."
+    },
+    {
+     "nom": "Validation des inscriptions",
+     "role": "Fournisseurs · Livreurs · Revendeurs à valider."
+    },
+    {
+     "nom": "Tous les domaines",
+     "role": "Vers le back-office et ses rubriques."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-backoffice",
+     "libelle": "Back-office"
+    },
+    {
+     "id": "adm-commandes",
+     "libelle": "Commandes"
+    },
+    {
+     "id": "adm-produits",
+     "libelle": "Produits"
+    }
+   ],
+   "capture": {
+    "chemin": "/admin"
+   }
+  },
+  {
+   "id": "adm-backoffice",
+   "role": "admin",
+   "titre": "Back-office",
+   "chemin": "/admin/backoffice",
+   "but": "Le sommaire de l’administration, rangé par domaine. Chaque membre de l’équipe ne peut agir que selon son rôle.",
+   "elements": [
+    {
+     "nom": "Commerce",
+     "role": "Commandes · Produits · Nouveau produit · Boutique Suguba."
+    },
+    {
+     "nom": "Utilisateurs",
+     "role": "Utilisateurs · Boutiques."
+    },
+    {
+     "nom": "Finance",
+     "role": "Retraits et commissions · Récompenses · Analyses · Rapport du soir."
+    },
+    {
+     "nom": "Réseau",
+     "role": "Missions · Sponsorisation · Diffusion · Vérifications."
+    },
+    {
+     "nom": "Organisation",
+     "role": "Service après-vente · Équipe et permissions · Paramètres et commissions · Checklist de lancement."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-commandes",
+     "libelle": "Commandes"
+    },
+    {
+     "id": "adm-utilisateurs",
+     "libelle": "Utilisateurs"
+    },
+    {
+     "id": "adm-equipe",
+     "libelle": "Équipe"
+    }
+   ],
+   "capture": {
+    "chemin": "/admin/backoffice"
+   }
+  },
+  {
+   "id": "adm-commandes",
+   "role": "admin",
+   "titre": "Commandes",
+   "chemin": "/admin/commandes",
+   "but": "Toutes les commandes, avec recherche et filtres par statut.",
+   "elements": [
+    {
+     "nom": "Filtres",
+     "role": "Toutes · À confirmer · Confirmée · Livreur assigné · En livraison · Livrée · Annulée · Retournée."
+    },
+    {
+     "nom": "Recherche",
+     "role": "Numéro, client, téléphone, produit, code revendeur."
+    },
+    {
+     "nom": "Carte commande",
+     "role": "Client, date, quartier, numéro, produit, montant, statut. Les paniers regroupent leurs commandes."
+    },
+    {
+     "nom": "Gérer sur la vue globale",
+     "role": "Les actions (appel, dispatch) se font sur la vue globale."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-vue",
+     "libelle": "Vue globale"
+    }
+   ],
+   "note": "Nom et téléphone du client masqués sur la capture.",
+   "capture": {
+    "chemin": "/admin/commandes"
+   }
+  },
+  {
+   "id": "adm-produits",
+   "role": "admin",
+   "titre": "Produits",
+   "chemin": "/admin/products",
+   "but": "Modérer le catalogue : photos, prix, mise en vente.",
+   "elements": [
+    {
+     "nom": "Onglets",
+     "role": "Nouveautés fournisseurs · Sans photo · Tous."
+    },
+    {
+     "nom": "Modifier les photos",
+     "role": "Remplacer ou ajouter des images."
+    },
+    {
+     "nom": "Fixer le prix",
+     "role": "Prix public et commission."
+    },
+    {
+     "nom": "Retirer de la vente",
+     "role": "Masque le produit."
+    },
+    {
+     "nom": "Nouveau produit",
+     "role": "Ajouter un article."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-produit-nouveau",
+     "libelle": "Nouveau produit"
+    }
+   ],
+   "capture": {
+    "chemin": "/admin/products"
+   }
+  },
+  {
+   "id": "adm-produit-nouveau",
+   "role": "admin",
+   "titre": "Ajouter un produit",
+   "chemin": "/admin/products/new",
+   "but": "Suguba ajoute un produit elle-même, pour son propre stock ou pour un fournisseur.",
+   "elements": [
+    {
+     "nom": "Photos",
+     "role": "Ajouter des photos."
+    },
+    {
+     "nom": "Nom · Catégorie · Fournisseur",
+     "role": "Laisser le fournisseur vide = stock Suguba."
+    },
+    {
+     "nom": "Description · Prix · Commission · Stock",
+     "role": "Fiche complète."
+    },
+    {
+     "nom": "Publier le produit",
+     "role": "Mise en vente immédiate ; les abonnés de la boutique sont prévenus."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-produits",
+     "libelle": "Produits"
+    }
+   ],
+   "capture": {
+    "chemin": "/admin/products/new"
+   }
+  },
+  {
+   "id": "adm-boutique-suguba",
+   "role": "admin",
+   "titre": "Boutique Suguba",
+   "chemin": "/admin/boutique-suguba",
+   "but": "Suguba comme vendeuse : la vitrine officielle /boutique/suguba avec les produits du stock Suguba.",
+   "elements": [
+    {
+     "nom": "Nom · Quartier · Accroche · Présentation",
+     "role": "Textes de la vitrine."
+    },
+    {
+     "nom": "Logo · Couverture · Galerie",
+     "role": "Images."
+    },
+    {
+     "nom": "Enregistrer",
+     "role": "Met la vitrine à jour."
+    },
+    {
+     "nom": "Ajouter un produit",
+     "role": "Vers le formulaire."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-produit-nouveau",
+     "libelle": "Ajouter un produit"
+    }
+   ],
+   "note": "**Non capturée volontairement :** la première ouverture **crée** la boutique officielle en base. À faire par vous quand vous êtes prêt.",
+   "attention": true,
+   "capture": null
+  },
+  {
+   "id": "adm-utilisateurs",
+   "role": "admin",
+   "titre": "Utilisateurs",
+   "chemin": "/admin/utilisateurs",
+   "but": "Tous les comptes, par profil, avec leur activité.",
+   "elements": [
+    {
+     "nom": "Onglets",
+     "role": "Revendeurs · Fournisseurs · Livreurs · Clients."
+    },
+    {
+     "nom": "Recherche",
+     "role": "Nom, téléphone, e-mail, code."
+    },
+    {
+     "nom": "Carte",
+     "role": "Statut (Actif…), code revendeur, ventes et commissions."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-verifications",
+     "libelle": "Vérifications"
+    }
+   ],
+   "note": "Noms, téléphones et e-mails masqués sur la capture.",
+   "capture": {
+    "chemin": "/admin/utilisateurs"
+   }
+  },
+  {
+   "id": "adm-verifications",
+   "role": "admin",
+   "titre": "Vérifications",
+   "chemin": "/admin/verifications",
+   "but": "File d’attente des demandes de badge : identité (pièce privée, consultable 10 minutes), appel téléphonique, quartier.",
+   "elements": [
+    {
+     "nom": "Approuver · Refuser",
+     "role": "Le badge s’affiche aussitôt sur la boutique du revendeur."
+    }
+   ],
+   "suite": [
+    {
+     "id": "rev-verification",
+     "libelle": "Côté revendeur"
+    }
+   ],
+   "capture": {
+    "chemin": "/admin/verifications"
+   }
+  },
+  {
+   "id": "adm-boutiques",
+   "role": "admin",
+   "titre": "Boutiques",
+   "chemin": "/admin/boutiques",
+   "but": "Toutes les vitrines, pour les modérer.",
+   "elements": [
+    {
+     "nom": "Filtres",
+     "role": "Toutes · Fournisseurs · Revendeurs · Suguba."
+    },
+    {
+     "nom": "Masquer · Suspendre",
+     "role": "Retire une boutique de la vue publique."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-utilisateurs",
+     "libelle": "Utilisateurs"
+    }
+   ],
+   "capture": {
+    "chemin": "/admin/boutiques"
+   }
+  },
+  {
+   "id": "adm-missions",
+   "role": "admin",
+   "titre": "Missions",
+   "chemin": "/admin/missions",
+   "but": "Créer et suivre les objectifs proposés aux revendeurs.",
+   "elements": [
+    {
+     "nom": "Nouvelle mission",
+     "role": "Type (ventes, partages…), produit éventuel, objectif, prime, dates."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-recompenses",
+     "libelle": "Récompenses"
+    },
+    {
+     "id": "rev-missions",
+     "libelle": "Côté revendeur"
+    }
+   ],
+   "capture": {
+    "chemin": "/admin/missions"
+   }
+  },
+  {
+   "id": "adm-sponsorisations",
+   "role": "admin",
+   "titre": "Sponsorisation",
+   "chemin": "/admin/sponsorisations",
+   "but": "Tarifs des packs et demandes des fournisseurs.",
+   "elements": [
+    {
+     "nom": "Prix (FCFA)",
+     "role": "Modifier le prix de chaque pack, puis « Enregistrer »."
+    },
+    {
+     "nom": "Désactiver",
+     "role": "Retire un pack de la vente."
+    },
+    {
+     "nom": "Demandes",
+     "role": "Activer une sponsorisation après paiement."
+    }
+   ],
+   "suite": [
+    {
+     "id": "fou-sponsorisation",
+     "libelle": "Côté fournisseur"
+    }
+   ],
+   "capture": {
+    "chemin": "/admin/sponsorisations"
+   }
+  },
+  {
+   "id": "adm-recompenses",
+   "role": "admin",
+   "titre": "Récompenses",
+   "chemin": "/admin/recompenses",
+   "but": "Primes à verser : missions atteintes et parrainages.",
+   "elements": [
+    {
+     "nom": "Missions atteintes · Parrainages en attente",
+     "role": "Verser la prime (une seule fois par récompense)."
+    },
+    {
+     "nom": "Montants des primes",
+     "role": "Filleul client · Filleul revendeur, puis « Enregistrer les primes »."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-missions",
+     "libelle": "Missions"
+    }
+   ],
+   "capture": {
+    "chemin": "/admin/recompenses"
+   }
+  },
+  {
+   "id": "adm-equipe",
+   "role": "admin",
+   "titre": "Équipe et permissions",
+   "chemin": "/admin/equipe",
+   "but": "Qui a le droit de faire quoi dans le back-office.",
+   "elements": [
+    {
+     "nom": "Rôle d’équipe",
+     "role": "Support, finance, catalogue… chaque rôle donne un ensemble de permissions."
+    },
+    {
+     "nom": "Appliquer ce rôle",
+     "role": "Enregistre le rôle du membre."
+    },
+    {
+     "nom": "Tous les droits",
+     "role": "Un admin sans rôle attribué garde tous les droits."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-backoffice",
+     "libelle": "Back-office"
+    }
+   ],
+   "note": "Noms et contacts masqués sur la capture.",
+   "capture": {
+    "chemin": "/admin/equipe"
+   }
+  },
+  {
+   "id": "adm-sav",
+   "role": "admin",
+   "titre": "SAV & retours",
+   "chemin": "/admin/sav",
+   "but": "Réclamations, garanties et échanges sous 72 h.",
+   "elements": [
+    {
+     "nom": "Ouvrir un dossier SAV",
+     "role": "Commande, motif, action (échange, remboursement)."
+    },
+    {
+     "nom": "File des réclamations",
+     "role": "Dossiers en cours et leur état."
+    }
+   ],
+   "suite": [
+    {
+     "id": "garantie",
+     "libelle": "Politique de garantie"
+    }
+   ],
+   "capture": {
+    "chemin": "/admin/sav"
+   }
+  },
+  {
+   "id": "adm-analyses",
+   "role": "admin",
+   "titre": "Analyses financières",
+   "chemin": "/admin/analytics",
+   "but": "Chiffre d’affaires, marges, commissions, trésorerie.",
+   "elements": [
+    {
+     "nom": "Exporter journal comptable",
+     "role": "Fichier Excel / CSV des transactions."
+    },
+    {
+     "nom": "Registre des transactions",
+     "role": "Répartition de chaque vente (fournisseur, revendeur, livraison, Suguba)."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-rapport",
+     "libelle": "Rapport du soir"
+    }
+   ],
+   "capture": {
+    "chemin": "/admin/analytics"
+   }
+  },
+  {
+   "id": "adm-rapport",
+   "role": "admin",
+   "titre": "Rapport du soir",
+   "chemin": "/admin/reports/daily",
+   "but": "Le point de la journée en un message.",
+   "elements": [
+    {
+     "nom": "Aperçu du rapport",
+     "role": "Commandes, livraisons, encaissements, commissions."
+    },
+    {
+     "nom": "Copier texte",
+     "role": "Pour le coller ailleurs."
+    },
+    {
+     "nom": "Envoyer sur WhatsApp",
+     "role": "Ouvre WhatsApp avec le rapport prêt."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-analyses",
+     "libelle": "Analyses"
+    }
+   ],
+   "capture": {
+    "chemin": "/admin/reports/daily"
+   }
+  },
+  {
+   "id": "adm-diffusion",
+   "role": "admin",
+   "titre": "Diffusion",
+   "chemin": "/admin/broadcast",
+   "but": "Préparer un message pour tout le réseau (revendeurs, livreurs, grossistes).",
+   "elements": [
+    {
+     "nom": "Modèles",
+     "role": "Arrivage stock flash, défi du week-end…"
+    },
+    {
+     "nom": "Cible",
+     "role": "Revendeurs · Livreurs · Grossistes."
+    },
+    {
+     "nom": "Canal",
+     "role": "WhatsApp VIP · SMS · Push."
+    },
+    {
+     "nom": "Copier texte",
+     "role": "Copie le message."
+    },
+    {
+     "nom": "Diffuser",
+     "role": "Voir la note."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-vue",
+     "libelle": "Vue globale"
+    }
+   ],
+   "note": "**Maquette :** « Diffuser » n’envoie rien, et les nombres de destinataires (142 / 18 / 12) sont écrits en dur. Seuls « Copier » et le lien WhatsApp servent réellement.",
+   "attention": true,
+   "capture": {
+    "chemin": "/admin/broadcast"
+   }
+  },
+  {
+   "id": "adm-lancement",
+   "role": "admin",
+   "titre": "Checklist de lancement",
+   "chemin": "/admin/launch-checklist",
+   "but": "Liste de contrôle avant le lancement officiel : sécurité, finance, logistique, croissance.",
+   "elements": [
+    {
+     "nom": "Points par domaine",
+     "role": "Cases cochées ou non."
+    },
+    {
+     "nom": "Exporter sauvegarde JSON",
+     "role": "Télécharge les données affichées."
+    },
+    {
+     "nom": "Purger données de test",
+     "role": "Voir la note."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-vue",
+     "libelle": "Vue globale"
+    }
+   ],
+   "note": "**À savoir :** « Purger » ne remet à zéro que l’affichage de ce téléphone, pas la base. Le score « 15 / 16 » n’est pas calculé automatiquement.",
+   "attention": true,
+   "capture": {
+    "chemin": "/admin/launch-checklist"
+   }
+  },
+  {
+   "id": "adm-guide",
+   "role": "admin",
+   "titre": "Guide des parcours (page cachée)",
+   "chemin": "/admin/guide",
+   "but": "Cette page : toutes les pages de l’application, leurs boutons et leurs parcours, plus le journal de chaque demande et de ce qui a été livré. Réservée à l’administrateur général ; pour tout autre visiteur, l’adresse répond « page introuvable ».",
+   "elements": [
+    {
+     "nom": "Journal des demandes",
+     "role": "Pour chaque mise à jour : ta demande, ce qui a été fait, les écarts, les pages concernées, le commit."
+    },
+    {
+     "nom": "Fiches des pages",
+     "role": "Capture téléphone, rôle de chaque bouton, liens « Mène à » vers la page suivante."
+    },
+    {
+     "nom": "Navigation par profil",
+     "role": "Barre de pastilles en haut : Journal · Parcours · Visiteur · Revendeur · Fournisseur · Livreur · Admin."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-vue",
+     "libelle": "Vue globale"
+    }
+   ],
+   "note": "Aucun lien ne mène à cette page dans l’application : ouvrez directement app.sugubaml.com/admin/guide (à garder en favori).",
+   "capture": null
+  }
+ ]
+}

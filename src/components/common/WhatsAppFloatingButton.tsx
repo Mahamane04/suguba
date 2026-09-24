@@ -44,12 +44,12 @@ export default function WhatsAppFloatingButton() {
         <div className="mb-3 bg-white rounded-3xl p-4 shadow-2xl border border-slate-200 w-72 space-y-3 animate-in fade-in slide-in-from-bottom-3 duration-200 text-xs">
           <div className="flex items-center justify-between border-b border-slate-100 pb-2">
             <div className="flex items-center space-x-2">
-              <div className="w-7 h-7 rounded-xl bg-[#25D366] text-white flex items-center justify-center">
+              <div className="w-7 h-7 rounded-xl bg-suguba-wa text-suguba-profond flex items-center justify-center">
                 <MessageCircle className="w-4 h-4 fill-current" />
               </div>
               <div>
                 <h4 className="font-bold text-slate-900">Assistance Suguba</h4>
-                <p className="text-[11px] text-emerald-600 font-bold">Réponse sur WhatsApp</p>
+                <p className="text-xs text-emerald-600 font-bold">Réponse sur WhatsApp</p>
               </div>
             </div>
             <button 
@@ -60,7 +60,7 @@ export default function WhatsAppFloatingButton() {
             </button>
           </div>
 
-          <p className="text-[11px] text-slate-600 leading-tight">
+          <p className="text-xs text-slate-600 leading-tight">
             Besoin d&apos;aide pour une commande, un suivi ou pour devenir revendeur ?
           </p>
 
@@ -90,7 +90,7 @@ export default function WhatsAppFloatingButton() {
             </button>
           </div>
 
-          <div className="text-center pt-1 border-t border-slate-100 text-[11px] text-slate-500">
+          <div className="text-center pt-1 border-t border-slate-100 text-xs text-slate-500">
             Tél : <strong>+223 89 46 00 00</strong>
           </div>
         </div>
@@ -99,7 +99,7 @@ export default function WhatsAppFloatingButton() {
       {/* Floating Button Trigger */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-2 px-4 py-3 bg-[#25D366] hover:bg-[#20bd5a] text-white font-black rounded-full shadow-2xl shadow-[#25D366]/40 active:scale-95 transition-transform"
+        className="flex items-center space-x-2 px-4 py-3 bg-suguba-wa hover:bg-[#20bd5a] text-suguba-profond font-bold rounded-full shadow-2xl shadow-[#25D366]/40 active:scale-95 transition-transform"
         aria-label="Contacter le support sur WhatsApp"
       >
         <MessageCircle className="w-5 h-5 fill-current" />

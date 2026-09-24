@@ -67,12 +67,12 @@ export default function OrderSuccessPage({ params }: { params: Promise<{ orderNu
               type="button"
               onClick={copierNumero}
               aria-label={`Copier le numéro de commande ${order.orderNumber}`}
-              className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1 rounded-full border border-emerald-200"
+              className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1 rounded-full border border-emerald-200"
             >
               Commande #{order.orderNumber}
               <Copy className="w-3.5 h-3.5" />
             </button>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 pt-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 pt-2">
               Merci pour votre commande !
             </h1>
             <p className="text-xs text-slate-600 max-w-sm mx-auto">
@@ -87,11 +87,11 @@ export default function OrderSuccessPage({ params }: { params: Promise<{ orderNu
               <span>Votre Code Secret de Livraison Suguba</span>
             </div>
             
-            <div className="bg-white text-slate-950 font-mono text-3xl font-black py-3 px-6 rounded-2xl tracking-[0.4em] inline-block shadow-inner">
+            <div className="bg-white text-slate-950 font-mono text-3xl font-bold py-3 px-6 rounded-2xl tracking-[0.4em] inline-block shadow-inner">
               {order.deliveryOtp}
             </div>
 
-            <p className="text-[11px] text-amber-100 max-w-xs mx-auto leading-tight">
+            <p className="text-xs text-amber-100 max-w-xs mx-auto leading-tight">
               ⚠️ Donnez ce code au livreur <strong>uniquement</strong> après avoir reçu et vérifié votre colis.
             </p>
           </div>
@@ -129,7 +129,7 @@ export default function OrderSuccessPage({ params }: { params: Promise<{ orderNu
               </span>
             </div>
 
-            <div className="flex justify-between text-sm font-black text-slate-900 pt-2 border-t border-slate-200">
+            <div className="flex justify-between text-sm font-bold text-slate-900 pt-2 border-t border-slate-200">
               <span>{order.paymentCollected ? 'Total réglé :' : 'Total à payer :'}</span>
               <span className="text-emerald-700">{order.totalAmount.toLocaleString('fr-FR')} FCFA</span>
             </div>
@@ -154,7 +154,7 @@ export default function OrderSuccessPage({ params }: { params: Promise<{ orderNu
               )}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold py-3.5 px-4 rounded-2xl text-xs flex items-center justify-center space-x-2 shadow-xs"
+              className="w-full bg-suguba-wa hover:bg-[#20bd5a] text-suguba-profond font-bold py-3.5 px-4 rounded-2xl text-xs flex items-center justify-center space-x-2 shadow-xs"
             >
               <span>📲 Sauvegarder mon Reçu & Code sur WhatsApp</span>
             </a>
@@ -164,7 +164,7 @@ export default function OrderSuccessPage({ params }: { params: Promise<{ orderNu
                 href={`/track/${order.orderNumber}`}
                 className="py-3 px-3 bg-white hover:bg-slate-50 text-slate-900 font-bold border border-slate-200 rounded-2xl text-xs flex items-center justify-center space-x-1.5"
               >
-                <Truck className="w-4 h-4 text-suguba-brand" />
+                <Truck className="w-4 h-4 text-suguba-brand-dark" />
                 <span>Suivre ma commande</span>
               </Link>
 

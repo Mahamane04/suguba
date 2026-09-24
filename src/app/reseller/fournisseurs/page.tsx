@@ -86,13 +86,13 @@ export default function FournisseursPage() {
               <div className="flex items-start gap-3">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 {f.logo ? <img src={f.logo} alt="" className="w-12 h-12 rounded-2xl object-cover shrink-0" />
-                  : <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-500 font-black flex items-center justify-center shrink-0">{f.nom.charAt(0).toUpperCase()}</div>}
+                  : <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-500 font-bold flex items-center justify-center shrink-0">{f.nom.charAt(0).toUpperCase()}</div>}
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-black text-slate-900 truncate flex items-center gap-1">
+                  <p className="text-sm font-bold text-slate-900 truncate flex items-center gap-1">
                     {f.nom}
-                    {f.verifie && <ShieldCheck className="w-4 h-4 text-suguba-brand shrink-0" aria-label="Fournisseur vérifié" />}
+                    {f.verifie && <ShieldCheck className="w-4 h-4 text-suguba-brand-dark shrink-0" aria-label="Fournisseur vérifié" />}
                   </p>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-xs text-slate-500">
                     {f.produits} produit{f.produits > 1 ? 's' : ''}
                     {f.nouveautes > 0 ? ` · ${f.nouveautes} nouveauté${f.nouveautes > 1 ? 's' : ''}` : ''}
                     {f.abonnes > 0 ? ` · ${f.abonnes} abonné${f.abonnes > 1 ? 's' : ''}` : ''}
@@ -115,7 +115,7 @@ export default function FournisseursPage() {
         </div>
       )}
 
-      <p className="text-[11px] text-slate-500 px-1">
+      <p className="text-xs text-slate-500 px-1">
         Pour vendre les produits d’un fournisseur, ajoutez-les à votre boutique depuis le <Link href="/reseller/catalog" className="underline font-bold">catalogue</Link> (filtre « fournisseur »).
       </p>
     </PageReseau>

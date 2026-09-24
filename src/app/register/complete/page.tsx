@@ -181,14 +181,14 @@ function FinaliserInscription() {
       <EtapesInscription etapeActuelle={2} />
 
       <div className="text-center space-y-1">
-        <h1 className="text-xl font-black text-slate-900">Finalisez votre inscription</h1>
+        <h1 className="text-xl font-bold text-slate-900">Finalisez votre inscription</h1>
         <p className="text-sm text-slate-500">Votre identité est vérifiée. Encore une minute et vous êtes dans votre espace.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* 1. Qui êtes-vous ? */}
         <section className="bg-white rounded-3xl p-5 border border-slate-200 space-y-3">
-          <h2 className="font-black text-sm text-slate-900">1. Vous êtes…</h2>
+          <h2 className="font-bold text-sm text-slate-900">1. Vous êtes…</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {ROLES.map(({ cle, titre, detail, icone: Icone }) => {
               const choisi = role === cle;
@@ -202,18 +202,18 @@ function FinaliserInscription() {
                     choisi ? 'border-suguba-brand bg-suguba-brand/5 ring-2 ring-suguba-brand/30' : 'border-slate-200 hover:border-slate-300'
                   }`}
                 >
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${choisi ? 'bg-suguba-brand text-white' : 'bg-slate-100 text-slate-600'}`}>
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${choisi ? 'bg-suguba-profond text-white' : 'bg-slate-100 text-slate-600'}`}>
                     {choisi ? <Check className="w-4 h-4" /> : <Icone className="w-4 h-4" />}
                   </div>
                   <div className="min-w-0">
                     <p className="font-bold text-sm text-slate-900">{titre}</p>
-                    <p className="text-[11px] text-slate-500 leading-snug">{detail}</p>
+                    <p className="text-xs text-slate-500 leading-snug">{detail}</p>
                   </div>
                 </button>
               );
             })}
           </div>
-          <Link href="/" className="flex items-center gap-2 p-3 rounded-2xl bg-slate-50 text-[11px] text-slate-600 hover:bg-slate-100">
+          <Link href="/" className="flex items-center gap-2 p-3 rounded-2xl bg-slate-50 text-xs text-slate-600 hover:bg-slate-100">
             <ShoppingCart className="w-4 h-4 shrink-0" />
             <span><strong>Vous voulez seulement acheter ?</strong> Pas besoin de compte : commandez directement depuis le catalogue.</span>
           </Link>
@@ -222,7 +222,7 @@ function FinaliserInscription() {
         {/* 2. Coordonnées */}
         {role && (
           <section className="bg-white rounded-3xl p-5 border border-slate-200 space-y-4">
-            <h2 className="font-black text-sm text-slate-900">2. Vos coordonnées</h2>
+            <h2 className="font-bold text-sm text-slate-900">2. Vos coordonnées</h2>
             <Champ label="Nom complet">
               <input type="text" required placeholder="Ex : Moussa Coulibaly" value={fullName}
                 onChange={(e) => setFullName(e.target.value)} className={INPUT} />
@@ -242,7 +242,7 @@ function FinaliserInscription() {
                 </Champ>
                 {refCode && (
                   <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs">
-                    <Gift className="w-4 h-4 text-suguba-brand shrink-0" />
+                    <Gift className="w-4 h-4 text-suguba-brand-dark shrink-0" />
                     <span>Invité par <strong className="font-mono">{refCode}</strong></span>
                   </div>
                 )}
@@ -293,7 +293,7 @@ function FinaliserInscription() {
                 <Champ label="N° de pièce d'identité (facultatif)">
                   <input type="text" value={idDocumentNumber} onChange={(e) => setIdDocumentNumber(e.target.value)} className={INPUT} />
                 </Champ>
-                <p className="text-[11px] text-slate-500">
+                <p className="text-xs text-slate-500">
                   Avant votre première course, un agent Suguba vérifie vos papiers et votre engin au guichet de Bamako.
                 </p>
               </>
@@ -353,7 +353,7 @@ function Champ({ label, aide, children }: { label: string; aide?: string; childr
     <div className="space-y-1">
       <label className="block text-xs font-bold text-slate-700">{label}</label>
       {children}
-      {aide && <p className="text-[11px] text-slate-500">{aide}</p>}
+      {aide && <p className="text-xs text-slate-500">{aide}</p>}
     </div>
   );
 }

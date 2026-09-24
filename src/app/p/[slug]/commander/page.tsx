@@ -62,13 +62,13 @@ function Section({
     <Card padding="p-4 sm:p-5" className="space-y-4">
       <div className="flex items-center gap-2.5">
         <span
-          className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-black text-white shrink-0 transition-colors ${
-            complete ? 'bg-suguba-brand' : 'bg-slate-900'
+          className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white shrink-0 transition-colors ${
+            complete ? 'bg-suguba-profond' : 'bg-slate-900'
           }`}
         >
           {complete ? <Check className="w-3.5 h-3.5" strokeWidth={3} /> : numero}
         </span>
-        <h2 className="text-sm font-black text-slate-900">{titre}</h2>
+        <h2 className="text-sm font-bold text-slate-900">{titre}</h2>
       </div>
       {children}
     </Card>
@@ -228,8 +228,8 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
           <ArrowLeft className="w-5 h-5" />
         </button>
         <div className="min-w-0">
-          <h1 className="text-base font-black text-slate-900 leading-tight">Finaliser la commande</h1>
-          <p className="text-[11px] text-slate-500 flex items-center gap-1">
+          <h1 className="text-base font-bold text-slate-900 leading-tight">Finaliser la commande</h1>
+          <p className="text-xs text-slate-500 flex items-center gap-1">
             <Lock className="w-3 h-3" />
             Rien à payer maintenant
           </p>
@@ -294,7 +294,7 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
               <div className="min-w-0 flex-1 flex flex-col justify-between gap-2">
                 <div>
                   <p className="text-sm font-bold text-slate-900 leading-snug line-clamp-2">{product.name}</p>
-                  <p className="text-sm font-black text-suguba-brand mt-0.5">{fcfa(unitPrice)}</p>
+                  <p className="text-sm font-bold text-suguba-brand-dark mt-0.5">{fcfa(unitPrice)}</p>
                 </div>
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs text-slate-500">Quantité</span>
@@ -308,7 +308,7 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
                     >
                       <Minus className="w-4 h-4" />
                     </button>
-                    <span className="w-8 text-center text-sm font-black text-slate-900" aria-live="polite">{quantity}</span>
+                    <span className="w-8 text-center text-sm font-bold text-slate-900" aria-live="polite">{quantity}</span>
                     <button
                       type="button"
                       onClick={() => setQuantity((q) => Math.min(50, q + 1))}
@@ -372,11 +372,11 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
                     onClick={() => setMode(valeur)}
                     className={`relative text-left rounded-2xl border p-3 transition-all ${actif ? CARTE_CHOIX_ACTIVE : CARTE_CHOIX_INACTIVE}`}
                   >
-                    <Icone className={`w-5 h-5 ${actif ? 'text-suguba-brand' : 'text-slate-400'}`} />
-                    <span className="block text-sm font-black text-slate-900 mt-1.5">{titre}</span>
-                    <span className="block text-[11px] text-slate-500">{detail}</span>
+                    <Icone className={`w-5 h-5 ${actif ? 'text-suguba-brand-dark' : 'text-slate-400'}`} />
+                    <span className="block text-sm font-bold text-slate-900 mt-1.5">{titre}</span>
+                    <span className="block text-xs text-slate-500">{detail}</span>
                     {actif && (
-                      <span className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-suguba-brand text-white flex items-center justify-center">
+                      <span className="absolute top-2.5 right-2.5 w-5 h-5 rounded-full bg-suguba-profond text-white flex items-center justify-center">
                         <Check className="w-3 h-3" strokeWidth={3} />
                       </span>
                     )}
@@ -476,19 +476,19 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className="block text-sm font-bold text-slate-900 leading-snug">{point.nom}</span>
-                          <span className="flex items-center gap-1 text-[11px] text-slate-500 mt-0.5">
+                          <span className="flex items-center gap-1 text-xs text-slate-500 mt-0.5">
                             <Clock className="w-3 h-3" />
                             {point.horaires}
                           </span>
                         </span>
-                        <span className={`text-xs font-black whitespace-nowrap ${point.frais === 0 ? 'text-suguba-brand' : 'text-slate-900'}`}>
+                        <span className={`text-xs font-bold whitespace-nowrap ${point.frais === 0 ? 'text-suguba-brand-dark' : 'text-slate-900'}`}>
                           {point.frais === 0 ? 'Gratuit' : fcfa(point.frais)}
                         </span>
                       </button>
                     );
                   })
                 )}
-                <p className="text-[11px] text-slate-500 flex items-start gap-1.5 pt-1">
+                <p className="text-xs text-slate-500 flex items-start gap-1.5 pt-1">
                   <Info className="w-3.5 h-3.5 shrink-0 mt-px" />
                   Colis déposé sous 24 h. Un SMS vous donne le code de retrait.
                 </p>
@@ -531,7 +531,7 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
                   </Button>
                 </div>
                 {devis?.codePromo && devis.remise > 0 && (
-                  <p className="text-xs font-semibold text-suguba-brand flex items-center gap-1">
+                  <p className="text-xs font-semibold text-suguba-brand-dark flex items-center gap-1">
                     <Check className="w-3.5 h-3.5" strokeWidth={3} />
                     Code {devis.codePromo} appliqué : −{fcfa(devis.remise)}
                     {devis.avisPromo === 'plafonnee' ? ' (remise maximale sur cet article)' : ''}
@@ -549,7 +549,7 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
 
         <aside className="md:sticky md:top-20 space-y-3">
           <Card padding="p-4 sm:p-5" className="space-y-3">
-            <h2 className="text-sm font-black text-slate-900">Récapitulatif</h2>
+            <h2 className="text-sm font-bold text-slate-900">Récapitulatif</h2>
             {devis ? (
               <dl className="space-y-2 text-sm">
                 <div className="flex justify-between gap-3">
@@ -560,7 +560,7 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
                   <dt className="text-slate-600">
                     {devis.modeLivraison === 'relais' ? 'Retrait en point relais' : 'Livraison'}
                     {devis.distanceLivraisonKm !== null && (
-                      <span className="ml-1.5 inline-flex items-center gap-0.5 text-[11px] text-slate-400">
+                      <span className="ml-1.5 inline-flex items-center gap-0.5 text-xs text-slate-400">
                         <Navigation className="w-3 h-3" />~{devis.distanceLivraisonKm.toFixed(1)} km
                       </span>
                     )}
@@ -570,14 +570,14 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
                   </dd>
                 </div>
                 {devis.remise > 0 && (
-                  <div className="flex justify-between gap-3 text-suguba-brand">
+                  <div className="flex justify-between gap-3 text-suguba-brand-dark">
                     <dt className="font-semibold">Remise</dt>
                     <dd className="font-bold whitespace-nowrap">−{fcfa(devis.remise)}</dd>
                   </div>
                 )}
                 <div className="flex justify-between items-baseline gap-3 pt-3 border-t border-slate-100">
-                  <dt className="font-black text-slate-900">Total</dt>
-                  <dd className="text-xl font-black text-slate-900 whitespace-nowrap">{fcfa(devis.total)}</dd>
+                  <dt className="font-bold text-slate-900">Total</dt>
+                  <dd className="text-xl font-bold text-slate-900 whitespace-nowrap">{fcfa(devis.total)}</dd>
                 </div>
               </dl>
             ) : devisEnCours || !erreurDevis ? (
@@ -589,7 +589,7 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
             ) : (
               <p className="text-xs font-semibold text-rose-600">{erreurDevis}</p>
             )}
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500">
               À payer au livreur, en espèces ou Mobile Money, après vérification du colis.
             </p>
             <Button type="submit" size="lg" fullWidth disabled={isSubmitting} className="hidden md:inline-flex">
@@ -597,13 +597,13 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
             </Button>
           </Card>
 
-          <ul className="px-1 space-y-1.5 text-[11px] text-slate-500">
+          <ul className="px-1 space-y-1.5 text-xs text-slate-500">
             <li className="flex items-center gap-2">
-              <ShieldCheck className="w-3.5 h-3.5 text-suguba-brand shrink-0" />
+              <ShieldCheck className="w-3.5 h-3.5 text-suguba-brand-dark shrink-0" />
               Code secret remis au livreur à la réception
             </li>
             <li className="flex items-center gap-2">
-              <Lock className="w-3.5 h-3.5 text-suguba-brand shrink-0" />
+              <Lock className="w-3.5 h-3.5 text-suguba-brand-dark shrink-0" />
               Aucun compte à créer, aucun paiement en ligne
             </li>
           </ul>
@@ -621,8 +621,8 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
         >
           <div className="px-4 py-2.5 flex items-center gap-4">
             <div className="min-w-0">
-              <p className="text-[11px] text-slate-500 leading-none">Total à la livraison</p>
-              <p className="text-lg font-black text-slate-900 whitespace-nowrap mt-1">
+              <p className="text-xs text-slate-500 leading-none">Total à la livraison</p>
+              <p className="text-lg font-bold text-slate-900 whitespace-nowrap mt-1">
                 {devis ? fcfa(devis.total) : '…'}
               </p>
             </div>

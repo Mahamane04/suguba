@@ -64,11 +64,11 @@ export default function DriverDashboardPage() {
             « voir /register/complete ». */}
         <div className="bg-white border border-slate-200 p-5 rounded-3xl space-y-4">
           <div className="space-y-1">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-[11px] font-bold">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-bold">
               <Truck className="w-3.5 h-3.5" />
               <span>Espace livreur</span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
               {currentUser.fullName ? `Bonjour, ${currentUser.fullName.split(' ')[0]}` : 'Bonjour'}
             </h1>
             {driver?.vehicleType ? (
@@ -77,7 +77,7 @@ export default function DriverDashboardPage() {
                 {driver.licensePlate ? ` (${driver.licensePlate})` : ''}
               </p>
             ) : (
-              <Link href="/register/complete" className="text-xs font-bold text-suguba-brand hover:underline">
+              <Link href="/register/complete" className="text-xs font-bold text-suguba-brand-dark hover:underline">
                 Compléter mon dossier (véhicule, zone)
               </Link>
             )}
@@ -85,8 +85,8 @@ export default function DriverDashboardPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-2xl bg-slate-50 p-3">
-              <p className="text-[11px] font-bold text-slate-500 uppercase">Encaissé à la livraison</p>
-              <p className="text-lg font-black text-slate-900">{totalCollectedCash.toLocaleString('fr-FR')} F</p>
+              <p className="text-xs font-bold text-slate-500 uppercase">Encaissé à la livraison</p>
+              <p className="text-lg font-bold text-slate-900">{totalCollectedCash.toLocaleString('fr-FR')} F</p>
             </div>
             <Link
               href="/driver/earnings"
@@ -101,7 +101,7 @@ export default function DriverDashboardPage() {
         {/* Active Runs Section */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="font-black text-base text-slate-900 flex items-center">
+            <h2 className="font-bold text-base text-slate-900 flex items-center">
               <Navigation className="w-4 h-4 mr-2 text-amber-600" />
               <span>Mes courses en cours ({myAssignedOrders.length})</span>
             </h2>
@@ -125,7 +125,7 @@ export default function DriverDashboardPage() {
                     {/* Top Status */}
                     <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                       <div>
-                        <span className="font-mono text-xs font-black text-slate-900">
+                        <span className="font-mono text-xs font-bold text-slate-900">
                           #{order.orderNumber}
                         </span>
                         <span className="text-xs text-slate-500 ml-2">
@@ -136,12 +136,12 @@ export default function DriverDashboardPage() {
                       {/* Un badge « à encaisser » inconditionnel ferait réclamer
                           au client une somme qu'il a déjà réglée en ligne. */}
                       {order.paymentCollected ? (
-                        <div className="px-3 py-1 bg-emerald-100 border border-emerald-300 rounded-full text-emerald-900 font-black text-xs flex items-center space-x-1">
+                        <div className="px-3 py-1 bg-emerald-100 border border-emerald-300 rounded-full text-emerald-900 font-bold text-xs flex items-center space-x-1">
                           <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
                           <span>Déjà payé — ne rien encaisser</span>
                         </div>
                       ) : (
-                        <div className="px-3 py-1 bg-amber-100 border border-amber-300 rounded-full text-amber-900 font-black text-xs flex items-center space-x-1">
+                        <div className="px-3 py-1 bg-amber-100 border border-amber-300 rounded-full text-amber-900 font-bold text-xs flex items-center space-x-1">
                           <Banknote className="w-3.5 h-3.5 text-amber-700" />
                           <span>À encaisser : {order.totalAmount.toLocaleString('fr-FR')} F</span>
                         </div>
@@ -155,7 +155,7 @@ export default function DriverDashboardPage() {
                       </div>
                       <div className="min-w-0 flex-1">
                         <h4 className="font-bold text-xs text-slate-900 truncate">{order.productName}</h4>
-                        <p className="text-[11px] text-slate-500">Quantité à remettre : <strong>{order.quantity}</strong></p>
+                        <p className="text-xs text-slate-500">Quantité à remettre : <strong>{order.quantity}</strong></p>
                       </div>
                     </div>
 
@@ -189,7 +189,7 @@ export default function DriverDashboardPage() {
                         📍 Repère : {order.landmark}
                       </p>
                       {order.deliveryNotes && (
-                        <p className="text-[11px] text-slate-500 pl-5 italic">
+                        <p className="text-xs text-slate-500 pl-5 italic">
                           Note client : {order.deliveryNotes}
                         </p>
                       )}
@@ -207,7 +207,7 @@ export default function DriverDashboardPage() {
 
                       <button
                         onClick={() => setSelectedOrderForReceipt(order)}
-                        className="py-3 px-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold border border-slate-200 rounded-2xl text-[11px] flex items-center justify-center space-x-1 transition-colors"
+                        className="py-3 px-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold border border-slate-200 rounded-2xl text-xs flex items-center justify-center space-x-1 transition-colors"
                       >
                         <Printer className="w-3.5 h-3.5 text-slate-600" />
                         <span>Reçu</span>
@@ -215,7 +215,7 @@ export default function DriverDashboardPage() {
 
                       <a
                         href={`tel:${order.customerPhone}`}
-                        className="py-3 px-2 bg-slate-900 hover:bg-black text-white font-bold rounded-2xl text-[11px] flex items-center justify-center space-x-1 transition-colors"
+                        className="py-3 px-2 bg-slate-900 hover:bg-black text-white font-bold rounded-2xl text-xs flex items-center justify-center space-x-1 transition-colors"
                       >
                         <Phone className="w-3.5 h-3.5" />
                         <span>Appel</span>
@@ -223,7 +223,7 @@ export default function DriverDashboardPage() {
 
                       <button
                         onClick={() => setSelectedOrderForOtp(order)}
-                        className="py-3 px-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black rounded-2xl text-[11px] shadow-md shadow-amber-600/20 flex items-center justify-center space-x-1 transition-transform active:scale-95"
+                        className="py-3 px-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-2xl text-xs shadow-md shadow-amber-600/20 flex items-center justify-center space-x-1 transition-transform active:scale-95"
                       >
                         <KeyRound className="w-4 h-4 stroke-[2.5]" />
                         {/* « OTP » : jargon. Le client parle de son « code secret ». */}
@@ -240,7 +240,7 @@ export default function DriverDashboardPage() {
 
         {/* Completed Runs History */}
         <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs space-y-4">
-          <h2 className="font-black text-base text-slate-900">
+          <h2 className="font-bold text-base text-slate-900">
             Livraisons effectuées
           </h2>
 
@@ -254,7 +254,7 @@ export default function DriverDashboardPage() {
                   <p className="font-bold text-xs text-slate-900">
                     Commande #{order.orderNumber} • {order.customerName}
                   </p>
-                  <p className="text-[11px] text-slate-500">
+                  <p className="text-xs text-slate-500">
                     {order.neighborhood} • {order.productName}
                   </p>
                 </div>
@@ -267,10 +267,10 @@ export default function DriverDashboardPage() {
                     <span>Reçu</span>
                   </button>
                   <div className="text-right">
-                    <span className="text-xs font-black text-emerald-700 block">
+                    <span className="text-xs font-bold text-emerald-700 block">
                       {order.totalAmount.toLocaleString('fr-FR')} F
                     </span>
-                    <span className="text-[11px] text-emerald-700 font-bold">
+                    <span className="text-xs text-emerald-700 font-bold">
                       {order.paymentCollected ? 'Payé en ligne' : 'Encaissé'}
                     </span>
                   </div>

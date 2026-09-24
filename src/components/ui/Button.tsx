@@ -12,38 +12,42 @@ import Link from 'next/link';
  * peints à la main en `emerald-500/600/700` ou en `#09b500` écrit en dur. Un
  * jeton que personne n'appelle n'est pas un système ; un composant, si.
  *
- * Règles qu'il applique, et qui valent pour tout le reste de l'app :
- *   • un seul vert de marque, `suguba-brand`, réservé à l'action primaire ;
- *   • une seule échelle neutre, `slate` ;
- *   • un seul rayon pour les boutons, `rounded-2xl` ;
- *   • pas de texte sous 11px — illisible sur un téléphone en plein soleil.
+ * Règles qu'il applique (charte verte du 2026-09-23, voir tailwind.config.js) :
+ *   • action principale en vert PROFOND, texte blanc (12,5:1). L'ancien
+ *     blanc sur `suguba-brand` (2,76:1) était illisible en plein soleil ;
+ *   • forme pilule, cibles de 40 à 52 px pour le pouce ;
+ *   • demi-gras (600), jamais d'extra-gras ; rien sous 13 px.
  */
 
-type Variante = 'primary' | 'secondary' | 'ghost' | 'danger';
+type Variante = 'primary' | 'secondary' | 'ghost' | 'danger' | 'whatsapp' | 'citron';
 type Taille = 'sm' | 'md' | 'lg';
 
 const VARIANTES: Record<Variante, string> = {
   // Action principale de l'écran. Une seule par écran, en principe.
-  primary: 'bg-suguba-brand hover:bg-suguba-brand-dark text-white shadow-brand-md hover:shadow-brand-lg',
-  // Action importante mais pas la principale (« Acheter » sur une carte,
-  // navigation ferme). Neutre foncé, jamais le vert de marque.
-  secondary: 'bg-slate-900 hover:bg-black text-white',
+  primary: 'bg-suguba-profond hover:bg-suguba-profond-2 text-white',
+  // Action importante mais pas la principale (« Acheter » sur une carte) :
+  // fond menthe, texte profond — clairement cliquable, sans voler la vedette.
+  secondary: 'bg-suguba-menthe hover:bg-[#dcefd8] text-suguba-profond',
   // Action secondaire ou réversible : retour, annuler, choix parmi plusieurs.
-  ghost: 'bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-slate-800',
+  ghost: 'bg-white border border-slate-200 hover:bg-suguba-sauge hover:border-slate-300 text-suguba-profond',
   // Destructif ou irréversible uniquement — pas « attention » au sens large.
-  danger: 'bg-rose-600 hover:bg-rose-700 text-white',
+  danger: 'bg-white border border-rose-200 hover:bg-rose-50 text-rose-700',
+  // Uniquement ce qui ouvre WhatsApp (partager, écrire au support).
+  whatsapp: 'bg-suguba-wa hover:bg-[#1fbf5b] text-suguba-profond',
+  // Action posée sur un fond vert profond (en-têtes, barre de commande).
+  citron: 'bg-suguba-citron hover:bg-[#b9e94f] text-suguba-profond',
 };
 
 const TAILLES: Record<Taille, string> = {
-  sm: 'py-2 px-3 text-xs gap-1.5',
-  md: 'py-2.5 px-4 text-xs gap-2',
-  lg: 'py-3.5 px-6 text-sm gap-2.5',
+  sm: 'min-h-[40px] px-4 text-sm gap-1.5',
+  md: 'min-h-[44px] px-5 text-sm gap-2',
+  lg: 'min-h-[52px] px-7 text-[15px] gap-2.5',
 };
 
 const BASE =
-  'inline-flex items-center justify-center font-bold rounded-2xl transition-all ' +
+  'inline-flex items-center justify-center font-semibold rounded-full transition-all ' +
   'active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none ' +
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-suguba-brand/40 focus-visible:ring-offset-2';
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-suguba-brand focus-visible:ring-offset-2';
 
 interface ProprietesCommunes {
   variant?: Variante;

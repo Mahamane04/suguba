@@ -119,16 +119,16 @@ export default function ProductPricingModal({ product, isOpen, onClose }: Produc
               <ProductImage src={product.images?.[0]} alt={product.name} fill className="object-cover" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Fournisseur : {product.supplierName}</p>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Fournisseur : {product.supplierName}</p>
               <h4 className="font-bold text-xs text-slate-900 truncate">{product.name}</h4>
-              <p className="text-xs font-black text-slate-700 mt-0.5">Prix fournisseur : {f(product.supplierPrice)}</p>
+              <p className="text-xs font-bold text-slate-700 mt-0.5">Prix fournisseur : {f(product.supplierPrice)}</p>
             </div>
           </div>
 
           {!confirme && (
             <div className="flex items-start space-x-2 bg-amber-50 border border-amber-300 rounded-2xl p-3">
               <AlertCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
-              <p className="text-[11px] text-amber-900">
+              <p className="text-xs text-amber-900">
                 Les coûts de la plateforme ne sont pas encore confirmés : ce calcul repose sur une
                 estimation provisoire. Renseignez vos vrais coûts dans « Réglages économiques ».
               </p>
@@ -150,26 +150,26 @@ export default function ProductPricingModal({ product, isOpen, onClose }: Produc
                   step={500}
                   value={prixVente}
                   onChange={(e) => setPrixVente(parseInt(e.target.value) || 0)}
-                  className="w-full h-12 px-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-black text-slate-900 focus:bg-white focus:outline-slate-600"
+                  className="w-full h-12 px-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:bg-white focus:outline-slate-600"
                 />
                 <div className="flex gap-2 mt-2">
                   <button type="button" onClick={() => setPrixVente(tarif.prixRecommande)}
-                    className="flex-1 h-9 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-[11px] font-bold flex items-center justify-center space-x-1">
+                    className="flex-1 h-9 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 text-xs font-bold flex items-center justify-center space-x-1">
                     <Sparkles className="w-3.5 h-3.5" /><span>Recommandé : {f(tarif.prixRecommande)}</span>
                   </button>
                   <button type="button" onClick={() => setPrixVente(tarif.prixMinimal)}
-                    className="flex-1 h-9 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-[11px] font-bold">
+                    className="flex-1 h-9 rounded-xl bg-slate-50 border border-slate-200 text-slate-700 text-xs font-bold">
                     Minimal : {f(tarif.prixMinimal)}
                   </button>
                 </div>
               </div>
 
-              <div className={`border rounded-2xl px-3 py-2 text-[11px] font-bold ${statutLibelle[tarif.statut].classe}`}>
+              <div className={`border rounded-2xl px-3 py-2 text-xs font-bold ${statutLibelle[tarif.statut].classe}`}>
                 {statutLibelle[tarif.statut].texte}
               </div>
 
               <div className="bg-slate-900 text-white rounded-2xl p-4 space-y-1.5 text-xs">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500 pb-1">Décomposition par article</p>
+                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 pb-1">Décomposition par article</p>
                 <Ligne l="Prix de vente" v={f(tarif.prixVente)} fort />
                 <Ligne l="− Prix fournisseur" v={f(tarif.prixFournisseur)} classe="text-slate-300" />
                 <div className="border-t border-slate-800 my-1" />
@@ -188,13 +188,13 @@ export default function ProductPricingModal({ product, isOpen, onClose }: Produc
               </div>
 
               {tarif.partageable && (
-                <p className="text-[11px] text-slate-600">
+                <p className="text-xs text-slate-600">
                   Affiché au revendeur : « Gagne {f(tarif.commission)} par vente ».
                 </p>
               )}
 
               {erreur && (
-                <div className="flex items-start space-x-2 text-rose-700 text-[11px] font-bold bg-rose-50 border border-rose-200 rounded-xl p-2.5">
+                <div className="flex items-start space-x-2 text-rose-700 text-xs font-bold bg-rose-50 border border-rose-200 rounded-xl p-2.5">
                   <AlertCircle className="w-4 h-4 shrink-0" /><span>{erreur}</span>
                 </div>
               )}
@@ -217,7 +217,7 @@ export default function ProductPricingModal({ product, isOpen, onClose }: Produc
 
 function Ligne({ l, v, classe = 'text-slate-200', fort = false }: { l: string; v: string; classe?: string; fort?: boolean }) {
   return (
-    <div className={`flex justify-between ${classe} ${fort ? 'font-black' : ''}`}>
+    <div className={`flex justify-between ${classe} ${fort ? 'font-bold' : ''}`}>
       <span>{l}</span><span>{v}</span>
     </div>
   );

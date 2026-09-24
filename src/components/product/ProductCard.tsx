@@ -104,7 +104,7 @@ export default function ProductCard({
       onMouseEnter={precharger}
       disabled={preparation}
       aria-label={`Partager ${produit.nom} sur WhatsApp`}
-      className={`h-9 rounded-2xl bg-[#25D366] hover:bg-[#1ebe5b] text-white font-bold text-xs inline-flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] disabled:opacity-70 ${
+      className={`h-9 rounded-2xl bg-suguba-wa hover:bg-[#1fbf5b] text-suguba-profond font-bold text-xs inline-flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] disabled:opacity-70 ${
         pleineLargeur ? 'flex-1 min-w-0' : 'px-3 shrink-0'
       }`}
     >
@@ -130,17 +130,17 @@ export default function ProductCard({
       <div className="relative">
         <Carrousel images={produit.images} alt={produit.nom} href={lien} priority={priority} />
         {sponsorisationId && (
-          <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-lg bg-white/95 text-slate-700 text-[10px] font-bold border border-slate-200 pointer-events-none">
+          <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-lg bg-white/95 text-slate-700 text-xs font-bold border border-slate-200 pointer-events-none">
             Sponsorisé
           </span>
         )}
         {enRupture && (
-          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-lg bg-slate-900/85 text-white text-[11px] font-bold pointer-events-none">
+          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-lg bg-slate-900/85 text-white text-xs font-bold pointer-events-none">
             Rupture de stock
           </span>
         )}
         {afficherCommission && (produit.commission ?? 0) > 0 && (
-          <span className="absolute top-2 right-2 px-2 py-0.5 rounded-lg bg-suguba-brand text-white text-[11px] font-black shadow pointer-events-none">
+          <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-suguba-citron text-suguba-profond text-xs font-bold shadow pointer-events-none">
             +{produit.commission!.toLocaleString('fr-FR')} F
           </span>
         )}
@@ -152,12 +152,12 @@ export default function ProductCard({
             {produit.nom}
           </h3>
         </Link>
-        <p className="text-base sm:text-lg font-black text-slate-900 leading-none">
+        <p className="text-base sm:text-lg font-bold text-slate-900 leading-none">
           {produit.prix.toLocaleString('fr-FR')} <span className="text-xs font-bold">F</span>
         </p>
-        <p className="text-[11px] text-slate-500">
+        <p className="text-xs text-slate-500">
           {afficherCommission && (produit.commission ?? 0) > 0
-            ? <>Vous gagnez <strong className="text-suguba-brand">{produit.commission!.toLocaleString('fr-FR')} F</strong></>
+            ? <>Vous gagnez <strong className="text-suguba-brand-dark">{produit.commission!.toLocaleString('fr-FR')} F</strong></>
             : 'Payez à la livraison'}
         </p>
 

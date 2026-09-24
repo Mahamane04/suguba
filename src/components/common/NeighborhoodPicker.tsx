@@ -96,11 +96,11 @@ export default function NeighborhoodPicker({
           aria-expanded={open}
           className="max-w-full min-h-[44px] inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 hover:bg-white/15 pl-1.5 pr-3 py-1 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-white/40"
         >
-          <span className="w-8 h-8 rounded-full bg-suguba-brand text-white flex items-center justify-center shrink-0">
+          <span className="w-8 h-8 rounded-full bg-suguba-citron text-suguba-profond flex items-center justify-center shrink-0">
             <MapPin className="w-4 h-4" />
           </span>
           <span className="min-w-0 leading-tight">
-            {prefixe && <span className="block text-[10px] font-bold uppercase tracking-wider text-emerald-100/60">{prefixe}</span>}
+            {prefixe && <span className="block text-xs font-bold uppercase tracking-wider text-emerald-100/60">{prefixe}</span>}
             <span className={`block truncate text-sm font-bold ${value ? 'text-white' : 'text-emerald-100/80'}`}>{value || placeholder}</span>
           </span>
           <ChevronDown className={`w-4 h-4 text-emerald-100/70 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
@@ -128,14 +128,14 @@ export default function NeighborhoodPicker({
             type="button"
             onClick={utiliserPositionActuelle}
             disabled={localisationEnCours}
-            className="w-full flex items-center gap-2 px-3.5 py-2.5 text-xs font-bold text-suguba-brand hover:bg-suguba-50 disabled:opacity-60 transition-colors border-b border-gray-100 mb-1"
+            className="w-full flex items-center gap-2 px-3.5 py-2.5 text-xs font-bold text-suguba-brand-dark hover:bg-suguba-50 disabled:opacity-60 transition-colors border-b border-gray-100 mb-1"
           >
             {localisationEnCours ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LocateFixed className="w-3.5 h-3.5" />}
             {localisationEnCours ? 'Localisation…' : 'Utiliser ma position actuelle'}
           </button>
           {BAMAKO_NEIGHBORHOODS.map((group) => (
             <div key={group.commune}>
-              <p className="px-3.5 pt-2 pb-1 text-[11px] font-black text-gray-400 uppercase tracking-wider">
+              <p className="px-3.5 pt-2 pb-1 text-xs font-bold text-gray-400 uppercase tracking-wider">
                 {group.commune}
               </p>
               {group.quartiers.map((q) => (

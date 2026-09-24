@@ -162,14 +162,14 @@ export default function RejoindrePage() {
 
     return (
       <>
-        <p className="text-2xl sm:text-3xl font-black leading-tight">{titre}</p>
+        <p className="text-2xl sm:text-3xl font-bold leading-tight">{titre}</p>
         <p className="text-sm text-white/80 mt-1.5 leading-relaxed">{sous}</p>
 
         <div className="mt-4 flex items-center gap-1.5 flex-wrap">
           {flux.map((etape, i) => (
             <React.Fragment key={etape}>
               {i > 0 && <ArrowRight className="w-3.5 h-3.5 text-white/40 shrink-0" />}
-              <span className="px-2.5 py-1.5 rounded-xl bg-white/15 text-[11px] font-bold">
+              <span className="px-2.5 py-1.5 rounded-xl bg-white/15 text-xs font-bold">
                 {etape}
               </span>
             </React.Fragment>
@@ -190,7 +190,7 @@ export default function RejoindrePage() {
           Retour au catalogue
         </Link>
 
-        <h1 className="text-2xl font-black text-gray-900 tracking-tight">
+        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
           Gagner de l&apos;argent avec Suguba
         </h1>
 
@@ -223,7 +223,7 @@ export default function RejoindrePage() {
         <div className={`rounded-3xl p-5 sm:p-6 text-white bg-gradient-to-br ${actif.fond} shadow-lg`}>
           <div className="flex items-center gap-2 mb-3">
             <Icon className="w-5 h-5 text-white/80" />
-            <span className="text-xs font-black uppercase tracking-wider text-white/80">
+            <span className="text-xs font-bold uppercase tracking-wider text-white/80">
               {actif.label} · {actif.tagline}
             </span>
           </div>
@@ -259,7 +259,7 @@ export default function RejoindrePage() {
                   <GoogleIcon className="w-5 h-5" />
                   {actif.cta}
                 </Button>
-                <p className="text-[11px] text-white/70 text-center mt-2">
+                <p className="text-xs text-white/70 text-center mt-2">
                   Sans mot de passe · dossier en 2 minutes
                 </p>
               </>
@@ -272,12 +272,12 @@ export default function RejoindrePage() {
           <p className="text-sm text-gray-600 leading-relaxed">{actif.quoiFaire}</p>
 
           <div className="pt-1 space-y-2.5">
-            <p className="text-[11px] font-black uppercase tracking-wider text-gray-400">
+            <p className="text-xs font-bold uppercase tracking-wider text-gray-400">
               Comment démarrer
             </p>
             {actif.etapes.map((etape, i) => (
               <div key={etape} className="flex items-start gap-2.5">
-                <span className={`w-5 h-5 shrink-0 rounded-full flex items-center justify-center text-[11px] font-black ${actif.puce}`}>
+                <span className={`w-5 h-5 shrink-0 rounded-full flex items-center justify-center text-xs font-bold ${actif.puce}`}>
                   {i + 1}
                 </span>
                 <span className="text-xs text-gray-700 leading-relaxed">{etape}</span>
@@ -294,15 +294,15 @@ export default function RejoindrePage() {
             'Livraison assurée par Suguba',
           ].map((texte) => (
             <div key={texte} className="bg-white rounded-2xl border border-gray-100 px-3 py-2.5 flex items-center gap-2">
-              <Check className="w-3.5 h-3.5 text-suguba-brand shrink-0 stroke-[3]" />
-              <span className="text-[11px] font-semibold text-gray-700">{texte}</span>
+              <Check className="w-3.5 h-3.5 text-suguba-brand-dark shrink-0 stroke-[3]" />
+              <span className="text-xs font-semibold text-gray-700">{texte}</span>
             </div>
           ))}
         </div>
 
         <p className="text-center text-xs text-gray-500 pb-2">
           Vous avez déjà un compte ?{' '}
-          <Link href="/login" className="font-bold text-suguba-brand hover:underline">
+          <Link href="/login" className="font-bold text-suguba-brand-dark hover:underline">
             Se connecter
           </Link>
         </p>

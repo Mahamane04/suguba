@@ -94,8 +94,8 @@ export default function DriverVerificationPanel() {
             <Bike className="w-4 h-4" />
           </div>
           <div>
-            <h3 className="font-black text-sm text-slate-900">Livreurs — vérification au guichet</h3>
-            <p className="text-[11px] text-slate-500">
+            <h3 className="font-bold text-sm text-slate-900">Livreurs — vérification au guichet</h3>
+            <p className="text-xs text-slate-500">
               {enAttente > 0
                 ? `${enAttente} livreur${enAttente > 1 ? 's' : ''} à rencontrer`
                 : 'Tous les livreurs inscrits ont été vérifiés'}
@@ -104,14 +104,14 @@ export default function DriverVerificationPanel() {
         </div>
         <button
           onClick={charger}
-          className="text-[11px] font-bold text-slate-500 hover:text-slate-900"
+          className="text-xs font-bold text-slate-500 hover:text-slate-900"
         >
           Actualiser
         </button>
       </div>
 
       {!cloud && (
-        <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded-2xl p-3">
+        <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-2xl p-3">
           Base non configurée sur cet environnement.
         </p>
       )}
@@ -134,17 +134,17 @@ export default function DriverVerificationPanel() {
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <p className="font-black text-sm text-slate-900 truncate">{l.fullName}</p>
-                  <p className="text-[11px] text-slate-600 font-mono">{l.phone}</p>
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-[11px] text-slate-600">
+                  <p className="font-bold text-sm text-slate-900 truncate">{l.fullName}</p>
+                  <p className="text-xs text-slate-600 font-mono">{l.phone}</p>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1.5 text-xs text-slate-600">
                     {l.vehicleType && <span>{l.vehicleType}{l.licensePlate ? ` · ${l.licensePlate}` : ''}</span>}
                     {l.zone && <span className="flex items-center"><MapPin className="w-3 h-3 mr-1" />{l.zone}</span>}
                     {l.livraisons > 0 && <span>{l.livraisons} livraison{l.livraisons > 1 ? 's' : ''}</span>}
                   </div>
                 </div>
                 <span
-                  className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] font-black ${
-                    l.verifie ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-white'
+                  className={`shrink-0 px-2.5 py-1 rounded-full text-xs font-bold ${
+                    l.verifie ? 'bg-suguba-profond text-white' : 'bg-amber-500 text-white'
                   }`}
                 >
                   {l.verifie ? 'VÉRIFIÉ' : 'À RENCONTRER'}
@@ -152,14 +152,14 @@ export default function DriverVerificationPanel() {
               </div>
 
               {!l.dossierComplet && (
-                <p className="text-[11px] text-slate-600 bg-white border border-slate-200 rounded-xl p-2.5">
+                <p className="text-xs text-slate-600 bg-white border border-slate-200 rounded-xl p-2.5">
                   Dossier incomplet : ce livreur n&apos;a pas encore renseigné son véhicule
                   ni sa zone. Rien à vérifier tant qu&apos;il n&apos;a pas terminé son inscription.
                 </p>
               )}
 
               {l.verifie && l.constat && (
-                <p className="text-[11px] text-slate-600 bg-white border border-slate-200 rounded-xl p-2.5">
+                <p className="text-xs text-slate-600 bg-white border border-slate-200 rounded-xl p-2.5">
                   <span className="font-bold">Constat : </span>{l.constat}
                   {l.verifieLe && (
                     <span className="text-slate-500"> — {new Date(l.verifieLe).toLocaleDateString('fr-FR')}</span>
@@ -169,7 +169,7 @@ export default function DriverVerificationPanel() {
 
               {ouvert === l.id ? (
                 <div className="space-y-2">
-                  <label className="text-[11px] font-bold text-slate-600 uppercase tracking-wide block">
+                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wide block">
                     Ce que vous avez constaté au guichet
                   </label>
                   <textarea
@@ -179,12 +179,12 @@ export default function DriverVerificationPanel() {
                     placeholder="Pièce présentée, permis, assurance, état de la moto, réserves…"
                     className="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs focus:outline-none focus:border-slate-900"
                   />
-                  {erreur && <p className="text-[11px] text-red-700 font-medium">{erreur}</p>}
+                  {erreur && <p className="text-xs text-red-700 font-medium">{erreur}</p>}
                   <div className="flex gap-2">
                     <button
                       onClick={() => decider(l.id, true)}
                       disabled={enCours === l.id || !l.dossierComplet}
-                      className="flex-1 h-11 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white font-black rounded-xl text-xs flex items-center justify-center space-x-1.5 transition-transform active:scale-[0.98]"
+                      className="flex-1 h-11 bg-suguba-profond hover:bg-suguba-profond-2 disabled:bg-slate-300 text-white font-bold rounded-xl text-xs flex items-center justify-center space-x-1.5 transition-transform active:scale-[0.98]"
                     >
                       {enCours === l.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
                       <span>Vérifié — autoriser les courses</span>
@@ -203,7 +203,7 @@ export default function DriverVerificationPanel() {
                     <button
                       onClick={() => { setOuvert(l.id); setConstat(''); setErreur(''); }}
                       disabled={!l.dossierComplet}
-                      className="flex-1 h-11 bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white font-black rounded-xl text-xs transition-transform active:scale-[0.98]"
+                      className="flex-1 h-11 bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white font-bold rounded-xl text-xs transition-transform active:scale-[0.98]"
                     >
                       Enregistrer la vérification
                     </button>
@@ -224,7 +224,7 @@ export default function DriverVerificationPanel() {
         </div>
       )}
 
-      <p className="text-[11px] text-slate-500 border-t border-slate-100 pt-3">
+      <p className="text-xs text-slate-500 border-t border-slate-100 pt-3">
         Un compte livreur fonctionne dès l&apos;inscription : il peut se connecter et voir
         son espace. Ce panneau décide seulement du droit de recevoir des courses.
       </p>

@@ -43,7 +43,7 @@ export default function DeliveryMapModal({ order, isOpen, onClose }: DeliveryMap
             <Compass className="w-5 h-5 text-amber-400" />
             <div>
               <h3 className="font-bold text-base sm:text-lg">Itinéraire & Repère Terrain</h3>
-              <p className="text-[11px] text-slate-300">Commande #{order.orderNumber}</p>
+              <p className="text-xs text-slate-300">Commande #{order.orderNumber}</p>
             </div>
           </div>
           <button 
@@ -60,7 +60,7 @@ export default function DeliveryMapModal({ order, isOpen, onClose }: DeliveryMap
           {/* Zone & Sector Badge */}
           <div className="bg-slate-100 p-3 rounded-2xl border border-slate-200 flex items-center justify-between text-xs">
             <span className="font-bold text-slate-700">Secteur Logistique :</span>
-            <span className="font-black px-2.5 py-1 rounded-xl bg-amber-500 text-slate-950 text-[11px]">
+            <span className="font-bold px-2.5 py-1 rounded-xl bg-amber-500 text-slate-950 text-xs">
               📍 {zoneName}
             </span>
           </div>
@@ -70,19 +70,19 @@ export default function DeliveryMapModal({ order, isOpen, onClose }: DeliveryMap
             <div className="flex items-start space-x-3">
               <MapPin className="w-6 h-6 text-emerald-700 shrink-0 mt-0.5" />
               <div>
-                <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">
+                <p className="text-xs font-bold uppercase tracking-wider text-emerald-800">
                   Quartier de Destination :
                 </p>
-                <p className="text-base font-black text-slate-900">
+                <p className="text-base font-bold text-slate-900">
                   {order.neighborhood} ({order.city})
                 </p>
                 
                 <div className="mt-2 bg-white p-3 rounded-xl border border-emerald-200 shadow-2xs">
-                  <p className="text-[11px] font-bold text-slate-800">
-                    📍 Repère Précis : <span className="text-emerald-800 font-black">{order.landmark}</span>
+                  <p className="text-xs font-bold text-slate-800">
+                    📍 Repère Précis : <span className="text-emerald-800 font-bold">{order.landmark}</span>
                   </p>
                   {order.deliveryNotes && (
-                    <p className="text-[11px] text-slate-500 mt-1 italic">
+                    <p className="text-xs text-slate-500 mt-1 italic">
                       Note client : {order.deliveryNotes}
                     </p>
                   )}
@@ -94,14 +94,14 @@ export default function DeliveryMapModal({ order, isOpen, onClose }: DeliveryMap
           {/* Amount & Contact Preview */}
           <div className="grid grid-cols-2 gap-3">
             <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200 text-xs">
-              <span className="text-[11px] text-slate-500 font-bold block">Client :</span>
+              <span className="text-xs text-slate-500 font-bold block">Client :</span>
               <strong className="text-slate-900 block truncate">{order.customerName}</strong>
               <span className="font-mono text-emerald-700 font-bold">{order.customerPhone}</span>
             </div>
 
             <div className="bg-amber-50 p-3 rounded-2xl border border-amber-200 text-xs">
-              <span className="text-[11px] text-amber-800 font-bold block">À encaisser :</span>
-              <strong className="text-base font-black text-slate-900">
+              <span className="text-xs text-amber-800 font-bold block">À encaisser :</span>
+              <strong className="text-base font-bold text-slate-900">
                 {order.totalAmount.toLocaleString('fr-FR')} F
               </strong>
             </div>
@@ -150,7 +150,7 @@ export default function DeliveryMapModal({ order, isOpen, onClose }: DeliveryMap
               href={customerWhatsappUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="py-3 px-3 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold rounded-2xl text-xs flex items-center justify-center space-x-1.5 shadow-xs"
+              className="py-3 px-3 bg-suguba-wa hover:bg-[#20bd5a] text-suguba-profond font-bold rounded-2xl text-xs flex items-center justify-center space-x-1.5 shadow-xs"
             >
               <MessageCircle className="w-4 h-4 fill-current" />
               <span>Message WhatsApp</span>

@@ -156,12 +156,12 @@ export default function DiasporaPortalPage() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             
             <div className="space-y-3 max-w-xl">
-              <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/10 text-emerald-200 text-xs font-black border border-white/15">
+              <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/10 text-emerald-200 text-xs font-bold border border-white/15">
                 <Globe2 className="w-4 h-4 text-emerald-300" />
                 <span>Espace Diaspora Malienne (France, USA, Europe & Afrique)</span>
               </div>
 
-              <h1 className="text-2xl sm:text-4xl font-black tracking-tight text-white leading-tight">
+              <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-white leading-tight">
                 Offrez et Équipez votre Famille à Bamako depuis l&apos;Étranger 🌍🇲🇱
               </h1>
 
@@ -173,7 +173,7 @@ export default function DiasporaPortalPage() {
 
             {/* Currency Switcher */}
             <div className="bg-white/10 backdrop-blur-xs p-4 rounded-3xl border border-white/20 space-y-3 shrink-0 text-center">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-300 block">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-300 block">
                 Devise d&apos;affichage :
               </span>
               <div className="grid grid-cols-3 gap-1.5">
@@ -181,7 +181,7 @@ export default function DiasporaPortalPage() {
                   <button
                     key={curr}
                     onClick={() => setCurrency(curr)}
-                    className={`py-2 px-3 rounded-xl text-xs font-black transition-all ${
+                    className={`py-2 px-3 rounded-xl text-xs font-bold transition-all ${
                       currency === curr
                         ? 'bg-emerald-500 text-slate-950 shadow-md'
                         : 'bg-white/10 text-white hover:bg-white/20'
@@ -192,7 +192,7 @@ export default function DiasporaPortalPage() {
                 ))}
               </div>
               {/* Seule la parité euro est fixe (655,957 F) ; le dollar varie. */}
-              <p className="text-[11px] text-slate-500">Prix indicatifs convertis du franc CFA (1 € = 655,957 F)</p>
+              <p className="text-xs text-slate-500">Prix indicatifs convertis du franc CFA (1 € = 655,957 F)</p>
             </div>
 
           </div>
@@ -224,8 +224,8 @@ export default function DiasporaPortalPage() {
             article différent de celui qu'il avait choisi. */}
         <div className="space-y-4">
           <div className="border-b border-slate-200 pb-2">
-            <h2 className="font-black text-lg text-slate-900 flex items-center space-x-2">
-              <HeartHandshake className="w-5 h-5 text-suguba-brand" />
+            <h2 className="font-bold text-lg text-slate-900 flex items-center space-x-2">
+              <HeartHandshake className="w-5 h-5 text-suguba-brand-dark" />
               <span>Choisissez l&apos;article pour votre famille</span>
             </h2>
           </div>
@@ -254,16 +254,16 @@ export default function DiasporaPortalPage() {
                     <div className="relative aspect-square bg-slate-100">
                       <ProductImage src={p.images[0] || ''} alt={p.name} fill sizes="(max-width: 768px) 50vw, 25vw" className="object-cover" compact />
                       {choisi && (
-                        <span className="absolute top-2 right-2 w-7 h-7 rounded-full bg-suguba-brand text-white flex items-center justify-center">
+                        <span className="absolute top-2 right-2 w-7 h-7 rounded-full bg-suguba-profond text-white flex items-center justify-center">
                           <CheckCircle2 className="w-4 h-4" />
                         </span>
                       )}
                     </div>
                     <div className="p-3 space-y-0.5">
                       <p className="font-bold text-sm text-slate-900 line-clamp-2 leading-snug">{p.name}</p>
-                      <p className="text-base font-black text-slate-900">{formatPrice(p.publicPrice)}</p>
+                      <p className="text-base font-bold text-slate-900">{formatPrice(p.publicPrice)}</p>
                       {currency !== 'XOF' && (
-                        <p className="text-[11px] text-slate-500">{p.publicPrice.toLocaleString('fr-FR')} FCFA</p>
+                        <p className="text-xs text-slate-500">{p.publicPrice.toLocaleString('fr-FR')} FCFA</p>
                       )}
                     </div>
                   </button>
@@ -278,10 +278,10 @@ export default function DiasporaPortalPage() {
           <OrderRecovery attempt={recovery} disabled={isProcessing} onResume={() => { void finishOrder(); }} />
           
           <div className="border-b border-slate-100 pb-4">
-            <span className="px-3 py-1 bg-slate-100 text-slate-700 text-[11px] font-black rounded-full uppercase tracking-wider">
+            <span className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-full uppercase tracking-wider">
               Commande Sécurisée Internationale
             </span>
-            <h2 className="text-xl font-black text-slate-900 pt-2">
+            <h2 className="text-xl font-bold text-slate-900 pt-2">
               Commander et Faire Livrer à Bamako
             </h2>
             <p className="text-xs text-slate-500">
@@ -293,7 +293,7 @@ export default function DiasporaPortalPage() {
             <div className="p-8 bg-emerald-50 border border-emerald-200 rounded-3xl text-center space-y-4">
               <CheckCircle2 className="w-16 h-16 text-emerald-600 mx-auto" />
               <div className="space-y-1">
-                <h3 className="text-2xl font-black text-emerald-950">Paiement Validé & Commande Confirmée !</h3>
+                <h3 className="text-2xl font-bold text-emerald-950">Paiement Validé & Commande Confirmée !</h3>
                 <p className="text-xs text-emerald-800 max-w-md mx-auto">
                   Votre commande a été transmise à notre équipe logistique à Bamako. Suguba contactera <strong>{beneficiaryName}</strong> ({beneficiaryPhone}) pour organiser la livraison.
                 </p>
@@ -308,7 +308,7 @@ export default function DiasporaPortalPage() {
                qu'aucun fournisseur n'a référencé d'article. Sans ce garde-fou,
                selectedProduct est undefined et la page plante au build. */
             <div className="p-8 text-center space-y-2">
-              <p className="text-sm font-black text-slate-900">Catalogue en cours de constitution</p>
+              <p className="text-sm font-bold text-slate-900">Catalogue en cours de constitution</p>
               <p className="text-xs text-slate-500 max-w-sm mx-auto">
                 Aucun article n&apos;est disponible à la commande pour le moment. Revenez très
                 bientôt — nos fournisseurs partenaires référencent leurs produits.
@@ -325,14 +325,14 @@ export default function DiasporaPortalPage() {
                   </div>
                   <div>
                     <strong className="block text-xs text-slate-900">{selectedProduct.name}</strong>
-                    <span className="text-[11px] text-slate-500">Livraison à Bamako : {devis ? formatPrice(devis.fraisLivraison) : 'calcul…'}</span>
+                    <span className="text-xs text-slate-500">Livraison à Bamako : {devis ? formatPrice(devis.fraisLivraison) : 'calcul…'}</span>
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="text-base font-black text-emerald-700 font-mono">
+                  <span className="text-base font-bold text-emerald-700 font-mono">
                     {formatPrice(selectedProduct.publicPrice)}
                   </span>
-                  <span className="text-[11px] text-slate-500 block">TTC</span>
+                  <span className="text-xs text-slate-500 block">TTC</span>
                 </div>
               </div>
 
@@ -410,7 +410,7 @@ export default function DiasporaPortalPage() {
                 <button
                   type="submit"
                   disabled={isProcessing}
-                  className="w-full py-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black rounded-2xl text-sm flex items-center justify-center space-x-2 shadow-xl shadow-emerald-600/30 transition-transform active:scale-98"
+                  className="w-full py-4 bg-suguba-profond hover:bg-suguba-profond-2 text-white font-bold rounded-2xl text-sm flex items-center justify-center space-x-2 shadow-xl shadow-emerald-600/30 transition-transform active:scale-98"
                 >
                   <Lock className="w-4 h-4" />
                   <span>
@@ -426,7 +426,7 @@ export default function DiasporaPortalPage() {
                   </div>
                 )}
 
-                <p className="text-[11px] text-slate-500 text-center">
+                <p className="text-xs text-slate-500 text-center">
                   🔒 Paiement par carte sur la page sécurisée SasPay : Suguba ne voit ni ne conserve vos données bancaires.
                 </p>
               </div>

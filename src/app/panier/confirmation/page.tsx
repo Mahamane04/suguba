@@ -53,8 +53,8 @@ export default function ConfirmationPanierPage() {
       <Header />
       <main className="flex-1 max-w-xl w-full mx-auto px-4 py-6 space-y-4">
         <div className="text-center space-y-2 pt-2">
-          <CheckCircle2 className="w-12 h-12 text-suguba-brand mx-auto" />
-          <h1 className="text-xl font-black text-slate-900">Commande enregistrée</h1>
+          <CheckCircle2 className="w-12 h-12 text-suguba-brand-dark mx-auto" />
+          <h1 className="text-xl font-bold text-slate-900">Commande enregistrée</h1>
           <p className="text-sm text-slate-600">
             {donnees?.commandes.length} article{(donnees?.commandes.length || 0) > 1 ? 's' : ''} · {fcfa(donnees?.total || 0)} à payer à la livraison
           </p>
@@ -68,14 +68,14 @@ export default function ConfirmationPanierPage() {
         {livraisons.map(([code, commandes], i) => (
           <Card key={code} className="space-y-3">
             <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-black text-slate-900">
+              <p className="text-sm font-bold text-slate-900">
                 {livraisons.length > 1 ? `Livraison ${i + 1} sur ${livraisons.length}` : 'Votre livraison'}
               </p>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-slate-900 text-white text-sm font-black tabular-nums">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-slate-900 text-white text-sm font-bold tabular-nums">
                 <KeyRound className="w-4 h-4" />{code}
               </span>
             </div>
-            <p className="text-[11px] text-slate-500">
+            <p className="text-xs text-slate-500">
               Ne donnez ce code au livreur qu’une fois le colis vérifié. Il vous a aussi été envoyé par SMS.
             </p>
             <div className="divide-y divide-slate-100">
@@ -83,11 +83,11 @@ export default function ConfirmationPanierPage() {
                 <div key={c.id} className="py-2 flex items-center justify-between gap-3">
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-slate-900 truncate">{c.productName}</p>
-                    <Link href={`/track/${c.orderNumber}`} className="text-[11px] font-bold text-slate-500 underline">
+                    <Link href={`/track/${c.orderNumber}`} className="text-xs font-bold text-slate-500 underline">
                       Suivre {c.orderNumber}
                     </Link>
                   </div>
-                  <span className="text-sm font-black text-slate-900 tabular-nums shrink-0">{fcfa(c.totalAmount)}</span>
+                  <span className="text-sm font-bold text-slate-900 tabular-nums shrink-0">{fcfa(c.totalAmount)}</span>
                 </div>
               ))}
             </div>

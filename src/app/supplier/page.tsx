@@ -95,11 +95,11 @@ export default function SupplierDashboardPage() {
         {/* En-tête fournisseur */}
         <div className="bg-white border border-slate-200 p-5 sm:p-6 rounded-3xl space-y-4">
           <div className="space-y-1">
-            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-[11px] font-bold">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-bold">
               <Store className="w-3.5 h-3.5" />
               <span>Espace fournisseur</span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
               {supplier?.companyName || 'Dossier fournisseur incomplet'}
             </h1>
             <p className="text-xs text-slate-500">
@@ -154,7 +154,7 @@ export default function SupplierDashboardPage() {
 
         {/* Liste des produits */}
         <div className="bg-white rounded-3xl p-5 border border-slate-200 space-y-4">
-          <h2 className="font-black text-base text-slate-900">Mon catalogue</h2>
+          <h2 className="font-bold text-base text-slate-900">Mon catalogue</h2>
 
           {products.length === 0 ? (
             <div className="py-8 text-center space-y-3">
@@ -176,10 +176,10 @@ export default function SupplierDashboardPage() {
                     </div>
                     <div className="min-w-0 space-y-0.5">
                       <h3 className="font-bold text-sm text-slate-900 truncate">{product.name}</h3>
-                      <p className="text-[11px] text-slate-500">
+                      <p className="text-xs text-slate-500">
                         {product.category} • Stock : <strong>{product.stockQuantity}</strong>
                       </p>
-                      <p className="text-[11px] font-bold text-slate-700">
+                      <p className="text-xs font-bold text-slate-700">
                         Mon prix : {product.supplierPrice.toLocaleString('fr-FR')} F
                       </p>
                     </div>
@@ -196,7 +196,7 @@ export default function SupplierDashboardPage() {
                     </Button>
                     <Statut status={product.status} />
                     <div className="text-right">
-                      <span className="text-[11px] text-slate-500 block">Prix public</span>
+                      <span className="text-xs text-slate-500 block">Prix public</span>
                       <span className="text-xs font-bold text-slate-800">
                         {product.publicPrice ? `${product.publicPrice.toLocaleString('fr-FR')} F` : 'En attente'}
                       </span>
@@ -249,9 +249,9 @@ function Indicateur({ titre, valeur, note, accent }: {
 }) {
   return (
     <div className="bg-white p-4 rounded-3xl border border-slate-200 space-y-1">
-      <span className="text-[11px] font-bold text-slate-500 uppercase">{titre}</span>
-      <p className={`text-2xl font-black ${accent ? 'text-suguba-brand' : 'text-slate-900'}`}>{valeur}</p>
-      <p className="text-[11px] text-slate-500">{note}</p>
+      <span className="text-xs font-bold text-slate-500 uppercase">{titre}</span>
+      <p className={`text-2xl font-bold ${accent ? 'text-suguba-brand-dark' : 'text-slate-900'}`}>{valeur}</p>
+      <p className="text-xs text-slate-500">{note}</p>
     </div>
   );
 }
@@ -259,7 +259,7 @@ function Indicateur({ titre, valeur, note, accent }: {
 function Statut({ status }: { status: string }) {
   if (status === 'approved') {
     return (
-      <span className="px-2.5 py-1 rounded-full bg-suguba-brand/10 text-suguba-brand text-[11px] font-bold inline-flex items-center gap-1">
+      <span className="px-2.5 py-1 rounded-full bg-suguba-brand/10 text-suguba-brand-dark text-xs font-bold inline-flex items-center gap-1">
         <ShieldCheck className="w-3 h-3" />
         <span>En vente</span>
       </span>
@@ -267,7 +267,7 @@ function Statut({ status }: { status: string }) {
   }
   if (status === 'rejected') {
     return (
-      <span className="px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 text-[11px] font-bold inline-flex items-center gap-1">
+      <span className="px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 text-xs font-bold inline-flex items-center gap-1">
         <XCircle className="w-3 h-3" />
         <span>Retiré de la vente</span>
       </span>
@@ -275,7 +275,7 @@ function Statut({ status }: { status: string }) {
   }
   // submitted / pending / draft : il n'y avait aucune pastille pour les deux derniers.
   return (
-    <span className="px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-[11px] font-bold inline-flex items-center gap-1">
+    <span className="px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 text-xs font-bold inline-flex items-center gap-1">
       <Clock className="w-3 h-3" />
       <span>En attente</span>
     </span>

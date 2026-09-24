@@ -129,8 +129,8 @@ export default function BoutiqueFournisseurPage() {
                 <Megaphone className="w-5 h-5" />
               </div>
               <div className="min-w-0">
-                <p className="text-sm font-black text-slate-900">Je recherche des revendeurs</p>
-                <p className="text-[11px] text-slate-500 mt-0.5">
+                <p className="text-sm font-bold text-slate-900">Je recherche des revendeurs</p>
+                <p className="text-xs text-slate-500 mt-0.5">
                   Votre boutique apparaît dans « Ces boutiques recherchent des revendeurs », vue par tout le réseau.
                 </p>
               </div>
@@ -147,20 +147,20 @@ export default function BoutiqueFournisseurPage() {
 
           <Card className="space-y-3">
             <div>
-              <p className="text-sm font-black text-slate-900">Galerie</p>
-              <p className="text-[11px] text-slate-500 mt-0.5">Votre magasin, votre équipe, vos produits phares. Affichée en diaporama sur votre boutique.</p>
+              <p className="text-sm font-bold text-slate-900">Galerie</p>
+              <p className="text-xs text-slate-500 mt-0.5">Votre magasin, votre équipe, vos produits phares. Affichée en diaporama sur votre boutique.</p>
             </div>
             <GalerieEditeur images={galerie} max={maxGalerie} onChange={(nouvelles) => { setGalerie(nouvelles); enregistrer({ galerie: nouvelles }); }} />
           </Card>
 
           <Card className="space-y-4">
-            <p className="text-sm font-black text-slate-900">Personnaliser</p>
+            <p className="text-sm font-bold text-slate-900">Personnaliser</p>
 
             <CouvertureEditeur valeur={couverture} onChange={setCouverture} />
 
             <div className="flex items-center gap-4">
               <LogoUploader value={logo} onChange={setLogo} nomPourInitiale={nom} />
-              <p className="text-[11px] text-slate-500">Votre logo, affiché en haut de votre page.</p>
+              <p className="text-xs text-slate-500">Votre logo, affiché en haut de votre page.</p>
             </div>
 
             <Field label="Nom affiché" htmlFor="nom-boutique" requis>
