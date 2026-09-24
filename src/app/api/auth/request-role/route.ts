@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { role, fiche } = await req.json().catch(() => ({}));
+    const { role, fiche, phone: phoneFourni } = await req.json().catch(() => ({}));
     if (!ROLES_DEMANDABLES.includes(role)) {
       return NextResponse.json({ error: 'Rôle non disponible à la demande.' }, { status: 400 });
     }
@@ -49,6 +49,34 @@ export async function POST(req: NextRequest) {
     const admin = getSupabaseAdmin();
     if (!admin) {
       return NextResponse.json({ error: 'Base indisponible.' }, { status: 503 });
+    }
+
+    // Compte sans numéro réel (créé par script, ou jamais complété) : le
+    // nouveau rôle ne serait pas admin, et le middleware renverrait aussitôt
+    // vers /register/complete (numéro requis pour tout rôle non-admin) — une
+    // seconde saisie de tout le formulaire, en double de celle faite ici.
+    // On l'exige donc MAINTENANT, avant de créer quoi que ce soit.
+    const { data: profilAvant, error: lectureAvantErr } = await admin
+      .from('profiles').select('phone').eq('id', session.uid).maybeSingle();
+    if (lectureAvantErr || !profilAvant) {
+      return NextResponse.json({ error: 'Profil introuvable. Reconnectez-vous.' }, { status: 404 });
+    }
+    let numeroReel = profilAvant.phone as string | null;
+    if (!numeroReel) {
+      const chiffres = typeof phoneFourni === 'string' ? phoneFourni.replace(/\D/g, '') : '';
+      if (chiffres.length < 8) {
+        return NextResponse.json({ error: 'Indiquez votre numéro WhatsApp pour continuer.', numeroRequis: true }, { status: 400 });
+      }
+      numeroReel = typeof phoneFourni === 'string' && phoneFourni.trim().startsWith('+')
+        ? phoneFourni.trim() : `+223${chiffres}`;
+      const { error: dejaPrisErr } = await admin.from('profiles').update({ phone: numeroReel }).eq('id', session.uid);
+      if (dejaPrisErr) {
+        const dejaPris = /duplicate|unique/i.test(dejaPrisErr.message);
+        return NextResponse.json(
+          { error: dejaPris ? 'Ce numéro est déjà utilisé par un compte existant. Connectez-vous plutôt avec ce compte.' : dejaPrisErr.message, dejaCompte: dejaPris },
+          { status: dejaPris ? 409 : 500 },
+        );
+      }
     }
 
     // Fiche métier du nouveau profil (2026-09-24, page « Mes profils ») :
@@ -109,7 +137,7 @@ export async function POST(req: NextRequest) {
     const carte = await chargerRoles(session.uid, role, 'active');
     const token = await createSessionToken({
       uid: session.uid,
-      phone: session.phone,
+      phone: numeroReel || session.phone,
       role,
       status: 'active',
       roles: carte,

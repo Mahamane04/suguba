@@ -102,10 +102,18 @@ export async function POST(req: NextRequest) {
 
     const { error } = await admin.from('profiles').update(update).eq('id', session.uid);
     if (error) {
-      // Colonne phone UNIQUE : un numéro déjà pris ne doit pas finir en 500 muet.
+      // Colonne phone UNIQUE : un numéro déjà pris ne doit pas finir en 500
+      // muet, ni en cul-de-sac. `dejaCompte` : le client (register/complete)
+      // propose alors de se connecter plutôt que de réessayer un formulaire
+      // qui échouera toujours pour la même raison.
       const dejaPris = /duplicate|unique/i.test(error.message);
       return NextResponse.json(
-        { error: dejaPris ? 'Ce numéro est déjà utilisé par un autre compte.' : error.message },
+        {
+          error: dejaPris
+            ? 'Ce numéro appartient déjà à un compte. Connectez-vous avec ce compte plutôt que d’en créer un nouveau.'
+            : error.message,
+          dejaCompte: dejaPris,
+        },
         { status: dejaPris ? 409 : 500 },
       );
     }

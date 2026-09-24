@@ -54,6 +54,9 @@ function FinaliserInscription() {
   const [phone, setPhone] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
+  // Numéro déjà pris par un autre compte (voir /api/auth/complete-profile) :
+  // proposer de s'y connecter plutôt qu'un formulaire qui échouera toujours.
+  const [dejaCompte, setDejaCompte] = useState(false);
 
   // Revendeur
   const [neighborhood, setNeighborhood] = useState(DEFAULT_NEIGHBORHOOD);
@@ -125,6 +128,7 @@ function FinaliserInscription() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
+    setDejaCompte(false);
     const manque = champManquant();
     if (manque) { setFormError(manque); return; }
 
@@ -161,6 +165,7 @@ function FinaliserInscription() {
       const json = await res.json();
       if (!res.ok || !json.success) {
         setFormError(json.error || "Erreur lors de l'enregistrement.");
+        setDejaCompte(Boolean(json.dejaCompte));
         setIsSubmitting(false);
         return;
       }
@@ -332,7 +337,12 @@ function FinaliserInscription() {
         )}
 
         {formError && (
-          <div className="p-3 bg-rose-50 border border-rose-100 rounded-2xl text-xs font-bold text-rose-700">{formError}</div>
+          <div className="p-3 bg-rose-50 border border-rose-100 rounded-2xl text-xs font-bold text-rose-700 space-y-1.5">
+            <p>{formError}</p>
+            {dejaCompte && (
+              <Link href="/login" className="inline-block underline">Se connecter avec ce compte</Link>
+            )}
+          </div>
         )}
 
         <Button type="submit" disabled={isSubmitting || !role} size="lg" fullWidth>

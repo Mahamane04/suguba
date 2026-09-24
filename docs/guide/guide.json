@@ -191,6 +191,26 @@
  "journal": [
   {
    "date": "2026-09-24",
+   "titre": "Ajouter un profil sans numéro : corrigé (double saisie, blocage en cul-de-sac)",
+   "demande": "« un numéro déjà enregistré en tant que revendeur, s'il veut ajouter un compte fournisseur cela refuse car le numéro est déjà utilisé » ; « c'est ce parcours que j'ai fait et ça m'a redirigé vers cette page, j'ai inséré deux fois les informations » ; « vérifie les différents parcours de connexion, de création de compte, d'ajout de profil, il y a pas mal de bugs » ; « Fait les 3 ».",
+   "realise": [
+    "Cause trouvée en base (lecture seule) : un compte créé sans numéro (via script, avant que ce soit obligatoire) qui ajoute un profil depuis « Mes profils » se faisait renvoyer par le contrôle d'accès vers le formulaire d'inscription complet — deuxième saisie de tout, en double de la fiche déjà remplie dans « Mes profils ».",
+    "« Mes profils » demande maintenant le numéro WhatsApp directement, uniquement quand il manque vraiment, avant d'ajouter le rôle : plus de renvoi vers l'inscription.",
+    "Numéro déjà pris par un autre compte (inscription complète ou Mes profils) : message clair avec un lien « Se connecter avec ce compte », au lieu d'un blocage sans suite."
+   ],
+   "ecarts": [
+    "Reste à faire (décision de l'admin) : le compte fournisseur créé le 10/09 (téléphone 89 46 00 00) n'a aucune activité — à supprimer ou à garder ? Et quel numéro donner au compte admin sans numéro pour qu'il soit complet ?",
+    "Les comptes ne sont reconnus que par e-mail à la connexion Google, jamais par numéro : se connecter un jour avec une adresse, un autre jour avec une autre, crée deux comptes distincts pour la même personne. Pas corrigé — demanderait de fusionner des comptes, à faire avec précaution.",
+    "Audit des autres parcours (bascule de rôle depuis « Tester un profil » admin, lien de connexion par e-mail) pas encore fait."
+   ],
+   "pages": [
+    "compte-profils"
+   ],
+   "commit": "",
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-24",
    "titre": "Prix client = fournisseur + revendeur, frais de retrait payés par le revendeur, bulles d’aide",
    "demande": "« met des petit icons de (i) pour les infos des reglages » puis « la part de suguba … ne rajoute pas sur le prix : la part est soit proposée par le fournisseur (suguba gagne un pourcentage prédéfini), soit le fournisseur donne le prix de gros et le revendeur vend au prix qu’il a choisi (suguba gagne sur cette marge) … explique moi pourquoi le prix de départ fournisseur explose à l’arrivée chez le client et règle cela ». Puis : « si cela doit se faire par Orange Money il faut calculer le frais de retrait SasPay, Orange Money, Moov Money + les 1,5 % de Suguba ; si c’est retrait en liquide ces frais ne seront pas inclus … côté commission revendeur il aura aussi la possibilité de retirer en cash à l’agence mais le pourcentage de Suguba sera quand même pris ». Choix validés : frais Suguba sur chaque retrait ; retraits revendeur d’abord ; taux réglables dans l’admin.",
    "realise": [

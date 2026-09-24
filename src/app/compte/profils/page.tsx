@@ -7,6 +7,8 @@ import { Card } from '@/components/ui/Surface';
 import Button from '@/components/ui/Button';
 import { Field, Input, Select } from '@/components/ui/Field';
 import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
+import DialCodePicker from '@/components/common/DialCodePicker';
+import { DEFAULT_DIAL_CODE } from '@/lib/dial-codes';
 import { useToast } from '@/components/ui/Toast';
 
 /**
@@ -39,6 +41,14 @@ export default function MesProfilsPage() {
   const [ouvert, setOuvert] = useState<Role | null>(null);
   const [envoi, setEnvoi] = useState(false);
   const [fiche, setFiche] = useState({ companyName: '', warehouseNeighborhood: '', category: '', vehicleType: 'Moto', zone: '' });
+  // Vrai numéro absent (compte créé sans jamais le demander, ex. via script) :
+  // /api/auth/request-role l'exige avant d'ajouter un rôle non-admin, sinon
+  // le nouveau rôle serait aussitôt renvoyé vers /register/complete par le
+  // middleware — une seconde saisie de tout le formulaire, en double de
+  // celle-ci.
+  const [numeroManquant, setNumeroManquant] = useState(false);
+  const [dialCode, setDialCode] = useState(DEFAULT_DIAL_CODE);
+  const [phone, setPhone] = useState('');
 
   useEffect(() => {
     fetch('/api/auth/me', { cache: 'no-store' })
@@ -47,6 +57,7 @@ export default function MesProfilsPage() {
         if (!moi?.authenticated) { window.location.replace('/login?next=/compte/profils'); return; }
         setRoles(moi.roles || { [moi.role]: moi.status });
         setActif(moi.role);
+        setNumeroManquant(typeof moi.phone === 'string' && moi.phone.includes('@'));
       })
       .catch(() => toast('Impossible de lire votre compte.', { ton: 'erreur' }));
   }, [toast]);
@@ -56,6 +67,7 @@ export default function MesProfilsPage() {
 
   const ajouter = async (role: Role) => {
     if (role === 'supplier' && !fiche.companyName.trim()) { toast('Indiquez le nom de votre entreprise ou boutique.', { ton: 'erreur' }); return; }
+    if (numeroManquant && phone.replace(/\D/g, '').length < 8) { toast('Indiquez votre numéro WhatsApp.', { ton: 'erreur' }); return; }
     const ok = await confirmer({
       titre: `Ajouter le profil ${PROFILS[role].libelle} ?`,
       message: 'Vous gardez votre compte et tout ce qu’il contient. Vous passerez d’un espace à l’autre depuis « Mes profils ».',
@@ -66,10 +78,19 @@ export default function MesProfilsPage() {
     try {
       const r = await fetch('/api/auth/request-role', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role, fiche }),
+        body: JSON.stringify({ role, fiche, phone: numeroManquant ? `${dialCode}${phone.replace(/\D/g, '')}` : undefined }),
       });
       const d = await r.json();
-      if (!r.ok) { toast(d.error || 'Ajout impossible.', { ton: 'erreur' }); return; }
+      if (!r.ok) {
+        // Numéro déjà pris par un autre compte (voir /api/auth/request-role) :
+        // le renvoyer se connecter avec ce compte plutôt qu'un cul-de-sac.
+        if (d.dejaCompte) {
+          toast('Ce numéro appartient déjà à un compte. Connectez-vous avec lui plutôt que d’en créer un nouveau.', { ton: 'erreur' });
+        } else {
+          toast(d.error || 'Ajout impossible.', { ton: 'erreur' });
+        }
+        return;
+      }
       toast(`Profil ${PROFILS[role].libelle} ajouté.`, { ton: 'succes' });
       window.location.replace(PROFILS[role].espace);
     } catch {
@@ -129,6 +150,16 @@ export default function MesProfilsPage() {
                 </button>
                 {deplie && (
                   <div className="space-y-3">
+                    {numeroManquant && (
+                      <Field label="Votre numéro WhatsApp" htmlFor="p-telephone" requis aide="Indispensable pour vous prévenir de vos commandes et de vos gains — votre compte n'en a pas encore.">
+                        <div className="flex gap-2">
+                          <DialCodePicker value={dialCode} onChange={setDialCode} className="h-11" />
+                          <input id="p-telephone" type="tel" inputMode="tel" value={phone} onChange={(e) => setPhone(e.target.value)}
+                            placeholder="76 12 34 56"
+                            className="flex-1 min-w-0 h-11 px-3.5 rounded-2xl border border-slate-200 bg-white text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-suguba-profond/30 focus:border-suguba-profond" />
+                        </div>
+                      </Field>
+                    )}
                     {r === 'supplier' && (
                       <>
                         <Field label="Nom de votre entreprise ou boutique" htmlFor="p-entreprise" requis>
