@@ -213,8 +213,8 @@
     "connexion",
     "adm-vue"
    ],
-   "commit": "",
-   "statut": "en local"
+   "commit": "de88602",
+   "statut": "en ligne"
   },
   {
    "date": "2026-09-23",
@@ -240,7 +240,8 @@
     "vitrine-fournisseur",
     "boutiques-quartier"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "de88602"
   },
   {
    "date": "2026-09-23",
@@ -264,7 +265,8 @@
     "fou-ajouter",
     "adm-vue"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "de88602"
   },
   {
    "date": "2026-09-19",
@@ -284,7 +286,8 @@
    "pages": [
     "adm-guide"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "de88602"
   },
   {
    "date": "2026-09-18",
