@@ -1,6 +1,7 @@
 # SUGUBA — Fiche de référence
 
-> Mise à jour le **25 septembre 2026**. Résumé de tout ce qu'il faut savoir sur la
+> Mise à jour le **25 septembre 2026** (soir : reçu client avec QR de remise, scan
+> livreur et admin, photos SAV). Résumé de tout ce qu'il faut savoir sur la
 > plateforme : à quoi elle sert, qui fait quoi, comment l'argent circule, comment elle
 > est protégée et comment on la fait évoluer. Pour le détail page par page, voir le
 > **guide des parcours** (`/admin/guide`, réservé à l'administrateur général).
@@ -83,7 +84,10 @@ Client commande ─► Suguba appelle pour confirmer ─► Admin assigne un liv
 Paie à la livraison                           Livreur récupère le colis (ramassage)
   ou Orange/Moov Money                                        │
                                                               ▼
-                           Client donne son CODE DE REMISE ─► Commande livrée
+              Client vérifie le colis, montre son REÇU QR ─► Livreur scanne
+                                                              │ puis « Confirmer la remise »
+                                                              ▼
+                                                        Commande livrée
                                                               │
                ┌──────────────────────────────────────────────┤
                ▼                                              ▼
@@ -97,14 +101,25 @@ Paie à la livraison                           Livreur récupère le colis (rama
 2. **Paiement** — le client choisit :
    - **À la livraison** (choix par défaut) : il paie le livreur en espèces après avoir vu l'article ;
    - **Orange Money** ou **Moov Money** via SasPay. (Mobi Cash est retiré.)
-3. **Code de remise** : affiché **dans l'application** (reçu Suguba, pas de SMS). Le client
-   ne le donne au livreur **qu'après avoir vérifié le colis**. Pour une vente saisie par
-   un revendeur, le revendeur l'envoie à son client sur WhatsApp. 3 codes faux = commande
-   bloquée.
-4. **Le livreur voit** sur chaque course : 🟢 « Déjà payé — ne rien encaisser » ou
+3. **Reçu Suguba avec QR de remise** (`/recu/<n°>`) : grand QR, **code de remise écrit
+   dessous**, articles, montants, « À payer au livreur » ou « Payé en ligne ».
+   - Le client l'**enregistre en image** (présentable sans connexion) ou en **PDF**.
+   - Il reste **90 jours sur le téléphone** qui a commandé : « Suivre ma commande ›
+     Mes reçus sur ce téléphone ». Pas de SMS.
+   - Commande pour un proche ou vente d'un revendeur : « **Transmettre au destinataire** ».
+   - Le client ne le montre **qu'après avoir vérifié le colis**.
+4. **Remise** : le livreur appuie sur « **Scanner le QR du client** ». Le scan affiche les
+   articles et le paiement **sans rien valider** ; il confirme ensuite (« J'ai encaissé
+   X F » pour des espèces). S'il ne peut pas scanner, il **saisit le code**. QR et code =
+   même preuve : 3 essais faux (au total) = commande bloquée.
+   Sur chaque course, le livreur voit : 🟢 « Déjà payé — ne rien encaisser » ou
    🟠 « À encaisser : X F ».
 5. **Commission** : bloquée après la livraison le temps d'un éventuel retour
    (14 jours nouveau revendeur, 7 vérifié, 3 VIP), puis retirable.
+6. **Après la livraison** : depuis son reçu, le client peut « **Signaler un problème avec
+   un article** » (motif, quantité, échange / réparation / remboursement, **jusqu'à 3
+   photos**). La demande arrive dans **SAV & retours** ; ce n'est pas une acceptation
+   automatique.
 
 Suivi public d'une commande : `/track` (numéro + téléphone, tentatives limitées).
 
@@ -157,7 +172,8 @@ coûts fixes. Des exemples chiffrés montrent l'effet de chaque changement.
 ## 6. Fonctionnalités par espace
 
 **Client** : catalogue et recherche, fiches produit, panier multi-produits, commande sans
-compte, suivi, boutiques (`/boutique/<nom>`, avec couverture, logo, badges, liens,
+compte, suivi, **reçu avec QR de remise** (image, PDF, transmission, signalement SAV
+avec photos), boutiques (`/boutique/<nom>`, avec couverture, logo, badges, liens,
 bouton Suivre), boutiques suivies, notifications, B2B (devis), diaspora.
 
 **Revendeur** : catalogue et prix, partages suivis (liens `/go/…`, le premier revendeur
@@ -169,11 +185,13 @@ calendrier de publication, créateur de visuels / stories, badge et vérificatio
 revendeurs qui le vendent, ambassadeurs, campagnes et sponsorisation, analyses, boutique,
 équipe.
 
-**Livreur** : courses à récupérer et à livrer, carte, validation du code, portefeuille
+**Livreur** : courses à récupérer et à livrer, carte, **scan du QR du client** (ou saisie
+du code), portefeuille
 (à remettre, versements, reçus, rémunération).
 
 **Admin** : tableau de bord (appels à passer, livraisons à assigner, retraits à payer),
-commandes, produits et prix, utilisateurs, vérifications, boutiques, SAV & retours,
+commandes, produits et prix, utilisateurs, vérifications, boutiques, SAV & retours
+(**« Scanner un reçu »** pour retrouver une commande, photos du client),
 caisse livreurs, missions, récompenses, sponsorisations, diffusion, analyses, rapport
 du soir, équipe, paramètres, guide des parcours.
 
@@ -229,8 +247,16 @@ du soir, équipe, paramètres, guide des parcours.
 - Opérations sensibles **atomiques** en base (création de commande, retrait, livraison,
   versement livreur) : tout ou rien, pas de double traitement.
 - Paiement SasPay confirmé par **webhook signé** (HMAC) et revérifié auprès de SasPay.
-- Code de remise : jamais renvoyé dans les reçus, suivis, flux ou exports ; affiché
-  uniquement à l'appareil qui a passé la commande (clé secrète du reçu) ; 3 essais max.
+- Code de remise et QR : jamais dans le suivi public, les flux ou les exports ; le reçu ne
+  s'ouvre qu'avec la **clé secrète gardée sur le téléphone qui a commandé** (90 jours,
+  effacée à la déconnexion). Numéro de commande + téléphone ne suffisent pas.
+- Le QR **n'est pas un lien** : scanné par un autre téléphone, il n'ouvre rien et ne
+  montre aucune donnée personnelle. Seul le scanner livreur l'exploite, et le serveur
+  vérifie que la commande est assignée à ce livreur. QR et code partagent les 3 essais ;
+  un double scan ou une coupure réseau ne crée pas de double livraison.
+- Le scan admin (SAV) ne lit que le numéro de commande : il ne valide rien.
+- Photos SAV : métadonnées et **position GPS retirées**, stockage **privé**, liens admin
+  valables 10 minutes.
 - Commissions bloquées quelques jours après livraison (retours).
 - Suivi public limité en nombre de tentatives par numéro de commande.
 
@@ -258,7 +284,9 @@ du soir, équipe, paramètres, guide des parcours.
 | Réglages | table `platform_settings` (une ligne), `src/lib/platform-settings.ts` |
 | Session | `src/lib/session.ts`, `src/lib/active-session.ts`, `src/middleware.ts` |
 | Paiement | `src/lib/saspay.ts`, `/api/payments/saspay/*`, `/api/webhooks/saspay` |
-| Tests | `npm test` (179 tests, Node + PostgreSQL embarqué PGlite) |
+| Tests | `npm test` (190 tests, Node + PostgreSQL embarqué PGlite) |
+| Reçu et QR | `src/lib/recu-commande.ts`, `src/lib/qr-remise.ts`, `src/lib/recu-image.ts`, scanner `src/components/driver/ScannerQr.tsx` (jsQR) |
+| Photos SAV | bucket privé `sav-photos`, `src/lib/sav-photos.ts` |
 | Guide | `docs/guide/guide.json` + `/admin/guide` |
 
 **Variables d'environnement** (valeurs dans Vercel, jamais dans le code) :
@@ -284,6 +312,11 @@ dans le code mais **aucune passerelle SMS n'est branchée**.
 
 ## 11. Points ouverts (au 25/09/2026)
 
+- **Tester les scans sur de vrais téléphones** (iPhone et Android) : scan livreur et scan
+  admin n'ont pas pu être essayés avec une vraie caméra.
+- **Retrouver son reçu sur un autre téléphone** : pas encore. Pistes : rattacher les
+  commandes au compte connecté, puis un lien à usage unique envoyé par le WhatsApp Suguba
+  quand le client écrit « reçu SG-… » depuis le numéro de la commande.
 - **E-mails en spam** : configurer Resend (SMTP dans Supabase + DNS chez Hostinger, sans
   toucher au SPF existant), puis vérifier.
 - **Compte principal** (`infos@microofficeml.com`) sans numéro WhatsApp : choisir lequel
