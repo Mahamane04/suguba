@@ -202,7 +202,6 @@
     "Admin : pas de livreur à assigner pour ces commandes (et le serveur le refuse). Fiche produit, carte et reçu indiquent « Service », « Installation incluse », « Remis par le vendeur » ou « Chez le vendeur »."
    ],
    "ecarts": [
-    "SQL à exécuter : supabase/A-EXECUTER-2026-09-26-offres-remise.sql (avant, le formulaire annonce que les services arrivent après la mise à jour ; les produits ordinaires continuent de fonctionner).",
     "Pas encore : devis enregistré (lot 1b), prestations en plusieurs étapes avec validation par le client (lot 1c), capacité d'intervention par jour, expiration automatique d'une réservation (véhicule unique : le stock déjà réservé empêche une deuxième vente).",
     "Campagnes (lot 2) : à faire, en commençant par corriger les compteurs de partages et de clics."
    ],
@@ -212,7 +211,8 @@
     "fiche-produit",
     "adm-vue"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "f3e479c"
   },
   {
    "date": "2026-09-25",
