@@ -24,7 +24,7 @@ import {
   ShieldCheck, PhoneCall, Truck, Wallet, ShoppingBag,
   Clock, CheckCircle2, TrendingUp, AlertCircle, ArrowRight,
   ExternalLink, UserCheck, ShieldAlert, MessageCircle, BarChart3, Radio,
-  Building2, QrCode, Settings, Trash2, UserCog, RotateCcw, Sparkles, X, Check, Eye
+  Building2, QrCode, Settings, Trash2, UserCog, RotateCcw, Sparkles, X, Check, Eye, Banknote
 } from 'lucide-react';
 
 /** Rôles que l'admin peut prévisualiser (voir /api/admin/preview-role). */
@@ -220,6 +220,7 @@ export default function AdminDashboardPage() {
           <div className="flex gap-2 overflow-x-auto scrollbar-none pb-1">
             {[
               { href: '/admin/products', label: 'Produits', Icone: ShoppingBag },
+              { href: '/admin/caisse-livreurs', label: 'Caisse livreurs', Icone: Banknote },
               { href: '/admin/sav', label: 'SAV & retours', Icone: ShieldAlert },
               { href: '/admin/analytics', label: 'Analyses', Icone: TrendingUp },
               { href: '/admin/reports/daily', label: 'Rapport du soir', Icone: BarChart3 },

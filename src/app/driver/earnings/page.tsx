@@ -5,11 +5,21 @@ import Link from 'next/link';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import PrintableReceiptModal from '@/components/common/PrintableReceiptModal';
+import RecuVersementModal from '@/components/common/RecuVersementModal';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 import { useSugubaStore } from '@/lib/store';
 import EmptyState from '@/components/ui/EmptyState';
 import { Order } from '@/types';
-import { ArrowLeft, Banknote, Package, Printer, Truck, Wallet } from 'lucide-react';
+import { calculerAVerser, type CaisseLivreur, type Versement } from '@/lib/caisse-livreur';
+
+function caisseLocale(livrees: Order[], parCourse: number): CaisseLivreur {
+  const enEspeces = livrees.filter((o) => o.paymentMethod !== 'mobile_money');
+  return {
+    driverId: '', nom: 'Livreur', telephone: null, commandes: [], versements: [], ecartCumule: 0, plusAncienne: null,
+    ...calculerAVerser(enEspeces.map((o) => o.totalAmount), parCourse),
+  };
+}
+import { ArrowLeft, Banknote, Package, Printer, Receipt, Truck, Wallet } from 'lucide-react';
 
 /**
  * Portefeuille livreur — refait le 2026-09-11 sur des données réelles.
@@ -29,21 +39,35 @@ export default function DriverEarningsPage() {
   const state = useSugubaStore();
   const [recuPour, setRecuPour] = useState<Order | null>(null);
   const [remuneration, setRemuneration] = useState<number | null>(null);
+  const [caisse, setCaisse] = useState<{ caisse: CaisseLivreur | null; livreurGardeRemuneration: boolean; migrationRequise: boolean } | null>(null);
+  const [recuVersement, setRecuVersement] = useState<Versement | null>(null);
 
   useEffect(() => {
     fetch('/api/driver/me')
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => setRemuneration(j && typeof j.remunerationParLivraison === 'number' ? j.remunerationParLivraison : null))
       .catch(() => setRemuneration(null));
+    fetch('/api/driver/caisse', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => setCaisse(j))
+      .catch(() => setCaisse(null));
   }, []);
 
   // /api/orders/feed ne renvoie que les courses de CE livreur (voir /driver).
   const livrees = state.orders
     .filter((o) => o.status === 'delivered')
     .sort((a, b) => Date.parse(b.deliveredAt || b.createdAt || '') - Date.parse(a.deliveredAt || a.createdAt || ''));
-  const especes = livrees.filter((o) => !o.paymentCollected).reduce((t, o) => t + o.totalAmount, 0);
+  // Le montant à remettre vient de /api/driver/caisse (commandes non payées en
+  // Mobile Money et pas encore versées). L'ancien calcul reposait sur
+  // `paymentCollected`, que le code de remise passe à vrai pour TOUTES les
+  // commandes : le total restait à 0 F (corrigé le 2026-09-25).
+  // Tant que le SQL de la caisse n'est pas exécuté, aucun versement n'existe :
+  // on recalcule sur place à partir des livraisons, avec la même règle.
+  const c = caisse?.caisse
+    || (caisse?.migrationRequise && remuneration !== null ? caisseLocale(livrees, caisse.livreurGardeRemuneration ? remuneration : 0) : null);
+  const aRemettre = c ? Math.max(0, c.aVerser - c.ecartCumule) : caisse ? 0 : null;
   const gains = remuneration !== null ? livrees.length * remuneration : null;
-  const fmt = (n: number) => `${n.toLocaleString('fr-FR')} F`;
+  const fmt = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
@@ -62,8 +86,9 @@ export default function DriverEarningsPage() {
           <Carte icone={<Truck className="w-4 h-4" />} titre="Livraisons effectuées" note="Remises confirmées par le code du client">
             {livrees.length}
           </Carte>
-          <Carte icone={<Banknote className="w-4 h-4" />} titre="Espèces encaissées" note="À remettre à Suguba" accent>
-            {fmt(especes)}
+          <Carte icone={<Banknote className="w-4 h-4" />} titre="À remettre à Suguba"
+            note={c && c.garde > 0 ? `${fmt(c.especes)} encaissés, ${fmt(c.garde)} gardés pour vous` : 'Espèces encaissées pas encore versées'} accent>
+            {aRemettre !== null ? fmt(aRemettre) : <span className="inline-block h-7 w-24 rounded-lg bg-slate-700 animate-pulse align-middle" />}
           </Carte>
           <Carte
             icone={<Wallet className="w-4 h-4" />}
@@ -77,9 +102,35 @@ export default function DriverEarningsPage() {
         <div className="bg-white rounded-3xl p-5 border border-slate-200 space-y-3">
           <h2 className="font-bold text-sm text-slate-900">Remettre les espèces</h2>
           <p className="text-sm text-slate-600">
-            Les espèces encaissées se remettent à l&apos;équipe Suguba, et votre rémunération est réglée avec elle.
-            Une question sur un montant ? Écrivez-nous.
+            {caisse?.livreurGardeRemuneration === false
+              ? 'Remettez toutes les espèces encaissées à la caisse Suguba. Votre rémunération vous est payée à part.'
+              : 'Remettez les espèces encaissées à la caisse Suguba, moins votre rémunération par course, que vous gardez.'}
+            {' '}À chaque versement, vous recevez un reçu.
           </p>
+          {c && (c.commandes.length > 0 || c.ecartCumule !== 0) && (
+            <div className="rounded-2xl bg-slate-50 p-3 text-sm space-y-1">
+              <div className="flex justify-between"><span>{c.commandes.length} commande{c.commandes.length > 1 ? 's' : ''} payée{c.commandes.length > 1 ? 's' : ''} en espèces</span><span>{fmt(c.especes)}</span></div>
+              {c.garde > 0 && <div className="flex justify-between text-slate-600"><span>Votre rémunération gardée</span><span>− {fmt(c.garde)}</span></div>}
+              {c.ecartCumule < 0 && <div className="flex justify-between text-rose-700"><span>Manque sur un versement précédent</span><span>+ {fmt(-c.ecartCumule)}</span></div>}
+              {c.ecartCumule > 0 && <div className="flex justify-between text-emerald-700"><span>Avance déjà versée</span><span>− {fmt(c.ecartCumule)}</span></div>}
+              <div className="flex justify-between font-bold border-t border-slate-200 pt-1"><span>À remettre</span><span>{fmt(aRemettre || 0)}</span></div>
+            </div>
+          )}
+          {c && c.versements.length > 0 && (
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-slate-700">Mes versements</p>
+              {c.versements.slice(0, 10).map((v) => (
+                <button key={v.id} type="button" onClick={() => setRecuVersement(v)}
+                  className="w-full min-h-11 flex justify-between items-center gap-2 text-sm rounded-xl hover:bg-slate-50 px-2 text-left">
+                  <span className="min-w-0 truncate text-slate-700 inline-flex items-center gap-1.5">
+                    <Receipt className="w-4 h-4 shrink-0 text-slate-500" />
+                    {new Date(v.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} · {v.remittanceNumber}
+                  </span>
+                  <span className="font-semibold text-slate-900 shrink-0">{fmt(v.amountReceived)}</span>
+                </button>
+              ))}
+            </div>
+          )}
           <a
             href="https://wa.me/22389460000?text=Bonjour%20Suguba%2C%20je%20suis%20livreur%20et%20j%27ai%20une%20question%20sur%20mon%20portefeuille."
             target="_blank"
@@ -109,8 +160,8 @@ export default function DriverEarningsPage() {
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="text-right">
                       <p className="text-sm font-bold text-slate-900">{fmt(o.totalAmount)}</p>
-                      <p className={`text-xs font-bold ${o.paymentCollected ? 'text-slate-500' : 'text-emerald-700'}`}>
-                        {o.paymentCollected ? 'Payé en ligne' : 'Encaissé'}
+                      <p className={`text-xs font-bold ${o.paymentMethod === 'mobile_money' ? 'text-slate-500' : 'text-emerald-700'}`}>
+                        {o.paymentMethod === 'mobile_money' ? 'Payé en ligne' : 'Encaissé'}
                       </p>
                     </div>
                     <button
@@ -131,6 +182,7 @@ export default function DriverEarningsPage() {
       {recuPour && (
         <PrintableReceiptModal order={recuPour} isOpen={!!recuPour} onClose={() => setRecuPour(null)} />
       )}
+      <RecuVersementModal versement={recuVersement} nomLivreur={c?.nom || 'Livreur'} onClose={() => setRecuVersement(null)} />
 
       <BottomNav />
     </div>

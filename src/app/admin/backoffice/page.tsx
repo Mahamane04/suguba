@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import {
   ShoppingBag, Boxes, Store, Users, Wallet, Megaphone, Target,
-  ShieldCheck, Settings, BarChart3, LifeBuoy, UserCog, Radio, ChevronRight, Gift,
+  ShieldCheck, Settings, BarChart3, LifeBuoy, UserCog, Radio, ChevronRight, Gift, Banknote,
 } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import { Card } from '@/components/ui/Surface';
@@ -49,6 +49,7 @@ const DOMAINES: Domaine[] = [
     couleur: 'bg-amber-50 text-amber-800',
     entrees: [
       { libelle: 'Retraits et commissions', href: '/admin', icone: Wallet, aide: 'Demandes de retrait, paiements' },
+      { libelle: 'Caisse livreurs', href: '/admin/caisse-livreurs', icone: Banknote, aide: 'Espèces à remettre, versements reçus' },
       { libelle: 'Récompenses', href: '/admin/recompenses', icone: Gift, aide: 'Missions et parrainages à verser' },
       { libelle: 'Analyses', href: '/admin/analytics', icone: BarChart3, aide: 'Chiffre d’affaires et marges' },
       { libelle: 'Rapport du soir', href: '/admin/reports/daily', icone: Radio, aide: 'Le point de la journée' },

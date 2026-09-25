@@ -192,6 +192,14 @@ export interface ReglagesPlateforme {
   pointsRelais: PointRelais[];
   /** Rémunération du livreur par livraison, en FCFA. */
   remunerationLivreur: number;
+  /**
+   * Caisse livreurs (2026-09-25). Vrai (défaut) : sur les espèces encaissées,
+   * le livreur garde sa rémunération par course et ne verse que le reste.
+   * Faux : il verse tout, et Suguba le paie à part.
+   */
+  livreurGardeRemuneration?: boolean;
+  /** Délai, en heures, au-delà duquel des espèces non versées sont signalées. */
+  delaiVersementEspecesHeures?: number;
 
   // ── Coûts fixes ──────────────────────────────────────────────────────
   coutsFixesMensuels: LigneCoutFixe[];
@@ -302,6 +310,8 @@ export const REGLAGES_PAR_DEFAUT: ReglagesPlateforme = {
     { id: 'relais-yirimadio', nom: 'Point Relais Yirimadio — Près du Stade du 26 Mars', frais: 500, horaires: '08h - 20h00' },
   ],
   remunerationLivreur: 1000,
+  livreurGardeRemuneration: true,
+  delaiVersementEspecesHeures: 24,
   coutsFixesMensuels: [
     { libelle: 'Estimation provisoire globale — à remplacer par le détail ci-dessous', montant: 300000 },
     { libelle: 'Hébergement (Vercel)', montant: 0 },
@@ -1120,6 +1130,11 @@ export function completerReglages(partiels: Partial<ReglagesPlateforme> | null |
   if (r.modeLivraisonBamako !== 'zones') r.modeLivraisonBamako = 'distance';
   if (r.baseProvisionRefus !== 'course') r.baseProvisionRefus = 'prix';
   r.couvrirCoutsDansLePrix = r.couvrirCoutsDansLePrix === true;
+  r.livreurGardeRemuneration = r.livreurGardeRemuneration !== false;
+  {
+    const d = Number(r.delaiVersementEspecesHeures);
+    r.delaiVersementEspecesHeures = Number.isFinite(d) && d >= 1 ? Math.round(d) : 24;
+  }
   {
     const o = (r.fraisOperateurRetraitPct && typeof r.fraisOperateurRetraitPct === 'object' ? r.fraisOperateurRetraitPct : {}) as Partial<Record<MoyenRetraitMobile, number>>;
     const lire = (v: unknown) => (Number.isFinite(Number(v)) && Number(v) >= 0 ? Number(v) : 0);

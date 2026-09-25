@@ -157,8 +157,8 @@
      "texte": "Livrée contre le code secret du client"
     },
     {
-     "texte": "Espèces remises au guichet",
-     "page": "liv-portefeuille"
+     "texte": "Espèces remises à la caisse, reçu de versement",
+     "page": "adm-caisse"
     },
     {
      "texte": "Commission débloquée puis retrait payé",
@@ -189,6 +189,27 @@
   }
  ],
  "journal": [
+  {
+   "date": "2026-09-25",
+   "titre": "Caisse livreurs : espèces encaissées, versements et reçus",
+   "demande": "« Quand le livreur livre, comment savoir si le client doit payer en espèces ou s'il a déjà payé par Orange Money ? Et si le livreur récupère l'argent, quel système permet de vérifier qu'il l'a versé à la caisse ? » Puis : « oui pour les trois ! Pour la rémunération, il peut la garder pour un départ, mais laisser l'option éditable dans l'admin ».",
+   "realise": [
+    "Correction : le total « espèces à remettre » du livreur restait toujours à 0 F (il se fondait sur « payé », que la validation du code met à vrai pour toutes les commandes). Il se fonde maintenant sur le moyen de paiement : tout ce qui n'est pas Mobile Money a été encaissé par le livreur.",
+    "Nouvel écran admin « Caisse livreurs » : montant attendu par livreur, commandes concernées, alerte de retard, enregistrement d'un versement (commandes cochées + montant reçu en main), manque ou avance reportés, historique.",
+    "Reçu de versement imprimable, envoyable au livreur sur WhatsApp ; le livreur retrouve aussi ses reçus dans « Mon portefeuille ».",
+    "Nouveau réglage dans Paramètres › Livraison : « Il garde sa rémunération » (par défaut) ou « Il verse tout », et délai d'alerte des espèces non versées (24 h par défaut)."
+   ],
+   "ecarts": [
+    "Il faut exécuter une fois supabase/A-EXECUTER-2026-09-25-caisse-livreurs.sql dans Supabase ; avant, l'écran admin l'annonce et n'enregistre rien.",
+    "Le blocage automatique des nouvelles courses au-delà d'un plafond d'espèces n'est pas fait (l'alerte seulement)."
+   ],
+   "pages": [
+    "adm-caisse",
+    "liv-portefeuille",
+    "adm-vue"
+   ],
+   "statut": "en local"
+  },
   {
    "date": "2026-09-25",
    "titre": "Paiement : « À la livraison » visible, Mobi Cash retiré ; barre du bas stable sur iPhone",
@@ -2626,15 +2647,19 @@
    "role": "livreur",
    "titre": "Mon portefeuille",
    "chemin": "/driver/earnings",
-   "but": "Espèces encaissées à remettre, et gains du livreur.",
+   "but": "Ce que le livreur doit remettre à Suguba, ses versements et ses gains.",
    "elements": [
     {
+     "nom": "À remettre à Suguba",
+     "role": "Espèces encaissées pas encore versées, moins sa rémunération s'il la garde, plus un éventuel manque précédent."
+    },
+    {
      "nom": "Remettre les espèces",
-     "role": "Montant à déposer au guichet Suguba."
+     "role": "Détail du calcul et liste de ses versements ; chaque versement ouvre son reçu."
     },
     {
      "nom": "Mes livraisons",
-     "role": "Détail par course."
+     "role": "Détail par course : « Encaissé » (espèces) ou « Payé en ligne » (Mobile Money)."
     },
     {
      "nom": "Contacter Suguba",
@@ -2643,8 +2668,8 @@
    ],
    "suite": [
     {
-     "id": "adm-vue",
-     "libelle": "Côté admin : vérification au guichet"
+     "id": "adm-caisse",
+     "libelle": "Côté admin : la caisse livreurs"
     }
    ],
    "capture": {
@@ -3111,6 +3136,42 @@
    "capture": {
     "chemin": "/admin/equipe"
    }
+  },
+  {
+   "id": "adm-caisse",
+   "role": "admin",
+   "titre": "Caisse livreurs",
+   "chemin": "/admin/caisse-livreurs",
+   "but": "Les espèces encaissées par chaque livreur à la livraison, ce qu'il doit remettre à Suguba, et les versements reçus avec leur reçu.",
+   "elements": [
+    {
+     "nom": "Attendu à la caisse",
+     "role": "Total des espèces que les livreurs doivent encore remettre."
+    },
+    {
+     "nom": "En retard",
+     "role": "Livreurs qui gardent des espèces depuis plus que le délai réglé (orange), ou plus du double (rouge)."
+    },
+    {
+     "nom": "Règle en vigueur",
+     "role": "Le livreur garde sa rémunération par course, ou verse tout. Se change dans Paramètres › Livraison."
+    },
+    {
+     "nom": "Enregistrer un versement",
+     "role": "Cocher les commandes dont il apporte l'argent, saisir le montant reçu en main. Un manque reste inscrit sur son compte et se rattrape au versement suivant."
+    },
+    {
+     "nom": "Détail et historique",
+     "role": "Commandes non versées et versements passés ; chaque versement ouvre son reçu (imprimer, envoyer au livreur sur WhatsApp)."
+    }
+   ],
+   "suite": [
+    {
+     "id": "liv-portefeuille",
+     "libelle": "Côté livreur : son montant à remettre et ses reçus"
+    }
+   ],
+   "note": "Capture à faire après l'exécution du SQL de la caisse (avant, la page n'affiche que l'annonce d'installation). Elle montrera des noms et montants de livreurs réels : à masquer."
   },
   {
    "id": "adm-sav",

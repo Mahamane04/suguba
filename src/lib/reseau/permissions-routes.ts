@@ -11,6 +11,8 @@ import type { Permission } from './permissions';
  * ce qui était arrivé aux 16 routes antérieures au module d'équipe.
  */
 export const PERMISSION_PAR_ROUTE: Record<string, Permission> = {
+  'GET /api/admin/caisse-livreurs': 'finance.lire',
+  'POST /api/admin/caisse-livreurs': 'finance.payer',
   'GET /api/admin/drivers/active': 'livraison.lire',
   'GET /api/admin/drivers/roster': 'livraison.lire',
   'POST /api/admin/drivers/verify': 'livraison.gerer',

@@ -48,10 +48,12 @@ export default function DriverDashboardPage() {
 
   const myDeliveredOrders = state.orders.filter(o => o.status === 'delivered');
 
-  // Seulement ce que le livreur a réellement encaissé : une commande déjà
-  // payée en ligne (carte diaspora, mobile money) n'entre pas dans sa sacoche.
+  // Seulement ce que le livreur a réellement encaissé : une commande payée en
+  // Mobile Money n'entre pas dans sa sacoche. Filtrer sur `paymentCollected`
+  // donnait toujours 0 : le code de remise le passe à vrai pour TOUTES les
+  // commandes livrées (corrigé le 2026-09-25).
   const totalCollectedCash = myDeliveredOrders
-    .filter((o) => !o.paymentCollected)
+    .filter((o) => o.paymentMethod !== 'mobile_money')
     .reduce((acc, o) => acc + o.totalAmount, 0);
 
   return (

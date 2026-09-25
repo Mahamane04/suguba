@@ -505,6 +505,29 @@ export default function EconomicSettingsPanel() {
             <Num l="Rémunération du livreur" suffixe="F" v={r.remunerationLivreur} on={(v) => maj('remunerationLivreur', v)}
               aide={r.remunerationLivreur > r.fraisLivraisonClient ? `${enF(r.remunerationLivreur - r.fraisLivraisonClient)} non couverts par le client, ajoutés au plancher.` : undefined}
               info="Ce que Suguba paie au livreur par course. Si c'est plus que les frais de livraison facturés au client, la différence n'est pas couverte par le client : elle est ajoutée au plancher de coûts, ce qui relève le prix ailleurs." />
+            <div className="sm:col-span-2 space-y-2 rounded-2xl bg-suguba-sauge p-3">
+              <p className="text-xs font-semibold text-slate-700 inline-flex items-center gap-1">
+                Espèces encaissées par le livreur
+                <InfoBulle texte="Pour une commande payée à la livraison, le livreur encaisse l'argent puis le remet à la caisse Suguba (écran « Caisse livreurs »). Il peut garder sa rémunération sur place, ou tout verser et être payé à part." />
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2" role="radiogroup" aria-label="Rémunération du livreur sur les espèces">
+                {([
+                  [true, 'Il garde sa rémunération', `Il verse les espèces moins ${enF(r.remunerationLivreur)} par course`],
+                  [false, 'Il verse tout', 'Suguba lui paie sa rémunération à part'],
+                ] as const).map(([valeur, libelle, detail]) => {
+                  const actif = (r.livreurGardeRemuneration !== false) === valeur;
+                  return (
+                    <button key={libelle} type="button" role="radio" aria-checked={actif} onClick={() => maj('livreurGardeRemuneration', valeur)}
+                      className={`rounded-2xl border p-2.5 text-left bg-white ${actif ? 'border-suguba-profond ring-1 ring-suguba-profond' : 'border-slate-200'}`}>
+                      <span className="block text-xs font-semibold text-slate-900">{libelle}</span>
+                      <span className="block text-xs text-slate-600">{detail}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <Num l="Alerte espèces non versées après" suffixe="h" v={r.delaiVersementEspecesHeures ?? 24} on={(v) => maj('delaiVersementEspecesHeures', v)}
+              info="Au-delà de ce délai après la livraison, la Caisse livreurs signale le livreur en orange ; au double, en rouge." />
             <div className="sm:col-span-2 space-y-2">
               <p className="text-xs font-semibold text-slate-700">Frais par ville</p>
               {Object.entries(r.livraisonParVille).map(([ville, frais]) => (
