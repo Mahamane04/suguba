@@ -532,7 +532,13 @@ export default function AdminDashboardPage() {
                   </div>
 
                   <div className="flex items-center space-x-2">
-                    {activeDrivers.length === 0 ? (
+                    {order.modeRemise && order.modeRemise !== 'livreur' ? (
+                      // Offre remise par le fournisseur (2026-09-26) : il
+                      // l'organise lui-même depuis son espace « Commandes ».
+                      <p className="flex-1 text-xs font-semibold text-suguba-profond bg-suguba-menthe rounded-xl px-3 py-2">
+                        {order.modeRemise === 'retrait' ? 'Retrait chez le fournisseur' : 'Remise par le fournisseur'} — aucun livreur Suguba à assigner.
+                      </p>
+                    ) : activeDrivers.length === 0 ? (
                       <p className="flex-1 text-xs text-slate-500 italic">Aucun livreur actif pour l&apos;instant.</p>
                     ) : (
                       <>

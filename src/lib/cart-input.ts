@@ -1,6 +1,7 @@
 import { QUANTITE_MAX, calculerCommande, type Devis, type ReglagesPlateforme } from './pricing';
 import { normaliserCommande, type OrderInput } from './order-input';
 import type { DepotFournisseur } from './depot-fournisseur';
+import { remiseDuProduit } from './offre';
 
 /**
  * Panier multi-articles — seules les INTENTIONS du client traversent le
@@ -56,6 +57,9 @@ export interface ProduitPanier {
   supplier_id: string | null;
   /** 'gros' : article au prix de gros, vendu au prix du revendeur (2026-09-24). */
   mode_prix?: string | null;
+  /** Qui remet l'offre (2026-09-26) : 'livreur' (défaut), 'fournisseur', 'retrait'. */
+  mode_remise?: string | null;
+  frais_remise?: number | string | null;
 }
 
 export interface LigneCalculee {
@@ -91,10 +95,12 @@ export function calculerLignesPanier(
   const groupesLivres = new Set<string>();
   return lignes.map((ligne, i) => {
     const p = produits[i];
+    const remise = remiseDuProduit(p);
     const devis = calculerCommande({
       prixFournisseur: Number(p.supplier_price), prixVente: Number(p.public_price),
       commissionProposee: p.commission_proposee == null ? null : Number(p.commission_proposee),
       modePrix: p.mode_prix === 'gros' ? 'gros' : 'fixe',
+      remise,
     }, {
       quantite: ligne.quantity, ville: demande.ville,
       quartierClient: demande.quartierClient,
@@ -106,7 +112,12 @@ export function calculerLignesPanier(
       revendeurAttribue: demande.revendeurAttribue,
       prixRevendeur: demande.prixRevendeur?.get(p.id) ?? null,
     }, reglages);
-    const groupe = devis.pointRelais ? 'relais' : `f:${p.supplier_id || 'suguba'}`;
+    // Une remise par le fournisseur forme son propre groupe (2026-09-26) : un
+    // même scan ne doit jamais valider à la fois une livraison Suguba et une
+    // remise faite par le fournisseur.
+    const groupe = devis.pointRelais ? 'relais'
+      : remise.mode !== 'livreur' ? `${remise.mode}:${p.supplier_id || 'suguba'}`
+        : `f:${p.supplier_id || 'suguba'}`;
     const porteLaLivraison = !groupesLivres.has(groupe);
     groupesLivres.add(groupe);
     return {

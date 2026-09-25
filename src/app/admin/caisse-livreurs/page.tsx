@@ -222,7 +222,7 @@ function SaisieVersement({ caisse, parCourse, onFermer, onEnregistre }: {
 }) {
   const [choisies, setChoisies] = useState<Set<string>>(() => new Set(caisse.commandes.map((o) => o.id)));
   const lot = useMemo(() => caisse.commandes.filter((o) => choisies.has(o.id)), [caisse.commandes, choisies]);
-  const calc = calculerAVerser(lot.map((o) => o.totalAmount), parCourse);
+  const calc = calculerAVerser(lot.map((o) => o.totalAmount), parCourse, lot.filter((o) => !o.parFournisseur).length);
   const manque = Math.max(0, -caisse.ecartCumule);
   const [recu, setRecu] = useState(String(calc.aVerser + manque));
   const [note, setNote] = useState('');
@@ -308,7 +308,7 @@ function SaisieVersement({ caisse, parCourse, onFermer, onEnregistre }: {
 
         <div className="rounded-2xl bg-slate-50 p-3 text-sm space-y-1">
           <div className="flex justify-between"><span>Espèces encaissées</span><span>{fmt(calc.especes)}</span></div>
-          {calc.garde > 0 && <div className="flex justify-between text-slate-600"><span>Rémunération gardée ({lot.length} × {fmt(parCourse)})</span><span>− {fmt(calc.garde)}</span></div>}
+          {calc.garde > 0 && <div className="flex justify-between text-slate-600"><span>Rémunération gardée ({lot.filter((o) => !o.parFournisseur).length} × {fmt(parCourse)})</span><span>− {fmt(calc.garde)}</span></div>}
           <div className="flex justify-between font-bold"><span>Dû pour ces commandes</span><span>{fmt(calc.aVerser)}</span></div>
           {manque > 0 && <div className="flex justify-between text-rose-700"><span>Manque précédent</span><span>{fmt(manque)}</span></div>}
         </div>

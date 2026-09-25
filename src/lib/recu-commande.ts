@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { modeRemiseCommande } from './offre';
 
 /**
  * Reçu client Suguba (2026-09-25) — SERVEUR UNIQUEMENT.
@@ -67,6 +68,8 @@ export interface RecuCommande {
   status: string;
   destinataire: string;
   lieu: string;
+  /** Qui remet (2026-09-26) : livreur Suguba, vendeur, retrait chez le vendeur. */
+  modeRemise: 'livreur' | 'fournisseur' | 'retrait';
   articles: ArticleRecu[];
   totalArticles: number;
   totalLivraison: number;
@@ -135,6 +138,7 @@ export async function chargerRecu(admin: SupabaseClient, numero: string): Promis
       status: o.status,
       destinataire: o.customer_name || '',
       lieu: [o.neighborhood, o.city].filter(Boolean).join(', '),
+      modeRemise: modeRemiseCommande(o.pricing_snapshot),
       articles,
       totalArticles: actifs.reduce((t, x) => t + n(x.total_product_amount), 0),
       totalLivraison: actifs.reduce((t, x) => t + n(x.delivery_fee), 0),

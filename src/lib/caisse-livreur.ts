@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ReglagesPlateforme } from './pricing';
+import { modeRemiseCommande } from './offre';
 
 /**
  * Caisse livreurs (2026-09-25) — ce que chaque livreur doit remettre à
@@ -21,6 +22,8 @@ export interface CommandeAVerser {
   neighborhood: string | null;
   totalAmount: number;
   deliveredAt: string | null;
+  /** Remise faite par le fournisseur (pas de rémunération de livreur gardée). */
+  parFournisseur?: boolean;
 }
 
 export interface Versement {
@@ -62,10 +65,15 @@ export function remunerationRetenue(r: Pick<ReglagesPlateforme, 'remunerationLiv
   return Math.max(0, Number(r.remunerationLivreur) || 0);
 }
 
-/** Espèces encaissées, part gardée et montant à verser pour un lot de commandes. */
-export function calculerAVerser(montants: number[], parCourse: number) {
+/**
+ * Espèces encaissées, part gardée et montant à verser pour un lot de commandes.
+ * `coursesLivreur` : combien de ces commandes ont été livrées par un livreur
+ * Suguba (par défaut : toutes). Une remise faite par le fournisseur ne lui
+ * laisse garder aucune rémunération de livreur (2026-09-26).
+ */
+export function calculerAVerser(montants: number[], parCourse: number, coursesLivreur = montants.length) {
   const especes = montants.reduce((t, m) => t + (Number(m) || 0), 0);
-  const garde = Math.min(especes, Math.max(0, parCourse) * montants.length);
+  const garde = Math.min(especes, Math.max(0, parCourse) * Math.max(0, coursesLivreur));
   return { especes, garde, aVerser: especes - garde };
 }
 
@@ -109,7 +117,7 @@ export async function chargerCaisses(
 ): Promise<{ caisses: CaisseLivreur[]; migrationRequise: boolean; error?: string }> {
   let qCommandes = admin
     .from('orders')
-    .select('id, order_number, product_name, neighborhood, total_amount, delivered_at, assigned_driver_id, payment_method')
+    .select('id, order_number, product_name, neighborhood, total_amount, delivered_at, assigned_driver_id, payment_method, pricing_snapshot')
     .eq('status', 'delivered')
     .is('cash_remittance_id', null)
     .not('assigned_driver_id', 'is', null)
@@ -141,6 +149,7 @@ export async function chargerCaisses(
       neighborhood: o.neighborhood || null,
       totalAmount: Number(o.total_amount) || 0,
       deliveredAt: o.delivered_at || null,
+      parFournisseur: modeRemiseCommande(o.pricing_snapshot) !== 'livreur',
     });
   }
   for (const ligne of v.data || []) entree(String(ligne.driver_id)).versements.push(versementDepuisLigne(ligne));
@@ -154,7 +163,7 @@ export async function chargerCaisses(
 
   const caisses = ids.map((driverId) => {
     const { commandes, versements } = parLivreur.get(driverId)!;
-    const calc = calculerAVerser(commandes.map((o) => o.totalAmount), parCourse);
+    const calc = calculerAVerser(commandes.map((o) => o.totalAmount), parCourse, commandes.filter((o) => !o.parFournisseur).length);
     const profil = profils.get(driverId);
     const tel = profil?.phone && !profil.phone.includes('@') ? profil.phone : null;
     return {

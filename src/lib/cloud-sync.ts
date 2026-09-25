@@ -4,6 +4,7 @@ import { supabase, isSupabaseConfigured } from './supabase';
 import { sugubaStore } from './store';
 import { privateSessionGeneration } from './order-access-client';
 import { Order, Product } from '@/types';
+import { modeRemiseCommande, normaliserModeRemise, normaliserTypeOffre } from './offre';
 
 class CloudSyncService {
   private isListening = false;
@@ -104,6 +105,10 @@ class CloudSyncService {
           resellerCommissionProposee: Number(p.commission_proposee) || 0,
           modePrix: p.mode_prix === 'gros' ? 'gros' : 'fixe',
           prixConseille: p.prix_conseille == null ? null : Number(p.prix_conseille),
+          typeOffre: normaliserTypeOffre(p.type_offre),
+          modeRemise: normaliserModeRemise(p.mode_remise),
+          fraisRemise: Number(p.frais_remise) || 0,
+          offreInclus: p.offre_inclus || null,
           sugubaMargin: Math.max(0, Number(p.public_price || 0) - Number(p.supplier_price || 0) - Number(p.reseller_commission || 0)),
           stockQuantity: Number(p.stock ?? 0),
           warrantyMonths: 0, // Aucune colonne garantie en base : ne jamais en afficher une inventée.
@@ -187,6 +192,7 @@ class CloudSyncService {
           status: o.status || 'pending_call',
           failedOtpAttempts: Number(o.failed_otp_attempts || 0),
           paymentMethod: o.payment_method || 'cash_on_delivery',
+          modeRemise: modeRemiseCommande(o.pricing_snapshot),
           paymentCollected: Boolean(o.payment_collected),
           driverId: o.assigned_driver_id,
           driverName: o.assigned_driver_name,
@@ -383,6 +389,10 @@ class CloudSyncService {
       resellerCommissionProposee: Number(cloudProduct.commission_proposee) || 0,
       modePrix: cloudProduct.mode_prix === 'gros' ? 'gros' : 'fixe',
       prixConseille: cloudProduct.prix_conseille == null ? null : Number(cloudProduct.prix_conseille),
+      typeOffre: normaliserTypeOffre(cloudProduct.type_offre),
+      modeRemise: normaliserModeRemise(cloudProduct.mode_remise),
+      fraisRemise: Number(cloudProduct.frais_remise) || 0,
+      offreInclus: cloudProduct.offre_inclus || null,
       sugubaMargin: Math.max(0, Number(cloudProduct.public_price || 0) - Number(cloudProduct.supplier_price || 0) - Number(cloudProduct.reseller_commission || 0)),
       stockQuantity: Number(cloudProduct.stock ?? 0),
       warrantyMonths: 0, // Aucune colonne garantie en base : ne jamais en afficher une inventée.

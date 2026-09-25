@@ -317,6 +317,11 @@ export const sugubaStore = {
     /** Vente au prix de gros : le revendeur fixe son prix (2026-09-24). */
     modePrix?: 'fixe' | 'gros';
     prixConseille?: number | null;
+    /** Offre (2026-09-26) : nature et qui la remet au client. */
+    typeOffre?: Product['typeOffre'];
+    modeRemise?: Product['modeRemise'];
+    fraisRemise?: number;
+    offreInclus?: string | null;
   }): Promise<{
     product: Product;
     cloud: boolean;
@@ -337,6 +342,10 @@ export const sugubaStore = {
       resellerCommissionProposee: Number(data.resellerCommissionProposee) || 0,
       modePrix: data.modePrix === 'gros' ? 'gros' : 'fixe',
       prixConseille: data.modePrix === 'gros' ? Number(data.prixConseille) || null : null,
+      typeOffre: data.typeOffre,
+      modeRemise: data.modeRemise,
+      fraisRemise: data.fraisRemise,
+      offreInclus: data.offreInclus,
       sugubaMargin: Math.round(Number(data.supplierPrice) * 0.2),
       stockQuantity: Number(data.stockQuantity),
       warrantyMonths: Number(data.warrantyMonths) || 0,

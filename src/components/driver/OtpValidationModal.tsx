@@ -11,7 +11,13 @@ interface OtpValidationModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess?: () => void;
+  /** Qui remet : un livreur Suguba (défaut) ou le fournisseur lui-même (2026-09-26). */
+  espace?: 'livreur' | 'fournisseur';
 }
+
+const poster = (url: string, corps: unknown) => fetch(url, {
+  method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corps),
+});
 
 interface ArticleARemettre {
   id: string;
@@ -37,7 +43,14 @@ const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
  * traitement). Ce composant ne reçoit jamais le code du serveur : il le lit
  * sur le téléphone du client.
  */
-export default function OtpValidationModal({ order, isOpen, onClose, onSuccess }: OtpValidationModalProps) {
+export default function OtpValidationModal({ order, isOpen, onClose, onSuccess, espace = 'livreur' }: OtpValidationModalProps) {
+  // Mêmes étapes, mêmes protections : seules les adresses changent.
+  const preparer = (orderId: string, qr: string) => espace === 'fournisseur'
+    ? poster('/api/supplier/remise', { action: 'preparer', orderId, qr })
+    : poster('/api/driver/remise', { orderId, qr });
+  const confirmer = (orderId: string, code: string) => espace === 'fournisseur'
+    ? poster('/api/supplier/remise', { action: 'confirmer', orderId, code })
+    : poster('/api/driver/verify-delivery-otp', { orderId, code });
   const [etape, setEtape] = useState<'choix' | 'scan' | 'confirmation' | 'fait'>('choix');
   const [otpInput, setOtpInput] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
@@ -64,11 +77,7 @@ export default function OtpValidationModal({ order, isOpen, onClose, onSuccess }
     setErrorMsg('');
     setIsSubmitting(true);
     try {
-      const res = await fetch('/api/driver/verify-delivery-otp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId: order.id, code: otpInput.trim() }),
-      });
+      const res = await confirmer(order.id, otpInput.trim());
       const json = await res.json();
       if (res.ok && json.success) {
         setBilan({ remis: 1, encaisse: order.paymentCollected ? 0 : order.totalAmount });
@@ -94,11 +103,7 @@ export default function OtpValidationModal({ order, isOpen, onClose, onSuccess }
     }
     setIsSubmitting(true);
     try {
-      const res = await fetch('/api/driver/remise', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId: order.id, qr: texte }),
-      });
+      const res = await preparer(order.id, texte);
       const json = await res.json();
       if (!res.ok) {
         setEtape('choix');
@@ -131,11 +136,7 @@ export default function OtpValidationModal({ order, isOpen, onClose, onSuccess }
     // nouvel essai après une coupure ne crée ni doublon ni second encaissement.
     for (const a of selection) {
       try {
-        const res = await fetch('/api/driver/verify-delivery-otp', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orderId: a.id, code: codeLu }),
-        });
+        const res = await confirmer(a.id, codeLu);
         const json = await res.json();
         if (res.ok && json.success) reussis.add(a.id);
         else {

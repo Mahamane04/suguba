@@ -5,6 +5,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { contexteFournisseur } from '@/lib/reseau/contexte-fournisseur';
 import { publierAutomatiquement } from '@/lib/publication-auto';
+import { normaliserModeRemise, normaliserTypeOffre } from '@/lib/offre';
 
 /**
  * Création et modification des fiches produit — fournisseur ou admin.
@@ -132,16 +133,44 @@ export async function POST(req: NextRequest) {
     }
     const avecPrixDeGros = (ligne: Record<string, unknown>) =>
       prixDeGros && (prixDeGros.mode_prix === 'gros' || existant?.mode_prix === 'gros') ? { ...ligne, ...prixDeGros } : ligne;
-    const erreurColonne = (e: { code?: string; message: string }) => (e.code === '42703' || /mode_prix|prix_conseille/.test(e.message))
-      ? NextResponse.json({ error: 'La vente au prix de gros sera disponible après la mise à jour de la base par Suguba.' }, { status: 503 })
-      : NextResponse.json({ error: e.message }, { status: 500 });
+
+    // Offre (2026-09-26) : nature (produit / service) et qui la remet au
+    // client. Même principe que le prix de gros : colonnes envoyées seulement
+    // quand elles servent, pour qu'un produit ordinaire s'enregistre même si
+    // la base n'a pas encore été mise à jour.
+    let offre: { type_offre: string; mode_remise: string; frais_remise: number; offre_inclus: string | null } | undefined;
+    if ([product.typeOffre, product.modeRemise, product.fraisRemise, product.offreInclus].some((v) => v !== undefined)) {
+      const mode = normaliserModeRemise(product.modeRemise);
+      const frais = Number(product.fraisRemise ?? 0);
+      if (mode === 'fournisseur' && (!Number.isFinite(frais) || frais < 0 || frais > 10_000_000)) {
+        return NextResponse.json({ error: 'Frais de remise invalides.' }, { status: 400 });
+      }
+      offre = {
+        type_offre: normaliserTypeOffre(product.typeOffre),
+        mode_remise: mode,
+        frais_remise: mode === 'fournisseur' ? Math.round(frais) : 0,
+        offre_inclus: typeof product.offreInclus === 'string' ? product.offreInclus.trim().slice(0, 1000) || null : null,
+      };
+    }
+    const offreParDefaut = !offre || (offre.type_offre === 'produit' && offre.mode_remise === 'livreur' && !offre.offre_inclus);
+    const colonnesOffre = Boolean(existant && 'mode_remise' in existant);
+    const avecOffre = (ligne: Record<string, unknown>) => (offre && (!offreParDefaut || colonnesOffre) ? { ...ligne, ...offre } : ligne);
+
+    const erreurColonne = (e: { code?: string; message: string }) => {
+      if (/type_offre|mode_remise|frais_remise|offre_inclus/.test(e.message)) {
+        return NextResponse.json({ error: 'Les services et la remise par vous-même seront disponibles après la mise à jour de la base par Suguba.' }, { status: 503 });
+      }
+      return (e.code === '42703' || /mode_prix|prix_conseille/.test(e.message))
+        ? NextResponse.json({ error: 'La vente au prix de gros sera disponible après la mise à jour de la base par Suguba.' }, { status: 503 })
+        : NextResponse.json({ error: e.message }, { status: 500 });
+    };
 
     // ── Création ──────────────────────────────────────────────────────────
     if (!existant) {
       // Aucun produit ne naît approuvé : l'approbation passe par la
       // tarification admin, qui calcule la commission.
       const statut = estFournisseur || product.status === 'approved' ? 'submitted' : (product.status || 'submitted');
-      const { error } = await admin.from('products').insert(avecPrixDeGros({
+      const { error } = await admin.from('products').insert(avecOffre(avecPrixDeGros({
         id: product.id,
         slug: product.slug,
         ...descriptif,
@@ -153,7 +182,7 @@ export async function POST(req: NextRequest) {
         supplier_id: supplierId,
         supplier_name: supplierName,
         created_at: product.createdAt,
-      }));
+      })));
       if (error) return erreurColonne(error);
 
       // Dépôt fournisseur : publication automatique. L'admin, lui, publie avec
@@ -213,6 +242,10 @@ export async function POST(req: NextRequest) {
         maj.pricing_status = null;
       }
     }
+
+    // Offre : nature et mode de remise. Ne change pas le prix, donc pas de
+    // nouvelle tarification.
+    if (offre && (!offreParDefaut || colonnesOffre)) Object.assign(maj, offre);
 
     maj.status = statut;
     const { error } = await admin.from('products').update(maj).eq('id', product.id);

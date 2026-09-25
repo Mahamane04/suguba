@@ -7,6 +7,7 @@ import { genererNumeroCommande } from './order-number';
 import { OrderCreationError, recu } from './order-create';
 import { depotsFournisseurs } from './depot-fournisseur';
 import { prixEnregistres } from './prix-revendeur';
+import { remiseDuProduit } from './offre';
 
 /**
  * Création d'un panier multi-articles — SERVEUR.
@@ -127,6 +128,8 @@ export async function creerPanier(admin: SupabaseClient | null, value: unknown, 
         panier: { cartId, position: i, groupeLivraison: groupe, livraisonPortee: porteLaLivraison },
         // Position GPS du client pour le livreur (voir /api/orders/feed).
         livraison: { position: input.positionClient || null },
+        // Qui remet l'offre (2026-09-26) : livreur Suguba, fournisseur, retrait.
+        remise: remiseDuProduit(product),
       },
       customer_name: input.customerName, customer_phone: input.customerPhone,
       city: devis.ville, neighborhood: devis.pointRelais ? 'Point Relais Partenaire' : input.neighborhood,

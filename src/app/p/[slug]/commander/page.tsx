@@ -97,6 +97,9 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [mode, setMode] = useState<'home_delivery' | 'pickup_point'>('home_delivery');
+  // Offre remise par le vendeur (2026-09-26) : pas de point relais possible.
+  const remiseVendeur = Boolean(product?.modeRemise && product.modeRemise !== 'livreur');
+  useEffect(() => { if (remiseVendeur) setMode('home_delivery'); }, [remiseVendeur]);
   const [pickupPointId, setPickupPointId] = useState('');
   const [city, setCity] = useState('Bamako');
   const [neighborhood, setNeighborhood] = useState('');
@@ -362,7 +365,21 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
             </Field>
           </Section>
 
-          <Section numero={3} titre="Livraison" complete={livraisonOk}>
+          <Section numero={3} titre={remiseVendeur ? 'Remise' : 'Livraison'} complete={livraisonOk}>
+            {/* Offre remise par le vendeur (2026-09-26) : ni livreur Suguba ni
+                point relais. Le vendeur contacte le client après la
+                confirmation de Suguba ; l'adresse lui sert pour le rendez-vous. */}
+            {remiseVendeur ? (
+              <div className="rounded-2xl bg-suguba-sauge p-3 text-sm text-slate-800 flex items-start gap-2.5">
+                <Store className="w-5 h-5 text-suguba-profond shrink-0 mt-0.5" />
+                <p>
+                  {product?.modeRemise === 'retrait'
+                    ? <><strong>À retirer chez le vendeur.</strong> Après la confirmation de Suguba, il vous appelle pour convenir du moment et vous indiquer l’adresse.</>
+                    : <><strong>Remis par le vendeur lui-même</strong>{product?.typeOffre && product.typeOffre !== 'produit' ? ' (livraison et prestation)' : ''}. Après la confirmation de Suguba, il vous appelle pour convenir du rendez-vous.</>}
+                  {' '}Vous présenterez votre reçu QR au moment de la remise.
+                </p>
+              </div>
+            ) : (
             <div role="radiogroup" aria-label="Mode de réception" className="grid grid-cols-2 gap-2">
               {([
                 { valeur: 'home_delivery', Icone: Bike, titre: 'À domicile', detail: 'Livré chez vous' },
@@ -390,6 +407,7 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
                 );
               })}
             </div>
+            )}
 
             {mode === 'home_delivery' ? (
               <div className="space-y-4">
@@ -565,7 +583,9 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
                 </div>
                 <div className="flex justify-between gap-3">
                   <dt className="text-slate-600">
-                    {devis.modeLivraison === 'relais' ? 'Retrait en point relais' : 'Livraison'}
+                    {devis.modeLivraison === 'relais' ? 'Retrait en point relais'
+                      : devis.modeLivraison === 'fournisseur' ? 'Remise par le vendeur'
+                        : devis.modeLivraison === 'retrait' ? 'Retrait chez le vendeur' : 'Livraison'}
                     {devis.distanceLivraisonKm !== null && (
                       <span className="ml-1.5 inline-flex items-center gap-0.5 text-xs text-slate-400">
                         <Navigation className="w-3 h-3" />~{devis.distanceLivraisonKm.toFixed(1)} km

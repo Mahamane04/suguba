@@ -1,5 +1,5 @@
 {
- "majLe": "2026-09-25",
+ "majLe": "2026-09-26",
  "roles": [
   {
    "cle": "visiteur",
@@ -190,6 +190,30 @@
   }
  ],
  "journal": [
+  {
+   "date": "2026-09-26",
+   "titre": "Offres : services, remise par le fournisseur (lot 1a)",
+   "demande": "« Le fournisseur peut proposer aussi des gains sur les services. Par exemple, l'achat d'un kit solaire avec installation ne nécessite pas forcément qu'un livreur puisse aller le faire : c'est un service complet. L'achat de véhicule, c'est le vendeur directement qui va livrer le véhicule. » Choix : encaissement toujours via Suguba ; réservation puis paiement à la remise pour les gros montants ; commencer par le lot 1a (types d'offre et remise par le fournisseur).",
+   "realise": [
+    "« Ajouter une offre » : nature (produit, service, produit avec service), qui la remet (livreur Suguba, le fournisseur lui-même, retrait chez lui), frais de remise du fournisseur, « ce qui est inclus ». Seuls les champs utiles s'affichent.",
+    "Remise par le fournisseur : ses frais remplacent la livraison Suguba (retrait : aucun frais), pas de point relais ; ces articles forment leur propre lot dans un panier, pour qu'un même scan ne valide jamais une livraison Suguba et une remise du fournisseur ensemble.",
+    "Espace fournisseur › Commandes : « Organiser la remise » (la commande lui est assignée, aucun livreur ; il voit le contact du client pour le rendez-vous), puis « Remettre au client » : scan du reçu QR ou code, vérification, confirmation. Même protection que les livreurs (3 essais, commande assignée, aucun double traitement).",
+    "Paiement toujours via Suguba : Mobile Money avant, ou espèces remises à la caisse Suguba par le fournisseur (il ne garde aucune rémunération de livreur).",
+    "Admin : pas de livreur à assigner pour ces commandes (et le serveur le refuse). Fiche produit, carte et reçu indiquent « Service », « Installation incluse », « Remis par le vendeur » ou « Chez le vendeur »."
+   ],
+   "ecarts": [
+    "SQL à exécuter : supabase/A-EXECUTER-2026-09-26-offres-remise.sql (avant, le formulaire annonce que les services arrivent après la mise à jour ; les produits ordinaires continuent de fonctionner).",
+    "Pas encore : devis enregistré (lot 1b), prestations en plusieurs étapes avec validation par le client (lot 1c), capacité d'intervention par jour, expiration automatique d'une réservation (véhicule unique : le stock déjà réservé empêche une deuxième vente).",
+    "Campagnes (lot 2) : à faire, en commençant par corriger les compteurs de partages et de clics."
+   ],
+   "pages": [
+    "fou-ajouter",
+    "fou-commandes",
+    "fiche-produit",
+    "adm-vue"
+   ],
+   "statut": "en local"
+  },
   {
    "date": "2026-09-25",
    "titre": "SAV : scanner un reçu côté admin, photos dans la demande client",
@@ -784,6 +808,18 @@
    "chemin": "/p/<produit>",
    "but": "Tout sur un article : photos, prix, description, et les deux façons de l’acheter.",
    "elements": [
+    {
+     "nom": "Étiquette « Service » / « Installation incluse »",
+     "role": "Nature de l'offre, au-dessus du nom."
+    },
+    {
+     "nom": "Remis par le vendeur / Chez le vendeur",
+     "role": "Remplace « Livré par Suguba » quand le vendeur remet lui-même ou que le client vient chez lui."
+    },
+    {
+     "nom": "Ce qui est inclus",
+     "role": "Ce que comprend l'offre, tel que décrit par le fournisseur."
+    },
     {
      "nom": "Retour",
      "role": "Revient à la page précédente."
@@ -2431,6 +2467,14 @@
    "but": "Voir les commandes de vos produits et remettre le colis au livreur avec le code de ramassage.",
    "elements": [
     {
+     "nom": "Organiser la remise",
+     "role": "Offre que vous remettez vous-même : après la confirmation de Suguba, la commande vous est assignée (aucun livreur). Vous voyez alors le nom, le téléphone et le repère du client pour le rendez-vous."
+    },
+    {
+     "nom": "Remettre au client (scanner son reçu)",
+     "role": "Scan du QR du reçu client (ou saisie du code), vérification des articles et du paiement, puis « Confirmer la remise ». Les espèces encaissées se remettent à la caisse Suguba."
+    },
+    {
      "nom": "À préparer · En livraison · Terminées",
      "role": "Les commandes de vos produits, par étape."
     },
@@ -2457,10 +2501,26 @@
   {
    "id": "fou-ajouter",
    "role": "fournisseur",
-   "titre": "Ajouter un produit",
+   "titre": "Ajouter une offre",
    "chemin": "/supplier/products/new",
    "but": "Déposer un nouvel article : le fournisseur fixe son prix ET la part du revendeur. Avec au moins une photo, le produit est mis en vente aussitôt, au prix calculé par Suguba.",
    "elements": [
+    {
+     "nom": "Votre offre : que proposez-vous ?",
+     "role": "Un produit, un service, ou un produit avec service (ex. kit solaire avec installation)."
+    },
+    {
+     "nom": "Qui la remet au client ?",
+     "role": "Un livreur Suguba, vous-même (véhicule, installation) ou le client vient chez vous. Sans livreur Suguba : vous organisez la remise et scannez le reçu QR du client."
+    },
+    {
+     "nom": "Frais de déplacement ou de remise",
+     "role": "Si vous remettez vous-même : payés par le client à la place de la livraison Suguba (0 si inclus)."
+    },
+    {
+     "nom": "Ce qui est inclus",
+     "role": "Matériel, installation, zone, exclusions : affiché sur la fiche, pour qu'aucun supplément n'apparaisse après coup."
+    },
     {
      "nom": "Comment les revendeurs vendent cet article ?",
      "role": "**Prix fixe + part revendeur** (vous fixez la part du revendeur) ou **Prix de gros** : vous donnez votre prix de gros, le revendeur vend au prix qu’il veut et peut négocier, jamais sous le minimum."
@@ -2786,6 +2846,10 @@
    "chemin": "/admin",
    "but": "Le poste de pilotage quotidien : tout ce qui attend une action aujourd’hui.",
    "elements": [
+    {
+     "nom": "Dispatch : remise par le fournisseur",
+     "role": "Pour une offre remise par le fournisseur, aucun livreur à assigner : il l'organise depuis son espace. Le serveur refuse aussi d'y affecter un livreur."
+    },
     {
      "nom": "Raccourcis",
      "role": "Produits · SAV & retours · Analyses · Rapport du soir · Diffusion."

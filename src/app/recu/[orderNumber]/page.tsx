@@ -239,6 +239,11 @@ export default function RecuPage() {
               <p className="text-xs text-slate-500">Destinataire</p>
               <p className="font-semibold text-slate-900">{recu.destinataire}</p>
               {recu.lieu && <p className="text-slate-600">{recu.lieu}</p>}
+              {recu.modeRemise && recu.modeRemise !== 'livreur' && (
+                <p className="mt-1 text-slate-700">
+                  {recu.modeRemise === 'retrait' ? 'À retirer chez le vendeur' : 'Remis par le vendeur'} : il vous contacte pour le rendez-vous.
+                </p>
+              )}
             </section>
 
             <section aria-label="Assistance" className="border-t border-slate-100 pt-3 text-sm text-slate-700 space-y-1">

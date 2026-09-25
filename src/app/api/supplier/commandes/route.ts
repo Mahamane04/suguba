@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { exigerDroitFournisseur } from '@/lib/reseau/contexte-fournisseur';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { modeRemiseCommande } from '@/lib/offre';
 
 /**
  * Commandes à préparer côté fournisseur (2026-09-24).
@@ -11,10 +12,16 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
  *
  * Volontairement absents : nom et téléphone du client (le fournisseur n'en a
  * pas besoin, la livraison passe par Suguba) et le code de livraison du client.
+ *
+ * Exception (2026-09-26) : une offre que le fournisseur remet LUI-MÊME
+ * (véhicule, installation, retrait chez lui). Il doit pouvoir joindre le
+ * client pour fixer le rendez-vous : nom, téléphone et repère sont fournis,
+ * seulement tant que la remise est à faire (confirmée ou en cours). Le code
+ * de remise, lui, n'est jamais fourni : le client le présente sur son reçu.
  */
 
 const LIMITE = 200;
-const COLONNES = 'id, order_number, product_id, product_name, product_image, quantity, status, created_at, delivered_at, neighborhood, city, assigned_driver_name, pricing_snapshot';
+const COLONNES = 'id, order_number, product_id, product_name, product_image, quantity, status, created_at, delivered_at, neighborhood, city, assigned_driver_name, pricing_snapshot, assigned_driver_id, customer_name, customer_phone, landmark, total_amount, payment_method, payment_collected';
 
 export async function GET(req: NextRequest) {
   const acces = await exigerDroitFournisseur(req, 'commandes');
@@ -44,7 +51,10 @@ export async function GET(req: NextRequest) {
     const unitaire = typeof tarif?.prixFournisseur === 'number' ? tarif.prixFournisseur : prixFournisseur.get(o.product_id) || 0;
     // Le code ne sert qu'entre la confirmation et le ramassage : ensuite il ne
     // doit plus circuler.
-    const codeUtile = ['confirmed', 'dispatched'].includes(o.status) && !o.picked_up_at;
+    const modeRemise = modeRemiseCommande(o.pricing_snapshot);
+    const parMoi = modeRemise !== 'livreur';
+    const codeUtile = !parMoi && ['confirmed', 'dispatched'].includes(o.status) && !o.picked_up_at;
+    const remiseAFaire = parMoi && ['confirmed', 'in_transit'].includes(o.status);
     return {
       id: o.id,
       numero: o.order_number,
@@ -60,6 +70,12 @@ export async function GET(req: NextRequest) {
       ville: o.city || null,
       livreur: o.assigned_driver_name || null,
       codeRamassage: codeUtile ? o.pickup_code || null : null,
+      // Remise par le fournisseur (2026-09-26)
+      modeRemise,
+      remisePriseEnCharge: parMoi && o.assigned_driver_id === acces.contexte.fournisseurId,
+      client: remiseAFaire ? { nom: o.customer_name || '', telephone: o.customer_phone || '', repere: o.landmark || null } : null,
+      montantClient: parMoi ? Math.round(Number(o.total_amount) || 0) : null,
+      payeEnLigne: o.payment_method === 'mobile_money' && Boolean(o.payment_collected),
     };
   });
   return NextResponse.json({ commandes, ramassageActif });

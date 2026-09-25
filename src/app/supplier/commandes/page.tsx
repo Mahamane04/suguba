@@ -1,10 +1,14 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { PackageCheck, KeyRound, Truck, CheckCircle2, Clock, Package } from 'lucide-react';
+import { PackageCheck, KeyRound, Truck, CheckCircle2, Clock, Package, Handshake, Phone, QrCode } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
 import ProductImage from '@/components/common/ProductImage';
+import Button from '@/components/ui/Button';
+import { useToast } from '@/components/ui/Toast';
+import OtpValidationModal from '@/components/driver/OtpValidationModal';
+import type { Order } from '@/types';
 
 /**
  * Commandes à préparer — espace fournisseur (2026-09-24).
@@ -30,6 +34,12 @@ interface Commande {
   ville: string | null;
   livreur: string | null;
   codeRamassage: string | null;
+  // Remise par le fournisseur lui-même (2026-09-26)
+  modeRemise?: 'livreur' | 'fournisseur' | 'retrait';
+  remisePriseEnCharge?: boolean;
+  client?: { nom: string; telephone: string; repere: string | null } | null;
+  montantClient?: number | null;
+  payeEnLigne?: boolean;
 }
 
 const enF = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
@@ -40,7 +50,11 @@ type Filtre = 'a_preparer' | 'en_route' | 'terminees';
 function etape(c: Commande): { filtre: Filtre; libelle: string; ton: 'succes' | 'attente' | 'info' | 'danger' } {
   if (c.statut === 'cancelled') return { filtre: 'terminees', libelle: 'Annulée', ton: 'danger' };
   if (c.statut === 'returned') return { filtre: 'terminees', libelle: 'Retournée', ton: 'danger' };
-  if (c.statut === 'delivered') return { filtre: 'terminees', libelle: 'Livrée', ton: 'succes' };
+  if (c.statut === 'delivered') return { filtre: 'terminees', libelle: c.modeRemise && c.modeRemise !== 'livreur' ? 'Remise faite' : 'Livrée', ton: 'succes' };
+  if (c.modeRemise && c.modeRemise !== 'livreur') {
+    if (c.statut === 'in_transit') return { filtre: 'en_route', libelle: 'Remise à faire par vous', ton: 'info' };
+    if (c.statut === 'confirmed') return { filtre: 'a_preparer', libelle: 'Confirmée · à organiser', ton: 'attente' };
+  }
   if (c.recupereeLe || c.statut === 'in_transit') return { filtre: 'en_route', libelle: 'Récupérée · en livraison', ton: 'info' };
   if (c.statut === 'dispatched') return { filtre: 'a_preparer', libelle: 'Livreur en route vers vous', ton: 'attente' };
   if (c.statut === 'confirmed') return { filtre: 'a_preparer', libelle: 'Confirmée · à préparer', ton: 'attente' };
@@ -53,6 +67,28 @@ export default function CommandesFournisseurPage() {
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState('');
   const [filtre, setFiltre] = useState<Filtre>('a_preparer');
+  const [aRemettre, setARemettre] = useState<Commande | null>(null);
+  const [enCours, setEnCours] = useState<string | null>(null);
+  const [recharge, setRecharge] = useState(0);
+  const { toast } = useToast();
+
+  // « Organiser la remise » : la commande vous est assignée à la place d'un livreur.
+  const organiser = async (c: Commande) => {
+    setEnCours(c.id);
+    try {
+      const r = await fetch('/api/supplier/remise', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'prendre', orderId: c.id }),
+      });
+      const j = await r.json().catch(() => null);
+      if (!r.ok) toast(j?.error || 'Action impossible. Réessayez.', { ton: 'erreur' });
+      else { toast('Remise organisée : contactez le client pour le rendez-vous.', { ton: 'succes' }); setFiltre('en_route'); setRecharge((n) => n + 1); }
+    } catch {
+      toast('Connexion interrompue. Réessayez.', { ton: 'erreur' });
+    } finally {
+      setEnCours(null);
+    }
+  };
 
   useEffect(() => {
     let annule = false;
@@ -70,7 +106,7 @@ export default function CommandesFournisseurPage() {
     // Le livreur arrive : on relit toutes les minutes pour voir le ramassage passer.
     const minuterie = setInterval(charger, 60_000);
     return () => { annule = true; clearInterval(minuterie); };
-  }, []);
+  }, [recharge]);
 
   const parFiltre = useMemo(() => {
     const groupes: Record<Filtre, Commande[]> = { a_preparer: [], en_route: [], terminees: [] };
@@ -144,8 +180,41 @@ export default function CommandesFournisseurPage() {
                   </div>
                 )}
 
+                {c.modeRemise && c.modeRemise !== 'livreur' && ['confirmed', 'in_transit'].includes(c.statut) && (
+                  <div className="rounded-2xl bg-suguba-sauge p-3 space-y-2.5">
+                    <p className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                      <Handshake className="w-4 h-4 text-suguba-profond" />
+                      {c.modeRemise === 'retrait' ? 'Le client vient chez vous' : 'Vous remettez vous-même'} — aucun livreur Suguba
+                    </p>
+                    {c.client && (
+                      <div className="text-xs text-slate-700 space-y-0.5">
+                        <p><strong>{c.client.nom}</strong> · {c.quartierClient || c.ville}{c.client.repere ? ` · ${c.client.repere}` : ''}</p>
+                        <a href={`tel:${c.client.telephone}`} className="inline-flex items-center gap-1 min-h-11 font-bold text-suguba-profond underline">
+                          <Phone className="w-3.5 h-3.5" /> Appeler {c.client.telephone}
+                        </a>
+                      </div>
+                    )}
+                    <p className="text-xs text-slate-700">
+                      {c.payeEnLigne
+                        ? 'Déjà payé en ligne : rien à encaisser.'
+                        : <>À encaisser au client : <strong>{enF(c.montantClient || 0)}</strong>, à remettre ensuite à la caisse Suguba.</>}
+                    </p>
+                    {c.statut === 'confirmed' ? (
+                      <Button fullWidth onClick={() => organiser(c)} disabled={enCours === c.id}>
+                        {enCours === c.id ? 'Un instant…' : 'Organiser la remise'}
+                      </Button>
+                    ) : c.remisePriseEnCharge ? (
+                      <Button fullWidth onClick={() => setARemettre(c)}>
+                        <QrCode className="w-4 h-4" /> Remettre au client (scanner son reçu)
+                      </Button>
+                    ) : null}
+                  </div>
+                )}
+
                 <ul className="text-xs text-slate-600 space-y-1">
-                  <li className="flex items-center gap-2"><Clock className="w-3.5 h-3.5 text-slate-400" />Livraison vers {c.quartierClient || c.ville || 'le client'}</li>
+                  {(!c.modeRemise || c.modeRemise === 'livreur') && (
+                    <li className="flex items-center gap-2"><Clock className="w-3.5 h-3.5 text-slate-400" />Livraison vers {c.quartierClient || c.ville || 'le client'}</li>
+                  )}
                   {c.livreur && <li className="flex items-center gap-2"><Truck className="w-3.5 h-3.5 text-slate-400" />Livreur : {c.livreur}</li>}
                   {c.recupereeLe && <li className="flex items-center gap-2"><PackageCheck className="w-3.5 h-3.5 text-suguba-profond" />Récupérée le {heure(c.recupereeLe)}</li>}
                   {c.livreeLe && <li className="flex items-center gap-2"><CheckCircle2 className="w-3.5 h-3.5 text-suguba-profond" />Livrée le {heure(c.livreeLe)}</li>}
@@ -155,6 +224,20 @@ export default function CommandesFournisseurPage() {
           })}
         </div>
       )}
+
+      <OtpValidationModal
+        espace="fournisseur"
+        isOpen={Boolean(aRemettre)}
+        onClose={() => { setARemettre(null); setRecharge((n) => n + 1); }}
+        order={aRemettre ? ({
+          id: aRemettre.id,
+          orderNumber: aRemettre.numero,
+          totalAmount: aRemettre.montantClient || 0,
+          paymentCollected: Boolean(aRemettre.payeEnLigne),
+          customerName: aRemettre.client?.nom || 'le client',
+          customerPhone: aRemettre.client?.telephone || '',
+        } as unknown as Order) : null}
+      />
     </PageReseau>
   );
 }

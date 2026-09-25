@@ -728,6 +728,12 @@ export interface ProduitTarifable {
   prixVente: number;
   commissionProposee?: number | null;
   modePrix?: ModePrix | null;
+  /**
+   * Qui remet l'offre au client (2026-09-26). Absent = livreur Suguba.
+   * Remise par le fournisseur : ses frais remplacent la livraison Suguba ;
+   * retrait chez lui : aucun frais de livraison.
+   */
+  remise?: { mode: 'livreur' | 'fournisseur' | 'retrait'; frais: number } | null;
 }
 
 /**
@@ -782,7 +788,8 @@ export interface Devis {
   quantite: number;
   prixUnitaire: number;
   montantArticles: number;
-  modeLivraison: 'domicile' | 'relais';
+  /** 'fournisseur' / 'retrait' : aucun livreur Suguba (2026-09-26). */
+  modeLivraison: 'domicile' | 'relais' | 'fournisseur' | 'retrait';
   ville: string;
   pointRelais: { id: string; nom: string } | null;
   fraisLivraison: number;
@@ -897,14 +904,21 @@ export function calculerCommande(
   const montantArticles = prixUnitaire * quantite;
 
   // Livraison : point relais valide, sinon ville, sinon tarif par défaut.
-  const relais = demande.pointRelaisId
+  // Remise par le fournisseur ou retrait chez lui : ni livreur ni point relais,
+  // les frais sont ceux annoncés par le fournisseur (2026-09-26).
+  const remiseFournisseur = produit.remise && produit.remise.mode !== 'livreur' ? produit.remise : null;
+  const relais = demande.pointRelaisId && !remiseFournisseur
     ? r.pointsRelais.find((p) => p.id === demande.pointRelaisId) || null
     : null;
-  let modeLivraison: 'domicile' | 'relais';
+  let modeLivraison: Devis['modeLivraison'];
   let ville: string;
   let fraisLivraison: number;
   let distanceLivraisonKm: number | null = null;
-  if (relais) {
+  if (remiseFournisseur) {
+    modeLivraison = remiseFournisseur.mode === 'fournisseur' ? 'fournisseur' : 'retrait';
+    ville = fraisPourVille(r, demande.ville || 'Bamako').ville;
+    fraisLivraison = remiseFournisseur.mode === 'fournisseur' ? Math.max(0, Math.round(Number(remiseFournisseur.frais) || 0)) : 0;
+  } else if (relais) {
     modeLivraison = 'relais';
     ville = 'Bamako';
     fraisLivraison = Number(relais.frais) || 0;

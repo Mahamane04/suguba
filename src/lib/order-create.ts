@@ -7,6 +7,7 @@ import { genererNumeroCommande } from './order-number';
 import { depotsFournisseurs } from './depot-fournisseur';
 import { resoudrePrixRevendeur } from './prix-revendeur';
 import { prixMinimalGros } from './pricing';
+import { remiseDuProduit } from './offre';
 
 export class OrderCreationError extends Error {
   constructor(message: string, public status: number) { super(message); }
@@ -99,9 +100,10 @@ export async function creerCommande(admin: SupabaseClient | null, value: unknown
     admin, modePrix: product.mode_prix, productId: product.id,
     resellerId: reseller?.id, sessionUid, prixNegocie: input.prixNegocie,
   });
+  const remise = remiseDuProduit(product);
   const devis = calculerCommande({
     prixFournisseur: Number(product.supplier_price), prixVente: Number(product.public_price),
-    commissionProposee: product.commission_proposee, modePrix: product.mode_prix,
+    commissionProposee: product.commission_proposee, modePrix: product.mode_prix, remise,
   }, {
     quantite: input.quantity, ville: input.city,
     quartierClient: input.neighborhood, positionClient: input.positionClient,
@@ -130,6 +132,8 @@ export async function creerCommande(admin: SupabaseClient | null, value: unknown
       devis, reglagesDu: settings?.updated_at || null, calculeLe: now,
       // Position GPS du client pour le livreur (voir /api/orders/feed).
       livraison: { position: input.positionClient || null },
+      // Qui remet l'offre (2026-09-26) : livreur Suguba, fournisseur, retrait.
+      remise,
     },
     customer_name: input.customerName, customer_phone: input.customerPhone,
     city: devis.ville, neighborhood: devis.pointRelais ? 'Point Relais Partenaire' : input.neighborhood,

@@ -9,6 +9,7 @@ import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 import { compterClic } from '@/lib/sponsorises';
 import { partagerProduit, prechargerImage, prechargerLienPartage, useCodeRevendeur } from '@/lib/partage';
 import type { Product } from '@/types';
+import { libelleTypeOffre, normaliserTypeOffre } from '@/lib/offre';
 import { Loader2, Image as ImageIcon } from 'lucide-react';
 
 export interface ProduitCarte {
@@ -22,10 +23,14 @@ export interface ProduitCarte {
   commission?: number;
   /** Article au prix de gros : le revendeur fixe son prix (2026-09-24). */
   prixLibre?: boolean;
+  /** « Service », « Installation incluse » ou « Remis par le vendeur » (2026-09-26). */
+  etiquetteOffre?: string | null;
 }
 
 export function carteDepuisProduit(p: Product): ProduitCarte {
+  const nature = libelleTypeOffre(normaliserTypeOffre(p.typeOffre));
   return {
+    etiquetteOffre: nature || (p.modeRemise === 'fournisseur' ? 'Remis par le vendeur' : p.modeRemise === 'retrait' ? 'Chez le vendeur' : null),
     id: p.id,
     slug: p.slug,
     nom: p.name,
@@ -137,9 +142,13 @@ export default function ProductCard({
             Sponsorisé
           </span>
         )}
-        {enRupture && (
+        {enRupture ? (
           <span className="absolute top-2 left-2 px-2 py-0.5 rounded-lg bg-slate-900/85 text-white text-xs font-bold pointer-events-none">
             Rupture de stock
+          </span>
+        ) : produit.etiquetteOffre && (
+          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-lg bg-white/95 text-suguba-profond text-xs font-bold border border-slate-200 pointer-events-none">
+            {produit.etiquetteOffre}
           </span>
         )}
         {afficherCommission && (produit.commission ?? 0) > 0 && (

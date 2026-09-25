@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { SESSION_COOKIE_NAME } from '@/lib/session';
+import { modeRemiseCommande } from '@/lib/offre';
 
 /** Mises à jour internes uniquement. Création atomique : /api/orders/create. */
 
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
 
     const { data: existing, error: readError } = await admin
       .from('orders')
-      .select('id, status, assigned_driver_id, product_id, reseller_id')
+      .select('id, status, assigned_driver_id, product_id, reseller_id, pricing_snapshot')
       .eq('id', order.id)
       .maybeSingle();
 
@@ -94,6 +95,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, cloud: true, created: false, inchange: true });
     }
 
+    // Offre remise par le fournisseur (2026-09-26) : aucun livreur Suguba. Le
+    // fournisseur l'organise lui-même depuis son espace (/api/supplier/remise).
+    if (modeRemiseCommande(existing.pricing_snapshot) !== 'livreur'
+        && (statut === 'dispatched' || (maj.assigned_driver_id && maj.assigned_driver_id !== existing.assigned_driver_id))) {
+      return NextResponse.json({ error: 'Remise assurée par le fournisseur : aucun livreur Suguba à assigner.' }, { status: 409 });
+    }
     if (statut === 'dispatched' && !(maj.assigned_driver_id ?? existing.assigned_driver_id)) return NextResponse.json({ error: 'Choisissez un livreur avant le dispatch.' }, { status: 400 });
     if (maj.assigned_driver_id) {
       const { data: driver, error: driverError } = await admin.from('drivers').select('active_status').eq('profile_id', maj.assigned_driver_id).maybeSingle();

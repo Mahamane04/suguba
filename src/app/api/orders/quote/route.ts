@@ -6,6 +6,7 @@ import { depotsFournisseurs } from '@/lib/depot-fournisseur';
 import { positionValide } from '@/lib/bamako-quartiers';
 import { resoudrePrixRevendeur } from '@/lib/prix-revendeur';
 import { SESSION_COOKIE_NAME } from '@/lib/session';
+import { remiseDuProduit } from '@/lib/offre';
 
 /**
  * Devis d'une commande, pour affichage sur la page produit — publique.
@@ -89,6 +90,7 @@ export async function POST(req: NextRequest) {
       prixVente: Number(produit.public_price),
       commissionProposee: produit.commission_proposee,
       modePrix: produit.mode_prix,
+      remise: remiseDuProduit(produit),
     },
     {
       quantite: Number(quantity) || 1,

@@ -128,6 +128,14 @@ export interface Product {
   modePrix?: 'fixe' | 'gros';
   /** Prix conseillé proposé par le fournisseur (articles au prix de gros). */
   prixConseille?: number | null;
+  /** Nature de l'offre (2026-09-26) : produit, service, produit avec service. */
+  typeOffre?: 'produit' | 'service' | 'produit_service';
+  /** Qui remet l'offre au client : livreur Suguba, fournisseur, retrait chez lui. */
+  modeRemise?: 'livreur' | 'fournisseur' | 'retrait';
+  /** Frais de remise demandés par le fournisseur (mode « fournisseur »). */
+  fraisRemise?: number;
+  /** Ce qui est inclus (matériel, installation, mise en service…). */
+  offreInclus?: string | null;
   sugubaMargin: number;        // Marge nette Suguba (ex: 6 000 F)
   stockQuantity: number;
   warrantyMonths: number;
@@ -171,6 +179,8 @@ export interface Order {
   discountAmount?: number;
   status: OrderStatus;
   deliveryGroup?: string;      // Identifiant public du lot ; jamais le code de remise.
+  /** Qui remet (2026-09-26) : livreur Suguba, fournisseur, retrait. Connu de l'admin seulement. */
+  modeRemise?: 'livreur' | 'fournisseur' | 'retrait';
   failedOtpAttempts?: number;  // Nombre d'échecs de saisie OTP
   otpLockedUntil?: string;     // Blocage temporaire après 3 échecs
   driverId?: string;

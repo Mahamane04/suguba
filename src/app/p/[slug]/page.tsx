@@ -13,8 +13,9 @@ import { partagerProduit, prechargerImage, prechargerLienPartage, useCodeRevende
 import { useSugubaStore, useCatalogueCharge } from '@/lib/store';
 import { useOrderQuote } from '@/lib/useOrderQuote';
 import {
-  ShieldCheck, Truck, Clock, Minus, Plus, CheckCircle2, ArrowRight, ArrowLeft,
+  ShieldCheck, Truck, Clock, Minus, Plus, CheckCircle2, ArrowRight, ArrowLeft, Handshake, Store,
 } from 'lucide-react';
+import { libelleTypeOffre, normaliserTypeOffre } from '@/lib/offre';
 
 const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} FCFA`;
 
@@ -144,6 +145,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   }
 
   const outOfStock = product.stockQuantity <= 0;
+  // « Service » / « Installation incluse » (2026-09-26)
+  const typeOffreLibelle = libelleTypeOffre(normaliserTypeOffre(product.typeOffre));
   const unitPrice = devis?.prixUnitaire ?? product.publicPrice;
 
   const allerCommander = () => {
@@ -260,6 +263,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
 
             {/* Téléphone : nom, prix et Commander juste sous la photo. */}
             <div ref={blocAchatRef} className="md:hidden space-y-2">
+              {typeOffreLibelle && <span className="inline-flex px-2.5 py-0.5 rounded-full bg-suguba-citron text-suguba-profond text-xs font-bold">{typeOffreLibelle}</span>}
               <h1 className="text-xl font-bold text-slate-900 leading-tight">{product.name}</h1>
               <div className="flex items-center justify-between gap-3">
                 <p className="text-2xl font-bold text-suguba-brand whitespace-nowrap">
@@ -282,7 +286,12 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               {[
                 { Icone: CheckCircle2, titre: 'Payez à la livraison', detail: 'Rien à payer avant' },
                 { Icone: ShieldCheck, titre: 'Code secret', detail: 'Remis au livreur après vérification' },
-                { Icone: Truck, titre: 'Livré par Suguba', detail: 'Bamako et régions' },
+                // Qui remet l'offre (2026-09-26)
+                product.modeRemise === 'fournisseur'
+                  ? { Icone: Handshake, titre: 'Remis par le vendeur', detail: product.fraisRemise ? `Frais : ${fcfa(product.fraisRemise)}` : 'Sans livreur' }
+                  : product.modeRemise === 'retrait'
+                    ? { Icone: Store, titre: 'Chez le vendeur', detail: 'Adresse après confirmation' }
+                    : { Icone: Truck, titre: 'Livré par Suguba', detail: 'Bamako et régions' },
               ].map(({ Icone, titre, detail }) => (
                 <div key={titre} className="bg-white p-3 rounded-2xl border border-slate-200 text-slate-800 space-y-1">
                   <Icone className="w-5 h-5 mx-auto text-suguba-brand-dark" />
@@ -321,11 +330,19 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 {product.description}
               </p>
             </div>
+
+            {product.offreInclus && (
+              <div className="bg-white p-5 rounded-3xl border border-slate-200 space-y-2">
+                <h2 className="font-bold text-xs text-slate-900 uppercase tracking-wider">Ce qui est inclus</h2>
+                <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{product.offreInclus}</p>
+              </div>
+            )}
           </div>
 
           {/* Ordinateur : boîte d'achat collée à droite pendant le défilement. */}
           <div className="hidden md:block md:sticky md:top-28 bg-white rounded-3xl p-6 border border-slate-200 shadow-float space-y-5">
             <div className="space-y-1">
+              {typeOffreLibelle && <span className="inline-flex px-2.5 py-0.5 rounded-full bg-suguba-citron text-suguba-profond text-xs font-bold">{typeOffreLibelle}</span>}
               <h1 className="text-xl font-bold text-slate-900 leading-tight">{product.name}</h1>
               <p className="text-3xl font-bold text-suguba-brand-dark">{fcfa(unitPrice)}</p>
             </div>
@@ -368,7 +385,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             </Button>
             <BoutonAjoutPanier disabled={outOfStock} productId={product.id} quantite={quantity} />
             <p className="text-xs text-slate-500 text-center">
-              Livraison calculée à l&apos;étape suivante · Payez à la livraison
+              {product.modeRemise && product.modeRemise !== 'livreur'
+                ? 'Le vendeur vous contacte après la confirmation · Payez à la remise'
+                : <>Livraison calculée à l&apos;étape suivante · Payez à la livraison</>}
             </p>
           </div>
         </div>
