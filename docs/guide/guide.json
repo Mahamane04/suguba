@@ -200,7 +200,6 @@
     "Nouveau réglage dans Paramètres › Livraison : « Il garde sa rémunération » (par défaut) ou « Il verse tout », et délai d'alerte des espèces non versées (24 h par défaut)."
    ],
    "ecarts": [
-    "Il faut exécuter une fois supabase/A-EXECUTER-2026-09-25-caisse-livreurs.sql dans Supabase ; avant, l'écran admin l'annonce et n'enregistre rien.",
     "Le blocage automatique des nouvelles courses au-delà d'un plafond d'espèces n'est pas fait (l'alerte seulement)."
    ],
    "pages": [
@@ -208,7 +207,8 @@
     "liv-portefeuille",
     "adm-vue"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "3312ccf"
   },
   {
    "date": "2026-09-25",
