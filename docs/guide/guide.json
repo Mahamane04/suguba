@@ -154,7 +154,8 @@
      "page": "liv-courses"
     },
     {
-     "texte": "Livrée contre le code secret du client"
+     "texte": "Livrée : le livreur scanne le QR du reçu client (ou saisit le code)",
+     "page": "liv-courses"
     },
     {
      "texte": "Espèces remises à la caisse, reçu de versement",
@@ -189,6 +190,54 @@
   }
  ],
  "journal": [
+  {
+   "date": "2026-09-25",
+   "titre": "SAV : scanner un reçu côté admin, photos dans la demande client",
+   "demande": "« Ok pour le 1 et le 2 » : (1) un bouton « Scanner un reçu » dans SAV & retours pour retrouver la commande d'un client ; (2) des photos dans la demande SAV envoyée depuis le reçu.",
+   "realise": [
+    "SAV & retours : bouton « Scanner un reçu » → la commande scannée s'ouvre (« Voir la commande ») ou ses demandes SAV s'affichent. Seul le numéro de commande est lu ; le code de remise n'est ni affiché ni utilisé.",
+    "Reçu client : jusqu'à 3 photos dans « Signaler un problème ». Réduites dans le téléphone avant l'envoi (économie de données), réencodées par le serveur (métadonnées et position GPS retirées), rangées dans un stockage privé.",
+    "Fiche SAV : bouton « Voir les photos du client », liens valables 10 minutes, réservé à l'équipe qui peut lire les commandes."
+   ],
+   "ecarts": [
+    "Aucun SQL : le stockage privé « sav-photos » se crée tout seul au premier envoi.",
+    "Le scan admin, comme celui du livreur, reste à essayer sur un vrai téléphone."
+   ],
+   "pages": [
+    "adm-sav",
+    "recu"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-25",
+   "titre": "Reçu client avec QR de remise, scan livreur, SAV depuis le reçu",
+   "demande": "« Quand un client achète, il reçoit un code : je voudrais le rendre plus accessible et minimiser les appels au SAV pour le récupérer. Pourquoi ne pas permettre au client de télécharger le QR code avec le code écrit dessous ? Quand le livreur arrive, il scanne le QR depuis le téléphone du client pour confirmer la livraison. Le QR peut être un reçu avec les détails de la commande, ce qui facilitera aussi le SAV en cas de problème. » Puis : exécuter l'audit (reçu confidentiel, scan qui prépare puis confirmation, saisie de secours, retrouver son reçu, transmettre au destinataire, signaler un problème).",
+   "realise": [
+    "Nouvelle page « Mon reçu Suguba » (/recu/<n°>) : grand QR de remise, code écrit dessous (lisible, pas en petits caractères), consigne « présentez-le après avoir vérifié le colis », articles, montants, « À payer au livreur » ou « Payé en ligne », destinataire, numéro à donner au service client, date d'édition.",
+    "Enregistrer le reçu en image (partage du téléphone → Enregistrer l'image) et Imprimer / PDF. Le QR de l'image a été vérifié lisible.",
+    "Le reçu reste sur le téléphone 90 jours (il disparaissait à la fermeture de la page) : « Mes reçus sur ce téléphone » dans Suivre ma commande. Effacé à la déconnexion.",
+    "Livreur : « Scanner le QR du client » dans la remise du colis. Le scan vérifie le QR et affiche les articles et le paiement sans rien valider ; « Confirmer la remise » enregistre la livraison (cocher « J'ai encaissé X F » pour des espèces). La saisie du code reste disponible.",
+    "Mêmes protections pour le QR et le code : 3 essais partagés, livreur assigné, ramassage confirmé, un QR d'une autre commande refusé, aucun double enregistrement après une coupure.",
+    "« Transmettre au destinataire » (commande pour un proche, vente d'un revendeur) avec avertissement.",
+    "Après livraison : « Signaler un problème avec un article » (article, motif, quantité, souhait) → la demande arrive dans SAV & retours.",
+    "Le QR n'est pas un lien : scanné par un autre téléphone, il n'ouvre rien et ne montre aucune donnée personnelle."
+   ],
+   "ecarts": [
+    "Retrouver son reçu sur un AUTRE téléphone n'est pas fait : il faut un canal vérifié (SMS ou WhatsApp automatique) qui n'existe pas encore. Le numéro + téléphone du suivi ne donnent volontairement pas le code.",
+    "Photos dans la demande SAV : pas encore (texte seulement).",
+    "Le scan par caméra n'a pas pu être testé sur un vrai téléphone (caméra bloquée dans l'outil de test) : à essayer sur un iPhone et un Android.",
+    "Le même QR sert au livreur ; l'équipe SAV retrouve la commande par son numéro (écrit sur le reçu), pas encore par un scanner côté admin.",
+    "Livraison partielle : le livreur décoche les articles non remis ; les articles cochés sont livrés un par un."
+   ],
+   "pages": [
+    "recu",
+    "suivi",
+    "liv-courses",
+    "panier-confirmation"
+   ],
+   "statut": "en local"
+  },
   {
    "date": "2026-09-25",
    "titre": "Caisse livreurs : espèces encaissées, versements et reçus",
@@ -930,6 +979,10 @@
    "but": "Le client retrouve l’état de sa commande avec son numéro (ex. SG-5BC5XBDT).",
    "elements": [
     {
+     "nom": "Mes reçus sur ce téléphone",
+     "role": "Les reçus gardés sur ce téléphone (90 jours) : un tap ouvre le reçu avec le QR."
+    },
+    {
      "nom": "Numéro de commande",
      "role": "À saisir, puis « Voir ma commande » : ouvre /track/ avec les étapes (à confirmer, confirmée, livreur assigné, en livraison, livrée)."
     },
@@ -951,6 +1004,50 @@
    "capture": {
     "chemin": "/track"
    }
+  },
+  {
+   "id": "recu",
+   "role": "visiteur",
+   "titre": "Mon reçu Suguba",
+   "chemin": "/recu/<numéro>",
+   "but": "Le reçu confidentiel du client : QR de remise avec le code écrit dessous, détail de la commande, état du paiement, et accès au SAV après livraison. S'ouvre uniquement sur le téléphone qui a passé la commande (gardé 90 jours).",
+   "elements": [
+    {
+     "nom": "QR et code de remise",
+     "role": "À présenter au livreur seulement après avoir vérifié le colis. Le livreur le scanne ; le code écrit dessous sert si le scan échoue."
+    },
+    {
+     "nom": "Enregistrer mon reçu",
+     "role": "Enregistre le reçu en image dans le téléphone (présentable même sans connexion)."
+    },
+    {
+     "nom": "Imprimer / PDF",
+     "role": "Version imprimable ou PDF."
+    },
+    {
+     "nom": "Transmettre au destinataire",
+     "role": "Pour une commande faite pour quelqu'un d'autre : envoie l'image du reçu, avec un avertissement (ce document permet de confirmer la remise)."
+    },
+    {
+     "nom": "Signaler un problème avec un article",
+     "role": "Après livraison : article, problème, quantité, souhait (échange, réparation, remboursement) et jusqu'à 3 photos. La demande arrive dans SAV & retours."
+    },
+    {
+     "nom": "Contacter Suguba sur WhatsApp",
+     "role": "Message pré-rempli avec le numéro de commande."
+    }
+   ],
+   "suite": [
+    {
+     "id": "suivi",
+     "libelle": "Suivi de la commande"
+    },
+    {
+     "id": "adm-sav",
+     "libelle": "Côté Suguba : SAV & retours"
+    }
+   ],
+   "note": "Pas de capture : il faut une vraie commande et la clé du reçu sur le téléphone. Vérifié en local avec des données fictives (le QR de l'image enregistrée a été relu avec succès)."
   },
   {
    "id": "boutiques-quartier",
@@ -2612,6 +2709,10 @@
    "but": "Les livraisons assignées par Suguba, et l’historique.",
    "elements": [
     {
+     "nom": "Remise du colis",
+     "role": "« Scanner le QR du client » (caméra), ou saisir le code écrit sous le QR. Le scan affiche les articles et le paiement ; « Confirmer la remise » enregistre la livraison. Pour des espèces, il faut cocher « J'ai encaissé X F »."
+    },
+    {
      "nom": "Compléter mon dossier",
      "role": "Véhicule et zone, si manquants."
     },
@@ -3180,6 +3281,14 @@
    "chemin": "/admin/sav",
    "but": "Réclamations, garanties et échanges sous 72 h.",
    "elements": [
+    {
+     "nom": "Scanner un reçu",
+     "role": "Scanne le QR du reçu d'un client pour retrouver sa commande (« Voir la commande ») et ses demandes SAV. Ne lit que le numéro de commande : ne valide ni livraison ni retour."
+    },
+    {
+     "nom": "Voir les photos du client",
+     "role": "Sur une demande envoyée depuis le reçu : les photos jointes (3 max), en liens privés valables 10 minutes."
+    },
     {
      "nom": "Ouvrir un dossier SAV",
      "role": "Commande, motif, action (échange, remboursement)."

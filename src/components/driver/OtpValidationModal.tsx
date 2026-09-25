@@ -2,7 +2,9 @@
 
 import React, { useState } from 'react';
 import { Order } from '@/types';
-import { X, KeyRound, CheckCircle2, AlertTriangle, ShieldCheck, Banknote } from 'lucide-react';
+import ScannerQr from '@/components/driver/ScannerQr';
+import { lireQrRemise } from '@/lib/qr-remise';
+import { X, KeyRound, CheckCircle2, AlertTriangle, ShieldCheck, Banknote, QrCode, Package } from 'lucide-react';
 
 interface OtpValidationModalProps {
   order: Order | null;
@@ -11,29 +13,56 @@ interface OtpValidationModalProps {
   onSuccess?: () => void;
 }
 
+interface ArticleARemettre {
+  id: string;
+  orderNumber: string;
+  productName: string;
+  quantity: number;
+  totalAmount: number;
+  status: string;
+  pretARemettre: boolean;
+  payeEnLigne: boolean;
+}
+
+const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+
 /**
- * ⚠️ La validation se fait désormais entièrement côté serveur (voir
- * /api/driver/verify-delivery-otp) — ce composant n'a plus jamais accès au
- * code secret lui-même (`order.deliveryOtp` n'est plus renvoyé par
- * /api/orders/feed pour un livreur, précisément pour empêcher ce genre de
- * fuite). L'ancienne version affichait même le code en clair dans un
- * encart "démo" — corrigé le 2026-08-26.
+ * Preuve de remise (refaite le 2026-09-25) : le livreur SCANNE le QR du reçu
+ * client, ou saisit le code écrit dessous si le scan échoue.
+ *
+ * Le scan ne livre rien : il prépare la remise (/api/driver/remise), montre
+ * les articles et le paiement, puis « Confirmer la remise » enregistre la
+ * livraison par /api/driver/verify-delivery-otp — la même voie que la
+ * saisie, donc les mêmes protections (3 essais, livreur assigné, aucun double
+ * traitement). Ce composant ne reçoit jamais le code du serveur : il le lit
+ * sur le téléphone du client.
  */
 export default function OtpValidationModal({ order, isOpen, onClose, onSuccess }: OtpValidationModalProps) {
+  const [etape, setEtape] = useState<'choix' | 'scan' | 'confirmation' | 'fait'>('choix');
   const [otpInput, setOtpInput] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
-  const [isSuccess, setIsSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [attempts, setAttempts] = useState(0);
   const [locked, setLocked] = useState(false);
+  // Remise par QR
+  const [codeLu, setCodeLu] = useState('');
+  const [articles, setArticles] = useState<ArticleARemettre[]>([]);
+  const [choisis, setChoisis] = useState<Set<string>>(new Set());
+  const [especesRecues, setEspecesRecues] = useState(false);
+  const [bilan, setBilan] = useState<{ remis: number; encaisse: number }>({ remis: 0, encaisse: 0 });
 
   if (!isOpen || !order) return null;
+
+  const echec = (status: number, message: string) => {
+    if (status === 423) setLocked(true);
+    else if (status === 400) setAttempts((a) => a + 1);
+    setErrorMsg(message);
+  };
 
   const handleValidate = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
     setIsSubmitting(true);
-
     try {
       const res = await fetch('/api/driver/verify-delivery-otp', {
         method: 'POST',
@@ -41,154 +70,289 @@ export default function OtpValidationModal({ order, isOpen, onClose, onSuccess }
         body: JSON.stringify({ orderId: order.id, code: otpInput.trim() }),
       });
       const json = await res.json();
-
       if (res.ok && json.success) {
-        setIsSuccess(true);
-        if (onSuccess) onSuccess();
+        setBilan({ remis: 1, encaisse: order.paymentCollected ? 0 : order.totalAmount });
+        setEtape('fait');
+        onSuccess?.();
         return;
       }
-
-      if (res.status === 423) {
-        setLocked(true);
-      } else {
-        setAttempts((a) => a + 1);
-      }
-      setErrorMsg(json.error || 'Code invalide.');
-    } catch (err) {
+      echec(res.status, json.error || 'Code invalide.');
+    } catch {
       setErrorMsg('Erreur réseau, réessayez.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const apresScan = async (texte: string) => {
+    setErrorMsg('');
+    const lu = lireQrRemise(texte);
+    if (!lu) {
+      setEtape('choix');
+      setErrorMsg('Ce QR n’est pas un reçu de remise Suguba. Demandez au client d’ouvrir « Mon reçu Suguba ».');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      const res = await fetch('/api/driver/remise', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: order.id, qr: texte }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setEtape('choix');
+        echec(res.status, json.error || 'QR refusé.');
+        return;
+      }
+      const liste = (json.commandes || []) as ArticleARemettre[];
+      setArticles(liste);
+      setChoisis(new Set(liste.filter((a) => a.pretARemettre).map((a) => a.id)));
+      setEspecesRecues(false);
+      setCodeLu(lu.code);
+      setEtape('confirmation');
+    } catch {
+      setEtape('choix');
+      setErrorMsg('Connexion interrompue : la remise n’est PAS validée. Réessayez quand le réseau revient.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const selection = articles.filter((a) => choisis.has(a.id));
+  const aEncaisser = selection.filter((a) => !a.payeEnLigne).reduce((t, a) => t + a.totalAmount, 0);
+
+  const confirmerRemise = async () => {
+    setErrorMsg('');
+    setIsSubmitting(true);
+    const reussis = new Set<string>();
+    const erreurs: string[] = [];
+    // Une livraison par article : verify_delivery_atomic est idempotente, un
+    // nouvel essai après une coupure ne crée ni doublon ni second encaissement.
+    for (const a of selection) {
+      try {
+        const res = await fetch('/api/driver/verify-delivery-otp', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId: a.id, code: codeLu }),
+        });
+        const json = await res.json();
+        if (res.ok && json.success) reussis.add(a.id);
+        else {
+          erreurs.push(`${a.productName} : ${json.error || 'refusé'}`);
+          if (res.status === 423) setLocked(true);
+        }
+      } catch {
+        erreurs.push(`${a.productName} : connexion interrompue, non validé`);
+      }
+    }
+    setIsSubmitting(false);
+    if (reussis.size > 0) onSuccess?.();
+    const encaisse = selection.filter((a) => reussis.has(a.id) && !a.payeEnLigne).reduce((t, a) => t + a.totalAmount, 0);
+    if (erreurs.length === 0) {
+      setBilan({ remis: reussis.size, encaisse });
+      setEtape('fait');
+      return;
+    }
+    // Échec partiel : les articles validés passent « Déjà livré », les autres
+    // restent cochés pour un nouvel essai (sans risque de doublon).
+    setArticles((l) => l.map((a) => (reussis.has(a.id) ? { ...a, status: 'delivered', pretARemettre: false } : a)));
+    setChoisis((s) => new Set([...s].filter((id) => !reussis.has(id))));
+    setEspecesRecues(false);
+    setErrorMsg(`${reussis.size} article(s) validé(s). Non validé : ${erreurs.join(' · ')}`);
+  };
+
   const handleClose = () => {
     setOtpInput('');
     setErrorMsg('');
-    setIsSuccess(false);
+    setEtape('choix');
     setAttempts(0);
     setLocked(false);
+    setArticles([]);
+    setCodeLu('');
     onClose();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-md rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col">
+  const basculer = (id: string) => setChoisis((s) => {
+    const n = new Set(s);
+    if (n.has(id)) n.delete(id); else n.add(id);
+    return n;
+  });
 
-        {/* Header */}
-        <div className="p-4 sm:p-5 bg-gradient-to-r from-amber-600 to-orange-600 text-white flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <KeyRound className="w-5 h-5 text-amber-200" />
-            <h3 className="font-bold text-base sm:text-lg">Preuve de Livraison Sécurisée</h3>
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-slate-900/60" role="dialog" aria-modal="true" aria-label="Remise du colis">
+      <div className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[94vh]">
+
+        <div className="p-4 bg-suguba-profond text-white flex items-center justify-between">
+          <div className="flex items-center gap-2 min-w-0">
+            <KeyRound className="w-5 h-5 text-suguba-citron shrink-0" />
+            <h3 className="font-bold text-base truncate">Remise du colis · #{order.orderNumber}</h3>
           </div>
-          <button
-            onClick={handleClose}
-            className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors"
-          >
-            <X className="w-4 h-4" />
+          <button onClick={handleClose} aria-label="Fermer"
+            className="w-11 h-11 rounded-full hover:bg-white/15 flex items-center justify-center text-white shrink-0">
+            <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Modal Content */}
-        <div className="p-5 space-y-4">
+        <div className="p-5 space-y-4 overflow-y-auto">
 
-          {isSuccess ? (
-            <div className="text-center py-6 space-y-4">
-              <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-md shadow-emerald-600/10">
+          {etape === 'fait' ? (
+            <div className="text-center py-4 space-y-4">
+              <div className="w-16 h-16 bg-emerald-100 text-emerald-700 rounded-full flex items-center justify-center mx-auto">
                 <CheckCircle2 className="w-10 h-10" />
               </div>
-              <div>
-                <h4 className="text-xl font-bold text-slate-900">
-                  Livraison Validée !
-                </h4>
-                <p className="text-xs text-slate-600 mt-1">
-                  Le paiement de <strong>{order.totalAmount.toLocaleString('fr-FR')} FCFA</strong> est enregistré comme encaissé.
+              <div className="space-y-1">
+                <h4 className="text-xl font-bold text-slate-900">Remise confirmée</h4>
+                <p className="text-sm text-slate-600">
+                  {bilan.remis > 1 ? `${bilan.remis} articles marqués livrés.` : 'Commande marquée livrée.'}
                 </p>
-                <div className="mt-3 p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-800 font-medium space-y-1">
-                  <p className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 shrink-0" />Statut commande : <strong>LIVRÉ</strong></p>
-                  <p className="flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5 shrink-0" />Commission revendeur ({order.resellerCommission.toLocaleString('fr-FR')} F) : <strong>VERROUILLÉE EN SÉCURITÉ</strong></p>
-                </div>
+                {bilan.encaisse > 0 ? (
+                  <p className="text-sm text-slate-800">
+                    Espèces encaissées : <strong>{fcfa(bilan.encaisse)}</strong>, à remettre à la caisse Suguba.
+                  </p>
+                ) : (
+                  <p className="text-sm text-slate-600">Déjà payé en ligne : rien à encaisser.</p>
+                )}
               </div>
-              <button
-                onClick={handleClose}
-                className="w-full bg-slate-900 hover:bg-black text-white font-bold py-3 px-4 rounded-xl text-xs"
-              >
+              <button onClick={handleClose} className="w-full min-h-12 bg-suguba-profond text-white font-bold rounded-2xl text-sm">
                 Terminer
+              </button>
+            </div>
+          ) : etape === 'scan' ? (
+            <div className="space-y-3">
+              {isSubmitting ? (
+                <p role="status" className="text-center text-sm text-slate-600 py-10">Vérification du QR…</p>
+              ) : (
+                <ScannerQr onLecture={apresScan} />
+              )}
+              <p className="text-xs text-slate-600 text-center">
+                Scannez seulement quand le client a vérifié son colis.
+              </p>
+              <button type="button" onClick={() => setEtape('choix')}
+                className="w-full min-h-11 rounded-2xl border border-slate-200 text-sm font-bold text-slate-800">
+                Saisir le code à la place
+              </button>
+            </div>
+          ) : etape === 'confirmation' ? (
+            <div className="space-y-4">
+              <div className="rounded-2xl bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-900 flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 shrink-0" /> QR valide. Vérifiez avant de confirmer.
+              </div>
+
+              <fieldset className="space-y-1">
+                <legend className="text-xs font-bold text-slate-700 mb-1">Articles remis au client</legend>
+                {articles.map((a) => (
+                  <label key={a.id} className={`flex items-center gap-3 min-h-12 rounded-xl px-2 ${a.pretARemettre ? 'hover:bg-slate-50 cursor-pointer' : 'opacity-60'}`}>
+                    <input type="checkbox" disabled={!a.pretARemettre} checked={choisis.has(a.id)} onChange={() => basculer(a.id)}
+                      className="w-5 h-5 accent-suguba-profond" />
+                    <Package className="w-4 h-4 text-slate-500 shrink-0" />
+                    <span className="flex-1 min-w-0">
+                      <span className="block text-sm font-semibold text-slate-900 truncate">{a.quantity > 1 ? `${a.quantity} × ` : ''}{a.productName}</span>
+                      <span className="block text-xs text-slate-500">
+                        {a.status === 'delivered' ? 'Déjà livré' : !a.pretARemettre ? 'Ramassage non confirmé' : a.payeEnLigne ? 'Payé en ligne' : fcfa(a.totalAmount)}
+                      </span>
+                    </span>
+                  </label>
+                ))}
+              </fieldset>
+
+              {articles.some((a) => a.pretARemettre && !choisis.has(a.id)) && (
+                <p className="text-xs text-amber-800 bg-amber-50 rounded-xl p-2">
+                  Seuls les articles cochés seront marqués livrés. Les autres restent à livrer.
+                </p>
+              )}
+
+              {aEncaisser > 0 ? (
+                <label className="flex items-start gap-3 rounded-2xl bg-amber-50 border border-amber-300 p-3 cursor-pointer">
+                  <input type="checkbox" checked={especesRecues} onChange={(e) => setEspecesRecues(e.target.checked)}
+                    className="w-5 h-5 mt-0.5 accent-suguba-profond" />
+                  <span className="text-sm text-slate-900">
+                    <Banknote className="w-4 h-4 inline text-amber-700 mr-1" />
+                    J’ai encaissé <strong>{fcfa(aEncaisser)}</strong> en espèces auprès du client.
+                  </span>
+                </label>
+              ) : selection.length > 0 && (
+                <p className="rounded-2xl bg-emerald-50 border border-emerald-200 p-3 text-sm font-bold text-emerald-900">
+                  Déjà payé en ligne — ne rien encaisser.
+                </p>
+              )}
+
+              {errorMsg && (
+                <p role="alert" className="bg-rose-50 border border-rose-200 text-rose-800 p-3 rounded-xl text-xs font-bold">{errorMsg}</p>
+              )}
+
+              <button type="button" onClick={confirmerRemise}
+                disabled={isSubmitting || selection.length === 0 || (aEncaisser > 0 && !especesRecues)}
+                className="w-full min-h-12 bg-suguba-profond disabled:opacity-50 text-white font-bold rounded-2xl text-sm flex items-center justify-center gap-2">
+                <ShieldCheck className="w-4 h-4" />
+                {isSubmitting ? 'Enregistrement…' : `Confirmer la remise${selection.length > 1 ? ` (${selection.length})` : ''}`}
+              </button>
+              <button type="button" onClick={() => { setEtape('choix'); setArticles([]); setCodeLu(''); }}
+                className="w-full min-h-11 text-sm font-bold text-slate-600">
+                Annuler
               </button>
             </div>
           ) : (
             <form onSubmit={handleValidate} className="space-y-4">
 
-              {/* Ce que le livreur doit encaisser — ou surtout ne pas encaisser.
-                  Depuis que le client peut régler en ligne par Mobile Money, un
-                  bloc « à encaisser » inconditionnel ferait payer deux fois une
-                  commande déjà réglée. Le fond vert et l'absence de montant
-                  doivent rendre la situation évidente en un coup d'œil, y
-                  compris en plein soleil sur le pas d'une porte. */}
+              {/* Ce que le livreur doit encaisser — ou surtout ne pas encaisser. */}
               {order.paymentCollected ? (
-                <div className="bg-emerald-50 border border-emerald-300/80 rounded-2xl p-4 flex items-start space-x-3">
+                <div className="bg-emerald-50 border border-emerald-300/80 rounded-2xl p-4 flex items-start gap-3">
                   <ShieldCheck className="w-6 h-6 text-emerald-700 shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-emerald-800">
-                      Déjà payé en ligne
-                    </p>
-                    <p className="text-xl font-bold text-emerald-900 mt-0.5">
-                      Ne rien encaisser
-                    </p>
-                    <p className="text-xs text-slate-600 mt-0.5">
-                      Remettez simplement le colis à {order.customerName} ({order.customerPhone}).
-                    </p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-emerald-800">Déjà payé en ligne</p>
+                    <p className="text-xl font-bold text-emerald-900 mt-0.5">Ne rien encaisser</p>
+                    <p className="text-xs text-slate-600 mt-0.5">Client : {order.customerName} ({order.customerPhone})</p>
                   </div>
                 </div>
               ) : (
-                <div className="bg-amber-50 border border-amber-300/80 rounded-2xl p-4 flex items-start space-x-3">
+                <div className="bg-amber-50 border border-amber-300/80 rounded-2xl p-4 flex items-start gap-3">
                   <Banknote className="w-6 h-6 text-amber-700 shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-amber-800">
-                      Montant total à encaisser au client :
-                    </p>
-                    <p className="text-xl font-bold text-slate-900 mt-0.5">
-                      {order.totalAmount.toLocaleString('fr-FR')} FCFA
-                    </p>
-                    <p className="text-xs text-slate-600 mt-0.5">
-                      Client : {order.customerName} ({order.customerPhone})
-                    </p>
+                    <p className="text-xs font-bold uppercase tracking-wider text-amber-800">À encaisser au client</p>
+                    <p className="text-xl font-bold text-slate-900 mt-0.5">{fcfa(order.totalAmount)}</p>
+                    <p className="text-xs text-slate-600 mt-0.5">Client : {order.customerName} ({order.customerPhone})</p>
                   </div>
                 </div>
               )}
 
-              {/* OTP Input Instruction */}
+              {!locked && (
+                <button type="button" onClick={() => { setErrorMsg(''); setEtape('scan'); }}
+                  className="w-full min-h-14 bg-suguba-profond text-white font-bold rounded-2xl text-base flex items-center justify-center gap-2">
+                  <QrCode className="w-5 h-5 text-suguba-citron" /> Scanner le QR du client
+                </button>
+              )}
+
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <label className="block text-xs font-bold text-slate-700">
-                    Demandez au client son Code Secret *
+                  <label htmlFor="code-remise" className="block text-xs font-bold text-slate-700">
+                    Ou saisissez le code de remise (sous le QR)
                   </label>
                   {attempts > 0 && (
-                    <span className="text-xs font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
-                      Tentative {attempts} / 3
+                    <span className="text-xs font-bold text-rose-700 bg-rose-50 px-2 py-0.5 rounded-md border border-rose-200">
+                      Essai {attempts} / 3
                     </span>
                   )}
                 </div>
-
-                <div className="relative">
-                  <KeyRound className="w-5 h-5 text-slate-400 absolute left-3 top-3" />
-                  <input
-                    type="text"
-                    required
-                    maxLength={6}
-                    disabled={locked}
-                    placeholder="Ex: 5832"
-                    value={otpInput}
-                    onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ''))}
-                    className="w-full pl-10 pr-4 py-3 bg-slate-50 border-2 border-slate-300 focus:border-amber-500 rounded-2xl text-center text-2xl tracking-[0.5em] font-bold text-slate-900 focus:bg-white focus:outline-hidden disabled:bg-slate-200 disabled:opacity-60"
-                  />
-                </div>
+                <input
+                  id="code-remise"
+                  type="text"
+                  inputMode="numeric"
+                  autoComplete="one-time-code"
+                  maxLength={4}
+                  disabled={locked}
+                  placeholder="0000"
+                  value={otpInput}
+                  onChange={(e) => setOtpInput(e.target.value.replace(/\D/g, ''))}
+                  className="w-full px-4 py-3 bg-slate-50 border-2 border-slate-300 focus:border-suguba-profond rounded-2xl text-center text-2xl tracking-[0.5em] font-bold text-slate-900 focus:bg-white focus:outline-hidden disabled:opacity-60"
+                />
                 <p className="text-xs text-slate-500 mt-1 text-center">
-                  Le client voit ce code sur son reçu Suguba (ou l’a reçu de son revendeur sur WhatsApp).
+                  Le client le montre sur son reçu Suguba, après avoir vérifié le colis.
                 </p>
               </div>
 
               {errorMsg && (
-                <div className="bg-rose-50 border border-rose-200 text-rose-700 p-3 rounded-xl text-xs font-bold flex items-start space-x-2">
+                <div role="alert" className="bg-rose-50 border border-rose-200 text-rose-800 p-3 rounded-xl text-xs font-bold flex items-start gap-2">
                   <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                   <span>{errorMsg}</span>
                 </div>
@@ -197,41 +361,27 @@ export default function OtpValidationModal({ order, isOpen, onClose, onSuccess }
               {locked ? (
                 <div className="space-y-2">
                   <div className="p-3 bg-rose-100 border border-rose-300 text-rose-950 rounded-2xl text-xs font-bold text-center">
-                    ⛔ COMMANDE BLOQUÉE : 3 tentatives erronées.
+                    Commande bloquée après 3 essais erronés.
                   </div>
-                  <a
-                    href="tel:+22389460000"
-                    className="w-full py-3 bg-slate-900 hover:bg-black text-white font-bold rounded-2xl text-xs flex items-center justify-center space-x-2"
-                  >
-                    <span>Appeler le Support Suguba (+223 89 46 00 00)</span>
+                  <a href="tel:+22389460000"
+                    className="w-full min-h-12 bg-slate-900 text-white font-bold rounded-2xl text-sm flex items-center justify-center">
+                    Appeler le support Suguba
                   </a>
                 </div>
               ) : (
                 <button
                   type="submit"
                   disabled={otpInput.length < 4 || isSubmitting}
-                  className={`w-full disabled:opacity-50 text-white font-bold py-3.5 px-4 rounded-2xl text-xs shadow-lg flex items-center justify-center space-x-2 transition-transform active:scale-[0.98] ${
-                    order.paymentCollected
-                      ? 'bg-suguba-profond hover:bg-suguba-profond-2 shadow-emerald-600/20'
-                      : 'bg-amber-600 hover:bg-amber-700 shadow-amber-600/20'
-                  }`}
+                  className="w-full min-h-12 disabled:opacity-50 bg-white border-2 border-suguba-profond text-suguba-profond font-bold rounded-2xl text-sm flex items-center justify-center gap-2"
                 >
                   <ShieldCheck className="w-4 h-4" />
-                  <span>
-                    {isSubmitting
-                      ? 'Vérification...'
-                      : order.paymentCollected
-                        ? 'Valider le Code & Remettre le colis'
-                        : 'Valider le Code & Encaisser'}
-                  </span>
+                  {isSubmitting ? 'Vérification…' : order.paymentCollected ? 'Valider le code et remettre' : 'Valider le code et encaisser'}
                 </button>
               )}
-
             </form>
           )}
 
         </div>
-
       </div>
     </div>
   );

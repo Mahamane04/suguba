@@ -53,6 +53,9 @@ export default function OrderTrackingPage() {
   // cette relecture, sa commande restait « En attente d'appel » pour toujours,
   // même livrée. Le téléphone de la commande locale sert de preuve.
   const [actualisation, setActualisation] = useState(false);
+  // Reçu gardé sur ce téléphone (lu après montage : stockage du navigateur).
+  const [recuIci, setRecuIci] = useState(false);
+  useEffect(() => { setRecuIci(Boolean(orderNumber && orderAccessKey(orderNumber))); }, [orderNumber]);
   const actualiser = useCallback(async (tel: string) => {
     setActualisation(true);
     try {
@@ -272,6 +275,15 @@ export default function OrderTrackingPage() {
 
           {!['delivered', 'cancelled', 'returned'].includes(order.status) && (
             <DeliveryCodeNotice orderNumber={order.orderNumber} />
+          )}
+
+          {/* Après livraison, le reçu sert au SAV (2026-09-25). */}
+          {order.status === 'delivered' && recuIci && (
+            <Link href={`/recu/${encodeURIComponent(order.orderNumber)}`}
+              className="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 hover:bg-slate-50">
+              <span className="text-sm font-bold text-slate-900">Mon reçu · signaler un problème</span>
+              <span aria-hidden className="text-slate-400">›</span>
+            </Link>
           )}
 
           {/* Timeline */}

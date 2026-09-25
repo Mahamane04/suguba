@@ -5,7 +5,7 @@ import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 import { orderAccessKey } from '@/lib/order-access-client';
 import { fetchDeliveryCode, type DeliveryCodeResult } from '@/lib/delivery-code-client';
 import { whatsappHelper } from '@/lib/whatsapp-helper';
-import { KeyRound } from 'lucide-react';
+import { KeyRound, QrCode } from 'lucide-react';
 
 /**
  * Code de remise affiché dans l'application (2026-09-25), à la place de
@@ -83,7 +83,16 @@ export default function DeliveryCodeNotice({
       )}
 
       {canSee
-        ? !result?.code && <Button type="button" disabled={busy} onClick={afficher} fullWidth>{busy ? 'Chargement…' : 'Afficher le code'}</Button>
+        ? (
+          <>
+            {!result?.code && <Button type="button" variant="secondary" disabled={busy} onClick={afficher} fullWidth>{busy ? 'Chargement…' : 'Afficher le code'}</Button>}
+            {/* Reçu complet avec QR (2026-09-25) : à enregistrer pour ne pas
+                dépendre de cette page ni du SAV le jour de la livraison. */}
+            <Button href={`/recu/${encodeURIComponent(orderNumber)}`} fullWidth>
+              <QrCode className="w-4 h-4" /> {destinataire ? 'Reçu avec QR pour le client' : 'Mon reçu avec QR code'}
+            </Button>
+          </>
+        )
         : <p>Le code s’affiche sur l’appareil qui a passé la commande. Sinon, contactez Suguba avec le numéro de commande.</p>}
 
       <a href={whatsappHelper.getSupportChatLink(orderNumber)} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-11 items-center font-semibold text-suguba-profond underline">

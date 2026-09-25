@@ -28,6 +28,7 @@ export const PERMISSION_PAR_ROUTE: Record<string, Permission> = {
   'POST /api/admin/reset-otp-lock': 'utilisateur.moderer',
   'POST /api/admin/review-profile': 'utilisateur.moderer',
   'GET /api/admin/sav': 'commande.lire',
+  'GET /api/admin/sav/photos': 'commande.lire',
   'POST /api/admin/sav': 'commande.modifier',
   'PATCH /api/admin/sav': 'commande.modifier',
   'GET /api/admin/settings': 'finance.lire',

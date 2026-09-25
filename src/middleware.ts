@@ -92,6 +92,10 @@ const API_SESSION_REQUISE = [
  *   /api/orders/create           — création atomique invité avec clé de reprise.
  *   /api/orders/code-livraison   — code de remise affiché dans l'app, uniquement
  *                                  contre la clé secrète du reçu (UUID).
+ *   /api/orders/recu             — reçu client complet avec QR de remise, même
+ *                                  garde (clé secrète du reçu).
+ *   /api/orders/sav              — « signaler un problème » après livraison, même
+ *                                  garde ; une demande ouverte par article.
  */
 
 const ROLE_BY_PREFIX: { prefix: string; role: string }[] = [

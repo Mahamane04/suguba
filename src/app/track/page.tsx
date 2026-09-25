@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/common/Header';
 import Footer from '@/components/common/Footer';
 import BottomNav from '@/components/common/BottomNav';
-import { PackageSearch, ArrowRight, MessageCircle } from 'lucide-react';
+import { PackageSearch, ArrowRight, MessageCircle, QrCode } from 'lucide-react';
+import { recusSurCetAppareil } from '@/lib/order-access-client';
 import { normaliserNumeroCommande } from '@/lib/order-number';
 import { useSugubaStore } from '@/lib/store';
 
@@ -32,6 +33,11 @@ export default function TrackIndexPage() {
     .filter((o) => o.creationConfirmed)
     .sort((a, b) => Date.parse(b.createdAt || '') - Date.parse(a.createdAt || ''))
     .slice(0, 5);
+
+  // « Retrouver mon reçu » (2026-09-25) : les reçus gardés sur ce téléphone
+  // 90 jours, même après fermeture de la page de confirmation.
+  const [recus, setRecus] = useState<{ orderNumber: string; enregistreLe: number }[]>([]);
+  useEffect(() => { setRecus(recusSurCetAppareil().slice(0, 8)); }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,7 +76,29 @@ export default function TrackIndexPage() {
           </p>
         </div>
 
-        {recentes.length > 0 && (
+        {recus.length > 0 && (
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-card p-2">
+            <p className="px-3 pt-2 pb-1 text-xs font-bold text-slate-900">Mes reçus sur ce téléphone</p>
+            {recus.map((r) => (
+              <Link
+                key={r.orderNumber}
+                href={`/recu/${encodeURIComponent(r.orderNumber)}`}
+                className="flex items-center justify-between gap-3 px-3 py-3 rounded-2xl hover:bg-slate-50"
+              >
+                <span className="min-w-0 flex items-center gap-2.5">
+                  <QrCode className="w-5 h-5 text-suguba-profond shrink-0" />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-bold text-slate-900 font-mono">#{r.orderNumber}</span>
+                    <span className="block text-xs text-slate-500">Reçu et code de remise · {new Date(r.enregistreLe).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
+                  </span>
+                </span>
+                <ArrowRight className="w-4 h-4 text-slate-400 shrink-0" />
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {recentes.length > 0 && recus.length === 0 && (
           <div className="bg-white rounded-3xl border border-slate-100 shadow-card p-2">
             <p className="px-3 pt-2 pb-1 text-xs font-bold text-slate-900">Mes commandes sur ce téléphone</p>
             {recentes.map((o) => (

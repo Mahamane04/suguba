@@ -145,7 +145,9 @@ export const sugubaStore = {
     if (logout || previousId !== (identite?.id || '') || (identite && globalState.currentUser.role !== identite.role)) {
       const products = globalState.products.filter(p => p.status === 'approved');
       globalState = { ...getDefaultState(), products };
-      clearPrivateSessionStorage();
+      // Les reçus gardés sur l'appareil ne partent qu'à la déconnexion ou
+      // quand un autre compte prend la main, pas au simple démarrage.
+      clearPrivateSessionStorage(logout || Boolean(previousId && previousId !== (identite?.id || '')));
     }
     globalState = {
       ...globalState,
