@@ -192,7 +192,8 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
               </div>
             </div>
 
-            <DeliveryCodeNotice orderNumber={createdOrder.orderNumber} autoSend />
+            <DeliveryCodeNotice orderNumber={createdOrder.orderNumber} autoSend
+              destinataire={{ telephone: createdOrder.customerPhone || customerPhone, nom: createdOrder.customerName || customerName }} />
             <Button onClick={handleReset} fullWidth size="lg">Retour au catalogue</Button>
           </div>
         ) : (

@@ -90,6 +90,8 @@ const API_SESSION_REQUISE = [
  *                                  authentifiée par le contenu (numéro + téléphone)
  *                                  et protégée par une limitation de tentatives.
  *   /api/orders/create           — création atomique invité avec clé de reprise.
+ *   /api/orders/code-livraison   — code de remise affiché dans l'app, uniquement
+ *                                  contre la clé secrète du reçu (UUID).
  */
 
 const ROLE_BY_PREFIX: { prefix: string; role: string }[] = [

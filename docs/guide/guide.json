@@ -1,5 +1,5 @@
 {
- "majLe": "2026-09-24",
+ "majLe": "2026-09-25",
  "roles": [
   {
    "cle": "visiteur",
@@ -189,6 +189,27 @@
   }
  ],
  "journal": [
+  {
+   "date": "2026-09-25",
+   "titre": "Code de remise affiché dans l'app (plus de SMS nécessaire) ; lot sécurité prêt",
+   "demande": "« SMS peux t'il être fait dans l'app et non par sms mais le reste peut être comit ».",
+   "realise": [
+    "Le code de remise s'affiche sur le reçu, uniquement sur l'appareil qui a passé la commande (clé secrète du reçu). Les suivis publics, feeds, exports et l'équipe support ne le voient toujours pas.",
+    "Pour une vente saisie par un revendeur (« + Vente »), le code s'affiche au revendeur avec un bouton « Envoyer le code au client sur WhatsApp ».",
+    "Au premier affichage, un code neuf remplace celui d'avant l'audit et la transmission est enregistrée : le livreur peut alors valider la livraison avec ce code.",
+    "Le reste du lot d'audit sécurité (paiements, retraits, stock, droits) part tel quel ; l'envoi par SMS reste disponible pour le jour où un service SMS sera branché."
+   ],
+   "ecarts": [
+    "Choix assumé, contraire à une recommandation de l'audit : pour « + Vente », le revendeur connaît le code du client.",
+    "SQL à exécuter avant la mise en ligne : supabase/A-EXECUTER-2026-09-25-audit-securite.sql."
+   ],
+   "pages": [
+    "panier-confirmation",
+    "suivi"
+   ],
+   "commit": "",
+   "statut": "en local"
+  },
   {
    "date": "2026-09-24",
    "titre": "Page boutique refaite : couverture, logo, actions sur une ligne",
