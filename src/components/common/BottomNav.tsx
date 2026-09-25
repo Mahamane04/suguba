@@ -116,8 +116,11 @@ export default function BottomNav() {
   // Barre collée au bas de l'écran réellement visible (iPhone), et masquée
   // dès que le clavier occupe l'écran : voir useBarreSurEcranVisible.
   const barre = useRef<HTMLElement>(null);
-  const { clavier } = useBarreSurEcranVisible(barre);
-  const clavierOuvert = champActif || clavier;
+  // Un champ sélectionné sans clavier affiché (sélection automatique à
+  // l'ouverture d'une page) ne doit pas masquer la barre : on se fie à la
+  // hauteur réelle de l'écran quand le navigateur la donne.
+  const { clavier, mesure } = useBarreSurEcranVisible(barre);
+  const clavierOuvert = mesure ? clavier : champActif;
 
   const navItems = getNavItems(role);
 

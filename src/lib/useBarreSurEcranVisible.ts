@@ -16,13 +16,17 @@ import { useEffect, useState, type RefObject } from 'react';
  * Renvoie aussi `clavier` : vrai quand le clavier occupe l'écran (l'écran
  * visible a perdu plus d'un quart de sa hauteur), pour masquer la barre.
  */
-export function useBarreSurEcranVisible(ref: RefObject<HTMLElement | null>): { clavier: boolean } {
+export function useBarreSurEcranVisible(ref: RefObject<HTMLElement | null>): { clavier: boolean; mesure: boolean } {
   const [clavier, setClavier] = useState(false);
+  // Faux sur les navigateurs sans visualViewport : l'appelant retombe alors
+  // sur la détection par champ sélectionné (useClavierOuvert).
+  const [mesure, setMesure] = useState(false);
 
   useEffect(() => {
     const vv = typeof window !== 'undefined' ? window.visualViewport : null;
     const el = ref.current;
     if (!vv || !el) return;
+    setMesure(true);
 
     let image = 0;
     const appliquer = () => {
@@ -51,5 +55,5 @@ export function useBarreSurEcranVisible(ref: RefObject<HTMLElement | null>): { c
     };
   }, [ref]);
 
-  return { clavier };
+  return { clavier, mesure };
 }
