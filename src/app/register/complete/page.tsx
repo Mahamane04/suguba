@@ -8,6 +8,7 @@ import DialCodePicker from '@/components/common/DialCodePicker';
 import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
 import EtapesInscription from '@/components/common/EtapesInscription';
 import Button from '@/components/ui/Button';
+import ChoicePicker from '@/components/ui/ChoicePicker';
 import { supabase } from '@/lib/supabase';
 import { DEFAULT_DIAL_CODE } from '@/lib/dial-codes';
 import { DEFAULT_NEIGHBORHOOD } from '@/lib/bamako-neighborhoods';
@@ -261,13 +262,13 @@ function FinaliserInscription() {
                     onChange={(e) => setCompanyName(e.target.value)} className={INPUT} />
                 </Champ>
                 <Champ label="Catégorie principale">
-                  <select value={category} onChange={(e) => setCategory(e.target.value)} className={INPUT}>
-                    <option>Électronique & Énergie</option>
-                    <option>Électroménager & Maison</option>
-                    <option>Solaire & Groupes</option>
-                    <option>Smartphones & Informatique</option>
-                    <option>Mode & Beauté</option>
-                  </select>
+                  <ChoicePicker
+                    valeur={category}
+                    onChange={setCategory}
+                    ariaLabel="Catégorie principale"
+                    choix={['Électronique & Énergie', 'Électroménager & Maison', 'Solaire & Groupes', 'Smartphones & Informatique', 'Mode & Beauté']
+                      .map((c) => ({ valeur: c, libelle: c }))}
+                  />
                 </Champ>
                 <Champ label="Quartier de l'entrepôt ou du magasin">
                   <NeighborhoodPicker value={warehouseNeighborhood} onChange={setWarehouseNeighborhood} />
@@ -281,11 +282,16 @@ function FinaliserInscription() {
             {role === 'driver' && (
               <>
                 <Champ label="Véhicule">
-                  <select value={vehicleType} onChange={(e) => setVehicleType(e.target.value)} className={INPUT}>
-                    <option value="Moto Sanili / Jakarta 125">Moto (Sanili / Jakarta 125)</option>
-                    <option value="Tricycle Moto">Tricycle (gros colis)</option>
-                    <option value="Voiture / Camionnette">Voiture / camionnette</option>
-                  </select>
+                  <ChoicePicker
+                    valeur={vehicleType}
+                    onChange={setVehicleType}
+                    ariaLabel="Véhicule"
+                    choix={[
+                      { valeur: 'Moto Sanili / Jakarta 125', libelle: 'Moto (Sanili / Jakarta 125)' },
+                      { valeur: 'Tricycle Moto', libelle: 'Tricycle (gros colis)' },
+                      { valeur: 'Voiture / Camionnette', libelle: 'Voiture / camionnette' },
+                    ]}
+                  />
                 </Champ>
                 <Champ label="Zone de livraison">
                   <input type="text" required placeholder="Ex : Communes IV, V, VI" value={zone}
@@ -308,16 +314,24 @@ function FinaliserInscription() {
               <>
                 <div className="grid grid-cols-2 gap-3">
                   <Champ label="Pays de résidence">
-                    <select value={countryOfResidence} onChange={(e) => setCountryOfResidence(e.target.value)} className={INPUT}>
-                      {['France', 'États-Unis', 'Canada', 'Espagne', 'Côte d\'Ivoire', 'Sénégal', 'Autre'].map((p) => <option key={p}>{p}</option>)}
-                    </select>
+                    <ChoicePicker
+                      valeur={countryOfResidence}
+                      onChange={setCountryOfResidence}
+                      ariaLabel="Pays de résidence"
+                      choix={['France', 'États-Unis', 'Canada', 'Espagne', "Côte d'Ivoire", 'Sénégal', 'Autre'].map((p) => ({ valeur: p, libelle: p }))}
+                    />
                   </Champ>
                   <Champ label="Devise">
-                    <select value={currency} onChange={(e) => setCurrency(e.target.value as 'EUR' | 'USD' | 'CAD')} className={INPUT}>
-                      <option value="EUR">Euro (€)</option>
-                      <option value="USD">Dollar ($)</option>
-                      <option value="CAD">Dollar canadien</option>
-                    </select>
+                    <ChoicePicker
+                      valeur={currency}
+                      onChange={(v) => setCurrency(v as 'EUR' | 'USD' | 'CAD')}
+                      ariaLabel="Devise"
+                      choix={[
+                        { valeur: 'EUR', libelle: 'Euro (€)' },
+                        { valeur: 'USD', libelle: 'Dollar ($)' },
+                        { valeur: 'CAD', libelle: 'Dollar canadien' },
+                      ]}
+                    />
                   </Champ>
                 </div>
                 <Champ label="Nom de votre proche au Mali">

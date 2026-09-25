@@ -36,3 +36,8 @@ next-env.d.ts
 
 # Sauvegardes de données réelles (emails, téléphones) — jamais commitées
 /backups/
+
+# Fichiers de travail locaux, hors livraison applicative
+/audit-local/
+/.claude/skills/
+/Suguba logo.svg

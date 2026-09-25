@@ -1,5 +1,7 @@
+import { createHash, randomUUID } from 'node:crypto';
+import { verifyActiveSession } from '@/lib/active-session';
 import { NextRequest, NextResponse } from 'next/server';
-import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
+import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { libererCommissionsEchues } from '@/lib/commissions';
 import { chargerReglages } from '@/lib/platform-settings';
@@ -34,36 +36,40 @@ const PROVIDER_MAP: Record<string, string> = {
  * affiché côté client.
  */
 export async function POST(req: NextRequest) {
-  const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
+  const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value);
   if (!session || session.role !== 'reseller' || session.status !== 'active') {
     return NextResponse.json({ error: 'Session revendeur active requise.' }, { status: 401 });
   }
 
   const admin = getSupabaseAdmin();
   if (!admin) {
-    return NextResponse.json({ success: true, cloud: false });
+    return NextResponse.json({ error: 'Enregistrement indisponible.' }, { status: 503 });
   }
 
   try {
     const body = await req.json();
-    const { withdrawalCode, resellerName, amount, payoutProvider, payoutPhone } = body;
+    const { withdrawalCode, amount, payoutProvider, payoutPhone } = body;
 
-    const parsedAmount = Math.floor(Number(amount));
-    const { reglages } = await chargerReglages();
-    const minimum = reglages.retraitMinimum;
-    if (!Number.isFinite(parsedAmount) || parsedAmount < minimum) {
-      return NextResponse.json({ error: `Le montant minimum de retrait est de ${minimum} FCFA.` }, { status: 400 });
+    const parsedAmount = Number(amount);
+    const moyen = PROVIDER_MAP[payoutProvider];
+    if (!Number.isSafeInteger(parsedAmount) || parsedAmount <= 0 || !moyen || typeof withdrawalCode !== 'string' || !/^[A-Za-z0-9-]{8,100}$/.test(withdrawalCode) || typeof payoutPhone !== 'string' || !/^\+?[0-9 ()-]{8,30}$/.test(payoutPhone)) return NextResponse.json({ definitive: true, error: 'Montant, référence, moyen ou téléphone invalide.' }, { status: 400 });
+    const hash = (v: string) => createHash('sha256').update(v).digest('hex');
+    const key = hash(withdrawalCode), fingerprint = hash(JSON.stringify([parsedAmount, moyen, payoutPhone]));
+    const { data: previous, error: readError } = await admin.from('payouts').select('*').eq('reseller_id', session.uid).eq('request_key', key).maybeSingle();
+    if (readError) return NextResponse.json({ error: 'Vérification de la demande indisponible.' }, { status: 503 });
+    if (previous) {
+      if (previous.request_fingerprint !== fingerprint) return NextResponse.json({ error: 'Reprenez la demande avec ses informations initiales.' }, { status: 409 });
+      return NextResponse.json(payoutReceipt(previous));
     }
-    // Frais payés par le revendeur (2026-09-24) : SasPay + opérateur + Suguba
-    // en Mobile Money, Suguba seul en espèces. Le solde baisse du montant
-    // demandé ; `amount` est ce qui part réellement (virement ou guichet).
-    const moyen = PROVIDER_MAP[payoutProvider] || 'orange_money';
+    const { reglages } = await chargerReglages(true);
+    const minimum = reglages.retraitMinimum;
+    if (parsedAmount < minimum) return NextResponse.json({ definitive: true, error: `Le montant minimum de retrait est de ${minimum} FCFA.` }, { status: 400 });
     const frais = calculerFraisRetrait(parsedAmount, moyen, reglages);
     if (frais.montantNet <= 0) {
-      return NextResponse.json({ error: 'Montant trop faible une fois les frais déduits.' }, { status: 400 });
+      return NextResponse.json({ definitive: true, error: 'Montant trop faible une fois les frais déduits.' }, { status: 400 });
     }
     if (!payoutPhone || !withdrawalCode) {
-      return NextResponse.json({ error: 'Champs requis manquants.' }, { status: 400 });
+      return NextResponse.json({ definitive: true, error: 'Champs requis manquants.' }, { status: 400 });
     }
 
     // Libère d'abord les commissions dont le délai de sécurité vient
@@ -73,51 +79,31 @@ export async function POST(req: NextRequest) {
     // commission encore `locked` reste hors de portée.
     await libererCommissionsEchues(admin);
 
-    const { data: reserved, error: reserveErr } = await admin.rpc('reserve_commissions_for_withdrawal', {
-      p_reseller_id: session.uid,
-      p_amount: parsedAmount,
-      p_withdrawal_id: withdrawalCode,
+    const { data: profile, error: profileError } = await admin.from('profiles').select('full_name').eq('id', session.uid).maybeSingle();
+    if (profileError || !profile) return NextResponse.json({ error: 'Profil indisponible.' }, { status: 503 });
+    const { data: retrait, error } = await admin.rpc('create_payout_atomic', {
+      p_owner: session.uid, p_key: key,
+      p_fingerprint: fingerprint,
+      p_row: {
+        id: `WTH-${randomUUID().replaceAll('-', '').slice(0, 16).toUpperCase()}`, reseller_name: profile.full_name || 'Revendeur',
+        amount: frais.montantNet, payment_method: moyen, phone_number: payoutPhone,
+        montant_demande: frais.montantDemande, frais_retrait: frais.fraisTotal,
+        detail_frais: { saspay: frais.fraisSaspay, operateur: frais.fraisOperateur, suguba: frais.fraisSuguba },
+      },
     });
-
-    if (reserveErr) {
-      return NextResponse.json({ error: reserveErr.message }, { status: 500 });
+    if (error || !retrait) {
+      const insuffisant = error?.message === 'INSUFFICIENT_BALANCE';
+      const conflit = error?.message === 'IDEMPOTENCY_CONFLICT';
+      return NextResponse.json({ definitive: insuffisant, error: insuffisant ? 'Solde disponible insuffisant.' : conflit ? 'Cette référence correspond à une autre demande.' : 'Retrait non enregistré. Réessayez avec la même référence.' }, { status: insuffisant || conflit ? 409 : 503 });
     }
-    if (!reserved || Number(reserved) < parsedAmount) {
-      return NextResponse.json({ error: 'Solde disponible insuffisant.' }, { status: 400 });
-    }
-
-    const ligne = {
-      id: withdrawalCode, // aligné sur le format WTH-xxxx déjà utilisé côté client/webhook
-      reseller_id: session.uid,
-      reseller_name: resellerName || session.phone,
-      amount: frais.montantNet,
-      payment_method: moyen,
-      phone_number: payoutPhone,
-      status: 'pending',
-    };
-    let { error } = await admin.from('payouts').insert({
-      ...ligne,
-      montant_demande: frais.montantDemande,
-      frais_retrait: frais.fraisTotal,
-      detail_frais: { saspay: frais.fraisSaspay, operateur: frais.fraisOperateur, suguba: frais.fraisSuguba },
-    });
-    // Colonnes des frais pas encore créées en base : le retrait part quand
-    // même, frais déduits, seul le détail n'est pas conservé.
-    if (error?.code === '42703' || error?.code === 'PGRST204') {
-      ({ error } = await admin.from('payouts').insert(ligne));
-    }
-
-    if (error) {
-      // La réservation a réussi mais l'écriture du retrait a échoué (id déjà
-      // pris, etc.) — libérer tout de suite, sinon ces commissions restent
-      // bloquées en 'reserved' sans aucun retrait pour les réclamer.
-      await admin.rpc('release_commissions_for_withdrawal', { p_withdrawal_id: withdrawalCode });
-      return NextResponse.json({ error: error.message }, { status: 500 });
-    }
-
-    return NextResponse.json({ success: true, cloud: true, frais });
+    return NextResponse.json(payoutReceipt(retrait));
   } catch (error: any) {
     console.error('[API payouts/create ERROR]', error);
-    return NextResponse.json({ error: error.message || 'Erreur serveur.' }, { status: 500 });
+    return NextResponse.json({ error: 'Retrait non confirmé. Réessayez avec la même référence.' }, { status: 503 });
   }
+}
+
+function payoutReceipt(retrait: any) {
+  return { success: true, cloud: true, withdrawalCode: retrait.id,
+    frais: { fraisSaspay: Number(retrait.detail_frais?.saspay || 0), fraisOperateur: Number(retrait.detail_frais?.operateur || 0), fraisSuguba: Number(retrait.detail_frais?.suguba || 0), montantDemande: Number(retrait.montant_demande), montantNet: Number(retrait.amount), fraisTotal: Number(retrait.frais_retrait) } };
 }

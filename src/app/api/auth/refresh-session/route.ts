@@ -31,14 +31,7 @@ export async function POST(req: NextRequest) {
 
   const admin = getSupabaseAdmin();
   if (!admin) {
-    // Sans base, rien à rafraîchir : on renvoie l'état courant plutôt qu'une
-    // erreur, la page d'attente doit continuer de fonctionner.
-    return NextResponse.json({
-      authenticated: true,
-      role: session.role,
-      status: session.status,
-      changed: false,
-    });
+    return NextResponse.json({ error: 'Vérification de session indisponible.' }, { status: 503 });
   }
 
   // Le statut du COMPTE prime : un compte suspendu l'est quels que soient ses

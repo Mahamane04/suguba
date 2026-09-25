@@ -11,6 +11,8 @@ import {
   ShoppingBag, Shield, Truck, Store, UserCheck,
   ChevronDown, LogOut, Menu, X, Globe, LogIn, Search, Users
 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+import { invaliderIdentite } from '@/lib/identite';
 import LogoSuguba from '@/components/ui/LogoSuguba';
 
 const roleConfig: Record<UserRole, { label: string; icon: React.ElementType; path: string }> = {
@@ -69,10 +71,13 @@ export default function Header() {
   const seDeconnecter = useCallback(async () => {
     setMenuCompte(false);
     setMenuMobile(false);
-    await fetch('/api/auth/logout', { method: 'POST' });
+    const result = await fetch('/api/auth/logout', { method: 'POST' }).catch(() => null);
+    if (!result?.ok) { window.alert('Déconnexion non confirmée. Rétablissez la connexion puis réessayez.'); return; }
+    invaliderIdentite();
+    await supabase?.auth.signOut({ scope: 'local' }).catch(() => undefined);
     // Met à jour le store partagé tout de suite : BottomNav (et tout le
     // reste de l'app) le lit en direct, sans attendre un rechargement.
-    sugubaStore.definirUtilisateur(null);
+    sugubaStore.definirUtilisateur(null, true);
     router.push('/');
   }, [router]);
 

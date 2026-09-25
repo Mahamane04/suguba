@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Order, SavResolutionType } from '@/types';
 import { X, ShieldAlert, CheckCircle2, ArrowRight, RefreshCw } from 'lucide-react';
+import ChoicePicker from '@/components/ui/ChoicePicker';
 
 interface CreateSavTicketModalProps {
   orders: Order[];
@@ -84,17 +85,16 @@ export default function CreateSavTicketModal({ orders, isOpen, onClose, onCreate
             <label className="block font-bold text-slate-700 mb-1">
               Sélectionner la Commande Concernée :
             </label>
-            <select
-              value={selectedOrderId}
-              onChange={(e) => setSelectedOrderId(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2.5 font-bold text-slate-900"
-            >
-              {orders.map(o => (
-                <option key={o.id} value={o.id}>
-                  #{o.orderNumber} — {o.customerName} ({o.productName})
-                </option>
-              ))}
-            </select>
+            <ChoicePicker
+              valeur={selectedOrderId}
+              onChange={setSelectedOrderId}
+              ariaLabel="Commande"
+              choix={orders.map((o) => ({
+                valeur: o.id,
+                libelle: `#${o.orderNumber} — ${o.customerName}`,
+                detail: o.productName,
+              }))}
+            />
           </div>
 
           {selectedOrder && (

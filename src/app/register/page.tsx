@@ -152,13 +152,18 @@ export default function RegisterPage() {
             </div>
           ) : (
             <form onSubmit={inscriptionEmail} className="flex flex-col sm:flex-row gap-2">
+              <label htmlFor="register-email" className="sr-only">Adresse email</label>
               <input
+                id="register-email"
+                autoComplete="email"
+                aria-invalid={Boolean(erreur)}
+                aria-describedby={erreur ? 'register-error' : undefined}
                 type="email"
                 required
                 placeholder="vous@exemple.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="flex-1 min-w-0 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-suguba-brand/30 focus:border-suguba-brand"
+                className="flex-1 min-w-0 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-suguba-profond focus:border-suguba-profond"
               />
               <Button type="submit" disabled={envoi}>
                 {envoi ? 'Envoi…' : 'Recevoir un lien'}
@@ -167,7 +172,7 @@ export default function RegisterPage() {
           )}
 
           {erreur && (
-            <div className="p-3 rounded-2xl bg-rose-50 border border-rose-100 text-rose-700 text-xs font-bold flex items-center gap-2">
+            <div id="register-error" role="alert" className="p-3 rounded-2xl bg-rose-50 border border-rose-100 text-rose-700 text-xs font-bold flex items-center gap-2">
               <ShieldAlert className="w-4 h-4 shrink-0" />
               <span>{erreur}</span>
             </div>
@@ -179,7 +184,7 @@ export default function RegisterPage() {
           </p>
         </section>
 
-        <p className="text-center text-xs text-slate-500">
+        <p className="text-center text-xs text-slate-600">
           Vous avez déjà un compte ?{' '}
           <Link href="/login" className="font-bold text-suguba-brand-dark hover:underline">Se connecter</Link>
         </p>

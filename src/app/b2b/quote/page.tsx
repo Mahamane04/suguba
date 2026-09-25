@@ -6,6 +6,7 @@ import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
 import { useSugubaStore } from '@/lib/store';
+import ChoicePicker from '@/components/ui/ChoicePicker';
 import { 
   FileText, Building2, Printer, MessageCircle, 
   ArrowLeft, CheckCircle2, ShieldCheck, Download, Sparkles, Phone, Mail
@@ -175,17 +176,16 @@ export default function B2BQuotePage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
                 <label className="block font-bold text-slate-700 mb-1">Produit du Catalogue Suguba :</label>
-                <select
-                  value={selectedProductId}
-                  onChange={(e) => setSelectedProductId(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:bg-white"
-                >
-                  {products.map(p => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} ({p.publicPrice.toLocaleString('fr-FR')} FCFA / unité)
-                    </option>
-                  ))}
-                </select>
+                <ChoicePicker
+                  valeur={selectedProductId}
+                  onChange={setSelectedProductId}
+                  ariaLabel="Produit"
+                  choix={products.map((p) => ({
+                    valeur: p.id,
+                    libelle: p.name,
+                    detail: `${p.publicPrice.toLocaleString('fr-FR')} FCFA / unité`,
+                  }))}
+                />
               </div>
 
               <div>

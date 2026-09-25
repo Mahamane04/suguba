@@ -45,7 +45,7 @@ async function obtenirJetonOrange(clientId: string, clientSecret: string): Promi
 
   const json: any = await res.json().catch(() => ({}));
   if (!res.ok || !json.access_token) {
-    console.error('[SMS ORANGE] Authentification refusée:', res.status, json.error_description || json.error || '');
+    console.error('[SMS ORANGE] Authentification refusée:', res.status);
     return null;
   }
 
@@ -86,7 +86,9 @@ export const smsGateway = {
    */
   async sendDeliveryOtpSms(payload: SmsPayload): Promise<SmsResponse> {
     const formattedPhone = this.formatMaliPhone(payload.toPhone);
-    const smsText = `Suguba: Votre commande #${payload.orderNumber} (${payload.productName}) est enregistree. Montant a payer: ${payload.totalAmount.toLocaleString('fr-FR')} FCFA. Votre CODE SECRET DE LIVRAISON est: ${payload.deliveryOtp}. A donner UNIQUEMENT au livreur a la remise du colis.`;
+    // Un code peut couvrir plusieurs lignes du même colis : ne pas annoncer
+    // le montant d’une seule ligne comme le total à encaisser. Le reçu fait foi.
+    const smsText = `Suguba: Code de remise du colis (commande #${payload.orderNumber}): ${payload.deliveryOtp}. A donner au livreur UNIQUEMENT apres reception et verification du colis. Le montant figure sur votre recu.`;
     return this.sendPlainSms(formattedPhone, smsText);
   },
 
@@ -164,17 +166,12 @@ export const smsGateway = {
           // rejouer indéfiniment un jeton mort.
           if (res.status === 401) jetonOrange = null;
 
-          console.error(
-            '[SMS ORANGE] Envoi refusé:', res.status,
-            data?.requestError?.serviceException?.text
-              || data?.requestError?.policyException?.text
-              || JSON.stringify(data).slice(0, 200),
-          );
+          console.error('[SMS ORANGE] Envoi refusé, HTTP', res.status);
           // On ne renvoie pas d'échec ici : le nœud enchaîne sur Twilio,
           // Termii, ou le mode simulation. Un SMS non parti par Orange peut
           // encore partir par un autre canal.
         } catch (err: any) {
-          console.error('[SMS ERROR] Échec Orange Mali:', err?.message || err);
+          console.error('[SMS] Envoi non confirmé : Orange Mali.');
         }
       }
     }
@@ -203,7 +200,7 @@ export const smsGateway = {
           message: res.ok ? 'SMS envoyé avec succès via Twilio' : data.message,
         };
       } catch (err: any) {
-        console.error('[SMS ERROR] Échec Twilio:', err);
+        console.error('[SMS] Envoi non confirmé : Twilio.');
       }
     }
 
@@ -230,21 +227,11 @@ export const smsGateway = {
           message: 'SMS envoyé via Termii',
         };
       } catch (err: any) {
-        console.error('[SMS ERROR] Échec Termii:', err);
+        console.error('[SMS] Envoi non confirmé : Termii.');
       }
     }
 
-    // D. Mode Sandbox Sécurisé (Par défaut si aucune clé configurée)
-    console.log(`\n======================================================`);
-    console.log(`📱 [SIMULATION SMS SUGUBA MALI] Destinataire: ${formattedPhone}`);
-    console.log(`📩 Message: "${smsText}"`);
-    console.log(`======================================================\n`);
-
-    return {
-      success: true,
-      messageId: `SANDBOX-SMS-${Date.now()}`,
-      provider: 'SANDBOX',
-      message: `[Sandbox] SMS simulé envoyé avec succès au ${formattedPhone}.`,
-    };
+    // Aucune simulation de succès, aucun téléphone ou OTP dans les journaux.
+    return { success: false, provider: 'SANDBOX', message: 'Aucun SMS confirmé. Consultez votre reçu pour le code de livraison.' };
   }
 };

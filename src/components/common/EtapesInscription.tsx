@@ -46,7 +46,7 @@ export default function EtapesInscription({ etapeActuelle }: { etapeActuelle: 1 
                   ? 'bg-suguba-profond text-white'
                   : active
                   ? 'bg-suguba-profond text-white ring-4 ring-suguba-brand/20'
-                  : 'bg-gray-200 text-gray-500'
+                  : 'bg-gray-200 text-gray-700'
               }`}
             >
               {faite ? <Check className="w-3.5 h-3.5 stroke-[3]" /> : etape.numero}
@@ -54,14 +54,14 @@ export default function EtapesInscription({ etapeActuelle }: { etapeActuelle: 1 
 
             <span
               className={`mt-1.5 text-xs leading-tight ${
-                active ? 'font-bold text-gray-900' : faite ? 'font-semibold text-gray-600' : 'text-gray-400'
+                active ? 'font-bold text-gray-900' : faite ? 'font-semibold text-gray-600' : 'text-gray-600'
               }`}
             >
               {etape.titre}
             </span>
 
             {active && (
-              <span className="text-xs font-bold text-suguba-brand uppercase tracking-wider mt-0.5">
+              <span className="text-xs font-bold text-suguba-profond uppercase tracking-wider mt-0.5">
                 Vous êtes ici
               </span>
             )}

@@ -1,5 +1,6 @@
+import { verifyActiveSession } from '@/lib/active-session';
 import { NextRequest, NextResponse } from 'next/server';
-import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
+import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { chargerReglages } from '@/lib/platform-settings';
 import { calculerTarifGros, prixMinimalGros } from '@/lib/pricing';
@@ -15,7 +16,7 @@ import { calculerTarifGros, prixMinimalGros } from '@/lib/pricing';
  */
 
 async function revendeurConnecte(req: NextRequest) {
-  const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
+  const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value);
   return session && session.role === 'reseller' ? session : null;
 }
 

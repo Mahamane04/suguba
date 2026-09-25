@@ -7,9 +7,8 @@ import { chargerBoutiqueFournisseur, chargerBoutiqueRevendeur, chargerProduitsDe
 import { boutiqueParSlug } from '@/lib/reseau/boutiques';
 import { badgesDuCompte } from '@/lib/reseau/verifications-db';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import Link from 'next/link';
-import { MapPin } from 'lucide-react';
-import { quartierReconnu } from '@/lib/reseau/proximite';
+import { cookies } from 'next/headers';
+import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
 
 /**
  * Boutique du réseau — /boutique/<adresse>.
@@ -23,9 +22,20 @@ export const dynamic = 'force-dynamic';
 
 type Params = { params: Promise<{ slug: string }> };
 
-async function charger(slug: string): Promise<{ vitrine: Boutique; slugBoutique: string; abonnes: number; galerie: string[]; quartier: string | null } | null> {
+type Charge = {
+  vitrine: Boutique; slugBoutique: string; abonnes: number; galerie: string[]; quartier: string | null;
+  accroche: string | null; proprietaireId: string | null; typeProprietaire: string; principale: boolean;
+};
+
+async function charger(slug: string): Promise<Charge | null> {
   const boutique = await boutiqueParSlug(slug);
   if (!boutique || boutique.statut !== 'active') return null;
+  const commun = {
+    accroche: boutique.accroche,
+    proprietaireId: boutique.proprietaireId,
+    typeProprietaire: boutique.typeProprietaire,
+    principale: boutique.principale !== false,
+  };
   const enPlus = {
     couverture: boutique.couverture,
     badges: boutique.proprietaireId ? await badgesDuCompte(boutique.proprietaireId) : [],
@@ -50,6 +60,7 @@ async function charger(slug: string): Promise<{ vitrine: Boutique; slugBoutique:
       abonnes: boutique.abonnes,
       galerie: boutique.galerie,
       quartier: boutique.quartier,
+      ...commun,
     };
   }
 
@@ -70,6 +81,7 @@ async function charger(slug: string): Promise<{ vitrine: Boutique; slugBoutique:
       galerie: boutique.galerie,
       // Sans quartier choisi pour la boutique, celui de l'entrepôt (même règle que la recherche).
       quartier: boutique.quartier || data.warehouse_neighborhood || null,
+      ...commun,
     };
   }
 
@@ -84,6 +96,7 @@ async function charger(slug: string): Promise<{ vitrine: Boutique; slugBoutique:
       abonnes: boutique.abonnes,
       galerie: boutique.galerie,
       quartier: boutique.quartier,
+      ...commun,
     };
   }
 
@@ -117,27 +130,31 @@ export default async function BoutiqueReseauPage({ params }: Params) {
   const charge = await charger(slug);
   if (!charge) notFound();
 
+  // Le propriétaire voit « Modifier la boutique » (et une invitation à ajouter
+  // logo et couverture s'ils manquent) ; les visiteurs, jamais.
+  const session = await verifySessionToken((await cookies()).get(SESSION_COOKIE_NAME)?.value);
+  const estProprietaire = Boolean(session && !session.apercu && charge.proprietaireId && session.uid === charge.proprietaireId);
+  const lienModifier = !estProprietaire ? null
+    : !charge.principale ? '/compte/boutiques'
+      : charge.typeProprietaire === 'supplier' ? '/supplier/boutique'
+        : charge.typeProprietaire === 'reseller' ? '/reseller/boutique'
+          : null;
+
   return (
     <ShopView
       boutique={charge.vitrine}
       urlPartage={`${URL_APP}/boutique/${charge.slugBoutique}`}
       refCode={charge.vitrine.code}
-      complement={
-        <div className="space-y-4">
-          {charge.quartier && quartierReconnu(charge.quartier) && (
-            <Link
-              href={`/boutiques?quartier=${encodeURIComponent(charge.quartier)}`}
-              className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-600 min-h-[32px]"
-            >
-              <MapPin className="w-3.5 h-3.5 text-suguba-brand-dark" />
-              {charge.quartier}
-              <span className="text-suguba-brand-dark font-bold underline underline-offset-2">· Boutiques voisines</span>
-            </Link>
-          )}
+      quartier={charge.quartier}
+      accroche={charge.accroche}
+      lienModifier={lienModifier}
+      suivre={<BoutonSuivre slug={charge.slugBoutique} abonnesInitial={charge.abonnes} />}
+      galerie={charge.galerie.length > 0 ? (
+        <section className="bg-white rounded-3xl border border-slate-200 p-4 sm:p-5 space-y-3">
+          <h2 className="text-sm font-bold text-slate-900">Photos de la boutique</h2>
           <GalerieBoutique images={charge.galerie} nom={charge.vitrine.nom} />
-          <BoutonSuivre slug={charge.slugBoutique} abonnesInitial={charge.abonnes} />
-        </div>
-      }
+        </section>
+      ) : null}
     />
   );
 }

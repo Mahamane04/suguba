@@ -6,6 +6,7 @@ import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
 import CreateSavTicketModal from '@/components/admin/CreateSavTicketModal';
+import ChoicePicker from '@/components/ui/ChoicePicker';
 import { useSugubaStore } from '@/lib/store';
 import { SavTicket } from '@/types';
 import {
@@ -25,6 +26,7 @@ export default function AdminSavPage() {
   const [selectedTicketForDispatch, setSelectedTicketForDispatch] = useState<SavTicket | null>(null);
   const [tickets, setTickets] = useState<SavTicket[]>([]);
   const [livreurs, setLivreurs] = useState<Array<{ id: string; fullName: string }>>([]);
+  const [livreurChoisi, setLivreurChoisi] = useState<Record<string, string>>({});
 
   const deliveredOrders = state.orders.filter(o => o.status === 'delivered');
 
@@ -241,20 +243,16 @@ export default function AdminSavPage() {
                             </span>
                           ) : (
                             <div className="flex items-center gap-1.5">
-                              <select
-                                id={`sav-driver-${ticket.id}`}
-                                className="bg-white border border-slate-300 rounded-xl px-2 py-1.5 text-xs font-bold text-slate-900"
-                              >
-                                {livreurs.map((d) => (
-                                  <option key={d.id} value={d.id}>{d.fullName}</option>
-                                ))}
-                              </select>
+                              <ChoicePicker
+                                ariaLabel="Livreur"
+                                className="w-40"
+                                valeur={livreurChoisi[ticket.id] || livreurs[0].id}
+                                onChange={(v) => setLivreurChoisi((m) => ({ ...m, [ticket.id]: v }))}
+                                choix={livreurs.map((d) => ({ valeur: d.id, libelle: d.fullName }))}
+                              />
                               <button
-                                onClick={() => {
-                                  const select = document.getElementById(`sav-driver-${ticket.id}`) as HTMLSelectElement;
-                                  if (select?.value) handleDispatchCourier(ticket.id, select.value);
-                                }}
-                                className="py-2 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs flex items-center space-x-1 shadow-xs"
+                                onClick={() => handleDispatchCourier(ticket.id, livreurChoisi[ticket.id] || livreurs[0].id)}
+                                className="py-2 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs flex items-center space-x-1 shadow-xs shrink-0"
                               >
                                 <Truck className="w-3.5 h-3.5" />
                                 <span>Assigner</span>

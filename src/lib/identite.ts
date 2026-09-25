@@ -31,17 +31,20 @@ export interface Moi {
 
 const INTERVALLE_MIN_MS = 5_000;
 let derniereLecture = 0;
+let generation = 0;
+export function invaliderIdentite() { generation++; derniereLecture = 0; enCours = null; }
 let enCours: Promise<Moi | null> | null = null;
 
 export function rafraichirIdentite({ forcer = false } = {}): Promise<Moi | null> {
   if (enCours) return enCours;
   if (!forcer && Date.now() - derniereLecture < INTERVALLE_MIN_MS) return Promise.resolve(null);
   derniereLecture = Date.now();
+  const requestGeneration = generation;
   enCours = fetch('/api/auth/me', { cache: 'no-store', credentials: 'same-origin' })
     .then((r) => (r.ok ? r.json() : null))
     .then((moi: Moi | null) => {
       // Réseau coupé : on ne déconnecte pas l'écran sur une simple absence de réponse.
-      if (!moi) return null;
+      if (!moi || requestGeneration !== generation) return null;
       sugubaStore.definirUtilisateur(
         moi.authenticated && moi.uid
           ? { id: moi.uid, fullName: moi.fullName, phone: moi.phone, role: moi.role as never, city: moi.city }
@@ -51,6 +54,6 @@ export function rafraichirIdentite({ forcer = false } = {}): Promise<Moi | null>
       return moi;
     })
     .catch(() => null)
-    .finally(() => { enCours = null; });
+    .finally(() => { if (requestGeneration === generation) enCours = null; });
   return enCours;
 }

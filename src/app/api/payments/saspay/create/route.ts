@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { initierPayin, estReseau, estReseauGlobal, RESEAUX_MALI, RESEAUX_GLOBAUX } from '@/lib/saspay';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
@@ -68,6 +69,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Numéro de téléphone du payeur requis.' }, { status: 400 });
     }
 
+    const { data: tentative, error: reservationError } = await admin.rpc('begin_order_payment', {
+      p_order_number: commande.order_number, p_network: network, p_phone: telephone, p_id: randomUUID(),
+    });
+    if (reservationError || !tentative) return NextResponse.json({ error: reservationError?.message === 'PAYMENT_ALREADY_PENDING'
+      ? 'Un paiement est déjà en cours sur un autre réseau. Attendez son résultat avant de changer.'
+      : 'Paiement non initié. Vérifiez le paiement précédent ou réessayez.' }, { status: reservationError?.message === 'PAYMENT_ALREADY_PENDING' ? 409 : 503 });
+    if (tentative.transaction_id) return NextResponse.json({ success: true, transactionId: tentative.transaction_id,
+      statut: tentative.status, urlCheckout: tentative.checkout_url || null,
+      reseau: estReseauGlobal(network) ? RESEAUX_GLOBAUX[network] : RESEAUX_MALI[network] });
+
     const [prenom, ...resteNom] = String(commande.customer_name || 'Client Suguba').trim().split(/\s+/);
 
     const resultat = await initierPayin({
@@ -81,13 +92,13 @@ export async function POST(req: NextRequest) {
         email: `commande-${commande.order_number.toLowerCase()}@sugubaml.com`,
         prenom: prenom || 'Client',
         nom: resteNom.join(' ') || 'Suguba',
-        telephone,
+        telephone: tentative.phone,
       },
       urlRetour: `https://app.sugubaml.com/order-success/${commande.order_number}`,
       // Une clé par commande : si le client double-clique ou si le réseau
       // coupe, SasPay renvoie le paiement d'origine au lieu d'en pousser un
       // second sur son téléphone.
-      cleIdempotence: `order-${commande.order_number}-${network}`,
+      cleIdempotence: `order-attempt-${tentative.id}`,
     });
 
     if (!resultat.ok || !resultat.id) {
@@ -97,10 +108,9 @@ export async function POST(req: NextRequest) {
     // Écrit AVANT de répondre : sans cet id en base, le webhook de
     // confirmation n'aurait aucun moyen de retrouver la commande et le
     // paiement resterait invisible côté Suguba.
-    const { error: majErr } = await admin
-      .from('orders')
-      .update({ payment_transaction_id: resultat.id, payment_network: network })
-      .eq('order_number', commande.order_number);
+    const { error: majErr } = await admin.rpc('record_order_payment', {
+      p_id: tentative.id, p_transaction: resultat.id, p_checkout: resultat.urlCheckout || null,
+    });
 
     if (majErr) {
       console.error('[SASPAY] Paiement initié mais id non stocké:', commande.order_number, resultat.id, majErr);

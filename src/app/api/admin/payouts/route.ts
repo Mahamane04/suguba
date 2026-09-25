@@ -1,6 +1,7 @@
+import { verifyActiveSession } from '@/lib/active-session';
 import { NextRequest, NextResponse } from 'next/server';
 import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
-import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
+import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
 /**
@@ -23,7 +24,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
  */
 
 async function sessionAdmin(req: NextRequest) {
-  const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
+  const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value);
   return session && session.role === 'admin' ? session : null;
 }
 
@@ -86,40 +87,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Ce retrait a déjà été traité.' }, { status: 400 });
   }
 
-  if (action === 'payer_especes') {
-    if (retrait.payment_method !== 'cash') {
-      return NextResponse.json({ error: 'Ce retrait se paie par virement mobile money, pas au guichet.' }, { status: 422 });
-    }
-    // Conditionné à `pending` : deux clics simultanés ne consomment pas deux fois.
-    const { data: maj, error } = await admin
-      .from('payouts')
-      .update({
-        status: 'completed',
-        processed_at: new Date().toISOString(),
-        transaction_ref: `GUICHET ${new Date().toISOString().slice(0, 10)} (${session.phone})`,
-      })
-      .eq('id', retrait.id)
-      .eq('status', 'pending')
-      .select('id')
-      .maybeSingle();
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-    if (!maj) return NextResponse.json({ error: 'Ce retrait vient d\'être traité ailleurs.' }, { status: 409 });
-
-    await admin.rpc('settle_commissions_for_withdrawal', { p_withdrawal_id: retrait.id });
-    return NextResponse.json({ success: true });
+  if (action === 'payer_especes' && retrait.payment_method !== 'cash') {
+    return NextResponse.json({ error: 'Ce retrait se règle par Mobile Money.' }, { status: 422 });
   }
-
-  const { data: maj, error } = await admin
-    .from('payouts')
-    .update({ status: 'rejected', processed_at: new Date().toISOString() })
-    .eq('id', retrait.id)
-    .eq('status', 'pending')
-    .select('id')
-    .maybeSingle();
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  if (!maj) return NextResponse.json({ error: 'Ce retrait vient d\'être traité ailleurs.' }, { status: 409 });
-
-  // Le revendeur retrouve son solde.
-  await admin.rpc('release_commissions_for_withdrawal', { p_withdrawal_id: retrait.id });
+  const { data, error } = await admin.rpc('finalize_payout_atomic', {
+    p_expected_status: 'pending', p_id: retrait.id, p_status: action === 'payer_especes' ? 'completed' : 'rejected',
+    p_reference: action === 'payer_especes' ? `GUICHET ${session.uid}` : null,
+  });
+  if (error || !data) return NextResponse.json({ error: 'Retrait non validé. Vérifiez le grand-livre avant de réessayer.' }, { status: 503 });
   return NextResponse.json({ success: true });
 }

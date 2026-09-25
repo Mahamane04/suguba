@@ -23,7 +23,7 @@
  *
  * v4 (2026-09-24) : nouveau logo — les anciennes icônes préchargées sont purgées.
  */
-const VERSION = 'v4';
+const VERSION = 'v5'; // Purge des anciennes pages privées.
 const CACHE_PAGES = `suguba-pages-${VERSION}`;
 const CACHE_STATIQUE = `suguba-statique-${VERSION}`;
 const CACHE_IMAGES = `suguba-images-${VERSION}`;
@@ -84,6 +84,8 @@ self.addEventListener('fetch', (event) => {
   // Jamais d'API en cache : données personnelles, et une réponse périmée
   // servie hors ligne serait trompeuse (stock, prix, statut de commande...).
   if (memeOrigine && url.pathname.startsWith('/api/')) return;
+  // Les écrans privés et reçus ne doivent jamais survivre à une déconnexion.
+  if (memeOrigine && /^\/(admin|supplier|driver|reseller|compte|notifications|track|order-success|panier)(\/|$)/.test(url.pathname)) return;
 
   // Photos produits : stockage public Supabase, ou images optimisées par Next.
   const estPhoto =

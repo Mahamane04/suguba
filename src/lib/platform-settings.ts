@@ -20,7 +20,7 @@ export interface EtatReglages {
   majLe: string | null;
 }
 
-export async function chargerReglages(): Promise<EtatReglages> {
+export async function chargerReglages(strict = false): Promise<EtatReglages> {
   const admin = getSupabaseAdmin();
   if (!admin) return { reglages: REGLAGES_PAR_DEFAUT, confirme: false, majLe: null };
 
@@ -30,6 +30,7 @@ export async function chargerReglages(): Promise<EtatReglages> {
     .eq('id', 1)
     .maybeSingle();
 
+  if (error && strict) throw new Error('Réglages indisponibles. Réessayez.');
   if (error || !data) {
     // Table absente (migration pas encore appliquée) ou jamais renseignée :
     // les valeurs par défaut s'appliquent, clairement marquées non confirmées.

@@ -1,5 +1,6 @@
 'use client';
 
+
 import React, { use, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSugubaStore, useCatalogueCharge, useQuartierClient, definirQuartierClient } from '@/lib/store';
@@ -163,10 +164,7 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
   const finishOrder = async (data?: OrderInput) => {
     try {
       const order = await submitOrder(data);
-      void fetch('/api/sms/send-otp', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderNumber: order.orderNumber }),
-      }).catch(() => {});
+
       router.push(`/order-success/${order.orderNumber}`);
       resetAttempt();
     } catch (error) {
@@ -204,6 +202,7 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
       return;
     }
 
+    if (product.stockQuantity <= 0) { toast('Article indisponible. Consultez le catalogue.', { ton: 'erreur' }); return; }
     const retrait = mode === 'pickup_point' ? relais : undefined;
     await finishOrder({
       productId: product.id,
@@ -261,6 +260,7 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
       <div className="min-h-screen bg-slate-50">
         {barre}
         <main className="max-w-lg mx-auto p-4 space-y-4">
+          {product && product.stockQuantity <= 0 && <p role="status" className="p-3 rounded-2xl bg-amber-50 text-amber-900">Article actuellement indisponible. Une commande déjà envoyée reste récupérable ci-dessous.</p>}
           <OrderRecovery attempt={recovery} disabled={isSubmitting} onResume={() => { void finishOrder(); }} />
           <EmptyState
             icone={PackageX}
@@ -286,6 +286,7 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
         className="max-w-5xl mx-auto px-4 py-4 md:py-8 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_340px] gap-4 md:gap-6 items-start pb-36 md:pb-10"
       >
         <div className="space-y-4 min-w-0">
+          {product && product.stockQuantity <= 0 && <p role="status" className="p-3 rounded-2xl bg-amber-50 text-amber-900">Article actuellement indisponible. Une commande déjà envoyée reste récupérable ci-dessous.</p>}
           <OrderRecovery attempt={recovery} disabled={isSubmitting} onResume={() => { void finishOrder(); }} />
 
           <Section numero={1} titre="Votre article" complete>
@@ -316,8 +317,8 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
                     <span className="w-8 text-center text-sm font-bold text-slate-900" aria-live="polite">{quantity}</span>
                     <button
                       type="button"
-                      onClick={() => setQuantity((q) => Math.min(50, q + 1))}
-                      disabled={quantity >= 50}
+                      onClick={() => setQuantity((q) => Math.min(50, product.stockQuantity, q + 1))}
+                      disabled={quantity >= Math.min(50, product.stockQuantity)}
                       aria-label="Augmenter la quantité"
                       className="w-10 h-10 flex items-center justify-center text-slate-700 disabled:text-slate-300"
                     >
@@ -599,7 +600,7 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
             <p className="text-xs text-slate-500">
               À payer au livreur, en espèces ou Mobile Money, après vérification du colis.
             </p>
-            <Button type="submit" size="lg" fullWidth disabled={isSubmitting} className="hidden md:inline-flex">
+            <Button type="submit" size="lg" fullWidth disabled={isSubmitting || product.stockQuantity <= 0} className="hidden md:inline-flex">
               {isSubmitting ? 'Envoi…' : 'Confirmer la commande'}
             </Button>
           </Card>
@@ -633,7 +634,7 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
                 {devis ? fcfa(devis.total) : '…'}
               </p>
             </div>
-            <Button type="submit" form="formulaire-commande" size="lg" disabled={isSubmitting} className="flex-1">
+            <Button type="submit" form="formulaire-commande" size="lg" disabled={isSubmitting || product.stockQuantity <= 0} className="flex-1">
               {isSubmitting ? 'Envoi…' : 'Confirmer'}
             </Button>
           </div>

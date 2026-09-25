@@ -1,5 +1,6 @@
+import { verifyActiveSession } from '@/lib/active-session';
 import { NextRequest, NextResponse } from 'next/server';
-import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
+import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { chargerReglages } from '@/lib/platform-settings';
 
@@ -13,7 +14,7 @@ import { chargerReglages } from '@/lib/platform-settings';
  * derrière sa session, jamais dans /api/settings/public.
  */
 export async function GET(req: NextRequest) {
-  const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
+  const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value);
   if (!session || session.role !== 'driver') {
     return NextResponse.json({ error: 'Authentification livreur requise.' }, { status: 401 });
   }

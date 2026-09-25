@@ -1,5 +1,6 @@
+import { verifyActiveSession } from '@/lib/active-session';
 import { NextRequest, NextResponse } from 'next/server';
-import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
+import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
 const LIBELLE_MOYEN: Record<string, string> = {
@@ -18,7 +19,7 @@ const LIBELLE_MOYEN: Record<string, string> = {
  * jamais rien vendu.
  */
 export async function GET(req: NextRequest) {
-  const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
+  const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value);
   if (!session || session.role !== 'reseller') {
     return NextResponse.json({ error: 'Session revendeur requise.' }, { status: 401 });
   }

@@ -149,6 +149,7 @@ export async function creerPanier(admin: SupabaseClient | null, value: unknown, 
     p_key_hash: keyHash, p_fingerprint: fingerprint, p_cart_id: cartId, p_items: items,
   });
   if (error) {
+    if (error.message === 'STOCK_UNAVAILABLE') throw new OrderCreationError('Stock insuffisant. Actualisez le panier avant de réessayer.', 409);
     console.error('[CART CREATE]', error.code);
     if (error.code === 'P0001' && error.message === 'IDEMPOTENCY_CONFLICT') {
       throw new OrderCreationError('Cette demande correspond à un autre panier.', 409);

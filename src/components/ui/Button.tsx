@@ -47,7 +47,7 @@ const TAILLES: Record<Taille, string> = {
 const BASE =
   'inline-flex items-center justify-center font-semibold rounded-full transition-all ' +
   'active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none ' +
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-suguba-brand focus-visible:ring-offset-2';
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-suguba-profond focus-visible:ring-offset-2';
 
 interface ProprietesCommunes {
   variant?: Variante;

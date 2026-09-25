@@ -4,7 +4,8 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { CalendarDays, Plus, Loader2, Check, Share2, Target, X } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
-import { Field, Input, Select, Textarea } from '@/components/ui/Field';
+import { Field, Input, Textarea } from '@/components/ui/Field';
+import ChoicePicker from '@/components/ui/ChoicePicker';
 import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
 import { useSugubaStore } from '@/lib/store';
@@ -152,21 +153,17 @@ export default function CalendrierPage() {
                 <Input id="date" type="date" min={aujourdhui()} value={date} onChange={(e) => setDate(e.target.value)} required />
               </Field>
               <Field label="Canal" htmlFor="canal">
-                <Select id="canal" value={canal} onChange={(e) => setCanal(e.target.value)}>
-                  {CANAUX.filter((c) => c.valeur !== 'qr' && c.valeur !== 'autre').map((c) => (
-                    <option key={c.valeur} value={c.valeur}>{c.libelle}</option>
-                  ))}
-                </Select>
+                <ChoicePicker id="canal" valeur={canal} onChange={setCanal}
+                  choix={CANAUX.filter((c) => c.valeur !== 'qr' && c.valeur !== 'autre').map((c) => ({ valeur: c.valeur, libelle: c.libelle }))} />
               </Field>
             </div>
             <Field label="Quoi publier" htmlFor="titre" requis>
               <Input id="titre" value={titre} onChange={(e) => setTitre(e.target.value)} maxLength={120} required placeholder="Statut du vendredi : la TV 43 pouces" />
             </Field>
             <Field label="Produit (facultatif)" htmlFor="produit" aide="Le jour J, le partage de ce produit sera prêt en un geste.">
-              <Select id="produit" value={produit} onChange={(e) => setProduit(e.target.value)}>
-                <option value="">Aucun produit précis</option>
-                {produits.map((p) => <option key={p.id} value={p.slug}>{p.name}</option>)}
-              </Select>
+              <ChoicePicker id="produit" valeur={produit} onChange={setProduit}
+                placeholder="Aucun produit précis"
+                choix={[{ valeur: '', libelle: 'Aucun produit précis' }, ...produits.map((p) => ({ valeur: p.slug, libelle: p.name }))]} />
             </Field>
             <Field label="Note" htmlFor="note">
               <Textarea id="note" rows={2} value={note} onChange={(e) => setNote(e.target.value)} maxLength={400} />

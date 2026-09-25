@@ -1,5 +1,6 @@
+import { verifyActiveSession } from '../active-session';
 import { NextResponse, type NextRequest } from 'next/server';
-import { verifySessionToken, SESSION_COOKIE_NAME } from '../session';
+import { SESSION_COOKIE_NAME } from '../session';
 import { adminPeut } from './db';
 import { PERMISSION_PAR_ROUTE } from './permissions-routes';
 
@@ -15,8 +16,7 @@ import { PERMISSION_PAR_ROUTE } from './permissions-routes';
  * session non-admin passe ici sans contrôle — la route applique ses propres
  * règles pour le livreur ou le fournisseur.
  *
- * Un admin sans rôle d'équipe garde tous les droits (voir
- * permissionsEffectives) : aucun administrateur existant n'est bloqué.
+ * Un admin sans affectation explicite n’a aucun droit d’équipe.
  */
 export async function refusSansPermissionAdmin(req: NextRequest, cle: string): Promise<NextResponse | null> {
   const permission = PERMISSION_PAR_ROUTE[cle];
@@ -26,7 +26,7 @@ export async function refusSansPermissionAdmin(req: NextRequest, cle: string): P
     console.error('[PERMISSIONS] Route sans permission déclarée :', cle);
     return NextResponse.json({ error: 'Action non configurée.' }, { status: 500 });
   }
-  const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
+  const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value);
   if (!session || session.role !== 'admin') return null;
   if (await adminPeut(session.uid, permission)) return null;
   return NextResponse.json(

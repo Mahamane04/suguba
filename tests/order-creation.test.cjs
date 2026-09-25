@@ -99,7 +99,10 @@ test('TEST-013 : commande et commission confirmées avec le vrai moteur de prix'
   assert.equal(order.status, 'pending_call');
   assert.equal(order.paymentCollected, false);
   assert.notEqual(order.id, 'forged');
-  assert.match(order.deliveryOtp, /^[1-9]\d{3}$/);
+  assert.equal(order.deliveryOtp, undefined, 'Le reçu public ne contient pas le code');
+  const secret = (await db.query('SELECT delivery_otp FROM orders WHERE id=$1', [order.id])).rows[0].delivery_otp;
+  assert.match(secret, /^[1-9]\d{3}$/, 'Le code est toujours généré, mais uniquement côté serveur');
+  assert.notEqual(secret, '0000');
   assert.ok(!JSON.stringify(order).includes('pricing_snapshot'));
   assert.ok(!JSON.stringify(order).includes('supplier_price'));
   const { rows } = await db.query('SELECT * FROM commissions WHERE order_id = $1', [order.id]);

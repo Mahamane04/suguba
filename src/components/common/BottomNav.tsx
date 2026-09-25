@@ -26,14 +26,14 @@ function getNavItems(role: string | null): NavItem[] {
     case 'reseller':
       return [
         { label: 'Accueil',     href: '/reseller',           icon: Home        },
-        { label: 'Catalogue',   href: '/reseller/catalog',   icon: Grid3X3     },
+        { label: 'Produits',   href: '/reseller/catalog',   icon: Grid3X3     },
         { label: 'Ventes',      href: '/reseller/orders',    icon: ShoppingCart},
         { label: 'Gains',       href: '/reseller/payouts',   icon: Wallet      },
-        { label: 'Marketing',   href: '/reseller/marketing', icon: TrendingUp  },
+        { label: 'Partager',   href: '/reseller/marketing', icon: TrendingUp  },
       ];
     case 'supplier':
       return [
-        { label: 'Dashboard',   href: '/supplier',              icon: Home       },
+        { label: 'Accueil',   href: '/supplier',              icon: Home       },
         // Anciennement /supplier/products (inexistant) — la gestion du stock
         // et du catalogue du fournisseur vit sur /supplier/inventory.
         { label: 'Stocks',      href: '/supplier/inventory',    icon: Boxes      },
@@ -59,7 +59,7 @@ function getNavItems(role: string | null): NavItem[] {
       ];
     case 'admin':
       return [
-        { label: 'Vue globale', href: '/admin',              icon: Home       },
+        { label: 'Accueil', href: '/admin',              icon: Home       },
         // La modération, les commandes et les retraits sont tous des blocs de
         // /admin lui-même : les trois anciennes entrées menaient à des 404.
         // /admin/products existe depuis le 2026-09-11 (catalogue complet,
@@ -153,10 +153,11 @@ export default function BottomNav() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex flex-col items-center justify-center flex-1 py-2 px-1 rounded-xl transition-colors duration-150 active:scale-95 ${
+                aria-current={isActive ? 'page' : undefined}
+                className={`flex flex-col items-center justify-center flex-1 min-w-0 py-2 px-1 rounded-xl transition-colors duration-150 active:scale-95 ${
                   isActive
                     ? 'text-suguba-brand-dark'
-                    : 'text-gray-400 hover:text-gray-600'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
                 {/* Le halo pulsant (animate-pulse) donnait une impression de
@@ -176,7 +177,7 @@ export default function BottomNav() {
                   />
                 </div>
                 <span
-                  className={`text-xs mt-0.5 tracking-tight font-medium truncate max-w-[56px] leading-none transition-all duration-150 ${
+                  className={`text-xs mt-0.5 tracking-tight font-medium w-full text-center leading-tight transition-all duration-150 ${
                     isActive ? 'font-bold' : ''
                   }`}
                 >

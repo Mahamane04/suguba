@@ -19,7 +19,7 @@ export const whatsappHelper = {
       `📦 *Produit :* ${order.productName} (x${order.quantity})\n` +
       `💰 *Total à payer :* ${order.totalAmount.toLocaleString('fr-FR')} FCFA\n` +
       `📍 *Destination :* ${order.neighborhood} (${order.landmark})\n\n` +
-      `🔑 *VOTRE CODE SECRET DE LIVRAISON :* *${order.deliveryOtp}*\n` +
+      `🔑 Le code de remise est transmis séparément par SMS au destinataire.\n` +
       `⚠️ _Donnez ce code UNIQUEMENT au livreur lors de la remise du colis._\n\n` +
       `📲 *Suivre ma commande en direct :* ${trackingUrl}`;
 
@@ -96,7 +96,7 @@ export const whatsappHelper = {
       `Bonjour *${order.customerName}*,\n` +
       `Votre livreur arrive aujourd'hui à votre repère (*${order.landmark}*).\n\n` +
       `💵 *Montant exact à préparer :* ${order.totalAmount.toLocaleString('fr-FR')} FCFA\n` +
-      `🔑 *Votre Code Secret OTP :* *${order.deliveryOtp}*\n\n` +
+      `🔑 Gardez le code reçu par SMS pour la remise du colis.\n\n` +
       `En cas de question ou retard, contactez notre centre d'opérations au *+223 89 46 00 00*.`;
 
     return `https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(message)}`;

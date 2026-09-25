@@ -170,7 +170,7 @@ export interface Order {
   /** Remise effectivement accordée par le serveur. */
   discountAmount?: number;
   status: OrderStatus;
-  deliveryOtp: string;         // Code secret à 4 chiffres (ex: 5832)
+  deliveryGroup?: string;      // Identifiant public du lot ; jamais le code de remise.
   failedOtpAttempts?: number;  // Nombre d'échecs de saisie OTP
   otpLockedUntil?: string;     // Blocage temporaire après 3 échecs
   driverId?: string;

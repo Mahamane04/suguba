@@ -88,12 +88,12 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { data: commande } = await admin
-      .from('orders')
-      .select('order_number, status, payment_collected')
-      .eq('payment_transaction_id', idTransaction)
-      .maybeSingle();
-
+    const { data: tentative, error: attemptError } = await admin.from('payment_attempts').select('order_number').eq('transaction_id', idTransaction).maybeSingle();
+    if (attemptError) return NextResponse.json({ error: 'Rapprochement indisponible.' }, { status: 503 });
+    let requete = admin.from('orders').select('order_number, status, payment_collected');
+    requete = tentative ? requete.eq('order_number', tentative.order_number) : requete.eq('payment_transaction_id', idTransaction);
+    const { data: commande, error: orderError } = await requete.maybeSingle();
+    if (orderError) return NextResponse.json({ error: 'Rapprochement indisponible.' }, { status: 503 });
     if (commande) return await traiterCommande(admin, commande, idTransaction);
 
     const { data: retrait } = await admin
@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
     if (retrait) return await traiterRetrait(admin, retrait, idTransaction);
 
     console.warn('[WEBHOOK SASPAY] Transaction rattachée à aucune ligne:', idTransaction, type);
-    return NextResponse.json({ status: 'OK', ignore: 'transaction inconnue' });
+    return NextResponse.json({ error: 'Transaction en attente de rattachement.' }, { status: 503 });
   } catch (error: any) {
     console.error('[WEBHOOK SASPAY] Erreur de traitement:', error);
     return NextResponse.json({ error: 'Erreur serveur.' }, { status: 500 });
@@ -117,40 +117,17 @@ async function traiterCommande(
   commande: { order_number: string; status: string; payment_collected: boolean },
   idTransaction: string,
 ) {
-  if (commande.payment_collected) {
-    return NextResponse.json({ status: 'OK', ignore: 'déjà encaissée' });
-  }
-
   const verif = await verifierPayin(idTransaction);
   if (!verif.ok) {
     // Vérification impossible : ne rien décider. Un 503 fait retenter SasPay.
     console.error('[WEBHOOK SASPAY] Vérification impossible pour', commande.order_number, verif.erreur);
     return NextResponse.json({ error: 'Vérification impossible.' }, { status: 503 });
   }
-  if (verif.statut !== 'SUCCESS') {
-    return NextResponse.json({ status: 'OK', ignore: `statut vérifié: ${verif.statut}` });
-  }
-
-  const { error } = await admin
-    .from('orders')
-    .update({
-      status: commande.status === 'pending_call' ? 'confirmed' : commande.status,
-      // Indispensable : sans ce marquage, la commande reste vue comme un
-      // paiement à la livraison et le livreur réclamerait au client une
-      // somme déjà réglée par mobile money.
-      payment_collected: true,
-      payment_method: 'mobile_money',
-    })
-    .eq('order_number', commande.order_number)
-    // Garde d'idempotence : SasPay peut livrer le même event plusieurs fois
-    // (5 tentatives, plus un renvoi manuel possible depuis le dashboard).
-    .eq('payment_collected', false);
-
-  if (error) {
-    console.error('[WEBHOOK SASPAY] Écriture commande échouée:', commande.order_number, error);
-    return NextResponse.json({ error: 'Écriture échouée.' }, { status: 503 });
-  }
-
+  if (!verif.statut || verif.statut === 'PENDING') return NextResponse.json({ status: 'OK', ignore: 'paiement en cours' });
+  const { error } = await admin.rpc('apply_verified_payment', {
+    p_order_number: commande.order_number, p_transaction: idTransaction, p_status: verif.statut,
+  });
+  if (error) return NextResponse.json({ error: 'Rapprochement non enregistré.' }, { status: 503 });
   return NextResponse.json({ status: 'OK', traite: 'commande' });
 }
 
@@ -169,49 +146,13 @@ async function traiterRetrait(
     return NextResponse.json({ error: 'Vérification impossible.' }, { status: 503 });
   }
 
-  if (verif.statut === 'SUCCESS') {
-    const { error } = await admin
-      .from('payouts')
-      .update({
-        status: 'completed',
-        transaction_ref: verif.reference || idTransaction,
-        processed_at: new Date().toISOString(),
-      })
-      .eq('id', retrait.id)
-      .in('status', ['pending', 'processing']);
-
-    if (error) {
-      console.error('[WEBHOOK SASPAY] Écriture versement échouée:', retrait.id, error);
-      return NextResponse.json({ error: 'Écriture échouée.' }, { status: 503 });
-    }
-
-    // Les commissions réservées à la création du retrait sont maintenant
-    // définitivement consommées.
-    await admin.rpc('settle_commissions_for_withdrawal', { p_withdrawal_id: retrait.id });
+  if (verif.statut === 'SUCCESS' || verif.statut === 'FAILED' || verif.statut === 'CANCELLED') {
+    const { data, error } = await admin.rpc('finalize_payout_atomic', {
+      p_id: retrait.id, p_status: verif.statut === 'SUCCESS' ? 'completed' : 'rejected',
+      p_reference: verif.reference || idTransaction,
+    });
+    if (error || !data) return NextResponse.json({ error: 'Versement en attente de rapprochement.' }, { status: 503 });
     return NextResponse.json({ status: 'OK', traite: 'versement' });
   }
-
-  if (verif.statut === 'FAILED' || verif.statut === 'CANCELLED') {
-    const { error } = await admin
-      .from('payouts')
-      // 'rejected' et non 'failed' : la contrainte CHECK de `payouts.status`
-      // n'accepte que pending/processing/completed/rejected. Écrire une valeur
-      // hors contrainte ferait échouer la mise à jour en silence — exactement
-      // le piège déjà rencontré sur les statuts de commande.
-      .update({ status: 'rejected' })
-      .eq('id', retrait.id)
-      .in('status', ['pending', 'processing']);
-
-    if (error) {
-      console.error('[WEBHOOK SASPAY] Écriture échec versement:', retrait.id, error);
-      return NextResponse.json({ error: 'Écriture échouée.' }, { status: 503 });
-    }
-
-    // Le virement n'aura pas lieu : on rend son solde au revendeur plutôt
-    // que de le laisser bloqué sur une réservation morte.
-    await admin.rpc('release_commissions_for_withdrawal', { p_withdrawal_id: retrait.id });
-    return NextResponse.json({ status: 'OK', traite: 'versement échoué' });
-  }
-
-  return NextResponse.json({ status: 'OK', ignore: `statut vérifié: ${verif.statut}` });
+  return NextResponse.json({ status: 'OK', ignore: 'versement en cours' });
 }

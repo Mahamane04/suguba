@@ -4,7 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { Megaphone, Loader2, Eye, MousePointerClick } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
-import { Field, Select } from '@/components/ui/Field';
+import { Field } from '@/components/ui/Field';
+import ChoicePicker from '@/components/ui/ChoicePicker';
 import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
 
@@ -146,16 +147,14 @@ export default function SponsorisationPage() {
             <p className="text-sm font-bold text-slate-900">Demander une sponsorisation</p>
             <form onSubmit={demander} className="space-y-3">
               <Field label="Produit à mettre en avant" htmlFor="produit" requis>
-                <Select id="produit" value={produitChoisi} onChange={(e) => setProduitChoisi(e.target.value)} required>
-                  <option value="">Choisir un produit</option>
-                  {produits.map((p) => <option key={p.id} value={p.id}>{p.nom}</option>)}
-                </Select>
+                <ChoicePicker id="produit" valeur={produitChoisi} onChange={setProduitChoisi}
+                  placeholder="Choisir un produit"
+                  choix={produits.map((p) => ({ valeur: p.id, libelle: p.nom }))} />
               </Field>
               <Field label="Où l’afficher" htmlFor="emplacement"
                 aide={emplacements.find((e) => e.valeur === emplacementChoisi)?.description}>
-                <Select id="emplacement" value={emplacementChoisi} onChange={(e) => setEmplacementChoisi(e.target.value)}>
-                  {emplacements.map((e) => <option key={e.valeur} value={e.valeur}>{e.libelle}</option>)}
-                </Select>
+                <ChoicePicker id="emplacement" valeur={emplacementChoisi} onChange={setEmplacementChoisi}
+                  choix={emplacements.map((e) => ({ valeur: e.valeur, libelle: e.libelle }))} />
               </Field>
               <Button type="submit" disabled={envoi} fullWidth>
                 {envoi ? <Loader2 className="w-4 h-4 animate-spin" /> : <Megaphone className="w-4 h-4" />}

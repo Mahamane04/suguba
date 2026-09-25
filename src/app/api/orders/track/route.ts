@@ -9,16 +9,8 @@ import { normaliserNumeroCommande } from '@/lib/order-number';
  * compte, et c'est tout l'intérêt du parcours. C'est donc le CONTENU de la
  * requête qui fait l'authentification : numéro de commande ET téléphone exact.
  *
- * ── Pourquoi le code de livraison est renvoyé ────────────────────────────
- * Le client en a besoin devant sa porte. Le lui refuser ici oblige à le lui
- * envoyer par SMS payant, ou à le lui faire perdre. Trois raisons de juger
- * l'exposition acceptable :
- *   1. deux facteurs, dont le numéro de commande à 6,5 × 10¹¹ combinaisons
- *      depuis le nouveau format (voir src/lib/order-number.ts) ;
- *   2. les tentatives infructueuses sont limitées, ci-dessous ;
- *   3. le code seul ne sert à rien : il faut aussi être au bon endroit, au bon
- *      moment, et recevoir le colis des mains du livreur.
- * Une commande déjà livrée ne renvoie plus le code — il n'a plus d'usage.
+ * Le numéro et le téléphone permettent le suivi, mais ne sont pas un secret
+ * vis-à-vis du livreur. Le code de remise n’est jamais retourné par le suivi.
  *
  * ── La limitation ────────────────────────────────────────────────────────
  * Elle porte sur le NUMÉRO DE COMMANDE, pas sur l'IP : derrière un opérateur
@@ -130,7 +122,6 @@ export async function POST(req: NextRequest) {
         driverName: affichage?.assigned_driver_name || undefined,
         totalAmount: Number(commande.total_amount) || 0,
         paymentCollected: Boolean(commande.payment_collected),
-        deliveryOtp: commande.delivery_otp,
         createdAt: commande.created_at,
         deliveredAt: commande.delivered_at,
         pickedUpAt: ramassage?.picked_up_at || undefined,

@@ -1,5 +1,12 @@
 # Suguba — Fiche de reprise (11 septembre 2026)
 
+> **Complément local du 24 septembre 2026 — clôture des corrections d’audit (non déployées).**
+> Le rapport à jour est `audit-local/2026-09-24/cloture/rapport-final.md` ; il complète le rapport de corrections précédent. Les validations locales ne décrivent pas la production.
+> Le code de remise n’est plus retourné dans les reçus, suivis, feeds ou exports, même au créateur/admin. Le SMS vise uniquement le numéro enregistré en base ; le support doit posséder `commande.modifier`. La remise exige un nouveau code et un acquittement d’envoi enregistré. Les codes des anciens reçus sont invalides pour une remise active ; prévoir leur nouvel envoi avant toute ouverture.
+> Les migrations locales `migration-audit-integrite.sql` puis `migration-audit-sms.sql` sont requises, ainsi que les autres migrations du lot précédent. **Aucune migration de production n’a été exécutée.** Ne pas pousser les lecteurs avant validation et application autorisée du SQL.
+> `create-admin` affecte explicitement le premier super_admin et préserve une affectation existante. Script testé avec doubles locaux ; aucun compte réel créé ou promu. Un accès admin sans équipe reste refusé.
+> Fenêtres de vente/reçu et choix de quartier : clavier/focus corrigés ; erreurs de synchronisation, de solde et de SMS visibles ; couleurs de texte ciblées renforcées sans refonte.
+
 État réel du projet, basé sur l'historique git vérifié (dernier commit : `ddfe83c`, déployé et
 vérifié en production). C'est LA fiche de référence : les documents de `docs/` renvoient ici.
 

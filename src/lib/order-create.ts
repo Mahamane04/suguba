@@ -32,7 +32,8 @@ export function recu(row: Record<string, any>): Order {
     city: row.city, neighborhood: row.neighborhood, landmark: row.landmark,
     deliveryNotes: row.delivery_notes || undefined,
     pickupPointId: devis.pointRelais?.id, promoCode: devis.codePromo || undefined,
-    status: row.status, deliveryOtp: row.delivery_otp,
+    status: row.status,
+    deliveryGroup: createHash('sha256').update(JSON.stringify([row.pricing_snapshot?.panier?.cartId || row.id, row.pricing_snapshot?.panier?.groupeLivraison || row.id])).digest('hex'),
     paymentMethod: row.payment_method, paymentCollected: row.payment_collected,
     createdAt: row.created_at,
   };
@@ -144,6 +145,7 @@ export async function creerCommande(admin: SupabaseClient | null, value: unknown
     },
   });
   if (error) {
+    if (error.message === 'STOCK_UNAVAILABLE') throw new OrderCreationError('Stock insuffisant. Actualisez le panier avant de réessayer.', 409);
     // Ne journalise jamais la clé de reprise, le téléphone ou le code secret.
     console.error('[ORDER CREATE]', error.code);
     if (error.code === 'P0001' && error.message === 'IDEMPOTENCY_CONFLICT') {

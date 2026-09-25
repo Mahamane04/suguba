@@ -40,7 +40,7 @@ export function PageHeader({
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900">{titre}</h1>
-          {sousTitre && <p className="text-xs sm:text-sm text-slate-500 mt-0.5">{sousTitre}</p>}
+          {sousTitre && <p className="text-xs sm:text-sm text-slate-600 mt-0.5">{sousTitre}</p>}
         </div>
         {action && <div className="shrink-0">{action}</div>}
       </div>

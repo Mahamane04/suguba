@@ -1,10 +1,11 @@
+import { verifyActiveSession } from '@/lib/active-session';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { calculerCommande, completerReglages, QUANTITE_MAX } from '@/lib/pricing';
 import { depotsFournisseurs } from '@/lib/depot-fournisseur';
 import { positionValide } from '@/lib/bamako-quartiers';
 import { resoudrePrixRevendeur } from '@/lib/prix-revendeur';
-import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
+import { SESSION_COOKIE_NAME } from '@/lib/session';
 
 /**
  * Devis d'une commande, pour affichage sur la page produit — publique.
@@ -71,7 +72,7 @@ export async function POST(req: NextRequest) {
 
   // Article au prix de gros : prix négocié (revendeur connecté) ou prix
   // enregistré par le revendeur — exactement comme à la création.
-  const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
+  const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value);
   const prixRevendeur = await resoudrePrixRevendeur({
     admin, modePrix: produit.mode_prix, productId, resellerId: revendeurId,
     sessionUid: session?.uid || null,

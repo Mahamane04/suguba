@@ -1,3 +1,5 @@
+import { normaliserImage } from '@/lib/image-upload';
+import { randomUUID } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { sessionDeLaRequete } from '@/lib/reseau/route-session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
@@ -60,26 +62,28 @@ export async function POST(req: NextRequest) {
     if (!TYPES.includes(fichier.type)) return NextResponse.json({ error: 'Format non supporté (JPEG, PNG ou WEBP).' }, { status: 400 });
     if (fichier.size > TAILLE_MAX) return NextResponse.json({ error: 'Fichier trop volumineux (5 Mo max).' }, { status: 400 });
 
-    const extension = fichier.type === 'image/png' ? 'png' : fichier.type === 'image/webp' ? 'webp' : 'jpg';
-    const nom = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extension}`;
+    let normalized: Buffer;
+    try { normalized = await normaliserImage(fichier); }
+    catch { return NextResponse.json({ error: 'Image illisible ou trop grande (5 Mo, 16 mégapixels maximum).' }, { status: 400 }); }
+    const nom = `${randomUUID()}.webp`;
 
     if (usage === 'document') {
       await assurerBucketPrive(admin);
       const chemin = `${session.uid}/${nom}`;
-      const { error } = await admin.storage.from(BUCKET_PRIVE).upload(chemin, fichier, { contentType: fichier.type, upsert: false });
-      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      const { error } = await admin.storage.from(BUCKET_PRIVE).upload(chemin, normalized, { contentType: 'image/webp', upsert: false });
+      if (error) return NextResponse.json({ error: 'Envoi impossible. Réessayez.' }, { status: 500 });
       return NextResponse.json({ success: true, ref: `prive:${chemin}` });
     }
 
     const chemin = `boutiques/${session.uid}/${nom}`;
-    const { error } = await admin.storage.from(BUCKET_PUBLIC).upload(chemin, fichier, {
-      contentType: fichier.type, cacheControl: '31536000', upsert: false,
+    const { error } = await admin.storage.from(BUCKET_PUBLIC).upload(chemin, normalized, {
+      contentType: 'image/webp', cacheControl: '31536000', upsert: false,
     });
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return NextResponse.json({ error: 'Envoi impossible. Réessayez.' }, { status: 500 });
     const { data } = admin.storage.from(BUCKET_PUBLIC).getPublicUrl(chemin);
     return NextResponse.json({ success: true, url: data.publicUrl });
   } catch (erreur) {
     console.error('[RESEAU UPLOAD]', (erreur as Error).message);
-    return NextResponse.json({ error: (erreur as Error).message || 'Erreur serveur.' }, { status: 500 });
+    return NextResponse.json({ error: 'Stockage indisponible. Réessayez ou contactez Suguba.' }, { status: 500 });
   }
 }

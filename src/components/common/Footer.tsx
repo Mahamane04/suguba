@@ -44,7 +44,7 @@ export default function Footer() {
       {/* ── CTA Band ── */}
       <div
         className="py-10 px-4 sm:px-6 text-center"
-        style={{ background: 'linear-gradient(135deg, #09b500 0%, #16a34a 60%, #065f46 100%)' }}
+        style={{ background: 'linear-gradient(135deg, #0b3b2c 0%, #145a43 60%, #065f46 100%)' }}
       >
         <p className="text-white font-bold text-xl sm:text-2xl tracking-tight mb-2">
           Prêt à vendre sans stock ?
@@ -68,17 +68,17 @@ export default function Footer() {
           <div className="space-y-3">
             <div className="space-y-1.5">
               <LogoSuguba clair className="h-9" />
-              <p className="text-xs text-gray-500 font-semibold tracking-wider uppercase">Plateforme SaaS B2B2C Mali</p>
+              <p className="text-xs text-gray-400 font-semibold tracking-wider uppercase">Plateforme SaaS B2B2C Mali</p>
             </div>
-            <p className="text-xs text-gray-500 leading-relaxed max-w-xs">
+            <p className="text-xs text-gray-400 leading-relaxed max-w-xs">
               La plateforme de social commerce N°1 au Mali. Vendez sans stock via WhatsApp et TikTok. Commissions garanties par Mobile Money.
             </p>
-            <div className="flex items-center gap-1.5 text-xs text-gray-500">
-              <Phone className="w-3 h-3 text-suguba-brand-dark" />
+            <div className="flex items-center gap-1.5 text-xs text-gray-400">
+              <Phone className="w-3 h-3 text-suguba-citron" />
               <a href="tel:+22389460000" className="hover:text-white transition-colors">+223 89 46 00 00</a>
             </div>
             {/* Legal IDs */}
-            <div className="text-xs text-gray-600 space-y-0.5">
+            <div className="text-xs text-gray-400 space-y-0.5">
               <p>NIF : 086419208K</p>
               <p>RCCM : MA.BKO.2026.B.14820</p>
               <p>Hamdallaye ACI 2000, Rue 314 P.88, Bamako</p>
@@ -87,7 +87,7 @@ export default function Footer() {
 
           {/* Platform links */}
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
               Plateformes
             </p>
             <ul className="space-y-2">
@@ -106,7 +106,7 @@ export default function Footer() {
 
           {/* Legal links */}
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-3">
+            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
               Légal & Confiance
             </p>
             <ul className="space-y-2">
@@ -133,11 +133,11 @@ export default function Footer() {
 
       {/* ── Bottom Bar ── */}
       <div className="border-t border-gray-900 px-4 sm:px-6 py-4">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-600">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-400">
           <p>© 2026 Suguba Technologies Mali — Tous droits réservés</p>
           <p className="flex items-center gap-1">
             Conçu à
-            <span className="text-suguba-brand-dark font-bold mx-0.5">Bamako</span>
+            <span className="text-suguba-citron font-bold mx-0.5">Bamako</span>
             pour le Mali et la diaspora
           </p>
         </div>

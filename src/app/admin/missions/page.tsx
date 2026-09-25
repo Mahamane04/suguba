@@ -4,7 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { Target, Loader2, Plus, Play, Pause, Square } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
-import { Field, Input, Select, Textarea } from '@/components/ui/Field';
+import { Field, Input, Textarea } from '@/components/ui/Field';
+import ChoicePicker from '@/components/ui/ChoicePicker';
 import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
 import { TYPES_MISSION, libelleType, verbeType, type TypeMission } from '@/lib/reseau/missions';
@@ -124,9 +125,8 @@ export default function MissionsAdminPage() {
             </Field>
             <div className="grid grid-cols-2 gap-3">
               <Field label="Type" htmlFor="type">
-                <Select id="type" value={type} onChange={(e) => setType(e.target.value as TypeMission)}>
-                  {TYPES_MISSION.map((t) => <option key={t.valeur} value={t.valeur}>{t.libelle}</option>)}
-                </Select>
+                <ChoicePicker id="type" valeur={type} onChange={(v) => setType(v as TypeMission)}
+                  choix={TYPES_MISSION.map((t) => ({ valeur: t.valeur, libelle: t.libelle }))} />
               </Field>
               <Field label={`Objectif (${verbeType(type)})`} htmlFor="objectif">
                 <Input id="objectif" type="number" inputMode="numeric" min={1} value={objectif} onChange={(e) => setObjectif(e.target.value)} />

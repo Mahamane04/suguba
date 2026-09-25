@@ -50,12 +50,11 @@ export async function GET(req: NextRequest) {
   // Le webhook fait foi pour l'écriture, mais s'il tarde ou s'est perdu, la
   // commande resterait affichée « à payer » alors que l'argent est arrivé.
   // On rattrape ici, avec les mêmes gardes que le webhook.
-  if (verif.statut === 'SUCCESS' && commande.status === 'pending_call') {
-    await admin
-      .from('orders')
-      .update({ status: 'confirmed', payment_collected: true, payment_method: 'mobile_money' })
-      .eq('order_number', commande.order_number)
-      .eq('payment_collected', false);
+  if (verif.statut && verif.statut !== 'PENDING') {
+    const { error } = await admin.rpc('apply_verified_payment', {
+      p_order_number: commande.order_number, p_transaction: commande.payment_transaction_id, p_status: verif.statut,
+    });
+    if (error) return NextResponse.json({ error: 'Paiement en cours de rapprochement. Réessayez.', paye: false }, { status: 503 });
   }
 
   return NextResponse.json({ statut: verif.statut || 'PENDING', paye: verif.statut === 'SUCCESS' });

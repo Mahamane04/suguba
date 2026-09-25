@@ -2,10 +2,12 @@
 
 import { supabase, isSupabaseConfigured } from './supabase';
 import { sugubaStore } from './store';
+import { privateSessionGeneration } from './order-access-client';
 import { Order, Product } from '@/types';
 
 class CloudSyncService {
   private isListening = false;
+  private ordersRequest = 0;
   private isInitialFetched = false;
 
   public isCloudActive(): boolean {
@@ -103,7 +105,7 @@ class CloudSyncService {
           modePrix: p.mode_prix === 'gros' ? 'gros' : 'fixe',
           prixConseille: p.prix_conseille == null ? null : Number(p.prix_conseille),
           sugubaMargin: Math.max(0, Number(p.public_price || 0) - Number(p.supplier_price || 0) - Number(p.reseller_commission || 0)),
-          stockQuantity: Number(p.stock || 10),
+          stockQuantity: Number(p.stock ?? 0),
           warrantyMonths: 0, // Aucune colonne garantie en base : ne jamais en afficher une inventée.
           preparationDelayHours: 2,
           stockLocationType: 'supplier',
@@ -138,15 +140,27 @@ class CloudSyncService {
   }
 
   public async fetchOrdersFromCloud(): Promise<Order[]> {
+    const identity = sugubaStore.getState().currentUser;
+    const generation = privateSessionGeneration();
+    const request = ++this.ordersRequest;
+    const stillCurrent = () => { const current = sugubaStore.getState().currentUser; return request === this.ordersRequest && generation === privateSessionGeneration() && current.id === identity.id && current.role === identity.role; };
+    sugubaStore.setOrdersSync('loading');
     try {
       const res = await fetch('/api/orders/feed');
       if (!res.ok) {
+        if (stillCurrent()) {
+          if ([401,403].includes(res.status)) sugubaStore.setOrdersFromCloud([]);
+          sugubaStore.setOrdersSync([401,403].includes(res.status) ? 'forbidden' : 'error');
+        }
         // 401 attendu tant qu'aucune session admin/livreur n'est active —
         // pas une erreur, juste "rien à afficher pour ce visiteur".
         return [];
       }
       const json = await res.json();
+      if (!stillCurrent()) return [];
+      if (!Array.isArray(json.orders) || json.cloud !== true) { sugubaStore.setOrdersSync('error'); return []; }
       const data = json.orders as any[];
+      sugubaStore.setOrdersSync('ready');
 
       if (data && data.length > 0) {
         const cloudOrders: Order[] = data.map((o) => ({
@@ -162,7 +176,7 @@ class CloudSyncService {
           quantity: Number(o.quantity || 1),
           unitPrice: Number(o.unit_price || 0),
           totalProductAmount: Number(o.total_product_amount || 0),
-          deliveryFee: Number(o.delivery_fee || 1500),
+          deliveryFee: Number(o.delivery_fee ?? 0),
           totalAmount: Number(o.total_amount || 0),
           customerName: o.customer_name,
           customerPhone: o.customer_phone,
@@ -171,7 +185,6 @@ class CloudSyncService {
           landmark: o.landmark,
           deliveryNotes: o.delivery_notes,
           status: o.status || 'pending_call',
-          deliveryOtp: o.delivery_otp,
           failedOtpAttempts: Number(o.failed_otp_attempts || 0),
           paymentMethod: o.payment_method || 'cash_on_delivery',
           paymentCollected: Boolean(o.payment_collected),
@@ -187,9 +200,10 @@ class CloudSyncService {
         sugubaStore.setOrdersFromCloud(cloudOrders);
         return cloudOrders;
       }
+      sugubaStore.setOrdersFromCloud([]);
       return [];
     } catch (err) {
-      console.warn('Exception réseau chargement commandes:', err);
+      if (stillCurrent()) sugubaStore.setOrdersSync('error');
       return [];
     }
   }
@@ -335,7 +349,6 @@ class CloudSyncService {
         landmark: cloudOrder.landmark,
         deliveryNotes: cloudOrder.delivery_notes,
         status: cloudOrder.status || 'pending_call',
-        deliveryOtp: cloudOrder.delivery_otp,
         failedOtpAttempts: Number(cloudOrder.failed_otp_attempts || 0),
         paymentMethod: cloudOrder.payment_method || 'cash_on_delivery',
         paymentCollected: Boolean(cloudOrder.payment_collected),
@@ -371,7 +384,7 @@ class CloudSyncService {
       modePrix: cloudProduct.mode_prix === 'gros' ? 'gros' : 'fixe',
       prixConseille: cloudProduct.prix_conseille == null ? null : Number(cloudProduct.prix_conseille),
       sugubaMargin: Math.max(0, Number(cloudProduct.public_price || 0) - Number(cloudProduct.supplier_price || 0) - Number(cloudProduct.reseller_commission || 0)),
-      stockQuantity: Number(cloudProduct.stock || 10),
+      stockQuantity: Number(cloudProduct.stock ?? 0),
       warrantyMonths: 0, // Aucune colonne garantie en base : ne jamais en afficher une inventée.
       preparationDelayHours: 2,
       stockLocationType: 'supplier',

@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import ChoicePicker from '@/components/ui/ChoicePicker';
+import React, { useState } from 'react';
 import { ChevronDown, LocateFixed, Loader2, MapPin } from 'lucide-react';
 import { BAMAKO_NEIGHBORHOODS } from '@/lib/bamako-neighborhoods';
 import { quartierLePlusProche } from '@/lib/bamako-quartiers';
@@ -49,18 +50,7 @@ export default function NeighborhoodPicker({
   variante = 'champ', prefixe, onPosition,
 }: NeighborhoodPickerProps) {
   const { toast } = useToast();
-  const [open, setOpen] = useState(false);
   const [localisationEnCours, setLocalisationEnCours] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
-  }, [open]);
 
   const utiliserPositionActuelle = () => {
     if (!navigator.geolocation) {
@@ -81,7 +71,7 @@ export default function NeighborhoodPicker({
         }
         onChange(trouve.nom);
         onPosition?.({ lat: position.coords.latitude, lng: position.coords.longitude });
-        setOpen(false);
+
       },
       () => {
         setLocalisationEnCours(false);
@@ -91,86 +81,17 @@ export default function NeighborhoodPicker({
     );
   };
 
-  return (
-    <div ref={ref} className={`relative ${className}`}>
-      {/* Même gabarit que les champs du design system (Field.tsx) : 48 px,
-          rayon 2xl, texte 16 px sur téléphone, focus au vert de marque. */}
-      {variante === 'puce' ? (
-        <button
-          id={id}
-          type="button"
-          onClick={() => setOpen((o) => !o)}
-          aria-haspopup="listbox"
-          aria-expanded={open}
-          className="max-w-full min-h-[44px] inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 hover:bg-white/15 pl-1.5 pr-3 py-1 text-left transition-colors focus:outline-none focus:ring-2 focus:ring-white/40"
-        >
-          <span className="w-8 h-8 rounded-full bg-suguba-citron text-suguba-profond flex items-center justify-center shrink-0">
-            <MapPin className="w-4 h-4" />
-          </span>
-          <span className="min-w-0 leading-tight">
-            {prefixe && <span className="block text-xs font-bold uppercase tracking-wider text-emerald-100/60">{prefixe}</span>}
-            <span className={`block truncate text-sm font-bold ${value ? 'text-white' : 'text-emerald-100/80'}`}>{value || placeholder}</span>
-          </span>
-          <ChevronDown className={`w-4 h-4 text-emerald-100/70 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
-        </button>
-      ) : (
-      <button
-        id={id}
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-invalid={invalide}
-        className={`w-full h-12 flex items-center justify-between gap-2 bg-white border rounded-2xl px-3.5 text-base sm:text-sm text-left focus:outline-none focus:ring-2 focus:ring-suguba-brand/30 focus:border-suguba-brand ${
-          invalide ? 'border-rose-400' : 'border-slate-200'
-        }`}
-      >
-        <span className={`truncate ${value ? 'text-slate-900' : 'text-slate-400'}`}>{value || placeholder}</span>
-        <ChevronDown className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
-      )}
-
-      {open && (
-        <div className={`absolute z-30 mt-1.5 ${variante === 'puce' ? 'left-0 w-72 max-w-[calc(100vw-2rem)]' : 'w-full'} min-w-[240px] max-h-72 overflow-y-auto bg-white border border-gray-100 rounded-2xl shadow-float py-1.5 animate-slide-down`}>
-          <button
-            type="button"
-            onClick={utiliserPositionActuelle}
-            disabled={localisationEnCours}
-            className="w-full flex items-center gap-2 px-3.5 py-2.5 text-xs font-bold text-suguba-brand-dark hover:bg-suguba-50 disabled:opacity-60 transition-colors border-b border-gray-100 mb-1"
-          >
-            {localisationEnCours ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LocateFixed className="w-3.5 h-3.5" />}
-            {localisationEnCours ? 'Localisation…' : 'Utiliser ma position actuelle'}
-          </button>
-          {BAMAKO_NEIGHBORHOODS.map((group) => (
-            <div key={group.commune}>
-              <p className="px-3.5 pt-2 pb-1 text-xs font-bold text-gray-400 uppercase tracking-wider">
-                {group.commune}
-              </p>
-              {group.quartiers.map((q) => (
-                <button
-                  key={q}
-                  type="button"
-                  onClick={() => { onChange(q); onPosition?.(null); setOpen(false); }}
-                  className={`w-full text-left px-3.5 py-2 text-xs transition-colors ${
-                    q === value ? 'bg-suguba-brand/10 text-suguba-brand font-bold' : 'text-gray-700 hover:bg-gray-50 font-medium'
-                  }`}
-                >
-                  {q}
-                </button>
-              ))}
-            </div>
-          ))}
-          <button
-            type="button"
-            onClick={() => { onChange('Autre quartier'); onPosition?.(null); setOpen(false); }}
-            className={`w-full text-left px-3.5 py-2 text-xs mt-1 border-t border-gray-50 transition-colors ${
-              value === 'Autre quartier' ? 'bg-suguba-brand/10 text-suguba-brand font-bold' : 'text-gray-500 hover:bg-gray-50 font-medium'
-            }`}
-          >
-            Autre quartier
-          </button>
-        </div>
-      )}
-    </div>
-  );
+  const choix = [...BAMAKO_NEIGHBORHOODS.flatMap(g => g.quartiers.map(q => ({ valeur:q, libelle:q, groupe:g.commune }))), { valeur:'Autre quartier', libelle:'Autre quartier', groupe:'Autres' }];
+  return <div className={`${variante === 'puce' ? 'flex items-center gap-2 min-w-0' : 'space-y-1'} ${className}`}>
+    <ChoicePicker id={id} valeur={value} choix={choix} invalide={invalide} placeholder={placeholder}
+      ariaLabel={id ? undefined : prefixe || 'Quartier'} prefixe={variante === 'puce' ? prefixe : undefined}
+      className={variante === 'puce' ? 'flex-1 min-w-0' : ''}
+      triggerClassName={variante === 'puce' ? 'bg-suguba-profond text-white border-white/40' : ''}
+      onChange={q=>{onChange(q);onPosition?.(null);}} />
+    <button type="button" onClick={utiliserPositionActuelle} disabled={localisationEnCours}
+      aria-label="Utiliser ma position actuelle" className={`min-h-11 min-w-11 flex items-center justify-center gap-2 rounded-xl px-2 text-xs font-semibold focus-visible:outline-2 ${variante === 'puce' ? 'bg-suguba-profond text-white' : 'text-suguba-profond hover:bg-slate-100'}`}>
+      {localisationEnCours ? <Loader2 aria-hidden="true" className="w-4 h-4 animate-spin" /> : <LocateFixed aria-hidden="true" className="w-4 h-4" />}
+      {variante !== 'puce' && (localisationEnCours ? 'Localisation…' : 'Utiliser ma position actuelle')}
+    </button>
+  </div>;
 }

@@ -143,9 +143,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
     );
   }
 
+  const outOfStock = product.stockQuantity <= 0;
   const unitPrice = devis?.prixUnitaire ?? product.publicPrice;
 
   const allerCommander = () => {
+    if (outOfStock) return;
     const parametres = new URLSearchParams();
     if (quantity > 1) parametres.set('q', String(quantity));
     if (refCode) parametres.set('ref', refCode);
@@ -191,10 +193,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             <button
               type="button"
               tabIndex={blocAchatVisible ? -1 : 0}
-              onClick={allerCommander}
+              onClick={allerCommander} disabled={outOfStock}
               className="h-8 px-3.5 rounded-full bg-suguba-profond hover:bg-suguba-profond-2 text-white text-xs font-bold whitespace-nowrap active:scale-95 transition-transform"
             >
-              Commander
+              {outOfStock ? 'Indisponible' : 'Commander'}
             </button>
           </div>
         </div>
@@ -263,13 +265,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 <p className="text-2xl font-bold text-suguba-brand whitespace-nowrap">
                   {Math.round(unitPrice).toLocaleString('fr-FR')} <span className="text-base">FCFA</span>
                 </p>
-                <Button type="button" onClick={allerCommander} className="shrink-0">
-                  <span>Commander</span>
+                <Button type="button" onClick={allerCommander} disabled={outOfStock} className="shrink-0">
+                  <span>{outOfStock ? 'Rupture de stock' : 'Commander'}</span>
                   <ArrowRight className="w-4 h-4" />
                 </Button>
               </div>
               <SelecteurVariantes slug={product.slug} />
-              <BoutonAjoutPanier productId={product.id} quantite={1} />
+              <BoutonAjoutPanier disabled={outOfStock} productId={product.id} quantite={1} />
               <p className="text-xs text-slate-500">
                 Sans créer de compte · Payez à la livraison
               </p>
@@ -345,8 +347,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 <span className="w-8 text-center text-sm font-bold text-slate-900" aria-live="polite">{quantity}</span>
                 <button
                   type="button"
-                  onClick={() => setQuantity((q) => Math.min(50, q + 1))}
-                  disabled={quantity >= 50}
+                  onClick={() => setQuantity((q) => Math.min(50, product.stockQuantity, q + 1))}
+                  disabled={quantity >= Math.min(50, product.stockQuantity)}
                   aria-label="Augmenter la quantité"
                   className="w-10 h-10 flex items-center justify-center text-slate-700 disabled:text-slate-300"
                 >
@@ -360,11 +362,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               <span className="font-bold text-slate-900">{fcfa(unitPrice * quantity)}</span>
             </div>
 
-            <Button type="button" onClick={allerCommander} size="lg" fullWidth>
-              <span>Commander</span>
+            <Button type="button" onClick={allerCommander} disabled={outOfStock} size="lg" fullWidth>
+              <span>{outOfStock ? 'Rupture de stock' : 'Commander'}</span>
               <ArrowRight className="w-4 h-4" />
             </Button>
-            <BoutonAjoutPanier productId={product.id} quantite={quantity} />
+            <BoutonAjoutPanier disabled={outOfStock} productId={product.id} quantite={quantity} />
             <p className="text-xs text-slate-500 text-center">
               Livraison calculée à l&apos;étape suivante · Payez à la livraison
             </p>

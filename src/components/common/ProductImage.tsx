@@ -33,5 +33,5 @@ export default function ProductImage({ compact = false, ...props }: Omit<ImagePr
     );
   }
 
-  return <Image {...props} onError={() => setFailed(true)} />;
+  return <Image {...props} alt={props.alt} onError={() => setFailed(true)} />;
 }

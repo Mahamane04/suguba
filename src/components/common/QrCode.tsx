@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import QRCode from 'qrcode';
+import Image from 'next/image';
 
 /**
  * QR code d'un lien de partage (2026-09-12) — inspiré d'une app de mobile
@@ -31,9 +32,8 @@ export default function QrCode({ value, size = 160 }: { value: string; size?: nu
     return <div style={{ width: size, height: size }} className="bg-slate-100 rounded-2xl animate-pulse" />;
   }
 
-  // eslint-disable-next-line @next/next/no-img-element
   return (
-    <img
+    <Image unoptimized
       src={dataUrl}
       alt={`QR code — ${value}`}
       width={size}

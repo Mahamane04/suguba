@@ -112,8 +112,13 @@ test('un panier de 3 articles chez 2 fournisseurs : 3 commandes, 2 livraisons, 2
   assert.ok(a.deliveryFee > 0, 'premier article du fournisseur 1 : porte la livraison');
   assert.equal(b.deliveryFee, 0, 'même fournisseur : pas de seconde livraison');
   assert.ok(c.deliveryFee > 0, 'fournisseur 2 : sa propre livraison');
-  assert.equal(a.deliveryOtp, b.deliveryOtp, 'un seul code pour le lot du fournisseur 1');
-  assert.notEqual(a.deliveryOtp, c.deliveryOtp);
+  assert.equal(a.deliveryGroup, b.deliveryGroup, 'Un groupe public commun sans publier le code');
+  assert.notEqual(a.deliveryGroup, c.deliveryGroup);
+  for (const o of r.orders) assert.equal(o.deliveryOtp, undefined);
+  const secrets = (await db.query('SELECT id, delivery_otp FROM orders WHERE id = ANY($1)', [r.orders.map(o => o.id)])).rows;
+  const code = id => secrets.find(o => o.id === id).delivery_otp;
+  assert.equal(code(a.id), code(b.id), 'Un seul code reste généré pour le lot du fournisseur 1');
+  assert.notEqual(code(a.id), code(c.id));
 
   const devisB = calculerCommande({ prixFournisseur: 5000, prixVente: 10000, commissionProposee: 1000 },
     { quantite: 2, ville: 'Bamako', revendeurAttribue: true }, REGLAGES_PAR_DEFAUT);

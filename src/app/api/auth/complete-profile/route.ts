@@ -1,6 +1,7 @@
+import { verifyActiveSession } from '@/lib/active-session';
 import { NextRequest, NextResponse } from 'next/server';
 import { parrainageAInscription } from '@/lib/reseau/parrainage';
-import { verifySessionToken, createSessionToken, SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS, SugubaRole } from '@/lib/session';
+import { createSessionToken, SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS, SugubaRole } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { chargerRoles, choisirRoleActif } from '@/lib/profile-roles';
 import { attribuerSlugFournisseur } from '@/lib/shop';
@@ -24,7 +25,7 @@ const ROLES_INSCRIPTION: SugubaRole[] = ['reseller', 'supplier', 'driver', 'dias
  * complet, et le middleware renvoie ici tout profil qui ne l'a pas.
  */
 export async function POST(req: NextRequest) {
-  const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
+  const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value, true);
   if (!session) {
     return NextResponse.json({ error: 'Session invalide ou expirée. Reconnectez-vous.' }, { status: 401 });
   }

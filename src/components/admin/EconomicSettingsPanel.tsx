@@ -153,7 +153,7 @@ export default function EconomicSettingsPanel() {
     });
   }, [r, produits]);
   const nbCommissionChange = impact.filter((l) => l.t.commission !== l.avant).length;
-  const nbARevoir = impact.filter((l) => l.t.statut !== 'ok').length;
+  const nbARevoir = impact.filter((l) => l.t.statut !== 'ok' || l.t.margeNetteSuguba < 0).length;
 
   const maj = <K extends keyof ReglagesPlateforme>(cle: K, valeur: ReglagesPlateforme[K]) =>
     setR((prev) => (prev ? { ...prev, [cle]: valeur } : prev));
@@ -212,14 +212,14 @@ export default function EconomicSettingsPanel() {
           </div>
           <div className="min-w-0">
             <h3 className="font-semibold text-sm text-slate-900">Réglages économiques</h3>
-            <p className="text-xs text-slate-500 truncate">
+            <p className="text-xs text-slate-600 truncate">
               {chargement ? 'Chargement…' : !confirme
                 ? '⚠️ Coûts non confirmés — estimation provisoire en vigueur'
                 : r ? `${libelleMode(r)} · coûts, livraison, codes promo` : 'Coûts, commissions, livraison, codes promo'}
             </p>
           </div>
         </div>
-        {ouvert ? <ChevronUp className="w-4 h-4 text-slate-500 shrink-0" /> : <ChevronDown className="w-4 h-4 text-slate-500 shrink-0" />}
+        {ouvert ? <ChevronUp className="w-4 h-4 text-slate-600 shrink-0" /> : <ChevronDown className="w-4 h-4 text-slate-600 shrink-0" />}
       </button>
 
       {ouvert && r && (
@@ -278,7 +278,7 @@ export default function EconomicSettingsPanel() {
                     <button key={libelle} type="button" role="radio" aria-checked={actif} onClick={() => maj('couvrirCoutsDansLePrix', valeur)}
                       className={`rounded-2xl border p-2.5 text-left bg-white ${actif ? 'border-suguba-profond ring-1 ring-suguba-profond' : 'border-slate-200'}`}>
                       <span className="block text-xs font-semibold text-slate-900">{libelle}</span>
-                      <span className="block text-xs text-slate-500">{detail}</span>
+                      <span className="block text-xs text-slate-600">{detail}</span>
                     </button>
                   );
                 })}
@@ -313,7 +313,7 @@ export default function EconomicSettingsPanel() {
             aide="Calculé en direct avec les réglages ci-dessus, avant d'enregistrer. Enregistrer met à jour la commission ; le prix affiché au client ne change jamais tout seul.">
             <div className="sm:col-span-2 space-y-2">
               {impact.length === 0 ? (
-                <p className="text-xs text-slate-500">Aucun produit en ligne pour l&apos;instant.</p>
+                <p className="text-xs text-slate-600">Aucun produit en ligne pour l&apos;instant.</p>
               ) : (
                 <>
                   <p className="text-xs text-slate-700">
@@ -329,20 +329,20 @@ export default function EconomicSettingsPanel() {
                             {p.name}
                             {p.mode_prix === 'gros' && <span className="ml-1.5 align-middle rounded-full bg-suguba-citron text-suguba-profond text-xs font-semibold px-2 py-0.5">Prix de gros</span>}
                           </p>
-                          <PastilleStatut statut={t.statut} />
+                          <PastilleStatut statut={t.statut} margeNette={t.margeNetteSuguba} />
                         </div>
                         <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-slate-600 [&>span]:whitespace-nowrap">
                           <span>Fournisseur <strong className="text-slate-900">{enF(t.prixFournisseur)}</strong></span>
                           <span>Prix client <strong className="text-slate-900">{enF(t.prixVente)}</strong></span>
                           <span className="inline-flex items-center gap-1">
                             Revendeur{' '}
-                            {t.commission !== avant && <><s className="text-slate-400">{enF(avant)}</s><ArrowRight className="w-3 h-3" /></>}
+                            {t.commission !== avant && <><s className="text-slate-600">{enF(avant)}</s><ArrowRight className="w-3 h-3" /></>}
                             <strong className="text-slate-900">{enF(t.commission)}</strong>
                           </span>
                           <span>Marge Suguba <strong className={t.margeNetteSuguba < 0 ? 'text-rose-700' : 'text-slate-900'}>{enF(t.margeNetteSuguba)}</strong></span>
                         </div>
                         {Math.abs(conseille - t.prixVente) >= r.arrondiPrix && (
-                          <p className="text-xs text-slate-500">
+                          <p className="text-xs text-slate-600">
                             Prix conseillé avec ces réglages : <strong className="text-slate-800">{enF(conseille)}</strong>{' '}
                             ({conseille < t.prixVente ? `${enF(t.prixVente - conseille)} de moins pour le client` : `${enF(conseille - t.prixVente)} de plus`}).
                           </p>
@@ -413,7 +413,7 @@ export default function EconomicSettingsPanel() {
                     <button key={valeur} type="button" role="radio" aria-checked={actif} onClick={() => maj('baseProvisionRefus', valeur)}
                       className={`rounded-2xl border p-2.5 text-left bg-white ${actif ? 'border-suguba-profond ring-1 ring-suguba-profond' : 'border-slate-200'}`}>
                       <span className="block text-xs font-semibold text-slate-900">{libelle}</span>
-                      <span className="block text-xs text-slate-500">{aide}</span>
+                      <span className="block text-xs text-slate-600">{aide}</span>
                     </button>
                   );
                 })}
@@ -531,7 +531,7 @@ export default function EconomicSettingsPanel() {
                       onClick={() => maj('modeLivraisonBamako', valeur)}
                       className={`rounded-2xl border p-2.5 text-left ${actif ? 'border-suguba-profond ring-1 ring-suguba-profond bg-suguba-menthe' : 'border-slate-200 bg-white'}`}>
                       <span className="block text-xs font-semibold text-slate-900">{libelle}</span>
-                      <span className="block text-xs text-slate-500">{aide}</span>
+                      <span className="block text-xs text-slate-600">{aide}</span>
                     </button>
                   );
                 })}
@@ -539,7 +539,7 @@ export default function EconomicSettingsPanel() {
             </div>
             {r.modeLivraisonBamako === 'zones' && r.livraisonZonesBamako ? (
               <div className="sm:col-span-2 space-y-2">
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-600">
                   Rive gauche : Communes I à IV. Rive droite : Communes V et VI. S&apos;applique quand les
                   quartiers du fournisseur et du client sont reconnus ; sinon, tarif « Bamako » ci-dessus.
                 </p>
@@ -556,7 +556,7 @@ export default function EconomicSettingsPanel() {
               </div>
             ) : (
               <div className="sm:col-span-2 space-y-2">
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-slate-600">
                   Remplace le tarif « Bamako » quand les quartiers du fournisseur ET du client sont reconnus.
                   Base + (frais/km × distance à vol d&apos;oiseau), entre le minimum et le maximum.
                   Exemple à 3 km : <strong className="text-slate-800">{enF(Math.min(r.livraisonDistanceBamako.fraisMaximum, Math.max(r.livraisonDistanceBamako.fraisMinimum, r.livraisonDistanceBamako.fraisBase + 3 * r.livraisonDistanceBamako.fraisParKm)))}</strong>.
@@ -864,7 +864,7 @@ function PrixDeGrosReglages({ g, r, onChange }: { g: ReglagesPrixDeGros; r: Regl
           <span>Revendeur gagne <strong className="text-slate-900">{enF(t.commission)}</strong></span>
           <span>Suguba (net) <strong className={t.margeNetteSuguba < 0 ? 'text-rose-700' : 'text-slate-900'}>{enF(t.margeNetteSuguba)}</strong></span>
         </div>
-        <p className="text-xs text-slate-500">Au prix conseillé. Le revendeur peut vendre plus cher (il gagne plus) mais jamais sous le prix minimal.</p>
+        <p className="text-xs text-slate-600">Au prix conseillé. Le revendeur peut vendre plus cher (il gagne plus) mais jamais sous le prix minimal.</p>
       </div>
     </>
   );
@@ -910,7 +910,7 @@ function Section({ id, titre, aide, children }: { id?: string; titre: string; ai
     <section id={id ? `reglage-${id}` : undefined} className="space-y-3 scroll-mt-4">
       <div>
         <h4 className="text-sm font-semibold text-slate-900">{titre}</h4>
-        {aide && <p className="text-xs text-slate-500 mt-0.5">{aide}</p>}
+        {aide && <p className="text-xs text-slate-600 mt-0.5">{aide}</p>}
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">{children}</div>
     </section>
@@ -923,9 +923,9 @@ function Num({ l, v, on, suffixe, aide, info }: { l: string; v: number; on: (v: 
       <span className="inline-flex items-center gap-1">{l}{info && <InfoBulle texte={info} />}</span>
       <div className="flex items-center mt-1">
         <ChampNombre valeur={v} onChange={on} className="flex-1 min-w-0" />
-        {suffixe && <span className="ml-2 text-xs font-normal text-slate-500 whitespace-nowrap">{suffixe}</span>}
+        {suffixe && <span className="ml-2 text-xs font-normal text-slate-600 whitespace-nowrap">{suffixe}</span>}
       </div>
-      {aide && <span className="block mt-1 text-xs font-normal text-slate-500">{aide}</span>}
+      {aide && <span className="block mt-1 text-xs font-normal text-slate-600">{aide}</span>}
     </label>
   );
 }
@@ -973,7 +973,8 @@ function InfoBulle({ texte }: { texte: string }) {
   );
 }
 
-function PastilleStatut({ statut }: { statut: string }) {
+function PastilleStatut({ statut, margeNette }: { statut: string; margeNette: number }) {
+  if (margeNette < 0) return <span className="shrink-0 rounded-full bg-amber-50 text-amber-900 text-xs font-semibold px-2 py-0.5">Vente à perte</span>;
   if (statut === 'ok') return <span className="shrink-0 rounded-full bg-suguba-menthe text-suguba-profond text-xs font-semibold px-2 py-0.5">Rentable</span>;
   return (
     <span className="shrink-0 rounded-full bg-rose-50 text-rose-700 text-xs font-semibold px-2 py-0.5">
@@ -994,7 +995,7 @@ function Avertissement({ children }: { children: React.ReactNode }) {
 function BoutonSupprimer({ libelle, onClick }: { libelle: string; onClick: () => void }) {
   return (
     <button type="button" aria-label={libelle} onClick={onClick}
-      className="w-11 h-11 shrink-0 rounded-xl border border-slate-200 text-slate-500 hover:text-rose-600 flex items-center justify-center">
+      className="w-11 h-11 shrink-0 rounded-xl border border-slate-200 text-slate-600 hover:text-rose-600 flex items-center justify-center">
       <Trash2 className="w-4 h-4" />
     </button>
   );

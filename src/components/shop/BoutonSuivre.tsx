@@ -65,21 +65,21 @@ export default function BoutonSuivre({ slug, abonnesInitial }: { slug: string; a
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={() => (telephone || suit ? basculer(telephone) : setSaisieOuverte(true))}
           disabled={enCours}
           aria-pressed={suit}
-          className={`inline-flex items-center gap-2 h-11 px-4 rounded-2xl text-xs font-bold transition-all active:scale-[0.98] ${
-            suit ? 'bg-white/10 text-white border border-white/20' : 'bg-white text-slate-900'
+          className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 h-11 px-5 rounded-2xl text-xs font-bold transition-all active:scale-[0.98] ${
+            suit ? 'bg-suguba-menthe text-suguba-profond border border-suguba-profond/20' : 'bg-suguba-profond hover:bg-suguba-profond-2 text-white'
           }`}
         >
           {enCours ? <Loader2 className="w-4 h-4 animate-spin" /> : suit ? <BellRing className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
-          {suit ? 'Abonné' : 'Suivre cette boutique'}
+          {suit ? 'Abonné' : 'Suivre'}
         </button>
         {abonnes > 0 && (
-          <span className="text-xs text-slate-300">
+          <span className="text-xs text-slate-500 whitespace-nowrap">
             {abonnes} abonné{abonnes > 1 ? 's' : ''}
           </span>
         )}
@@ -94,24 +94,24 @@ export default function BoutonSuivre({ slug, abonnesInitial }: { slug: string; a
             onChange={(e) => setTelephone(e.target.value)}
             placeholder="Votre numéro WhatsApp"
             aria-label="Votre numéro WhatsApp"
-            className="h-11 flex-1 min-w-0 rounded-2xl bg-white/10 border border-white/20 px-3 text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-white/40"
+            className="h-11 flex-1 min-w-0 rounded-2xl bg-white border border-slate-200 px-3 text-base sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-suguba-brand/30 focus:border-suguba-brand"
           />
           <button
             type="button"
             onClick={() => basculer(telephone)}
             disabled={enCours || telephone.replace(/\D/g, '').length < 8}
-            className="h-11 px-4 rounded-2xl bg-white text-slate-900 text-xs font-bold disabled:opacity-50"
+            className="h-11 px-4 rounded-2xl bg-suguba-profond text-white text-xs font-bold disabled:opacity-50"
           >
             Valider
           </button>
         </div>
       )}
 
-      {message && <p className="text-xs text-amber-300">{message}</p>}
+      {message && <p className="text-xs text-amber-700">{message}</p>}
       {suit && (
-        <p className="text-xs text-slate-300">
+        <p className="text-xs text-slate-500">
           Vous serez prévenu des nouveautés et des promotions.{' '}
-          <a href="/boutiques-suivies" className="underline font-bold text-white">Mes boutiques suivies</a>
+          <a href="/boutiques-suivies" className="underline font-bold text-suguba-brand-dark">Mes boutiques suivies</a>
         </p>
       )}
     </div>

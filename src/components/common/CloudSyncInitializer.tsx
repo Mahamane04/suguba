@@ -33,8 +33,9 @@ export default function CloudSyncInitializer() {
     // ouverte dans un autre onglet, ou une page restaurée depuis le cache du
     // navigateur (iPhone), le layout ne remonte pas et l'identité restait
     // figée sur « visiteur » — d'où la double connexion signalée.
-    const auRetour = () => { if (document.visibilityState === 'visible') rafraichirIdentite(); };
-    const aLaRestauration = (e: PageTransitionEvent) => { if (e.persisted) rafraichirIdentite({ forcer: true }); };
+    const recharger = (forcer = false) => rafraichirIdentite({ forcer }).then((moi) => cloudSyncService.fetchOrdersFromCloudSiEligible(moi?.authenticated ? moi.role : null));
+    const auRetour = () => { if (document.visibilityState === 'visible') void recharger(); };
+    const aLaRestauration = (e: PageTransitionEvent) => { if (e.persisted) void recharger(true); };
     document.addEventListener('visibilitychange', auRetour);
     window.addEventListener('pageshow', aLaRestauration);
 

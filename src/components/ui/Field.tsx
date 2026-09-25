@@ -1,4 +1,6 @@
-import React, { forwardRef } from 'react';
+'use client';
+
+import React, { forwardRef, createContext, useContext, useId } from 'react';
 
 /**
  * Champs de formulaire communs (2026-09-11).
@@ -10,8 +12,12 @@ import React, { forwardRef } from 'react';
 
 const BASE_CHAMP =
   'w-full rounded-2xl border border-slate-200 bg-white px-3.5 text-base sm:text-sm text-slate-900 ' +
-  'placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-suguba-brand/30 focus:border-suguba-brand ' +
+  'placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-suguba-profond focus:border-suguba-profond ' +
   'disabled:bg-slate-50 disabled:text-slate-500 aria-[invalid=true]:border-rose-400';
+
+const FieldContext = createContext<{ id: string; description?: string; invalid: boolean; required: boolean } | null>(null);
+
+export function useFieldContext() { return useContext(FieldContext); }
 
 export function Field({
   label,
@@ -28,35 +34,43 @@ export function Field({
   requis?: boolean;
   children: React.ReactNode;
 }) {
+  const generated = useId();
+  const id = htmlFor || generated;
+  const description = (erreur || aide) ? `${id}-description` : undefined;
   return (
+    <FieldContext.Provider value={{ id, description, invalid: Boolean(erreur), required: Boolean(requis) }}>
     <div className="space-y-1.5">
-      <label htmlFor={htmlFor} className="block text-xs font-bold text-slate-700">
+      <label htmlFor={id} className="block text-xs font-bold text-slate-700">
         {label}{requis && <span className="text-rose-600"> *</span>}
       </label>
       {children}
       {erreur ? (
-        <p className="text-xs font-semibold text-rose-600">{erreur}</p>
+        <p id={description} role="alert" className="text-xs font-semibold text-rose-700">{erreur}</p>
       ) : aide ? (
-        <p className="text-xs text-slate-500">{aide}</p>
+        <p id={description} className="text-xs text-slate-600">{aide}</p>
       ) : null}
     </div>
+    </FieldContext.Provider>
   );
 }
 
 export const Input = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTMLInputElement>>(
   function Input({ className = '', ...props }, ref) {
-    return <input ref={ref} className={`${BASE_CHAMP} h-12 ${className}`} {...props} />;
+    const field = useContext(FieldContext);
+    return <input {...props} id={props.id || field?.id} aria-describedby={[field?.description, props['aria-describedby']].filter(Boolean).join(' ') || undefined} aria-invalid={field?.invalid || props['aria-invalid']} required={field?.required || props.required} ref={ref} className={`${BASE_CHAMP} h-12 ${className}`} />;
   },
 );
 
 export const Select = forwardRef<HTMLSelectElement, React.SelectHTMLAttributes<HTMLSelectElement>>(
   function Select({ className = '', children, ...props }, ref) {
-    return <select ref={ref} className={`${BASE_CHAMP} h-12 ${className}`} {...props}>{children}</select>;
+    const field = useContext(FieldContext);
+    return <select {...props} id={props.id || field?.id} aria-describedby={[field?.description, props['aria-describedby']].filter(Boolean).join(' ') || undefined} aria-invalid={field?.invalid || props['aria-invalid']} required={field?.required || props.required} ref={ref} className={`${BASE_CHAMP} h-12 ${className}`}>{children}</select>;
   },
 );
 
 export const Textarea = forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttributes<HTMLTextAreaElement>>(
   function Textarea({ className = '', ...props }, ref) {
-    return <textarea ref={ref} className={`${BASE_CHAMP} py-3 ${className}`} {...props} />;
+    const field = useContext(FieldContext);
+    return <textarea {...props} id={props.id || field?.id} aria-describedby={[field?.description, props['aria-describedby']].filter(Boolean).join(' ') || undefined} aria-invalid={field?.invalid || props['aria-invalid']} required={field?.required || props.required} ref={ref} className={`${BASE_CHAMP} py-3 ${className}`} />;
   },
 );

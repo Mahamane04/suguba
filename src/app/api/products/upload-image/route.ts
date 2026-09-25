@@ -1,5 +1,9 @@
+import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
+import { normaliserImage } from '@/lib/image-upload';
+import { randomUUID } from 'node:crypto';
+import { verifyActiveSession } from '@/lib/active-session';
 import { NextRequest, NextResponse } from 'next/server';
-import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
+import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
 const BUCKET_NAME = 'product-images';
@@ -14,7 +18,9 @@ const MAX_SIZE_BYTES = 5 * 1024 * 1024;
  * pouvoir remplir le bucket.
  */
 export async function POST(req: NextRequest) {
-  const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
+  const denied = await refusSansPermissionAdmin(req, 'POST /api/products/upload-image');
+  if (denied) return denied;
+  const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value);
   if (!session || !['admin', 'supplier'].includes(session.role)) {
     return NextResponse.json({ error: 'Authentification fournisseur ou admin requise.' }, { status: 401 });
   }
@@ -38,24 +44,26 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Fichier trop volumineux (5MB max).' }, { status: 400 });
     }
 
-    const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
-    const path = `${session.role}/${session.uid}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    let normalized: Buffer;
+    try { normalized = await normaliserImage(file); }
+    catch { return NextResponse.json({ error: 'Image illisible ou trop grande. Envoyez une photo JPEG, PNG ou WebP, 5 Mo et 16 mégapixels maximum.' }, { status: 400 }); }
+    const path = `${session.role}/${session.uid}/${randomUUID()}.webp`;
 
-    const { error: uploadErr } = await admin.storage.from(BUCKET_NAME).upload(path, file, {
-      contentType: file.type,
+    const { error: uploadErr } = await admin.storage.from(BUCKET_NAME).upload(path, normalized, {
+      contentType: 'image/webp',
       cacheControl: '31536000',
       upsert: false,
     });
 
     if (uploadErr) {
-      return NextResponse.json({ error: uploadErr.message }, { status: 500 });
+      return NextResponse.json({ error: 'Envoi impossible. Réessayez.' }, { status: 500 });
     }
 
     const { data: publicUrlData } = admin.storage.from(BUCKET_NAME).getPublicUrl(path);
 
     return NextResponse.json({ success: true, url: publicUrlData.publicUrl });
   } catch (error: any) {
-    console.error('[API upload-image ERROR]', error);
-    return NextResponse.json({ error: error.message || 'Erreur serveur.' }, { status: 500 });
+    console.error('[API upload-image] Échec de traitement.');
+    return NextResponse.json({ error: 'Envoi impossible. Réessayez.' }, { status: 500 });
   }
 }

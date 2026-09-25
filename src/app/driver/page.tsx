@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import ProductImage from '@/components/common/ProductImage';
+import OrdersSyncNotice from '@/components/common/OrdersSyncNotice';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import CloudSyncBadge from '@/components/common/CloudSyncBadge';
@@ -56,6 +57,7 @@ export default function DriverDashboardPage() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
       <Header />
+      <OrdersSyncNotice />
 
       <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
         
@@ -87,7 +89,7 @@ export default function DriverDashboardPage() {
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-2xl bg-slate-50 p-3">
               <p className="text-xs font-bold text-slate-500 uppercase">Encaissé à la livraison</p>
-              <p className="text-lg font-bold text-slate-900">{totalCollectedCash.toLocaleString('fr-FR')} F</p>
+              <p className="text-lg font-bold text-slate-900">{state.ordersSync === 'ready' ? totalCollectedCash.toLocaleString('fr-FR') : '—'} F</p>
             </div>
             <Link
               href="/driver/earnings"
@@ -104,14 +106,14 @@ export default function DriverDashboardPage() {
           <div className="flex items-center justify-between">
             <h2 className="font-bold text-base text-slate-900 flex items-center">
               <Navigation className="w-4 h-4 mr-2 text-amber-600" />
-              <span>Mes courses en cours ({myAssignedOrders.length})</span>
+              <span>Mes courses en cours ({state.ordersSync === 'ready' ? myAssignedOrders.length : '—'})</span>
             </h2>
           </div>
 
           {myAssignedOrders.length === 0 ? (
             <div className="bg-white rounded-3xl p-8 text-center text-slate-500 text-xs border border-slate-200 shadow-xs">
               <Truck className="w-10 h-10 mx-auto text-slate-300 mb-2" />
-              Aucune livraison en attente pour le moment.
+              {state.ordersSync === 'ready' ? 'Aucune livraison en attente pour le moment.' : 'La liste des courses n’est pas encore confirmée.'}
             </div>
           ) : (
             <div className="space-y-4">
@@ -238,7 +240,7 @@ export default function DriverDashboardPage() {
 
           <div className="divide-y divide-slate-100">
             {myDeliveredOrders.length === 0 && (
-              <EmptyState icon={Package} title="Aucune livraison effectuée pour le moment." />
+              <EmptyState icon={Package} title={state.ordersSync === 'ready' ? 'Aucune livraison effectuée pour le moment.' : 'Historique non confirmé.'} />
             )}
             {myDeliveredOrders.map((order) => (
               <div key={order.id} className="py-3 flex items-center justify-between">

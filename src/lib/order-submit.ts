@@ -1,3 +1,4 @@
+import { rememberOrderAccess, privateSessionGeneration } from './order-access-client';
 import type { Order } from '@/types';
 import { normaliserCommande, type OrderInput } from './order-input';
 
@@ -73,6 +74,7 @@ export class OrderCheckout {
  * le serveur peut avoir enregistré la commande malgré une réponse perdue.
  */
 export async function soumettreCommande(attempt: OrderAttempt): Promise<Order> {
+  const generation = privateSessionGeneration();
   let res: Response;
   let json;
   const controller = new AbortController();
@@ -89,11 +91,13 @@ export async function soumettreCommande(attempt: OrderAttempt): Promise<Order> {
   } finally {
     clearTimeout(timeout);
   }
-  if (!res.ok || json?.success !== true || json.order?.creationConfirmed !== true || !json.order?.id || !json.order?.orderNumber || !/^\d{4}$/.test(json.order?.deliveryOtp || '')) {
+  if (!res.ok || json?.success !== true || json.order?.creationConfirmed !== true || !json.order?.id || !json.order?.orderNumber) {
     // Un 403/429 du proxy peut suivre une première réponse perdue. Il ne
     // prouve pas l'absence de commande : garder la clé pour la retrouver.
     throw new OrderSubmissionError(json?.error || 'Confirmation non reçue. Réessayez.',
       json?.definitive === true && (res.status === 400 || res.status === 409));
   }
+  if (generation !== privateSessionGeneration()) throw new OrderSubmissionError('Votre session a changé. Retrouvez cette commande depuis votre compte d’origine.', false);
+  rememberOrderAccess(json.order.orderNumber, attempt.key);
   return json.order as Order;
 }

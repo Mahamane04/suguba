@@ -1,7 +1,8 @@
+import { verifyActiveSession } from '@/lib/active-session';
 import { NextRequest, NextResponse } from 'next/server';
 import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
+import { SESSION_COOKIE_NAME } from '@/lib/session';
 
 /**
  * Remplace l'ancien `fetchOrdersFromCloud` qui lisait la table `orders`
@@ -26,14 +27,14 @@ import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
 export async function GET(req: NextRequest) {
   const refusEquipe = await refusSansPermissionAdmin(req, 'GET /api/orders/feed');
   if (refusEquipe) return refusEquipe;
-  const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
+  const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value);
   if (!session || !['admin', 'driver', 'reseller'].includes(session.role)) {
     return NextResponse.json({ error: 'Authentification interne requise.' }, { status: 401 });
   }
 
   const admin = getSupabaseAdmin();
   if (!admin) {
-    return NextResponse.json({ orders: [], cloud: false });
+    return NextResponse.json({ error: 'Commandes indisponibles. Réessayez.' }, { status: 503 });
   }
 
   let query = admin.from('orders').select('*').order('created_at', { ascending: false });
@@ -49,12 +50,10 @@ export async function GET(req: NextRequest) {
 
   const { data, error } = await query;
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: 'Commandes indisponibles. Réessayez.' }, { status: 503 });
   }
 
-  // Le code de livraison ne sort que pour l'admin : ni le livreur (qui le
-  // fait saisir au client puis vérifier par le serveur) ni le revendeur
-  // (qui n'a rien à voir avec la remise du colis) n'ont à le connaître.
+  // Le code de remise est exclusivement transmis au téléphone du destinataire.
   // Point de retrait pour le livreur (2026-09-24) : le dépôt du fournisseur
   // de chaque produit — il affichait seulement « Chez <nom> », sans adresse.
   const retraits = new Map<string, Record<string, unknown>>();
@@ -81,7 +80,8 @@ export async function GET(req: NextRequest) {
   }
 
   const orders = (data || []).map((o) => {
-    if (session.role === 'admin') return o;
+    // Aucun rôle navigateur ne reçoit le secret de remise.
+    if (session.role === 'admin') { const { delivery_otp, ...safe } = o; return safe; }
     // Le code de ramassage appartient au FOURNISSEUR : le livreur doit le lui
     // demander, sinon il pourrait valider un ramassage qui n'a pas eu lieu.
     const { delivery_otp, pickup_code, pricing_snapshot, ...sansCodes } = o;

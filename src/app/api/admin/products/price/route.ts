@@ -1,7 +1,8 @@
+import { verifyActiveSession } from '@/lib/active-session';
 import { annoncerBaissePrix, annoncerNouveauProduit } from '@/lib/reseau/notifications';
 import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
 import { NextRequest, NextResponse } from 'next/server';
-import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
+import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { chargerReglages } from '@/lib/platform-settings';
 import { calculerTarif } from '@/lib/pricing';
@@ -25,7 +26,7 @@ import { calculerTarif } from '@/lib/pricing';
 export async function POST(req: NextRequest) {
   const refusEquipe = await refusSansPermissionAdmin(req, 'POST /api/admin/products/price');
   if (refusEquipe) return refusEquipe;
-  const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
+  const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value);
   if (!session || session.role !== 'admin') {
     return NextResponse.json({ error: 'Authentification admin requise.' }, { status: 401 });
   }

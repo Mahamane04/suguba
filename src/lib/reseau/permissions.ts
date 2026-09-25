@@ -75,14 +75,9 @@ export function permissionsDuRole(role: RoleEquipe): Permission[] {
   return trouve.permissions === 'toutes' ? [...PERMISSIONS] : trouve.permissions;
 }
 
-/**
- * Permissions effectives d'un membre : celles de son rôle, plus les
- * permissions ajoutées à la main. Un membre sans ligne d'équipe — cas de tous
- * les admins existants avant cette migration — garde TOUT : sinon la mise en
- * production aurait enfermé dehors les administrateurs actuels.
- */
+/** Aucun droit implicite en l’absence d’affectation explicite. */
 export function permissionsEffectives(membre: { teamRole?: string | null; permissions?: string[] | null } | null): Permission[] {
-  if (!membre || !membre.teamRole) return [...PERMISSIONS];
+  if (!membre || !membre.teamRole) return [];
   const base = permissionsDuRole(membre.teamRole as RoleEquipe);
   const sup = (membre.permissions || []).filter((p): p is Permission => (PERMISSIONS as readonly string[]).includes(p));
   return Array.from(new Set([...base, ...sup]));

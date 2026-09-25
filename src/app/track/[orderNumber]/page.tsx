@@ -1,9 +1,12 @@
 'use client';
 
+import { orderAccessKey } from '@/lib/order-access-client';
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import ProductImage from '@/components/common/ProductImage';
+import DeliveryCodeNotice from '@/components/common/DeliveryCodeNotice';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
@@ -56,7 +59,7 @@ export default function OrderTrackingPage() {
       const res = await fetch('/api/orders/track', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderNumber, phone: tel }),
+        body: JSON.stringify({ orderNumber, phone: tel, accessKey: orderAccessKey(orderNumber) }),
       });
       const json = await res.json();
       if (res.ok && json.success) setCommandeDistante(json.commande);
@@ -80,7 +83,7 @@ export default function OrderTrackingPage() {
       const res = await fetch('/api/orders/track', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderNumber, phone: telephone }),
+        body: JSON.stringify({ orderNumber, phone: telephone, accessKey: orderAccessKey(orderNumber) }),
       });
       const json = await res.json();
       if (!res.ok || !json.success) {
@@ -267,22 +270,8 @@ export default function OrderTrackingPage() {
             </div>
           </div>
 
-          {/* Code secret : inutile (et trompeur) sur une commande annulée ou retournée. */}
-          {!['cancelled', 'returned'].includes(order.status) && (
-          <div className="bg-gradient-to-br from-amber-500 to-orange-600 text-white rounded-2xl p-5 shadow-lg space-y-2 text-center">
-            <div className="flex items-center justify-center space-x-1.5 text-xs font-bold text-amber-100 uppercase tracking-wider">
-              <KeyRound className="w-4 h-4" />
-              <span>Votre Code Secret de Livraison</span>
-            </div>
-            
-            <div className="text-4xl font-bold tracking-[0.4em] text-white py-1">
-              {order.deliveryOtp}
-            </div>
-
-            <p className="text-xs text-amber-100/90 leading-tight">
-              À donner <strong>UNIQUEMENT</strong> au livreur lors de la remise physique de votre colis.
-            </p>
-          </div>
+          {!['delivered', 'cancelled', 'returned'].includes(order.status) && (
+            <DeliveryCodeNotice orderNumber={order.orderNumber} />
           )}
 
           {/* Timeline */}

@@ -4,7 +4,8 @@ import React, { useEffect, useState } from 'react';
 import { UserCog, Loader2, ShieldCheck } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
-import { Field, Select } from '@/components/ui/Field';
+import { Field } from '@/components/ui/Field';
+import ChoicePicker from '@/components/ui/ChoicePicker';
 import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
 
@@ -12,8 +13,7 @@ import { useToast } from '@/components/ui/Toast';
  * Équipe et permissions (§ 50 des écrans).
  *
  * Deux garde-fous visibles ici :
- *   — un admin sans rôle d'équipe garde TOUS les droits (les administrateurs
- *     existants ne perdent rien le jour de la mise en production) ;
+ *   — un admin sans rôle d'équipe doit recevoir une affectation explicite ;
  *   — personne ne peut modifier ses propres droits (voir /api/admin/equipe).
  */
 
@@ -94,8 +94,8 @@ export default function EquipeAdminPage() {
                     <p className="text-sm font-bold text-slate-900 truncate">{m.nom}</p>
                     <p className="text-xs text-slate-500">{m.contact || '—'}</p>
                   </div>
-                  <StatusPill ton={m.teamRole ? 'info' : 'succes'}>
-                    {m.teamRole ? roles.find((r) => r.valeur === m.teamRole)?.libelle || m.teamRole : 'Tous les droits'}
+                  <StatusPill ton={m.teamRole ? 'info' : 'attente'}>
+                    {m.teamRole ? roles.find((r) => r.valeur === m.teamRole)?.libelle || m.teamRole : 'Affectation requise'}
                   </StatusPill>
                 </div>
 
@@ -106,9 +106,9 @@ export default function EquipeAdminPage() {
                 ) : (
                   <>
                     <Field label="Rôle d’équipe" htmlFor={`role-${m.id}`} aide={role?.description}>
-                      <Select id={`role-${m.id}`} value={choix[m.id] || 'support'} onChange={(e) => setChoix((v) => ({ ...v, [m.id]: e.target.value }))}>
-                        {roles.map((r) => <option key={r.valeur} value={r.valeur}>{r.libelle}</option>)}
-                      </Select>
+                      <ChoicePicker id={`role-${m.id}`} valeur={choix[m.id] || 'support'}
+                        onChange={(v) => setChoix((s) => ({ ...s, [m.id]: v }))}
+                        choix={roles.map((r) => ({ valeur: r.valeur, libelle: r.libelle }))} />
                     </Field>
                     <Button size="sm" fullWidth disabled={enCours === m.id} onClick={() => enregistrer(m)}>
                       {enCours === m.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserCog className="w-4 h-4" />}

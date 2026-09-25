@@ -33,7 +33,7 @@ export default function GalerieBoutique({ images, nom }: { images: string[]; nom
       {images.length > 1 && (
         <div className="flex justify-center gap-1.5" aria-hidden="true">
           {images.map((url, i) => (
-            <span key={url} className={`h-1.5 rounded-full transition-all ${i === index ? 'w-5 bg-white' : 'w-1.5 bg-white/40'}`} />
+            <span key={url} className={`h-1.5 rounded-full transition-all ${i === index ? 'w-5 bg-suguba-profond' : 'w-1.5 bg-slate-300'}`} />
           ))}
         </div>
       )}

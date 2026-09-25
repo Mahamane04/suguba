@@ -1,8 +1,9 @@
+import { mayTransitionOrder } from '@/lib/order-transitions';
+import { verifyActiveSession } from '@/lib/active-session';
 import { NextRequest, NextResponse } from 'next/server';
 import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
-import { verrouillerCommissionDeLivraison } from '@/lib/commissions';
+import { SESSION_COOKIE_NAME } from '@/lib/session';
 
 /** Mises à jour internes uniquement. Création atomique : /api/orders/create. */
 
@@ -17,7 +18,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
+    const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value);
     if (!session || !['admin', 'driver', 'supplier'].includes(session.role)) {
       return NextResponse.json({ error: 'Authentification requise pour modifier une commande.' }, { status: 401 });
     }
@@ -66,8 +67,8 @@ export async function POST(req: NextRequest) {
 
     // Le passage à « livré » passe par la vérification du code secret
     // (/api/driver/verify-delivery-otp). Seul l'admin peut le forcer ici.
-    if (statut === 'delivered' && existing.status !== 'delivered' && session.role !== 'admin') {
-      return NextResponse.json({ error: 'Le statut « livré » ne peut être posé que via la validation du code secret.' }, { status: 403 });
+    if (statut && !mayTransitionOrder(session.role, existing.status, statut)) {
+      return NextResponse.json({ error: 'Cette transition exige le parcours de validation approprié.' }, { status: 403 });
     }
 
     const maj: Record<string, unknown> = {};
@@ -93,19 +94,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, cloud: true, created: false, inchange: true });
     }
 
-    const { error } = await admin.from('orders').update(maj).eq('id', order.id);
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-    // Livraison confirmée pour la première fois : la commission passe en
-    // `locked` avec son délai de sécurité. Le revendeur est celui enregistré
-    // en base à la création — jamais un code renvoyé par le navigateur.
-    if (statut === 'delivered' && existing.status !== 'delivered') {
-      await verrouillerCommissionDeLivraison(admin, order.id, existing.reseller_id || null);
+    if (statut === 'dispatched' && !(maj.assigned_driver_id ?? existing.assigned_driver_id)) return NextResponse.json({ error: 'Choisissez un livreur avant le dispatch.' }, { status: 400 });
+    if (maj.assigned_driver_id) {
+      const { data: driver, error: driverError } = await admin.from('drivers').select('active_status').eq('profile_id', maj.assigned_driver_id).maybeSingle();
+      if (driverError || !driver?.active_status) return NextResponse.json({ error: 'Livreur non autorisé au dispatch.' }, { status: 403 });
     }
+    const { data: updated, error } = await admin.from('orders').update(maj).eq('id', order.id).eq('status', existing.status).select('id').maybeSingle();
+    if (error) return NextResponse.json({ error: 'Mise à jour non confirmée. Actualisez puis réessayez.' }, { status: 500 });
+
+    if (!updated) return NextResponse.json({ error: 'Commande modifiée ailleurs. Actualisez.' }, { status: 409 });
+    // Le trigger de la migration-audit-integrite effectue les effets métier atomiquement.
 
     return NextResponse.json({ success: true, cloud: true, created: false });
   } catch (error: any) {
     console.error('[API orders/sync ERROR]', error);
-    return NextResponse.json({ error: error.message || 'Erreur serveur.' }, { status: 500 });
+    return NextResponse.json({ error: 'Mise à jour non confirmée. Réessayez.' }, { status: 500 });
   }
 }

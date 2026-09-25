@@ -5,7 +5,8 @@ import { Store, ShoppingBag, Truck, Shield, Globe, ArrowRight, Plus, Loader2, Ch
 import PageReseau from '@/components/reseau/PageReseau';
 import { Card } from '@/components/ui/Surface';
 import Button from '@/components/ui/Button';
-import { Field, Input, Select } from '@/components/ui/Field';
+import { Field, Input } from '@/components/ui/Field';
+import ChoicePicker from '@/components/ui/ChoicePicker';
 import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
 import DialCodePicker from '@/components/common/DialCodePicker';
 import { DEFAULT_DIAL_CODE } from '@/lib/dial-codes';
@@ -176,9 +177,8 @@ export default function MesProfilsPage() {
                     {r === 'driver' && (
                       <>
                         <Field label="Véhicule" htmlFor="p-vehicule">
-                          <Select id="p-vehicule" value={fiche.vehicleType} onChange={(e) => setFiche({ ...fiche, vehicleType: e.target.value })}>
-                            {['Moto', 'Tricycle', 'Voiture', 'Vélo'].map((v) => <option key={v}>{v}</option>)}
-                          </Select>
+                          <ChoicePicker id="p-vehicule" valeur={fiche.vehicleType} onChange={(v) => setFiche({ ...fiche, vehicleType: v })}
+                            choix={['Moto', 'Tricycle', 'Voiture', 'Vélo'].map((v) => ({ valeur: v, libelle: v }))} />
                         </Field>
                         <Field label="Zone où vous livrez" htmlFor="p-zone">
                           <NeighborhoodPicker id="p-zone" value={fiche.zone} onChange={(q) => setFiche({ ...fiche, zone: q })} placeholder="Choisir un quartier" />

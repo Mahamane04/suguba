@@ -37,6 +37,10 @@ export const PERMISSION_PAR_ROUTE: Record<string, Permission> = {
   'POST /api/payouts/initiate': 'finance.payer',
   'GET /api/orders/feed': 'commande.lire',
   'POST /api/orders/sync': 'commande.modifier',
+  'POST /api/products/sync': 'produit.moderer',
+  'POST /api/products/images': 'produit.moderer',
+  'POST /api/products/upload-image': 'produit.moderer',
+  'POST /api/products/apercu-prix': 'produit.prix',
 };
 
 /**

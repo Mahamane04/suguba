@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useEffect, useId } from 'react';
+import React, { useId } from 'react';
+import { createPortal } from 'react-dom';
+import { useModalFocus } from '@/hooks/useModalFocus';
 import { X } from 'lucide-react';
 
 /**
@@ -31,35 +33,14 @@ export default function Sheet({
 }) {
   const idTitre = useId();
 
-  useEffect(() => {
-    if (!ouvert) return;
-    const surTouche = (e: KeyboardEvent) => { if (e.key === 'Escape') onFermer(); };
-    // Simple `overflow:hidden` sur body ne suffit pas sur iOS Safari : la page
-    // derrière la feuille continue de "rebondir" au doigt (scroll chaining),
-    // ce qui donnait l'impression d'un défilement dur/collant une fois la
-    // feuille ouverte. On fige aussi la position du body pendant l'ouverture.
-    const y = window.scrollY;
-    const { overflow, position, top, width } = document.body.style;
-    document.body.style.overflow = 'hidden';
-    document.body.style.position = 'fixed';
-    document.body.style.top = `-${y}px`;
-    document.body.style.width = '100%';
-    document.addEventListener('keydown', surTouche);
-    return () => {
-      document.body.style.overflow = overflow;
-      document.body.style.position = position;
-      document.body.style.top = top;
-      document.body.style.width = width;
-      window.scrollTo(0, y);
-      document.removeEventListener('keydown', surTouche);
-    };
-  }, [ouvert, onFermer]);
+  const { host, ref } = useModalFocus(ouvert, onFermer);
+  if (!ouvert || !host) return null;
 
-  if (!ouvert) return null;
-
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 bg-slate-900/60 flex items-end sm:items-center justify-center sm:p-4" onClick={onFermer}>
       <div
+        ref={ref}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-labelledby={idTitre}
@@ -81,7 +62,7 @@ export default function Sheet({
             type="button"
             onClick={onFermer}
             aria-label="Fermer"
-            className="w-10 h-10 -mr-2 -mt-1 rounded-full hover:bg-slate-100 flex items-center justify-center shrink-0"
+            className="w-11 h-11 -mr-2 -mt-1 rounded-full hover:bg-slate-100 flex items-center justify-center shrink-0"
           >
             <X className="w-5 h-5 text-slate-600" />
           </button>
@@ -95,6 +76,6 @@ export default function Sheet({
           <div className="p-4 border-t border-slate-100 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] sm:pb-4 shrink-0">{pied}</div>
         )}
       </div>
-    </div>
+    </div>, host
   );
 }

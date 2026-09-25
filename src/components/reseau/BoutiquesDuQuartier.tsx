@@ -95,11 +95,11 @@ export function CarteBoutiqueProche({ b, carrousel = false }: { b: BoutiqueProch
       </div>
       <div className="px-3 pt-7 pb-3 space-y-1.5">
         <p className="text-sm font-bold text-slate-900 truncate">{b.nom}</p>
-        {sousTitre && <p className="text-xs text-slate-500 truncate">{sousTitre}</p>}
+        {sousTitre && <p className="text-xs text-slate-600 truncate">{sousTitre}</p>}
         <div className="flex items-center gap-1.5 flex-wrap">
           <BadgeProximite b={b} />
           {b.niveau === 'proche' && b.quartier && (
-            <span className="text-xs text-slate-500 truncate max-w-[120px]">{b.quartier}</span>
+            <span className="text-xs text-slate-600 truncate max-w-[120px]">{b.quartier}</span>
           )}
           {b.abonnes > 0 && (
             <span className="inline-flex items-center gap-0.5 text-xs text-slate-400">
@@ -143,7 +143,7 @@ export default function BoutiquesDuQuartier({ quartier }: { quartier: string | n
       <div className="flex items-end justify-between gap-3">
         <div className="min-w-0">
           <h2 className="text-base font-bold text-slate-900">Boutiques près de chez vous</h2>
-          <p className="text-xs text-slate-500 truncate">
+          <p className="text-xs text-slate-600 truncate">
             <MapPin className="w-3 h-3 inline -mt-0.5 text-suguba-brand-dark" /> {situe} et alentours
           </p>
         </div>
@@ -163,7 +163,7 @@ export default function BoutiquesDuQuartier({ quartier }: { quartier: string | n
       ) : boutiques.length === 0 ? (
         <div className="bg-white rounded-3xl border border-slate-200 p-4 space-y-3">
           <p className="text-sm font-bold text-slate-900">Pas encore de boutique près de {situe}</p>
-          <p className="text-xs text-slate-500">Regardez dans un quartier voisin :</p>
+          <p className="text-xs text-slate-600">Regardez dans un quartier voisin :</p>
           <QuartiersVoisins quartier={situe} />
         </div>
       ) : (

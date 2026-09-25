@@ -1,5 +1,7 @@
+import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
+import { verifyActiveSession } from '@/lib/active-session';
 import { NextRequest, NextResponse } from 'next/server';
-import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
+import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { contexteFournisseur } from '@/lib/reseau/contexte-fournisseur';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { publierAutomatiquement } from '@/lib/publication-auto';
@@ -22,7 +24,9 @@ const MAX_PHOTOS = 6;
  *    un article de la vente.
  */
 export async function POST(req: NextRequest) {
-  const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
+  const denied = await refusSansPermissionAdmin(req, 'POST /api/products/images');
+  if (denied) return denied;
+  const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value);
   if (!session || !['admin', 'supplier'].includes(session.role)) {
     return NextResponse.json({ error: 'Authentification fournisseur ou admin requise.' }, { status: 401 });
   }

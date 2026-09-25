@@ -1,6 +1,6 @@
+import { verifyActiveSession } from '@/lib/active-session';
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  verifySessionToken,
   createSessionToken,
   rolesDeLaSession,
   SESSION_COOKIE_NAME,
@@ -27,7 +27,7 @@ import { attribuerSlugFournisseur } from '@/lib/shop';
 const ROLES_DEMANDABLES: SugubaRole[] = ['reseller', 'supplier', 'driver', 'diaspora'];
 
 export async function POST(req: NextRequest) {
-  const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
+  const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value, true);
   if (!session) {
     return NextResponse.json({ error: 'Connectez-vous pour ajouter un rôle.' }, { status: 401 });
   }

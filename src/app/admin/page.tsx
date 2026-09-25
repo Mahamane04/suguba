@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import ProductImage from '@/components/common/ProductImage';
+import OrdersSyncNotice from '@/components/common/OrdersSyncNotice';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import CarteAccesReseau from '@/components/reseau/CarteAccesReseau';
@@ -13,6 +14,7 @@ import CloudSyncBadge from '@/components/common/CloudSyncBadge';
 import ProductPricingModal from '@/components/admin/ProductPricingModal';
 import DriverVerificationPanel from '@/components/admin/DriverVerificationPanel';
 import EconomicSettingsPanel from '@/components/admin/EconomicSettingsPanel';
+import ChoicePicker from '@/components/ui/ChoicePicker';
 import { useSugubaStore, sugubaStore, definirApercuAdmin } from '@/lib/store';
 import { whatsappHelper } from '@/lib/whatsapp-helper';
 import PaymentLogo, { moyenDepuisCode } from '@/components/ui/PaymentLogo';
@@ -107,6 +109,10 @@ export default function AdminDashboardPage() {
   // Vrais livreurs actifs pour le dispatch — state.drivers ne contient que
   // des fiches fictives (mock-data.ts), jamais les vrais comptes.
   const [activeDrivers, setActiveDrivers] = useState<Array<{ id: string; fullName: string; phone: string | null; vehicleType: string | null }>>([]);
+  // Livreur choisi par commande, dans le bloc Dispatch : remplace la lecture
+  // DOM (getElementById sur un <select> natif) par un état React, nécessaire
+  // pour passer au ChoicePicker du design system (voir orderId → driverId).
+  const [livreurChoisi, setLivreurChoisi] = useState<Record<string, string>>({});
 
   // Les produits "submitted" par un fournisseur sur un autre appareil sont
   // invisibles à la clé anon (RLS ne lit que status='approved', voir
@@ -194,6 +200,7 @@ export default function AdminDashboardPage() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
       <Header />
+      <OrdersSyncNotice />
 
       <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
         
@@ -293,9 +300,9 @@ export default function AdminDashboardPage() {
           <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs space-y-1">
             <span className="text-xs font-bold text-slate-500 uppercase">Volume Global (GMV)</span>
             <p className="text-xl sm:text-2xl font-bold text-slate-900">
-              {totalGMV.toLocaleString('fr-FR')} <span className="text-xs font-normal">F</span>
+              {state.ordersSync === 'ready' ? totalGMV.toLocaleString('fr-FR') : '—'} <span className="text-xs font-normal">F</span>
             </p>
-            <p className="text-xs text-slate-500">{state.orders.length} commandes totales</p>
+            <p className="text-xs text-slate-500">{state.ordersSync === 'ready' ? `${state.orders.length} commandes totales` : 'Total des commandes non confirmé'}</p>
           </div>
 
           <div className="bg-white p-4 rounded-3xl border border-emerald-200 shadow-xs space-y-1">
@@ -309,7 +316,7 @@ export default function AdminDashboardPage() {
           <div className="bg-white p-4 rounded-3xl border border-amber-200 shadow-xs space-y-1">
             <span className="text-xs font-bold text-amber-700 uppercase">Appels à passer</span>
             <p className="text-xl sm:text-2xl font-bold text-amber-600">
-              {pendingCallOrders.length}
+              {state.ordersSync === 'ready' ? pendingCallOrders.length : '—'}
             </p>
             <p className="text-xs text-slate-500">Confirmations clients requises</p>
           </div>
@@ -347,14 +354,14 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
               <span className="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-xs font-bold">
-                {pendingCallOrders.length} en attente
+                {state.ordersSync === 'ready' ? pendingCallOrders.length : '—'} en attente
               </span>
             </div>
 
             {pendingCallOrders.length === 0 ? (
               <div className="text-center py-6 text-slate-500 text-xs flex items-center justify-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                Tous les appels de confirmation ont été traités !
+                {state.ordersSync === 'ready' ? 'Tous les appels de confirmation ont été traités !' : 'La liste des appels n’est pas encore confirmée.'}
               </div>
             ) : (
               <div className="space-y-3">
@@ -502,13 +509,13 @@ export default function AdminDashboardPage() {
               </div>
             </div>
             <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-800 text-xs font-bold">
-              {confirmedOrders.length} à dispatcher
+              {state.ordersSync === 'ready' ? confirmedOrders.length : '—'} à dispatcher
             </span>
           </div>
 
           {confirmedOrders.length === 0 ? (
             <div className="text-center py-6 text-slate-500 text-xs">
-              Toutes les livraisons confirmées sont actuellement assignées.
+              {state.ordersSync === 'ready' ? 'Toutes les livraisons confirmées sont actuellement assignées.' : 'La liste des livraisons n’est pas encore confirmée.'}
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -528,26 +535,27 @@ export default function AdminDashboardPage() {
                       <p className="flex-1 text-xs text-slate-500 italic">Aucun livreur actif pour l&apos;instant.</p>
                     ) : (
                       <>
-                        <select
-                          id={`driver-select-${order.id}`}
-                          className="flex-1 bg-white border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-900"
-                        >
-                          {activeDrivers.map((d) => (
-                            <option key={d.id} value={d.id}>
-                              {d.fullName} {d.vehicleType ? `(${d.vehicleType})` : ''}
-                            </option>
-                          ))}
-                        </select>
+                        <ChoicePicker
+                          ariaLabel={`Livreur pour la commande ${order.orderNumber}`}
+                          valeur={livreurChoisi[order.id] || activeDrivers[0].id}
+                          onChange={(v) => setLivreurChoisi((m) => ({ ...m, [order.id]: v }))}
+                          className="flex-1"
+                          choix={activeDrivers.map((d) => ({
+                            valeur: d.id,
+                            libelle: d.fullName,
+                            detail: d.vehicleType || undefined,
+                          }))}
+                        />
 
                         <button
                           onClick={() => {
-                            const select = document.getElementById(`driver-select-${order.id}`) as HTMLSelectElement;
-                            const chosen = activeDrivers.find(d => d.id === select?.value);
+                            const id = livreurChoisi[order.id] || activeDrivers[0].id;
+                            const chosen = activeDrivers.find(d => d.id === id);
                             if (chosen) {
                               sugubaStore.assignDriver(order.id, chosen.id, chosen.fullName, chosen.phone || undefined, state.currentUser.fullName);
                             }
                           }}
-                          className="px-3 py-1.5 bg-slate-600 hover:bg-slate-700 text-white text-xs font-bold rounded-xl shadow-xs"
+                          className="px-3 py-1.5 bg-slate-600 hover:bg-slate-700 text-white text-xs font-bold rounded-xl shadow-xs shrink-0"
                         >
                           Assigner
                         </button>
@@ -690,6 +698,7 @@ export default function AdminDashboardPage() {
           {enCoursDeVirement.length > 0 && (
             <p className="text-xs text-slate-500 pt-2 border-t border-slate-100">
               {enCoursDeVirement.length} virement{enCoursDeVirement.length > 1 ? 's' : ''} en cours chez SasPay : marqué{enCoursDeVirement.length > 1 ? 's' : ''} payé{enCoursDeVirement.length > 1 ? 's' : ''} automatiquement à la confirmation du réseau.
+              {enCoursDeVirement.map(r => <button key={r.id} type="button" disabled={retraitEnCours === r.id} onClick={() => agirSurRetrait(r, 'virer')} className="block min-h-11 text-suguba-profond underline">Vérifier / reprendre {r.id}</button>)}
             </p>
           )}
         </div>
@@ -770,7 +779,7 @@ export default function AdminDashboardPage() {
               <button
                 onClick={() => setOnboardingTab('suppliers')}
                 className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
-                  onboardingTab === 'suppliers' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                  onboardingTab === 'suppliers' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-800'
                 }`}
               >
                 Fournisseurs
@@ -778,7 +787,7 @@ export default function AdminDashboardPage() {
               <button
                 onClick={() => setOnboardingTab('drivers')}
                 className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
-                  onboardingTab === 'drivers' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                  onboardingTab === 'drivers' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-800'
                 }`}
               >
                 Livreurs
@@ -786,7 +795,7 @@ export default function AdminDashboardPage() {
               <button
                 onClick={() => setOnboardingTab('resellers')}
                 className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
-                  onboardingTab === 'resellers' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                  onboardingTab === 'resellers' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-800'
                 }`}
               >
                 Revendeurs
@@ -794,7 +803,7 @@ export default function AdminDashboardPage() {
               <button
                 onClick={() => setOnboardingTab('diaspora')}
                 className={`px-3 py-1 rounded-lg text-xs font-bold transition-colors ${
-                  onboardingTab === 'diaspora' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-500 hover:text-slate-800'
+                  onboardingTab === 'diaspora' ? 'bg-white text-slate-900 shadow-xs' : 'text-slate-600 hover:text-slate-800'
                 }`}
               >
                 Diaspora
@@ -927,10 +936,10 @@ export default function AdminDashboardPage() {
             <div className="space-y-3.5 bg-slate-50/70 p-4 rounded-2xl border border-slate-200">
               <h4 className="font-bold text-xs text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
                 <UserCog className="w-4 h-4 text-slate-700" />
-                <span>Donner l'accès admin</span>
+                <span>Donner l&apos;accès admin</span>
               </h4>
               <p className="text-xs text-slate-800">
-                Donne le rôle admin (accès immédiat, sans validation) à un numéro déjà inscrit sur Suguba.
+                Ajoute le profil administrateur. Attribuez ensuite ses permissions dans Équipe et permissions avant son utilisation.
                 Le tout premier compte admin, lui, se crée uniquement en ligne de commande — voir <code className="font-mono">scripts/create-admin.js</code>.
               </p>
               <div className="flex gap-2">
@@ -955,7 +964,7 @@ export default function AdminDashboardPage() {
                       const json = await res.json();
                       setActionFeedback(
                         res.ok
-                          ? { type: 'success', message: `✅ ${json.phone} promu admin et activé.` }
+                          ? { type: 'success', message: `✅ ${json.phone} ajouté. Attribuez ses permissions dans Équipe et permissions.` }
                           : { type: 'error', message: json.error || 'Échec de la promotion.' }
                       );
                       if (res.ok) setPromotePhoneInput('');

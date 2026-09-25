@@ -1,5 +1,6 @@
+import { verifyActiveSession } from '@/lib/active-session';
 import { NextRequest, NextResponse } from 'next/server';
-import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
+import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { libererCommissionsEchues } from '@/lib/commissions';
 
@@ -30,14 +31,14 @@ function paliers(ventes: number): 'new' | 'verified' | 'vip' {
 }
 
 export async function GET(req: NextRequest) {
-  const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
+  const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value);
   if (!session || session.role !== 'reseller') {
     return NextResponse.json({ error: 'Session revendeur requise.' }, { status: 401 });
   }
 
   const admin = getSupabaseAdmin();
   if (!admin) {
-    return NextResponse.json({ reseller: null });
+    return NextResponse.json({ error: 'Votre solde est indisponible. Réessayez.' }, { status: 503 });
   }
 
   // Les commissions dont le délai de sécurité est écoulé deviennent
@@ -45,13 +46,17 @@ export async function GET(req: NextRequest) {
   // aucun décalage entre le solde affiché et le solde réellement retirable.
   await libererCommissionsEchues(admin);
 
-  const [{ data: profil }, { data: commissions }, { count: ventesLivrees }] = await Promise.all([
+  const results = await Promise.all([
     admin.from('profiles').select('reseller_code, full_name, phone, metadata, city').eq('id', session.uid).maybeSingle(),
     admin.from('commissions').select('amount, status').eq('reseller_id', session.uid),
     admin.from('orders').select('id', { count: 'exact', head: true })
       .eq('reseller_id', session.uid).eq('status', 'delivered'),
   ]);
 
+  if (results.some(result => result.error) || !results[0].data || !Array.isArray(results[1].data) || results[2].count == null) {
+    return NextResponse.json({ error: 'Votre solde et votre palier sont indisponibles. Réessayez.' }, { status: 503 });
+  }
+  const [{ data: profil }, { data: commissions }, { count: ventesLivrees }] = results;
   const lignes = commissions || [];
   const somme = (statut: string) =>
     lignes.filter((c) => c.status === statut).reduce((total, c) => total + Number(c.amount), 0);
@@ -90,7 +95,7 @@ export async function GET(req: NextRequest) {
  * du revendeur sans qu'il s'en aperçoive.
  */
 export async function PATCH(req: NextRequest) {
-  const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
+  const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value);
   if (!session || session.role !== 'reseller') {
     return NextResponse.json({ error: 'Session revendeur requise.' }, { status: 401 });
   }

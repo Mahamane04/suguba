@@ -1,6 +1,6 @@
+import { verifyActiveSession } from './lib/active-session';
 import { NextRequest, NextResponse } from 'next/server';
 import {
-  verifySessionToken,
   createSessionToken,
   rolesDeLaSession,
   SESSION_COOKIE_NAME,
@@ -114,7 +114,9 @@ export async function middleware(req: NextRequest) {
   }
 
   const token = req.cookies.get(SESSION_COOKIE_NAME)?.value;
-  const session = await verifySessionToken(token);
+  const onboarding = ['/api/auth/complete-profile', '/api/auth/refresh-session', '/api/auth/request-role'].includes(pathname);
+  const session = await verifyActiveSession(token, onboarding || !pathname.startsWith('/api/'));
+  if (session && session.status !== 'active' && !onboarding && pathname.startsWith('/api/')) return NextResponse.json({ error: 'Compte non autorisé.' }, { status: 403 });
 
   // ── Barrière API ────────────────────────────────────────────────────────
   // Une route API répond 401 en JSON, jamais par une redirection : un appel
@@ -130,11 +132,6 @@ export async function middleware(req: NextRequest) {
         { status: 403 },
       );
     }
-    // Volontairement AUCUN contrôle de statut ici. Sur les quinze routes à
-    // rôle, une seule le vérifie (/api/payouts/create, qui garde le sien).
-    // L'ajouter globalement bloquerait un compte en attente d'approbation sur
-    // des lectures qui lui sont légitimes — /pending-approval a besoin de
-    // savoir où il en est. Ce durcissement se décide route par route, pas ici.
     return NextResponse.next();
   }
 
@@ -203,6 +200,7 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
+  runtime: 'nodejs',
   matcher: [
     '/admin/:path*',
     '/supplier/:path*',

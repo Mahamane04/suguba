@@ -1,11 +1,16 @@
 'use client';
 
+
+import { createPortal } from 'react-dom';
+import { useModalFocus } from '@/hooks/useModalFocus';
+import DeliveryCodeNotice from '@/components/common/DeliveryCodeNotice';
 import React, { useEffect, useState } from 'react';
 import { Product } from '@/types';
 import { ArrowLeft, CheckCircle, Minus, Plus, Loader2, Check, X } from 'lucide-react';
 import OrderRecovery from '@/components/common/OrderRecovery';
 import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
-import { Field, Input, Select } from '@/components/ui/Field';
+import { Field, Input } from '@/components/ui/Field';
+import ChoicePicker from '@/components/ui/ChoicePicker';
 import Button from '@/components/ui/Button';
 import { useOrderQuote } from '@/lib/useOrderQuote';
 import type { OrderInput } from '@/lib/order-input';
@@ -64,15 +69,12 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
     prixNegocie,
   } : null);
 
-  // Plein écran : la page du dessous ne doit pas défiler en même temps.
+  const { host, ref } = useModalFocus(isOpen && Boolean(product), () => handleReset());
   useEffect(() => {
-    if (!isOpen) return;
-    const precedent = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = precedent; };
-  }, [isOpen]);
-
-  if (!isOpen || !product) return null;
+    // Le formulaire disparaît après succès : déplacer le focus sur le reçu.
+    if (createdOrder && isOpen) ref.current?.focus();
+  }, [createdOrder, isOpen, ref]);
+  if (!isOpen || !product || !host) return null;
 
   const unitPrice = devis?.prixUnitaire ?? product.publicPrice;
   // Gain RÉEL calculé par le serveur pour ce revendeur (prix négocié compris),
@@ -85,10 +87,7 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
   const finishOrder = async (data?: OrderInput) => {
     try {
       const order = await submitOrder(data);
-      void fetch('/api/sms/send-otp', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderNumber: order.orderNumber }),
-      }).catch(() => {});
+
       setCreatedOrder(order);
       onSuccess?.(order.orderNumber);
     } catch (error) {
@@ -132,8 +131,10 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
     onClose();
   };
 
-  return (
+  return createPortal(
     <div
+      ref={ref}
+      tabIndex={-1}
       className="fixed inset-0 z-50 flex sm:items-center sm:justify-center sm:p-4 sm:bg-slate-900/60 sm:backdrop-blur-xs animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
@@ -191,6 +192,7 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
               </div>
             </div>
 
+            <DeliveryCodeNotice orderNumber={createdOrder.orderNumber} autoSend />
             <Button onClick={handleReset} fullWidth size="lg">Retour au catalogue</Button>
           </div>
         ) : (
@@ -207,7 +209,7 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
                   <p className="font-bold text-sm text-slate-900 line-clamp-2">{product.name}</p>
                   <p className="text-xs text-suguba-brand-dark font-bold">+{fcfa(commissionPerUnit)} / unité pour toi</p>
                 </div>
-                <div className="flex items-center rounded-full border border-slate-200 shrink-0" aria-label="Quantité">
+                <div className="flex items-center rounded-full border border-slate-200 shrink-0" role="group" aria-label="Quantité">
                   <button type="button" onClick={() => setQuantity((q) => Math.max(1, q - 1))} disabled={quantity <= 1}
                     aria-label="Retirer un" className="w-10 h-10 flex items-center justify-center text-slate-700 disabled:text-slate-300">
                     <Minus className="w-4 h-4" />
@@ -251,12 +253,8 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
               <section className="bg-white rounded-3xl border border-slate-200 p-4 space-y-4">
                 <h3 className="text-sm font-bold text-slate-900">Livraison</h3>
                 <Field label="Ville" htmlFor="vente-ville" requis>
-                  <Select id="vente-ville" value={city} onChange={(e) => setCity(e.target.value)}>
-                    <option value="Bamako">Bamako</option>
-                    <option value="Kati">Kati</option>
-                    <option value="Sikasso">Sikasso</option>
-                    <option value="Ségou">Ségou</option>
-                  </Select>
+                  <ChoicePicker id="vente-ville" valeur={city} onChange={setCity}
+                    choix={['Bamako', 'Kati', 'Sikasso', 'Ségou'].map((v) => ({ valeur: v, libelle: v }))} />
                 </Field>
                 <Field label="Quartier" htmlFor="vente-quartier" requis>
                   <NeighborhoodPicker id="vente-quartier" value={neighborhood} onChange={setNeighborhood} placeholder="Choisir le quartier du client" />
@@ -314,6 +312,6 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
           </form>
         )}
       </div>
-    </div>
+    </div>, host
   );
 }

@@ -1,6 +1,8 @@
 'use client';
 
-import React, { useCallback, useEffect, useState } from 'react';
+import { PayoutCheckout, payoutSessionStorage } from '@/lib/payout-submit';
+
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Button from '@/components/ui/Button';
@@ -48,14 +50,6 @@ const STATUTS: Record<string, { libelle: string; classe: string }> = {
 
 const enF = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
 
-/** « WTH-7K2Q9M » : 30 symboles sans ambiguïté visuelle (pas de 0/O, 1/I). */
-function codeRetrait(): string {
-  const alphabet = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
-  let code = '';
-  for (let i = 0; i < 6; i++) code += alphabet[Math.floor(Math.random() * alphabet.length)];
-  return `WTH-${code}`;
-}
-
 /**
  * Gains du revendeur — refaits le 2026-09-11 sur les VRAIES données.
  *
@@ -72,6 +66,7 @@ function codeRetrait(): string {
  */
 export default function ResellerPayoutsPage() {
   const state = useSugubaStore();
+  const checkout = useMemo(() => new PayoutCheckout(`suguba_payout_attempt:${state.currentUser.id}`, payoutSessionStorage), [state.currentUser.id]);
   const [soldes, setSoldes] = useState<{ disponible: number; attente: number; verse: number } | null>(null);
   const [retraits, setRetraits] = useState<Retrait[]>([]);
   const [retraitMinimum, setRetraitMinimum] = useState(5000);
@@ -117,41 +112,33 @@ export default function ResellerPayoutsPage() {
   }, [state.currentUser.phone, telephone]);
 
   const disponible = soldes?.disponible ?? 0;
-  const assez = disponible >= retraitMinimum;
+  const assez = disponible >= retraitMinimum || Boolean(checkout.restore());
   // Même calcul que le serveur (/api/payouts/create) : ce qui est affiché est ce qui sera retenu.
   const frais: DetailFraisRetrait | null = taux && montant > 0 ? calculerFraisRetrait(montant, CODE_MOYEN[moyen], taux) : null;
+
+  useEffect(() => {
+    const previous = checkout.restore();
+    if (previous) {
+      setMontant(previous.input.amount); setTelephone(previous.input.payoutPhone); setMoyen(previous.input.payoutProvider as Moyen);
+      setErreur('Une demande attend sa confirmation. Reprenez-la avec les mêmes informations.');
+    }
+  }, [checkout]);
 
   const demander = async (e: React.FormEvent) => {
     e.preventDefault();
     setErreur('');
     if (montant < retraitMinimum) { setErreur(`Le minimum de retrait est de ${enF(retraitMinimum)}.`); return; }
-    if (montant > disponible) { setErreur('Ce montant dépasse votre solde disponible.'); return; }
+    if (!checkout.restore() && montant > disponible) { setErreur('Ce montant dépasse votre solde disponible.'); return; }
     if (telephone.replace(/\D/g, '').length < 8) { setErreur('Indiquez un numéro valide.'); return; }
 
     setEnvoi(true);
-    const code = codeRetrait();
     try {
-      const res = await fetch('/api/payouts/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          withdrawalCode: code,
-          resellerName: state.currentUser.fullName || undefined,
-          amount: montant,
-          payoutProvider: moyen,
-          payoutPhone: telephone,
-        }),
-      });
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok || !json.success) {
-        setErreur(json.error || "La demande n'a pas pu être enregistrée.");
-        return;
-      }
-      setSucces({ code, montant, net: Number(json.frais?.montantNet) || montant, moyen, telephone });
+      const json = await checkout.submit({ amount: montant, payoutProvider: moyen, payoutPhone: telephone });
+      setSucces({ code: json.withdrawalCode, montant, net: Number(json.frais?.montantNet) || montant, moyen, telephone });
       setMontant(0);
       await charger();
-    } catch {
-      setErreur('Erreur réseau, réessayez.');
+    } catch (error) {
+      setErreur(error instanceof Error ? error.message : 'Erreur réseau, reprenez cette demande.');
     } finally {
       setEnvoi(false);
     }

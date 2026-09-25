@@ -9,6 +9,7 @@ import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
 import { useSugubaStore } from '@/lib/store';
 import OrderRecovery from '@/components/common/OrderRecovery';
+import ChoicePicker from '@/components/ui/ChoicePicker';
 import { useOrderQuote } from '@/lib/useOrderQuote';
 import type { OrderInput } from '@/lib/order-input';
 import { useOrderCheckout } from '@/lib/useOrderCheckout';
@@ -341,17 +342,18 @@ export default function DiasporaPortalPage() {
                 
                 <div className="space-y-1">
                   <label className="font-bold text-slate-700">Votre Pays de Résidence :</label>
-                  <select
-                    value={buyerCountry}
-                    onChange={(e) => setBuyerCountry(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-base sm:text-sm font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500"
-                  >
-                    <option value="France (Europe)">🇫🇷 France (Europe)</option>
-                    <option value="États-Unis / Canada">🇺🇸 / 🇨🇦 États-Unis / Canada</option>
-                    <option value="Côte d'Ivoire">🇨🇮 Côte d&apos;Ivoire</option>
-                    <option value="Sénégal">🇸🇳 Sénégal</option>
-                    <option value="Autre pays">🌍 Autre pays</option>
-                  </select>
+                  <ChoicePicker
+                    valeur={buyerCountry}
+                    onChange={setBuyerCountry}
+                    ariaLabel="Pays de résidence"
+                    choix={[
+                      { valeur: 'France (Europe)', libelle: '🇫🇷 France (Europe)' },
+                      { valeur: 'États-Unis / Canada', libelle: '🇺🇸 / 🇨🇦 États-Unis / Canada' },
+                      { valeur: "Côte d'Ivoire", libelle: "🇨🇮 Côte d'Ivoire" },
+                      { valeur: 'Sénégal', libelle: '🇸🇳 Sénégal' },
+                      { valeur: 'Autre pays', libelle: '🌍 Autre pays' },
+                    ]}
+                  />
                 </div>
 
                 <div className="space-y-1">

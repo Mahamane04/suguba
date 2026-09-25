@@ -149,7 +149,7 @@ function LoginPageContent() {
         <Link href="/" className="flex items-center">
           <LogoSuguba className="h-8" />
         </Link>
-        <Link href="/" className="text-xs text-gray-400 hover:text-gray-600 transition-colors">
+        <Link href="/" className="text-xs text-slate-600 hover:text-gray-600 transition-colors">
           Retour à l&apos;accueil
         </Link>
       </div>
@@ -169,7 +169,7 @@ function LoginPageContent() {
               <h1 className="text-xl font-bold text-gray-900">
                 Connexion Suguba
               </h1>
-              <p className="text-xs text-gray-400 mt-1">
+              <p className="text-xs text-slate-600 mt-1">
                 Sans mot de passe, avec Google ou par email
               </p>
               <p className="text-xs text-gray-500 mt-2">
@@ -201,7 +201,7 @@ function LoginPageContent() {
 
             <div className="flex items-center gap-3 mb-4">
               <div className="h-px flex-1 bg-gray-100" />
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">ou</span>
+              <span className="text-xs font-semibold text-slate-600 uppercase tracking-wider">ou</span>
               <div className="h-px flex-1 bg-gray-100" />
             </div>
 
@@ -225,24 +225,28 @@ function LoginPageContent() {
             ) : (
               <form onSubmit={handleRequestEmailOtp} className="space-y-4">
                 <div className="space-y-1.5">
-                  <label className="block text-xs font-semibold text-gray-700">
+                  <label htmlFor="login-email" className="block text-xs font-semibold text-gray-700">
                     Adresse email
                   </label>
                   <div className="relative">
-                    <Mail className="w-4 h-4 text-gray-400 absolute left-3.5 top-3.5" />
+                    <Mail className="w-4 h-4 text-slate-600 absolute left-3.5 top-3.5" />
                     <input
+                      id="login-email"
+                      autoComplete="email"
+                      aria-describedby={errorMessage ? 'login-error' : undefined}
+                      aria-invalid={Boolean(errorMessage)}
                       type="email"
                       required
                       placeholder="vous@exemple.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-suguba-brand/30 focus:border-suguba-brand transition-all"
+                      className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-base sm:text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-suguba-profond focus:border-suguba-profond transition-all"
                     />
                   </div>
                 </div>
 
                 {errorMessage && (
-                  <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-xs font-semibold text-red-600">
+                  <div id="login-error" role="alert" className="p-3 bg-red-50 border border-red-100 rounded-xl text-xs font-semibold text-red-600">
                     {errorMessage}
                   </div>
                 )}
@@ -275,12 +279,12 @@ function LoginPageContent() {
 
             {/* Trust badges */}
             <div className="flex items-center justify-center gap-3 mt-4 pt-4 border-t border-gray-50">
-              <div className="flex items-center gap-1 text-xs text-gray-400">
+              <div className="flex items-center gap-1 text-xs text-slate-600">
                 <ShieldCheck className="w-3 h-3 text-suguba-brand-dark" />
                 Connexion sécurisée
               </div>
               <div className="w-px h-3 bg-gray-200" />
-              <div className="flex items-center gap-1 text-xs text-gray-400">
+              <div className="flex items-center gap-1 text-xs text-slate-600">
                 <Zap className="w-3 h-3 text-amber-500" />
                 Sans mot de passe
               </div>
@@ -296,7 +300,7 @@ function LoginPageContent() {
               <p className="text-xs font-bold uppercase tracking-widest text-amber-600 text-center mb-1">
                 ⚠️ Accès démo — désactivé en production
               </p>
-              <p className="text-xs text-gray-400 text-center mb-3">
+              <p className="text-xs text-slate-600 text-center mb-3">
                 Ne saute aucune vérification réelle : réservé aux environnements de développement.
               </p>
               {/* Corrige BUG-015 : en grid-cols-4 sur mobile, la 4e carte
@@ -325,7 +329,7 @@ function LoginPageContent() {
 
       {/* Bottom legal */}
       <div className="text-center pb-6 px-4">
-        <p className="text-xs text-gray-300">
+        <p className="text-xs text-slate-600">
           En vous connectant, vous acceptez les{' '}
           <Link href="/legal/terms" className="text-suguba-brand-dark hover:underline">
             Conditions générales

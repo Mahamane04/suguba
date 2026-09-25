@@ -11,6 +11,7 @@ import {
   INITIAL_AUDIT_LOGS, INITIAL_SAV_TICKETS 
 } from './mock-data';
 import { cloudSyncService } from './cloud-sync';
+import { clearPrivateSessionStorage } from './order-access-client';
 import { soumettreCommande } from './order-submit';
 import type { OrderInput } from './order-input';
 
@@ -31,6 +32,7 @@ export interface SugubaState {
   diasporaProfiles: DiasporaProfile[];
   products: Product[];
   orders: Order[];
+  ordersSync: 'idle' | 'loading' | 'ready' | 'error' | 'forbidden';
   commissions: Commission[];
   withdrawals: Withdrawal[];
   auditLogs: AuditLog[];
@@ -68,6 +70,7 @@ const getDefaultState = (): SugubaState => ({
   diasporaProfiles: INITIAL_DIASPORA,
   products: INITIAL_PRODUCTS,
   orders: INITIAL_ORDERS,
+  ordersSync: 'idle',
   commissions: INITIAL_COMMISSIONS,
   withdrawals: INITIAL_WITHDRAWALS,
   auditLogs: INITIAL_AUDIT_LOGS,
@@ -80,7 +83,7 @@ const listeners = new Set<() => void>();
 
 function notify() {
   if (typeof window !== 'undefined') {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(globalState));
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ products: globalState.products.filter(p => p.status === 'approved') })); } catch { /* Cache facultatif. */ }
   }
   listeners.forEach((listener) => listener());
 }
@@ -99,22 +102,21 @@ export const sugubaStore = {
     if (typeof window === 'undefined' || hasHydratedFromStorage) return;
     hasHydratedFromStorage = true;
 
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (!saved) return;
-
     try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) return;
       const parsed = JSON.parse(saved);
       globalState = {
         ...globalState,
-        ...parsed,
+        products: Array.isArray(parsed.products) ? parsed.products.filter((p: Product) => p.status === 'approved') : [],
         // Jamais l'utilisateur mémorisé : les anciens téléphones gardent
         // « Moussa Coulibaly » dans leur cache, et une autre personne peut
         // s'être connectée depuis. L'identité vient toujours du serveur.
         currentUser: globalState.currentUser,
-        diasporaProfiles: parsed.diasporaProfiles || INITIAL_DIASPORA,
-        savTickets: parsed.savTickets || INITIAL_SAV_TICKETS,
+
+
       };
-      listeners.forEach((listener) => listener());
+      notify();
     } catch (e) {
       console.error('Failed to parse saved state', e);
     }
@@ -138,7 +140,13 @@ export const sugubaStore = {
 
   // Identité réelle de la personne connectée (null = visiteur). Appelée au
   // démarrage par CloudSyncInitializer, à partir de /api/auth/me.
-  definirUtilisateur: (identite: { id: string; fullName?: string; phone?: string; role?: UserRole; city?: string } | null) => {
+  definirUtilisateur: (identite: { id: string; fullName?: string; phone?: string; role?: UserRole; city?: string } | null, logout = false) => {
+    const previousId = globalState.currentUser.id;
+    if (logout || previousId !== (identite?.id || '') || (identite && globalState.currentUser.role !== identite.role)) {
+      const products = globalState.products.filter(p => p.status === 'approved');
+      globalState = { ...getDefaultState(), products };
+      clearPrivateSessionStorage();
+    }
     globalState = {
       ...globalState,
       currentUser: identite
@@ -226,13 +234,15 @@ export const sugubaStore = {
     ecouteursCatalogue.forEach((f) => f());
   },
 
+  setOrdersSync: (ordersSync: SugubaState['ordersSync']) => {
+    globalState = { ...globalState, ordersSync }; notify();
+  },
+
   setOrdersFromCloud: (cloudOrders: Order[]) => {
-    if (!cloudOrders || cloudOrders.length === 0) return;
-    const existingMap = new Map(globalState.orders.map(o => [o.orderNumber, o]));
-    cloudOrders.forEach(o => existingMap.set(o.orderNumber, o));
+
     globalState = {
       ...globalState,
-      orders: Array.from(existingMap.values()),
+      orders: cloudOrders || [],
     };
     notify();
   },
@@ -707,6 +717,7 @@ export const sugubaStore = {
       diasporaProfiles: INITIAL_DIASPORA,
       products: INITIAL_PRODUCTS,
       orders: INITIAL_ORDERS,
+      ordersSync: 'idle',
       commissions: INITIAL_COMMISSIONS,
       withdrawals: INITIAL_WITHDRAWALS,
       auditLogs: INITIAL_AUDIT_LOGS,
@@ -755,7 +766,7 @@ export const sugubaStore = {
     };
 
     if (typeof window !== 'undefined') {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(globalState));
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ products: globalState.products.filter(p => p.status === 'approved') })); } catch { /* Cache facultatif. */ }
     }
     notify();
   },

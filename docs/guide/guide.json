@@ -191,6 +191,45 @@
  "journal": [
   {
    "date": "2026-09-24",
+   "titre": "Page boutique refaite : couverture, logo, actions sur une ligne",
+   "demande": "« j'ai pas trop le badge qu'on voit avec les liens, le nom de la boutique et tout ce que je veux que l'on voie ; on peut réorganiser de manière professionnelle (je ne sais pas où tu as mis la photo de profil de la boutique avec la couverture ?) ».",
+   "realise": [
+    "En-tête clair façon vraie vitrine : couverture en haut, logo qui la chevauche, nom, accroche, badges, nombre d'articles, catégorie, livraisons réussies et quartier.",
+    "Sans couverture, un fond aux couleurs de Suguba la remplace ; sans logo, l'initiale sur fond menthe.",
+    "Actions regroupées : « Suivre » puis « WhatsApp » et trois petites icônes (Facebook, copier le lien, partager) au lieu de quatre gros boutons de couleurs différentes.",
+    "Le propriétaire voit « Modifier la boutique » sur la couverture et, s'il manque le logo ou la couverture, un rappel qui mène à la page où les ajouter. Les visiteurs ne voient rien de tout ça.",
+    "Photos de la boutique (galerie) déplacées dans leur propre carte sous l'en-tête."
+   ],
+   "ecarts": [
+    "Aucune boutique n'a encore de logo ni de couverture en base : à ajouter dans « Ma boutique » (fournisseur ou revendeur)."
+   ],
+   "pages": [
+    "vitrine-fournisseur",
+    "fou-boutique",
+    "rev-boutique"
+   ],
+   "commit": "",
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-24",
+   "titre": "Menus déroulants : tous passés au design system",
+   "demande": "« verifie les menu deroulant sur present sur saas adapte les au design système » (capture : catégorie de produit fournisseur, liste système grise et sans style de l'app).",
+   "realise": [
+    "ChoicePicker (créé le 13/09 pour le quartier de livraison) étendu avec des groupes — utilisé pour les catégories avec familles (« Électronique & Électroménager », etc.).",
+    "21 menus déroulants remplacés dans 17 pages/composants : dépôt produit (fournisseur, admin), inscription (catégorie, véhicule, pays, devise), dispatch livreur (admin, SAV), diffusion, équipe, missions, calendrier revendeur, parrainages, sponsorisation fournisseur, vente directe (+ Vente), Mes profils, devis B2B, diaspora.",
+    "Deux menus qui lisaient la valeur choisie directement dans la page (getElementById) sont passés à un état React normal, sans rien changer au comportement (Dispatch admin, SAV admin)."
+   ],
+   "ecarts": [],
+   "pages": [
+    "fou-ajouter",
+    "adm-vue"
+   ],
+   "commit": "",
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-24",
    "titre": "Ajouter un profil sans numéro : corrigé (double saisie, blocage en cul-de-sac)",
    "demande": "« un numéro déjà enregistré en tant que revendeur, s'il veut ajouter un compte fournisseur cela refuse car le numéro est déjà utilisé » ; « c'est ce parcours que j'ai fait et ça m'a redirigé vers cette page, j'ai inséré deux fois les informations » ; « vérifie les différents parcours de connexion, de création de compte, d'ajout de profil, il y a pas mal de bugs » ; « Fait les 3 ».",
    "realise": [

@@ -1,5 +1,6 @@
+import { verifyActiveSession } from '../active-session';
 import type { NextRequest } from 'next/server';
-import { verifySessionToken, SESSION_COOKIE_NAME, type SugubaRole, type SugubaSession } from '../session';
+import { SESSION_COOKIE_NAME, type SugubaRole, type SugubaSession } from '../session';
 
 /**
  * Session d'une route API du module Réseau. Regroupée ici pour que les douze
@@ -7,7 +8,7 @@ import { verifySessionToken, SESSION_COOKIE_NAME, type SugubaRole, type SugubaSe
  * est une route ouverte.
  */
 export async function sessionDeLaRequete(req: NextRequest): Promise<SugubaSession | null> {
-  return verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
+  return verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value);
 }
 
 export async function sessionAvecRole(req: NextRequest, role: SugubaRole): Promise<SugubaSession | null> {

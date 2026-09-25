@@ -5,7 +5,8 @@ import { Bell, Copy, Check, Send } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import { Card } from '@/components/ui/Surface';
 import Button from '@/components/ui/Button';
-import { Field, Input, Select, Textarea } from '@/components/ui/Field';
+import { Field, Input, Textarea } from '@/components/ui/Field';
+import ChoicePicker from '@/components/ui/ChoicePicker';
 import { useToast } from '@/components/ui/Toast';
 
 /**
@@ -150,9 +151,8 @@ export default function DiffusionPage() {
           <Textarea id="diff-texte" rows={4} value={texte} maxLength={400} onChange={(e) => setTexte(e.target.value)} />
         </Field>
         <Field label="Lien ouvert en touchant la notification" htmlFor="diff-lien">
-          <Select id="diff-lien" value={lien} onChange={(e) => setLien(e.target.value)}>
-            {LIENS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-          </Select>
+          <ChoicePicker id="diff-lien" valeur={lien} onChange={setLien}
+            choix={LIENS.map(([v, l]) => ({ valeur: v, libelle: l }))} />
         </Field>
 
         {titre.trim() && (

@@ -1,7 +1,8 @@
+import { verifyActiveSession } from '@/lib/active-session';
 import { NextRequest, NextResponse } from 'next/server';
 import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
 import { initierPayout, RESEAUX_MALI, type ReseauMali } from '@/lib/saspay';
-import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
+import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
 /**
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
     // (BUG-005), mais on revérifie ici au cas où le matcher du middleware
     // serait un jour mal configuré — un endpoint qui déclenche un virement
     // réel ne doit jamais dépendre d'une seule couche de protection.
-    const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
+    const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value);
     if (!session || session.role !== 'admin') {
       return NextResponse.json({ error: 'Authentification admin requise.' }, { status: 401 });
     }
@@ -65,7 +66,7 @@ export async function POST(req: NextRequest) {
     if (!withdrawal) {
       return NextResponse.json({ error: 'Demande de retrait introuvable.' }, { status: 404 });
     }
-    if (withdrawal.status !== 'pending') {
+    if (!['pending', 'processing'].includes(withdrawal.status)) {
       return NextResponse.json({ error: 'Ce retrait a déjà été traité.' }, { status: 400 });
     }
 
@@ -98,20 +99,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Montant de retrait invalide.' }, { status: 422 });
     }
 
-    // Passage en `processing` AVANT l'appel : si SasPay répond mais que notre
-    // process meurt juste après, le retrait n'est plus `pending` et un second
-    // clic ne pourra pas déclencher un deuxième virement.
-    const { data: verrouille } = await admin
-      .from('payouts')
-      .update({ status: 'processing' })
-      .eq('id', withdrawal.id)
-      .eq('status', 'pending')
-      .select('id')
-      .maybeSingle();
-
-    if (!verrouille) {
-      return NextResponse.json({ error: 'Ce retrait vient d\'être pris en charge ailleurs.' }, { status: 409 });
-    }
+    // Réserve vérifiée et passage en processing avant l'appel. Les reprises
+    // utilisent la même clé prestataire, y compris après une réponse perdue.
+    const { data: verrouille, error: lockError } = await admin.rpc('begin_payout_transfer', { p_id: withdrawal.id });
+    if (lockError || !verrouille) return NextResponse.json({ error: 'Versement non initié. Vérifiez le retrait et sa réserve.' }, { status: 409 });
+    if (verrouille.payment_transaction_id) return NextResponse.json({ success: true, statut: 'processing', transactionId: verrouille.payment_transaction_id });
 
     const [prenom, ...resteNom] = String(withdrawal.reseller_name || 'Revendeur Suguba').trim().split(/\s+/);
 
@@ -131,9 +123,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (!resultat.ok || !resultat.id) {
-      // Le virement n'est pas parti : on rend son solde au revendeur et on
-      // remet le retrait à `pending` pour qu'il puisse être relancé.
-      await admin.from('payouts').update({ status: 'pending' }).eq('id', withdrawal.id);
+      // Résultat incertain : garder la réserve et reprendre avec la même clé prestataire.
       return NextResponse.json({ success: false, error: resultat.erreur || 'Versement refusé.' }, { status: 502 });
     }
 
@@ -146,7 +136,8 @@ export async function POST(req: NextRequest) {
       .eq('id', withdrawal.id);
 
     if (majErr) {
-      console.error('[SASPAY] VERSEMENT ENVOYÉ MAIS ID NON STOCKÉ — rapprochement manuel requis:', withdrawal.id, resultat.id, majErr);
+      console.error('[SASPAY] Référence de versement non enregistrée, rapprochement requis.');
+      return NextResponse.json({ success: false, error: 'Confirmation non enregistrée. Reprenez ce même retrait.' }, { status: 503 });
     }
 
     return NextResponse.json({

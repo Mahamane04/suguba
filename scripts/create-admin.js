@@ -110,9 +110,14 @@ async function main() {
       { profile_id: profileId, role: 'admin', status: 'active', approved_at: new Date().toISOString() },
       { onConflict: 'profile_id,role' }
     );
-  if (roleErr) {
-    console.error('⚠️  profile_roles non renseigné:', roleErr.message);
-    console.error('   Le compte fonctionne, mais corrige-le avant d\'ajouter un second rôle à cet admin.');
+  if (roleErr) throw new Error('Le rôle admin n’a pas été enregistré. Reprenez cette opération.');
+  const { data: team, error: teamError } = await supabase.from('admin_team_members')
+    .select('profile_id').eq('profile_id', profileId).maybeSingle();
+  if (teamError) throw new Error('Affectation d’équipe indisponible. Aucun accès implicite accordé.');
+  if (!team) {
+    const { error: assignError } = await supabase.from('admin_team_members')
+      .upsert({ profile_id: profileId, team_role: 'super_admin', permissions: [] }, { onConflict: 'profile_id', ignoreDuplicates: true });
+    if (assignError) throw new Error('Affectation super-admin non enregistrée. Reprenez cette opération.');
   }
 
   console.log('→ Ce compte peut se connecter via /login (Google ou lien email) et accéder à /admin.');

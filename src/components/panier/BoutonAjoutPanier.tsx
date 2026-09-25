@@ -12,7 +12,7 @@ import { useToast } from '@/components/ui/Toast';
  * bouton propose d'aller au panier plutôt que d'y envoyer d'office : le
  * client qui remplit son panier veut continuer ses achats.
  */
-export default function BoutonAjoutPanier({ productId, quantite }: { productId: string; quantite: number }) {
+export default function BoutonAjoutPanier({ productId, quantite, disabled = false }: { productId: string; quantite: number; disabled?: boolean }) {
   const { toast } = useToast();
   const [ajoute, setAjoute] = useState(false);
 
@@ -27,6 +27,7 @@ export default function BoutonAjoutPanier({ productId, quantite }: { productId: 
 
   return (
     <Button
+      disabled={disabled}
       type="button"
       variant="ghost"
       fullWidth
@@ -39,7 +40,7 @@ export default function BoutonAjoutPanier({ productId, quantite }: { productId: 
       }}
     >
       <ShoppingBag className="w-4 h-4" />
-      Ajouter au panier
+      {disabled ? 'Article indisponible' : 'Ajouter au panier'}
     </Button>
   );
 }

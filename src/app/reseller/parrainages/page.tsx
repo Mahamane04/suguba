@@ -5,7 +5,8 @@ import { UserPlus, Loader2, Gift, Users } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import CarteLien from '@/components/reseau/CarteLien';
 import Button from '@/components/ui/Button';
-import { Field, Input, Select } from '@/components/ui/Field';
+import { Field, Input } from '@/components/ui/Field';
+import ChoicePicker from '@/components/ui/ChoicePicker';
 import { Card, EmptyState, Skeleton, StatCard, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
 import { useCodeRevendeur } from '@/lib/partage';
@@ -122,10 +123,8 @@ export default function ParrainagesPage() {
             />
           </Field>
           <Field label="Il rejoint Suguba comme" htmlFor="type-filleul">
-            <Select id="type-filleul" value={type} onChange={(e) => setType(e.target.value as 'customer' | 'reseller')}>
-              <option value="customer">Client</option>
-              <option value="reseller">Revendeur</option>
-            </Select>
+            <ChoicePicker id="type-filleul" valeur={type} onChange={(v) => setType(v as 'customer' | 'reseller')}
+              choix={[{ valeur: 'customer', libelle: 'Client' }, { valeur: 'reseller', libelle: 'Revendeur' }]} />
           </Field>
           <Button type="submit" disabled={envoi} fullWidth>
             {envoi ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}

@@ -1,5 +1,7 @@
 'use client';
 
+import { rememberOrderAccess } from '@/lib/order-access-client';
+
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -177,17 +179,8 @@ export default function PanierPage() {
       }
 
       const commandes = data.orders as Order[];
-      for (const c of commandes) sugubaStore.addOrderFromCloud(c);
+      for (const c of commandes) { sugubaStore.addOrderFromCloud(c); rememberOrderAccess(c.orderNumber, cle); }
       // Un SMS par code de livraison (un par fournisseur), pas un par article.
-      const codesEnvoyes = new Set<string>();
-      for (const c of commandes) {
-        if (codesEnvoyes.has(c.deliveryOtp)) continue;
-        codesEnvoyes.add(c.deliveryOtp);
-        void fetch('/api/sms/send-otp', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ orderNumber: c.orderNumber }),
-        }).catch(() => undefined);
-      }
       try {
         sessionStorage.setItem('suguba_dernier_panier', JSON.stringify({ total: data.total, commandes }));
         sessionStorage.removeItem(CLE_TENTATIVE);

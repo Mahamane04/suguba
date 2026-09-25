@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
+import { useModalFocus } from '@/hooks/useModalFocus';
 import { X } from 'lucide-react';
 import PhotosUploader from '@/components/product/PhotosUploader';
 import Button from '@/components/ui/Button';
@@ -20,6 +22,7 @@ export default function PhotosProduitModal({
   /** `publication` : résultat de la publication automatique déclenchée par une première photo. */
   onEnregistre: (images: string[], publication?: { publie: boolean; prix?: number; raison?: string }) => void;
 }) {
+  const { host, ref } = useModalFocus(true, onClose);
   const [images, setImages] = useState<string[]>(produit.images);
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
   const [enregistrement, setEnregistrement] = useState(false);
@@ -47,11 +50,14 @@ export default function PhotosProduitModal({
     }
   };
 
-  return (
+  if (!host) return null;
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/60 p-0 sm:p-4" onClick={onClose}>
       <div
         className="bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl p-5 space-y-4 max-h-[92vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
+        ref={ref}
+        tabIndex={-1}
         role="dialog"
         aria-modal="true"
         aria-label={`Photos de ${produit.nom}`}
@@ -62,7 +68,7 @@ export default function PhotosProduitModal({
             <p className="text-xs text-slate-500 line-clamp-1">{produit.nom}</p>
           </div>
           <button type="button" onClick={onClose} aria-label="Fermer"
-            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center shrink-0">
+            className="w-11 h-11 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center shrink-0">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -77,7 +83,7 @@ export default function PhotosProduitModal({
         <PhotosUploader value={produit.images} onChange={setImages} onUploadingChange={setEnvoiEnCours} />
 
         {erreur && (
-          <p className="p-3 rounded-2xl bg-rose-50 border border-rose-100 text-xs font-bold text-rose-700">{erreur}</p>
+          <p role="alert" className="p-3 rounded-2xl bg-rose-50 border border-rose-100 text-xs font-bold text-rose-700">{erreur}</p>
         )}
 
         <div className="flex gap-2">
@@ -87,6 +93,6 @@ export default function PhotosProduitModal({
           </Button>
         </div>
       </div>
-    </div>
+    </div>, host
   );
 }

@@ -3,6 +3,7 @@
 import React, { use } from 'react';
 import Link from 'next/link';
 import ProductImage from '@/components/common/ProductImage';
+import DeliveryCodeNotice from '@/components/common/DeliveryCodeNotice';
 import Header from '@/components/common/Header';
 import SasPayPaymentDesk from '@/components/common/SasPayPaymentDesk';
 import { useSugubaStore } from '@/lib/store';
@@ -80,21 +81,7 @@ export default function OrderSuccessPage({ params }: { params: Promise<{ orderNu
             </p>
           </div>
 
-          {/* The Secret Delivery OTP Box */}
-          <div className="bg-gradient-to-br from-amber-500 to-orange-600 text-white rounded-3xl p-5 shadow-lg space-y-2">
-            <div className="flex items-center justify-center space-x-1.5 text-xs font-bold text-amber-100">
-              <KeyRound className="w-4 h-4 text-amber-200" />
-              <span>Votre Code Secret de Livraison Suguba</span>
-            </div>
-            
-            <div className="bg-white text-slate-950 font-mono text-3xl font-bold py-3 px-6 rounded-2xl tracking-[0.4em] inline-block shadow-inner">
-              {order.deliveryOtp}
-            </div>
-
-            <p className="text-xs text-amber-100 max-w-xs mx-auto leading-tight">
-              ⚠️ Donnez ce code au livreur <strong>uniquement</strong> après avoir reçu et vérifié votre colis.
-            </p>
-          </div>
+          <DeliveryCodeNotice orderNumber={order.orderNumber} autoSend />
 
           {/* Order Details Summary */}
           <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 text-left space-y-2.5 text-xs">
@@ -150,13 +137,13 @@ export default function OrderSuccessPage({ params }: { params: Promise<{ orderNu
           <div className="space-y-2 pt-2">
             <a
               href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-                `🎉 *SUGUBA.ML — Reçu Commande #${order.orderNumber}*\n\nProduit : ${order.productName}\nTotal : ${order.totalAmount.toLocaleString('fr-FR')} FCFA\n🔑 Mon Code OTP : ${order.deliveryOtp}\n📍 Repère : ${order.landmark} (${order.neighborhood})`
+                `🎉 *SUGUBA.ML — Reçu Commande #${order.orderNumber}*\n\nProduit : ${order.productName}\nTotal : ${order.totalAmount.toLocaleString('fr-FR')} FCFA\nLe code de remise est transmis séparément par SMS au destinataire.\n📍 Repère : ${order.landmark} (${order.neighborhood})`
               )}`}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full bg-suguba-wa hover:bg-[#20bd5a] text-suguba-profond font-bold py-3.5 px-4 rounded-2xl text-xs flex items-center justify-center space-x-2 shadow-xs"
             >
-              <span>📲 Sauvegarder mon Reçu & Code sur WhatsApp</span>
+              <span>📲 Sauvegarder mon reçu sur WhatsApp</span>
             </a>
 
             <div className="grid grid-cols-2 gap-2">

@@ -1,6 +1,8 @@
+import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
+import { verifyActiveSession } from '@/lib/active-session';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
+import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { contexteFournisseur } from '@/lib/reseau/contexte-fournisseur';
 import { publierAutomatiquement } from '@/lib/publication-auto';
 
@@ -35,7 +37,9 @@ import { publierAutomatiquement } from '@/lib/publication-auto';
  *    de Suguba sans que personne ne le voie.
  */
 export async function POST(req: NextRequest) {
-  const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
+  const denied = await refusSansPermissionAdmin(req, 'POST /api/products/sync');
+  if (denied) return denied;
+  const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value);
   if (!session || !['admin', 'supplier'].includes(session.role)) {
     return NextResponse.json({ error: 'Authentification fournisseur ou admin requise.' }, { status: 401 });
   }

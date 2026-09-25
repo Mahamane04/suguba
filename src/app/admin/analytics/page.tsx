@@ -45,8 +45,7 @@ export default function AdminAnalyticsPage() {
       'Commission Revendeur (FCFA)',
       'Marge Nette Suguba (FCFA)',
       'Statut Paiement',
-      'Livreur Assigné',
-      'Code OTP'
+      'Livreur Assigné'
     ];
 
     const rows = state.orders.map(o => {
@@ -68,8 +67,7 @@ export default function AdminAnalyticsPage() {
         o.resellerCommission || 0,
         Math.max(0, margin),
         o.paymentCollected ? 'ENCAISSÉ' : 'EN ATTENTE',
-        `"${o.driverName || 'Non assigné'}"`,
-        o.deliveryOtp
+        `"${o.driverName || 'Non assigné'}"`
       ].join(';');
     });
 

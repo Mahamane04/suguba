@@ -203,11 +203,11 @@ test('un badge inconnu s’affiche proprement au lieu de casser l’écran', () 
 
 // ── Permissions ────────────────────────────────────────────────────────────
 
-test('un admin sans ligne d’équipe garde tous les droits', () => {
-  // Sinon, la mise en production de ce module enfermerait dehors les
-  // administrateurs actuels, qui n'ont aucune ligne dans admin_team_members.
-  assert.deepEqual(permissions.permissionsEffectives(null), [...permissions.PERMISSIONS]);
-  assert.equal(permissions.aLaPermission(null, 'plateforme.equipe'), true);
+test('TEST-AUD-S4 : un admin sans affectation explicite n’obtient aucun droit', () => {
+  // L’ancien attendu encodait le défaut fail-open démontré par l’audit.
+  // Le cas légitime super_admin reste testé séparément, ainsi que le Support.
+  assert.deepEqual(permissions.permissionsEffectives(null), []);
+  assert.equal(permissions.aLaPermission(null, 'plateforme.equipe'), false);
 });
 
 test('un rôle d’équipe ne donne que ses propres permissions', () => {

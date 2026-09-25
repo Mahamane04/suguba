@@ -1,5 +1,6 @@
+import { verifyActiveSession } from '@/lib/active-session';
 import { NextRequest, NextResponse } from 'next/server';
-import { verifySessionToken, rolesDeLaSession, SESSION_COOKIE_NAME } from '@/lib/session';
+import { rolesDeLaSession, SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
 /**
@@ -11,7 +12,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
  * renvoyé au-delà du rôle et du numéro déjà connu du visiteur lui-même.
  */
 export async function GET(req: NextRequest) {
-  const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
+  const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value, true);
   if (!session) {
     return NextResponse.json({ authenticated: false });
   }

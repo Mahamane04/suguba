@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import ProductImage from '@/components/common/ProductImage';
+import OrdersSyncNotice from '@/components/common/OrdersSyncNotice';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import CarteAccesReseau from '@/components/reseau/CarteAccesReseau';
@@ -59,6 +60,7 @@ export default function ResellerDashboardPage() {
   // Tant que /api/reseller/me n'a pas répondu, pas de « 0 F » : un revendeur
   // qui voit son solde à zéro une seconde croit avoir perdu ses gains.
   const [charge, setCharge] = useState(false);
+  const [rechargerProfil, setRechargerProfil] = useState(0);
 
   const currentUser = state.currentUser;
 
@@ -71,13 +73,16 @@ export default function ResellerDashboardPage() {
 
   useEffect(() => {
     let annule = false;
-    fetch('/api/reseller/me')
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    setCharge(false); setMoi(null);
+    fetch('/api/reseller/me', { signal: controller.signal })
       .then((res) => (res.ok ? res.json() : { reseller: null }))
       .then((json) => { if (!annule) setMoi(json.reseller || null); })
       .catch(() => {})
-      .finally(() => { if (!annule) setCharge(true); });
-    return () => { annule = true; };
-  }, []);
+      .finally(() => { clearTimeout(timeout); if (!annule) setCharge(true); });
+    return () => { annule = true; clearTimeout(timeout); controller.abort(); };
+  }, [rechargerProfil, currentUser.id]);
 
   const referralCode = moi?.referralCode || null;
   const palierCle: Palier = (moi?.tier && moi.tier in PALIERS ? moi.tier : 'new') as Palier;
@@ -92,9 +97,9 @@ export default function ResellerDashboardPage() {
   // Commission > 0 comme au catalogue : « Vous gagnez 0 F » n'a aucun sens ici.
   const approvedProducts = state.products.filter(p => p.status === 'approved' && p.publicPrice > 0 && p.resellerCommission > 0);
 
-  const montant = (n: number) => charge
-    ? <>{n.toLocaleString('fr-FR')} <span className="text-xs font-bold text-slate-500">F</span></>
-    : <span className="inline-block h-6 w-20 rounded-lg bg-slate-200 animate-pulse align-middle" aria-label="Chargement" />;
+  const montant = (n: number) => charge && !moi ? '—' : charge
+    ? <>{n.toLocaleString('fr-FR')} <span className="text-xs font-bold text-slate-600">F</span></>
+    : <span className="inline-block h-6 w-20 rounded-lg bg-slate-200 animate-pulse align-middle" role="status" aria-label="Chargement" />;
 
   const ventesLivrees = moi?.successfulOrdersCount ?? myOrders.filter(o => o.status === 'delivered').length;
   const progression = palier.prochain ? Math.min(100, Math.round((ventesLivrees / palier.prochain) * 100)) : 100;
@@ -112,9 +117,11 @@ export default function ResellerDashboardPage() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
       <Header />
+      <OrdersSyncNotice />
 
       <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 py-6 w-full space-y-5">
         <BandeauDemarrage />
+        {charge && !moi && <div role="alert" className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950 space-y-2"><p>Votre solde et votre palier sont indisponibles. Aucun montant n’est confirmé.</p><Button variant="ghost" onClick={() => setRechargerProfil(v => v + 1)}>Réessayer le solde et le profil</Button></div>}
 
 
         {/* 1. Accueil + solde retirable : ce que le revendeur vient voir en premier */}
@@ -122,13 +129,13 @@ export default function ResellerDashboardPage() {
           <div className="space-y-3">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 text-xs font-bold">
               <ShieldCheck className="w-3.5 h-3.5" />
-              <span>{palier.nom}</span>
+              <span>{moi ? palier.nom : 'Palier non confirmé'}</span>
             </div>
             <h1 className="text-2xl font-bold text-slate-900">
               Bonjour{prenom ? `, ${prenom}` : ''} 👋
             </h1>
             <div className="space-y-1">
-              <span className="text-xs font-bold text-slate-500 uppercase block">Mon code revendeur</span>
+              <span className="text-xs font-bold text-slate-600 uppercase block">Mon code revendeur</span>
               <button
                 onClick={handleCopyRefCode}
                 disabled={!referralCode}
@@ -141,7 +148,7 @@ export default function ResellerDashboardPage() {
                   ? <Check className="w-4 h-4 text-suguba-brand-dark" />
                   : <Copy className="w-4 h-4 text-slate-400" />}
               </button>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-slate-600">
                 {copiedRef ? 'Code copié.' : 'Il est déjà inclus dans chaque lien que vous partagez.'}
               </p>
             </div>
@@ -149,11 +156,11 @@ export default function ResellerDashboardPage() {
 
           <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4 flex flex-col justify-between gap-3">
             <div>
-              <p className="text-xs font-bold text-slate-500 uppercase">Disponible au retrait</p>
+              <p className="text-xs font-bold text-slate-600 uppercase">Disponible au retrait</p>
               <p className="text-3xl font-bold text-slate-900">
-                {charge
-                  ? <>{availableBalance.toLocaleString('fr-FR')} <span className="text-sm font-bold text-slate-500">F</span></>
-                  : <span className="inline-block h-8 w-32 rounded-lg bg-slate-200 animate-pulse align-middle" aria-label="Chargement du solde" />}
+                {charge && !moi ? '—' : charge
+                  ? <>{availableBalance.toLocaleString('fr-FR')} <span className="text-sm font-bold text-slate-600">F</span></>
+                  : <span className="inline-block h-8 w-32 rounded-lg bg-slate-200 animate-pulse align-middle" role="status" aria-label="Chargement du solde" />}
               </p>
             </div>
             <Button href="/reseller/payouts" variant="primary" fullWidth>
@@ -165,14 +172,14 @@ export default function ResellerDashboardPage() {
 
         {/* 2. Indicateurs */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <Indicateur icone={<Clock className="w-4 h-4" />} titre="En attente" note={`Débloqué ${palier.jours} jours après livraison`}>
+          <Indicateur icone={<Clock className="w-4 h-4" />} titre="En attente" note={moi ? `Débloqué ${palier.jours} jours après livraison` : 'Délai non confirmé'}>
             {montant(pendingBalance)}
           </Indicateur>
           <Indicateur icone={<TrendingUp className="w-4 h-4" />} titre="Total gagné" note="Depuis votre inscription">
             {montant(totalEarned)}
           </Indicateur>
-          <Indicateur icone={<ShoppingBag className="w-4 h-4" />} titre="Ventes livrées" note={`${myOrders.length} commande${myOrders.length > 1 ? 's' : ''} au total`}>
-            {ventesLivrees}
+          <Indicateur icone={<ShoppingBag className="w-4 h-4" />} titre="Ventes livrées" note={state.ordersSync === 'ready' ? `${myOrders.length} commande${myOrders.length > 1 ? 's' : ''} au total` : 'Total des commandes non confirmé'}>
+            {state.ordersSync === 'ready' || moi ? ventesLivrees : '—'}
           </Indicateur>
         </div>
 
@@ -181,24 +188,24 @@ export default function ResellerDashboardPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <h2 className="font-bold text-sm text-slate-900">
-                Vos commissions sont débloquées {palier.jours} jours après la livraison
+                {moi ? `Vos commissions sont débloquées ${palier.jours} jours après la livraison` : 'Votre palier sera affiché après chargement du profil'}
               </h2>
-              <p className="text-xs text-slate-500">
-                {palier.prochain
+              <p className="text-xs text-slate-600">
+                {!moi ? 'Réessayez le chargement pour consulter votre progression.' : palier.prochain
                   ? `Encore ${restantes} vente${restantes > 1 ? 's' : ''} livrée${restantes > 1 ? 's' : ''} pour passer « ${palier.suivant} » et raccourcir ce délai.`
                   : 'Vous êtes au palier le plus rapide.'}
               </p>
             </div>
-            {palier.prochain && (
+            {moi && palier.prochain && (
               <span className="text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 px-3 py-1 rounded-full self-start sm:self-auto shrink-0">
-                {ventesLivrees} / {palier.prochain}
+                {state.ordersSync === 'ready' || moi ? ventesLivrees : '—'} / {palier.prochain}
               </span>
             )}
           </div>
           <div className="bg-slate-100 rounded-full h-2 overflow-hidden">
-            <div className="h-2 rounded-full bg-suguba-brand transition-all duration-500" style={{ width: `${progression}%` }} />
+            <div className="h-2 rounded-full bg-suguba-brand transition-all duration-500" style={{ width: `${moi ? progression : 0}%` }} />
           </div>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-600">
             14 jours pour un nouveau revendeur, 7 jours dès 10 ventes livrées, 3 jours dès 30. Ce délai protège contre les retours.
           </p>
         </div>
@@ -223,7 +230,7 @@ export default function ResellerDashboardPage() {
           <div className="flex items-end justify-between gap-3">
             <div>
               <h2 className="text-base font-bold text-slate-900">À partager aujourd&apos;hui</h2>
-              <p className="text-xs text-slate-500">Sur votre statut WhatsApp ou directement à un client.</p>
+              <p className="text-xs text-slate-600">Sur votre statut WhatsApp ou directement à un client.</p>
             </div>
             <Link href="/reseller/catalog" className="text-xs font-bold text-suguba-brand-dark hover:underline flex items-center gap-0.5 shrink-0">
               <span>Voir tout</span>
@@ -238,7 +245,7 @@ export default function ResellerDashboardPage() {
               ))}
             </div>
           ) : approvedProducts.length === 0 ? (
-            <div className="bg-white rounded-3xl border border-slate-200 p-8 text-center text-sm text-slate-500">
+            <div className="bg-white rounded-3xl border border-slate-200 p-8 text-center text-sm text-slate-600">
               Le catalogue est en cours de remplissage. Les produits apparaîtront ici dès leur validation.
             </div>
           ) : (
@@ -252,7 +259,7 @@ export default function ResellerDashboardPage() {
                     <div className="flex-1 min-w-0 space-y-0.5">
                       <h3 className="font-bold text-sm text-slate-900 truncate">{product.name}</h3>
                       <p className="text-xs font-bold text-slate-900">
-                        {product.publicPrice.toLocaleString('fr-FR')} <span className="text-xs font-bold text-slate-500">F</span>
+                        {product.publicPrice.toLocaleString('fr-FR')} <span className="text-xs font-bold text-slate-600">F</span>
                       </p>
                       <span className="inline-block px-2 py-0.5 bg-suguba-brand/10 text-suguba-brand-dark text-xs font-bold rounded-full">
                         Vous gagnez {product.resellerCommission.toLocaleString('fr-FR')} F
@@ -291,8 +298,8 @@ export default function ResellerDashboardPage() {
           </div>
 
           {myOrders.length === 0 ? (
-            <p className="text-center py-6 text-slate-500 text-sm">
-              Aucune vente pour le moment. Partagez votre premier produit !
+            <p className="text-center py-6 text-slate-600 text-sm">
+              {state.ordersSync === 'ready' ? 'Aucune vente pour le moment. Partagez votre premier produit !' : 'La liste des ventes n’est pas encore confirmée.'}
             </p>
           ) : (
             <div className="divide-y divide-slate-100">
@@ -303,7 +310,7 @@ export default function ResellerDashboardPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-sm text-slate-900 truncate">{order.productName}</p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-slate-600">
                       {new Date(order.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                       {' • '}{order.totalAmount.toLocaleString('fr-FR')} F
                     </p>
@@ -367,12 +374,12 @@ function Indicateur({ icone, titre, note, children }: {
 }) {
   return (
     <div className="bg-white p-4 rounded-3xl border border-slate-200 space-y-1.5">
-      <div className="flex items-center gap-1.5 text-slate-500">
+      <div className="flex items-center gap-1.5 text-slate-600">
         {icone}
         <span className="text-xs font-bold uppercase">{titre}</span>
       </div>
       <p className="text-xl sm:text-2xl font-bold text-slate-900">{children}</p>
-      <p className="text-xs text-slate-500">{note}</p>
+      <p className="text-xs text-slate-600">{note}</p>
     </div>
   );
 }
@@ -388,7 +395,7 @@ function Raccourci({ href, onClick, disabled, icone, titre, sousTitre }: {
       </div>
       <div className="min-w-0 flex-1">
         <p className="font-bold text-sm text-slate-900 truncate">{titre}</p>
-        <p className="text-xs text-slate-500 truncate">{sousTitre}</p>
+        <p className="text-xs text-slate-600 truncate">{sousTitre}</p>
       </div>
       <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />
     </>

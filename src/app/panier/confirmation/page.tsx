@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { CheckCircle2, KeyRound, Package, Phone } from 'lucide-react';
+import DeliveryCodeNotice from '@/components/common/DeliveryCodeNotice';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Button from '@/components/ui/Button';
@@ -10,8 +11,8 @@ import { Card, EmptyState } from '@/components/ui/Surface';
 import type { Order } from '@/types';
 
 /**
- * Confirmation d'un panier. Les commandes sont groupées par CODE de livraison
- * — un code par livraison (donc par fournisseur) : c'est ce que le client doit
+ * Confirmation d'un panier. Les commandes sont groupées par identifiant public de livraison
+ * — un groupe par livraison : le client peut
  * retenir pour réceptionner ses colis.
  */
 
@@ -29,8 +30,8 @@ export default function ConfirmationPanierPage() {
   const livraisons = useMemo(() => {
     const groupes = new Map<string, Order[]>();
     for (const c of donnees?.commandes || []) {
-      if (!groupes.has(c.deliveryOtp)) groupes.set(c.deliveryOtp, []);
-      groupes.get(c.deliveryOtp)!.push(c);
+      if (!groupes.has(c.deliveryGroup || c.id)) groupes.set(c.deliveryGroup || c.id, []);
+      groupes.get(c.deliveryGroup || c.id)!.push(c);
     }
     return [...groupes.entries()];
   }, [donnees]);
@@ -71,13 +72,8 @@ export default function ConfirmationPanierPage() {
               <p className="text-sm font-bold text-slate-900">
                 {livraisons.length > 1 ? `Livraison ${i + 1} sur ${livraisons.length}` : 'Votre livraison'}
               </p>
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-slate-900 text-white text-sm font-bold tabular-nums">
-                <KeyRound className="w-4 h-4" />{code}
-              </span>
             </div>
-            <p className="text-xs text-slate-500">
-              Ne donnez ce code au livreur qu’une fois le colis vérifié. Il vous a aussi été envoyé par SMS.
-            </p>
+            <DeliveryCodeNotice orderNumber={commandes[0].orderNumber} autoSend />
             <div className="divide-y divide-slate-100">
               {commandes.map((c) => (
                 <div key={c.id} className="py-2 flex items-center justify-between gap-3">

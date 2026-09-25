@@ -315,8 +315,7 @@ export async function membreEquipe(profileId: string): Promise<MembreEquipe | nu
 
 /**
  * L'admin connecté a-t-il cette permission ? Un admin sans ligne d'équipe
- * garde tous les droits (voir permissionsEffectives) : la mise en production
- * de ce module ne doit enfermer dehors aucun administrateur existant.
+ * n’obtient aucun droit implicite. L’affectation explicite est obligatoire.
  */
 export async function adminPeut(profileId: string, permission: Permission): Promise<boolean> {
   const membre = await membreEquipe(profileId);
@@ -326,8 +325,7 @@ export async function adminPeut(profileId: string, permission: Permission): Prom
 /**
  * Administrateur GÉNÉRAL (2026-09-19) : admin sans rôle d'équipe restreint,
  * ou « Super Admin ». Seul à voir le guide des parcours (/admin/guide).
- * Strict, contrairement à membreEquipe : une erreur de lecture REFUSE
- * l'accès — sauf table d'équipe absente, où tous les admins sont généraux.
+ * Toute erreur ou absence d’affectation refuse l’accès.
  */
 export async function estAdministrateurGeneral(profileId: string): Promise<boolean> {
   const a = admin();
@@ -337,6 +335,6 @@ export async function estAdministrateurGeneral(profileId: string): Promise<boole
     .select('team_role')
     .eq('profile_id', profileId)
     .maybeSingle();
-  if (error) return schemaIncomplet(error);
-  return !data || data.team_role === 'super_admin';
+  if (error) return false;
+  return data?.team_role === 'super_admin';
 }

@@ -14,21 +14,16 @@ export async function GET(req: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Session admin requise.' }, { status: 401 });
   if (!(await adminPeut(session.uid, 'commande.lire'))) return NextResponse.json({ error: 'Votre rôle ne donne pas accès aux commandes.' }, { status: 403 });
   const admin = getSupabaseAdmin();
-  if (!admin) return NextResponse.json({ commandes: [], compteurs: {} });
+  if (!admin) return NextResponse.json({ error: 'Service indisponible.' }, { status: 503 });
 
   const statut = req.nextUrl.searchParams.get('statut') || '';
   const q = (req.nextUrl.searchParams.get('q') || '').trim().toLowerCase();
 
-  let requete = admin.from('orders').select('*').order('created_at', { ascending: false }).limit(300);
-  if (statut) requete = requete.eq('status', statut);
-  const { data } = await requete;
-
-  const { data: tous } = await admin.from('orders').select('status').limit(20000);
-  const compteurs: Record<string, number> = {};
-  for (const o of tous || []) compteurs[o.status] = (compteurs[o.status] || 0) + 1;
-
-  const commandes = (data || [])
-    .filter((o: any) => !q || [o.order_number, o.customer_name, o.customer_phone, o.product_name, o.reseller_code].some((v) => String(v || '').toLowerCase().includes(q)))
+  const page = Math.max(1, Math.min(100000, Number(req.nextUrl.searchParams.get('page')) || 1));
+  if (!Number.isInteger(page) || q.length > 100) return NextResponse.json({ error: 'Recherche invalide.' }, { status: 400 });
+  const { data, error } = await admin.rpc('search_admin_orders', { p_status: statut, p_query: q, p_page: page });
+  if (error || !data) return NextResponse.json({ error: 'Recherche indisponible. Réessayez.' }, { status: 503 });
+  const commandes = (data.orders || [])
     .map((o: any) => ({
       id: o.id, numero: o.order_number, produit: o.product_name, quantite: Number(o.quantity) || 1,
       total: Number(o.total_amount) || 0, livraison: Number(o.delivery_fee) || 0, statut: o.status,
@@ -39,5 +34,5 @@ export async function GET(req: NextRequest) {
       codeRamassage: ['confirmed', 'dispatched'].includes(o.status) && !o.picked_up_at ? o.pickup_code || null : null,
       recupereeLe: o.picked_up_at || null,
     }));
-  return NextResponse.json({ commandes, compteurs });
+  return NextResponse.json({ commandes, compteurs: data.counts, total: Number(data.total), page, taillePage: 50 });
 }

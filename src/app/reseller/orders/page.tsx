@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import ProductImage from '@/components/common/ProductImage';
 import Header from '@/components/common/Header';
+import OrdersSyncNotice from '@/components/common/OrdersSyncNotice';
 import BottomNav from '@/components/common/BottomNav';
 import { useSugubaStore } from '@/lib/store';
 import EmptyState from '@/components/ui/EmptyState';
@@ -34,6 +35,7 @@ export default function ResellerOrdersPage() {
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
       <Header />
+      <OrdersSyncNotice />
 
       <main className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 py-6 w-full space-y-5">
         
@@ -43,14 +45,14 @@ export default function ResellerOrdersPage() {
             Mes Ventes & Suivi des Commandes
           </h1>
           <p className="text-xs text-slate-500">
-            Suivez en temps réel la livraison de vos clients et le déblocage de vos commissions.
+            Consultez la livraison de vos clients et le déblocage de vos commissions.
           </p>
         </div>
 
         {/* Status Filter Tabs */}
         <div className="flex items-center space-x-2 overflow-x-auto pb-1 scrollbar-none">
           {[
-            { id: 'all', label: `Toutes (${myOrders.length})` },
+            { id: 'all', label: `Toutes (${state.ordersSync === 'ready' ? myOrders.length : '—'})` },
             { id: 'delivered', label: 'Livrées & Payées' },
             { id: 'in_transit', label: 'En cours de livraison' },
             { id: 'pending', label: 'À confirmer' },
@@ -72,7 +74,7 @@ export default function ResellerOrdersPage() {
         {/* Orders List */}
         <div className="space-y-3">
           {filteredOrders.length === 0 ? (
-            <EmptyState icon={ShoppingBag} title="Aucune commande trouvée pour ce filtre." />
+            <EmptyState icon={ShoppingBag} title={state.ordersSync === 'ready' ? 'Aucune commande trouvée pour ce filtre.' : 'La liste des commandes n’est pas encore confirmée.'} />
           ) : (
             filteredOrders.map((order) => {
               const commission = state.commissions.find(c => c.orderId === order.id);
