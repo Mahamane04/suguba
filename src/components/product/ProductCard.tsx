@@ -30,7 +30,8 @@ export interface ProduitCarte {
 export function carteDepuisProduit(p: Product): ProduitCarte {
   const nature = libelleTypeOffre(normaliserTypeOffre(p.typeOffre));
   return {
-    etiquetteOffre: nature || (p.modeRemise === 'fournisseur' ? 'Remis par le vendeur' : p.modeRemise === 'retrait' ? 'Chez le vendeur' : null),
+    etiquetteOffre: p.modeCommande === 'devis' ? 'Sur devis'
+      : nature || (p.modeRemise === 'fournisseur' ? 'Remis par le vendeur' : p.modeRemise === 'retrait' ? 'Chez le vendeur' : null),
     id: p.id,
     slug: p.slug,
     nom: p.name,

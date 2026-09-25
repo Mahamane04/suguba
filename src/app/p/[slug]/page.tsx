@@ -147,10 +147,17 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   const outOfStock = product.stockQuantity <= 0;
   // « Service » / « Installation incluse » (2026-09-26)
   const typeOffreLibelle = libelleTypeOffre(normaliserTypeOffre(product.typeOffre));
+  const surDevis = product.modeCommande === 'devis';
+  const libelleAction = outOfStock ? 'Rupture de stock' : surDevis ? 'Demander un devis' : 'Commander';
   const unitPrice = devis?.prixUnitaire ?? product.publicPrice;
 
   const allerCommander = () => {
     if (outOfStock) return;
+    // Offre sur devis (lot 1b) : le client décrit son besoin au lieu de commander.
+    if (surDevis) {
+      router.push(`/p/${product.slug}/devis${refCode ? `?ref=${encodeURIComponent(refCode)}` : ''}`);
+      return;
+    }
     const parametres = new URLSearchParams();
     if (quantity > 1) parametres.set('q', String(quantity));
     if (refCode) parametres.set('ref', refCode);
@@ -267,15 +274,16 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               <h1 className="text-xl font-bold text-slate-900 leading-tight">{product.name}</h1>
               <div className="flex items-center justify-between gap-3">
                 <p className="text-2xl font-bold text-suguba-brand whitespace-nowrap">
+                  {surDevis && <span className="block text-xs font-bold text-slate-500">À partir de</span>}
                   {Math.round(unitPrice).toLocaleString('fr-FR')} <span className="text-base">FCFA</span>
                 </p>
                 <Button type="button" onClick={allerCommander} disabled={outOfStock} className="shrink-0">
-                  <span>{outOfStock ? 'Rupture de stock' : 'Commander'}</span>
+                  <span>{libelleAction}</span>
                   <ArrowRight className="w-4 h-4" />
                 </Button>
               </div>
               <SelecteurVariantes slug={product.slug} />
-              <BoutonAjoutPanier disabled={outOfStock} productId={product.id} quantite={1} />
+              {!surDevis && <BoutonAjoutPanier disabled={outOfStock} productId={product.id} quantite={1} />}
               <p className="text-xs text-slate-500">
                 Sans créer de compte · Payez à la livraison
               </p>
@@ -344,7 +352,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             <div className="space-y-1">
               {typeOffreLibelle && <span className="inline-flex px-2.5 py-0.5 rounded-full bg-suguba-citron text-suguba-profond text-xs font-bold">{typeOffreLibelle}</span>}
               <h1 className="text-xl font-bold text-slate-900 leading-tight">{product.name}</h1>
-              <p className="text-3xl font-bold text-suguba-brand-dark">{fcfa(unitPrice)}</p>
+              <p className="text-3xl font-bold text-suguba-brand-dark">{surDevis && <span className="block text-xs font-bold text-slate-500">À partir de</span>}{fcfa(unitPrice)}</p>
             </div>
 
             <SelecteurVariantes slug={product.slug} />
@@ -380,10 +388,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             </div>
 
             <Button type="button" onClick={allerCommander} disabled={outOfStock} size="lg" fullWidth>
-              <span>{outOfStock ? 'Rupture de stock' : 'Commander'}</span>
+              <span>{libelleAction}</span>
               <ArrowRight className="w-4 h-4" />
             </Button>
-            <BoutonAjoutPanier disabled={outOfStock} productId={product.id} quantite={quantity} />
+            {!surDevis && <BoutonAjoutPanier disabled={outOfStock} productId={product.id} quantite={quantity} />}
             <p className="text-xs text-slate-500 text-center">
               {product.modeRemise && product.modeRemise !== 'livreur'
                 ? 'Le vendeur vous contacte après la confirmation · Payez à la remise'

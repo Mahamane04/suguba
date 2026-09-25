@@ -111,7 +111,9 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { vitrine } = charge;
   const titre = `${vitrine.nom} — Suguba`;
   const description = `${vitrine.produits.length} article${vitrine.produits.length > 1 ? 's' : ''} livrés à Bamako. Vous payez à la livraison.`;
-  const image = vitrine.produits.find((p) => p.image)?.image;
+  // Aperçu WhatsApp/Facebook : la couverture, puis le logo de la boutique ;
+  // une photo d'article seulement si le revendeur n'a rien personnalisé.
+  const image = vitrine.couverture || vitrine.logo || vitrine.produits.find((p) => p.image)?.image;
 
   return {
     title: titre,

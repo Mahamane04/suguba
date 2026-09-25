@@ -53,6 +53,41 @@ export function recusSurCetAppareil(): { orderNumber: string; enregistreLe: numb
 }
 
 /**
+ * Devis (2026-09-26) : même principe, clé gardée 90 jours sur le téléphone
+ * qui a demandé le devis. À l'acceptation, elle devient aussi la clé du reçu
+ * de la commande créée (voir src/lib/devis.ts).
+ */
+const PREFIX_DEVIS = 'suguba_devis:';
+
+export function rememberDevisAccess(numero: string, key: string) {
+  try { localStorage.setItem(PREFIX_DEVIS + numero, JSON.stringify({ k: key, t: Date.now() })); } catch { /* Navigation privée. */ }
+}
+
+export function devisAccessKey(numero: string): string | undefined {
+  try {
+    const brut = localStorage.getItem(PREFIX_DEVIS + numero);
+    if (!brut) return undefined;
+    const { k, t } = JSON.parse(brut) as { k?: string; t?: number };
+    if (typeof k !== 'string' || !t || Date.now() - t > DUREE_MS) { localStorage.removeItem(PREFIX_DEVIS + numero); return undefined; }
+    return k;
+  } catch { return undefined; }
+}
+
+export function devisSurCetAppareil(): { numero: string; enregistreLe: number }[] {
+  const liste: { numero: string; enregistreLe: number }[] = [];
+  try {
+    for (const cle of Object.keys(localStorage)) {
+      if (!cle.startsWith(PREFIX_DEVIS)) continue;
+      const numero = cle.slice(PREFIX_DEVIS.length);
+      if (!devisAccessKey(numero)) continue;
+      const { t } = JSON.parse(localStorage.getItem(cle) || '{}') as { t?: number };
+      liste.push({ numero, enregistreLe: t || 0 });
+    }
+  } catch { /* Stockage indisponible. */ }
+  return liste.sort((a, b) => b.enregistreLe - a.enregistreLe);
+}
+
+/**
  * `effacerRecus` : vrai à la déconnexion ou quand un AUTRE compte prend la
  * main sur l'appareil. Faux au simple chargement d'une session (cette
  * fonction est aussi appelée à chaque démarrage d'un utilisateur connecté).
@@ -67,6 +102,6 @@ export function clearPrivateSessionStorage(effacerRecus = false) {
   } catch { /* Stockage indisponible. */ }
   if (!effacerRecus) return;
   try {
-    for (const key of Object.keys(localStorage)) if (key.startsWith(PREFIX_DURABLE)) localStorage.removeItem(key);
+    for (const key of Object.keys(localStorage)) if (key.startsWith(PREFIX_DURABLE) || key.startsWith(PREFIX_DEVIS)) localStorage.removeItem(key);
   } catch { /* Stockage indisponible. */ }
 }

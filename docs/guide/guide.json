@@ -192,6 +192,48 @@
  "journal": [
   {
    "date": "2026-09-26",
+   "titre": "Correctif : logo et couverture de la boutique revendeur",
+   "demande": "La photo de profil et la couverture choisies dans « Ma boutique » n'apparaissent ni sur la boutique /r/<code>, ni dans l'aperçu WhatsApp du lien (une photo d'article s'affiche à la place).",
+   "realise": [
+    "La boutique /r/<code> reprend désormais le nom, le logo, la couverture et la présentation choisis dans « Ma boutique ».",
+    "L'aperçu du lien (WhatsApp, Facebook) montre la couverture, sinon le logo ; une photo d'article seulement si rien n'est personnalisé. Même règle pour /boutique/<adresse>."
+   ],
+   "ecarts": [
+    "WhatsApp garde en mémoire l'ancien aperçu d'un lien déjà envoyé : les nouveaux envois (ou le lien /boutique/<adresse>) montrent la bonne image."
+   ],
+   "pages": [
+    "rev-boutique"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-26",
+   "titre": "Devis enregistrés (lot 1b)",
+   "demande": "« Ok continue » : suite du lot « Offres & réalisation » — pour le solaire ou l'installation, le client demande un devis, le fournisseur répond avec un prix, le client accepte.",
+   "realise": [
+    "Offre « sur devis » : dans « Ajouter une offre », choix « Il demande un devis ». Sur la fiche, « Demander un devis » remplace « Commander » et le panier ; le prix devient « à partir de ».",
+    "Le client décrit son besoin (sans compte). Sa demande reste sur son téléphone (« Suivre ma commande › Mes demandes de devis »).",
+    "Espace fournisseur › Demandes de devis : appeler le client, proposer son prix (tout compris) et la part du revendeur, ou refuser avec un motif. Suguba calcule le prix client, qui est figé dans le devis.",
+    "Le client voit le prix final (jamais le prix du fournisseur ni la commission), accepte ou refuse. Accepter crée une commande normale au prix du devis et ouvre directement le reçu QR ; la suite est la même que pour toute commande (appel de confirmation, remise, caisse).",
+    "Anti-abus : une demande en cours par offre et par numéro, cinq au total ; un devis expiré ne peut plus être accepté."
+   ],
+   "ecarts": [
+    "SQL à exécuter : supabase/A-EXECUTER-2026-09-26-devis.sql.",
+    "Pas de notification au fournisseur quand une demande arrive (il consulte « Demandes de devis ») ; pas encore de liste des devis côté admin.",
+    "Pas encore : prestations en plusieurs étapes (lot 1c), acomptes."
+   ],
+   "pages": [
+    "devis-demande",
+    "devis-client",
+    "fou-devis",
+    "fou-ajouter",
+    "fiche-produit",
+    "suivi"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-26",
    "titre": "Offres : services, remise par le fournisseur (lot 1a)",
    "demande": "« Le fournisseur peut proposer aussi des gains sur les services. Par exemple, l'achat d'un kit solaire avec installation ne nécessite pas forcément qu'un livreur puisse aller le faire : c'est un service complet. L'achat de véhicule, c'est le vendeur directement qui va livrer le véhicule. » Choix : encaissement toujours via Suguba ; réservation puis paiement à la remise pour les gros montants ; commencer par le lot 1a (types d'offre et remise par le fournisseur).",
    "realise": [
@@ -809,6 +851,10 @@
    "but": "Tout sur un article : photos, prix, description, et les deux façons de l’acheter.",
    "elements": [
     {
+     "nom": "Demander un devis",
+     "role": "Pour une offre sur devis : remplace « Commander » et le panier ; le prix est « à partir de »."
+    },
+    {
      "nom": "Étiquette « Service » / « Installation incluse »",
      "role": "Nature de l'offre, au-dessus du nom."
     },
@@ -862,6 +908,62 @@
    "capture": {
     "chemin": "/p/encre-205a-hp"
    }
+  },
+  {
+   "id": "devis-demande",
+   "role": "visiteur",
+   "titre": "Demander un devis",
+   "chemin": "/p/<produit>/devis",
+   "but": "Pour une offre « sur devis » (kit solaire à dimensionner, installation…) : le client décrit son besoin, sans compte et sans engagement.",
+   "elements": [
+    {
+     "nom": "Votre besoin",
+     "role": "Description libre (au moins 10 caractères), quantité."
+    },
+    {
+     "nom": "Nom, téléphone, ville, quartier, repère",
+     "role": "Pour que le vendeur rappelle et chiffre au bon endroit."
+    },
+    {
+     "nom": "Envoyer ma demande",
+     "role": "Enregistre la demande (une clé reste sur ce téléphone) et ouvre la page du devis. Une seule demande en cours par offre et par numéro."
+    }
+   ],
+   "suite": [
+    {
+     "id": "devis-client",
+     "libelle": "Le devis du client"
+    }
+   ],
+   "note": "Pas de capture : il faut une offre « sur devis » et une vraie demande. Vérifié par les tests automatiques (parcours complet et SQL)."
+  },
+  {
+   "id": "devis-client",
+   "role": "visiteur",
+   "titre": "Mon devis",
+   "chemin": "/devis/<numéro>",
+   "but": "Le suivi du devis sur le téléphone qui l'a demandé : en attente, proposition du vendeur (prix final, ce qui est compris, validité), acceptation ou refus.",
+   "elements": [
+    {
+     "nom": "Prix proposé",
+     "role": "Prix, livraison ou remise par le vendeur, total. Jamais le prix du fournisseur ni la commission."
+    },
+    {
+     "nom": "Accepter le devis",
+     "role": "Crée la commande au prix du devis (confirmation demandée) et ouvre directement le reçu QR."
+    },
+    {
+     "nom": "Refuser",
+     "role": "Clôt le devis ; une nouvelle demande reste possible."
+    }
+   ],
+   "suite": [
+    {
+     "id": "recu",
+     "libelle": "Mon reçu Suguba"
+    }
+   ],
+   "note": "Pas de capture : il faut une offre « sur devis » et une vraie demande. Vérifié par les tests automatiques (parcours complet et SQL)."
   },
   {
    "id": "commander",
@@ -1016,6 +1118,10 @@
    "chemin": "/track",
    "but": "Le client retrouve l’état de sa commande avec son numéro (ex. SG-5BC5XBDT).",
    "elements": [
+    {
+     "nom": "Mes demandes de devis",
+     "role": "Les devis demandés depuis ce téléphone."
+    },
     {
      "nom": "Mes reçus sur ce téléphone",
      "role": "Les reçus gardés sur ce téléphone (90 jours) : un tap ouvre le reçu avec le QR."
@@ -2499,12 +2605,48 @@
    }
   },
   {
+   "id": "fou-devis",
+   "role": "fournisseur",
+   "titre": "Demandes de devis",
+   "chemin": "/supplier/devis",
+   "but": "Les demandes des clients sur les offres « sur devis » : le fournisseur répond avec son prix, Suguba calcule le prix client.",
+   "elements": [
+    {
+     "nom": "À répondre · Proposés · Terminés",
+     "role": "Filtres."
+    },
+    {
+     "nom": "Appeler le client",
+     "role": "Téléphone visible tant que la demande est ouverte, pour préciser le besoin."
+    },
+    {
+     "nom": "Proposer un prix",
+     "role": "Votre prix (tout compris), part du revendeur, ce qui est compris, validité. Le prix client est calculé et figé ; le client accepte ou refuse."
+    },
+    {
+     "nom": "Refuser",
+     "role": "Avec un motif visible par le client (hors zone, indisponible…)."
+    }
+   ],
+   "suite": [
+    {
+     "id": "fou-commandes",
+     "libelle": "Un devis accepté devient une commande"
+    }
+   ],
+   "note": "Pas de capture : il faut une offre « sur devis » et une vraie demande. Vérifié par les tests automatiques (parcours complet et SQL)."
+  },
+  {
    "id": "fou-ajouter",
    "role": "fournisseur",
    "titre": "Ajouter une offre",
    "chemin": "/supplier/products/new",
    "but": "Déposer un nouvel article : le fournisseur fixe son prix ET la part du revendeur. Avec au moins une photo, le produit est mis en vente aussitôt, au prix calculé par Suguba.",
    "elements": [
+    {
+     "nom": "Comment le client commande ?",
+     "role": "Il achète directement, ou il demande un devis (le prix affiché devient « à partir de »)."
+    },
     {
      "nom": "Votre offre : que proposez-vous ?",
      "role": "Un produit, un service, ou un produit avec service (ex. kit solaire avec installation)."

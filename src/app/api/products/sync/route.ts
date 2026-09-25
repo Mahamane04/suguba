@@ -154,9 +154,17 @@ export async function POST(req: NextRequest) {
     }
     const offreParDefaut = !offre || (offre.type_offre === 'produit' && offre.mode_remise === 'livreur' && !offre.offre_inclus);
     const colonnesOffre = Boolean(existant && 'mode_remise' in existant);
-    const avecOffre = (ligne: Record<string, unknown>) => (offre && (!offreParDefaut || colonnesOffre) ? { ...ligne, ...offre } : ligne);
+    // Commande sur devis (lot 1b) : colonne à part, envoyée seulement quand
+    // elle sert (même principe que les autres colonnes récentes).
+    const modeCommande = product.modeCommande === 'devis' ? 'devis' : product.modeCommande === 'achat' ? 'achat' : undefined;
+    const avecDevis = (ligne: Record<string, unknown>) =>
+      modeCommande && (modeCommande === 'devis' || (existant && 'mode_commande' in existant)) ? { ...ligne, mode_commande: modeCommande } : ligne;
+    const avecOffre = (ligne: Record<string, unknown>) => avecDevis(offre && (!offreParDefaut || colonnesOffre) ? { ...ligne, ...offre } : ligne);
 
     const erreurColonne = (e: { code?: string; message: string }) => {
+      if (/mode_commande/.test(e.message)) {
+        return NextResponse.json({ error: 'Les offres sur devis seront disponibles après la mise à jour de la base par Suguba.' }, { status: 503 });
+      }
       if (/type_offre|mode_remise|frais_remise|offre_inclus/.test(e.message)) {
         return NextResponse.json({ error: 'Les services et la remise par vous-même seront disponibles après la mise à jour de la base par Suguba.' }, { status: 503 });
       }
@@ -246,6 +254,7 @@ export async function POST(req: NextRequest) {
     // Offre : nature et mode de remise. Ne change pas le prix, donc pas de
     // nouvelle tarification.
     if (offre && (!offreParDefaut || colonnesOffre)) Object.assign(maj, offre);
+    Object.assign(maj, avecDevis({}));
 
     maj.status = statut;
     const { error } = await admin.from('products').update(maj).eq('id', product.id);

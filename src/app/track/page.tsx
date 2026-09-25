@@ -7,7 +7,7 @@ import Header from '@/components/common/Header';
 import Footer from '@/components/common/Footer';
 import BottomNav from '@/components/common/BottomNav';
 import { PackageSearch, ArrowRight, MessageCircle, QrCode } from 'lucide-react';
-import { recusSurCetAppareil } from '@/lib/order-access-client';
+import { devisSurCetAppareil, recusSurCetAppareil } from '@/lib/order-access-client';
 import { normaliserNumeroCommande } from '@/lib/order-number';
 import { useSugubaStore } from '@/lib/store';
 
@@ -37,7 +37,8 @@ export default function TrackIndexPage() {
   // « Retrouver mon reçu » (2026-09-25) : les reçus gardés sur ce téléphone
   // 90 jours, même après fermeture de la page de confirmation.
   const [recus, setRecus] = useState<{ orderNumber: string; enregistreLe: number }[]>([]);
-  useEffect(() => { setRecus(recusSurCetAppareil().slice(0, 8)); }, []);
+  const [devis, setDevis] = useState<{ numero: string; enregistreLe: number }[]>([]);
+  useEffect(() => { setRecus(recusSurCetAppareil().slice(0, 8)); setDevis(devisSurCetAppareil().slice(0, 8)); }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,6 +92,22 @@ export default function TrackIndexPage() {
                     <span className="block text-sm font-bold text-slate-900 font-mono">#{r.orderNumber}</span>
                     <span className="block text-xs text-slate-500">Reçu et code de remise · {new Date(r.enregistreLe).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
                   </span>
+                </span>
+                <ArrowRight className="w-4 h-4 text-slate-400 shrink-0" />
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {devis.length > 0 && (
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-card p-2">
+            <p className="px-3 pt-2 pb-1 text-xs font-bold text-slate-900">Mes demandes de devis</p>
+            {devis.map((d) => (
+              <Link key={d.numero} href={`/devis/${encodeURIComponent(d.numero)}`}
+                className="flex items-center justify-between gap-3 px-3 py-3 rounded-2xl hover:bg-slate-50">
+                <span className="min-w-0">
+                  <span className="block text-sm font-bold text-slate-900 font-mono">{d.numero}</span>
+                  <span className="block text-xs text-slate-500">Demandé le {new Date(d.enregistreLe).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
                 </span>
                 <ArrowRight className="w-4 h-4 text-slate-400 shrink-0" />
               </Link>

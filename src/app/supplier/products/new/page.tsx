@@ -59,6 +59,7 @@ export default function NewSupplierProductPage() {
   const [modeRemise, setModeRemise] = useState<ModeRemise>('livreur');
   const [fraisRemise, setFraisRemise] = useState<number>(0);
   const [offreInclus, setOffreInclus] = useState('');
+  const [modeCommande, setModeCommande] = useState<'achat' | 'devis'>('achat');
   const [prixConseille, setPrixConseille] = useState<number>(0);
   const [apercuGros, setApercuGros] = useState<{
     prixMinimal: number; prixConseille: number; conseilFournisseurRetenu: boolean;
@@ -119,6 +120,7 @@ export default function NewSupplierProductPage() {
       modeRemise,
       fraisRemise: modeRemise === 'fournisseur' ? Number(fraisRemise) || 0 : 0,
       offreInclus: offreInclus.trim() || null,
+      modeCommande,
     });
 
     setIsSubmitting(false);
@@ -299,6 +301,30 @@ export default function NewSupplierProductPage() {
                     Aucun livreur Suguba ne sera envoyé. Après la confirmation de Suguba, vous organisez la remise avec le client,
                     puis vous scannez son reçu QR. Si le client paie en espèces, vous remettez l’argent à la caisse Suguba ;
                     vous touchez votre prix comme pour toute vente.
+                  </p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-slate-700">Comment le client commande ?</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2" role="radiogroup" aria-label="Comment le client commande">
+                  {([
+                    ['achat', 'Il achète directement', 'Prix fixe, commande en un clic'],
+                    ['devis', 'Il demande un devis', 'Vous répondez avec un prix adapté à son besoin'],
+                  ] as const).map(([valeur, libelle, detail]) => {
+                    const actif = modeCommande === valeur;
+                    return (
+                      <button key={valeur} type="button" role="radio" aria-checked={actif} onClick={() => setModeCommande(valeur)}
+                        className={`text-left p-3 rounded-2xl border ${actif ? 'border-suguba-profond bg-suguba-menthe ring-1 ring-suguba-profond' : 'border-slate-200 bg-white'}`}>
+                        <span className="block text-sm font-semibold text-slate-900">{libelle}</span>
+                        <span className="block text-xs text-slate-600 mt-0.5">{detail}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {modeCommande === 'devis' && (
+                  <p className="text-xs text-slate-600 bg-slate-50 rounded-xl p-2.5">
+                    Le prix ci-dessous sert de prix « à partir de ». Les demandes arrivent dans « Demandes de devis » :
+                    vous répondez avec votre prix, le client accepte ou refuse.
                   </p>
                 )}
               </div>

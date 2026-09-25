@@ -136,6 +136,8 @@ export interface Product {
   fraisRemise?: number;
   /** Ce qui est inclus (matériel, installation, mise en service…). */
   offreInclus?: string | null;
+  /** Comment le client commande (lot 1b) : achat direct, ou demande de devis. */
+  modeCommande?: 'achat' | 'devis';
   sugubaMargin: number;        // Marge nette Suguba (ex: 6 000 F)
   stockQuantity: number;
   warrantyMonths: number;

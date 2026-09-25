@@ -9,7 +9,7 @@ import { Store as StoreIcone, Users as UsersIcone, Megaphone as MegaphoneIcone, 
 import Button from '@/components/ui/Button';
 import PhotosProduitModal from '@/components/product/PhotosProduitModal';
 import {
-  Plus, ShieldCheck, Clock, Store, Package, Users, XCircle, Camera, ClipboardList
+  Plus, ShieldCheck, Clock, Store, Package, Users, XCircle, Camera, ClipboardList, FileText
 } from 'lucide-react';
 
 interface SupplierProduct {
@@ -112,11 +112,15 @@ export default function SupplierDashboardPage() {
           <div className="flex flex-wrap items-center gap-2">
             <Button href="/supplier/products/new" variant="primary">
               <Plus className="w-4 h-4 stroke-[3]" />
-              <span>Ajouter un produit</span>
+              <span>Ajouter une offre</span>
             </Button>
             <Button href="/supplier/commandes" variant="ghost">
               <ClipboardList className="w-4 h-4" />
               <span>Commandes à préparer</span>
+            </Button>
+            <Button href="/supplier/devis" variant="ghost">
+              <FileText className="w-4 h-4" />
+              <span>Demandes de devis</span>
             </Button>
             <Button href="/supplier/inventory" variant="ghost">
               <Package className="w-4 h-4" />

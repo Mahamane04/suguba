@@ -259,12 +259,28 @@ export async function chargerBoutiqueRevendeur(codeBrut: string): Promise<Boutiq
     const v = versVitrine(p);
     return sesPrix.has(p.id) ? { ...v, prix: sesPrix.get(p.id) as number } : v;
   });
+  // Logo, couverture et nom choisis dans « Ma boutique » (table stores). Sans
+  // cette lecture, l'ancienne adresse /r/<code> — celle que les revendeurs
+  // partagent le plus — affichait l'initiale et le fond par défaut même après
+  // personnalisation (bug signalé le 2026-09-25). Lecture directe : importer
+  // lib/reseau/boutiques créerait une dépendance circulaire.
+  const { data: magasins } = await admin
+    .from('stores')
+    .select('*')
+    .eq('owner_type', 'reseller')
+    .eq('owner_id', profil.id)
+    .order('created_at', { ascending: true })
+    .limit(10);
+  const magasin = (magasins || []).find((b: any) => b.principale !== false) || (magasins || [])[0] || null;
+  const actif = magasin && (magasin.status || 'active') === 'active';
+
   return {
     type: 'revendeur',
-    nom: nomPublic(profil.full_name),
+    nom: (actif && magasin.name) || nomPublic(profil.full_name),
     categorie: null,
-    logo: null,
-    description: null,
+    logo: (actif && magasin.logo_url) || null,
+    couverture: (actif && magasin.cover_url) || null,
+    description: (actif && magasin.description) || null,
     produits: liste,
     livraisons: 0,
     selectionVide,
