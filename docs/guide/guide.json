@@ -207,7 +207,8 @@
     "adm-sav",
     "recu"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "9a36f5a"
   },
   {
    "date": "2026-09-25",
@@ -236,7 +237,8 @@
     "liv-courses",
     "panier-confirmation"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "9a36f5a"
   },
   {
    "date": "2026-09-25",
