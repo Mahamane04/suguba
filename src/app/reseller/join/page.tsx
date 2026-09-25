@@ -92,7 +92,7 @@ function JoinContent() {
         <div className="bg-white p-3 rounded-2xl border border-slate-200 text-center space-y-1">
           <Wallet className="w-5 h-5 text-slate-600 mx-auto" />
           <span className="font-bold text-xs text-slate-900 block">Mobile Money</span>
-          <span className="text-xs text-slate-500 block leading-tight">Orange · Moov · Mobi Cash</span>
+          <span className="text-xs text-slate-500 block leading-tight">Orange Money · Moov Money</span>
         </div>
       </div>
 

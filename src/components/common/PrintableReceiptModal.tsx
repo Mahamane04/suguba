@@ -110,7 +110,7 @@ export default function PrintableReceiptModal({ order, isOpen, onClose }: Printa
           </div>
 
           <div className="border-2 border-slate-900 rounded-xl p-3 text-center text-sm text-slate-700">
-            Le code de remise est transmis séparément par SMS au destinataire.
+            Le code de remise s’affiche sur le reçu Suguba de la commande.
             Donnez-le au livreur uniquement après avoir vérifié le colis.
           </div>
 

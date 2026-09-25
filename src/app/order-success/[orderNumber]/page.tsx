@@ -137,7 +137,7 @@ export default function OrderSuccessPage({ params }: { params: Promise<{ orderNu
           <div className="space-y-2 pt-2">
             <a
               href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-                `🎉 *SUGUBA.ML — Reçu Commande #${order.orderNumber}*\n\nProduit : ${order.productName}\nTotal : ${order.totalAmount.toLocaleString('fr-FR')} FCFA\nLe code de remise est transmis séparément par SMS au destinataire.\n📍 Repère : ${order.landmark} (${order.neighborhood})`
+                `🎉 *SUGUBA.ML — Reçu Commande #${order.orderNumber}*\n\nProduit : ${order.productName}\nTotal : ${order.totalAmount.toLocaleString('fr-FR')} FCFA\nLe code de remise s’affiche sur le reçu Suguba de la commande.\n📍 Repère : ${order.landmark} (${order.neighborhood})`
               )}`}
               target="_blank"
               rel="noopener noreferrer"

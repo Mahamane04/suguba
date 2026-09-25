@@ -28,7 +28,6 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 const RESEAU_PAR_METHODE: Record<string, ReseauMali> = {
   orange_money: 'orange_ml',
   moov: 'moov_ml',
-  mobi_cash: 'mobi_cash_ml',
 };
 
 export async function POST(req: NextRequest) {

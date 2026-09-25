@@ -12,7 +12,7 @@ import PaymentLogo, { moyenDepuisCode } from '@/components/ui/PaymentLogo';
 import { Wallet, Clock, CheckCircle2, History, AlertCircle, Building2, Loader2, Check } from 'lucide-react';
 import { calculerFraisRetrait, type DetailFraisRetrait, type TauxRetrait } from '@/lib/pricing';
 
-type Moyen = 'Orange Money' | 'Moov Money' | 'Mobi Cash' | 'Agence Suguba';
+type Moyen = 'Orange Money' | 'Moov Money' | 'Agence Suguba';
 
 interface Retrait {
   id: string;
@@ -30,14 +30,12 @@ interface Retrait {
 const CODE_MOYEN: Record<Moyen, string> = {
   'Orange Money': 'orange_money',
   'Moov Money': 'moov',
-  'Mobi Cash': 'mobi_cash',
   'Agence Suguba': 'cash',
 };
 
 const MOYENS: { id: Moyen; libelle: string; detail: string }[] = [
   { id: 'Orange Money', libelle: 'Orange Money', detail: 'Virement' },
   { id: 'Moov Money', libelle: 'Moov Money', detail: 'Virement' },
-  { id: 'Mobi Cash', libelle: 'Mobi Cash', detail: 'Virement' },
   { id: 'Agence Suguba', libelle: 'Espèces', detail: 'Au guichet' },
 ];
 
@@ -214,7 +212,7 @@ export default function ResellerPayoutsPage() {
             <form onSubmit={demander} className="space-y-4">
               <div>
                 <p className="text-xs font-bold text-slate-700 mb-2">Comment voulez-vous recevoir l&apos;argent ?</p>
-                <div role="radiogroup" aria-label="Moyen de retrait" className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                <div role="radiogroup" aria-label="Moyen de retrait" className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   {MOYENS.map((m) => {
                     const actif = moyen === m.id;
                     return (

@@ -14,7 +14,6 @@ import { calculerFraisRetrait } from '@/lib/pricing';
 const PROVIDER_MAP: Record<string, string> = {
   'Orange Money': 'orange_money',
   'Moov Money': 'moov',
-  'Mobi Cash': 'mobi_cash',
   'Agence Suguba': 'cash',
 };
 

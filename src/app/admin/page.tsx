@@ -577,7 +577,7 @@ export default function AdminDashboardPage() {
               </div>
               <div>
                 <h2 className="font-bold text-sm text-slate-900">Retraits des revendeurs</h2>
-                <p className="text-xs text-slate-500">Virement Orange Money, Moov ou Mobi Cash via SasPay, ou espèces au guichet</p>
+                <p className="text-xs text-slate-500">Virement Orange Money ou Moov Money via SasPay, ou espèces au guichet</p>
               </div>
             </div>
             <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">

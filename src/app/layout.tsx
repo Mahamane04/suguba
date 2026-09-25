@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   // seraient relatives, et WhatsApp comme Facebook les ignoreraient.
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://app.sugubaml.com'),
   title: 'SUGUBA — Vendez Sans Stock au Mali | Social Commerce & Commissions Mobile Money',
-  description: 'Plateforme B2B2C Mobile-First au Mali : connectez-vous avec les grossistes, partagez les produits sur WhatsApp, gagnez des commissions garanties et retirez par Orange Money, Moov ou Mobi Cash.',
+  description: 'Plateforme B2B2C Mobile-First au Mali : connectez-vous avec les grossistes, partagez les produits sur WhatsApp, gagnez des commissions garanties et retirez par Orange Money ou Moov Money.',
   manifest: '/manifest.json',
   // Nouveau logo (2026-09-24) : icônes régénérées depuis public/images/logo.svg.
   icons: {

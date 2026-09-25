@@ -37,7 +37,7 @@ export default function ResellerCalculatorPage() {
             Combien pouvez-vous gagner par mois avec Suguba ?
           </h1>
           <p className="text-xs sm:text-sm text-slate-600">
-            Ajustez les curseurs ci-dessous selon votre rythme de vente et découvrez vos gains potentiels, versés par Orange Money, Moov Money ou Mobi Cash.
+            Ajustez les curseurs ci-dessous selon votre rythme de vente et découvrez vos gains potentiels, versés par Orange Money ou Moov Money.
           </p>
         </div>
 

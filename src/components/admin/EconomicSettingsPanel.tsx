@@ -478,7 +478,7 @@ export default function EconomicSettingsPanel() {
               info="Ce que SasPay facture pour envoyer l'argent sur le téléphone du revendeur. Il le paie lui-même : ce n'est plus un coût pour Suguba." />
             <Num l="Frais Suguba (tous les retraits)" suffixe="%" v={r.fraisRetraitSugubaPct ?? 0} on={(v) => maj('fraisRetraitSugubaPct', v)}
               info="Pris sur chaque retrait, en Mobile Money comme en espèces au guichet. C'est un gain pour Suguba, en plus du % prélevé sur la part revendeur à la vente." />
-            {([['orange_money', 'Frais Orange Money'], ['moov', 'Frais Moov Money'], ['mobi_cash', 'Frais Mobi Cash']] as const).map(([cle, libelle]) => (
+            {([['orange_money', 'Frais Orange Money'], ['moov', 'Frais Moov Money']] as const).map(([cle, libelle]) => (
               <Num key={cle} l={libelle} suffixe="%" v={r.fraisOperateurRetraitPct?.[cle] ?? 0}
                 on={(v) => maj('fraisOperateurRetraitPct', { orange_money: 0, moov: 0, mobi_cash: 0, ...r.fraisOperateurRetraitPct, [cle]: v })}
                 info="Frais propres à l'opérateur, en plus de SasPay. Laissez 0 si le taux SasPay les inclut déjà." />

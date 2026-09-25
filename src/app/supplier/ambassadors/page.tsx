@@ -116,7 +116,7 @@ export default function SupplierBoutiquePage() {
     `Vous avez une communauté sur WhatsApp, TikTok ou Facebook ? Vendez nos articles sans acheter de stock.\n\n` +
     `✅ Pas de stock, pas d'avance d'argent\n` +
     `✅ Suguba livre le client et encaisse à la livraison\n` +
-    `✅ Une commission sur chaque vente livrée, versée sur Orange Money, Moov ou Mobi Cash\n\n` +
+    `✅ Une commission sur chaque vente livrée, versée sur Orange Money ou Moov Money\n\n` +
     (urlBoutique ? `👀 Nos articles : ${urlBoutique}\n` : '') +
     `👉 Inscription gratuite : ${origine}/rejoindre`;
 

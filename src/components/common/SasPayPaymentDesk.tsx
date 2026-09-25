@@ -26,10 +26,13 @@ import PaymentLogo, { type MoyenPaiement } from '@/components/ui/PaymentLogo';
 
 // Logo de la marque au-dessus d'un libellé court : « Orange Money » sur trois
 // colonnes à 375 px passait à la ligne et cassait l'alignement.
-const RESEAUX: readonly { code: 'orange_ml' | 'moov_ml' | 'mobi_cash_ml'; label: string; moyen: MoyenPaiement }[] = [
+// « À la livraison » en premier et choisi par défaut (2026-09-25) : c'est le
+// mode de règlement normal de Suguba, il n'apparaissait qu'en petit texte.
+// Mobi Cash retiré : seuls Orange Money et Moov Money sont acceptés.
+const RESEAUX: readonly { code: 'livraison' | 'orange_ml' | 'moov_ml'; label: string; moyen: MoyenPaiement }[] = [
+  { code: 'livraison', label: 'À la livraison', moyen: 'especes' },
   { code: 'orange_ml', label: 'Orange Money', moyen: 'orange_money' },
   { code: 'moov_ml', label: 'Moov Money', moyen: 'moov_money' },
-  { code: 'mobi_cash_ml', label: 'Mobi Cash', moyen: 'mobi_cash' },
 ];
 
 const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} FCFA`;
@@ -45,7 +48,7 @@ interface Props {
 }
 
 export default function SasPayPaymentDesk({ amount, orderNumber, defaultPhone = '' }: Props) {
-  const [reseau, setReseau] = useState<CodeReseau>('orange_ml');
+  const [reseau, setReseau] = useState<CodeReseau>('livraison');
   const [telephone, setTelephone] = useState(defaultPhone);
   const [etape, setEtape] = useState<Etape>('saisie');
   const [erreur, setErreur] = useState('');
@@ -108,6 +111,7 @@ export default function SasPayPaymentDesk({ amount, orderNumber, defaultPhone = 
 
   const payer = async () => {
     setErreur('');
+    if (reseau === 'livraison') return;
 
     const numero = telephone.trim();
     if (numero.replace(/\D/g, '').length < 8) {
@@ -168,13 +172,14 @@ export default function SasPayPaymentDesk({ amount, orderNumber, defaultPhone = 
   }
 
   const choisi = RESEAUX.find((r) => r.code === reseau) || RESEAUX[0];
+  const aLaLivraison = reseau === 'livraison';
 
   return (
     <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200 text-left space-y-5">
       <div className="space-y-1">
-        <h3 className="text-sm font-bold text-slate-900">Payer maintenant par Mobile Money</h3>
+        <h3 className="text-sm font-bold text-slate-900">Comment voulez-vous payer ?</h3>
         <p className="text-3xl font-bold text-slate-900 tabular-nums">{fcfa(amount)}</p>
-        <p className="text-xs text-slate-500">Commande #{orderNumber} · ou payez en espèces au livreur</p>
+        <p className="text-xs text-slate-500">Commande #{orderNumber}</p>
       </div>
 
       {etape === 'attente' ? (
@@ -206,7 +211,7 @@ export default function SasPayPaymentDesk({ amount, orderNumber, defaultPhone = 
                   type="button"
                   role="radio"
                   aria-checked={actif}
-                  onClick={() => setReseau(r.code)}
+                  onClick={() => { setReseau(r.code); setErreur(''); if (etape === 'echec') setEtape('saisie'); }}
                   className={`relative rounded-2xl border p-2.5 pt-3 flex flex-col items-center gap-1.5 transition-all active:scale-[0.98] ${
                     actif
                       ? 'border-suguba-brand bg-suguba-brand/5 ring-1 ring-suguba-brand'
@@ -225,6 +230,17 @@ export default function SasPayPaymentDesk({ amount, orderNumber, defaultPhone = 
             })}
           </div>
 
+          {aLaLivraison ? (
+            <div className="rounded-2xl bg-suguba-sauge border border-suguba-brand/20 p-4 flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-suguba-brand-dark shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="text-sm font-bold text-slate-900">Rien à payer maintenant</p>
+                <p className="text-xs text-slate-600">
+                  Vous payez {fcfa(amount)} en espèces au livreur, à la remise du colis, après avoir vérifié l’article.
+                </p>
+              </div>
+            </div>
+          ) : (<>
           <Field label={`Numéro ${choisi.label} qui paie`} htmlFor="saspay-tel" erreur={erreur && etape === 'saisie' ? erreur : undefined}>
             <Input
               id="saspay-tel"
@@ -251,16 +267,17 @@ export default function SasPayPaymentDesk({ amount, orderNumber, defaultPhone = 
                 <span>Envoi en cours…</span>
               </>
             ) : (
-              <span>Payer {fcfa(amount)}</span>
+              <span>Payer par {choisi.label}</span>
             )}
           </Button>
+
+          <p className="flex items-center gap-1.5 text-xs text-slate-500">
+            <ShieldCheck className="w-3.5 h-3.5 text-suguba-brand-dark shrink-0" />
+            Paiement sécurisé par SasPay. Suguba ne voit jamais votre code secret.
+          </p>
+          </>)}
         </>
       )}
-
-      <p className="flex items-center gap-1.5 text-xs text-slate-500">
-        <ShieldCheck className="w-3.5 h-3.5 text-suguba-brand-dark shrink-0" />
-        Paiement sécurisé par SasPay. Suguba ne voit jamais votre code secret.
-      </p>
     </div>
   );
 }

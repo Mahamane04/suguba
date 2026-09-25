@@ -42,7 +42,8 @@ export const DEVISE = 'XOF';
 export const RESEAUX_MALI = {
   orange_ml: 'Orange Money',
   moov_ml: 'Moov Money',
-  mobi_cash_ml: 'Mobi Cash',
+  // Mobi Cash retiré le 2026-09-25 (choix du fondateur) : Suguba n'accepte
+  // qu'Orange Money et Moov Money, au paiement comme au retrait.
 } as const;
 
 export type ReseauMali = keyof typeof RESEAUX_MALI;

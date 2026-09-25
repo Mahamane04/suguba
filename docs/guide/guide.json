@@ -191,6 +191,25 @@
  "journal": [
   {
    "date": "2026-09-25",
+   "titre": "Paiement : « À la livraison » visible, Mobi Cash retiré ; barre du bas stable sur iPhone",
+   "demande": "Capture de l'écran de fin de commande : « Mobi cash ne doit apparaître. Et aussi on ne voit pas de Paiement à la livraison » ; « corrige ce problème ». Puis : « quand je scrolle le menu se déplace en haut, peux-tu régler ça aussi et ensuite mettre en ligne ».",
+   "realise": [
+    "Écran de paiement : « Comment voulez-vous payer ? » avec trois choix — À la livraison (choisi par défaut : « Rien à payer maintenant, vous payez en espèces au livreur après avoir vérifié l'article »), Orange Money, Moov Money.",
+    "Mobi Cash retiré partout où il apparaissait : paiement, retrait revendeur, réglages des frais, textes d'inscription et de présentation. Le serveur le refuse aussi, au paiement comme au retrait.",
+    "Textes « code transmis par SMS » corrigés (reçu WhatsApp, reçu imprimable, écran du livreur) : le code s'affiche sur le reçu Suguba.",
+    "Barre de navigation du bas : elle suit désormais le bas de l'écran réellement visible sur iPhone (elle se retrouvait au milieu de l'écran, surtout dans l'application installée, après le clavier ou un défilement rapide) et se masque dès que le clavier occupe l'écran. Testé sur iPhone simulé : défilement, clavier ouvert puis fermé."
+   ],
+   "ecarts": [],
+   "pages": [
+    "panier-confirmation",
+    "suivi",
+    "rev-gains"
+   ],
+   "commit": "",
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-25",
    "titre": "Code de remise affiché dans l'app (plus de SMS nécessaire) ; lot sécurité prêt",
    "demande": "« SMS peux t'il être fait dans l'app et non par sms mais le reste peut être comit ».",
    "realise": [

@@ -183,7 +183,7 @@ export default function OtpValidationModal({ order, isOpen, onClose, onSuccess }
                   />
                 </div>
                 <p className="text-xs text-slate-500 mt-1 text-center">
-                  Le client a reçu ce code par SMS/WhatsApp lors de la commande.
+                  Le client voit ce code sur son reçu Suguba (ou l’a reçu de son revendeur sur WhatsApp).
                 </p>
               </div>
 

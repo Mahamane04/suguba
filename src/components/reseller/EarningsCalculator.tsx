@@ -64,7 +64,7 @@ export default function EarningsCalculator({ showCta = true }: EarningsCalculato
               Simulateur de Revenus Mensuels Suguba
             </h3>
             <p className="text-xs text-slate-500">
-              Estimez vos gains sans stock, versés par Orange Money, Moov Money ou Mobi Cash.
+              Estimez vos gains sans stock, versés par Orange Money ou Moov Money.
             </p>
           </div>
         </div>

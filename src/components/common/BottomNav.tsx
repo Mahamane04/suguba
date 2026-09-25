@@ -1,10 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useSugubaStore } from '@/lib/store';
 import { useClavierOuvert } from '@/lib/useClavierOuvert';
+import { useBarreSurEcranVisible } from '@/lib/useBarreSurEcranVisible';
 import {
   Home, Grid3X3, ShoppingCart, Wallet, TrendingUp,
   PackagePlus, ShieldCheck, Truck, Store, Users,
@@ -111,7 +112,12 @@ export default function BottomNav() {
   const role = state.currentUser.id ? state.currentUser.role : null;
   // Masquée pendant la saisie : sur iPhone, elle restait décalée de la hauteur
   // du clavier après sa fermeture (voir src/lib/useClavierOuvert.ts).
-  const clavierOuvert = useClavierOuvert();
+  const champActif = useClavierOuvert();
+  // Barre collée au bas de l'écran réellement visible (iPhone), et masquée
+  // dès que le clavier occupe l'écran : voir useBarreSurEcranVisible.
+  const barre = useRef<HTMLElement>(null);
+  const { clavier } = useBarreSurEcranVisible(barre);
+  const clavierOuvert = champActif || clavier;
 
   const navItems = getNavItems(role);
 
@@ -136,6 +142,7 @@ export default function BottomNav() {
         style={{ height: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}
       />
     <nav
+      ref={barre}
       hidden={clavierOuvert}
       className="fixed bottom-0 left-0 right-0 z-40 md:hidden"
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
