@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import {
   ShoppingBag, Boxes, Store, Users, Wallet, Megaphone, Target,
-  ShieldCheck, Settings, BarChart3, LifeBuoy, UserCog, Radio, ChevronRight, Gift, Banknote,
+  ShieldCheck, Settings, BarChart3, LifeBuoy, UserCog, Radio, ChevronRight, Gift, Banknote, FileText, Hammer,
 } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import { Card } from '@/components/ui/Surface';
@@ -69,6 +69,8 @@ const DOMAINES: Domaine[] = [
     couleur: 'bg-rose-50 text-rose-700',
     entrees: [
       { libelle: 'Vérifications', href: '/admin/verifications', icone: ShieldCheck, aide: 'File d’attente des pièces à valider' },
+      { libelle: 'Devis', href: '/admin/devis', icone: FileText, aide: 'Demandes de devis, relances fournisseurs' },
+      { libelle: 'Prestations', href: '/admin/prestations', icone: Hammer, aide: 'Installations à étapes, contestations' },
       { libelle: 'Service après-vente', href: '/admin/sav', icone: LifeBuoy, aide: 'Litiges et réclamations' },
     ],
   },

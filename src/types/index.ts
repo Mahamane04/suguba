@@ -138,6 +138,8 @@ export interface Product {
   offreInclus?: string | null;
   /** Comment le client commande (lot 1b) : achat direct, ou demande de devis. */
   modeCommande?: 'achat' | 'devis';
+  /** Étapes de la prestation (lot 1c), validées une à une par le client. */
+  etapes?: ('visite' | 'rendez_vous' | 'materiel' | 'installation' | 'prise_en_main')[];
   sugubaMargin: number;        // Marge nette Suguba (ex: 6 000 F)
   stockQuantity: number;
   warrantyMonths: number;

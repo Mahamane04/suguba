@@ -37,6 +37,9 @@ const admin = {
   },
 };
 require.cache[require.resolve('../src/lib/depot-fournisseur.ts')] = { exports: { depotsFournisseurs: async () => new Map() } };
+// Avis capturés en mémoire : jamais de table notifications réelle.
+const avis = [];
+require.cache[require.resolve('../src/lib/reseau/notifications.ts')] = { exports: { notifier: async (ids, contenu) => { avis.push({ ids, ...contenu }); } } };
 const devis = require('../src/lib/devis.ts');
 
 const CLE = '11111111-2222-4333-8444-555555555555';
@@ -47,6 +50,7 @@ const demande = (x = {}) => ({ productId: 'p1', customerName: '[TEST] Client', c
 const reset = (p = produit()) => {
   tables = { products: [p], quote_requests: [], platform_settings: [{ id: 1, valeurs: {}, updated_at: null }], profiles: [] };
   rpcs = [];
+  avis.length = 0;
 };
 
 test('demande : validation (besoin décrit, téléphone, quantité)', () => {
@@ -100,6 +104,26 @@ test('parcours : demande → proposition → vue client sans coûts → acceptat
   assert.deepEqual(appel.args.p_product, { supplier_price: 100000, public_price: 130000, commission_proposee: 5000 }, 'prix actuels du produit pour le contrôle SQL');
   assert.equal(appel.args.p_order.pricing_snapshot.remise.mode, 'fournisseur');
   assert.equal(tables.quote_requests[0].status, 'acceptee');
+
+  // Avis : fournisseur à la demande puis à l'acceptation ; jamais le téléphone du client.
+  assert.deepEqual(avis.map((a) => [a.ids, a.titre.split(' ')[0]]), [['f1', 'Nouvelle'], ['f1', 'Devis']]);
+  assert.ok(!JSON.stringify(avis).includes('70000001'), 'pas de téléphone client dans les avis');
+});
+
+test('admin : liste avec prix, retard au-delà de 24 h, via revendeur', async () => {
+  reset();
+  tables.profiles.push({ id: 'f1', full_name: '[TEST] Fournisseur', phone: '+22370000009' });
+  await devis.creerDemandeDevis(admin, demande(), CLE);
+  tables.quote_requests[0].created_at = new Date(Date.now() - 30 * 3_600_000).toISOString();
+  let liste = await devis.listerDevisAdmin(admin);
+  assert.equal(liste.devis[0].enRetard, true);
+  assert.equal(liste.devis[0].fournisseur.telephone, '+22370000009');
+  assert.equal(liste.devis[0].prix, null);
+  await devis.proposerDevis(admin, 'f1', { quoteId: tables.quote_requests[0].id, prixTotal: 300000 });
+  liste = await devis.listerDevisAdmin(admin);
+  assert.equal(liste.devis[0].enRetard, false);
+  assert.equal(liste.devis[0].prix.fournisseur, 300000);
+  assert.equal(liste.devis[0].prix.client, liste.devis[0].prix.fournisseur + liste.devis[0].prix.gainRevendeur + liste.devis[0].prix.margeSuguba + liste.devis[0].prix.livraison);
 });
 
 test('refus, offre sans devis, devis expiré', async () => {

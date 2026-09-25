@@ -13,20 +13,26 @@ export const BUCKET_SAV_PHOTOS = 'sav-photos';
 export const PHOTOS_SAV_MAX = 3;
 const TAILLE_MAX = 5 * 1024 * 1024;
 
-let verifie = false;
+const verifies = new Set<string>();
 
-export async function assurerBucketSavPhotos(admin: SupabaseClient) {
-  if (verifie) return;
-  const { data } = await admin.storage.getBucket(BUCKET_SAV_PHOTOS);
+/**
+ * Crée le bucket PRIVÉ s'il manque ; refuse d'y déposer s'il a été rendu
+ * public à la main. Partagé avec les photos d'étapes de prestation (lot 1c).
+ */
+export async function assurerBucketPrive(admin: SupabaseClient, bucket: string) {
+  if (verifies.has(bucket)) return;
+  const { data } = await admin.storage.getBucket(bucket);
   if (!data) {
-    const { error } = await admin.storage.createBucket(BUCKET_SAV_PHOTOS, { public: false, fileSizeLimit: TAILLE_MAX });
+    const { error } = await admin.storage.createBucket(bucket, { public: false, fileSizeLimit: TAILLE_MAX });
     if (error && !/already exists/i.test(error.message)) throw new Error(error.message);
   } else if (data.public) {
     // Garde-fou : bucket rendu public à la main → on refuse d'y déposer.
-    throw new Error('Le stockage des photos SAV est public : envoi refusé. Repassez-le en privé dans Supabase.');
+    throw new Error(`Le stockage « ${bucket} » est public : envoi refusé. Repassez-le en privé dans Supabase.`);
   }
-  verifie = true;
+  verifies.add(bucket);
 }
+
+export const assurerBucketSavPhotos = (admin: SupabaseClient) => assurerBucketPrive(admin, BUCKET_SAV_PHOTOS);
 
 /** Liens temporaires (10 min) vers les photos d'un ticket, dans l'ordre. */
 export async function liensPhotosTicket(admin: SupabaseClient, ticketId: string): Promise<string[]> {

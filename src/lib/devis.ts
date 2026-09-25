@@ -5,6 +5,7 @@ import { genererNumeroCommande } from './order-number';
 import { depotsFournisseurs } from './depot-fournisseur';
 import { remiseDuProduit, type RemiseOffre } from './offre';
 import { recu } from './order-create';
+import { notifier } from './reseau/notifications';
 
 /**
  * Devis enregistrés (2026-09-26, lot 1b) — SERVEUR UNIQUEMENT.
@@ -144,6 +145,16 @@ export async function creerDemandeDevis(admin: SupabaseClient, value: unknown, c
     console.error('[DEVIS CREATE]', error.code);
     indisponible();
   }
+  // Le fournisseur est prévenu dans l'application (cloche) : sans cela, une
+  // demande restait sans réponse tant qu'il n'ouvrait pas « Demandes de devis ».
+  // Ni nom ni téléphone du client dans l'avis : il les verra dans la demande.
+  if (produit.supplier_id) {
+    await notifier(produit.supplier_id, {
+      type: 'devis', titre: 'Nouvelle demande de devis',
+      texte: `${produit.name} · ${input.quantite > 1 ? `${input.quantite} unités · ` : ''}${input.neighborhood || input.city}. Répondez vite : le client attend votre prix.`,
+      lien: '/supplier/devis',
+    });
+  }
   return { quoteNumber, created: true };
 }
 
@@ -247,6 +258,12 @@ export async function deciderDevisClient(admin: SupabaseClient, numero: unknown,
     const { error } = await admin.from('quote_requests').update({ status: 'refusee_client', decided_at: new Date().toISOString() })
       .eq('id', q.id).in('status', ['demande', 'proposee']);
     if (error) indisponible();
+    if (q.supplier_id) {
+      await notifier(q.supplier_id, {
+        type: 'devis', titre: `Devis ${q.quote_number} refusé par le client`,
+        texte: 'Le client ne donne pas suite à cette demande.', lien: '/supplier/devis',
+      });
+    }
     return { statut: 'refusee_client' as const };
   }
   if (decision !== 'accepter') throw new DevisError('Décision inconnue.', 400);
@@ -305,6 +322,24 @@ export async function deciderDevisClient(admin: SupabaseClient, numero: unknown,
   await admin.from('quote_requests').update({
     status: 'acceptee', order_id: commande.id, order_number: commande.orderNumber, decided_at: now,
   }).eq('id', q.id).eq('status', 'proposee');
+  // Avis seulement au premier passage (une nouvelle tentative rend le même
+  // reçu : on ne prévient pas deux fois).
+  if (q.status === 'proposee' && data.created !== false) {
+    if (q.supplier_id) {
+      await notifier(q.supplier_id, {
+        type: 'devis', titre: `Devis accepté · commande #${commande.orderNumber}`,
+        texte: `${produit.name} : le client a accepté votre prix. Suguba l’appelle pour confirmer, puis organise la remise.`,
+        lien: '/supplier/commandes',
+      });
+    }
+    if (q.reseller_id) {
+      await notifier(q.reseller_id, {
+        type: 'devis', titre: 'Votre client a accepté un devis 🎉',
+        texte: `${produit.name} · commande #${commande.orderNumber}. Votre gain est versé après la remise.`,
+        lien: '/reseller/orders',
+      });
+    }
+  }
   return { statut: 'acceptee' as const, order: commande };
 }
 
@@ -341,6 +376,70 @@ export async function listerDevisFournisseur(admin: SupabaseClient, fournisseurI
         } : null,
         motifRefus: q.motif_refus || null,
         commande: q.order_number || null,
+      };
+    }),
+  };
+}
+
+// ── 5. Vue admin (suivi) ────────────────────────────────────────────────────
+/** Une demande sans réponse depuis plus longtemps que ça est signalée « en retard ». */
+export const RELANCE_HEURES = 24;
+
+/**
+ * Tous les devis, pour l'équipe Suguba : qui attend une réponse, qui a
+ * accepté, et les prix (fournisseur, revendeur, client, marge). Lecture
+ * seule : le fournisseur reste seul à proposer son prix.
+ */
+export async function listerDevisAdmin(admin: SupabaseClient) {
+  const { data, error } = await admin.from('quote_requests').select('*')
+    .order('created_at', { ascending: false }).limit(500);
+  if (error) {
+    if (['42P01', 'PGRST205'].includes(String(error.code))) return { devis: [], migrationRequise: true };
+    indisponible();
+  }
+  const lignes = data || [];
+  const idsProduits = [...new Set(lignes.map((q) => q.product_id))];
+  const idsFournisseurs = [...new Set(lignes.map((q) => q.supplier_id).filter(Boolean))] as string[];
+  const produits = new Map<string, string>();
+  const fournisseurs = new Map<string, { nom: string; telephone: string | null }>();
+  if (idsProduits.length) {
+    const { data: p } = await admin.from('products').select('id, name').in('id', idsProduits);
+    for (const x of p || []) produits.set(x.id, x.name);
+  }
+  if (idsFournisseurs.length) {
+    const [{ data: fiches }, { data: profils }] = await Promise.all([
+      admin.from('suppliers').select('*').in('profile_id', idsFournisseurs),
+      admin.from('profiles').select('id, full_name, phone').in('id', idsFournisseurs),
+    ]);
+    const fiche = new Map((fiches || []).map((f: any) => [f.profile_id, f]));
+    for (const p of profils || []) {
+      const f: any = fiche.get(p.id) || {};
+      fournisseurs.set(p.id, { nom: f.shop_display_name || f.company_name || p.full_name || 'Fournisseur', telephone: p.phone || null });
+    }
+  }
+  const maintenant = Date.now();
+  return {
+    migrationRequise: false,
+    relanceHeures: RELANCE_HEURES,
+    devis: lignes.map((q) => {
+      const d = q.proposition?.devis as Devis | undefined;
+      const expire = q.status === 'proposee' && q.valable_jusqu && Date.parse(q.valable_jusqu) < maintenant;
+      const attenteHeures = q.status === 'demande' ? Math.floor((maintenant - Date.parse(q.created_at)) / 3_600_000) : null;
+      return {
+        id: q.id, numero: q.quote_number, statut: expire ? 'expiree' : q.status, creeLe: q.created_at,
+        proposeLe: q.proposed_at || null, decideLe: q.decided_at || null,
+        enRetard: attenteHeures !== null && attenteHeures >= RELANCE_HEURES, attenteHeures,
+        produit: produits.get(q.product_id) || '', quantite: q.quantite, besoin: q.besoin,
+        lieu: [q.neighborhood, q.city].filter(Boolean).join(', '),
+        client: { nom: q.customer_name, telephone: q.customer_phone },
+        fournisseur: q.supplier_id ? fournisseurs.get(q.supplier_id) || { nom: 'Fournisseur', telephone: null } : null,
+        revendeur: q.reseller_id ? { nom: q.reseller_name || null, code: q.reseller_code || null } : null,
+        prix: d ? {
+          fournisseur: Number(q.prix_fournisseur) || 0, partRevendeur: Number(q.part_revendeur) || 0,
+          client: d.total, gainRevendeur: d.commissionTotale, margeSuguba: d.margeSuguba, livraison: d.fraisLivraison,
+        } : null,
+        conditions: q.conditions || null, valableJusqu: q.valable_jusqu || null,
+        motifRefus: q.motif_refus || null, commande: q.order_number || null,
       };
     }),
   };

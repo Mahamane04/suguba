@@ -22,6 +22,44 @@ export interface RemiseOffre {
   mode: ModeRemise;
   /** Frais facturés au client par le fournisseur pour la remise (mode « fournisseur »). */
   frais: number;
+  /**
+   * Étapes de la prestation (lot 1c), dans l'ordre. Absent = remise en une
+   * fois. Figées dans la commande : modifier l'offre ensuite ne change pas
+   * le parcours d'une commande déjà passée.
+   */
+  etapes?: CleEtape[];
+}
+
+// ── Prestations à étapes (2026-09-26, lot 1c) ───────────────────────────────
+// Chaque étape est DÉCLARÉE par le fournisseur (avec sa preuve) puis VALIDÉE
+// par le client depuis son reçu. La réception finale reste le scan du reçu
+// QR : c'est elle qui clôt la commande et débloque les gains. Elle n'est
+// possible qu'une fois toutes les étapes validées par le client.
+export type CleEtape = 'visite' | 'rendez_vous' | 'materiel' | 'installation' | 'prise_en_main';
+
+export const ETAPES: { cle: CleEtape; libelle: string; detail: string; preuve: string }[] = [
+  { cle: 'visite', libelle: 'Visite technique', detail: 'Vous passez voir le lieu et confirmez ce qu’il faut', preuve: 'Ce que vous avez constaté, photos du lieu' },
+  { cle: 'rendez_vous', libelle: 'Rendez-vous fixé', detail: 'Date et heure de l’intervention, convenues avec le client', preuve: 'La date et l’heure convenues' },
+  { cle: 'materiel', libelle: 'Matériel remis', detail: 'Le matériel est apporté chez le client', preuve: 'Photos du matériel sur place' },
+  { cle: 'installation', libelle: 'Installation / réalisation', detail: 'Le travail est fait', preuve: 'Photos du travail terminé' },
+  { cle: 'prise_en_main', libelle: 'Prise en main', detail: 'Vous montrez au client comment l’utiliser', preuve: 'Ce que vous avez expliqué' },
+];
+
+export const ETAPES_MAX = ETAPES.length;
+
+/** Étapes valides, sans doublon, dans l'ordre du parcours. */
+export function normaliserEtapes(v: unknown): CleEtape[] {
+  if (!Array.isArray(v)) return [];
+  const voulues = new Set(v.filter((x): x is string => typeof x === 'string'));
+  return ETAPES.map((e) => e.cle).filter((c) => voulues.has(c));
+}
+
+export const libelleEtape = (cle: string) => ETAPES.find((e) => e.cle === cle)?.libelle || 'Étape';
+
+/** Étapes figées dans une commande (instantané de prix). */
+export function etapesCommande(pricingSnapshot: unknown): CleEtape[] {
+  const s = pricingSnapshot as { remise?: { mode?: unknown; etapes?: unknown } } | null | undefined;
+  return remiseParFournisseur(normaliserModeRemise(s?.remise?.mode)) ? normaliserEtapes(s?.remise?.etapes) : [];
 }
 
 export const TYPES_OFFRE: { valeur: TypeOffre; libelle: string; detail: string }[] = [
@@ -43,10 +81,13 @@ export const normaliserModeRemise = (v: unknown): ModeRemise =>
   v === 'fournisseur' || v === 'retrait' ? v : 'livreur';
 
 /** Réglage de remise d'un produit tel que lu en base (colonnes absentes = livreur Suguba). */
-export function remiseDuProduit(p: { mode_remise?: unknown; frais_remise?: unknown } | null | undefined): RemiseOffre {
+export function remiseDuProduit(p: { mode_remise?: unknown; frais_remise?: unknown; etapes?: unknown } | null | undefined): RemiseOffre {
   const mode = normaliserModeRemise(p?.mode_remise);
   const frais = mode === 'fournisseur' ? Math.max(0, Math.round(Number(p?.frais_remise) || 0)) : 0;
-  return { mode, frais };
+  // Étapes seulement quand le fournisseur remet lui-même : un livreur Suguba
+  // ne réalise pas de prestation.
+  const etapes = mode !== 'livreur' ? normaliserEtapes(p?.etapes) : [];
+  return etapes.length ? { mode, frais, etapes } : { mode, frais };
 }
 
 /** Mode de remise d'une commande, lu dans son instantané de prix. */

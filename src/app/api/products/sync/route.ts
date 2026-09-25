@@ -5,7 +5,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { contexteFournisseur } from '@/lib/reseau/contexte-fournisseur';
 import { publierAutomatiquement } from '@/lib/publication-auto';
-import { normaliserModeRemise, normaliserTypeOffre } from '@/lib/offre';
+import { normaliserEtapes, normaliserModeRemise, normaliserTypeOffre } from '@/lib/offre';
 
 /**
  * Création et modification des fiches produit — fournisseur ou admin.
@@ -157,11 +157,20 @@ export async function POST(req: NextRequest) {
     // Commande sur devis (lot 1b) : colonne à part, envoyée seulement quand
     // elle sert (même principe que les autres colonnes récentes).
     const modeCommande = product.modeCommande === 'devis' ? 'devis' : product.modeCommande === 'achat' ? 'achat' : undefined;
-    const avecDevis = (ligne: Record<string, unknown>) =>
-      modeCommande && (modeCommande === 'devis' || (existant && 'mode_commande' in existant)) ? { ...ligne, mode_commande: modeCommande } : ligne;
+    // Étapes de prestation (lot 1c) : seulement si le fournisseur remet
+    // lui-même ; même principe d'envoi que les autres colonnes récentes.
+    const etapes = product.etapes === undefined ? undefined
+      : offre && offre.mode_remise !== 'livreur' ? normaliserEtapes(product.etapes) : [];
+    const avecEtapes = (ligne: Record<string, unknown>) =>
+      etapes && (etapes.length > 0 || (existant && 'etapes' in existant)) ? { ...ligne, etapes: etapes.length ? etapes : null } : ligne;
+    const avecDevis = (ligne: Record<string, unknown>) => avecEtapes(
+      modeCommande && (modeCommande === 'devis' || (existant && 'mode_commande' in existant)) ? { ...ligne, mode_commande: modeCommande } : ligne);
     const avecOffre = (ligne: Record<string, unknown>) => avecDevis(offre && (!offreParDefaut || colonnesOffre) ? { ...ligne, ...offre } : ligne);
 
     const erreurColonne = (e: { code?: string; message: string }) => {
+      if (/etapes/.test(e.message)) {
+        return NextResponse.json({ error: 'Les prestations à étapes seront disponibles après la mise à jour de la base par Suguba.' }, { status: 503 });
+      }
       if (/mode_commande/.test(e.message)) {
         return NextResponse.json({ error: 'Les offres sur devis seront disponibles après la mise à jour de la base par Suguba.' }, { status: 503 });
       }

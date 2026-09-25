@@ -4,7 +4,7 @@ import { supabase, isSupabaseConfigured } from './supabase';
 import { sugubaStore } from './store';
 import { privateSessionGeneration } from './order-access-client';
 import { Order, Product } from '@/types';
-import { modeRemiseCommande, normaliserModeRemise, normaliserTypeOffre } from './offre';
+import { modeRemiseCommande, normaliserEtapes, normaliserModeRemise, normaliserTypeOffre } from './offre';
 
 class CloudSyncService {
   private isListening = false;
@@ -110,6 +110,7 @@ class CloudSyncService {
           fraisRemise: Number(p.frais_remise) || 0,
           offreInclus: p.offre_inclus || null,
           modeCommande: p.mode_commande === 'devis' ? 'devis' : 'achat',
+          etapes: normaliserEtapes(p.etapes),
           sugubaMargin: Math.max(0, Number(p.public_price || 0) - Number(p.supplier_price || 0) - Number(p.reseller_commission || 0)),
           stockQuantity: Number(p.stock ?? 0),
           warrantyMonths: 0, // Aucune colonne garantie en base : ne jamais en afficher une inventée.
@@ -395,6 +396,7 @@ class CloudSyncService {
       fraisRemise: Number(cloudProduct.frais_remise) || 0,
       offreInclus: cloudProduct.offre_inclus || null,
       modeCommande: cloudProduct.mode_commande === 'devis' ? 'devis' : 'achat',
+      etapes: normaliserEtapes(cloudProduct.etapes),
       sugubaMargin: Math.max(0, Number(cloudProduct.public_price || 0) - Number(cloudProduct.supplier_price || 0) - Number(cloudProduct.reseller_commission || 0)),
       stockQuantity: Number(cloudProduct.stock ?? 0),
       warrantyMonths: 0, // Aucune colonne garantie en base : ne jamais en afficher une inventée.

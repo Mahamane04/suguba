@@ -16,7 +16,8 @@ import { contenuQrRemise } from '@/lib/qr-remise';
 import { dessinerRecu } from '@/lib/recu-image';
 import { whatsappHelper } from '@/lib/whatsapp-helper';
 import type { RecuCommande } from '@/lib/recu-commande';
-import { AlertTriangle, Camera, CheckCircle2, Download, LifeBuoy, Printer, Send, Truck, X } from 'lucide-react';
+import { AlertTriangle, Camera, CheckCircle2, Circle, Clock, Download, LifeBuoy, Printer, Send, Truck, X } from 'lucide-react';
+import type { ArticleRecu } from '@/lib/recu-commande';
 
 const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
 const dateLongue = (iso: string) => new Date(iso).toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' });
@@ -191,7 +192,10 @@ export default function RecuPage() {
                 <p className="font-mono text-xl font-bold tracking-[0.4em] text-slate-900" aria-live="polite">{recu.code}</p>
                 <p className="rounded-2xl bg-amber-50 text-amber-900 text-sm p-3 flex items-start gap-2 text-left">
                   <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <span>Présentez ce QR au livreur <strong>uniquement après avoir vérifié votre colis</strong>. Ne l’envoyez pas au livreur à l’avance.</span>
+                  <span>
+                    {recu.modeRemise && recu.modeRemise !== 'livreur' ? 'Présentez ce QR au vendeur' : 'Présentez ce QR au livreur'}{' '}
+                    <strong>uniquement après avoir vérifié {recu.articles.some((a) => a.etapes.length) ? 'que tout est fait' : 'votre colis'}</strong>. Ne l’envoyez pas à l’avance.
+                  </span>
                 </p>
               </section>
             ) : recu.livre ? (
@@ -245,6 +249,10 @@ export default function RecuPage() {
                 </p>
               )}
             </section>
+
+            {recu.articles.filter((a) => a.etapes.length > 0 && !['cancelled', 'returned'].includes(a.status)).map((a) => (
+              <EtapesPrestation key={a.orderNumber} numero={numero} article={a} plusieurs={recu.articles.length > 1} onMaj={charger} />
+            ))}
 
             <section aria-label="Assistance" className="border-t border-slate-100 pt-3 text-sm text-slate-700 space-y-1">
               <p>Une question ? Donnez le numéro <strong className="font-mono">{recu.orderNumber}</strong> au service client.</p>
@@ -481,5 +489,117 @@ function SignalerProbleme({ numero, articles, onFermer }: {
         </div>
       )}
     </Sheet>
+  );
+}
+
+const heureCourte = (iso: string) => new Date(iso).toLocaleString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+/**
+ * Étapes de la prestation (2026-09-26, lot 1c). Le vendeur déclare chaque
+ * étape avec sa preuve ; le client la valide ici, ou signale un problème.
+ * La remise finale (QR) n'est possible qu'une fois tout validé.
+ */
+function EtapesPrestation({ numero, article, plusieurs, onMaj }: { numero: string; article: ArticleRecu; plusieurs: boolean; onMaj: () => void }) {
+  const { toast } = useToast();
+  const [ouverte, setOuverte] = useState<{ position: number; mode: 'valider' | 'contester' } | null>(null);
+  const [motif, setMotif] = useState('');
+  const [envoi, setEnvoi] = useState(false);
+  const validees = article.etapes.filter((e) => e.statut === 'validee').length;
+  const livre = article.status === 'delivered';
+
+  const repondre = async (position: number, decision: 'valider' | 'contester') => {
+    setEnvoi(true);
+    try {
+      const r = await fetch('/api/orders/etapes', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderNumber: article.orderNumber, accessKey: orderAccessKey(numero) || orderAccessKey(article.orderNumber) || '', position, decision, motif }),
+      });
+      const j = await r.json().catch(() => null);
+      if (!r.ok) { toast(j?.error || 'Envoi impossible. Réessayez.', { ton: 'erreur' }); return; }
+      toast(decision === 'valider' ? 'Étape validée. Merci !' : 'Problème signalé au vendeur et à Suguba.', { ton: decision === 'valider' ? 'succes' : 'info' });
+      setOuverte(null); setMotif('');
+      onMaj();
+    } catch {
+      toast('Connexion interrompue. Réessayez.', { ton: 'erreur' });
+    } finally {
+      setEnvoi(false);
+    }
+  };
+
+  return (
+    <section aria-label="Étapes de la prestation" className="border-t border-slate-100 pt-3 space-y-3">
+      <div className="flex items-baseline justify-between gap-2">
+        <h2 className="text-sm font-bold text-slate-900">Étapes de la prestation{plusieurs ? ` · ${article.productName}` : ''}</h2>
+        <p className="text-xs font-semibold text-slate-500 tabular-nums">{livre ? 'Terminé' : `${validees}/${article.etapes.length} validées`}</p>
+      </div>
+      <ol className="space-y-2">
+        {article.etapes.map((e) => {
+          const Icone = e.statut === 'validee' ? CheckCircle2 : e.statut === 'declaree' ? Clock : e.statut === 'contestee' ? AlertTriangle : Circle;
+          const couleur = e.statut === 'validee' ? 'text-emerald-600' : e.statut === 'declaree' ? 'text-amber-600' : e.statut === 'contestee' ? 'text-rose-600' : 'text-slate-300';
+          return (
+            <li key={e.position} className={`rounded-2xl border p-3 space-y-2 ${e.statut === 'declaree' ? 'border-amber-300 bg-amber-50/60' : 'border-slate-200'}`}>
+              <div className="flex items-start gap-2.5">
+                <Icone className={`w-5 h-5 shrink-0 mt-0.5 ${couleur}`} aria-hidden />
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-semibold text-slate-900">{e.libelle}</p>
+                  <p className="text-xs text-slate-600">
+                    {e.statut === 'validee' ? (e.valideePar === 'admin' ? 'Validée par Suguba' : 'Vous l’avez validée')
+                      : e.statut === 'declaree' ? 'Le vendeur dit que c’est fait : à vous de vérifier'
+                        : e.statut === 'contestee' ? 'Vous avez signalé un problème : le vendeur doit corriger'
+                          : 'À faire par le vendeur'}
+                  </p>
+                </div>
+              </div>
+              {e.datePrevue && <p className="text-xs text-slate-800">Rendez-vous : <strong>{heureCourte(e.datePrevue)}</strong></p>}
+              {e.note && e.statut !== 'a_faire' && <p className="text-xs text-slate-700 whitespace-pre-line">« {e.note} »</p>}
+              {e.liensPhotos.length > 0 && (
+                <div className="flex gap-2 print:hidden">
+                  {e.liensPhotos.map((url, i) => (
+                    <a key={url} href={url} target="_blank" rel="noopener noreferrer" className="block w-20 h-20 rounded-xl overflow-hidden bg-slate-100 border border-slate-200">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={url} alt={`Photo ${i + 1} de l’étape ${e.libelle}`} className="w-full h-full object-cover" />
+                    </a>
+                  ))}
+                </div>
+              )}
+              {e.statut === 'contestee' && e.motifContestation && <p className="text-xs text-rose-800">Votre signalement : {e.motifContestation}</p>}
+
+              {e.statut === 'declaree' && (ouverte?.position === e.position ? (
+                ouverte.mode === 'valider' ? (
+                  <div className="space-y-2 print:hidden">
+                    <p className="text-xs text-slate-800">Vous confirmez que <strong>« {e.libelle} »</strong> est bien fait ? Vous ne pourrez plus revenir en arrière.</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button variant="ghost" onClick={() => setOuverte(null)} disabled={envoi}>Annuler</Button>
+                      <Button onClick={() => repondre(e.position, 'valider')} disabled={envoi}>{envoi ? 'Envoi…' : 'Oui, je valide'}</Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-2 print:hidden">
+                    <Field label="Qu’est-ce qui ne va pas ?" htmlFor={`motif-${article.orderNumber}-${e.position}`} requis>
+                      <Textarea id={`motif-${article.orderNumber}-${e.position}`} rows={3} maxLength={1000} value={motif} onChange={(ev) => setMotif(ev.target.value)}
+                        placeholder="Ex : l’installation ne marche pas, il manque une pièce…" />
+                    </Field>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button variant="ghost" onClick={() => setOuverte(null)} disabled={envoi}>Annuler</Button>
+                      <Button onClick={() => repondre(e.position, 'contester')} disabled={envoi || motif.trim().length < 5}>{envoi ? 'Envoi…' : 'Envoyer'}</Button>
+                    </div>
+                  </div>
+                )
+              ) : (
+                <div className="grid grid-cols-2 gap-2 print:hidden">
+                  <Button onClick={() => { setOuverte({ position: e.position, mode: 'valider' }); setMotif(''); }}>C’est fait</Button>
+                  <Button variant="ghost" onClick={() => { setOuverte({ position: e.position, mode: 'contester' }); setMotif(''); }}>Signaler un problème</Button>
+                </div>
+              ))}
+            </li>
+          );
+        })}
+      </ol>
+      {!livre && (
+        <p className="text-xs text-slate-500">
+          Quand toutes les étapes sont validées, présentez votre QR au vendeur pour la réception finale.
+        </p>
+      )}
+    </section>
   );
 }

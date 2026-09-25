@@ -323,6 +323,7 @@ export const sugubaStore = {
     fraisRemise?: number;
     offreInclus?: string | null;
     modeCommande?: Product['modeCommande'];
+    etapes?: Product['etapes'];
   }): Promise<{
     product: Product;
     cloud: boolean;
@@ -348,6 +349,7 @@ export const sugubaStore = {
       fraisRemise: data.fraisRemise,
       offreInclus: data.offreInclus,
       modeCommande: data.modeCommande,
+      etapes: data.etapes,
       sugubaMargin: Math.round(Number(data.supplierPrice) * 0.2),
       stockQuantity: Number(data.stockQuantity),
       warrantyMonths: Number(data.warrantyMonths) || 0,

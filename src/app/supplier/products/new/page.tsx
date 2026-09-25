@@ -10,7 +10,7 @@ import Button from '@/components/ui/Button';
 import ChoicePicker from '@/components/ui/ChoicePicker';
 import { sugubaStore } from '@/lib/store';
 import { FAMILLES_CATEGORIES } from '@/lib/product-categories';
-import { MODES_REMISE, TYPES_OFFRE, type ModeRemise, type TypeOffre } from '@/lib/offre';
+import { ETAPES, MODES_REMISE, TYPES_OFFRE, type CleEtape, type ModeRemise, type TypeOffre } from '@/lib/offre';
 import {
   PackagePlus, ShieldCheck, CheckCircle2, ArrowLeft
 } from 'lucide-react';
@@ -60,6 +60,7 @@ export default function NewSupplierProductPage() {
   const [fraisRemise, setFraisRemise] = useState<number>(0);
   const [offreInclus, setOffreInclus] = useState('');
   const [modeCommande, setModeCommande] = useState<'achat' | 'devis'>('achat');
+  const [etapes, setEtapes] = useState<CleEtape[]>([]);
   const [prixConseille, setPrixConseille] = useState<number>(0);
   const [apercuGros, setApercuGros] = useState<{
     prixMinimal: number; prixConseille: number; conseilFournisseurRetenu: boolean;
@@ -121,6 +122,7 @@ export default function NewSupplierProductPage() {
       fraisRemise: modeRemise === 'fournisseur' ? Number(fraisRemise) || 0 : 0,
       offreInclus: offreInclus.trim() || null,
       modeCommande,
+      etapes: modeRemise !== 'livreur' ? etapes : [],
     });
 
     setIsSubmitting(false);
@@ -304,6 +306,31 @@ export default function NewSupplierProductPage() {
                   </p>
                 )}
               </div>
+              {modeRemise !== 'livreur' && (
+                <div className="space-y-2">
+                  <p className="text-xs font-bold text-slate-700">Étapes de la prestation (facultatif)</p>
+                  <p className="text-xs text-slate-600">
+                    Cochez les étapes de votre intervention. Vous déclarez chacune avec une preuve (photo, date…),
+                    le client la valide depuis son reçu. La réception finale se fait en scannant son reçu, une fois tout validé.
+                    Ne cochez rien pour une remise en une seule fois.
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {ETAPES.map((e) => {
+                      const coche = etapes.includes(e.cle);
+                      return (
+                        <label key={e.cle} className={`flex items-start gap-2.5 p-3 rounded-2xl border cursor-pointer ${coche ? 'border-suguba-profond bg-suguba-menthe' : 'border-slate-200 bg-white'}`}>
+                          <input type="checkbox" checked={coche} className="mt-0.5 w-4 h-4 accent-suguba-profond"
+                            onChange={() => setEtapes((l) => (coche ? l.filter((k) => k !== e.cle) : ETAPES.map((x) => x.cle).filter((k) => k === e.cle || l.includes(k))))} />
+                          <span>
+                            <span className="block text-sm font-semibold text-slate-900">{e.libelle}</span>
+                            <span className="block text-xs text-slate-600">{e.detail}</span>
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               <div className="space-y-2">
                 <p className="text-xs font-bold text-slate-700">Comment le client commande ?</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2" role="radiogroup" aria-label="Comment le client commande">

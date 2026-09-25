@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { exigerDroitFournisseur } from '@/lib/reseau/contexte-fournisseur';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { modeRemiseCommande } from '@/lib/offre';
+import { etapesCommande, modeRemiseCommande } from '@/lib/offre';
+import { lireEtapes } from '@/lib/etapes';
 
 /**
  * Commandes à préparer côté fournisseur (2026-09-24).
@@ -46,6 +47,10 @@ export async function GET(req: NextRequest) {
   }
   if (error) return NextResponse.json({ error: 'Lecture des commandes impossible.' }, { status: 500 });
 
+  // Prestations à étapes (lot 1c) : le parcours des commandes qui en ont un.
+  const avecEtapes = (data || []).filter((o: any) => etapesCommande(o.pricing_snapshot).length > 0).map((o: any) => o.id);
+  const etapes = await lireEtapes(admin, avecEtapes).catch(() => new Map());
+
   const commandes = (data || []).map((o: any) => {
     const tarif = o.pricing_snapshot?.devis?.tarif;
     const unitaire = typeof tarif?.prixFournisseur === 'number' ? tarif.prixFournisseur : prixFournisseur.get(o.product_id) || 0;
@@ -76,6 +81,9 @@ export async function GET(req: NextRequest) {
       client: remiseAFaire ? { nom: o.customer_name || '', telephone: o.customer_phone || '', repere: o.landmark || null } : null,
       montantClient: parMoi ? Math.round(Number(o.total_amount) || 0) : null,
       payeEnLigne: o.payment_method === 'mobile_money' && Boolean(o.payment_collected),
+      // Étapes prévues (créées à la prise en charge) et leur avancement.
+      etapesPrevues: etapesCommande(o.pricing_snapshot),
+      etapes: etapes.get(o.id) || [],
     };
   });
   return NextResponse.json({ commandes, ramassageActif });

@@ -192,6 +192,52 @@
  "journal": [
   {
    "date": "2026-09-26",
+   "titre": "Prestations à étapes (lot 1c)",
+   "demande": "Des parcours de prestation (visite technique, rendez-vous, remise du matériel, installation, réception) : chaque étape a sa preuve, validée par le client ; le fournisseur déclare mais ne valide pas à la place du client ; la commission n'est débloquée qu'après la réception finale.",
+   "realise": [
+    "Offre : choix des étapes quand le fournisseur remet lui-même ; « Comment ça se passe » sur la fiche.",
+    "Fournisseur : déclare l'étape en cours avec sa preuve (date du rendez-vous, photos réencodées et privées, description), dans l'ordre.",
+    "Client : valide ou conteste chaque étape depuis son reçu (clé du reçu exigée).",
+    "Réception finale = scan du reçu QR, refusée tant qu'une étape n'est pas validée (application + garde-fou en base). Les gains ne se débloquent qu'à cette livraison.",
+    "Admin « Prestations » : contestations et clients sans réponse, valider après appel ou faire refaire, avec raison écrite.",
+    "Avis au fournisseur à chaque validation, contestation ou décision de Suguba."
+   ],
+   "ecarts": [
+    "SQL à exécuter : supabase/A-EXECUTER-2026-09-26-prestations-etapes.sql.",
+    "Le client n'est pas prévenu automatiquement d'une étape à valider (pas de compte ni de WhatsApp automatique) : le fournisseur lui demande d'ouvrir son reçu.",
+    "Pas d'acompte par étape : le paiement reste à la réception finale (ou Mobile Money avant).",
+    "Modèles de parcours fixes (5 étapes au choix), pas d'étapes personnalisées."
+   ],
+   "pages": [
+    "adm-prestations",
+    "fou-commandes",
+    "fou-ajouter",
+    "recu",
+    "fiche-produit"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-26",
+   "titre": "Devis : avis au fournisseur et suivi admin",
+   "demande": "Prévenir le fournisseur quand une demande de devis arrive, et donner à l'admin la liste des devis.",
+   "realise": [
+    "Notification (cloche) au fournisseur : nouvelle demande, devis accepté (avec le n° de commande) ou refusé par le client.",
+    "Notification au revendeur quand son client accepte un devis.",
+    "Page admin « Devis » : filtres, demandes en retard (plus de 24 h sans réponse), prix fournisseur / revendeur / marge / client, recherche, lien vers la commande."
+   ],
+   "ecarts": [
+    "Avis dans l'application uniquement (pas de SMS ni WhatsApp automatique, règles anti-ban).",
+    "Seul le propriétaire du compte fournisseur est prévenu, pas les membres de son équipe."
+   ],
+   "pages": [
+    "adm-devis",
+    "fou-devis"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-26",
    "titre": "Correctif : logo et couverture de la boutique revendeur",
    "demande": "La photo de profil et la couverture choisies dans « Ma boutique » n'apparaissent ni sur la boutique /r/<code>, ni dans l'aperçu WhatsApp du lien (une photo d'article s'affiche à la place).",
    "realise": [
@@ -868,6 +914,10 @@
      "role": "Ce que comprend l'offre, tel que décrit par le fournisseur."
     },
     {
+     "nom": "Comment ça se passe",
+     "role": "Les étapes de la prestation, puis la réception finale : le client sait d’avance ce qu’il validera."
+    },
+    {
      "nom": "Retour",
      "role": "Revient à la page précédente."
     },
@@ -1160,6 +1210,10 @@
     {
      "nom": "QR et code de remise",
      "role": "À présenter au livreur seulement après avoir vérifié le colis. Le livreur le scanne ; le code écrit dessous sert si le scan échoue."
+    },
+    {
+     "nom": "Étapes de la prestation",
+     "role": "Pour une installation ou un service en plusieurs étapes : voir la preuve du vendeur (photos, date), puis « C’est fait » ou « Signaler un problème ». Le QR ne sert qu’à la réception finale, une fois tout validé."
     },
     {
      "nom": "Enregistrer mon reçu",
@@ -2578,8 +2632,12 @@
      "role": "Offre que vous remettez vous-même : après la confirmation de Suguba, la commande vous est assignée (aucun livreur). Vous voyez alors le nom, le téléphone et le repère du client pour le rendez-vous."
     },
     {
+     "nom": "Étapes de la prestation",
+     "role": "Déclarer l’étape en cours avec sa preuve (date du rendez-vous, photos, description). Le client la valide depuis son reçu ; une étape contestée se corrige puis se redéclare. Le fournisseur ne valide jamais lui-même."
+    },
+    {
      "nom": "Remettre au client (scanner son reçu)",
-     "role": "Scan du QR du reçu client (ou saisie du code), vérification des articles et du paiement, puis « Confirmer la remise ». Les espèces encaissées se remettent à la caisse Suguba."
+     "role": "Scan du QR du reçu client (ou saisie du code), vérification des articles et du paiement, puis « Confirmer la remise ». Les espèces encaissées se remettent à la caisse Suguba. Pour une prestation à étapes : « Réception finale », possible seulement quand le client a tout validé."
     },
     {
      "nom": "À préparer · En livraison · Terminées",
@@ -2612,6 +2670,10 @@
    "chemin": "/supplier/devis",
    "but": "Les demandes des clients sur les offres « sur devis » : le fournisseur répond avec son prix, Suguba calcule le prix client.",
    "elements": [
+    {
+     "nom": "Avis de nouvelle demande",
+     "role": "Une notification (cloche) prévient le fournisseur à chaque nouvelle demande, et quand le client accepte ou refuse."
+    },
     {
      "nom": "À répondre · Proposés · Terminés",
      "role": "Filtres."
@@ -2655,6 +2717,10 @@
     {
      "nom": "Qui la remet au client ?",
      "role": "Un livreur Suguba, vous-même (véhicule, installation) ou le client vient chez vous. Sans livreur Suguba : vous organisez la remise et scannez le reçu QR du client."
+    },
+    {
+     "nom": "Étapes de la prestation",
+     "role": "Si vous remettez vous-même : cochez visite technique, rendez-vous, matériel remis, installation, prise en main. Chaque étape est validée par le client ; rien de coché = remise en une fois."
     },
     {
      "nom": "Frais de déplacement ou de remise",
@@ -3482,6 +3548,74 @@
     }
    ],
    "note": "Capture à faire après l'exécution du SQL de la caisse (avant, la page n'affiche que l'annonce d'installation). Elle montrera des noms et montants de livreurs réels : à masquer."
+  },
+  {
+   "id": "adm-devis",
+   "role": "admin",
+   "titre": "Devis",
+   "chemin": "/admin/devis",
+   "but": "Toutes les demandes de devis des clients : qui attend une réponse, les prix proposés et les devis acceptés. Lecture seule : seul le fournisseur propose son prix.",
+   "elements": [
+    {
+     "nom": "À répondre · Proposés · Acceptés · Refusés / expirés",
+     "role": "Filtres. Les demandes les plus anciennes sans réponse passent en tête."
+    },
+    {
+     "nom": "En retard",
+     "role": "Demande sans réponse du fournisseur depuis plus de 24 h : l'appeler (son téléphone est sur la fiche)."
+    },
+    {
+     "nom": "Prix",
+     "role": "Prix du fournisseur, gain du revendeur, marge Suguba et prix payé par le client, figés à la proposition."
+    },
+    {
+     "nom": "Recherche",
+     "role": "Par numéro de devis ou de commande, téléphone, client ou fournisseur."
+    }
+   ],
+   "suite": [
+    {
+     "id": "fou-devis",
+     "libelle": "Côté fournisseur : répondre aux demandes"
+    }
+   ],
+   "note": "Pas de capture : aucune demande réelle pour l'instant, et la page affichera des noms et téléphones de clients (à masquer)."
+  },
+  {
+   "id": "adm-prestations",
+   "role": "admin",
+   "titre": "Prestations",
+   "chemin": "/admin/prestations",
+   "but": "Les installations et services en plusieurs étapes en cours. En tête : ceux où le client conteste une étape, ou ne répond pas depuis 48 h.",
+   "elements": [
+    {
+     "nom": "Contestées · Client muet",
+     "role": "Compteurs des parcours qui demandent un appel."
+    },
+    {
+     "nom": "Étapes",
+     "role": "Déclaration du fournisseur (note, rendez-vous, photos à la demande) et réponse du client."
+    },
+    {
+     "nom": "Valider (après appel)",
+     "role": "Valide l’étape à la place du client, avec une raison écrite obligatoire, visible du fournisseur."
+    },
+    {
+     "nom": "Faire refaire",
+     "role": "Remet l’étape à faire, avec ce que le fournisseur doit corriger."
+    }
+   ],
+   "suite": [
+    {
+     "id": "fou-commandes",
+     "libelle": "Côté fournisseur : déclarer les étapes"
+    },
+    {
+     "id": "recu",
+     "libelle": "Côté client : valider depuis le reçu"
+    }
+   ],
+   "note": "Pas de capture : aucune prestation réelle pour l'instant ; la page affichera des noms et téléphones de clients (à masquer)."
   },
   {
    "id": "adm-sav",

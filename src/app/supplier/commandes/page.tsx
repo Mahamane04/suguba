@@ -1,7 +1,10 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { PackageCheck, KeyRound, Truck, CheckCircle2, Clock, Package, Handshake, Phone, QrCode } from 'lucide-react';
+import { PackageCheck, KeyRound, Truck, CheckCircle2, Clock, Package, Handshake, Phone, QrCode, Circle, AlertTriangle, Camera, X } from 'lucide-react';
+import { Field, Input, Textarea } from '@/components/ui/Field';
+import { compresserImage } from '@/lib/compression-image';
+import { ETAPES, libelleEtape, type CleEtape } from '@/lib/offre';
 import PageReseau from '@/components/reseau/PageReseau';
 import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
 import ProductImage from '@/components/common/ProductImage';
@@ -40,6 +43,23 @@ interface Commande {
   client?: { nom: string; telephone: string; repere: string | null } | null;
   montantClient?: number | null;
   payeEnLigne?: boolean;
+  // Prestation à étapes (2026-09-26, lot 1c)
+  etapesPrevues?: CleEtape[];
+  etapes?: EtapeFournisseur[];
+}
+
+interface EtapeFournisseur {
+  position: number;
+  cle: CleEtape;
+  libelle: string;
+  preuveAttendue: string;
+  statut: 'a_faire' | 'declaree' | 'validee' | 'contestee';
+  note: string | null;
+  datePrevue: string | null;
+  photos: number;
+  valideePar: 'client' | 'admin' | null;
+  motifContestation: string | null;
+  noteAdmin: string | null;
 }
 
 const enF = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
@@ -199,14 +219,28 @@ export default function CommandesFournisseurPage() {
                         ? 'Déjà payé en ligne : rien à encaisser.'
                         : <>À encaisser au client : <strong>{enF(c.montantClient || 0)}</strong>, à remettre ensuite à la caisse Suguba.</>}
                     </p>
+                    {c.statut === 'confirmed' && (c.etapesPrevues?.length || 0) > 0 && (
+                      <p className="text-xs text-slate-700">
+                        Parcours prévu : {c.etapesPrevues!.map((k) => libelleEtape(k)).join(' → ')} → réception finale.
+                      </p>
+                    )}
+                    {c.statut === 'in_transit' && c.remisePriseEnCharge && (c.etapes?.length || 0) > 0 && (
+                      <EtapesPrestation commande={c} onMaj={() => setRecharge((n) => n + 1)} />
+                    )}
                     {c.statut === 'confirmed' ? (
                       <Button fullWidth onClick={() => organiser(c)} disabled={enCours === c.id}>
                         {enCours === c.id ? 'Un instant…' : 'Organiser la remise'}
                       </Button>
                     ) : c.remisePriseEnCharge ? (
-                      <Button fullWidth onClick={() => setARemettre(c)}>
-                        <QrCode className="w-4 h-4" /> Remettre au client (scanner son reçu)
-                      </Button>
+                      (c.etapes || []).some((x) => x.statut !== 'validee') ? (
+                        <p className="text-xs text-slate-600 bg-white rounded-xl p-2.5">
+                          Réception finale (scan du reçu) : possible quand le client aura validé toutes les étapes.
+                        </p>
+                      ) : (
+                        <Button fullWidth onClick={() => setARemettre(c)}>
+                          <QrCode className="w-4 h-4" /> {(c.etapes?.length || 0) > 0 ? 'Réception finale (scanner son reçu)' : 'Remettre au client (scanner son reçu)'}
+                        </Button>
+                      )
                     ) : null}
                   </div>
                 )}
@@ -239,5 +273,138 @@ export default function CommandesFournisseurPage() {
         } as unknown as Order) : null}
       />
     </PageReseau>
+  );
+}
+
+const dateCourte = (iso: string) => new Date(iso).toLocaleString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+
+/**
+ * Étapes de la prestation côté fournisseur (2026-09-26, lot 1c). Il déclare
+ * l'étape en cours avec sa preuve ; le client la valide depuis son reçu.
+ * Il ne peut jamais la valider lui-même.
+ */
+function EtapesPrestation({ commande, onMaj }: { commande: Commande; onMaj: () => void }) {
+  const etapes = commande.etapes || [];
+  const enCours = etapes.find((e) => e.statut !== 'validee');
+  const [formulaire, setFormulaire] = useState(false);
+
+  return (
+    <div className="rounded-2xl bg-white border border-slate-200 p-3 space-y-2.5">
+      <p className="text-xs font-bold text-slate-900">
+        Étapes de la prestation · {etapes.filter((e) => e.statut === 'validee').length}/{etapes.length} validées par le client
+      </p>
+      <ol className="space-y-1.5">
+        {etapes.map((e) => {
+          const Icone = e.statut === 'validee' ? CheckCircle2 : e.statut === 'declaree' ? Clock : e.statut === 'contestee' ? AlertTriangle : Circle;
+          const couleur = e.statut === 'validee' ? 'text-emerald-600' : e.statut === 'declaree' ? 'text-amber-600' : e.statut === 'contestee' ? 'text-rose-600' : 'text-slate-300';
+          return (
+            <li key={e.position} className="flex items-start gap-2 text-xs">
+              <Icone className={`w-4 h-4 shrink-0 ${couleur}`} aria-hidden />
+              <span className="min-w-0">
+                <strong className="text-slate-900">{e.libelle}</strong>
+                <span className="text-slate-600"> · {
+                  e.statut === 'validee' ? (e.valideePar === 'admin' ? 'validée par Suguba' : 'validée par le client')
+                    : e.statut === 'declaree' ? 'en attente du client'
+                      : e.statut === 'contestee' ? 'contestée par le client' : 'à faire'
+                }</span>
+                {e.datePrevue && <span className="block text-slate-700">Rendez-vous : {dateCourte(e.datePrevue)}</span>}
+                {e.statut === 'contestee' && e.motifContestation && <span className="block text-rose-800">Le client : « {e.motifContestation} »</span>}
+                {e.noteAdmin && e.statut !== 'validee' && <span className="block text-slate-700">Suguba : {e.noteAdmin}</span>}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+
+      {enCours && enCours.statut === 'declaree' && (
+        <p className="text-xs text-slate-600 bg-slate-50 rounded-xl p-2.5">
+          Demandez au client d’ouvrir son reçu Suguba et de valider « {enCours.libelle} ».
+        </p>
+      )}
+      {enCours && ['a_faire', 'contestee'].includes(enCours.statut) && (formulaire ? (
+        <FormEtape commande={commande} etape={enCours} onFini={(ok) => { setFormulaire(false); if (ok) onMaj(); }} />
+      ) : (
+        <Button fullWidth onClick={() => setFormulaire(true)}>
+          {enCours.statut === 'contestee' ? `Corriger et redéclarer « ${enCours.libelle} »` : `Déclarer « ${enCours.libelle} » terminée`}
+        </Button>
+      ))}
+    </div>
+  );
+}
+
+function FormEtape({ commande, etape, onFini }: { commande: Commande; etape: EtapeFournisseur; onFini: (ok: boolean) => void }) {
+  const { toast } = useToast();
+  const [note, setNote] = useState('');
+  const [date, setDate] = useState('');
+  const [photos, setPhotos] = useState<File[]>([]);
+  const [envoi, setEnvoi] = useState(false);
+  const rdv = etape.cle === 'rendez_vous';
+  const detail = ETAPES.find((x) => x.cle === etape.cle);
+  const pret = rdv ? Boolean(date) : note.trim().length >= 5 || photos.length > 0;
+
+  const ajouter = async (liste: FileList | null) => {
+    if (!liste) return;
+    const nouvelles = await Promise.all(Array.from(liste).slice(0, 3 - photos.length).map((f) => compresserImage(f)));
+    setPhotos((p) => [...p, ...nouvelles].slice(0, 3));
+  };
+
+  const envoyer = async () => {
+    setEnvoi(true);
+    try {
+      const f = new FormData();
+      f.set('orderId', commande.id);
+      f.set('position', String(etape.position));
+      f.set('note', note);
+      if (rdv && date) f.set('datePrevue', new Date(date).toISOString());
+      photos.forEach((p) => f.append('photos', p));
+      const r = await fetch('/api/supplier/etapes', { method: 'POST', body: f });
+      const j = await r.json().catch(() => null);
+      if (!r.ok) { toast(j?.error || 'Envoi impossible. Réessayez.', { ton: 'erreur' }); return; }
+      toast('Étape déclarée : le client la valide depuis son reçu.', { ton: 'succes' });
+      onFini(true);
+    } catch {
+      toast('Connexion interrompue. Réessayez.', { ton: 'erreur' });
+    } finally {
+      setEnvoi(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2.5">
+      <p className="text-xs text-slate-600">Preuve attendue : {detail?.preuve || 'une photo ou une description'}. Le client la voit sur son reçu.</p>
+      {rdv && (
+        <Field label="Date et heure du rendez-vous" htmlFor={`rdv-${commande.id}`} requis>
+          <Input id={`rdv-${commande.id}`} type="datetime-local" value={date} onChange={(e) => setDate(e.target.value)} />
+        </Field>
+      )}
+      <Field label={rdv ? 'Précisions (facultatif)' : 'Ce qui a été fait'} htmlFor={`note-${commande.id}`}>
+        <Textarea id={`note-${commande.id}`} rows={3} maxLength={1000} value={note} onChange={(e) => setNote(e.target.value)}
+          placeholder={rdv ? 'Ex : prévoir un accès au toit' : 'Ex : 4 panneaux posés, batterie branchée, test OK'} />
+      </Field>
+      {!rdv && (
+        <div className="space-y-2">
+          <div className="flex gap-2 flex-wrap">
+            {photos.map((p, i) => (
+              <span key={i} className="relative inline-flex items-center gap-1 px-2.5 h-9 rounded-xl bg-slate-100 text-xs text-slate-700">
+                Photo {i + 1}
+                <button type="button" aria-label={`Retirer la photo ${i + 1}`} onClick={() => setPhotos((l) => l.filter((_, j) => j !== i))} className="p-1">
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </span>
+            ))}
+          </div>
+          {photos.length < 3 && (
+            <label className="inline-flex items-center gap-1.5 min-h-11 px-3 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 cursor-pointer hover:bg-slate-50">
+              <Camera className="w-4 h-4" /> Ajouter une photo ({photos.length}/3)
+              <input type="file" accept="image/jpeg,image/png,image/webp" capture="environment" multiple className="sr-only" onChange={(e) => { ajouter(e.target.files); e.target.value = ''; }} />
+            </label>
+          )}
+        </div>
+      )}
+      <div className="grid grid-cols-2 gap-2">
+        <Button variant="ghost" onClick={() => onFini(false)} disabled={envoi}>Annuler</Button>
+        <Button onClick={envoyer} disabled={envoi || !pret}>{envoi ? 'Envoi…' : 'Déclarer terminée'}</Button>
+      </div>
+    </div>
   );
 }

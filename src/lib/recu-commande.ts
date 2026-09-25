@@ -1,5 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { modeRemiseCommande } from './offre';
+import { ETAPES, etapesCommande, modeRemiseCommande } from './offre';
+import { liensPhotosEtape, lireEtapes, type EtapeCommande } from './etapes';
 
 /**
  * Reçu client Suguba (2026-09-25) — SERVEUR UNIQUEMENT.
@@ -60,6 +61,8 @@ export interface ArticleRecu {
   total: number;
   status: string;
   deliveredAt: string | null;
+  /** Prestation à étapes (lot 1c) : parcours, avec liens temporaires vers les photos. */
+  etapes: (EtapeCommande & { liensPhotos: string[] })[];
 }
 
 export interface RecuCommande {
@@ -103,6 +106,16 @@ export async function chargerRecu(admin: SupabaseClient, numero: string): Promis
   }
 
   const n = (v: unknown) => Math.round(Number(v) || 0);
+  // Étapes : seules les commandes qui en prévoient ; lecture sans effet si la
+  // table n'existe pas encore.
+  const avecEtapes = lignes.filter((x) => etapesCommande(x.pricing_snapshot).length > 0);
+  const etapes = avecEtapes.length ? await lireEtapes(admin, avecEtapes.map((x) => x.id)).catch(() => new Map<string, EtapeCommande[]>()) : new Map<string, EtapeCommande[]>();
+  const etapesAvecPhotos = new Map<string, (EtapeCommande & { liensPhotos: string[] })[]>();
+  for (const [id, liste] of etapes) {
+    etapesAvecPhotos.set(id, await Promise.all(liste.map(async (e) => ({
+      ...e, liensPhotos: e.photos > 0 ? await liensPhotosEtape(admin, id, e.position).catch(() => []) : [],
+    }))));
+  }
   const articles: ArticleRecu[] = lignes.map((x) => ({
     orderNumber: x.order_number,
     productName: x.product_name,
@@ -114,6 +127,13 @@ export async function chargerRecu(admin: SupabaseClient, numero: string): Promis
     total: n(x.total_amount),
     status: x.status,
     deliveredAt: x.delivered_at || null,
+    // Avant la prise en charge, le parcours n'existe pas encore en base : on
+    // montre les étapes prévues, toutes « à faire ».
+    etapes: etapesAvecPhotos.get(x.id) || etapesCommande(x.pricing_snapshot).map((cle, i) => ({
+      position: i + 1, cle, libelle: ETAPES.find((e) => e.cle === cle)?.libelle || 'Étape', preuveAttendue: '',
+      statut: 'a_faire' as const, note: null, datePrevue: null, photos: 0, declareeLe: null, valideeLe: null,
+      valideePar: null, motifContestation: null, noteAdmin: null, liensPhotos: [],
+    })),
   }));
   const actifs = lignes.filter((x) => !['cancelled', 'returned'].includes(x.status));
   const payeEnLigne = actifs.length > 0 && actifs.every((x) => x.payment_method === 'mobile_money' && x.payment_collected);

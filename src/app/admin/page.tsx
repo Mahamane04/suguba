@@ -9,7 +9,7 @@ import OrdersSyncNotice from '@/components/common/OrdersSyncNotice';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import CarteAccesReseau from '@/components/reseau/CarteAccesReseau';
-import { LayoutGrid as LayoutGridIcone, ShieldCheck as ShieldCheckIcone, Target as TargetIcone, Megaphone as MegaphoneIcone, UserCog as UserCogIcone, Gift as GiftIcone } from 'lucide-react';
+import { LayoutGrid as LayoutGridIcone, ShieldCheck as ShieldCheckIcone, Target as TargetIcone, Megaphone as MegaphoneIcone, UserCog as UserCogIcone, Gift as GiftIcone, FileText as FileTextIcone, Hammer as HammerIcone } from 'lucide-react';
 import CloudSyncBadge from '@/components/common/CloudSyncBadge';
 import ProductPricingModal from '@/components/admin/ProductPricingModal';
 import DriverVerificationPanel from '@/components/admin/DriverVerificationPanel';
@@ -221,6 +221,8 @@ export default function AdminDashboardPage() {
             {[
               { href: '/admin/products', label: 'Produits', Icone: ShoppingBag },
               { href: '/admin/caisse-livreurs', label: 'Caisse livreurs', Icone: Banknote },
+              { href: '/admin/devis', label: 'Devis', Icone: FileTextIcone },
+              { href: '/admin/prestations', label: 'Prestations', Icone: HammerIcone },
               { href: '/admin/sav', label: 'SAV & retours', Icone: ShieldAlert },
               { href: '/admin/analytics', label: 'Analyses', Icone: TrendingUp },
               { href: '/admin/reports/daily', label: 'Rapport du soir', Icone: BarChart3 },

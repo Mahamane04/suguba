@@ -15,7 +15,7 @@ import { useOrderQuote } from '@/lib/useOrderQuote';
 import {
   ShieldCheck, Truck, Clock, Minus, Plus, CheckCircle2, ArrowRight, ArrowLeft, Handshake, Store,
 } from 'lucide-react';
-import { libelleTypeOffre, normaliserTypeOffre } from '@/lib/offre';
+import { ETAPES, libelleTypeOffre, normaliserTypeOffre } from '@/lib/offre';
 
 const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} FCFA`;
 
@@ -343,6 +343,23 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               <div className="bg-white p-5 rounded-3xl border border-slate-200 space-y-2">
                 <h2 className="font-bold text-xs text-slate-900 uppercase tracking-wider">Ce qui est inclus</h2>
                 <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{product.offreInclus}</p>
+              </div>
+            )}
+
+            {/* Prestation à étapes (lot 1c) : le client sait d'avance comment ça se passe. */}
+            {product.modeRemise && product.modeRemise !== 'livreur' && (product.etapes?.length || 0) > 0 && (
+              <div className="bg-white p-5 rounded-3xl border border-slate-200 space-y-3">
+                <h2 className="font-bold text-xs text-slate-900 uppercase tracking-wider">Comment ça se passe</h2>
+                <ol className="space-y-2">
+                  {[...ETAPES.filter((e) => product.etapes!.includes(e.cle)).map((e) => ({ titre: e.libelle, detail: e.detail })),
+                    { titre: 'Réception finale', detail: 'Vous présentez le QR de votre reçu une fois tout vérifié' }].map((e, i) => (
+                    <li key={e.titre} className="flex gap-3">
+                      <span className="w-6 h-6 shrink-0 rounded-full bg-suguba-menthe text-suguba-profond text-xs font-bold flex items-center justify-center">{i + 1}</span>
+                      <span className="text-sm text-slate-700"><strong className="text-slate-900">{e.titre}</strong> · {e.detail}</span>
+                    </li>
+                  ))}
+                </ol>
+                <p className="text-xs text-slate-500">Vous validez chaque étape depuis votre reçu Suguba, avec les photos du vendeur.</p>
               </div>
             )}
           </div>
