@@ -207,8 +207,8 @@
     "panier-confirmation",
     "suivi"
    ],
-   "commit": "",
-   "statut": "en local"
+   "commit": "2a0b5f9",
+   "statut": "en ligne"
   },
   {
    "date": "2026-09-24",
@@ -229,8 +229,8 @@
     "fou-boutique",
     "rev-boutique"
    ],
-   "commit": "",
-   "statut": "en local"
+   "commit": "3ab0327",
+   "statut": "en ligne"
   },
   {
    "date": "2026-09-24",
@@ -246,8 +246,8 @@
     "fou-ajouter",
     "adm-vue"
    ],
-   "commit": "",
-   "statut": "en local"
+   "commit": "3ab0327",
+   "statut": "en ligne"
   },
   {
    "date": "2026-09-24",
@@ -266,8 +266,8 @@
    "pages": [
     "compte-profils"
    ],
-   "commit": "",
-   "statut": "en local"
+   "commit": "d06c9ef",
+   "statut": "en ligne"
   },
   {
    "date": "2026-09-24",
@@ -295,8 +295,8 @@
     "adm-vue",
     "rev-gains"
    ],
-   "commit": "",
-   "statut": "en local"
+   "commit": "3120447",
+   "statut": "en ligne"
   },
   {
    "date": "2026-09-24",
