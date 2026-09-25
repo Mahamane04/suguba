@@ -203,7 +203,6 @@
     "Avis au fournisseur à chaque validation, contestation ou décision de Suguba."
    ],
    "ecarts": [
-    "SQL à exécuter : supabase/A-EXECUTER-2026-09-26-prestations-etapes.sql.",
     "Le client n'est pas prévenu automatiquement d'une étape à valider (pas de compte ni de WhatsApp automatique) : le fournisseur lui demande d'ouvrir son reçu.",
     "Pas d'acompte par étape : le paiement reste à la réception finale (ou Mobile Money avant).",
     "Modèles de parcours fixes (5 étapes au choix), pas d'étapes personnalisées."
@@ -215,7 +214,8 @@
     "recu",
     "fiche-produit"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "24e3a1b"
   },
   {
    "date": "2026-09-26",
@@ -234,7 +234,8 @@
     "adm-devis",
     "fou-devis"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "24e3a1b"
   },
   {
    "date": "2026-09-26",
