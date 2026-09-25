@@ -204,7 +204,8 @@
    "pages": [
     "rev-boutique"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "19f0129"
   },
   {
    "date": "2026-09-26",
@@ -218,7 +219,6 @@
     "Anti-abus : une demande en cours par offre et par numéro, cinq au total ; un devis expiré ne peut plus être accepté."
    ],
    "ecarts": [
-    "SQL à exécuter : supabase/A-EXECUTER-2026-09-26-devis.sql.",
     "Pas de notification au fournisseur quand une demande arrive (il consulte « Demandes de devis ») ; pas encore de liste des devis côté admin.",
     "Pas encore : prestations en plusieurs étapes (lot 1c), acomptes."
    ],
@@ -230,7 +230,8 @@
     "fiche-produit",
     "suivi"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "19f0129"
   },
   {
    "date": "2026-09-26",
