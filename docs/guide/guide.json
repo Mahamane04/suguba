@@ -192,6 +192,29 @@
  "journal": [
   {
    "date": "2026-09-26",
+   "titre": "Protection Suguba — lot 2 : coordonnées par dossier",
+   "demande": "Lot 2 de la « Protection Suguba » : chaque intervenant ne reçoit une coordonnée que pour un dossier et une étape où il en a besoin ; aucune donnée interne chez les partenaires ; traçabilité.",
+   "realise": [
+    "Livreur : téléphone, repère, consignes du client et point de retrait (adresse et téléphone du fournisseur) seulement pour les courses en cours ; historique masqué (« Awa D. »).",
+    "Livreur et revendeur ne reçoivent plus la marge Suguba ni le détail des prix ; le livreur ne voit plus la commission du revendeur.",
+    "Fournisseur qui remet lui-même : contact du client seulement après « Organiser la remise », jusqu’à la remise.",
+    "Fournisseur, devis : téléphone et repère tant que la demande attend sa réponse ; ensuite nom masqué, contact via Suguba.",
+    "Journal des coordonnées remises et page admin « Accès aux coordonnées » (devis consultés sans réponse signalés)."
+   ],
+   "ecarts": [
+    "Un numéro déjà communiqué peut avoir été copié : le masquage limite l’exposition, il ne remplace pas l’engagement de non-contournement.",
+    "Messagerie interne « Poser une question » (lot 3) pas encore faite : après une proposition de devis, le contact passe par Suguba.",
+    "Pages publiques, listes fournisseurs et analyses vérifiées : aucune coordonnée n’y figure (inchangées)."
+   ],
+   "pages": [
+    "adm-acces-coordonnees",
+    "liv-portefeuille",
+    "adm-devis"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-26",
    "titre": "Protection Suguba — lot 1 : trésorerie",
    "demande": "Analyse « Protection Suguba et intégrité des transactions » : protéger d’abord l’argent réellement encaissé. Décision : le gain d’une vente payée en espèces attend que l’argent soit reversé à Suguba (avance possible par l’admin, avec motif).",
    "realise": [
@@ -2913,6 +2936,10 @@
     {
      "nom": "Vous recevez",
      "role": "Votre prix fournisseur × la quantité."
+    },
+    {
+     "nom": "Contact du client (remise par vous)",
+     "role": "Visible une fois la remise organisée (« Organiser la remise »), jusqu’à la remise ; ensuite il disparaît."
     }
    ],
    "suite": [
@@ -2952,6 +2979,10 @@
     {
      "nom": "Refuser",
      "role": "Avec un motif visible par le client (hors zone, indisponible…)."
+    },
+    {
+     "nom": "Coordonnées du client",
+     "role": "Téléphone et repère visibles tant que la demande attend votre réponse. Après votre proposition, le client répond depuis son reçu ; pour le joindre, passez par Suguba."
     }
    ],
    "suite": [
@@ -3343,6 +3374,10 @@
     {
      "nom": "Contacter Suguba",
      "role": "WhatsApp."
+    },
+    {
+     "nom": "Coordonnées",
+     "role": "Le téléphone du client, son repère et le point de retrait ne restent visibles que pendant la course. Dans l’historique, le nom devient « Awa D. »."
     }
    ],
    "suite": [
@@ -3843,6 +3878,30 @@
    "capture": {
     "chemin": "/admin/equipe"
    }
+  },
+  {
+   "id": "adm-acces-coordonnees",
+   "role": "admin",
+   "titre": "Accès aux coordonnées",
+   "chemin": "/admin/acces-coordonnees",
+   "but": "Voir qui a reçu les coordonnées de quels dossiers sur 30 jours : chaque intervenant ne les reçoit que pour un dossier et une étape où il en a besoin.",
+   "elements": [
+    {
+     "nom": "Règles",
+     "role": "Livreur : téléphone du client et point de retrait pendant une course en cours seulement. Fournisseur : client d’une remise qu’il a prise en charge, ou d’une demande de devis à laquelle il n’a pas encore répondu."
+    },
+    {
+     "nom": "Liste par personne",
+     "role": "Courses, remises et devis consultés ; pastille « devis consultés sans réponse » (plus de 24 h) : le signe possible de contacts récupérés hors Suguba."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-devis",
+     "libelle": "Devis"
+    }
+   ],
+   "note": "Pas de capture : page réservée aux admins (session de démonstration refusée pour les captures)."
   },
   {
    "id": "adm-caisse",

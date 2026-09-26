@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { exigerDroitFournisseur } from '@/lib/reseau/contexte-fournisseur';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { DevisError, listerDevisFournisseur, proposerDevis, refuserDemande } from '@/lib/devis';
+import { journaliserAcces } from '@/lib/acces-contacts';
 
 /**
  * Devis côté fournisseur (2026-09-26, lot 1b) : ses demandes, et ses
@@ -14,7 +15,10 @@ export async function GET(req: NextRequest) {
   const admin = getSupabaseAdmin();
   if (!admin) return NextResponse.json({ devis: [], migrationRequise: false });
   try {
-    return NextResponse.json(await listerDevisFournisseur(admin, acces.contexte.fournisseurId), { headers: { 'Cache-Control': 'no-store' } });
+    const liste = await listerDevisFournisseur(admin, acces.contexte.fournisseurId);
+    // Journal des coordonnées remises (lot 2).
+    await journaliserAcces(admin, acces.contexte.personneId, 'supplier', 'devis', liste.devis.filter((d) => d.client.telephone).map((d) => d.id));
+    return NextResponse.json(liste, { headers: { 'Cache-Control': 'no-store' } });
   } catch (e) {
     const err = e as DevisError;
     return NextResponse.json({ error: err.message || 'Lecture impossible.' }, { status: err.status || 500 });

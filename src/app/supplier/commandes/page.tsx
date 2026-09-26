@@ -206,6 +206,9 @@ export default function CommandesFournisseurPage() {
                       <Handshake className="w-4 h-4 text-suguba-profond" />
                       {c.modeRemise === 'retrait' ? 'Le client vient chez vous' : 'Vous remettez vous-même'} — aucun livreur Suguba
                     </p>
+                    {!c.client && !c.remisePriseEnCharge && (
+                      <p className="text-xs text-slate-700">Organisez la remise pour obtenir le contact du client.</p>
+                    )}
                     {c.client && (
                       <div className="text-xs text-slate-700 space-y-0.5">
                         <p><strong>{c.client.nom}</strong> · {c.quartierClient || c.ville}{c.client.repere ? ` · ${c.client.repere}` : ''}</p>

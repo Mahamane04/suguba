@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { SESSION_COOKIE_NAME } from '@/lib/session';
+import { commandePourLivreur, commandePourRevendeur, courseEnCours, journaliserAcces } from '@/lib/acces-contacts';
 
 /**
  * Remplace l'ancien `fetchOrdersFromCloud` qui lisait la table `orders`
@@ -79,16 +80,22 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  // Coordonnées par dossier (Protection Suguba, lot 2) : le livreur ne
+  // reçoit client et point de retrait que pour ses courses EN COURS ; son
+  // historique est masqué. Le code de ramassage appartient au fournisseur,
+  // la marge Suguba et le détail des prix ne sortent pas.
   const orders = (data || []).map((o) => {
     // Aucun rôle navigateur ne reçoit le secret de remise.
     if (session.role === 'admin') { const { delivery_otp, ...safe } = o; return safe; }
-    // Le code de ramassage appartient au FOURNISSEUR : le livreur doit le lui
-    // demander, sinon il pourrait valider un ramassage qui n'a pas eu lieu.
-    const { delivery_otp, pickup_code, pricing_snapshot, ...sansCodes } = o;
-    if (session.role !== 'driver') return sansCodes;
-    const livraison = pricing_snapshot?.livraison || null;
-    return { ...sansCodes, pickup_location: retraits.get(o.product_id) || null, client_position: livraison?.position || null };
+    if (session.role === 'reseller') return commandePourRevendeur(o);
+    return commandePourLivreur(o, {
+      pickup_location: retraits.get(o.product_id) || null,
+      client_position: o.pricing_snapshot?.livraison?.position || null,
+    });
   });
+  if (session.role === 'driver') {
+    await journaliserAcces(admin, session.uid, 'driver', 'course', (data || []).filter((o: any) => courseEnCours(o.status)).map((o: any) => o.id));
+  }
 
   return NextResponse.json({ orders, cloud: true });
 }

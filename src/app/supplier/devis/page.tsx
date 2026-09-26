@@ -120,6 +120,9 @@ export default function DevisFournisseurPage() {
                     <Phone className="w-3.5 h-3.5" /> Appeler {d.client.telephone}
                   </a>
                 )}
+                {!d.client.telephone && d.statut === 'proposee' && (
+                  <p>Le client répond à votre proposition depuis son reçu. Pour le joindre, passez par Suguba.</p>
+                )}
                 {d.viaRevendeur && <p className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> Client apporté par un revendeur</p>}
               </div>
 

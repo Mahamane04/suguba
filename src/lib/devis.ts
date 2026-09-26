@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { calculerCommande, calculerTarif, completerReglages, type Devis, type ReglagesPlateforme } from './pricing';
 import { genererNumeroCommande } from './order-number';
 import { depotsFournisseurs } from './depot-fournisseur';
+import { nomMasque, telephoneDevisVisible } from './acces-contacts';
 import { remiseDuProduit, type RemiseOffre } from './offre';
 import { recu } from './order-create';
 import { notifier } from './reseau/notifications';
@@ -360,15 +361,19 @@ export async function listerDevisFournisseur(admin: SupabaseClient, fournisseurI
   return {
     migrationRequise: false,
     devis: (data || []).map((q) => {
-      const ouvert = ['demande', 'proposee'].includes(q.status);
       const d = q.proposition?.devis as Devis | undefined;
       const expire = q.status === 'proposee' && q.valable_jusqu && Date.parse(q.valable_jusqu) < Date.now();
       return {
         id: q.id, numero: q.quote_number, statut: expire ? 'expiree' : q.status, creeLe: q.created_at,
         produit: noms.get(q.product_id) || '', quantite: q.quantite, besoin: q.besoin,
         lieu: [q.neighborhood, q.city].filter(Boolean).join(', '),
-        // Le fournisseur doit pouvoir qualifier le besoin : contact tant que la demande est ouverte.
-        client: { nom: q.customer_name, telephone: ouvert ? q.customer_phone : null, repere: ouvert ? q.landmark || null : null },
+        // Coordonnées par dossier (lot 2) : téléphone et repère seulement tant
+        // que la demande attend la réponse du fournisseur.
+        client: {
+          nom: telephoneDevisVisible(q.status) ? q.customer_name : nomMasque(q.customer_name),
+          telephone: telephoneDevisVisible(q.status) ? q.customer_phone : null,
+          repere: telephoneDevisVisible(q.status) ? q.landmark || null : null,
+        },
         viaRevendeur: Boolean(q.reseller_id),
         proposition: d ? {
           prixFournisseur: Number(q.prix_fournisseur) || 0, partRevendeur: Number(q.part_revendeur) || 0,

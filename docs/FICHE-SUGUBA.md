@@ -2,7 +2,8 @@
 
 > Mise à jour le **26 septembre 2026** (offres et services, devis, prestations à étapes,
 > « Priorité au réseau », campagnes encadrées, paiement des sponsorisations,
-> **rémunération au résultat**). Résumé de
+> rémunération au résultat, **Protection Suguba : trésorerie et coordonnées par
+> dossier**). Résumé de
 > tout ce qu'il faut savoir sur la plateforme : à quoi elle sert, qui fait quoi, comment
 > l'argent circule, comment elle est protégée et comment on la fait évoluer. Pour le
 > détail page par page, voir le **guide des parcours** (`/admin/guide`, réservé à
@@ -129,8 +130,8 @@ Suivi public d'une commande : `/track` (numéro + téléphone, tentatives limit�
 - **Nature** : produit, service, ou produit avec service (ex. kit solaire posé).
 - **Qui remet** : un **livreur Suguba** (défaut), **le fournisseur lui-même** (avec frais
   de déplacement éventuels) ou **retrait chez lui**. Pas de livreur envoyé dans les deux
-  derniers cas ; le fournisseur voit le téléphone du client **seulement le temps de la
-  remise**.
+  derniers cas ; le fournisseur voit le téléphone du client **seulement une fois la
+  remise prise en charge, et jusqu'à la remise** (voir « Coordonnées par dossier »).
 - **Ce qui est inclus** : écrit par le fournisseur, affiché sur la fiche ; aucun
   supplément ne peut être ajouté après coup.
 - **Comment le client commande** : achat direct, ou **sur devis**.
@@ -200,11 +201,15 @@ Suivi public d'une commande : `/track` (numéro + téléphone, tentatives limit�
   **activation refusée tant que le budget n'est pas reçu en entier**. Suivi réglé /
   dépensé / restant ; page de marque `/campagne/<id>` partagée par les revendeurs avec
   leur code. Jamais de paiement aux clics bruts.
-- **Sponsorisations** : l'admin enregistre le paiement reçu (montant, référence) ;
+- **Sponsorisations** : l'admin enregistre les paiements reçus ;
   **activation refusée sans le pack réglé** ; la durée démarre à l'activation ; reçu
   imprimable côté fournisseur.
 - Paiements des campagnes et sponsorisations : **hors application** (Mobile Money,
-  espèces), enregistrés par l'admin.
+  espèces), enregistrés par l'admin dans un **historique** (« Paiements reçus ») :
+  chaque paiement s'ajoute avec sa référence, **une même référence ne sert qu'une fois**
+  (« OM 123-456 » = « om123456 »), une erreur s'**annule avec un motif** sans rien
+  effacer, et le total reçu est **recalculé par la base** (il ne s'écrit plus à la
+  main). Droit Finance.
 
 ### Rémunération au résultat (lot 3)
 
@@ -243,22 +248,38 @@ allume l'interrupteur **« Payer les résultats »** (Admin › Qualité des mes
 Le revendeur voit avant de valider **combien il recevra**. Retrait minimum réglable
 (5 000 F par défaut).
 
-### Caisse livreurs (espèces)
+### Caisse livreurs (espèces) et trésorerie
 
 - Chaque livreur — ou fournisseur qui remet lui-même — remet les espèces encaissées. Par
   défaut le livreur **garde sa rémunération par course** (1 000 F) ; le fournisseur, lui,
   ne garde rien (il touche son prix normalement).
 - **`/admin/caisse-livreurs`** : montant attendu, alerte orange après 24 h, rouge après
-  48 h, « Enregistrer un versement », reçu (n° VS-…).
+  48 h, « Enregistrer un versement » (admin avec droit Finance seulement : un collecteur
+  ne valide jamais sa propre remise), reçu (n° VS-…).
+- **Trois temps distincts** pour une vente en espèces : remise faite → client payé →
+  **argent reçu par Suguba** (commande rattachée à un versement de caisse).
+- **Le gain du revendeur attend l'argent** (décision du 26/09) : délai de sécurité passé
+  **et** espèces reversées. Mobile Money inchangé ; ventes livrées avant la mise à jour
+  (26/09, 15 h 23) non concernées. Le revendeur voit « Dont X F en attente du versement
+  des espèces ». Versement partiel : les commandes couvertes sont libérées, le manque
+  reste une dette du collecteur.
+- **Avance** : « Débloquer avant terme » sur une vente dont l'argent n'est pas reçu =
+  avance de Suguba, **motif obligatoire**, tracé (qui, quand, pourquoi).
+- **Plafond d'espèces non versées** par collecteur (150 000 F par défaut, réglable ; 0 =
+  sans plafond) ou retard grave (2 × le délai d'alerte) : **plus de nouvelle commande en
+  espèces** (dispatch refusé, « Organiser la remise » refusé au fournisseur) jusqu'au
+  versement. Courses en cours, SAV et versement restent possibles.
 
 ### Où se règle tout ça
 
 - **Admin › Paramètres** (`/admin#reglages`) : part Suguba, coûts, prix de gros, frais,
-  retraits, livraison, points relais, caisse, codes promo, formules boutiques.
+  retraits, livraison, points relais, caisse (délai d'alerte, **plafond d'espèces**),
+  codes promo, formules boutiques.
 - **Admin › Priorité au réseau** : annuaire, achat direct, prix de gros.
 - **Admin › Récompenses** : primes de parrainage, missions à payer.
 - **Admin › Qualité des mesures** : interrupteur « Payer les résultats », mesures des 30
   derniers jours, résultats à vérifier.
+- **Admin › Accès aux coordonnées** : qui a reçu les coordonnées de quels dossiers.
 
 ---
 
@@ -336,6 +357,25 @@ du soir, équipe, paramètres, guide.
   Une nouvelle colonne de produit est privée par défaut.
 - Adresses d'image de boutique gardées entières (plus de coupure à 160 caractères).
 
+**Coordonnées par dossier** (Protection Suguba, lot 2) — un intervenant voit une
+coordonnée *pour ce dossier, pendant cette étape, parce qu'il en a besoin* ; la donnée
+ne quitte pas le serveur autrement (jamais envoyée puis cachée) :
+
+| Qui | Voit | Quand |
+|---|---|---|
+| Livreur | Téléphone, repère, consignes du client ; adresse et téléphone du point de retrait | Course **en cours** seulement ; historique masqué (« Awa D. ») |
+| Fournisseur qui remet lui-même | Nom, téléphone, repère du client | Après « Organiser la remise », jusqu'à la remise |
+| Fournisseur, devis | Téléphone et repère du client | Tant que la demande attend **sa réponse** ; ensuite nom masqué, contact via Suguba |
+| Revendeur | Ses propres clients | Toujours (ce sont ses ventes) |
+| Revendeur ↔ fournisseur | Nom, logo, boutique — **aucune coordonnée** | — |
+
+- Ni le livreur ni le revendeur ne reçoivent la **marge Suguba** ou le détail des prix ;
+  le livreur ne voit pas la commission du revendeur.
+- **Journal** de chaque coordonnée remise (une ligne par personne, dossier et jour) ;
+  page admin « Accès aux coordonnées » : les devis consultés sans réponse sont signalés.
+- Un numéro déjà communiqué peut avoir été copié : le masquage limite l'exposition, il
+  ne remplace pas l'**engagement de non-contournement** (à rédiger juridiquement).
+
 **Argent et commandes**
 - Montants, prix, commissions, numéros et codes **calculés côté serveur**.
 - Opérations sensibles **atomiques** en base (commande, retrait, livraison, versement,
@@ -343,7 +383,10 @@ du soir, équipe, paramètres, guide.
 - **Garde-fous en base** (même si l'application était contournée) : pas de livraison avec
   une étape non validée ; pas d'activation d'une campagne ou d'une sponsorisation non
   réglée ; un résultat payé une seule fois, jamais au-delà du budget reçu, rien payé
-  tant que l'interrupteur est coupé.
+  tant que l'interrupteur est coupé ; gain d'une vente en espèces libéré seulement après
+  le versement de l'argent ; paiement reçu jamais effacé, référence unique, total non
+  modifiable à la main ; demande qualifiée faite avec le numéro du revendeur jamais
+  payée.
 - Paiement SasPay confirmé par **webhook signé** et revérifié.
 - Reçus (commande, devis) ouverts seulement avec la **clé secrète du téléphone** qui a
   commandé ; le QR n'est pas un lien ; scan limité aux commandes assignées.
@@ -374,12 +417,14 @@ du soir, équipe, paramètres, guide.
 | Réseau | `src/lib/ancrage-revendeur.ts`, `src/lib/offres-revendeurs.ts`, `src/lib/presentation-fournisseur.ts`, réglages `reseau_reglages` |
 | Missions | `src/lib/reseau/missions-db.ts` (`compter_evenement_mission`), `src/lib/reseau/preuves-missions.ts` |
 | Paiement au résultat | `src/lib/reseau/resultats*.ts`, `/api/reseau/visite`, SQL `enregistrer_resultat_campagne` / `decider_resultat_campagne`, tables `visites_mesurees` et `campagne_resultats` |
+| Trésorerie | `src/lib/caisse-livreur.ts` (plafond), `src/lib/paiements-recus.ts`, SQL `fonds_recus` / `liberer_commissions_echues`, tables `paiements_recus` et `tresorerie_reglages` |
+| Coordonnées | `src/lib/acces-contacts.ts` (règles par dossier), table `acces_coordonnees` |
 | Réglages | `platform_settings` (prix) et `reseau_reglages` (réseau) |
 | Session | `src/lib/session.ts`, `src/lib/active-session.ts`, `src/middleware.ts` |
 | Paiement | `src/lib/saspay.ts`, `/api/payments/saspay/*`, `/api/webhooks/saspay` |
 | Reçu et QR | `src/lib/recu-commande.ts`, `src/lib/qr-remise.ts`, `src/lib/remise-qr.ts` |
 | Stockage privé | buckets `sav-photos`, `etapes-photos`, `preuves-missions` |
-| Tests | `npm test` (231 tests, Node + PostgreSQL embarqué PGlite) |
+| Tests | `npm test` (239 tests, Node + PostgreSQL embarqué PGlite) |
 | Guide | `docs/guide/guide.json` + `/admin/guide` |
 
 **Variables d'environnement** (valeurs dans Vercel) : `NEXT_PUBLIC_SUPABASE_URL`,
@@ -418,8 +463,19 @@ données) :
   téléphone, 20 s + défilement → visible dans « Qualité des mesures ».
 - Après quelques semaines de mesures stables : allumer « Payer les résultats », puis
   campagne test (budget, gain en attente, contestation, annulation qui rend le budget).
+- **Trésorerie** : vente en espèces → gain « en attente du versement » → versement en
+  caisse → gain retirable ; avance avec motif ; plafond (le baisser un instant pour voir
+  le dispatch refusé) ; paiement reçu en double refusé, annulation avec motif.
+- **Coordonnées** : un livreur ne voit plus le téléphone d'une course livrée ; un
+  fournisseur ne voit le client qu'après « Organiser la remise ».
 
 **Prochaines évolutions**
+- **Protection Suguba, lot 3** : messagerie interne « Poser une question » (offre, devis,
+  commande) avec détection des tentatives de contournement ; comptes liés (même personne
+  ou structure) exclus des résultats payés ; réduction de la part Suguba seulement avec
+  un droit dédié et un motif ; suspension d'un partenaire avec motif et contestation.
+- **Engagement de non-contournement** fournisseur / revendeur : à faire rédiger et
+  valider juridiquement au Mali (hors application).
 - **Lot 3 en ligne, interrupteur coupé** : décider quand allumer « Payer les résultats »
   au vu de la page « Qualité des mesures ».
 - Paiement en ligne des campagnes et sponsorisations, remboursement du solde non utilisé.

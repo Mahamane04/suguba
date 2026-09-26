@@ -3,6 +3,7 @@ import { exigerDroitFournisseur } from '@/lib/reseau/contexte-fournisseur';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { etapesCommande, modeRemiseCommande } from '@/lib/offre';
 import { lireEtapes } from '@/lib/etapes';
+import { clientVisiblePourRemise, journaliserAcces } from '@/lib/acces-contacts';
 
 /**
  * Commandes à préparer côté fournisseur (2026-09-24).
@@ -59,7 +60,9 @@ export async function GET(req: NextRequest) {
     const modeRemise = modeRemiseCommande(o.pricing_snapshot);
     const parMoi = modeRemise !== 'livreur';
     const codeUtile = !parMoi && ['confirmed', 'dispatched'].includes(o.status) && !o.picked_up_at;
-    const remiseAFaire = parMoi && ['confirmed', 'in_transit'].includes(o.status);
+    // Coordonnées par dossier (lot 2) : seulement une fois la remise prise en
+    // charge par ce fournisseur, et jusqu'à la remise.
+    const remiseAFaire = parMoi && clientVisiblePourRemise(o, acces.contexte.fournisseurId);
     return {
       id: o.id,
       numero: o.order_number,
@@ -86,5 +89,7 @@ export async function GET(req: NextRequest) {
       etapes: etapes.get(o.id) || [],
     };
   });
+  await journaliserAcces(admin, acces.contexte.personneId, 'supplier', 'remise',
+    commandes.filter((c) => c.client).map((c) => c.id));
   return NextResponse.json({ commandes, ramassageActif });
 }
