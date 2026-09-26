@@ -2,9 +2,10 @@
 
 > Mise à jour le **26 septembre 2026** (offres et services, devis, prestations à étapes,
 > « Priorité au réseau », campagnes encadrées, paiement des sponsorisations,
-> rémunération au résultat, **Protection Suguba : trésorerie, coordonnées par
-> dossier, messagerie, comptes liés, part Suguba sous droit dédié, suspension
-> motivée**). Résumé de
+> rémunération au résultat, **Protection Suguba** : trésorerie, coordonnées par
+> dossier, messagerie, comptes liés, part Suguba sous droit dédié, suspension motivée ;
+> **compte client** : commandes sur tous les téléphones, favoris, destinataires,
+> diaspora). Résumé de
 > tout ce qu'il faut savoir sur la plateforme : à quoi elle sert, qui fait quoi, comment
 > l'argent circule, comment elle est protégée et comment on la fait évoluer. Pour le
 > détail page par page, voir le **guide des parcours** (`/admin/guide`, réservé à
@@ -28,7 +29,7 @@ fournisseurs alimentent le réseau.
 | Code | GitHub `Mahamane04/suguba` (branche `main`) |
 | Hébergement | **Vercel** — chaque `git push` sur `main` déploie automatiquement |
 | Base de données | **Supabase** (PostgreSQL) |
-| Paiements | **SasPay** (Orange Money Mali, Moov Money Mali) |
+| Paiements | **SasPay** (Orange Money Mali, Moov Money Mali) ; carte bancaire **fermée** tant qu'un vrai paiement test n'a pas été fait |
 | Support | WhatsApp **+223 89 46 00 00** |
 
 ---
@@ -45,7 +46,7 @@ de l'un à l'autre dans **Compte › Profils**.
 | **Revendeur** | Choisit des offres, les partage, vend, encaisse des commissions, ouvre sa boutique, participe aux missions et campagnes. | `/reseller/…` |
 | **Fournisseur** | Publie ses offres, répond aux devis, remet lui-même ou prépare pour le livreur, déclare les étapes, lance des campagnes. | `/supplier/…` |
 | **Livreur** | Récupère et livre les colis, encaisse les espèces, les remet à la caisse. | `/driver`, `/driver/earnings` |
-| **Diaspora** | Commande depuis l'étranger pour un proche au Mali. | `/diaspora` |
+| **Diaspora** | Commande depuis l'étranger pour un proche au Mali, avec le **même compte client** (proche enregistré, commandes dans « Mes commandes »). Le proche paie à la réception tant que la carte n'est pas ouverte. | `/diaspora` |
 | **Admin / équipe Suguba** | Confirme, assigne, modère, paie, suit devis et prestations, règle l'économie et la priorité au réseau. | `/admin/…` |
 
 ### Équipe admin et permissions
@@ -55,7 +56,7 @@ Chaque membre de l'équipe a un **rôle d'équipe** qui lui donne des **permissi
 
 | Rôle d'équipe | Droits principaux |
 |---|---|
-| Super Admin | Tout, y compris gérer l'équipe |
+| Super Admin | Tout, y compris gérer l'équipe et **baisser la part Suguba** (droit dédié, motif obligatoire) |
 | Responsable fournisseurs | Produits, prix, boutiques, vérifications |
 | Responsable revendeurs | Réseau, missions, marketing |
 | Support | Lire / modifier les commandes (dont devis et prestations) |
@@ -117,7 +118,8 @@ Paie à la remise                        ▼                            ▼
                ┌──────────────────────────────────────┤
                ▼                                      ▼
   Espèces remises à la caisse Suguba      Commission du revendeur bloquée
-  (reçu de versement)                     quelques jours, puis retirable
+  (reçu de versement)                     quelques jours ; en espèces, retirable
+                                          seulement une fois l'argent versé
 ```
 
 1. **Commande** : créée par le serveur en une seule transaction (commande + commission +
@@ -129,12 +131,15 @@ Paie à la remise                        ▼                            ▼
 3. **Reçu Suguba avec QR de remise** (`/recu/<n°>`) : QR, **code écrit dessous**, articles,
    montants, étapes de la prestation le cas échéant. Enregistrable en image ou en PDF,
    gardé **90 jours sur le téléphone** qui a commandé (« Suivre ma commande › Mes reçus »),
-   « Transmettre au destinataire ». À montrer **seulement après vérification**.
+   ou ouvert sur **n'importe quel téléphone** avec le compte client (« Mes commandes »).
+   « Transmettre au destinataire » envoie l'image du reçu au proche qui réceptionne.
+   À montrer **seulement après vérification**.
 4. **Remise** : scan du QR (ou saisie du code) par le livreur **ou par le fournisseur**
    qui remet lui-même. Le scan affiche sans valider ; « Confirmer la remise » valide.
    3 essais faux (au total) = commande bloquée.
 5. **Commission** : bloquée après la livraison (14 jours nouveau revendeur, 7 vérifié,
-   3 VIP), puis retirable.
+   3 VIP), puis retirable — pour une vente **en espèces**, seulement une fois l'argent
+   reversé à la caisse Suguba (voir « Caisse livreurs et trésorerie »).
 6. **Après la livraison** : « **Signaler un problème avec un article** » depuis le reçu
    (motif, souhait, **jusqu'à 3 photos**) → **SAV & retours**.
 
@@ -190,7 +195,8 @@ Suivi public d'une commande : `/track` (numéro + téléphone, tentatives limit�
   1. le **fournisseur propose la part revendeur** → même prix partout ;
   2. **prix de gros** → chaque revendeur fixe son prix de vente.
 - Les coûts de Suguba sont payés sur la part Suguba par défaut (option : les ajouter au
-  prix client). Toutes les marges peuvent être mises à **0**.
+  prix client). Les marges peuvent être baissées jusqu'à **0**, mais toute baisse de la
+  part Suguba exige le droit dédié, un motif, et reste dans un journal non modifiable.
 
 ### Priorité au réseau de revendeurs (Admin › Priorité au réseau)
 
@@ -299,37 +305,46 @@ Le revendeur voit avant de valider **combien il recevra**. Retrait minimum régl
 - **Admin › Qualité des mesures** : interrupteur « Payer les résultats », mesures des 30
   derniers jours, résultats à vérifier.
 - **Admin › Accès aux coordonnées** : qui a reçu les coordonnées de quels dossiers.
+- **Admin › Messages à vérifier** : messages retenus (numéro, lien, contournement).
+- **Réglages économiques** : aussi le **paiement par carte (diaspora)**, fermé par défaut.
 
 ---
 
 ## 7. Fonctionnalités par espace
 
-**Client** : catalogue et recherche, fiches (étiquettes Service / Installation incluse,
-« Ce qui est inclus », « Comment ça se passe », offres des revendeurs), panier, commande
-ou **demande de devis** sans compte, suivi, **reçu QR** (image, PDF, transmission,
-**validation des étapes**, SAV avec photos), boutiques, pages de campagne, boutiques
-suivies, notifications, B2B, diaspora.
+**Client** : catalogue et recherche (résultats pendant la saisie), fiches (étiquettes
+Service / Installation incluse, « Ce qui est inclus », « Comment ça se passe », offres
+des revendeurs, **cœur favori**, « Recommander »), panier, commande ou **demande de
+devis** sans compte, suivi, **reçu QR** (image, PDF, transmission, **validation des
+étapes**, SAV avec photos), **messages avec le vendeur** dans le devis, boutiques, pages
+de campagne, boutiques suivies, notifications, B2B, diaspora. **Avec un compte client**
+(facultatif) : « Mes commandes » sur tous les téléphones, « Ajouter à mon compte »,
+favoris, destinataires (« Pour qui commandez-vous ? »), « Commander à nouveau ».
 
 **Revendeur** : catalogue et prix, partages suivis, « + Vente », commandes, clients,
 commissions et retraits, boutique(s), parrainage, **missions avec preuves de
 publication**, **campagnes au résultat** (gain par visite ou demande), partage des pages
-de campagne, calendrier, créateur de visuels, badge.
+de campagne, **questions aux fournisseurs** sur leurs offres, gains « en attente du
+versement des espèces », calendrier, créateur de visuels, badge.
 
 **Fournisseur** : ajout d'offres (nature, qui remet, étapes, devis, variantes, photos),
 inventaire, **commandes** (préparer, organiser la remise, déclarer les étapes, remettre en
 scannant le reçu), **demandes de devis**, revendeurs, ambassadeurs, **campagnes**
 (canal, budget réglé / dépensé / restant, **visites et demandes qualifiées** avec
-contestation sous 48 h), **sponsorisation** (statut de paiement, reçu),
-analyses, boutique (page de présentation), équipe.
+contestation sous 48 h), **sponsorisation** (statut de paiement, reçu), **questions
+des revendeurs** et **messages des devis**, analyses, boutique (page de présentation),
+équipe.
 
-**Livreur** : courses, carte, scan du QR du client (ou code), portefeuille.
+**Livreur** : courses (coordonnées du client seulement pendant la course), carte, scan du
+QR du client (ou code), portefeuille (espèces à remettre, plafond d'encaissement).
 
 **Admin** : tableau de bord, commandes, produits et prix, utilisateurs, vérifications,
 boutiques, **Priorité au réseau**, SAV & retours (« Scanner un reçu »), **Devis**,
-**Prestations**, caisse livreurs, **missions** (preuves à vérifier, budget, paiement des
-campagnes), **Qualité des mesures** (paiement au résultat), récompenses,
-**sponsorisations** (paiement reçu), diffusion, analyses, rapport
-du soir, équipe, paramètres, guide.
+**Prestations**, caisse livreurs (plafond, avance motivée), **missions** (preuves à
+vérifier, paiements reçus des campagnes), **Qualité des mesures** (paiement au
+résultat), récompenses, **sponsorisations** (paiements reçus), **Accès aux
+coordonnées**, **Messages à vérifier**, utilisateurs (**suspension motivée** et
+contestation), diffusion, analyses, rapport du soir, équipe, paramètres, guide.
 
 ---
 
@@ -427,7 +442,11 @@ ne quitte pas le serveur autrement (jamais envoyée puis cachée) :
   payée.
 - Paiement SasPay confirmé par **webhook signé** et revérifié.
 - Reçus (commande, devis) ouverts seulement avec la **clé secrète du téléphone** qui a
-  commandé ; le QR n'est pas un lien ; scan limité aux commandes assignées.
+  commandé, ou avec une **nouvelle clé délivrée au propriétaire connecté** du compte
+  client (seul son hash est gardé) ; une ancienne commande ne s'ajoute à un compte
+  qu'avec la clé de son reçu, jamais sur un simple numéro ; le QR n'est pas un lien ;
+  scan limité aux commandes assignées.
+- **Paiement par carte** refusé par le serveur tant que l'admin ne l'a pas ouvert.
 - Photos (SAV, étapes, preuves de publication) : métadonnées et **position GPS retirées**,
   stockage **privé**, liens temporaires (10 min).
 
@@ -512,14 +531,21 @@ données) :
   message avec un numéro retenu puis remis ou refusé dans « Messages à vérifier ».
 - **Part Suguba** : baisser un taux dans les réglages → motif demandé ; suspension d'un
   compte de test avec motif, puis contestation depuis « Suspension ».
+- **Compte client** : inscription `/register?role=customer`, commande, puis « Mes
+  commandes » et reçu ouverts depuis un autre téléphone ; « Ajouter à mon compte » ;
+  favori, destinataire, « Commander à nouveau », bouton « Recommander ».
+- **Diaspora** : page `/diaspora` sans promesse de carte, commande payée à la réception,
+  proche enregistré proposé.
 
 **Prochaines évolutions**
 - Messagerie : pièces jointes (photos) dans les échanges.
 - Comptes liés : une même personne avec deux numéros n'est pas détectée automatiquement.
 - **Engagement de non-contournement** fournisseur / revendeur : à faire rédiger et
   valider juridiquement au Mali (hors application).
-- **Lot 3 en ligne, interrupteur coupé** : décider quand allumer « Payer les résultats »
-  au vu de la page « Qualité des mesures ».
+- **Rémunération au résultat** : en ligne, interrupteur coupé ; décider quand allumer
+  « Payer les résultats » au vu de la page « Qualité des mesures ».
+- Compte client : enregistrer automatiquement un destinataire saisi pendant une
+  commande (aujourd'hui, il s'ajoute depuis « Mes destinataires »).
 - Paiement en ligne des campagnes et sponsorisations, remboursement du solde non utilisé.
 - Prévenir le client sans compte d'une étape à valider (aujourd'hui, le fournisseur lui
   demande d'ouvrir son reçu).
