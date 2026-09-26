@@ -209,7 +209,8 @@
     "adm-priorite-reseau",
     "fiche-produit"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "423a3fe"
   },
   {
    "date": "2026-09-26",
