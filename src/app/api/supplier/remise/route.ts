@@ -3,6 +3,8 @@ import { exigerDroitFournisseur } from '@/lib/reseau/contexte-fournisseur';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { preparerRemise } from '@/lib/remise-qr';
 import { assurerEtapes, etapesNonValidees, EtapeError } from '@/lib/etapes';
+import { chargerReglages } from '@/lib/platform-settings';
+import { estPayeEnEspeces, etatEspecesCollecteur, MESSAGE_PLAFOND } from '@/lib/caisse-livreur';
 
 /**
  * Remise par le fournisseur lui-même (2026-09-26, lot 1a) — véhicule remis
@@ -30,6 +32,15 @@ export async function POST(req: NextRequest) {
   if (typeof orderId !== 'string' || !orderId) return NextResponse.json({ error: 'Commande manquante.' }, { status: 400 });
 
   if (action === 'prendre') {
+    // Plafond d'espèces (Protection Suguba) : un fournisseur qui n'a pas
+    // reversé les espèces de ses remises ne prend pas de NOUVELLE commande
+    // payée en espèces. Les remises déjà prises restent possibles.
+    const { data: aPrendre } = await admin.from('orders').select('payment_method').eq('id', orderId).maybeSingle();
+    if (aPrendre && estPayeEnEspeces(aPrendre.payment_method)) {
+      const { reglages } = await chargerReglages();
+      const etat = await etatEspecesCollecteur(admin, reglages, fournisseurId);
+      if (etat.bloque) return NextResponse.json({ error: `${etat.raison} ${MESSAGE_PLAFOND}` }, { status: 409 });
+    }
     const { data: fiche } = await admin.from('suppliers').select('company_name').eq('profile_id', fournisseurId).maybeSingle();
     const { data, error } = await admin.rpc('prendre_en_charge_remise', {
       p_order_id: orderId, p_supplier_id: fournisseurId, p_supplier_name: fiche?.company_name || 'Fournisseur',

@@ -31,23 +31,9 @@ export async function POST(req: NextRequest) {
 
   const corps = await req.json().catch(() => ({}));
 
-  // Budget reçu d'une campagne fournisseur (lot 2b) : montant TOTAL réglé à
-  // ce jour, avec une référence (reçu, transaction Mobile Money…).
-  if (typeof corps.missionId === 'string' && corps.action === 'budget') {
-    if (!(await adminPeut(session.uid, 'finance.payer'))) {
-      return NextResponse.json({ error: 'Votre rôle ne permet pas d’enregistrer un paiement.' }, { status: 403 });
-    }
-    const montant = Math.round(Number(corps.montant));
-    const reference = typeof corps.reference === 'string' ? corps.reference.trim().slice(0, 120) : '';
-    if (!Number.isFinite(montant) || montant < 0 || montant > 100_000_000) return NextResponse.json({ error: 'Montant invalide.' }, { status: 400 });
-    if (montant > 0 && reference.length < 3) return NextResponse.json({ error: 'Indiquez la référence du paiement (reçu, transaction…).' }, { status: 400 });
-    const { error } = await admin.from('missions').update({
-      budget_recu: montant, budget_recu_le: new Date().toISOString(), budget_reference: reference || null, budget_recu_par: session.uid,
-    }).eq('id', corps.missionId).not('supplier_id', 'is', null);
-    if (error) {
-      return NextResponse.json({ error: /budget_recu/.test(error.message) ? 'Le suivi du budget sera disponible après la mise à jour de la base.' : 'Enregistrement impossible.' }, { status: 503 });
-    }
-    return NextResponse.json({ success: true });
+  // Budget reçu d'une campagne : historique des paiements (/api/admin/paiements-recus).
+  if (corps.action === 'budget') {
+    return NextResponse.json({ error: 'Les paiements reçus s’enregistrent désormais dans l’historique « Paiements reçus ».' }, { status: 410 });
   }
 
   // Changement de statut d'une mission existante.

@@ -127,6 +127,9 @@ export default function CaisseLivreursPage() {
                               <Phone className="w-3 h-3" /> {c.telephone}
                             </a>
                           )}
+                          {c.bloque && (
+                            <p className="text-xs font-bold text-rose-700">Plus de nouvelle course en espèces jusqu’au versement</p>
+                          )}
                           {retard !== 'ok' && (
                             <p className={`text-xs font-bold flex items-center gap-1 ${retard === 'grave' ? 'text-rose-700' : 'text-amber-700'}`}>
                               <AlertTriangle className="w-3.5 h-3.5" /> Espèces du {jour(c.plusAncienne)} non versées

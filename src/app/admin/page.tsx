@@ -748,12 +748,20 @@ export default function AdminDashboardPage() {
 
                     <button
                       onClick={async () => {
-                        const res = await fetch('/api/admin/unlock-commission', {
+                        const debloquer = (motif?: string) => fetch('/api/admin/unlock-commission', {
                           method: 'POST',
                           headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify({ commissionId: com.id }),
+                          body: JSON.stringify({ commissionId: com.id, motif }),
                         });
-                        const json = await res.json();
+                        let res = await debloquer();
+                        let json = await res.json();
+                        // Espèces pas encore reversées : c'est une AVANCE de Suguba, motif obligatoire.
+                        if (res.status === 409 && json.motifRequis) {
+                          const motif = window.prompt(`${json.error}\n\nMotif :`);
+                          if (!motif) return;
+                          res = await debloquer(motif);
+                          json = await res.json();
+                        }
                         setActionFeedback(res.ok && json.success
                           ? { type: 'success', message: '✅ Commission débloquée : elle est désormais retirable par le revendeur.' }
                           : { type: 'error', message: json.error || 'Déblocage impossible.' });

@@ -102,6 +102,9 @@ export default function DriverEarningsPage() {
         <div className="bg-white rounded-3xl p-5 border border-slate-200 space-y-3">
           <h2 className="font-bold text-sm text-slate-900">Remettre les espèces</h2>
           <p className="text-sm text-slate-600">
+            {c?.bloque && (
+              <span className="block mb-1 font-bold text-rose-700">{c.raison} Versez vos espèces à Suguba pour recevoir de nouvelles courses payées en espèces.</span>
+            )}
             {caisse?.livreurGardeRemuneration === false
               ? 'Remettez toutes les espèces encaissées à la caisse Suguba. Votre rémunération vous est payée à part.'
               : 'Remettez les espèces encaissées à la caisse Suguba, moins votre rémunération par course, que vous gardez.'}

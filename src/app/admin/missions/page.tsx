@@ -10,6 +10,7 @@ import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface'
 import { useToast } from '@/components/ui/Toast';
 import { TYPES_MISSION, libelleType, verbeType, type TypeMission } from '@/lib/reseau/missions';
 import { estTypeResultat } from '@/lib/reseau/resultats-constantes';
+import PaiementsRecus from '@/components/admin/PaiementsRecus';
 
 /**
  * Administration des missions (§ 48 des écrans).
@@ -302,65 +303,17 @@ function PreuvesAVerifier({ preuves, onMaj }: { preuves: Preuve[]; onMaj: () => 
 }
 
 /**
- * Budget d'une campagne fournisseur (lot 2b, 2026-09-26) : elle ne s'active
- * qu'une fois le budget (récompense × revendeurs) reçu en entier. L'admin note
- * le montant total reçu et sa référence.
+ * Budget d'une campagne fournisseur (lot 2b) : elle ne s'active qu'une fois le
+ * budget reçu en entier. Depuis la Protection Suguba (lot 1), les paiements
+ * reçus forment un historique (ajout, annulation avec motif).
  */
 function BudgetCampagne({ mission, onMaj }: { mission: Mission; onMaj: () => void }) {
-  const { toast } = useToast();
   // Campagne au résultat (lot 3) : prix d'un résultat × nombre de résultats achetés.
   const du = mission.recompense * (estTypeResultat(mission.type) ? mission.objectif : mission.maxParticipants || 0);
-  const recu = mission.budget?.recu || 0;
-  const [ouvert, setOuvert] = useState(false);
-  const [montant, setMontant] = useState(String(du));
-  const [reference, setReference] = useState('');
-  const [envoi, setEnvoi] = useState(false);
-
-  const enregistrer = async () => {
-    setEnvoi(true);
-    try {
-      const r = await fetch('/api/admin/missions', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ missionId: mission.id, action: 'budget', montant: Number(montant), reference }),
-      });
-      const j = await r.json().catch(() => null);
-      if (!r.ok) { toast(j?.error || 'Enregistrement impossible.', { ton: 'erreur' }); return; }
-      toast('Paiement enregistré.', { ton: 'succes' });
-      setOuvert(false);
-      onMaj();
-    } finally {
-      setEnvoi(false);
-    }
-  };
-
   return (
-    <div className={`rounded-2xl px-3 py-2 text-xs space-y-2 ${recu >= du ? 'bg-emerald-50 text-emerald-900' : 'bg-amber-50 text-amber-900'}`}>
-      <p className="font-bold">
-        Campagne fournisseur · budget {fcfa(du)} ·{' '}
-        {recu >= du ? `réglé${mission.budget?.recuLe ? ` le ${new Date(mission.budget.recuLe).toLocaleDateString('fr-FR')}` : ''}` : recu > 0 ? `${fcfa(recu)} reçus, reste ${fcfa(du - recu)}` : 'à encaisser avant activation'}
-        {mission.budget?.reference ? ` (réf. ${mission.budget.reference})` : ''}
-      </p>
-      {mission.canal && mission.canal !== 'tous' && <p>Canal demandé : {mission.canal.replace('_', ' ')}</p>}
-      {ouvert ? (
-        <div className="space-y-2">
-          <div className="grid grid-cols-2 gap-2">
-            <Field label="Montant total reçu (F)" htmlFor={`montant-${mission.id}`}>
-              <Input id={`montant-${mission.id}`} type="number" inputMode="numeric" min={0} value={montant} onChange={(e) => setMontant(e.target.value)} />
-            </Field>
-            <Field label="Référence" htmlFor={`ref-${mission.id}`} aide="Reçu, transaction Mobile Money…">
-              <Input id={`ref-${mission.id}`} value={reference} onChange={(e) => setReference(e.target.value)} maxLength={120} />
-            </Field>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <Button size="sm" variant="ghost" onClick={() => setOuvert(false)}>Annuler</Button>
-            <Button size="sm" onClick={enregistrer} disabled={envoi}>Enregistrer</Button>
-          </div>
-        </div>
-      ) : (
-        <Button size="sm" variant="ghost" onClick={() => { setOuvert(true); setMontant(String(Math.max(recu, du))); }}>
-          {recu > 0 ? 'Modifier le paiement reçu' : 'Enregistrer le paiement reçu'}
-        </Button>
-      )}
+    <div className="space-y-1">
+      <PaiementsRecus cible="campagne" cibleId={mission.id} du={du} recu={mission.budget?.recu || 0} titre="Campagne fournisseur · budget" onMaj={onMaj} />
+      {mission.canal && mission.canal !== 'tous' && <p className="text-xs text-slate-600 px-1">Canal demandé : {mission.canal.replace('_', ' ')}</p>}
     </div>
   );
 }

@@ -528,6 +528,8 @@ export default function EconomicSettingsPanel() {
             </div>
             <Num l="Alerte espèces non versées après" suffixe="h" v={r.delaiVersementEspecesHeures ?? 24} on={(v) => maj('delaiVersementEspecesHeures', v)}
               info="Au-delà de ce délai après la livraison, la Caisse livreurs signale le livreur en orange ; au double, en rouge." />
+            <Num l="Plafond d’espèces non versées" suffixe="F" v={r.plafondEspecesCollecteur ?? 150000} on={(v) => maj('plafondEspecesCollecteur', v)}
+              info="Au-delà (ou après le double du délai), le livreur ou le fournisseur ne reçoit plus de nouvelle commande payée en espèces jusqu’à son versement. Les courses en cours, le SAV et le versement restent possibles. 0 = pas de plafond." />
             <div className="sm:col-span-2 space-y-2">
               <p className="text-xs font-semibold text-slate-700">Frais par ville</p>
               {Object.entries(r.livraisonParVille).map(([ville, frais]) => (

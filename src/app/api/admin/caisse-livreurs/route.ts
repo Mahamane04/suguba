@@ -4,7 +4,7 @@ import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
 import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { chargerReglages } from '@/lib/platform-settings';
-import { chargerCaisses, migrationManquante, remunerationRetenue } from '@/lib/caisse-livreur';
+import { chargerCaisses, migrationManquante, remunerationRetenue, blocageEspeces, duParCollecteur } from '@/lib/caisse-livreur';
 
 /**
  * Caisse livreurs (2026-09-25) — espèces encaissées par chaque livreur et
@@ -34,7 +34,8 @@ export async function GET(req: NextRequest) {
   if (error) return NextResponse.json({ error }, { status: 500 });
 
   return NextResponse.json({
-    caisses,
+    // Plafond d'espèces (Protection Suguba) : qui ne reçoit plus de course en espèces.
+    caisses: caisses.map((c) => ({ ...c, ...blocageEspeces(duParCollecteur(c), c.plusAncienne, reglages) })),
     migrationRequise,
     remunerationParCourse: remunerationRetenue(reglages),
     livreurGardeRemuneration: reglages.livreurGardeRemuneration !== false,

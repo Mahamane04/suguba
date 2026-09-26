@@ -200,6 +200,13 @@ export interface ReglagesPlateforme {
   livreurGardeRemuneration?: boolean;
   /** Délai, en heures, au-delà duquel des espèces non versées sont signalées. */
   delaiVersementEspecesHeures?: number;
+  /**
+   * Plafond d'espèces non reversées par collecteur (livreur ou fournisseur
+   * qui remet lui-même), en FCFA — Protection Suguba, 2026-09-26. Atteint, ou
+   * espèces en retard grave (2 × le délai), il ne reçoit plus de nouvelle
+   * commande payée en espèces. 0 = pas de plafond.
+   */
+  plafondEspecesCollecteur?: number;
 
   // ── Coûts fixes ──────────────────────────────────────────────────────
   coutsFixesMensuels: LigneCoutFixe[];
@@ -312,6 +319,7 @@ export const REGLAGES_PAR_DEFAUT: ReglagesPlateforme = {
   remunerationLivreur: 1000,
   livreurGardeRemuneration: true,
   delaiVersementEspecesHeures: 24,
+  plafondEspecesCollecteur: 150000,
   coutsFixesMensuels: [
     { libelle: 'Estimation provisoire globale — à remplacer par le détail ci-dessous', montant: 300000 },
     { libelle: 'Hébergement (Vercel)', montant: 0 },
@@ -1148,6 +1156,8 @@ export function completerReglages(partiels: Partial<ReglagesPlateforme> | null |
   {
     const d = Number(r.delaiVersementEspecesHeures);
     r.delaiVersementEspecesHeures = Number.isFinite(d) && d >= 1 ? Math.round(d) : 24;
+    const p = Number(r.plafondEspecesCollecteur);
+    r.plafondEspecesCollecteur = Number.isFinite(p) && p >= 0 ? Math.round(p) : 150000;
   }
   {
     const o = (r.fraisOperateurRetraitPct && typeof r.fraisOperateurRetraitPct === 'object' ? r.fraisOperateurRetraitPct : {}) as Partial<Record<MoyenRetraitMobile, number>>;

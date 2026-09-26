@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { chargerReglages } from '@/lib/platform-settings';
-import { chargerCaisses, remunerationRetenue } from '@/lib/caisse-livreur';
+import { blocageEspeces, chargerCaisses, duParCollecteur, remunerationRetenue } from '@/lib/caisse-livreur';
 
 /**
  * Caisse du livreur connecté (2026-09-25) : espèces encaissées pas encore
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
   if (error) return NextResponse.json({ error }, { status: 500 });
 
   return NextResponse.json({
-    caisse: caisses[0] || null,
+    caisse: caisses[0] ? { ...caisses[0], ...blocageEspeces(duParCollecteur(caisses[0]), caisses[0].plusAncienne, reglages) } : null,
     migrationRequise,
     remunerationParCourse: remunerationRetenue(reglages),
     livreurGardeRemuneration: reglages.livreurGardeRemuneration !== false,

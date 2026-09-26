@@ -48,7 +48,7 @@ export async function GET(req: NextRequest) {
 
   const results = await Promise.all([
     admin.from('profiles').select('reseller_code, full_name, phone, metadata, city').eq('id', session.uid).maybeSingle(),
-    admin.from('commissions').select('amount, status').eq('reseller_id', session.uid),
+    admin.from('commissions').select('amount, status, unlock_at, order_id').eq('reseller_id', session.uid),
     admin.from('orders').select('id', { count: 'exact', head: true })
       .eq('reseller_id', session.uid).eq('status', 'delivered'),
   ]);
@@ -74,6 +74,11 @@ export async function GET(req: NextRequest) {
       availableBalance: somme('available'),
       // `locked` = vente acquise mais délai de sécurité en cours.
       pendingBalance: somme('pending') + somme('locked'),
+      // Délai passé mais toujours bloqué : vente payée en espèces dont
+      // l'argent n'est pas encore reversé à Suguba (Protection Suguba).
+      attenteFondsBalance: lignes
+        .filter((c) => c.status === 'locked' && c.order_id && c.unlock_at && Date.parse(c.unlock_at) <= Date.now())
+        .reduce((total, c) => total + Number(c.amount), 0),
       reservedBalance: somme('reserved'),
       totalEarned: somme('paid'),
       momoNumber: metadata.momoNumber ? String(metadata.momoNumber) : null,

@@ -211,32 +211,3 @@ export async function changerStatutSponsorisation(
   return { ok: true };
 }
 
-/**
- * Paiement reçu d'une sponsorisation (2026-09-26) : montant TOTAL reçu à ce
- * jour et sa référence (reçu, transaction Mobile Money…).
- */
-export async function enregistrerPaiementSponsorisation(
-  id: string,
-  adminId: string,
-  montantBrut: unknown,
-  referenceBrute: unknown,
-): Promise<{ ok: boolean; erreur?: string }> {
-  const a = getSupabaseAdmin();
-  if (!a) return { ok: false, erreur: 'Base indisponible.' };
-  const montant = Math.round(Number(montantBrut));
-  const reference = typeof referenceBrute === 'string' ? referenceBrute.trim().slice(0, 120) : '';
-  if (!Number.isFinite(montant) || montant < 0 || montant > 100_000_000) return { ok: false, erreur: 'Montant invalide.' };
-  if (montant > 0 && reference.length < 3) return { ok: false, erreur: 'Indiquez la référence du paiement (reçu, transaction…).' };
-  const { data, error } = await a.from('sponsorships').update({
-    paid_amount: montant, paid_at: new Date().toISOString(), payment_reference: reference || null, paid_by: adminId,
-  }).eq('id', id).select('supplier_id, label, budget').maybeSingle();
-  if (error) return { ok: false, erreur: /paid_amount/.test(error.message) ? 'Le suivi du paiement sera disponible après la mise à jour de la base.' : 'Enregistrement impossible.' };
-  if (data?.supplier_id && montant >= (Number(data.budget) || 0) && montant > 0) {
-    await notifier(data.supplier_id, {
-      type: 'sponsorisation', titre: 'Paiement de sponsorisation reçu',
-      texte: `${montant.toLocaleString('fr-FR')} F reçus${data.label ? ` · ${data.label}` : ''}. Votre reçu est disponible.`,
-      lien: '/supplier/sponsorisation',
-    });
-  }
-  return { ok: true };
-}

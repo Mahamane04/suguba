@@ -65,7 +65,7 @@ const enF = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
 export default function ResellerPayoutsPage() {
   const state = useSugubaStore();
   const checkout = useMemo(() => new PayoutCheckout(`suguba_payout_attempt:${state.currentUser.id}`, payoutSessionStorage), [state.currentUser.id]);
-  const [soldes, setSoldes] = useState<{ disponible: number; attente: number; verse: number } | null>(null);
+  const [soldes, setSoldes] = useState<{ disponible: number; attente: number; attenteFonds: number; verse: number } | null>(null);
   const [retraits, setRetraits] = useState<Retrait[]>([]);
   const [retraitMinimum, setRetraitMinimum] = useState(5000);
   const [taux, setTaux] = useState<TauxRetrait | null>(null);
@@ -88,6 +88,7 @@ export default function ResellerPayoutsPage() {
     setSoldes({
       disponible: Number(r?.availableBalance) || 0,
       attente: Number(r?.pendingBalance) || 0,
+      attenteFonds: Number(r?.attenteFondsBalance) || 0,
       verse: Number(r?.totalEarned) || 0,
     });
     setRetraits(Array.isArray(hist?.retraits) ? hist.retraits : []);
@@ -168,6 +169,11 @@ export default function ResellerPayoutsPage() {
                 <p className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1"><Clock className="w-3.5 h-3.5" />En attente</p>
                 <p className="text-lg font-bold text-slate-900">{enF(soldes?.attente ?? 0)}</p>
                 <p className="text-xs text-slate-500">Disponible après le délai de sécurité qui suit la livraison</p>
+                {(soldes?.attenteFonds ?? 0) > 0 && (
+                  <p className="text-xs text-amber-800 mt-1">
+                    Dont {enF(soldes?.attenteFonds ?? 0)} en attente du versement des espèces à Suguba par le livreur ou le fournisseur.
+                  </p>
+                )}
               </div>
               <div className="rounded-2xl bg-slate-50 p-3">
                 <p className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" />Déjà versé</p>

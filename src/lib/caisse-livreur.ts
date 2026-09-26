@@ -54,6 +54,9 @@ export interface CaisseLivreur {
   /** Livraison non versée la plus ancienne. */
   plusAncienne: string | null;
   versements: Versement[];
+  /** Plafond d'espèces atteint (ajouté par les routes caisse). */
+  bloque?: boolean;
+  raison?: string | null;
 }
 
 export const estPayeEnEspeces = (paymentMethod: string | null | undefined) =>
@@ -86,6 +89,44 @@ export function niveauRetard(plusAncienne: string | null, delaiHeures: number, m
   if (heures > delaiHeures) return 'retard';
   return 'ok';
 }
+
+/**
+ * Plafond d'espèces (Protection Suguba, 2026-09-26) : au-delà du plafond, ou
+ * avec des espèces en retard grave, le collecteur ne reçoit plus de NOUVELLE
+ * commande payée en espèces. Terminer une course, le SAV et le versement
+ * restent toujours possibles.
+ */
+export function blocageEspeces(
+  du: number, plusAncienne: string | null,
+  r: Pick<ReglagesPlateforme, 'plafondEspecesCollecteur' | 'delaiVersementEspecesHeures'>, maintenant = Date.now(),
+): { bloque: boolean; raison: string | null } {
+  const plafond = Math.max(0, Number(r.plafondEspecesCollecteur ?? 150000) || 0);
+  const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+  if (plafond > 0 && du >= plafond) {
+    return { bloque: true, raison: `Plafond d’encaissement atteint (${fcfa(du)} à verser, plafond ${fcfa(plafond)}).` };
+  }
+  if (du > 0 && niveauRetard(plusAncienne, r.delaiVersementEspecesHeures || 24, maintenant) === 'grave') {
+    return { bloque: true, raison: `Espèces en retard de versement (${fcfa(du)} à verser).` };
+  }
+  return { bloque: false, raison: null };
+}
+
+/** Montant réellement dû par un collecteur : à verser + manques des versements passés. */
+export const duParCollecteur = (c: Pick<CaisseLivreur, 'aVerser' | 'ecartCumule'>) => Math.max(0, c.aVerser - c.ecartCumule);
+
+/** Le collecteur peut-il recevoir une nouvelle commande payée en espèces ? */
+export async function etatEspecesCollecteur(admin: SupabaseClient, r: ReglagesPlateforme, collecteurId: string) {
+  // Caisse illisible : on ne bloque pas le travail sur une panne de lecture.
+  const libre = { bloque: false, raison: null, du: 0 };
+  const lu = await chargerCaisses(admin, r, [collecteurId]).catch(() => null);
+  if (!lu) return libre;
+  const { caisses, error, migrationRequise } = lu;
+  if (error || migrationRequise || !caisses[0]) return libre;
+  const du = duParCollecteur(caisses[0]);
+  return { ...blocageEspeces(du, caisses[0].plusAncienne, r), du };
+}
+
+export const MESSAGE_PLAFOND = 'Régularisez votre versement à Suguba pour recevoir de nouvelles commandes payées en espèces.';
 
 const versementDepuisLigne = (v: Record<string, unknown>): Versement => ({
   id: String(v.id),

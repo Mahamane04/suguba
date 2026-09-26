@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sessionAvecRole } from '@/lib/reseau/route-session';
 import { adminPeut } from '@/lib/reseau/db';
-import { changerStatutSponsorisation, enregistrerPaiementSponsorisation, listerPacks, toutesLesSponsorisations } from '@/lib/reseau/sponsorisation-db';
+import { changerStatutSponsorisation, listerPacks, toutesLesSponsorisations } from '@/lib/reseau/sponsorisation-db';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
 /** Administration de la sponsorisation et des packs (§ 47 des écrans). */
@@ -27,13 +27,9 @@ export async function POST(req: NextRequest) {
 
   const corps = await req.json().catch(() => ({}));
 
-  // Paiement reçu (2026-09-26) : réservé aux rôles qui peuvent encaisser.
-  if (typeof corps.sponsorisationId === 'string' && corps.action === 'paiement') {
-    if (!(await adminPeut(session.uid, 'finance.payer'))) {
-      return NextResponse.json({ error: 'Votre rôle ne permet pas d’enregistrer un paiement.' }, { status: 403 });
-    }
-    const r = await enregistrerPaiementSponsorisation(corps.sponsorisationId, session.uid, corps.montant, corps.reference);
-    return r.ok ? NextResponse.json({ success: true }) : NextResponse.json({ error: r.erreur }, { status: 400 });
+  // Paiement reçu : historique des paiements (/api/admin/paiements-recus).
+  if (corps.action === 'paiement') {
+    return NextResponse.json({ error: 'Les paiements reçus s’enregistrent désormais dans l’historique « Paiements reçus ».' }, { status: 410 });
   }
 
   if (typeof corps.sponsorisationId === 'string') {

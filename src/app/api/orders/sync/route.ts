@@ -5,6 +5,8 @@ import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { modeRemiseCommande } from '@/lib/offre';
+import { chargerReglages } from '@/lib/platform-settings';
+import { estPayeEnEspeces, etatEspecesCollecteur, MESSAGE_PLAFOND } from '@/lib/caisse-livreur';
 
 /** Mises à jour internes uniquement. Création atomique : /api/orders/create. */
 
@@ -32,7 +34,7 @@ export async function POST(req: NextRequest) {
 
     const { data: existing, error: readError } = await admin
       .from('orders')
-      .select('id, status, assigned_driver_id, product_id, reseller_id, pricing_snapshot')
+      .select('id, status, assigned_driver_id, product_id, reseller_id, pricing_snapshot, payment_method')
       .eq('id', order.id)
       .maybeSingle();
 
@@ -105,6 +107,13 @@ export async function POST(req: NextRequest) {
     if (maj.assigned_driver_id) {
       const { data: driver, error: driverError } = await admin.from('drivers').select('active_status').eq('profile_id', maj.assigned_driver_id).maybeSingle();
       if (driverError || !driver?.active_status) return NextResponse.json({ error: 'Livreur non autorisé au dispatch.' }, { status: 403 });
+      // Plafond d'espèces (Protection Suguba) : un livreur qui n'a pas reversé
+      // ne reçoit pas de NOUVELLE course payée en espèces.
+      if (maj.assigned_driver_id !== existing.assigned_driver_id && estPayeEnEspeces(existing.payment_method)) {
+        const { reglages } = await chargerReglages();
+        const etat = await etatEspecesCollecteur(admin, reglages, String(maj.assigned_driver_id));
+        if (etat.bloque) return NextResponse.json({ error: `${etat.raison} ${MESSAGE_PLAFOND}` }, { status: 409 });
+      }
     }
     const { data: updated, error } = await admin.from('orders').update(maj).eq('id', order.id).eq('status', existing.status).select('id').maybeSingle();
     if (error) return NextResponse.json({ error: 'Mise à jour non confirmée. Actualisez puis réessayez.' }, { status: 500 });

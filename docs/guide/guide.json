@@ -192,6 +192,32 @@
  "journal": [
   {
    "date": "2026-09-26",
+   "titre": "Protection Suguba — lot 1 : trésorerie",
+   "demande": "Analyse « Protection Suguba et intégrité des transactions » : protéger d’abord l’argent réellement encaissé. Décision : le gain d’une vente payée en espèces attend que l’argent soit reversé à Suguba (avance possible par l’admin, avec motif).",
+   "realise": [
+    "Gain d’une vente en espèces retirable seulement une fois l’argent reversé à la caisse Suguba (ventes livrées à partir de la mise à jour) ; Mobile Money inchangé.",
+    "Avance d’un gain par l’admin : motif obligatoire, tracé (qui, quand, pourquoi).",
+    "Plafond d’espèces non versées par collecteur (150 000 F par défaut, réglable) et retard grave : plus de nouvelle commande en espèces confiée au livreur ni prise en charge par le fournisseur, jusqu’au versement.",
+    "Paiements reçus des campagnes et sponsorisations en historique : référence unique, annulation avec motif, total recalculé par la base et non modifiable à la main.",
+    "Revendeur : montant « en attente du versement des espèces » affiché ; demande qualifiée avec son propre numéro jamais payée."
+   ],
+   "ecarts": [
+    "Lot 2 (données et contacts par dossier) et lot 3 (messagerie interne, comptes liés, part Suguba réduite sous permission) pas encore faits.",
+    "Un versement partiel libère les gains des commandes qu’il couvre ; le manque reste une dette du collecteur (comptée dans son plafond).",
+    "Engagement de non-contournement : à faire rédiger juridiquement, hors application."
+   ],
+   "pages": [
+    "adm-caisse",
+    "liv-portefeuille",
+    "rev-gains",
+    "adm-missions",
+    "adm-sponsorisations",
+    "adm-vue"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-26",
    "titre": "Rémunération au résultat (lot 3)",
    "demande": "Lot 3 : rémunérer les visites et les demandes qualifiées. Choix validés : prix libre du fournisseur au-dessus d’un minimum (25 F la visite, 500 F la demande), 20 % pour Suguba et 80 % au revendeur, gains retirables après 7 jours, interrupteur désactivé au départ (mesure seule).",
    "realise": [
@@ -2252,7 +2278,7 @@
     },
     {
      "nom": "En attente · Déjà versé",
-     "role": "Commissions encore bloquées, et total déjà reçu."
+     "role": "Commissions encore bloquées, et total déjà reçu. Une vente payée en espèces reste en attente jusqu’à ce que le livreur ou le fournisseur ait reversé l’argent à Suguba : la ligne « Dont … en attente du versement des espèces » l’indique."
     },
     {
      "nom": "Mode de retrait",
@@ -3302,6 +3328,10 @@
      "role": "Espèces encaissées pas encore versées, moins sa rémunération s'il la garde, plus un éventuel manque précédent."
     },
     {
+     "nom": "Plafond d’encaissement",
+     "role": "Au-delà du plafond d’espèces non versées (150 000 F par défaut) ou avec des espèces en retard grave, message rouge : plus de nouvelle course payée en espèces jusqu’au versement. Les courses déjà confiées et le versement restent possibles."
+    },
+    {
      "nom": "Remettre les espèces",
      "role": "Détail du calcul et liste de ses versements ; chaque versement ouvre son reçu."
     },
@@ -3382,6 +3412,10 @@
     {
      "nom": "Tous les domaines",
      "role": "Vers le back-office et ses rubriques."
+    },
+    {
+     "nom": "Débloquer avant terme",
+     "role": "Sur une vente en espèces pas encore reversée, c’est une AVANCE de Suguba : motif obligatoire, gardé avec le nom de l’admin et la date. Réglages économiques : « Plafond d’espèces non versées »."
     }
    ],
    "suite": [
@@ -3696,12 +3730,12 @@
      "role": "Engagé (récompense × nombre de gagnants maximum), versé, restant. Sans nombre de gagnants, le budget est ouvert."
     },
     {
-     "nom": "Enregistrer le paiement reçu",
-     "role": "Campagne fournisseur : montant total reçu et référence (reçu, transaction). L’activation est refusée tant que le budget n’est pas réglé en entier (application et base)."
+     "nom": "Paiements reçus",
+     "role": "Historique : « Ajouter un paiement reçu » (montant, référence, note) ; le total est recalculé. Une même référence ne sert qu’une fois (« OM 123-456 » = « om123456 »). Une erreur se corrige par « Annuler ce paiement » avec un motif : rien ne s’efface. L’activation reste refusée tant que le total ne couvre pas le prix."
     },
     {
      "nom": "Campagnes au résultat",
-     "role": "Prix par résultat, budget consommé ; activation refusée tant que la rémunération au résultat est coupée ou que le budget prévu n’est pas réglé. Pause automatique quand le budget ne couvre plus un résultat. Elles ne se créent que côté fournisseur."
+     "role": "Prix par résultat, budget consommé ; activation refusée tant que la rémunération au résultat est coupée ou que le budget prévu n’est pas réglé. Pause automatique quand le budget ne couvre plus un résultat. Elles ne se créent que côté fournisseur. Une demande faite avec le numéro du revendeur lui-même n’est jamais payée."
     }
    ],
    "suite": [
@@ -3738,8 +3772,8 @@
      "role": "Activer une sponsorisation après paiement."
     },
     {
-     "nom": "Enregistrer le paiement reçu",
-     "role": "Montant total reçu et référence. L’activation est refusée tant que le pack n’est pas réglé en entier (application et base) ; la durée démarre à la première activation."
+     "nom": "Paiements reçus",
+     "role": "Historique : « Ajouter un paiement reçu » (montant, référence, note) ; le total est recalculé. Une même référence ne sert qu’une fois (« OM 123-456 » = « om123456 »). Une erreur se corrige par « Annuler ce paiement » avec un motif : rien ne s’efface. L’activation reste refusée tant que le total ne couvre pas le prix."
     }
    ],
    "suite": [
@@ -3823,6 +3857,10 @@
     {
      "nom": "En retard",
      "role": "Livreurs qui gardent des espèces depuis plus que le délai réglé (orange), ou plus du double (rouge)."
+    },
+    {
+     "nom": "Plus de nouvelle course en espèces",
+     "role": "Collecteur (livreur ou fournisseur) au-dessus du plafond ou en retard grave : le dispatch d’une commande payée en espèces vers lui est refusé, et le fournisseur ne peut plus « Organiser la remise » d’une commande en espèces. Un versement lève le blocage. Chaque versement libère aussi les gains des revendeurs sur ces ventes."
     },
     {
      "nom": "Règle en vigueur",
