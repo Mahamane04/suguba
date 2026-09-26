@@ -202,15 +202,16 @@
     "Adresse pas encore inscrite : « Créer mon compte » (profil choisi, puis mot de passe) ; ou Google / code depuis la connexion, puis choix du profil."
    ],
    "ecarts": [
-    "Réglages Supabase à faire par l’admin : fournisseur Email avec « Confirm email » activé, longueur minimale 8, et le code {{ .Token }} dans les modèles « Confirm signup », « Reset Password » et « Magic Link ».",
-    "Délivrabilité : la réputation du domaine d’envoi se construit avec le temps ; désactiver le suivi des clics et des ouvertures dans Resend."
+    "Délivrabilité : la réputation du domaine d’envoi se construit avec le temps ; désactiver le suivi des clics et des ouvertures dans Resend.",
+    "Modèles d’e-mail Supabase (Confirm sign up, Reset password, Magic link) remplacés par le modèle Suguba avec le code, le 2026-09-26."
    ],
    "pages": [
     "connexion",
     "inscription",
     "mot-de-passe"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "e464a1d"
   },
   {
    "date": "2026-09-26",
