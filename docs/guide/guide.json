@@ -201,13 +201,13 @@
     "Mise à jour du catalogue : relu toutes les 2 minutes, au retour sur l'app et à chaque connexion ou changement d'espace (plus de temps réel sur les produits)."
    ],
    "ecarts": [
-    "SQL à exécuter APRÈS la mise en ligne : supabase/A-EXECUTER-2026-09-26-catalogue-prix-prives.sql.",
     "Une nouvelle colonne de produit sera privée par défaut ; la rendre publique demande de l'ajouter au SQL et à la liste du code."
    ],
    "pages": [
     "accueil"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "7250454"
   },
   {
    "date": "2026-09-26",
@@ -218,13 +218,12 @@
     "Les adresses d'image sont désormais gardées entières (et refusées si ce ne sont pas des images en https).",
     "SQL de réparation : retrouve dans le stockage le fichier complet de chaque adresse tronquée et la corrige, sans renvoyer les photos."
    ],
-   "ecarts": [
-    "SQL à exécuter : supabase/A-EXECUTER-2026-09-26-reparer-images-boutiques.sql."
-   ],
+   "ecarts": [],
    "pages": [
     "rev-boutique"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "7250454"
   },
   {
    "date": "2026-09-26",
