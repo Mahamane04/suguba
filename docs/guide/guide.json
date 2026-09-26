@@ -211,7 +211,8 @@
     "compte-commandes",
     "fiche-produit"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "85a78a4"
   },
   {
    "date": "2026-09-26",
