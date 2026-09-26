@@ -210,7 +210,8 @@
     "recherche",
     "adm-recherche"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "96d6b7e"
   },
   {
    "date": "2026-09-26",
