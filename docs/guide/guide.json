@@ -201,7 +201,6 @@
     "Fournisseur : « À régler » puis « Réglé le … » et reçu imprimable."
    ],
    "ecarts": [
-    "SQL à exécuter : supabase/A-EXECUTER-2026-09-26-sponsorisations-paiement.sql.",
     "Paiement toujours hors application (Mobile Money, espèces)."
    ],
    "pages": [
@@ -210,7 +209,8 @@
     "fou-sponsorisation-recu",
     "adm-sponsorisations"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "d9f86a3"
   },
   {
    "date": "2026-09-26",
