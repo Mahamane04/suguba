@@ -211,7 +211,8 @@
     "liv-portefeuille",
     "adm-devis"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "8cec610"
   },
   {
    "date": "2026-09-26",
