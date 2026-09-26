@@ -202,7 +202,6 @@
     "Page de marque /campagne/<id> (logo, couverture, produit, message, aperçu WhatsApp) ; les revendeurs la partagent avec leur code depuis leurs missions."
    ],
    "ecarts": [
-    "SQL à exécuter : supabase/A-EXECUTER-2026-09-26-campagnes.sql.",
     "Paiement du budget hors application (Mobile Money, espèces) : l'admin l'enregistre ; pas de paiement en ligne ni de remboursement automatique du solde.",
     "Les sponsorisations (packs d'affichage) n'ont pas encore ce suivi de paiement."
    ],
@@ -212,7 +211,8 @@
     "rev-missions",
     "fou-campagnes"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "f208dab"
   },
   {
    "date": "2026-09-26",
@@ -225,14 +225,14 @@
     "Admin Missions : preuves à vérifier (Valider / Refuser avec motif), budget engagé / versé / restant, nombre de gagnants maximum à la création."
    ],
    "ecarts": [
-    "SQL à exécuter : supabase/A-EXECUTER-2026-09-26-missions-comptage.sql (avant : l'ancien comptage reste actif).",
     "Pas encore de page de marque, de choix du canal avant paiement, ni de campagnes payées par les fournisseurs (lot 2b). Les clics ne rapportent pas d'argent."
    ],
    "pages": [
     "rev-missions",
     "adm-missions"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "f208dab"
   },
   {
    "date": "2026-09-26",
