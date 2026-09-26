@@ -211,7 +211,8 @@
     "rev-missions",
     "adm-missions"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "88483f1"
   },
   {
    "date": "2026-09-26",
