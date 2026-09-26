@@ -1,6 +1,7 @@
 'use client';
 
 import { sugubaStore, definirApercuAdmin } from '@/lib/store';
+import { cloudSyncService } from '@/lib/cloud-sync';
 
 /**
  * Relit la session réelle (/api/auth/me) et la pousse dans le store partagé
@@ -34,6 +35,9 @@ let derniereLecture = 0;
 let generation = 0;
 export function invaliderIdentite() { generation++; derniereLecture = 0; enCours = null; }
 let enCours: Promise<Moi | null> | null = null;
+// Rôle pour lequel le catalogue a été chargé : les colonnes reçues en
+// dépendent (lot A, 2026-09-26). undefined = pas encore connu.
+let roleDuCatalogue: string | null | undefined;
 
 export function rafraichirIdentite({ forcer = false } = {}): Promise<Moi | null> {
   if (enCours) return enCours;
@@ -51,6 +55,11 @@ export function rafraichirIdentite({ forcer = false } = {}): Promise<Moi | null>
           : null,
       );
       definirApercuAdmin(Boolean(moi.authenticated && moi.apercu));
+      // Connexion, déconnexion ou changement d'espace : le catalogue est relu
+      // aussitôt avec les colonnes du nouveau rôle (gains du revendeur…).
+      const role = moi.authenticated ? moi.role ?? null : null;
+      if (roleDuCatalogue !== undefined && role !== roleDuCatalogue) void cloudSyncService.rafraichirCatalogue(true);
+      roleDuCatalogue = role;
       return moi;
     })
     .catch(() => null)

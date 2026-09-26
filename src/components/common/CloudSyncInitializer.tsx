@@ -34,7 +34,13 @@ export default function CloudSyncInitializer() {
     // navigateur (iPhone), le layout ne remonte pas et l'identité restait
     // figée sur « visiteur » — d'où la double connexion signalée.
     const recharger = (forcer = false) => rafraichirIdentite({ forcer }).then((moi) => cloudSyncService.fetchOrdersFromCloudSiEligible(moi?.authenticated ? moi.role : null));
-    const auRetour = () => { if (document.visibilityState === 'visible') void recharger(); };
+    // Retour sur l'app : identité ET catalogue (plus de temps réel sur les
+    // produits depuis le 2026-09-26, voir cloud-sync).
+    const auRetour = () => {
+      if (document.visibilityState !== 'visible') return;
+      void recharger();
+      void cloudSyncService.rafraichirCatalogue();
+    };
     const aLaRestauration = (e: PageTransitionEvent) => { if (e.persisted) void recharger(true); };
     document.addEventListener('visibilitychange', auRetour);
     window.addEventListener('pageshow', aLaRestauration);

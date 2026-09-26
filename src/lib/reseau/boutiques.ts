@@ -175,6 +175,18 @@ export async function majBoutique(
     const valeur = champs[cle];
     if (valeur === null) { ligne[colonne] = null; continue; }
     if (typeof valeur !== 'string') continue;
+    // Logo et couverture : une adresse d'image se garde ENTIÈRE. Coupée à 160
+    // caractères (bug corrigé le 2026-09-26), elle ne menait plus à rien et
+    // la boutique affichait une image cassée. Une adresse trop longue ou qui
+    // n'est pas une image en https est refusée, jamais tronquée.
+    if (cle === 'logo' || cle === 'couverture') {
+      const url = valeur.trim();
+      if (url && (url.length > 600 || !/^https:\/\/[^\s"'<>]+$/.test(url))) {
+        return { ok: false, erreur: 'Image invalide. Envoyez-la à nouveau.' };
+      }
+      ligne[colonne] = url || null;
+      continue;
+    }
     const propre = valeur.trim().slice(0, cle === 'description' ? 1200 : 160);
     if (cle === 'nom' && propre.length < 2) return { ok: false, erreur: 'Le nom de la boutique est trop court.' };
     ligne[colonne] = propre || null;

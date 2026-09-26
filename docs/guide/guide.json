@@ -192,6 +192,42 @@
  "journal": [
   {
    "date": "2026-09-26",
+   "titre": "Prix fournisseur privés (lot A « Priorité au réseau »)",
+   "demande": "Les prix de gros et conditions professionnelles ne doivent pas être publics ; la restriction doit être appliquée côté serveur, pas seulement en masquant une page.",
+   "realise": [
+    "Constat : avec la clé publique, n'importe quel visiteur pouvait lire le prix fournisseur, la part revendeur et la tarification de chaque produit approuvé.",
+    "Le catalogue passe par le serveur (/api/catalogue), qui ne renvoie que les colonnes du rôle : visiteur = prix de vente ; revendeur = + ses gains ; fournisseur = + prix de SES produits ; admin = tout.",
+    "SQL : la base refuse désormais ces colonnes à la clé publique.",
+    "Mise à jour du catalogue : relu toutes les 2 minutes, au retour sur l'app et à chaque connexion ou changement d'espace (plus de temps réel sur les produits)."
+   ],
+   "ecarts": [
+    "SQL à exécuter APRÈS la mise en ligne : supabase/A-EXECUTER-2026-09-26-catalogue-prix-prives.sql.",
+    "Une nouvelle colonne de produit sera privée par défaut ; la rendre publique demande de l'ajouter au SQL et à la liste du code."
+   ],
+   "pages": [
+    "accueil"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-26",
+   "titre": "Correctif : images cassées du logo et de la couverture",
+   "demande": "Après le premier correctif, la boutique affichait le nom et la présentation, mais le logo et la couverture apparaissaient comme des images cassées.",
+   "realise": [
+    "Cause : l'enregistrement de « Ma boutique » coupait l'adresse des images à 160 caractères ; l'image existait mais l'adresse ne menait plus à rien.",
+    "Les adresses d'image sont désormais gardées entières (et refusées si ce ne sont pas des images en https).",
+    "SQL de réparation : retrouve dans le stockage le fichier complet de chaque adresse tronquée et la corrige, sans renvoyer les photos."
+   ],
+   "ecarts": [
+    "SQL à exécuter : supabase/A-EXECUTER-2026-09-26-reparer-images-boutiques.sql."
+   ],
+   "pages": [
+    "rev-boutique"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-26",
    "titre": "Prestations à étapes (lot 1c)",
    "demande": "Des parcours de prestation (visite technique, rendez-vous, remise du matériel, installation, réception) : chaque étape a sa preuve, validée par le client ; le fournisseur déclare mais ne valide pas à la place du client ; la commission n'est débloquée qu'après la réception finale.",
    "realise": [

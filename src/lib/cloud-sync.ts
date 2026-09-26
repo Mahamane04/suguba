@@ -46,37 +46,48 @@ class CloudSyncService {
       // /api/orders/feed, authentifiée) — voir CloudSyncBadge / pages
       // concernées pour un polling périodique si besoin d'un quasi-live.
 
-      // Écouteur en temps réel sur les Produits
-      supabase
-        .channel('suguba_realtime_products')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'products' },
-          (payload) => {
-            if (payload.eventType === 'INSERT') {
-              this.syncProductFromCloud(payload.new);
-            } else if (payload.eventType === 'UPDATE') {
-              this.syncProductUpdateFromCloud(payload.new);
-            }
-          }
-        )
-        .subscribe();
+      // Plus d'abonnement Realtime sur `products` (2026-09-26, lot A) : la clé
+      // publique n'a plus accès aux colonnes de prix, et Realtime ne sait pas
+      // filtrer par colonne. Le catalogue se relit par /api/catalogue toutes
+      // les deux minutes quand l'app est visible, et au retour sur l'app
+      // (voir CloudSyncInitializer).
+      setInterval(() => {
+        if (typeof document === 'undefined' || document.visibilityState === 'visible') void this.rafraichirCatalogue();
+      }, 120_000);
 
-      console.log('🟢 Synchronisation Cloud Supabase Websockets activée avec succès !');
+      console.log('🟢 Catalogue Suguba synchronisé.');
     } catch (err) {
       console.warn('Erreur initialisation Supabase Realtime:', err);
     }
   }
 
-  // 2. Récupérer tous les produits depuis Supabase
+  private dernierChargement = 0;
+
+  /** Relecture du catalogue, au plus une fois toutes les 20 secondes (sauf `forcer`). */
+  public async rafraichirCatalogue(forcer = false): Promise<void> {
+    if (!forcer && Date.now() - this.dernierChargement < 20_000) return;
+    await this.fetchProductsFromCloud();
+  }
+
+  // 2. Récupérer les produits approuvés — par /api/catalogue (2026-09-26,
+  // lot A) et non plus en lisant la table avec la clé publique : le serveur
+  // ne renvoie que les colonnes permises au rôle de la personne connectée
+  // (le prix fournisseur n'est jamais envoyé à un visiteur ni à un revendeur).
   public async fetchProductsFromCloud(): Promise<Product[]> {
-    if (!this.isCloudActive() || !supabase) return [];
+    if (!this.isCloudActive()) return [];
+    this.dernierChargement = Date.now();
 
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false });
+      let data: any[] | null = null;
+      let error: { message: string } | null = null;
+      try {
+        const res = await fetch('/api/catalogue', { cache: 'no-store', credentials: 'same-origin' });
+        const j = await res.json().catch(() => null);
+        if (res.ok && Array.isArray(j?.products)) data = j.products;
+        else error = { message: j?.error || `HTTP ${res.status}` };
+      } catch (e) {
+        error = { message: (e as Error).message };
+      }
 
       if (error) {
         console.warn('Erreur chargement produits Supabase:', error.message);
@@ -373,45 +384,6 @@ class CloudSyncService {
 
   private syncOrderUpdateFromCloud(cloudOrder: any): void {
     sugubaStore.updateOrderStatusFromCloud(cloudOrder.id || cloudOrder.order_number, cloudOrder.status, cloudOrder.payment_collected);
-  }
-
-  private syncProductFromCloud(cloudProduct: any): void {
-    const formattedProduct: Product = {
-      id: cloudProduct.id,
-      supplierId: cloudProduct.supplier_id || 'sup-default',
-      supplierName: cloudProduct.supplier_name || 'Fournisseur Certifié',
-      name: cloudProduct.name,
-      slug: cloudProduct.slug,
-      category: cloudProduct.category || 'Général',
-      description: cloudProduct.description || '',
-      images: Array.isArray(cloudProduct.images) ? cloudProduct.images : [], // BUG-011 : plus de repli Unsplash — voir ProductImage
-      supplierPrice: Number(cloudProduct.supplier_price || 0),
-      publicPrice: Number(cloudProduct.public_price || 0),
-      resellerCommission: Number(cloudProduct.reseller_commission || 0),
-      resellerCommissionProposee: Number(cloudProduct.commission_proposee) || 0,
-      modePrix: cloudProduct.mode_prix === 'gros' ? 'gros' : 'fixe',
-      prixConseille: cloudProduct.prix_conseille == null ? null : Number(cloudProduct.prix_conseille),
-      typeOffre: normaliserTypeOffre(cloudProduct.type_offre),
-      modeRemise: normaliserModeRemise(cloudProduct.mode_remise),
-      fraisRemise: Number(cloudProduct.frais_remise) || 0,
-      offreInclus: cloudProduct.offre_inclus || null,
-      modeCommande: cloudProduct.mode_commande === 'devis' ? 'devis' : 'achat',
-      etapes: normaliserEtapes(cloudProduct.etapes),
-      sugubaMargin: Math.max(0, Number(cloudProduct.public_price || 0) - Number(cloudProduct.supplier_price || 0) - Number(cloudProduct.reseller_commission || 0)),
-      stockQuantity: Number(cloudProduct.stock ?? 0),
-      warrantyMonths: 0, // Aucune colonne garantie en base : ne jamais en afficher une inventée.
-      preparationDelayHours: 2,
-      stockLocationType: 'supplier',
-      stockLocationAddress: 'Bamako',
-      status: (cloudProduct.status as any) || 'approved',
-      marketingPitch: `🔥 NOUVEAUTÉ : ${cloudProduct.name}\nQualité garantie !\nLivraison disponible à Bamako.`,
-      createdAt: cloudProduct.created_at || new Date().toISOString(),
-    };
-    sugubaStore.addProductFromCloud(formattedProduct);
-  }
-
-  private syncProductUpdateFromCloud(cloudProduct: any): void {
-    this.syncProductFromCloud(cloudProduct);
   }
 }
 
