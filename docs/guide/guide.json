@@ -211,7 +211,8 @@
     "suivi",
     "recu"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "b1b6355"
   },
   {
    "date": "2026-09-26",
