@@ -1,7 +1,8 @@
 # SUGUBA — Fiche de référence
 
 > Mise à jour le **26 septembre 2026** (offres et services, devis, prestations à étapes,
-> « Priorité au réseau », campagnes encadrées, paiement des sponsorisations). Résumé de
+> « Priorité au réseau », campagnes encadrées, paiement des sponsorisations,
+> **rémunération au résultat**). Résumé de
 > tout ce qu'il faut savoir sur la plateforme : à quoi elle sert, qui fait quoi, comment
 > l'argent circule, comment elle est protégée et comment on la fait évoluer. Pour le
 > détail page par page, voir le **guide des parcours** (`/admin/guide`, réservé à
@@ -195,15 +196,42 @@ Suivi public d'une commande : `/track` (numéro + téléphone, tentatives limit�
   revendeur lui-même et les **robots d'aperçu** (WhatsApp, Facebook…) ne comptent pas ;
   un **partage ne compte que sur preuve de publication validée** (une capture ne sert
   qu'une fois).
-- **Campagnes fournisseur** : canal choisi avant de payer, partages ou ventes (pas de
-  campagne payée aux visites), **activation refusée tant que le budget n'est pas reçu en
-  entier**. Suivi réglé / dépensé / restant ; page de marque `/campagne/<id>` partagée
-  par les revendeurs avec leur code.
+- **Campagnes fournisseur** : canal choisi avant de payer, partages ou ventes,
+  **activation refusée tant que le budget n'est pas reçu en entier**. Suivi réglé /
+  dépensé / restant ; page de marque `/campagne/<id>` partagée par les revendeurs avec
+  leur code. Jamais de paiement aux clics bruts.
 - **Sponsorisations** : l'admin enregistre le paiement reçu (montant, référence) ;
   **activation refusée sans le pack réglé** ; la durée démarre à l'activation ; reçu
   imprimable côté fournisseur.
 - Paiements des campagnes et sponsorisations : **hors application** (Mobile Money,
   espèces), enregistrés par l'admin.
+
+### Rémunération au résultat (lot 3)
+
+Deux types de campagne fournisseur payés **à l'unité**, ouverts seulement quand l'admin
+allume l'interrupteur **« Payer les résultats »** (Admin › Qualité des mesures) —
+**désactivé** à la mise en ligne : d'ici là les visites sont seulement **mesurées**.
+
+| | Visite qualifiée | Demande qualifiée |
+|---|---|---|
+| Ce qui compte | Arrivée par le lien d'un revendeur, **20 s** sur le produit **et** un geste (toucher, défiler) | Devis auquel le fournisseur **répond**, ou commande **confirmée par l'appel** Suguba |
+| Une seule fois | par visiteur et par campagne | par client (téléphone) et par campagne |
+| Exclus | robots d'aperçu, le revendeur lui-même | — |
+| Prix minimum (fixé par le fournisseur) | 25 F | 500 F |
+| Plafond | 50 visites payées / revendeur / campagne / jour | — |
+
+- Budget = prix × nombre de résultats, **payé d'avance** ; chaque résultat le consomme ;
+  **pause automatique** quand il ne couvre plus un résultat (garde-fou en base).
+- Partage : **80 % au revendeur**, 20 % Suguba. Gain **en attente 7 jours**, puis
+  retirable.
+- **Suspect** (5 visites ou plus d'un même réseau en 24 h pour un revendeur) ou
+  **contesté** par le fournisseur (sous **48 h**) : gain gelé jusqu'à la décision de
+  l'admin (Valider / Annuler). Un résultat **annulé** rend son prix au budget.
+- Aucune IP gardée : empreintes salées du visiteur et de son réseau. Le fournisseur ne
+  voit que « Awa D. ».
+- Limite connue : un tricheur patient peut simuler des visites (20 s par appareil) ;
+  plafond, contrôle du réseau et contestation en limitent l'effet — surveiller la page
+  qualité.
 
 ### Retraits des revendeurs
 
@@ -229,6 +257,8 @@ Le revendeur voit avant de valider **combien il recevra**. Retrait minimum régl
   retraits, livraison, points relais, caisse, codes promo, formules boutiques.
 - **Admin › Priorité au réseau** : annuaire, achat direct, prix de gros.
 - **Admin › Récompenses** : primes de parrainage, missions à payer.
+- **Admin › Qualité des mesures** : interrupteur « Payer les résultats », mesures des 30
+  derniers jours, résultats à vérifier.
 
 ---
 
@@ -242,12 +272,14 @@ suivies, notifications, B2B, diaspora.
 
 **Revendeur** : catalogue et prix, partages suivis, « + Vente », commandes, clients,
 commissions et retraits, boutique(s), parrainage, **missions avec preuves de
-publication**, partage des pages de campagne, calendrier, créateur de visuels, badge.
+publication**, **campagnes au résultat** (gain par visite ou demande), partage des pages
+de campagne, calendrier, créateur de visuels, badge.
 
 **Fournisseur** : ajout d'offres (nature, qui remet, étapes, devis, variantes, photos),
 inventaire, **commandes** (préparer, organiser la remise, déclarer les étapes, remettre en
 scannant le reçu), **demandes de devis**, revendeurs, ambassadeurs, **campagnes**
-(canal, budget réglé / dépensé / restant), **sponsorisation** (statut de paiement, reçu),
+(canal, budget réglé / dépensé / restant, **visites et demandes qualifiées** avec
+contestation sous 48 h), **sponsorisation** (statut de paiement, reçu),
 analyses, boutique (page de présentation), équipe.
 
 **Livreur** : courses, carte, scan du QR du client (ou code), portefeuille.
@@ -255,7 +287,8 @@ analyses, boutique (page de présentation), équipe.
 **Admin** : tableau de bord, commandes, produits et prix, utilisateurs, vérifications,
 boutiques, **Priorité au réseau**, SAV & retours (« Scanner un reçu »), **Devis**,
 **Prestations**, caisse livreurs, **missions** (preuves à vérifier, budget, paiement des
-campagnes), récompenses, **sponsorisations** (paiement reçu), diffusion, analyses, rapport
+campagnes), **Qualité des mesures** (paiement au résultat), récompenses,
+**sponsorisations** (paiement reçu), diffusion, analyses, rapport
 du soir, équipe, paramètres, guide.
 
 ---
@@ -309,7 +342,8 @@ du soir, équipe, paramètres, guide.
   progression de mission).
 - **Garde-fous en base** (même si l'application était contournée) : pas de livraison avec
   une étape non validée ; pas d'activation d'une campagne ou d'une sponsorisation non
-  réglée.
+  réglée ; un résultat payé une seule fois, jamais au-delà du budget reçu, rien payé
+  tant que l'interrupteur est coupé.
 - Paiement SasPay confirmé par **webhook signé** et revérifié.
 - Reçus (commande, devis) ouverts seulement avec la **clé secrète du téléphone** qui a
   commandé ; le QR n'est pas un lien ; scan limité aux commandes assignées.
@@ -339,12 +373,13 @@ du soir, équipe, paramètres, guide.
 | Offres | `src/lib/offre.ts` (nature, remise, étapes), `src/lib/devis.ts`, `src/lib/etapes.ts` |
 | Réseau | `src/lib/ancrage-revendeur.ts`, `src/lib/offres-revendeurs.ts`, `src/lib/presentation-fournisseur.ts`, réglages `reseau_reglages` |
 | Missions | `src/lib/reseau/missions-db.ts` (`compter_evenement_mission`), `src/lib/reseau/preuves-missions.ts` |
+| Paiement au résultat | `src/lib/reseau/resultats*.ts`, `/api/reseau/visite`, SQL `enregistrer_resultat_campagne` / `decider_resultat_campagne`, tables `visites_mesurees` et `campagne_resultats` |
 | Réglages | `platform_settings` (prix) et `reseau_reglages` (réseau) |
 | Session | `src/lib/session.ts`, `src/lib/active-session.ts`, `src/middleware.ts` |
 | Paiement | `src/lib/saspay.ts`, `/api/payments/saspay/*`, `/api/webhooks/saspay` |
 | Reçu et QR | `src/lib/recu-commande.ts`, `src/lib/qr-remise.ts`, `src/lib/remise-qr.ts` |
 | Stockage privé | buckets `sav-photos`, `etapes-photos`, `preuves-missions` |
-| Tests | `npm test` (227 tests, Node + PostgreSQL embarqué PGlite) |
+| Tests | `npm test` (231 tests, Node + PostgreSQL embarqué PGlite) |
 | Guide | `docs/guide/guide.json` + `/admin/guide` |
 
 **Variables d'environnement** (valeurs dans Vercel) : `NEXT_PUBLIC_SUPABASE_URL`,
@@ -379,10 +414,14 @@ données) :
 - Campagne et sponsorisation : activation refusée avant l'enregistrement du paiement.
 - Vues revendeur / fournisseur / admin après le passage des prix privés (gains et
   « Mon prix » bien affichés).
+- **Visite qualifiée** : produit ouvert par le lien d'un revendeur depuis un autre
+  téléphone, 20 s + défilement → visible dans « Qualité des mesures ».
+- Après quelques semaines de mesures stables : allumer « Payer les résultats », puis
+  campagne test (budget, gain en attente, contestation, annulation qui rend le budget).
 
 **Prochaines évolutions**
-- **Lot 3** : rémunérer les visites et demandes qualifiées, **après quelques semaines de
-  données réelles** sur les nouveaux compteurs.
+- **Lot 3 en ligne, interrupteur coupé** : décider quand allumer « Payer les résultats »
+  au vu de la page « Qualité des mesures ».
 - Paiement en ligne des campagnes et sponsorisations, remboursement du solde non utilisé.
 - Prévenir le client sans compte d'une étape à valider (aujourd'hui, le fournisseur lui
   demande d'ouvrir son reçu).
