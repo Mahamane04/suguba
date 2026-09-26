@@ -18,6 +18,7 @@ import { useToast } from '@/components/ui/Toast';
 import { MARGE_BAS_FLOTTANT } from '@/lib/mise-en-page';
 import { normaliserCodeRevendeur, revendeurAncre } from '@/lib/ancrage-revendeur';
 import PartenaireVisite from '@/components/common/PartenaireVisite';
+import ChoixDestinataire from '@/components/compte/ChoixDestinataire';
 import {
   ArrowLeft, Minus, Plus, Bike, Store, Tag, ShieldCheck, Lock, Check,
   Navigation, Clock, PackageX, Info,
@@ -347,6 +348,12 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
           </Section>
 
           <Section numero={2} titre="Vos coordonnées" complete={coordonneesOk}>
+            {/* Compte client (C2) : « Pour moi » ou un proche enregistré. */}
+            <ChoixDestinataire onChoisir={(c) => {
+              setCustomerName(c.nom); setCustomerPhone(c.telephone);
+              if (c.quartier) setNeighborhood(c.quartier);
+              setLandmark(c.repere || '');
+            }} />
             <Field label="Nom et prénom" htmlFor="champ-nom" requis erreur={afficher(erreurs.nom)}>
               <Input
                 id="champ-nom"

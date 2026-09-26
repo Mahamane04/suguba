@@ -19,6 +19,7 @@ import { changerQuantite, retirerDuPanier, usePanier, viderPanier } from '@/lib/
 import { sugubaStore, useQuartierClient, definirQuartierClient } from '@/lib/store';
 import type { Order } from '@/types';
 import PartenaireVisite from '@/components/common/PartenaireVisite';
+import ChoixDestinataire from '@/components/compte/ChoixDestinataire';
 
 /**
  * Panier et validation (§ 29 et § 30 des écrans).
@@ -278,6 +279,12 @@ export default function PanierPage() {
 
           <Card className="space-y-4">
             <p className="text-sm font-bold text-slate-900">Vos coordonnées</p>
+            {/* Compte client (C2) : « Pour moi » ou un proche enregistré. */}
+            <ChoixDestinataire onChoisir={(c) => {
+              setNom(c.nom); setTelephone(c.telephone);
+              if (c.quartier) setQuartier(c.quartier);
+              setRepere(c.repere || '');
+            }} />
             <Field label="Nom et prénom" htmlFor="nom" erreur={voir(erreurs.nom)} requis>
               <Input id="nom" value={nom} onChange={(e) => setNom(e.target.value)} autoComplete="name" aria-invalid={Boolean(voir(erreurs.nom))} />
             </Field>

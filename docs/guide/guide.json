@@ -192,6 +192,29 @@
  "journal": [
   {
    "date": "2026-09-26",
+   "titre": "Compte client (C2) : favoris, destinataires, commander à nouveau, recommander",
+   "demande": "Lot C2 du compte client : favoris, destinataires enregistrés (« Pour moi · Pour un proche »), « Commander à nouveau » au prix et au stock du jour, « Recommander à un proche » sans commission.",
+   "realise": [
+    "Favoris : cœur sur la fiche produit, page « Mes favoris » (jamais de prix fournisseur ; prix de gros non affiché).",
+    "Destinataires enregistrés (20 au plus, numéro étranger accepté) et « Pour qui commandez-vous ? » à la commande et au panier.",
+    "« Commander à nouveau » depuis « Mes commandes », vers la fiche du produit au prix et au stock du jour.",
+    "« Recommander » pour un client sur la fiche produit : partage WhatsApp sans commission, le revendeur d’origine garde la vente.",
+    "Onglets de l’espace client : Commandes · Favoris · Destinataires."
+   ],
+   "ecarts": [
+    "Un destinataire saisi pendant la commande n’est pas enregistré automatiquement : il s’ajoute depuis « Mes destinataires ».",
+    "Diaspora (même compte, destinataire au Mali, paiement par carte à vérifier) : lot C3."
+   ],
+   "pages": [
+    "compte-favoris",
+    "compte-destinataires",
+    "compte-commandes",
+    "fiche-produit"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-26",
    "titre": "Compte client (C1)",
    "demande": "Audit « compte client » : pouvoir acheter sans compte ne suffit pas ; créer un compte client simple et facultatif, sans validation professionnelle, pour retrouver ses commandes sur tous ses téléphones. Choix : « Mes commandes » pour tout compte ; l’espace diaspora reste tel quel jusqu’au lot C3.",
    "realise": [
@@ -1232,6 +1255,14 @@
     {
      "nom": "Poser une question au fournisseur",
      "role": "Revendeur connecté : ouvre une conversation avec le fournisseur du produit, dans « Mes questions »."
+    },
+    {
+     "nom": "Cœur (favori)",
+     "role": "Ajoute le produit à « Mes favoris » ; sans compte, invite à se connecter."
+    },
+    {
+     "nom": "Recommander",
+     "role": "Pour un client : partage le produit à un proche sur WhatsApp, sans commission ; le lien garde le revendeur d’origine. Pour un revendeur connecté, le bouton reste « Partager » (avec son code)."
     }
    ],
    "suite": [
@@ -1378,6 +1409,10 @@
     {
      "nom": "Votre partenaire : …",
      "role": "Rappel du revendeur d’origine du client. Simple indication : l’attribution est décidée par le serveur à la commande."
+    },
+    {
+     "nom": "Pour qui commandez-vous ?",
+     "role": "Compte connecté : « Pour moi » ou un proche enregistré remplit nom, téléphone, quartier et repère ; « + Un proche » ouvre « Mes destinataires »."
     }
    ],
    "suite": [
@@ -1451,6 +1486,10 @@
     {
      "nom": "Votre partenaire : …",
      "role": "Rappel du revendeur d’origine du client. Simple indication : l’attribution est décidée par le serveur à la commande."
+    },
+    {
+     "nom": "Pour qui commandez-vous ?",
+     "role": "Comme sur la commande d’un article : « Pour moi » ou un proche enregistré."
     }
    ],
    "suite": [
@@ -1554,12 +1593,68 @@
     {
      "nom": "Non connecté",
      "role": "« Me connecter » ou « Créer mon compte client »."
+    },
+    {
+     "nom": "Onglets Commandes · Favoris · Destinataires",
+     "role": "Navigation de l’espace client."
+    },
+    {
+     "nom": "Commander à nouveau",
+     "role": "Commande livrée, annulée ou retournée : ouvre la fiche du produit au prix et au stock du jour ; le revendeur rattaché au client garde la vente."
     }
    ],
    "suite": [
     {
      "id": "suivi",
      "libelle": "Suivre ma commande"
+    }
+   ],
+   "note": "Pas de capture : nécessite un compte client connecté."
+  },
+  {
+   "id": "compte-favoris",
+   "role": "visiteur",
+   "titre": "Mes favoris",
+   "chemin": "/compte/favoris",
+   "but": "Retrouver les produits gardés avec le cœur, avec leur disponibilité du jour.",
+   "elements": [
+    {
+     "nom": "Liste",
+     "role": "Nom, prix (« Prix de nos revendeurs » pour un article au prix de gros), « Indisponible pour le moment » si plus de stock ; ouvre la fiche."
+    },
+    {
+     "nom": "Cœur",
+     "role": "Retire le produit des favoris."
+    }
+   ],
+   "suite": [
+    {
+     "id": "fiche-produit",
+     "libelle": "Le cœur sur la fiche produit"
+    }
+   ],
+   "note": "Pas de capture : nécessite un compte client connecté."
+  },
+  {
+   "id": "compte-destinataires",
+   "role": "visiteur",
+   "titre": "Mes destinataires",
+   "chemin": "/compte/destinataires",
+   "but": "Enregistrer les proches pour qui on commande souvent, proposés au moment de commander.",
+   "elements": [
+    {
+     "nom": "Ajouter un destinataire",
+     "role": "Nom, téléphone (numéro étranger accepté), lien (Maman, bureau…), quartier, repère ; 20 au plus."
+    },
+    {
+     "nom": "Supprimer",
+     "role": "Retire un destinataire (confirmation demandée)."
+    }
+   ],
+   "suite": [
+    {
+     "id": "commander",
+     "libelle": "« Pour qui commandez-vous ? » à la commande"
     }
    ],
    "note": "Pas de capture : nécessite un compte client connecté."

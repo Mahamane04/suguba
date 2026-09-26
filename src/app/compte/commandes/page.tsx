@@ -8,8 +8,9 @@ import Button from '@/components/ui/Button';
 import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
 import { devisAccessKey, devisSurCetAppareil, orderAccessKey, recusSurCetAppareil } from '@/lib/order-access-client';
+import OngletsCompte from '@/components/compte/OngletsCompte';
 
-interface Commande { numero: string; produit: string; image: string | null; quantite: number; total: number; statut: string; creeLe: string; livreeLe: string | null }
+interface Commande { numero: string; produit: string; image: string | null; quantite: number; total: number; statut: string; creeLe: string; livreeLe: string | null; racheter: string | null }
 interface Devis { numero: string; produit: string; statut: string; creeLe: string; commande: string | null }
 
 const STATUT: Record<string, [string, 'succes' | 'attente' | 'neutre' | 'danger' | 'info']> = {
@@ -94,6 +95,7 @@ export default function MesCommandesPage() {
 
   return (
     <PageReseau titre="Mes commandes" sousTitre="Vos achats sur tous vos téléphones." retour={{ href: '/', libelle: 'Accueil' }}>
+      <OngletsCompte actif="/compte/commandes" />
       {etat === 'chargement' ? <Skeleton className="h-48" />
         : etat === 'erreur' ? <EmptyState icone={ShoppingBag} titre="Commandes indisponibles" texte={erreur} />
         : migration ? <EmptyState icone={ShoppingBag} titre="Bientôt disponible" texte="Le compte client sera disponible après la mise à jour de Suguba." />
@@ -133,6 +135,12 @@ export default function MesCommandesPage() {
                               </span>
                               <StatusPill ton={ton}>{libelle}</StatusPill>
                             </Link>
+                            {/* C2 : au prix et au stock du jour, sur la fiche du produit. */}
+                            {c.racheter && ['delivered', 'cancelled', 'returned'].includes(c.statut) && (
+                              <Link href={`/p/${encodeURIComponent(c.racheter)}`} className="inline-flex items-center min-h-10 -mt-1 mb-2 ml-[3.75rem] text-xs font-bold text-suguba-profond underline">
+                                Commander à nouveau
+                              </Link>
+                            )}
                           </li>
                         );
                       })}

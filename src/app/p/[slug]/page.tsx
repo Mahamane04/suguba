@@ -20,6 +20,7 @@ import { normaliserCodeRevendeur, revendeurAncre } from '@/lib/ancrage-revendeur
 import OffresRevendeurs, { type OffreRevendeurVue } from '@/components/product/OffresRevendeurs';
 import VisiteQualifiee from '@/components/product/VisiteQualifiee';
 import BoutonQuestionFournisseur from '@/components/messagerie/BoutonQuestionFournisseur';
+import BoutonFavori from '@/components/compte/BoutonFavori';
 
 const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} FCFA`;
 
@@ -300,8 +301,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 className="absolute top-3 right-3 h-9 px-3 rounded-full bg-suguba-wa hover:bg-[#1fbf5b] text-suguba-profond text-xs font-bold inline-flex items-center gap-1.5 shadow-md active:scale-[0.97] transition-all"
               >
                 <WhatsAppIcon className="w-4 h-4" />
-                <span>Partager</span>
+                {/* Client (C2) : recommander à un proche, sans commission ; le revendeur d'origine garde la vente. */}
+                <span>{monCode ? 'Partager' : 'Recommander'}</span>
               </button>
+              <BoutonFavori produitId={product.id} className="absolute top-14 right-3" />
             </div>
 
             {/* Revendeur connecté : question au fournisseur, sans échange de coordonnées (lot 3). */}

@@ -55,7 +55,7 @@ export async function rattacherDevis(admin: SupabaseClient | null, session: Pick
 // ── Mes commandes ───────────────────────────────────────────────────────────
 export async function mesAchats(admin: SupabaseClient, uid: string) {
   const [commandes, devis] = await Promise.all([
-    admin.from('orders').select('order_number, product_name, product_image, quantity, total_amount, status, created_at, delivered_at')
+    admin.from('orders').select('order_number, product_id, product_name, product_image, quantity, total_amount, status, created_at, delivered_at')
       .eq('customer_profile_id', uid).order('created_at', { ascending: false }).limit(200),
     admin.from('quote_requests').select('quote_number, product_id, status, created_at, order_number')
       .eq('customer_profile_id', uid).order('created_at', { ascending: false }).limit(100),
@@ -64,17 +64,20 @@ export async function mesAchats(admin: SupabaseClient, uid: string) {
     if (tableAbsente(commandes.error.code)) return { migrationRequise: true, commandes: [], devis: [] };
     throw new CompteError('Vos commandes sont indisponibles. Réessayez.', 503);
   }
-  const idsProduits = [...new Set((devis.data || []).map((q) => q.product_id))];
+  const idsProduits = [...new Set([...(devis.data || []).map((q) => q.product_id), ...(commandes.data || []).map((o) => o.product_id)].filter(Boolean))];
   const { data: produits } = idsProduits.length
-    ? await admin.from('products').select('id, name').in('id', idsProduits)
+    ? await admin.from('products').select('id, name, slug, status, stock').in('id', idsProduits)
     : { data: [] as any[] };
   const noms = new Map((produits || []).map((p: any) => [p.id, p.name]));
+  // « Commander à nouveau » (C2) : vers la fiche du produit, au prix et au stock du jour.
+  const fiche = new Map((produits || []).map((p: any) => [p.id, p.status === 'approved' && (p.stock == null || Number(p.stock) > 0) ? p.slug : null]));
   return {
     migrationRequise: false,
     commandes: (commandes.data || []).map((o) => ({
       numero: o.order_number as string, produit: o.product_name as string, image: o.product_image || null,
       quantite: Number(o.quantity) || 1, total: Number(o.total_amount) || 0, statut: o.status as string,
       creeLe: o.created_at as string, livreeLe: o.delivered_at || null,
+      racheter: (fiche.get(o.product_id) as string | null) || null,
     })),
     devis: (devis.data || []).map((q) => ({
       numero: q.quote_number as string, produit: (noms.get(q.product_id) as string) || 'Offre', statut: q.status as string,
@@ -129,4 +132,107 @@ export async function rattacherAnciens(
     if (q.order_id) await admin.from('orders').update({ customer_profile_id: uid }).eq('id', q.order_id).is('customer_profile_id', null);
   }
   return { ajoutes };
+}
+
+// ── C2 : favoris ────────────────────────────────────────────────────────────
+export const FAVORIS_MAX = 200;
+
+/** Favoris du compte : seulement les colonnes publiques du produit (jamais son prix fournisseur). */
+export async function mesFavoris(admin: SupabaseClient, uid: string) {
+  const { data, error } = await admin.from('favoris').select('product_id, created_at')
+    .eq('profile_id', uid).order('created_at', { ascending: false }).limit(FAVORIS_MAX);
+  if (error) {
+    if (tableAbsente(error.code)) return { migrationRequise: true, favoris: [] };
+    throw new CompteError('Favoris indisponibles. Réessayez.', 503);
+  }
+  const ids = (data || []).map((f) => f.product_id);
+  if (!ids.length) return { migrationRequise: false, favoris: [] };
+  const { data: produits } = await admin.from('products').select('id, name, slug, images, public_price, status, stock, mode_prix').in('id', ids);
+  const p = new Map((produits || []).map((x: any) => [x.id, x]));
+  return {
+    migrationRequise: false,
+    favoris: ids.map((id) => p.get(id)).filter(Boolean).map((x: any) => ({
+      id: x.id as string, nom: x.name as string, slug: x.slug as string,
+      image: Array.isArray(x.images) ? x.images[0] || null : null,
+      // Prix de gros : le prix dépend du revendeur, on n'affiche pas le prix conseillé.
+      prix: x.mode_prix === 'gros' ? null : Number(x.public_price) || null,
+      disponible: x.status === 'approved' && (x.stock == null || Number(x.stock) > 0),
+    })),
+  };
+}
+
+export async function basculerFavori(admin: SupabaseClient, uid: string, produitId: unknown, actif: unknown) {
+  if (typeof produitId !== 'string' || !produitId || produitId.length > 64) throw new CompteError('Produit manquant.', 400);
+  if (actif === false) {
+    const { error } = await admin.from('favoris').delete().eq('profile_id', uid).eq('product_id', produitId);
+    if (error) throw new CompteError('Favori non retiré. Réessayez.', 503);
+    return { favori: false };
+  }
+  const { count } = await admin.from('favoris').select('product_id', { count: 'exact', head: true }).eq('profile_id', uid);
+  if ((count || 0) >= FAVORIS_MAX) throw new CompteError(`${FAVORIS_MAX} favoris au plus.`, 409);
+  const { data: produit } = await admin.from('products').select('id').eq('id', produitId).eq('status', 'approved').maybeSingle();
+  if (!produit) throw new CompteError('Produit introuvable.', 404);
+  const { error } = await admin.from('favoris').upsert({ profile_id: uid, product_id: produitId }, { onConflict: 'profile_id,product_id', ignoreDuplicates: true });
+  if (error) throw new CompteError(tableAbsente(error.code) ? 'Les favoris seront disponibles après la mise à jour de Suguba.' : 'Favori non enregistré. Réessayez.', 503);
+  return { favori: true };
+}
+
+// ── C2 : destinataires ──────────────────────────────────────────────────────
+export const DESTINATAIRES_MAX = 20;
+
+export interface Destinataire { id: string; nom: string; telephone: string; ville: string; quartier: string | null; repere: string | null; relation: string | null }
+
+/** Contrôle d'un destinataire saisi (logique pure). */
+export function normaliserDestinataire(v: unknown): Omit<Destinataire, 'id'> {
+  const o = (v && typeof v === 'object' ? v : {}) as Record<string, unknown>;
+  const texte = (x: unknown, max: number) => (typeof x === 'string' ? x.trim().replace(/\s+/g, ' ').slice(0, max) : '');
+  const nom = texte(o.nom, 80);
+  const telephone = texte(o.telephone, 24).replace(/[^\d+]/g, '');
+  const chiffres = telephone.replace(/\D/g, '');
+  if (nom.length < 2) throw new CompteError('Indiquez le nom du destinataire.', 400);
+  if (chiffres.length < 8 || chiffres.length > 15) throw new CompteError('Indiquez un numéro de téléphone valide.', 400);
+  return {
+    nom, telephone, ville: texte(o.ville, 60) || 'Bamako',
+    quartier: texte(o.quartier, 80) || null, repere: texte(o.repere, 200) || null, relation: texte(o.relation, 40) || null,
+  };
+}
+
+export async function mesDestinataires(admin: SupabaseClient, uid: string) {
+  const [liste, profil] = await Promise.all([
+    admin.from('destinataires').select('id, nom, telephone, ville, quartier, repere, relation')
+      .eq('profile_id', uid).order('created_at', { ascending: false }).limit(DESTINATAIRES_MAX),
+    admin.from('profiles').select('full_name, phone, city, metadata').eq('id', uid).maybeSingle(),
+  ]);
+  const p = profil.data as any;
+  const tel = p?.phone && !String(p.phone).includes('@') ? String(p.phone) : '';
+  // « Pour moi » : les coordonnées du compte.
+  const moi = { nom: p?.full_name || '', telephone: tel, ville: p?.city || 'Bamako', quartier: p?.metadata?.neighborhood || null };
+  if (liste.error) {
+    if (tableAbsente(liste.error.code)) return { migrationRequise: true, moi, destinataires: [] as Destinataire[] };
+    throw new CompteError('Destinataires indisponibles. Réessayez.', 503);
+  }
+  return { migrationRequise: false, moi, destinataires: (liste.data || []) as Destinataire[] };
+}
+
+export async function gererDestinataire(admin: SupabaseClient, uid: string, corps: Record<string, unknown>) {
+  if (corps.action === 'supprimer') {
+    if (typeof corps.id !== 'string') throw new CompteError('Destinataire manquant.', 400);
+    const { error } = await admin.from('destinataires').delete().eq('id', corps.id).eq('profile_id', uid);
+    if (error) throw new CompteError('Suppression impossible. Réessayez.', 503);
+    return { ok: true };
+  }
+  const d = normaliserDestinataire(corps.destinataire);
+  if (corps.action === 'modifier') {
+    if (typeof corps.id !== 'string') throw new CompteError('Destinataire manquant.', 400);
+    const { data, error } = await admin.from('destinataires').update(d).eq('id', corps.id).eq('profile_id', uid).select('id').maybeSingle();
+    if (error) throw new CompteError('Modification impossible. Réessayez.', 503);
+    if (!data) throw new CompteError('Destinataire introuvable.', 404);
+    return { id: data.id as string };
+  }
+  if (corps.action !== 'ajouter') throw new CompteError('Action inconnue.', 400);
+  const { count } = await admin.from('destinataires').select('id', { count: 'exact', head: true }).eq('profile_id', uid);
+  if ((count || 0) >= DESTINATAIRES_MAX) throw new CompteError(`${DESTINATAIRES_MAX} destinataires au plus : supprimez-en un d’abord.`, 409);
+  const { data, error } = await admin.from('destinataires').insert({ ...d, profile_id: uid }).select('id').maybeSingle();
+  if (error) throw new CompteError(tableAbsente(error.code) ? 'Les destinataires seront disponibles après la mise à jour de Suguba.' : 'Enregistrement impossible. Réessayez.', 503);
+  return { id: (data as any)?.id as string };
 }

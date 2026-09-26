@@ -41,7 +41,7 @@ de l'un à l'autre dans **Compte › Profils**.
 | Rôle | Ce qu'il fait | Espace |
 |---|---|---|
 | **Client / visiteur** | Achète ou demande un devis, suit sa commande, valide les étapes d'une prestation, suit des boutiques. **Pas besoin de compte.** | `/`, `/p/…`, `/panier`, `/track`, `/recu/…`, `/devis/…` |
-| **Client avec compte** (facultatif) | Retrouve ses commandes, reçus et devis **sur tous ses téléphones** ; ajoute les achats faits sans compte depuis son téléphone. | `/compte/commandes` |
+| **Client avec compte** (facultatif) | Retrouve ses commandes, reçus et devis **sur tous ses téléphones** ; ajoute les achats faits sans compte depuis son téléphone ; favoris, destinataires enregistrés, « Commander à nouveau », « Recommander ». | `/compte/commandes`, `/compte/favoris`, `/compte/destinataires` |
 | **Revendeur** | Choisit des offres, les partage, vend, encaisse des commissions, ouvre sa boutique, participe aux missions et campagnes. | `/reseller/…` |
 | **Fournisseur** | Publie ses offres, répond aux devis, remet lui-même ou prépare pour le livreur, déclare les étapes, lance des campagnes. | `/supplier/…` |
 | **Livreur** | Récupère et livre les colis, encaisse les espèces, les remet à la caisse. | `/driver`, `/driver/earnings` |
@@ -84,6 +84,10 @@ Un admin **sans rôle d'équipe n'a aucun droit** d'équipe.
   nouvelle clé pour ouvrir son reçu (seul son hash est gardé). Une ancienne commande ne
   s'ajoute au compte qu'avec la clé de son reçu. « Mes commandes » est dans le menu de
   tout compte.
+- **Compte client (C2)** : favoris (cœur sur la fiche, jamais de prix fournisseur),
+  destinataires enregistrés proposés à la commande (« Pour qui commandez-vous ? »),
+  « Commander à nouveau » au prix et au stock du jour, « Recommander » à un proche sans
+  commission (le revendeur d'origine garde la vente).
 - ⚠️ Les e-mails de connexion partent encore de l'expéditeur par défaut de Supabase et
   peuvent arriver en **spam**. Solution prévue : SMTP **Resend** + DNS du domaine
   `sugubaml.com` (chez Hostinger) — **pas encore vérifiés**.
@@ -448,7 +452,7 @@ ne quitte pas le serveur autrement (jamais envoyée puis cachée) :
 | Missions | `src/lib/reseau/missions-db.ts` (`compter_evenement_mission`), `src/lib/reseau/preuves-missions.ts` |
 | Paiement au résultat | `src/lib/reseau/resultats*.ts`, `/api/reseau/visite`, SQL `enregistrer_resultat_campagne` / `decider_resultat_campagne`, tables `visites_mesurees` et `campagne_resultats` |
 | Trésorerie | `src/lib/caisse-livreur.ts` (plafond), `src/lib/paiements-recus.ts`, SQL `fonds_recus` / `liberer_commissions_echues`, tables `paiements_recus` et `tresorerie_reglages` |
-| Compte client | `src/lib/compte-client.ts`, `/api/compte/commandes`, colonnes `customer_profile_id`, table `acces_cles` |
+| Compte client | `src/lib/compte-client.ts`, `/api/compte/commandes`, `/api/compte/favoris`, `/api/compte/destinataires`, colonnes `customer_profile_id`, tables `acces_cles`, `favoris`, `destinataires` |
 | Coordonnées | `src/lib/acces-contacts.ts` (règles par dossier), table `acces_coordonnees` |
 | Protection lot 3 | `src/lib/protection.ts` (baisses de la part Suguba, analyse des messages), `src/lib/messagerie.ts`, `src/lib/suspensions.ts`, SQL `comptes_lies`, tables `conversations`, `messages`, `journal_part_suguba`, `suspensions` |
 | Réglages | `platform_settings` (prix) et `reseau_reglages` (réseau) |
@@ -456,7 +460,7 @@ ne quitte pas le serveur autrement (jamais envoyée puis cachée) :
 | Paiement | `src/lib/saspay.ts`, `/api/payments/saspay/*`, `/api/webhooks/saspay` |
 | Reçu et QR | `src/lib/recu-commande.ts`, `src/lib/qr-remise.ts`, `src/lib/remise-qr.ts` |
 | Stockage privé | buckets `sav-photos`, `etapes-photos`, `preuves-missions` |
-| Tests | `npm test` (247 tests, Node + PostgreSQL embarqué PGlite) |
+| Tests | `npm test` (250 tests, Node + PostgreSQL embarqué PGlite) |
 | Guide | `docs/guide/guide.json` + `/admin/guide` |
 
 **Variables d'environnement** (valeurs dans Vercel) : `NEXT_PUBLIC_SUPABASE_URL`,
@@ -515,8 +519,6 @@ données) :
 - Paiement en ligne des campagnes et sponsorisations, remboursement du solde non utilisé.
 - Prévenir le client sans compte d'une étape à valider (aujourd'hui, le fournisseur lui
   demande d'ouvrir son reçu).
-- **Compte client C2** : favoris, destinataires enregistrés (« Pour moi · Pour un proche
-  au Mali »), « Commander à nouveau », « Recommander à un proche » sans commission.
 - **Compte client C3** : diaspora = même compte avec un destinataire au Mali ; n'afficher
   le paiement par carte (SasPay) qu'après un vrai paiement test.
 
