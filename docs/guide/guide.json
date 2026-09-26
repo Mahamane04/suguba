@@ -192,6 +192,30 @@
  "journal": [
   {
    "date": "2026-09-26",
+   "titre": "Protection Suguba — lot 3 : échanges, comptes liés, part Suguba, suspension",
+   "demande": "Lot 3 de la « Protection Suguba » : messagerie interne rattachée aux dossiers avec détection des contournements ; comptes liés exclus des résultats payés ; réduction de la part Suguba seulement avec un droit dédié et un motif ; suspension motivée et contestable, sans effacer les engagements en cours.",
+   "realise": [
+    "Messagerie : questions revendeur → fournisseur sur une offre, échanges client ↔ fournisseur dans le devis ; message avec numéro, lien, e-mail ou invitation à traiter hors Suguba retenu pour vérification (Admin › Messages à vérifier) ; références techniques libres ; 30 messages par jour.",
+    "Comptes liés (même compte, équipe du fournisseur, même numéro) : participation refusée aux campagnes de ce fournisseur, garde-fou en base.",
+    "Part Suguba : droit dédié « Baisser la part Suguba » (Super Admin par défaut) et motif obligatoire pour toute baisse (réglages, codes promo, prix de gros, prix d’un produit sans part Suguba) ; journal non modifiable.",
+    "Suspension : motif obligatoire, notification, page « Suspension » pour contester ; commandes en cours et gains dus signalés à l’admin, jamais effacés."
+   ],
+   "ecarts": [
+    "Pièces jointes dans la messagerie : pas encore (texte seul).",
+    "Comptes liés : repérés par compte, équipe et numéro ; une même personne avec deux numéros différents n’est pas détectée automatiquement.",
+    "Engagement de non-contournement : à faire rédiger juridiquement (hors application)."
+   ],
+   "pages": [
+    "rev-questions",
+    "fou-questions",
+    "adm-messages",
+    "compte-suspension",
+    "devis-client"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-26",
    "titre": "Protection Suguba — lot 2 : coordonnées par dossier",
    "demande": "Lot 2 de la « Protection Suguba » : chaque intervenant ne reçoit une coordonnée que pour un dossier et une étape où il en a besoin ; aucune donnée interne chez les partenaires ; traçabilité.",
    "realise": [
@@ -1179,6 +1203,10 @@
     {
      "nom": "Visite qualifiée (invisible)",
      "role": "Arrivé par le lien d’un revendeur (?ref=), le visiteur qui reste 20 s et touche l’écran est compté comme visite qualifiée. Rien ne s’affiche ; aucune IP n’est gardée."
+    },
+    {
+     "nom": "Poser une question au fournisseur",
+     "role": "Revendeur connecté : ouvre une conversation avec le fournisseur du produit, dans « Mes questions »."
     }
    ],
    "suite": [
@@ -1269,6 +1297,10 @@
     {
      "nom": "Refuser",
      "role": "Clôt le devis ; une nouvelle demande reste possible."
+    },
+    {
+     "nom": "Échanger avec le vendeur",
+     "role": "Messages avec le fournisseur, dans le dossier du devis (clé de ce téléphone). Les messages avec un numéro ou un lien sont vérifiés par Suguba."
     }
    ],
    "suite": [
@@ -2501,6 +2533,30 @@
    }
   },
   {
+   "id": "compte-suspension",
+   "role": "revendeur",
+   "titre": "Suspension",
+   "chemin": "/compte/suspension",
+   "but": "Voir le motif d’une suspension d’un espace (revendeur, fournisseur, livreur) et la contester.",
+   "elements": [
+    {
+     "nom": "Motif",
+     "role": "Écrit par l’équipe Suguba au moment de la suspension ; les gains déjà acquis et les commandes en cours ne sont pas perdus."
+    },
+    {
+     "nom": "Contester la décision",
+     "role": "Une fois par suspension ; l’équipe voit la contestation dans Admin › Utilisateurs."
+    }
+   ],
+   "suite": [
+    {
+     "id": "notifications",
+     "libelle": "Notifications"
+    }
+   ],
+   "note": "Pas de capture : visible seulement pour un compte suspendu."
+  },
+  {
    "id": "rev-missions",
    "role": "revendeur",
    "titre": "Missions",
@@ -2530,6 +2586,10 @@
     {
      "nom": "Campagnes au résultat",
      "role": "« Visites qualifiées » ou « Demandes qualifiées » : payé à chaque résultat (80 % du prix fixé par le fournisseur), sans objectif à atteindre. Une visite compte quand la personne reste 20 s sur le produit et touche l’écran ; une demande quand le fournisseur répond au devis ou que Suguba confirme la commande. Chaque personne ou client compte une fois ; gains retirables 7 jours après chaque résultat."
+    },
+    {
+     "nom": "Comptes liés",
+     "role": "Un revendeur lié au fournisseur d’une campagne (même compte, membre de son équipe, même numéro) ne peut pas y participer."
     }
    ],
    "suite": [
@@ -2794,6 +2854,30 @@
    }
   },
   {
+   "id": "rev-questions",
+   "role": "revendeur",
+   "titre": "Mes questions",
+   "chemin": "/reseller/questions",
+   "but": "Poser une question au fournisseur d’un produit (disponibilité, caractéristique, délai) sans échanger de coordonnées.",
+   "elements": [
+    {
+     "nom": "Liste des questions",
+     "role": "Une conversation par produit ; ouvrir pour lire et répondre."
+    },
+    {
+     "nom": "Message",
+     "role": "Prix, conditions et paiements passent par Suguba. Un message avec un numéro, un lien, une adresse e-mail ou une proposition de traiter ailleurs est vérifié par l’équipe avant d’être remis (« en vérification par Suguba »)."
+    }
+   ],
+   "suite": [
+    {
+     "id": "fiche-produit",
+     "libelle": "« Poser une question au fournisseur » sur la fiche produit"
+    }
+   ],
+   "note": "Pas de capture : nécessite une conversation réelle."
+  },
+  {
    "id": "rev-verification",
    "role": "revendeur",
    "titre": "Mon profil vérifié",
@@ -2984,6 +3068,10 @@
     {
      "nom": "Coordonnées du client",
      "role": "Téléphone et repère visibles tant que la demande attend votre réponse. Après votre proposition, le client répond depuis son reçu ; pour le joindre, passez par Suguba."
+    },
+    {
+     "nom": "Messages avec le client",
+     "role": "Conversation du devis ; remplace l’appel une fois la proposition envoyée."
     }
    ],
    "suite": [
@@ -2993,6 +3081,30 @@
     }
    ],
    "note": "Pas de capture : il faut une offre « sur devis » et une vraie demande. Vérifié par les tests automatiques (parcours complet et SQL)."
+  },
+  {
+   "id": "fou-questions",
+   "role": "fournisseur",
+   "titre": "Questions des revendeurs",
+   "chemin": "/supplier/questions",
+   "but": "Répondre aux questions des revendeurs sur vos offres, sans échanger de coordonnées.",
+   "elements": [
+    {
+     "nom": "Liste",
+     "role": "Une conversation par produit et par revendeur (« Awa D. »)."
+    },
+    {
+     "nom": "Répondre",
+     "role": "Les messages avec un numéro, un lien ou une invitation à traiter hors Suguba sont vérifiés avant d’être remis."
+    }
+   ],
+   "suite": [
+    {
+     "id": "fou-devis",
+     "libelle": "Demandes de devis"
+    }
+   ],
+   "note": "Pas de capture : nécessite une conversation réelle."
   },
   {
    "id": "fou-ajouter",
@@ -3453,6 +3565,10 @@
     {
      "nom": "Débloquer avant terme",
      "role": "Sur une vente en espèces pas encore reversée, c’est une AVANCE de Suguba : motif obligatoire, gardé avec le nom de l’admin et la date. Réglages économiques : « Plafond d’espèces non versées »."
+    },
+    {
+     "nom": "Baisser la part Suguba",
+     "role": "Réglages qui réduisent la part de Suguba (marge, taux, part revendeur relevée, code promo, gain sur le prix de gros) ou prix d’un produit qui ne lui laisse rien : droit « Baisser la part Suguba » (Super Admin) et motif obligatoire, gardés dans un journal non modifiable."
     }
    ],
    "suite": [
@@ -3678,6 +3794,10 @@
     {
      "nom": "Carte",
      "role": "Statut (Actif…), code revendeur, ventes et commissions."
+    },
+    {
+     "nom": "Suspendre ce rôle",
+     "role": "Motif obligatoire (le partenaire le voit et peut le contester) ; la réponse indique les commandes en cours et les gains qui restent dus, à traiter à part. La contestation s’affiche sur la fiche."
     }
    ],
    "suite": [
@@ -3900,6 +4020,30 @@
     {
      "id": "adm-devis",
      "libelle": "Devis"
+    }
+   ],
+   "note": "Pas de capture : page réservée aux admins (session de démonstration refusée pour les captures)."
+  },
+  {
+   "id": "adm-messages",
+   "role": "admin",
+   "titre": "Messages à vérifier",
+   "chemin": "/admin/messages",
+   "but": "Vérifier les messages retenus : numéro, lien, adresse e-mail ou proposition de traiter hors Suguba.",
+   "elements": [
+    {
+     "nom": "Remettre",
+     "role": "Le message est remis au destinataire (ex. une référence légitime prise pour un numéro)."
+    },
+    {
+     "nom": "Refuser",
+     "role": "Motif obligatoire, visible par l’auteur. Pastille « déjà refusés » pour repérer les récidives."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-acces-coordonnees",
+     "libelle": "Accès aux coordonnées"
     }
    ],
    "note": "Pas de capture : page réservée aux admins (session de démonstration refusée pour les captures)."

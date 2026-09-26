@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import {
-  Gauge, Contact,
+  Gauge, Contact, MessageSquareWarning,
   ShoppingBag, Boxes, Store, Users, Wallet, Megaphone, Target,
   ShieldCheck, Settings, BarChart3, LifeBuoy, UserCog, Radio, ChevronRight, Gift, Banknote, FileText, Hammer, Network,
 } from 'lucide-react';
@@ -83,6 +83,7 @@ const DOMAINES: Domaine[] = [
     entrees: [
       { libelle: 'Équipe et permissions', href: '/admin/equipe', icone: UserCog, aide: 'Qui a le droit de faire quoi' },
       { libelle: 'Accès aux coordonnées', href: '/admin/acces-coordonnees', icone: Contact, aide: 'Qui a reçu les coordonnées de quels dossiers' },
+      { libelle: 'Messages à vérifier', href: '/admin/messages', icone: MessageSquareWarning, aide: 'Numéros, liens et propositions de traiter hors Suguba' },
       { libelle: 'Paramètres et commissions', href: '/admin#reglages', icone: Settings, aide: 'Frais, commissions, livraison, points relais' },
     ],
   },

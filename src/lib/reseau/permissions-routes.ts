@@ -34,6 +34,8 @@ export const PERMISSION_PAR_ROUTE: Record<string, Permission> = {
   'GET /api/admin/resultats': 'mission.gerer',
   'GET /api/admin/paiements-recus': 'finance.lire',
   'GET /api/admin/acces-coordonnees': 'commande.lire',
+  'GET /api/admin/messages': 'utilisateur.moderer',
+  'POST /api/admin/messages': 'utilisateur.moderer',
   'POST /api/admin/paiements-recus': 'finance.payer',
   'POST /api/admin/resultats': 'mission.gerer',
   'GET /api/admin/priorite-reseau': 'boutique.lire',

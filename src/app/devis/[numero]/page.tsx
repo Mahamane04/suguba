@@ -9,6 +9,7 @@ import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 import { devisAccessKey, rememberOrderAccess } from '@/lib/order-access-client';
 import { whatsappHelper } from '@/lib/whatsapp-helper';
 import { CheckCircle2, Clock, FileText, QrCode, XCircle } from 'lucide-react';
+import FilMessages from '@/components/messagerie/FilMessages';
 
 interface DevisClient {
   numero: string;
@@ -187,6 +188,14 @@ export default function DevisClientPage() {
           <Button fullWidth variant="secondary" href={`/p/${devis.produit.slug}/devis`}>Faire une nouvelle demande</Button>
         )}
 
+        {/* Échanger avec le vendeur dans le dossier (Protection Suguba, lot 3). */}
+        {['demande', 'proposee', 'acceptee'].includes(devis.statut) && (
+          <details className="rounded-2xl bg-white border border-slate-200 p-4 text-sm">
+            <summary className="font-bold text-slate-900 cursor-pointer">Échanger avec le vendeur</summary>
+            <div className="mt-3"><FilDevisClient numero={devis.numero} /></div>
+          </details>
+        )}
+
         <a href={whatsappHelper.getSupportChatLink(devis.numero)} target="_blank" rel="noopener noreferrer"
           className="h-12 w-full rounded-2xl bg-suguba-wa hover:bg-[#20bd5a] text-suguba-profond text-sm font-bold inline-flex items-center justify-center gap-2">
           <WhatsAppIcon className="w-4 h-4" /> Une question ? Écrivez à Suguba
@@ -195,4 +204,21 @@ export default function DevisClientPage() {
       </main>
     </div>
   );
+}
+
+/** Messages du devis, avec la clé gardée sur ce téléphone. */
+function FilDevisClient({ numero }: { numero: string }) {
+  const appel = useCallback(async (action: 'lire' | 'envoyer', texte?: string) => {
+    const r = await fetch('/api/devis/messages', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ numero, accessKey: devisAccessKey(numero), action, texte }),
+    });
+    return { ok: r.ok, j: await r.json().catch(() => ({})) };
+  }, [numero]);
+  const charger = useCallback(async () => { const { ok, j } = await appel('lire'); if (!ok) throw new Error(j.error); return j.messages || []; }, [appel]);
+  const envoyer = useCallback(async (texte: string) => {
+    const { ok, j } = await appel('envoyer', texte);
+    return ok ? { avertissement: j.avertissement } : { error: j.error || 'Envoi impossible.' };
+  }, [appel]);
+  return <FilMessages charger={charger} envoyer={envoyer} placeholder="Précisez votre besoin, un créneau, une question…" />;
 }

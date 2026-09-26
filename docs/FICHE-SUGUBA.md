@@ -2,8 +2,9 @@
 
 > Mise à jour le **26 septembre 2026** (offres et services, devis, prestations à étapes,
 > « Priorité au réseau », campagnes encadrées, paiement des sponsorisations,
-> rémunération au résultat, **Protection Suguba : trésorerie et coordonnées par
-> dossier**). Résumé de
+> rémunération au résultat, **Protection Suguba : trésorerie, coordonnées par
+> dossier, messagerie, comptes liés, part Suguba sous droit dédié, suspension
+> motivée**). Résumé de
 > tout ce qu'il faut savoir sur la plateforme : à quoi elle sert, qui fait quoi, comment
 > l'argent circule, comment elle est protégée et comment on la fait évoluer. Pour le
 > détail page par page, voir le **guide des parcours** (`/admin/guide`, réservé à
@@ -376,6 +377,25 @@ ne quitte pas le serveur autrement (jamais envoyée puis cachée) :
 - Un numéro déjà communiqué peut avoir été copié : le masquage limite l'exposition, il
   ne remplace pas l'**engagement de non-contournement** (à rédiger juridiquement).
 
+**Échanges, comptes liés, part Suguba, suspension** (Protection Suguba, lot 3)
+- **Messagerie interne rattachée au dossier** : questions revendeur → fournisseur sur
+  une offre (« Poser une question au fournisseur », « Mes questions », « Questions des
+  revendeurs ») ; échanges client ↔ fournisseur dans le devis. Texte seul, 30 messages
+  par jour. Un message avec un **numéro, un lien, une adresse e-mail ou une invitation à
+  traiter hors Suguba** (« WhatsApp », « payez directement »…) attend la vérification
+  de l'équipe (**Admin › Messages à vérifier** : remettre, ou refuser avec un motif) ;
+  une référence de pièce ou un numéro de série passe. Prix et conditions passent par
+  les actions prévues (devis, commande), pas par la conversation.
+- **Comptes liés** (même compte, membre de l'équipe du fournisseur, même numéro) :
+  participation refusée aux campagnes de ce fournisseur, garde-fou en base.
+- **Part Suguba** : toute baisse (marge nette, taux, part revendeur relevée, code
+  promo, gain sur le prix de gros, prix d'un produit qui ne laisse rien à Suguba) exige
+  le droit **« Baisser la part Suguba »** (Super Admin par défaut) et un **motif** ;
+  chaque baisse est gardée dans un journal que personne ne peut modifier ni effacer.
+- **Suspension d'un partenaire** : motif obligatoire, notification, page
+  **« Suspension »** pour la contester ; l'admin voit la contestation et, en
+  suspendant, les commandes en cours et les gains encore dus (rien n'est effacé).
+
 **Argent et commandes**
 - Montants, prix, commissions, numéros et codes **calculés côté serveur**.
 - Opérations sensibles **atomiques** en base (commande, retrait, livraison, versement,
@@ -419,12 +439,13 @@ ne quitte pas le serveur autrement (jamais envoyée puis cachée) :
 | Paiement au résultat | `src/lib/reseau/resultats*.ts`, `/api/reseau/visite`, SQL `enregistrer_resultat_campagne` / `decider_resultat_campagne`, tables `visites_mesurees` et `campagne_resultats` |
 | Trésorerie | `src/lib/caisse-livreur.ts` (plafond), `src/lib/paiements-recus.ts`, SQL `fonds_recus` / `liberer_commissions_echues`, tables `paiements_recus` et `tresorerie_reglages` |
 | Coordonnées | `src/lib/acces-contacts.ts` (règles par dossier), table `acces_coordonnees` |
+| Protection lot 3 | `src/lib/protection.ts` (baisses de la part Suguba, analyse des messages), `src/lib/messagerie.ts`, `src/lib/suspensions.ts`, SQL `comptes_lies`, tables `conversations`, `messages`, `journal_part_suguba`, `suspensions` |
 | Réglages | `platform_settings` (prix) et `reseau_reglages` (réseau) |
 | Session | `src/lib/session.ts`, `src/lib/active-session.ts`, `src/middleware.ts` |
 | Paiement | `src/lib/saspay.ts`, `/api/payments/saspay/*`, `/api/webhooks/saspay` |
 | Reçu et QR | `src/lib/recu-commande.ts`, `src/lib/qr-remise.ts`, `src/lib/remise-qr.ts` |
 | Stockage privé | buckets `sav-photos`, `etapes-photos`, `preuves-missions` |
-| Tests | `npm test` (239 tests, Node + PostgreSQL embarqué PGlite) |
+| Tests | `npm test` (243 tests, Node + PostgreSQL embarqué PGlite) |
 | Guide | `docs/guide/guide.json` + `/admin/guide` |
 
 **Variables d'environnement** (valeurs dans Vercel) : `NEXT_PUBLIC_SUPABASE_URL`,
@@ -468,12 +489,14 @@ données) :
   le dispatch refusé) ; paiement reçu en double refusé, annulation avec motif.
 - **Coordonnées** : un livreur ne voit plus le téléphone d'une course livrée ; un
   fournisseur ne voit le client qu'après « Organiser la remise ».
+- **Messagerie** : question d'un revendeur sur une offre, réponse du fournisseur ;
+  message avec un numéro retenu puis remis ou refusé dans « Messages à vérifier ».
+- **Part Suguba** : baisser un taux dans les réglages → motif demandé ; suspension d'un
+  compte de test avec motif, puis contestation depuis « Suspension ».
 
 **Prochaines évolutions**
-- **Protection Suguba, lot 3** : messagerie interne « Poser une question » (offre, devis,
-  commande) avec détection des tentatives de contournement ; comptes liés (même personne
-  ou structure) exclus des résultats payés ; réduction de la part Suguba seulement avec
-  un droit dédié et un motif ; suspension d'un partenaire avec motif et contestation.
+- Messagerie : pièces jointes (photos) dans les échanges.
+- Comptes liés : une même personne avec deux numéros n'est pas détectée automatiquement.
 - **Engagement de non-contournement** fournisseur / revendeur : à faire rédiger et
   valider juridiquement au Mali (hors application).
 - **Lot 3 en ligne, interrupteur coupé** : décider quand allumer « Payer les résultats »
@@ -484,6 +507,8 @@ données) :
 - Retrouver son reçu sur un autre téléphone.
 
 **Configuration et comptes**
+- **Équipe fournisseur** : sa table n'existe pas en production (SQL de l'équipe jamais
+  exécuté) — inviter des membres ne fonctionne pas tant qu'il ne l'est pas.
 - **E-mails en spam** : configurer Resend (SMTP + DNS chez Hostinger, sans toucher au SPF).
 - **Compte principal** (`infos@microofficeml.com`) sans numéro WhatsApp.
 - **Ancien compte fournisseur** `microoffice16@yahoo.fr` (0 produit) : à supprimer ou non.

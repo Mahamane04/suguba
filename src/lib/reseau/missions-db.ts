@@ -157,6 +157,10 @@ export async function rejoindreMission(
   const { error } = await a
     .from('mission_participants')
     .upsert({ mission_id: missionId, reseller_id: resellerId }, { onConflict: 'mission_id,reseller_id' });
+  // Comptes liés (Protection Suguba, lot 3) : garde-fou en base.
+  if (error && /COMPTE_LIE/.test(error.message)) {
+    return { ok: false, erreur: 'Vous êtes lié à ce fournisseur (même compte, même équipe ou même numéro) : vous ne pouvez pas participer à sa campagne.' };
+  }
   if (error) return { ok: false, erreur: error.message };
   return { ok: true };
 }

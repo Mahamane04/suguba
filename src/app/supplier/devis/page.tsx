@@ -7,6 +7,7 @@ import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface'
 import Button from '@/components/ui/Button';
 import { Field, Input, Textarea } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
+import FilMessages from '@/components/messagerie/FilMessages';
 
 interface DemandeDevis {
   id: string;
@@ -121,7 +122,7 @@ export default function DevisFournisseurPage() {
                   </a>
                 )}
                 {!d.client.telephone && d.statut === 'proposee' && (
-                  <p>Le client répond à votre proposition depuis son reçu. Pour le joindre, passez par Suguba.</p>
+                  <p>Le client répond à votre proposition depuis son reçu. Pour échanger avec lui, utilisez « Messages » ci-dessous.</p>
                 )}
                 {d.viaRevendeur && <p className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> Client apporté par un revendeur</p>}
               </div>
@@ -134,6 +135,12 @@ export default function DevisFournisseurPage() {
                 </div>
               )}
               {d.motifRefus && <p className="text-xs text-slate-600">Motif du refus : {d.motifRefus}</p>}
+              {['demande', 'proposee', 'acceptee'].includes(d.statut) && (
+                <details className="rounded-2xl border border-slate-200 p-3 text-sm">
+                  <summary className="font-bold text-slate-900 cursor-pointer">Messages avec le client</summary>
+                  <div className="mt-3"><FilDevisFournisseur quoteId={d.id} /></div>
+                </details>
+              )}
               {d.commande && <p className="text-xs font-bold text-emerald-800">Commande {d.commande} créée : suivez-la dans « Commandes à préparer ».</p>}
 
               {['demande', 'proposee'].includes(d.statut) && (ouvert?.id === d.id ? (
@@ -237,4 +244,27 @@ function FormRefus({ demande, onFini }: { demande: DemandeDevis; onFini: (ok: bo
       </div>
     </div>
   );
+}
+
+/** Messages d'un devis côté fournisseur (Protection Suguba, lot 3). */
+function FilDevisFournisseur({ quoteId }: { quoteId: string }) {
+  const fil = React.useRef<Promise<string | null> | null>(null);
+  const idFil = React.useCallback(() => (fil.current ??= fetch('/api/messages', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'ouvrir_devis', quoteId }),
+  }).then((r) => r.json()).then((j) => j?.id || null).catch(() => null)), [quoteId]);
+  const charger = React.useCallback(async () => {
+    const id = await idFil();
+    if (!id) throw new Error('Messagerie indisponible.');
+    const r = await fetch(`/api/messages?c=${id}`, { cache: 'no-store' });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error);
+    return j.messages || [];
+  }, [idFil]);
+  const envoyer = React.useCallback(async (texte: string) => {
+    const id = await idFil();
+    const r = await fetch('/api/messages', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'envoyer', c: id, texte }) });
+    const j = await r.json().catch(() => ({}));
+    return r.ok ? { avertissement: j.avertissement } : { error: j.error || 'Envoi impossible.' };
+  }, [idFil]);
+  return <FilMessages charger={charger} envoyer={envoyer} placeholder="Une précision sur le besoin, un créneau de visite…" />;
 }

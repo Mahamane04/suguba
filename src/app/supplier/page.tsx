@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import CarteAccesReseau from '@/components/reseau/CarteAccesReseau';
-import { Store as StoreIcone, Users as UsersIcone, Megaphone as MegaphoneIcone, BarChart3 as BarChartIcone, UsersRound as EquipeIcone, Rocket as RocketIcone } from 'lucide-react';
+import { Store as StoreIcone, Users as UsersIcone, Megaphone as MegaphoneIcone, BarChart3 as BarChartIcone, UsersRound as EquipeIcone, Rocket as RocketIcone, MessageCircleQuestion as QuestionIcone } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import PhotosProduitModal from '@/components/product/PhotosProduitModal';
 import {
@@ -121,6 +121,10 @@ export default function SupplierDashboardPage() {
             <Button href="/supplier/devis" variant="ghost">
               <FileText className="w-4 h-4" />
               <span>Demandes de devis</span>
+            </Button>
+            <Button href="/supplier/questions" variant="ghost">
+              <QuestionIcone className="w-4 h-4" />
+              <span>Questions des revendeurs</span>
             </Button>
             <Button href="/supplier/inventory" variant="ghost">
               <Package className="w-4 h-4" />

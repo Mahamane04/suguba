@@ -6,6 +6,7 @@ import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { chargerReglages } from '@/lib/platform-settings';
 import { calculerTarif } from '@/lib/pricing';
+import { adminPeut } from '@/lib/reseau/db';
 
 /**
  * Fixe le prix de vente d'un produit et l'approuve — admin seul.
@@ -34,7 +35,8 @@ export async function POST(req: NextRequest) {
   const admin = getSupabaseAdmin();
   if (!admin) return NextResponse.json({ error: 'Base indisponible.' }, { status: 503 });
 
-  const { productId, publicPrice } = await req.json().catch(() => ({}));
+  const { productId, publicPrice, motif: motifBrut } = await req.json().catch(() => ({}));
+  const motif = typeof motifBrut === 'string' ? motifBrut.trim().slice(0, 500) : '';
   const prixVente = Number(publicPrice);
   if (!productId || !Number.isFinite(prixVente) || prixVente <= 0) {
     return NextResponse.json({ error: 'Produit et prix de vente requis.' }, { status: 400 });
@@ -66,6 +68,22 @@ export async function POST(req: NextRequest) {
       },
       { status: 400 },
     );
+  }
+
+  // Protection Suguba (lot 3) : un prix qui ne laisse RIEN à Suguba (ou lui
+  // fait perdre de l'argent) n'est pas une simple mise à jour de prix.
+  if (tarif.margeSuguba <= 0) {
+    if (!(await adminPeut(session.uid, 'marge.reduire'))) {
+      return NextResponse.json({ error: 'À ce prix, Suguba ne gagne rien sur ce produit : réservé aux membres qui ont le droit « Baisser la part Suguba ».' }, { status: 403 });
+    }
+    if (motif.length < 5) {
+      return NextResponse.json({ error: 'À ce prix, Suguba ne gagne rien sur ce produit : indiquez le motif.', motifRequis: true }, { status: 409 });
+    }
+    const { error: eJournal } = await admin.from('journal_part_suguba').insert({
+      admin_id: session.uid, motif,
+      changements: [{ cle: `produit.${productId}`, libelle: `Prix de « ${produit.name} »`, avant: Number(produit.public_price) || null, apres: prixVente, margeSuguba: tarif.margeSuguba }],
+    });
+    if (eJournal) return NextResponse.json({ error: 'Journal de la part Suguba indisponible : prix non enregistré. Réessayez.' }, { status: 503 });
   }
 
   const { error } = await admin

@@ -19,6 +19,7 @@ import { ETAPES, libelleTypeOffre, normaliserTypeOffre } from '@/lib/offre';
 import { normaliserCodeRevendeur, revendeurAncre } from '@/lib/ancrage-revendeur';
 import OffresRevendeurs, { type OffreRevendeurVue } from '@/components/product/OffresRevendeurs';
 import VisiteQualifiee from '@/components/product/VisiteQualifiee';
+import BoutonQuestionFournisseur from '@/components/messagerie/BoutonQuestionFournisseur';
 
 const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} FCFA`;
 
@@ -302,6 +303,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 <span>Partager</span>
               </button>
             </div>
+
+            {/* Revendeur connecté : question au fournisseur, sans échange de coordonnées (lot 3). */}
+            {monCode && product.supplierId && <BoutonQuestionFournisseur produitId={product.id} />}
 
             {/* Téléphone : nom, prix et Commander juste sous la photo. */}
             <div ref={blocAchatRef} className="md:hidden space-y-2">

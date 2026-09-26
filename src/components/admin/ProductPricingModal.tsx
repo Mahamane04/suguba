@@ -67,12 +67,20 @@ export default function ProductPricingModal({ product, isOpen, onClose }: Produc
     setErreur('');
     setEnvoi(true);
     try {
-      const res = await fetch('/api/admin/products/price', {
+      const envoyer = (motif?: string) => fetch('/api/admin/products/price', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: product.id, publicPrice: prixVente }),
+        body: JSON.stringify({ productId: product.id, publicPrice: prixVente, motif }),
       });
-      const json = await res.json();
+      let res = await envoyer();
+      let json = await res.json();
+      // Prix sans part Suguba (Protection Suguba, lot 3) : motif obligatoire.
+      if (res.status === 409 && json.motifRequis) {
+        const motif = window.prompt(`${json.error}\n\nMotif :`);
+        if (!motif) { setErreur('Prix non enregistré : un motif est obligatoire.'); return; }
+        res = await envoyer(motif);
+        json = await res.json();
+      }
       if (!res.ok) {
         setErreur(json.error || 'Échec de l\'enregistrement.');
         return;

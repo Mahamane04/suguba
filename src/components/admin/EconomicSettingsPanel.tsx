@@ -171,12 +171,21 @@ export default function EconomicSettingsPanel() {
     setMessage('');
     setEnvoi(true);
     try {
-      const res = await fetch('/api/admin/settings', {
+      const envoyer = (motif?: string) => fetch('/api/admin/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reglages: r }),
+        body: JSON.stringify({ reglages: r, motif }),
       });
-      const json = await res.json();
+      let res = await envoyer();
+      let json = await res.json();
+      // Baisse de la part Suguba (Protection Suguba, lot 3) : motif obligatoire, gardé au journal.
+      if (res.status === 409 && json.motifRequis) {
+        const liste = (json.baisses || []).map((b: { libelle: string }) => `• ${b.libelle}`).join('\n');
+        const motif = window.prompt(`Ces changements réduisent la part de Suguba :\n${liste}\n\nMotif (promotion, lancement, accord commercial…) :`);
+        if (!motif) { setErreur('Rien n’a été enregistré : un motif est obligatoire pour baisser la part de Suguba.'); return; }
+        res = await envoyer(motif);
+        json = await res.json();
+      }
       if (!res.ok) {
         setErreur(json.error || 'Échec de l\'enregistrement.');
         return;

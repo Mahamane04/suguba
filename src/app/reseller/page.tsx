@@ -9,7 +9,7 @@ import BottomNav from '@/components/common/BottomNav';
 import CarteAccesReseau from '@/components/reseau/CarteAccesReseau';
 import BandeauDemarrage from '@/components/reseau/BandeauDemarrage';
 import SectionSponsorises from '@/components/reseau/SectionSponsorises';
-import { Store as StoreIcone, Target as TargetIcone, Share2 as Share2Icone, UserPlus as UserPlusIcone, Users as UsersIcone, ShieldCheck as ShieldCheckIcone, Palette as PaletteIcone, CalendarDays as CalendarIcone, Factory as FactoryIcone, Tag as TagIcone } from 'lucide-react';
+import { Store as StoreIcone, Target as TargetIcone, Share2 as Share2Icone, UserPlus as UserPlusIcone, Users as UsersIcone, ShieldCheck as ShieldCheckIcone, Palette as PaletteIcone, CalendarDays as CalendarIcone, Factory as FactoryIcone, Tag as TagIcone, MessageCircleQuestion as QuestionIcone } from 'lucide-react';
 import CreateOrderModal from '@/components/reseller/CreateOrderModal';
 import Button from '@/components/ui/Button';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
@@ -345,6 +345,7 @@ export default function ResellerDashboardPage() {
             { libelle: 'Mes prix', href: '/reseller/prix', icone: TagIcone, aide: 'Articles au prix de gros : fixez votre prix' },
             { libelle: 'Mes boutiques', href: '/compte/boutiques', icone: StoreIcone, aide: 'Plusieurs boutiques avec la formule Pro' },
             { libelle: 'Fournisseurs', href: '/reseller/fournisseurs', icone: FactoryIcone, aide: 'Suivre et découvrir les fournisseurs' },
+            { libelle: 'Mes questions', href: '/reseller/questions', icone: QuestionIcone, aide: 'Vos questions aux fournisseurs sur leurs offres' },
             { libelle: 'Missions', href: '/reseller/missions', icone: TargetIcone, aide: 'Des objectifs, une récompense' },
             { libelle: 'Créer un visuel', href: '/reseller/createur', icone: PaletteIcone, aide: 'Statut WhatsApp, publication, affiche avec QR' },
             { libelle: 'Mon calendrier', href: '/reseller/calendrier', icone: CalendarIcone, aide: 'Planifier vos publications' },

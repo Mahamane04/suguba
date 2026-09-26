@@ -13,6 +13,8 @@ export const PERMISSIONS = [
   'boutique.lire', 'boutique.moderer',
   'utilisateur.lire', 'utilisateur.moderer', 'utilisateur.promouvoir',
   'finance.lire', 'finance.payer', 'commission.configurer',
+  // Baisser la part de Suguba (marge, taux, code promo…) : réservé, motif obligatoire (Protection Suguba, lot 3).
+  'marge.reduire',
   'marketing.lire', 'marketing.gerer',
   'mission.gerer', 'sponsorisation.gerer', 'publicite.gerer',
   'verification.lire', 'verification.decider',

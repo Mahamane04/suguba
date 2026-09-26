@@ -3,6 +3,7 @@ import { sessionAvecRole } from '@/lib/reseau/route-session';
 import { adminPeut } from '@/lib/reseau/db';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { CATALOGUE_BADGES } from '@/lib/reseau/badges';
+import { reactiver, suspendre, suspensionsEnCours, SuspensionError } from '@/lib/suspensions';
 
 /**
  * Annuaire admin (§ pages 38 à 41) : clients, revendeurs, fournisseurs,
@@ -78,12 +79,15 @@ export async function GET(req: NextRequest) {
   }
 
   const statut = new Map((roles || []).map((r: any) => [r.profile_id, r.status]));
+  // Suspension motivée en cours (Protection Suguba, lot 3), et sa contestation.
+  const suspensions = await suspensionsEnCours(admin, ids, role);
   const lignes = (profils || [])
     .map((p: any) => ({
       id: p.id, nom: p.full_name, telephone: p.phone, email: p.email, ville: p.city, code: p.reseller_code,
       statut: statut.get(p.id), inscritLe: p.created_at,
       badges: (badges || []).filter((b: any) => b.profile_id === p.id).map((b: any) => b.badge),
       stats: stats.get(p.id) || {},
+      suspension: suspensions.get(p.id) || null,
     }))
     .filter((p) => !q || [p.nom, p.telephone, p.email, p.code].some((v) => String(v || '').toLowerCase().includes(q)))
     .sort((a, b) => String(b.inscritLe).localeCompare(String(a.inscritLe)))
@@ -105,9 +109,15 @@ export async function POST(req: NextRequest) {
     if (!(await adminPeut(session.uid, 'utilisateur.moderer'))) return NextResponse.json({ error: 'Votre rôle ne permet pas de suspendre un compte.' }, { status: 403 });
     const role = ROLE[c.onglet as keyof typeof ROLE];
     if (!role || !['active', 'suspended'].includes(c.statut)) return NextResponse.json({ error: 'Action invalide.' }, { status: 400 });
-    const { error } = await admin.from('profile_roles').update({ status: c.statut }).eq('profile_id', c.profileId).eq('role', role);
-    if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-    return NextResponse.json({ success: true });
+    // Suspension motivée et contestable ; les engagements en cours restent
+    // (commandes, gains) et sont renvoyés à l'admin pour qu'il les traite.
+    try {
+      if (c.statut === 'suspended') return NextResponse.json({ success: true, ...(await suspendre(admin, session.uid, c.profileId, role, c.motif)) });
+      return NextResponse.json({ success: true, ...(await reactiver(admin, session.uid, c.profileId, role, c.decision)) });
+    } catch (e) {
+      if (e instanceof SuspensionError) return NextResponse.json({ error: e.message }, { status: e.status });
+      return NextResponse.json({ error: 'Action impossible. Réessayez.' }, { status: 500 });
+    }
   }
 
   if (c.action === 'badge') {

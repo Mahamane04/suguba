@@ -4,6 +4,8 @@ import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
 import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { chargerReglages } from '@/lib/platform-settings';
+import { adminPeut } from '@/lib/reseau/db';
+import { baissesPartSuguba } from '@/lib/protection';
 import {
   tarifProduit,
   completerReglages,
@@ -72,6 +74,24 @@ export async function PUT(req: NextRequest) {
   const erreurs = validerReglages(reglages);
   if (erreurs.length > 0) {
     return NextResponse.json({ error: erreurs.join(' '), erreurs }, { status: 400 });
+  }
+
+  // Protection Suguba (lot 3) : baisser la part de Suguba n'est pas une
+  // modification technique. Droit dédié, motif obligatoire, trace gardée.
+  const { reglages: actuels } = await chargerReglages();
+  const baisses = baissesPartSuguba(actuels, reglages);
+  const motif = typeof body.motif === 'string' ? body.motif.trim().slice(0, 500) : '';
+  if (baisses.length > 0) {
+    if (!(await adminPeut(session.uid, 'marge.reduire'))) {
+      return NextResponse.json({ error: `Ces changements réduisent la part de Suguba (${baisses.map((b) => b.libelle).join(', ')}) : réservé aux membres qui ont le droit « Baisser la part Suguba ».` }, { status: 403 });
+    }
+    if (motif.length < 5) {
+      return NextResponse.json({ error: 'Ces changements réduisent la part de Suguba : indiquez le motif (promotion, lancement, accord commercial…).', motifRequis: true, baisses }, { status: 409 });
+    }
+    const { error: eJournal } = await admin.from('journal_part_suguba').insert({ admin_id: session.uid, motif, changements: baisses });
+    if (eJournal) {
+      return NextResponse.json({ error: 'Journal de la part Suguba indisponible : enregistrement annulé. Réessayez.' }, { status: 503 });
+    }
   }
 
   const { error } = await admin.from('platform_settings').upsert({

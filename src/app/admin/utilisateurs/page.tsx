@@ -38,8 +38,23 @@ export default function UtilisateursPage() {
     const r = await fetch('/api/admin/utilisateurs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ...corps, onglet }) });
     const d = await r.json();
     if (!r.ok) { toast(d.error || 'Action impossible.', { ton: 'erreur' }); return; }
-    toast(succes, { ton: 'succes' });
+    // Suspension (Protection Suguba, lot 3) : ce qui reste en cours est à traiter à part.
+    const e = d.engagements as { commandesEnCours: number; gainsEnAttente: number; gainsDisponibles: number } | undefined;
+    const reste = e && (e.commandesEnCours || e.gainsEnAttente || e.gainsDisponibles)
+      ? ` À traiter : ${e.commandesEnCours} commande(s) en cours${e.gainsEnAttente + e.gainsDisponibles > 0 ? `, ${fcfa(e.gainsEnAttente + e.gainsDisponibles)} de gains qui restent dus` : ''}.`
+      : '';
+    toast(succes + reste, { ton: 'succes' });
     await charger();
+  };
+  const suspendreRole = (id: string) => {
+    const motif = window.prompt('Motif de la suspension (le partenaire le verra et pourra le contester) :');
+    if (!motif || motif.trim().length < 5) { if (motif !== null) toast('Motif trop court : 5 caractères minimum.', { ton: 'erreur' }); return; }
+    action({ action: 'statut', profileId: id, statut: 'suspended', motif }, 'Rôle suspendu.');
+  };
+  const reactiverRole = (id: string) => {
+    const decision = window.prompt('Décision (facultatif, le partenaire la verra) :');
+    if (decision === null) return;
+    action({ action: 'statut', profileId: id, statut: 'active', decision }, 'Rôle réactivé.');
   };
 
   return (
@@ -94,6 +109,12 @@ export default function UtilisateursPage() {
                   {u.statut === 'active' ? 'Actif' : u.statut === 'suspended' ? 'Suspendu' : 'En attente'}
                 </StatusPill>
               </button>
+              {u.suspension && (
+                <div className="rounded-2xl bg-rose-50 text-rose-900 px-3 py-2 text-xs space-y-1">
+                  <p><strong>Suspendu le {new Date(u.suspension.depuis).toLocaleDateString('fr-FR')}</strong> : {u.suspension.motif}</p>
+                  {u.suspension.contestation && <p className="text-amber-900"><strong>Contestation</strong> ({new Date(u.suspension.contesteeLe).toLocaleDateString('fr-FR')}) : {u.suspension.contestation}</p>}
+                </div>
+              )}
               {u.badges.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">{u.badges.map((b: string) => <StatusPill key={b} ton="info"><ShieldCheck className="w-3 h-3" />{badges.find((x) => x.cle === b)?.libelle || b.replace(/_/g, ' ')}</StatusPill>)}</div>
               )}
@@ -111,9 +132,9 @@ export default function UtilisateursPage() {
                     })}
                   </div>
                   {u.statut === 'suspended' ? (
-                    <Button size="sm" variant="ghost" onClick={() => action({ action: 'statut', profileId: u.id, statut: 'active' }, 'Compte réactivé.')}><RotateCcw className="w-3.5 h-3.5" />Réactiver</Button>
+                    <Button size="sm" variant="ghost" onClick={() => reactiverRole(u.id)}><RotateCcw className="w-3.5 h-3.5" />Réactiver</Button>
                   ) : (
-                    <Button size="sm" variant="danger" onClick={() => action({ action: 'statut', profileId: u.id, statut: 'suspended' }, 'Compte suspendu.')}><Ban className="w-3.5 h-3.5" />Suspendre ce rôle</Button>
+                    <Button size="sm" variant="danger" onClick={() => suspendreRole(u.id)}><Ban className="w-3.5 h-3.5" />Suspendre ce rôle</Button>
                   )}
                 </div>
               )}
