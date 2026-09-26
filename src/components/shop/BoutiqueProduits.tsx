@@ -21,9 +21,12 @@ import { Search, ChevronDown, X } from 'lucide-react';
 export default function BoutiqueProduits({
   produits,
   refCode,
+  presentation = false,
 }: {
   produits: ProduitVitrine[];
   refCode: string | null;
+  /** Boutique fournisseur en présentation (lot C) : ni prix ni achat. */
+  presentation?: boolean;
 }) {
   const [recherche, setRecherche] = useState('');
   // Catégories repliées manuellement — vides par défaut : tout est déplié
@@ -106,6 +109,7 @@ export default function BoutiqueProduits({
                       produit={{ id: p.id, slug: p.slug, nom: p.nom, prix: p.prix, categorie: p.categorie, images: p.images, enStock: p.enStock }}
                       refCode={refCode}
                       priority={i < 4}
+                      presentation={presentation}
                     />
                   ))}
                 </div>

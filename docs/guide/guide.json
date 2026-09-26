@@ -192,6 +192,27 @@
  "journal": [
   {
    "date": "2026-09-26",
+   "titre": "Priorité au réseau : boutiques fournisseurs et prix de gros (lot C)",
+   "demande": "Boutiques revendeurs = vitrines commerciales ; boutiques fournisseurs masquées de l'annuaire client, en page de présentation sans achat direct par défaut ; article au prix de gros : offres des revendeurs à leur prix, pas d'offre parallèle au prix conseillé ; réglages admin, ouverture possible fournisseur par fournisseur.",
+   "realise": [
+    "Page admin « Priorité au réseau » : annuaire fournisseurs, achat direct (global ou par fournisseur), protection des prix de gros ; réglages fusionnés avec les primes de parrainage (aucune page n'efface les réglages de l'autre).",
+    "« Près de chez moi » et la recherche ne proposent plus les boutiques fournisseurs (réglage).",
+    "Boutique fournisseur (/s/ et /boutique/) en présentation : prix retirés côté serveur, cartes « Voir le produit », « Découvrir les offres des revendeurs partenaires » et « Où acheter ces produits ? ». La boutique Suguba n'est pas concernée.",
+    "Fiche d'un article au prix de gros sans revendeur : offres des revendeurs actifs, à leur prix, du moins cher au plus cher ; « Commander » et le panier sont remplacés.",
+    "Serveur : commande ou panier sans revendeur refusés pour un article au prix de gros dès qu'un revendeur le propose. Sans offre revendeur, l'achat au prix conseillé reste possible."
+   ],
+   "ecarts": [
+    "Les cartes du catalogue (accueil) affichent encore le prix conseillé d'un article au prix de gros ; la fiche montre les offres réelles.",
+    "Pas de SQL : réglages dans reseau_reglages (existant)."
+   ],
+   "pages": [
+    "adm-priorite-reseau",
+    "fiche-produit"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-26",
    "titre": "Revendeur d'origine gardé pendant la navigation (lot B « Priorité au réseau »)",
    "demande": "Changer de page ne doit pas effacer une attribution revendeur valide : un visiteur arrivé par un lien ou une boutique revendeur reste rattaché à ce revendeur jusqu'à sa commande ; un client déjà rattaché garde son revendeur.",
    "realise": [
@@ -1004,6 +1025,10 @@
     {
      "nom": "Recommandé par …",
      "role": "Le revendeur par qui le client est arrivé (lien, boutique /r/ ou /boutique/), même après être passé par l’accueil ou une autre boutique."
+    },
+    {
+     "nom": "Vendu par nos revendeurs partenaires",
+     "role": "Article au prix de gros ouvert sans revendeur : liste des revendeurs qui le proposent, à leur prix (« À partir de » le moins cher), avec « Choisir cette offre ». Remplace « Commander » tant qu’un revendeur le propose."
     }
    ],
    "suite": [
@@ -3684,6 +3709,38 @@
     }
    ],
    "note": "Pas de capture : aucune prestation réelle pour l'instant ; la page affichera des noms et téléphones de clients (à masquer)."
+  },
+  {
+   "id": "adm-priorite-reseau",
+   "role": "admin",
+   "titre": "Priorité au réseau",
+   "chemin": "/admin/priorite-reseau",
+   "but": "Profil « Priorité au réseau de revendeurs » : les boutiques revendeurs vendent aux clients ; les fournisseurs se présentent sans devenir une caisse concurrente.",
+   "elements": [
+    {
+     "nom": "Boutiques fournisseurs dans l’annuaire client",
+     "role": "« Près de chez moi » et la recherche. Désactivé par défaut."
+    },
+    {
+     "nom": "Achat direct dans les boutiques fournisseurs",
+     "role": "Désactivé par défaut : la boutique d’un fournisseur est une page de présentation (sans prix ni achat) qui renvoie vers les revendeurs partenaires. Ouvrable pour tous, ou fournisseur par fournisseur."
+    },
+    {
+     "nom": "Protéger les articles au prix de gros",
+     "role": "Activé par défaut : sans revendeur, le client choisit l’offre d’un revendeur ; l’achat au prix conseillé n’est possible que si aucun revendeur ne propose l’article."
+    },
+    {
+     "nom": "Enregistrer",
+     "role": "Ne modifie jamais une commande déjà passée ni ses commissions."
+    }
+   ],
+   "suite": [
+    {
+     "id": "fiche-produit",
+     "libelle": "Côté client : les offres des revendeurs sur la fiche"
+    }
+   ],
+   "note": "Pas de capture : page réservée aux admins (session de démonstration refusée pour les captures)."
   },
   {
    "id": "adm-sav",

@@ -29,6 +29,8 @@ export const PERMISSION_PAR_ROUTE: Record<string, Permission> = {
   'POST /api/admin/review-profile': 'utilisateur.moderer',
   'GET /api/admin/sav': 'commande.lire',
   'GET /api/admin/devis': 'commande.lire',
+  'GET /api/admin/priorite-reseau': 'boutique.lire',
+  'POST /api/admin/priorite-reseau': 'plateforme.parametres',
   'GET /api/admin/prestations': 'commande.lire',
   'POST /api/admin/prestations': 'commande.modifier',
   'GET /api/admin/sav/photos': 'commande.lire',

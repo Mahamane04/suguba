@@ -21,7 +21,13 @@ export async function lireReglagesReseau(): Promise<ReglagesReseau> {
 export async function ecrireReglagesReseau(valeurs: unknown): Promise<ReglagesReseau | null> {
   const a = getSupabaseAdmin();
   if (!a) return null;
-  const propres = normaliserReglagesReseau(valeurs);
+  // Fusion avec l'existant : la page Récompenses n'envoie que les primes, la
+  // page « Priorité au réseau » que ses réglages — aucune ne doit effacer
+  // ceux de l'autre.
+  const { data: actuel, error: lecture } = await a.from('reseau_reglages').select('valeurs').eq('id', 1).maybeSingle();
+  if (lecture) return null;
+  const partiel = valeurs && typeof valeurs === 'object' ? valeurs as Record<string, unknown> : {};
+  const propres = normaliserReglagesReseau({ ...(actuel?.valeurs || {}), ...partiel });
   const { error } = await a
     .from('reseau_reglages')
     .upsert({ id: 1, valeurs: propres, updated_at: new Date().toISOString() }, { onConflict: 'id' });

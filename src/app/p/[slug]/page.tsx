@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { ETAPES, libelleTypeOffre, normaliserTypeOffre } from '@/lib/offre';
 import { normaliserCodeRevendeur, revendeurAncre } from '@/lib/ancrage-revendeur';
+import OffresRevendeurs, { type OffreRevendeurVue } from '@/components/product/OffresRevendeurs';
 
 const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} FCFA`;
 
@@ -76,6 +77,15 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
       .then((j) => j?.nom && setNomRecommandeur(j.nom))
       .catch(() => {});
   }, [refCode]);
+
+  const [offresGros, setOffresGros] = useState<{ offres: OffreRevendeurVue[]; achatDirect: boolean } | null>(null);
+  useEffect(() => {
+    if (product?.modePrix !== 'gros') return;
+    fetch(`/api/products/offres?slug=${encodeURIComponent(resolvedParams.slug)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => j && setOffresGros({ offres: j.offres || [], achatDirect: j.achatDirect !== false }))
+      .catch(() => {});
+  }, [product?.modePrix, resolvedParams.slug]);
 
   // Livraisons réussies de ce produit : chiffre réel, affiché seulement s'il
   // est supérieur à zéro (voir /api/products/livraisons).
@@ -157,11 +167,22 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   // « Service » / « Installation incluse » (2026-09-26)
   const typeOffreLibelle = libelleTypeOffre(normaliserTypeOffre(product.typeOffre));
   const surDevis = product.modeCommande === 'devis';
-  const libelleAction = outOfStock ? 'Rupture de stock' : surDevis ? 'Demander un devis' : 'Commander';
+  // Article au prix de gros consulté sans revendeur (lot C) : dès qu'un
+  // revendeur le propose, le client choisit son offre au lieu d'acheter au
+  // prix conseillé (le serveur refuse aussi l'achat direct).
+  const viaRevendeurs = product.modePrix === 'gros' && !refCode && Boolean(offresGros && !offresGros.achatDirect && offresGros.offres.length);
+  const libelleAction = outOfStock ? 'Rupture de stock' : surDevis ? 'Demander un devis' : viaRevendeurs ? 'Voir les offres' : 'Commander';
   const unitPrice = devis?.prixUnitaire ?? product.publicPrice;
+  // Via les revendeurs : le prix le plus bas de leurs offres, pas le prix conseillé.
+  const prixAffiche = viaRevendeurs ? Math.min(...offresGros!.offres.map((o) => o.prix)) : unitPrice;
+  const aPartirDe = surDevis || viaRevendeurs;
 
   const allerCommander = () => {
     if (outOfStock) return;
+    if (viaRevendeurs) {
+      document.getElementById(window.matchMedia('(min-width: 768px)').matches ? 'offres-revendeurs-bureau' : 'offres-revendeurs')?.scrollIntoView({ behavior: 'smooth' });
+      return;
+    }
     // Offre sur devis (lot 1b) : le client décrit son besoin au lieu de commander.
     if (surDevis) {
       router.push(`/p/${product.slug}/devis${refUrl ? `?ref=${encodeURIComponent(refUrl)}` : ''}`);
@@ -209,7 +230,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             }`}
           >
             <span className="text-sm font-bold text-slate-900 whitespace-nowrap">
-              {Math.round(unitPrice).toLocaleString('fr-FR')} F
+              {aPartirDe ? 'dès ' : ''}{Math.round(prixAffiche).toLocaleString('fr-FR')} F
             </span>
             <button
               type="button"
@@ -285,8 +306,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               <h1 className="text-xl font-bold text-slate-900 leading-tight">{product.name}</h1>
               <div className="flex items-center justify-between gap-3">
                 <p className="text-2xl font-bold text-suguba-brand whitespace-nowrap">
-                  {surDevis && <span className="block text-xs font-bold text-slate-500">À partir de</span>}
-                  {Math.round(unitPrice).toLocaleString('fr-FR')} <span className="text-base">FCFA</span>
+                  {aPartirDe && <span className="block text-xs font-bold text-slate-500">À partir de</span>}
+                  {Math.round(prixAffiche).toLocaleString('fr-FR')} <span className="text-base">FCFA</span>
                 </p>
                 <Button type="button" onClick={allerCommander} disabled={outOfStock} className="shrink-0">
                   <span>{libelleAction}</span>
@@ -294,7 +315,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 </Button>
               </div>
               <SelecteurVariantes slug={product.slug} />
-              {!surDevis && <BoutonAjoutPanier disabled={outOfStock} productId={product.id} quantite={1} />}
+              {viaRevendeurs && <OffresRevendeurs id="offres-revendeurs" slug={product.slug} offres={offresGros!.offres} />}
+              {!surDevis && !viaRevendeurs && <BoutonAjoutPanier disabled={outOfStock} productId={product.id} quantite={1} />}
               <p className="text-xs text-slate-500">
                 Sans créer de compte · Payez à la livraison
               </p>
@@ -380,7 +402,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             <div className="space-y-1">
               {typeOffreLibelle && <span className="inline-flex px-2.5 py-0.5 rounded-full bg-suguba-citron text-suguba-profond text-xs font-bold">{typeOffreLibelle}</span>}
               <h1 className="text-xl font-bold text-slate-900 leading-tight">{product.name}</h1>
-              <p className="text-3xl font-bold text-suguba-brand-dark">{surDevis && <span className="block text-xs font-bold text-slate-500">À partir de</span>}{fcfa(unitPrice)}</p>
+              <p className="text-3xl font-bold text-suguba-brand-dark">{aPartirDe && <span className="block text-xs font-bold text-slate-500">À partir de</span>}{fcfa(prixAffiche)}</p>
             </div>
 
             <SelecteurVariantes slug={product.slug} />
@@ -410,16 +432,24 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               </div>
             </div>
 
-            <div className="flex items-center justify-between text-sm border-t border-slate-100 pt-4">
-              <span className="text-slate-600">Sous-total</span>
-              <span className="font-bold text-slate-900">{fcfa(unitPrice * quantity)}</span>
-            </div>
+            {!viaRevendeurs && (
+              <div className="flex items-center justify-between text-sm border-t border-slate-100 pt-4">
+                <span className="text-slate-600">Sous-total</span>
+                <span className="font-bold text-slate-900">{fcfa(unitPrice * quantity)}</span>
+              </div>
+            )}
 
-            <Button type="button" onClick={allerCommander} disabled={outOfStock} size="lg" fullWidth>
-              <span>{libelleAction}</span>
-              <ArrowRight className="w-4 h-4" />
-            </Button>
-            {!surDevis && <BoutonAjoutPanier disabled={outOfStock} productId={product.id} quantite={quantity} />}
+            {viaRevendeurs ? (
+              <OffresRevendeurs id="offres-revendeurs-bureau" slug={product.slug} offres={offresGros!.offres} />
+            ) : (
+              <>
+                <Button type="button" onClick={allerCommander} disabled={outOfStock} size="lg" fullWidth>
+                  <span>{libelleAction}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Button>
+                {!surDevis && <BoutonAjoutPanier disabled={outOfStock} productId={product.id} quantite={quantity} />}
+              </>
+            )}
             <p className="text-xs text-slate-500 text-center">
               {product.modeRemise && product.modeRemise !== 'livreur'
                 ? 'Le vendeur vous contacte après la confirmation · Payez à la remise'

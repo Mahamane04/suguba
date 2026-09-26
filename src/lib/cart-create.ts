@@ -8,6 +8,7 @@ import { OrderCreationError, recu } from './order-create';
 import { depotsFournisseurs } from './depot-fournisseur';
 import { prixEnregistres } from './prix-revendeur';
 import { remiseDuProduit } from './offre';
+import { achatDirectBloque, MESSAGE_ACHAT_VIA_REVENDEUR, protectionPrixDeGros } from './offres-revendeurs';
 
 /**
  * Création d'un panier multi-articles — SERVEUR.
@@ -88,6 +89,15 @@ export async function creerPanier(admin: SupabaseClient | null, value: unknown, 
     if (result.error) indisponible();
     if (!result.data) throw new OrderCreationError('Code revendeur introuvable. Vérifiez le lien partagé.', 400);
     reseller = result.data;
+  }
+
+  // Priorité au réseau (lot C, 2026-09-26) : sans revendeur, un article au
+  // prix de gros ne s'achète pas au prix conseillé dès qu'un revendeur le
+  // propose — le client choisit l'offre d'un revendeur.
+  if (!reseller && produits.some((p: any) => p.mode_prix === 'gros') && await protectionPrixDeGros(admin)) {
+    for (const p of produits) {
+      if (await achatDirectBloque(admin, p, true)) throw new OrderCreationError(MESSAGE_ACHAT_VIA_REVENDEUR, 409);
+    }
   }
 
   const { data: settings, error: settingsError } = await admin.from('platform_settings')

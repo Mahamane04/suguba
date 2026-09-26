@@ -316,6 +316,8 @@ export async function boutiquesQuiRecrutent(limite = 12): Promise<BoutiqueReseau
 export async function boutiquesParQuartier(
   quartier: string,
   limite = 40,
+  /** Faux (profil « Priorité au réseau », 2026-09-26) : seules les boutiques revendeurs et Suguba. */
+  avecFournisseurs = true,
 ): Promise<{ boutique: BoutiqueReseau; niveau: NiveauProximite; distanceKm: number }[]> {
   const a = getSupabaseAdmin();
   if (!a || !quartierReconnu(quartier)) return [];
@@ -327,7 +329,8 @@ export async function boutiquesParQuartier(
     .limit(500);
   if (error || !data) return [];
 
-  const boutiques = data.map(versBoutique);
+  const boutiques = data.map(versBoutique).filter((b) => avecFournisseurs || b.typeProprietaire !== 'supplier');
+  if (!avecFournisseurs) return classerParProximite(quartier, boutiques).slice(0, limite);
   const fournisseursSansQuartier = boutiques
     .filter((b) => !b.quartier && b.typeProprietaire === 'supplier' && b.proprietaireId)
     .map((b) => b.proprietaireId as string);

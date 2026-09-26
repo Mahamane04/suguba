@@ -8,6 +8,7 @@ import { depotsFournisseurs } from './depot-fournisseur';
 import { resoudrePrixRevendeur } from './prix-revendeur';
 import { prixMinimalGros } from './pricing';
 import { remiseDuProduit } from './offre';
+import { achatDirectBloque, MESSAGE_ACHAT_VIA_REVENDEUR, protectionPrixDeGros } from './offres-revendeurs';
 
 export class OrderCreationError extends Error {
   constructor(message: string, public status: number) { super(message); }
@@ -89,6 +90,15 @@ export async function creerCommande(admin: SupabaseClient | null, value: unknown
     if (result.error) indisponible();
     if (!result.data) throw new OrderCreationError('Code revendeur introuvable. Vérifiez le lien partagé.', 400);
     reseller = result.data;
+  }
+
+  // Priorité au réseau (lot C, 2026-09-26) : sans revendeur, un article au
+  // prix de gros ne s'achète pas au prix conseillé dès qu'un revendeur le
+  // propose — le client choisit l'offre d'un revendeur.
+  if (!reseller && [product].some((p: any) => p.mode_prix === 'gros') && await protectionPrixDeGros(admin)) {
+    for (const p of [product]) {
+      if (await achatDirectBloque(admin, p, true)) throw new OrderCreationError(MESSAGE_ACHAT_VIA_REVENDEUR, 409);
+    }
   }
 
   // Aucun repli silencieux sur des coûts par défaut en cas d'erreur de base.

@@ -46,6 +46,14 @@ export interface Boutique {
   /** Revendeur sans sélection : on montre le catalogue partageable à la place. */
   selectionVide: boolean;
   code: string | null;
+  /** Profil du fournisseur (boutiques fournisseur) : sert au profil « Priorité au réseau ». */
+  fournisseurId?: string | null;
+  /**
+   * Page de présentation (lot C, 2026-09-26) : vente directe fermée pour ce
+   * fournisseur. Pas de prix ni d'achat ; les revendeurs qui proposent ses
+   * produits sont mis en avant.
+   */
+  presentation?: { revendeurs: { nom: string; lien: string }[] } | null;
 }
 
 /** « Électro Diarra & Fils » → « electro-diarra-fils ». */
@@ -159,11 +167,12 @@ export async function chargerBoutiqueFournisseur(slug: string): Promise<Boutique
     livraisons: await compterLivraisons(admin, liste.map((p) => p.id)),
     selectionVide: false,
     code: null,
+    fournisseurId: fournisseur.profile_id || null,
   };
 }
 
 /** « Awa Traoré Diallo » → « Awa D. » : un prénom suffit pour une vitrine publique. */
-function nomPublic(nomComplet: string | null): string {
+export function nomPublic(nomComplet: string | null): string {
   const mots = String(nomComplet || '').trim().split(/\s+/).filter(Boolean);
   if (mots.length === 0) return 'Revendeur Suguba';
   if (mots.length === 1) return mots[0];

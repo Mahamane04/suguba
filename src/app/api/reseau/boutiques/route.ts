@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { boutiquesParQuartier, boutiquesQuiRecrutent } from '@/lib/reseau/boutiques';
+import { lireReglagesReseau } from '@/lib/reseau/recompenses';
 
 /**
  * Boutiques publiques.
@@ -13,7 +14,9 @@ import { boutiquesParQuartier, boutiquesQuiRecrutent } from '@/lib/reseau/boutiq
 export async function GET(req: NextRequest) {
   const quartier = req.nextUrl.searchParams.get('quartier')?.trim().slice(0, 80);
   if (quartier) {
-    const resultats = await boutiquesParQuartier(quartier);
+    // Profil « Priorité au réseau » : boutiques fournisseurs hors de l'annuaire client.
+    const { annuaireFournisseurs } = await lireReglagesReseau();
+    const resultats = await boutiquesParQuartier(quartier, 40, annuaireFournisseurs);
     return NextResponse.json({
       quartier,
       boutiques: resultats.map(({ boutique: b, niveau, distanceKm }) => ({

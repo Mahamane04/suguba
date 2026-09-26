@@ -7,6 +7,8 @@ import { chargerBoutiqueFournisseur, chargerBoutiqueRevendeur, chargerProduitsDe
 import { boutiqueParSlug } from '@/lib/reseau/boutiques';
 import { badgesDuCompte } from '@/lib/reseau/verifications-db';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { lireReglagesReseau } from '@/lib/reseau/recompenses';
+import { appliquerPrioriteReseau } from '@/lib/presentation-fournisseur';
 import { cookies } from 'next/headers';
 import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
 
@@ -74,8 +76,11 @@ async function charger(slug: string): Promise<Charge | null> {
       vitrine.produits = await chargerProduitsDeLaBoutique(boutique.id);
       vitrine.selectionVide = false;
     }
+    // Profil « Priorité au réseau » (lot C) : présentation sans prix ni achat
+    // tant que la vente directe n'est pas ouverte pour ce fournisseur.
+    const presentee = admin ? await appliquerPrioriteReseau(admin, vitrine, boutique.proprietaireId, await lireReglagesReseau()) : vitrine;
     return {
-      vitrine: { ...vitrine, ...enPlus, nom: boutique.nom || vitrine.nom, logo: boutique.logo || vitrine.logo, description: boutique.description || vitrine.description },
+      vitrine: { ...presentee, ...enPlus, nom: boutique.nom || vitrine.nom, logo: boutique.logo || vitrine.logo, description: boutique.description || vitrine.description },
       slugBoutique: boutique.slug,
       abonnes: boutique.abonnes,
       galerie: boutique.galerie,

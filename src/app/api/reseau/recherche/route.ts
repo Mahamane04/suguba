@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { lireReglagesReseau } from '@/lib/reseau/recompenses';
 
 /**
  * Recherche globale (§ Z) : produits, boutiques, fournisseurs, catégories.
@@ -21,7 +22,10 @@ export async function GET(req: NextRequest) {
   if (!admin) return NextResponse.json(vide);
   const m = motif(q);
 
-  const [produits, parCategorie, boutiques, fournisseurs] = await Promise.all([
+  // Profil « Priorité au réseau » (2026-09-26) : sans annuaire fournisseurs,
+  // la recherche client ne propose ni boutique ni vitrine de fournisseur.
+  const { annuaireFournisseurs } = await lireReglagesReseau();
+  const [produits, parCategorie, boutiquesBrutes, fournisseursBruts] = await Promise.all([
     admin.from('products').select('id, slug, name, category, images, public_price')
       .eq('status', 'approved').gt('public_price', 0).ilike('name', m).limit(24),
     admin.from('products').select('category').eq('status', 'approved').ilike('category', m).limit(200),
@@ -31,6 +35,8 @@ export async function GET(req: NextRequest) {
       .or(`company_name.ilike.${m.replace(/[,()]/g, ' ')},shop_display_name.ilike.${m.replace(/[,()]/g, ' ')}`).limit(12),
   ]);
 
+  const boutiques = { data: (boutiquesBrutes.data || []).filter((b: any) => annuaireFournisseurs || b.owner_type !== 'supplier') };
+  const fournisseurs = { data: annuaireFournisseurs ? fournisseursBruts.data || [] : [] };
   const categories = Array.from(new Set((parCategorie.data || []).map((p: any) => p.category).filter(Boolean))).slice(0, 8);
 
   return NextResponse.json({

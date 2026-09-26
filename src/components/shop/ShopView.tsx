@@ -9,7 +9,7 @@ import type { Boutique } from '@/lib/shop';
 import BadgeConfiance from '@/components/ui/BadgeConfiance';
 import { quartierReconnu } from '@/lib/reseau/proximite';
 import AncrageRevendeur from '@/components/common/AncrageRevendeur';
-import { ShieldCheck, Truck, KeyRound, Store, Users, MapPin, Pencil, ImagePlus } from 'lucide-react';
+import { ShieldCheck, Truck, KeyRound, Store, Users, MapPin, Pencil, ImagePlus, ArrowDown } from 'lucide-react';
 
 /**
  * Vitrine commune aux boutiques fournisseur (/s/), revendeur (/r/) et réseau
@@ -115,7 +115,7 @@ export default function ShopView({
             {/* Identité */}
             <div className="mt-3 space-y-2">
               <p className="text-xs font-bold uppercase tracking-wider text-suguba-brand-dark">
-                {estRevendeur ? 'Revendeur partenaire Suguba' : 'Boutique sur Suguba'}
+                {estRevendeur ? 'Revendeur partenaire Suguba' : boutique.presentation ? 'Fournisseur partenaire Suguba' : 'Boutique sur Suguba'}
               </p>
               <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight">{titre}</h1>
               {accroche && <p className="text-sm text-slate-600">{accroche}</p>}
@@ -156,6 +156,13 @@ export default function ShopView({
 
             {complement && <div className="mt-4">{complement}</div>}
 
+            {boutique.presentation && (
+              <a href="#revendeurs-partenaires"
+                className="mt-4 inline-flex items-center justify-center gap-2 h-11 px-5 rounded-2xl bg-suguba-profond hover:bg-suguba-profond-2 text-white text-xs font-bold">
+                Découvrir les offres des revendeurs partenaires <ArrowDown className="w-4 h-4" />
+              </a>
+            )}
+
             {lienModifier && visuelsManquants && (
               <Link
                 href={lienModifier}
@@ -193,7 +200,41 @@ export default function ShopView({
             <p className="text-xs text-slate-500">Revenez bientôt, la boutique se remplit.</p>
           </div>
         ) : (
-          <BoutiqueProduits produits={boutique.produits} refCode={refCode} />
+          <BoutiqueProduits produits={boutique.produits} refCode={refCode} presentation={Boolean(boutique.presentation)} />
+        )}
+
+        {/* Présentation du fournisseur (lot C) : on achète chez un revendeur partenaire. */}
+        {boutique.presentation && (
+          <section id="revendeurs-partenaires" className="bg-white rounded-3xl border border-slate-200 p-5 space-y-3 scroll-mt-24">
+            <h2 className="text-sm font-bold text-slate-900">Où acheter ces produits ?</h2>
+            {boutique.presentation.revendeurs.length > 0 ? (
+              <>
+                <p className="text-xs text-slate-600">
+                  Les produits de {boutique.nom} sont vendus par nos revendeurs partenaires, qui vous accompagnent jusqu’à la livraison.
+                </p>
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {boutique.presentation.revendeurs.map((r) => (
+                    <li key={r.lien}>
+                      <Link href={r.lien} className="flex items-center justify-between gap-3 min-h-11 rounded-2xl border border-slate-200 px-4 py-2.5 hover:border-suguba-profond">
+                        <span className="flex items-center gap-2.5 min-w-0">
+                          <span className="w-8 h-8 shrink-0 rounded-full bg-suguba-menthe text-suguba-profond text-xs font-bold flex items-center justify-center">{r.nom.charAt(0)}</span>
+                          <span className="min-w-0">
+                            <span className="block text-sm font-semibold text-slate-900 truncate">{r.nom}</span>
+                            <span className="block text-xs text-slate-500">Revendeur partenaire</span>
+                          </span>
+                        </span>
+                        <span className="text-xs font-bold text-suguba-profond shrink-0">Voir ses offres</span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </>
+            ) : (
+              <p className="text-xs text-slate-600">
+                Ouvrez un produit pour le commander sur Suguba : vous payez à la livraison.
+              </p>
+            )}
+          </section>
         )}
 
         <div className="bg-white rounded-3xl border border-slate-200 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">

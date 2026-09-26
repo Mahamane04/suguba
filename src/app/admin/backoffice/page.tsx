@@ -4,7 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import {
   ShoppingBag, Boxes, Store, Users, Wallet, Megaphone, Target,
-  ShieldCheck, Settings, BarChart3, LifeBuoy, UserCog, Radio, ChevronRight, Gift, Banknote, FileText, Hammer,
+  ShieldCheck, Settings, BarChart3, LifeBuoy, UserCog, Radio, ChevronRight, Gift, Banknote, FileText, Hammer, Network,
 } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import { Card } from '@/components/ui/Surface';
@@ -42,6 +42,7 @@ const DOMAINES: Domaine[] = [
     entrees: [
       { libelle: 'Utilisateurs', href: '/admin/utilisateurs', icone: Users, aide: 'Clients, revendeurs, fournisseurs, livreurs, badges' },
       { libelle: 'Boutiques', href: '/admin/boutiques', icone: Store, aide: 'Toutes les vitrines, modération' },
+      { libelle: 'Priorité au réseau', href: '/admin/priorite-reseau', icone: Network, aide: 'Annuaire fournisseurs, achat direct, prix de gros' },
     ],
   },
   {

@@ -64,6 +64,7 @@ export default function ProductCard({
   partageEnAvant = false,
   priority = false,
   sponsorisationId = null,
+  presentation = false,
   children,
 }: {
   produit: ProduitCarte;
@@ -79,6 +80,11 @@ export default function ProductCard({
    * résultat naturel trompe le client.
    */
   sponsorisationId?: string | null;
+  /**
+   * Boutique fournisseur en page de présentation (lot C, 2026-09-26) : ni
+   * prix ni achat ici, seulement « Voir le produit ».
+   */
+  presentation?: boolean;
   children?: React.ReactNode;
 }) {
   const monCode = useCodeRevendeur();
@@ -165,6 +171,10 @@ export default function ProductCard({
             {produit.nom}
           </h3>
         </Link>
+        {presentation ? (
+          <p className="text-xs text-slate-500">{produit.categorie}</p>
+        ) : (
+        <>
         <p className="text-base sm:text-lg font-bold text-slate-900 leading-none">
           {produit.prix.toLocaleString('fr-FR')} <span className="text-xs font-bold">F</span>
         </p>
@@ -173,9 +183,13 @@ export default function ProductCard({
             ? <>Vous gagnez <strong className="text-suguba-brand-dark">{produit.commission!.toLocaleString('fr-FR')} F</strong></>
             : 'Payez à la livraison'}
         </p>
+        </>
+        )}
 
         <div className="mt-auto pt-1.5 space-y-2">
-          {partageEnAvant ? (
+          {presentation ? (
+            <Button href={lien} variant="secondary" size="sm" fullWidth className="!h-9 !py-0">Voir le produit</Button>
+          ) : partageEnAvant ? (
             // Catalogue revendeur : partage direct + affiche pour le statut.
             <div className="flex items-center gap-2">
               {boutonPartage(true)}

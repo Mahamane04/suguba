@@ -2,6 +2,9 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import ShopView from '@/components/shop/ShopView';
 import { chargerBoutiqueFournisseur, URL_APP } from '@/lib/shop';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { lireReglagesReseau } from '@/lib/reseau/recompenses';
+import { appliquerPrioriteReseau } from '@/lib/presentation-fournisseur';
 
 /**
  * Boutique publique d'un fournisseur — /s/<adresse>.
@@ -54,8 +57,12 @@ export default async function BoutiqueFournisseurPage({ params, searchParams }: 
   const { slug } = await params;
   const { ref } = await searchParams;
 
-  const boutique = await chargerBoutiqueFournisseur(slug);
-  if (!boutique) notFound();
+  const brute = await chargerBoutiqueFournisseur(slug);
+  if (!brute) notFound();
+  const admin = getSupabaseAdmin();
+  // Profil « Priorité au réseau » (lot C) : page de présentation tant que la
+  // vente directe n'est pas ouverte pour ce fournisseur.
+  const boutique = admin ? await appliquerPrioriteReseau(admin, brute, brute.fournisseurId, await lireReglagesReseau()) : brute;
 
   // Une boutique fournisseur partagée par un revendeur garde son code : les
   // liens produits le transmettent, et la vente lui est attribuée.
