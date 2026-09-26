@@ -192,6 +192,28 @@
  "journal": [
   {
    "date": "2026-09-26",
+   "titre": "Recherche (R1) : une seule recherche, qui comprend les clients",
+   "demande": "Audit « catalogue et recherche à grande échelle », lot R1 : une recherche côté serveur, insensible aux accents, tolérante aux fautes, avec des synonymes gérés par l’admin, identique sur l’accueil et /recherche, au bon prix, sans réponse périmée ni faux « Aucun résultat » en cas de panne.",
+   "realise": [
+    "Fonction de recherche en base : accents et majuscules ignorés (« refrigerateur » trouve « Réfrigérateur »), fautes de frappe tolérées (« samsumg »), nom + catégorie + description, tous les mots utiles exigés, classement par pertinence.",
+    "Dictionnaire de synonymes (frigo, clim, tv, ordi…) et page admin « Recherche » pour l’enrichir et essayer une recherche.",
+    "Accueil et /recherche utilisent la même recherche ; /recherche affiche le prix du revendeur d’origine ou « dès » pour un article au prix de gros.",
+    "Réponses périmées annulées (« fri » n’écrase plus « frigo ») ; panne réseau : « Impossible de charger les résultats — Réessayer » (ou résultats simplifiés sur l’accueil)."
+   ],
+   "ecarts": [
+    "L’accueil télécharge encore tout le catalogue et l’affiche d’un bloc : pagination prévue au lot R2.",
+    "Pas encore de filtre de prix tapé dans la recherche (« frigo moins de 150000 »), ni de champ marque/référence.",
+    "Recherche dans une seule boutique : lot R3."
+   ],
+   "pages": [
+    "accueil",
+    "recherche",
+    "adm-recherche"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-26",
    "titre": "Compte client (C3) : diaspora",
    "demande": "Lot C3 : la diaspora utilise le même compte client avec un destinataire au Mali ; le destinataire n’accède qu’à ce qui sert à la réception ; ne pas promettre un paiement par carte non vérifié.",
    "realise": [
@@ -1073,7 +1095,7 @@
     },
     {
      "nom": "Barre de recherche",
-     "role": "Filtre les produits pendant la frappe. À partir de 2 lettres, un lien propose de chercher aussi dans les boutiques et les fournisseurs."
+     "role": "Cherche pendant la frappe, sans tenir compte des accents ni des fautes de frappe, dans le nom, la catégorie et la description ; les synonymes (« frigo », « tv ») marchent aussi. Les articles les plus pertinents passent devant. Si la connexion coupe : « Connexion instable : résultats simplifiés » et « Réessayer ». À partir de 2 lettres, un lien propose de chercher aussi dans les boutiques et les fournisseurs."
     },
     {
      "nom": "Catégories",
@@ -1183,15 +1205,19 @@
    "elements": [
     {
      "nom": "Champ de recherche",
-     "role": "Tapez un mot (« encre », « ventilateur »…). Les résultats se mettent à jour."
+     "role": "Tapez un mot (« encre », « ventilateur »…). Les accents, les majuscules et les petites fautes de frappe ne comptent pas ; les synonymes (« frigo ») marchent aussi. Les résultats se mettent à jour."
     },
     {
      "nom": "Résultats « Produits (n) »",
-     "role": "Chaque ligne ouvre la fiche du produit."
+     "role": "Classés par pertinence ; chaque ligne ouvre la fiche du produit. Prix du revendeur d’origine, ou « dès » le moins cher pour un article au prix de gros."
     },
     {
      "nom": "Boutiques / Fournisseurs",
      "role": "Apparaissent sous les produits quand le mot correspond à une boutique."
+    },
+    {
+     "nom": "Connexion coupée",
+     "role": "« Impossible de charger les résultats » et un bouton « Réessayer », au lieu d’un faux « Aucun résultat »."
     }
    ],
    "suite": [
@@ -3805,7 +3831,7 @@
    "elements": [
     {
      "nom": "Commerce",
-     "role": "Commandes · Produits · Nouveau produit · Boutique Suguba."
+     "role": "Commandes · Produits · Nouveau produit · Recherche · Boutique Suguba."
     },
     {
      "nom": "Utilisateurs",
@@ -3841,6 +3867,34 @@
    "capture": {
     "chemin": "/admin/backoffice"
    }
+  },
+  {
+   "id": "adm-recherche",
+   "role": "admin",
+   "titre": "Recherche",
+   "chemin": "/admin/recherche",
+   "but": "Régler la recherche des clients : relier leurs mots (« frigo ») aux mots du catalogue, et essayer une recherche telle qu’un visiteur la voit.",
+   "elements": [
+    {
+     "nom": "Explication",
+     "role": "La recherche ignore accents et majuscules, tolère les fautes de frappe et cherche dans le nom, la catégorie et la description."
+    },
+    {
+     "nom": "Essayer une recherche",
+     "role": "Montre les articles trouvés, dans l’ordre de pertinence, avec le prix que verrait un visiteur (« dès » pour un article au prix de gros)."
+    },
+    {
+     "nom": "Synonymes",
+     "role": "« Mot des clients » (un seul mot) ↔ « Mot du catalogue ». Valables dans les deux sens. Ajouter ou retirer ; 300 au plus. Droits : lecture « produit.lire », modification « produit.moderer »."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-backoffice",
+     "libelle": "Back-office"
+    }
+   ],
+   "note": "Pas de capture : page réservée aux admins (session de démonstration refusée pour les captures)."
   },
   {
    "id": "adm-commandes",

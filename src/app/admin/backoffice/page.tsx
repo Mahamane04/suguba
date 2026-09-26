@@ -5,7 +5,7 @@ import Link from 'next/link';
 import {
   Gauge, Contact, MessageSquareWarning,
   ShoppingBag, Boxes, Store, Users, Wallet, Megaphone, Target,
-  ShieldCheck, Settings, BarChart3, LifeBuoy, UserCog, Radio, ChevronRight, Gift, Banknote, FileText, Hammer, Network,
+  ShieldCheck, Settings, BarChart3, LifeBuoy, UserCog, Radio, ChevronRight, Gift, Banknote, FileText, Hammer, Network, Search,
 } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import { Card } from '@/components/ui/Surface';
@@ -34,6 +34,7 @@ const DOMAINES: Domaine[] = [
       { libelle: 'Commandes', href: '/admin/commandes', icone: ShoppingBag, aide: 'Toutes les commandes, recherche, paniers' },
       { libelle: 'Produits', href: '/admin/products', icone: Boxes, aide: 'Catalogue, modération, prix' },
       { libelle: 'Nouveau produit', href: '/admin/products/new', icone: Store, aide: 'Ajouter un article au catalogue' },
+      { libelle: 'Recherche', href: '/admin/recherche', icone: Search, aide: 'Synonymes des clients, essai de la recherche' },
       { libelle: 'Boutique Suguba', href: '/admin/boutique-suguba', icone: Store, aide: 'Suguba vendeuse de ses propres produits' },
     ],
   },

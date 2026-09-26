@@ -3,19 +3,20 @@
 import React, { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Search, Store, Factory, Tag, Loader2 } from 'lucide-react';
+import { Search, Store, Factory, Tag, Loader2, WifiOff } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import { Input } from '@/components/ui/Field';
 import { EmptyState } from '@/components/ui/Surface';
+import Button from '@/components/ui/Button';
 
 /**
  * Recherche globale (§ Z) : produits, boutiques, fournisseurs et catégories
- * sur une seule page. La recherche de l'accueil, elle, filtre seulement les
- * produits déjà affichés.
+ * sur une seule page. Les produits viennent de la même recherche serveur
+ * que l'accueil (R1, 2026-09-26) : accents, fautes, synonymes.
  */
 
 interface Resultats {
-  produits: { slug: string; nom: string; categorie: string; prix: number; image: string | null }[];
+  produits: { slug: string; nom: string; categorie: string; prix: number; mention: 'partenaire' | 'des' | null; image: string | null }[];
   boutiques: { lien: string; nom: string; accroche: string | null; logo: string | null; type: string; abonnes: number }[];
   fournisseurs: { lien: string; nom: string; logo: string | null }[];
   categories: string[];
@@ -34,18 +35,25 @@ function Contenu() {
   const [q, setQ] = useState(initial);
   const [res, setRes] = useState<Resultats | null>(null);
   const [enCours, setEnCours] = useState(false);
+  const [erreur, setErreur] = useState(false);
+  const [essai, setEssai] = useState(0);
 
+  // Une réponse arrivée après une frappe plus récente est ANNULÉE : celle de
+  // « fri » ne doit jamais remplacer celle de « frigo ».
   useEffect(() => {
     const texte = q.trim();
-    if (texte.length < 2) { setRes(null); return; }
+    if (texte.length < 2) { setRes(null); setErreur(false); setEnCours(false); return; }
     setEnCours(true);
+    const annulation = new AbortController();
     const minuterie = setTimeout(() => {
       router.replace(`/recherche?q=${encodeURIComponent(texte)}`, { scroll: false });
-      fetch(`/api/reseau/recherche?q=${encodeURIComponent(texte)}`)
-        .then((r) => r.json()).then(setRes).catch(() => undefined).finally(() => setEnCours(false));
+      fetch(`/api/reseau/recherche?q=${encodeURIComponent(texte)}`, { signal: annulation.signal })
+        .then(async (r) => { if (!r.ok) throw new Error('indisponible'); return r.json(); })
+        .then((j) => { setRes(j); setErreur(false); setEnCours(false); })
+        .catch(() => { if (!annulation.signal.aborted) { setErreur(true); setEnCours(false); } });
     }, 300);
-    return () => clearTimeout(minuterie);
-  }, [q, router]);
+    return () => { clearTimeout(minuterie); annulation.abort(); };
+  }, [q, router, essai]);
 
   const total = res ? res.produits.length + res.boutiques.length + res.fournisseurs.length + res.categories.length : 0;
 
@@ -57,7 +65,12 @@ function Contenu() {
         {enCours && <Loader2 className="w-4 h-4 text-slate-400 animate-spin absolute right-3.5 top-1/2 -translate-y-1/2" />}
       </div>
 
-      {q.trim().length < 2 ? null : res && total === 0 && !enCours ? (
+      {q.trim().length < 2 ? null : erreur && !enCours ? (
+        <div className="space-y-3">
+          <EmptyState icone={WifiOff} titre="Impossible de charger les résultats" texte="Vérifiez votre connexion, puis réessayez." />
+          <div className="text-center"><Button variant="secondary" size="md" onClick={() => setEssai((n) => n + 1)}>Réessayer</Button></div>
+        </div>
+      ) : res && total === 0 && !enCours ? (
         <EmptyState icone={Search} titre="Aucun résultat" texte="Essayez un autre mot, ou un mot plus court." />
       ) : res && (
         <div className="space-y-5">
@@ -82,7 +95,7 @@ function Contenu() {
                       <p className="text-sm font-bold text-slate-900 truncate">{p.nom}</p>
                       <p className="text-xs text-slate-500">{p.categorie}</p>
                     </div>
-                    <span className="text-sm font-bold text-slate-900 tabular-nums shrink-0">{p.prix.toLocaleString('fr-FR')} F</span>
+                    <span className="text-sm font-bold text-slate-900 tabular-nums shrink-0">{p.mention === 'des' && <span className="text-xs font-semibold text-slate-500">dès </span>}{p.prix.toLocaleString('fr-FR')} F</span>
                   </Link>
                 ))}
               </div>

@@ -10,6 +10,7 @@ import BoutiquesDuQuartier from '@/components/reseau/BoutiquesDuQuartier';
 import { useSponsorises, compterVues } from '@/lib/sponsorises';
 import { classerAvecSponsorises } from '@/lib/reseau/sponsoring';
 import { quartierReconnu } from '@/lib/reseau/proximite';
+import { correspondLocalement, motsUtiles } from '@/lib/recherche-texte';
 import Footer from '@/components/common/Footer';
 import Button from '@/components/ui/Button';
 import ProductCard, { carteDepuisProduit } from '@/components/product/ProductCard';
@@ -17,7 +18,7 @@ import { useSugubaStore, useCatalogueCharge, useQuartierClient, definirQuartierC
 import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
 import {
   ArrowRight, Search, Banknote,
-  ShieldCheck, Truck, TrendingUp, X, Store
+  ShieldCheck, Truck, TrendingUp, X, Store, WifiOff
 } from 'lucide-react';
 
 /* Page d'accueil réorganisée le 2026-09-09 en vitrine produit.
@@ -56,15 +57,35 @@ export default function HomePage() {
   const approvedProducts = state.products.filter(p => p.status === 'approved' && p.publicPrice > 0);
   const categories = ['all', ...Array.from(new Set(approvedProducts.map(p => p.category)))];
 
-  const requete = search.trim().toLowerCase();
-  const filtres = approvedProducts.filter((p) => {
-    const bonneCategorie = selectedCategory === 'all' || p.category === selectedCategory;
-    const correspond = !requete
-      || p.name.toLowerCase().includes(requete)
-      || p.description.toLowerCase().includes(requete)
-      || p.category.toLowerCase().includes(requete);
-    return bonneCategorie && correspond;
-  });
+  // Recherche R1 (2026-09-26) : la même recherche serveur que /recherche
+  // (accents, fautes de frappe, synonymes), qui renvoie les produits classés
+  // par pertinence. En attendant sa réponse, ou si la connexion coupe, un
+  // filtre local sans accents prend le relais — et la panne est signalée.
+  const requete = search.trim();
+  const [serveur, setServeur] = useState<{ requete: string; ids: string[] } | null>(null);
+  const [rechercheEnPanne, setRechercheEnPanne] = useState(false);
+  const [essaiRecherche, setEssaiRecherche] = useState(0);
+  useEffect(() => {
+    setRechercheEnPanne(false);
+    if (!motsUtiles(requete).length) { setServeur(null); return; }
+    const annulation = new AbortController();
+    const minuterie = setTimeout(() => {
+      fetch(`/api/reseau/recherche?format=ids&q=${encodeURIComponent(requete)}`, { signal: annulation.signal, cache: 'no-store' })
+        .then(async (r) => { if (!r.ok) throw new Error('indisponible'); return r.json(); })
+        .then((j) => setServeur({ requete, ids: Array.isArray(j.ids) ? j.ids : [] }))
+        .catch(() => { if (!annulation.signal.aborted) setRechercheEnPanne(true); });
+    }, 300);
+    return () => { clearTimeout(minuterie); annulation.abort(); };
+  }, [requete, essaiRecherche]);
+
+  const rang = serveur && serveur.requete === requete ? new Map(serveur.ids.map((id, i) => [id, i])) : null;
+  const filtres = approvedProducts
+    .filter((p) => {
+      const bonneCategorie = selectedCategory === 'all' || p.category === selectedCategory;
+      const correspond = !requete || (rang ? rang.has(p.id) : correspondLocalement(p, requete));
+      return bonneCategorie && correspond;
+    })
+    .sort((a, b) => (rang ? (rang.get(a.id) ?? 0) - (rang.get(b.id) ?? 0) : 0));
 
   // Sponsorisation (§ 17) : l'emplacement suit ce que regarde le client. Un
   // produit sponsorisé ne remonte que s'il correspond déjà à la recherche ou
@@ -142,6 +163,13 @@ export default function HomePage() {
                 </button>
               )}
             </div>
+
+            {rechercheEnPanne && requete && (
+              <div role="status" className="flex items-center justify-between gap-2 rounded-2xl bg-white/10 px-3.5 py-2 text-xs text-emerald-50">
+                <span className="inline-flex items-center gap-1.5"><WifiOff className="w-3.5 h-3.5 shrink-0" />Connexion instable : résultats simplifiés.</span>
+                <button type="button" onClick={() => setEssaiRecherche((n) => n + 1)} className="font-bold underline underline-offset-2 min-h-[32px]">Réessayer</button>
+              </div>
+            )}
 
             {search.trim().length >= 2 && (
               <Link href={`/recherche?q=${encodeURIComponent(search.trim())}`} className="inline-flex items-center gap-1 text-xs font-bold text-emerald-100 underline underline-offset-2 min-h-[32px]">
