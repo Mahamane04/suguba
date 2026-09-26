@@ -7,6 +7,9 @@ import BottomNav from '@/components/common/BottomNav';
 import EtapesInscription from '@/components/common/EtapesInscription';
 import Button from '@/components/ui/Button';
 import { supabase } from '@/lib/supabase';
+import CodeEmail from '@/components/auth/CodeEmail';
+import { messageErreurMotDePasse, problemeMotDePasse } from '@/lib/code-email';
+import ChampMotDePasse from '@/components/auth/ChampMotDePasse';
 import { Store, ShoppingBag, Truck, Globe, ShoppingCart, ShieldAlert, Mail, Check, ArrowRight } from 'lucide-react';
 
 function GoogleIcon({ className }: { className?: string }) {
@@ -49,6 +52,8 @@ export default function RegisterPage() {
     return ROLES.some((r) => r.cle === demande) ? (demande as Role) : 'reseller';
   });
   const [email, setEmail] = useState('');
+  const [motDePasse, setMotDePasse] = useState('');
+  const [confirmation, setConfirmation] = useState('');
   const [lienEnvoye, setLienEnvoye] = useState(false);
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
@@ -67,13 +72,26 @@ export default function RegisterPage() {
     e.preventDefault();
     setErreur(null);
     if (!supabase) { setErreur('Inscription indisponible sur cet environnement.'); return; }
+    // Mot de passe (2026-09-26) : l'adresse est confirmée UNE fois, par le
+    // code (ou le lien) de l'e-mail d'inscription ; ensuite, e-mail + mot de
+    // passe, sans attendre d'e-mail.
+    const probleme = problemeMotDePasse(motDePasse, confirmation);
+    if (probleme) { setErreur(probleme); return; }
     setEnvoi(true);
-    const { error } = await supabase.auth.signInWithOtp({
+    const { data, error } = await supabase.auth.signUp({
       email,
-      options: { shouldCreateUser: true, emailRedirectTo: retour() },
+      password: motDePasse,
+      options: { emailRedirectTo: retour() },
     });
     setEnvoi(false);
-    if (error) { setErreur(error.message); return; }
+    if (error) { setErreur(messageErreurMotDePasse(error.message)); return; }
+    // Adresse déjà inscrite : Supabase ne le dit pas en clair (aucune
+    // identité renvoyée) et n'envoie rien.
+    if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+      setErreur('Un compte existe déjà avec cette adresse : connectez-vous, ou choisissez « Mot de passe oublié ? » sur la page de connexion.');
+      return;
+    }
+    if (data.session) { window.location.assign(retour()); return; }
     setLienEnvoye(true);
   };
 
@@ -146,19 +164,10 @@ export default function RegisterPage() {
           </div>
 
           {lienEnvoye ? (
-            <div className="text-center space-y-2 py-2">
-              <Mail className="w-6 h-6 text-suguba-brand-dark mx-auto" />
-              <p className="text-sm font-bold text-slate-900">Vérifiez votre boîte mail</p>
-              <p className="text-xs text-slate-500">
-                Un lien a été envoyé à <strong>{email}</strong>. Ouvrez-le depuis ce même appareil.
-              </p>
-              <button type="button" onClick={() => setLienEnvoye(false)} className="text-xs font-bold text-suguba-brand-dark hover:underline">
-                Utiliser une autre adresse
-              </button>
-            </div>
+            <CodeEmail usage="inscription" email={email} retour={retour()} onAutreAdresse={() => setLienEnvoye(false)} />
           ) : (
-            <form onSubmit={inscriptionEmail} className="flex flex-col sm:flex-row gap-2">
-              <label htmlFor="register-email" className="sr-only">Adresse email</label>
+            <form onSubmit={inscriptionEmail} className="space-y-3">
+              <label htmlFor="register-email" className="block text-xs font-semibold text-gray-700">Adresse email</label>
               <input
                 id="register-email"
                 autoComplete="email"
@@ -169,11 +178,15 @@ export default function RegisterPage() {
                 placeholder="vous@exemple.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="flex-1 min-w-0 px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-suguba-profond focus:border-suguba-profond"
+                className="w-full px-3.5 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-suguba-profond focus:border-suguba-profond"
               />
-              <Button type="submit" disabled={envoi}>
-                {envoi ? 'Envoi…' : 'Recevoir un lien'}
+              <ChampMotDePasse id="register-password" label="Mot de passe" nouveau value={motDePasse} onChange={setMotDePasse} decrit="register-password-aide" />
+              <p id="register-password-aide" className="text-xs text-slate-500">8 caractères au moins, avec une lettre et un chiffre.</p>
+              <ChampMotDePasse id="register-password-2" label="Confirmer le mot de passe" nouveau value={confirmation} onChange={setConfirmation} />
+              <Button type="submit" disabled={envoi} fullWidth>
+                {envoi ? 'Création…' : 'Créer mon compte'}
               </Button>
+              <p className="text-xs text-slate-500 text-center">Un code arrive par e-mail pour confirmer votre adresse, une seule fois.</p>
             </form>
           )}
 

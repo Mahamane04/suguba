@@ -4,6 +4,9 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { memoriserApresConnexion, prendreApresConnexion } from '@/lib/apres-connexion';
 import { rafraichirIdentite } from '@/lib/identite';
+import CodeEmail from '@/components/auth/CodeEmail';
+import { messageErreurEmail, messageErreurMotDePasse } from '@/lib/code-email';
+import ChampMotDePasse from '@/components/auth/ChampMotDePasse';
 import Link from 'next/link';
 import { sugubaStore, useSugubaStore } from '@/lib/store';
 import { supabase } from '@/lib/supabase';
@@ -81,6 +84,10 @@ function LoginPageContent() {
   // l'identité de la personne qui se connecte.
   const [email, setEmail] = useState('');
   const [emailLinkSent, setEmailLinkSent] = useState(false);
+  // Mot de passe (2026-09-26) par défaut ; le code par e-mail reste possible.
+  const [password, setPassword] = useState('');
+  const [modeCode, setModeCode] = useState(false);
+  const [aConfirmer, setAConfirmer] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -104,11 +111,10 @@ function LoginPageContent() {
     }
   };
 
-  // Lien magique plutôt que code à taper : le template email par défaut de
-  // Supabase (gratuit, aucune personnalisation nécessaire) contient déjà un
-  // lien cliquable qui embarque le jeton — cliquer dessus renvoie vers
-  // /auth/callback, exactement le même point de sortie que Google
-  // ci-dessous. Pas besoin d'un second écran "entrez le code" pour l'email.
+  // E-mail avec un lien ET un code à 6 chiffres (2026-09-26) : le lien
+  // renvoie vers /auth/callback, comme Google ; le code se tape ici (voir
+  // CodeEmail) et marche même si le lien s'ouvre dans un autre navigateur.
+  // Adresse inconnue : même chemin, le compte est créé puis le profil choisi.
   const handleRequestEmailOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!supabase) {
@@ -123,10 +129,34 @@ function LoginPageContent() {
     });
     setIsLoading(false);
     if (error) {
-      setErrorMessage(error.message);
+      setErrorMessage(messageErreurEmail(error.message));
       return;
     }
     setEmailLinkSent(true);
+  };
+
+  // Connexion par mot de passe (2026-09-26) : aucun e-mail à attendre. Une
+  // adresse jamais confirmée reçoit un nouveau code de confirmation.
+  const handlePasswordLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!supabase) {
+      setErrorMessage('Connexion indisponible sur cet environnement.');
+      return;
+    }
+    setIsLoading(true);
+    setErrorMessage('');
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      setIsLoading(false);
+      if (/email not confirmed/i.test(error.message)) {
+        await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: `${window.location.origin}/auth/callback` } });
+        setAConfirmer(true);
+        return;
+      }
+      setErrorMessage(messageErreurMotDePasse(error.message));
+      return;
+    }
+    window.location.assign(`${window.location.origin}/auth/callback`);
   };
 
   const handleGoogleLogin = async () => {
@@ -170,10 +200,10 @@ function LoginPageContent() {
                 Connexion Suguba
               </h1>
               <p className="text-xs text-slate-600 mt-1">
-                Sans mot de passe, avec Google ou par email
+                Avec Google, ou avec votre e-mail et votre mot de passe
               </p>
               <p className="text-xs text-gray-500 mt-2">
-                Nouveau sur Suguba ? Connectez-vous de la même façon : vous choisirez votre profil juste après.
+                Nouveau sur Suguba ? Créez votre compte (en bas), ou continuez avec Google : vous choisirez votre profil juste après.
               </p>
             </div>
 
@@ -205,24 +235,11 @@ function LoginPageContent() {
               <div className="h-px flex-1 bg-gray-100" />
             </div>
 
-            {emailLinkSent ? (
-              <div className="text-center space-y-3 animate-fade-up">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
-                  <Mail className="w-6 h-6" />
-                </div>
-                <p className="text-sm font-semibold text-gray-900">Vérifiez votre boîte mail</p>
-                <p className="text-xs text-gray-500">
-                  Un lien de connexion a été envoyé à <b>{email}</b>. Ouvrez-le depuis ce même appareil pour continuer.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setEmailLinkSent(false)}
-                  className="text-xs text-suguba-brand-dark hover:underline font-semibold"
-                >
-                  Utiliser une autre adresse
-                </button>
-              </div>
-            ) : (
+            {aConfirmer ? (
+              <CodeEmail usage="inscription" email={email} retour={`${window.location.origin}/auth/callback`} onAutreAdresse={() => { setAConfirmer(false); setPassword(''); }} />
+            ) : modeCode && emailLinkSent ? (
+              <CodeEmail email={email} retour={`${window.location.origin}/auth/callback`} onAutreAdresse={() => setEmailLinkSent(false)} />
+            ) : modeCode ? (
               <form onSubmit={handleRequestEmailOtp} className="space-y-4">
                 <div className="space-y-1.5">
                   <label htmlFor="login-email" className="block text-xs font-semibold text-gray-700">
@@ -252,18 +269,55 @@ function LoginPageContent() {
                 )}
 
                 <Button type="submit" disabled={isLoading} size="lg" fullWidth>
-                  {isLoading ? (
-                    <span className="flex items-center gap-2">
-                      <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Envoi du lien...
-                    </span>
-                  ) : (
-                    <>
-                      Recevoir mon lien de connexion
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
+                  {isLoading ? 'Envoi du code…' : <>Recevoir un code par e-mail<ArrowRight className="w-4 h-4" /></>}
                 </Button>
+                <button type="button" onClick={() => { setModeCode(false); setErrorMessage(''); }} className="w-full text-xs font-semibold text-suguba-brand-dark hover:underline min-h-[44px]">
+                  Se connecter avec mon mot de passe
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handlePasswordLogin} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label htmlFor="login-email" className="block text-xs font-semibold text-gray-700">
+                    Adresse email
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-slate-600 absolute left-3.5 top-3.5" />
+                    <input
+                      id="login-email"
+                      autoComplete="email"
+                      aria-describedby={errorMessage ? 'login-error' : undefined}
+                      aria-invalid={Boolean(errorMessage)}
+                      type="email"
+                      required
+                      placeholder="vous@exemple.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-base sm:text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-suguba-profond focus:border-suguba-profond transition-all"
+                    />
+                  </div>
+                </div>
+
+                <ChampMotDePasse id="login-password" label="Mot de passe" value={password} onChange={setPassword} decrit={errorMessage ? 'login-error' : undefined} />
+
+                {errorMessage && (
+                  <div id="login-error" role="alert" className="p-3 bg-red-50 border border-red-100 rounded-xl text-xs font-semibold text-red-600">
+                    {errorMessage}
+                  </div>
+                )}
+
+                <Button type="submit" disabled={isLoading} size="lg" fullWidth>
+                  {isLoading ? 'Connexion…' : <>Se connecter<ArrowRight className="w-4 h-4" /></>}
+                </Button>
+                <div className="flex items-center justify-between gap-2 text-xs">
+                  {/* L'adresse passe par sessionStorage, jamais par l'URL (historique, journaux). */}
+                  <Link href="/mot-de-passe" onClick={() => { try { sessionStorage.setItem('suguba_email_saisi', email); } catch { /* navigation privée */ } }} className="font-semibold text-suguba-brand-dark hover:underline min-h-[44px] inline-flex items-center">
+                    Mot de passe oublié ?
+                  </Link>
+                  <button type="button" onClick={() => { setModeCode(true); setErrorMessage(''); }} className="font-semibold text-slate-600 hover:underline min-h-[44px]">
+                    Recevoir plutôt un code
+                  </button>
+                </div>
               </form>
             )}
 
@@ -272,7 +326,7 @@ function LoginPageContent() {
               <p className="text-xs text-gray-500">
                 Pas encore de compte ?{' '}
                 <Link href="/register" className="font-bold text-suguba-brand-dark hover:underline">
-                  Créer un compte pro &rarr;
+                  Créer un compte &rarr;
                 </Link>
               </p>
             </div>
@@ -286,7 +340,7 @@ function LoginPageContent() {
               <div className="w-px h-3 bg-gray-200" />
               <div className="flex items-center gap-1 text-xs text-slate-600">
                 <Zap className="w-3 h-3 text-amber-500" />
-                Sans mot de passe
+                E-mail vérifié une fois
               </div>
             </div>
           </div>

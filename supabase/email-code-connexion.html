@@ -1,0 +1,18 @@
+<!--
+  Modèle d'e-mail Suguba (2026-09-26) : code à 6 chiffres + lien.
+  À coller dans Supabase → Authentication → Emails → Templates, dans les TROIS
+  modèles « Confirm signup » (inscription avec mot de passe), « Reset
+  Password » (mot de passe oublié) et « Magic Link » (connexion par code).
+  Sujet conseillé : « Votre code Suguba : {{ .Token }} ».
+  Volontairement simple (texte, un seul lien, pas d'image) : c'est ce qui
+  passe le mieux les filtres anti-spam.
+-->
+<div style="font-family:Arial,Helvetica,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#0f172a">
+  <p style="font-size:18px;font-weight:bold;margin:0 0 16px">Suguba</p>
+  <p style="font-size:14px;margin:0 0 12px">Voici votre code :</p>
+  <p style="font-size:32px;font-weight:bold;letter-spacing:8px;margin:0 0 16px;color:#14532d">{{ .Token }}</p>
+  <p style="font-size:14px;margin:0 0 16px">Tapez-le sur la page Suguba où vous l’avez demandé. Il est valable une heure.</p>
+  <p style="font-size:14px;margin:0 0 24px">Vous pouvez aussi <a href="{{ .ConfirmationURL }}" style="color:#15803d">continuer en cliquant ici</a>.</p>
+  <p style="font-size:12px;color:#64748b;margin:0">Vous n’avez rien demandé ? Ignorez cet e-mail : personne ne peut l’utiliser sans ce code.</p>
+  <p style="font-size:12px;color:#64748b;margin:8px 0 0">Suguba — app.sugubaml.com</p>
+</div>

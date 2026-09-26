@@ -238,7 +238,7 @@ function CreerBoutique({ onFait }: { onFait: () => Promise<void> }) {
           </Button>
           <p className="text-xs text-slate-500">
             Créée par l’admin, la boutique peut dépasser la limite de la formule du compte.
-            {mode === 'nouveau' ? ' La personne se connecte ensuite avec « Continuer avec Google » ou « Recevoir mon lien » sur cet e-mail.' : ''}
+            {mode === 'nouveau' ? ' La personne se connecte ensuite avec « Continuer avec Google » ou « Recevoir mon code » sur cet e-mail.' : ''}
           </p>
         </>
       )}

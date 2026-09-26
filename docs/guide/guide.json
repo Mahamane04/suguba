@@ -192,6 +192,28 @@
  "journal": [
   {
    "date": "2026-09-26",
+   "titre": "Connexion : mot de passe, adresse vérifiée une seule fois",
+   "demande": "Les e-mails de connexion arrivent en spam. D’abord un code à 6 chiffres, puis décision : « activer le mot de passe car cela doit être vérifié qu’une seule fois ». Question : comment fait une adresse pas encore inscrite ?",
+   "realise": [
+    "Connexion par e-mail + mot de passe par défaut (sans attendre d’e-mail) ; Google et le code à 6 chiffres restent possibles.",
+    "Inscription : e-mail + mot de passe (8 caractères, une lettre et un chiffre, confirmé) ; un code à 6 chiffres (ou le lien) confirme l’adresse une seule fois ; adresse déjà inscrite signalée.",
+    "Page « Mot de passe oublié » (/mot-de-passe) : code par e-mail puis nouveau mot de passe ; sert aussi aux comptes créés avec Google ou un code pour créer leur premier mot de passe.",
+    "Écran de code commun : « Renvoyer le code » après 60 s, « Utiliser une autre adresse », rappel des Spams, erreurs en français.",
+    "Adresse pas encore inscrite : « Créer mon compte » (profil choisi, puis mot de passe) ; ou Google / code depuis la connexion, puis choix du profil."
+   ],
+   "ecarts": [
+    "Réglages Supabase à faire par l’admin : fournisseur Email avec « Confirm email » activé, longueur minimale 8, et le code {{ .Token }} dans les modèles « Confirm signup », « Reset Password » et « Magic Link ».",
+    "Délivrabilité : la réputation du domaine d’envoi se construit avec le temps ; désactiver le suivi des clics et des ouvertures dans Resend."
+   ],
+   "pages": [
+    "connexion",
+    "inscription",
+    "mot-de-passe"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-26",
    "titre": "Recherche (R1) : une seule recherche, qui comprend les clients",
    "demande": "Audit « catalogue et recherche à grande échelle », lot R1 : une recherche côté serveur, insensible aux accents, tolérante aux fautes, avec des synonymes gérés par l’admin, identique sur l’accueil et /recherche, au bon prix, sans réponse périmée ni faux « Aucun résultat » en cas de panne.",
    "realise": [
@@ -2070,16 +2092,20 @@
      "role": "Connexion en un geste."
     },
     {
-     "nom": "Recevoir mon lien de connexion",
-     "role": "Saisir son e-mail : un lien de connexion arrive par e-mail (sans mot de passe)."
+     "nom": "E-mail et mot de passe",
+     "role": "Se connecter avec son e-mail et son mot de passe, sans attendre d’e-mail. « Afficher » révèle le mot de passe tapé. Adresse jamais confirmée : un nouveau code de confirmation est envoyé. « Recevoir plutôt un code » : connexion par code à 6 chiffres, comme avant."
     },
     {
      "nom": "Revendeur · Fournisseur · Livreur · Admin",
      "role": "Connexion rapide aux comptes de démonstration, visible seulement en mode démo (test local)."
     },
     {
-     "nom": "Créer un compte pro",
+     "nom": "Créer un compte",
      "role": "Vers l’inscription."
+    },
+    {
+     "nom": "Mot de passe oublié ?",
+     "role": "Ouvre « Mot de passe oublié » ; sert aussi à créer un premier mot de passe pour un compte créé avec Google ou un code."
     }
    ],
    "suite": [
@@ -2094,6 +2120,34 @@
    }
   },
   {
+   "id": "mot-de-passe",
+   "role": "visiteur",
+   "titre": "Mot de passe oublié",
+   "chemin": "/mot-de-passe",
+   "but": "Retrouver l’accès à son compte, ou créer un premier mot de passe quand on se connectait avec Google ou un code.",
+   "elements": [
+    {
+     "nom": "Adresse email",
+     "role": "Pré-remplie depuis la connexion. « Recevoir un code » : un code à 6 chiffres arrive si un compte existe (la page ne dit pas si l’adresse est inscrite)."
+    },
+    {
+     "nom": "Code reçu par e-mail",
+     "role": "Taper le code, ou cliquer le lien de l’e-mail. « Renvoyer le code » après 60 s."
+    },
+    {
+     "nom": "Nouveau mot de passe",
+     "role": "8 caractères au moins, une lettre et un chiffre, à confirmer. « Enregistrer et me connecter » ouvre directement son espace."
+    }
+   ],
+   "suite": [
+    {
+     "id": "connexion",
+     "libelle": "Connexion"
+    }
+   ],
+   "note": "Pas de capture : l’étape utile demande un vrai code reçu par e-mail."
+  },
+  {
    "id": "inscription",
    "role": "visiteur",
    "titre": "Créer mon compte",
@@ -2106,7 +2160,7 @@
     },
     {
      "nom": "2 · Vérifiez votre identité",
-     "role": "Google, ou lien reçu par e-mail."
+     "role": "Google, ou e-mail + mot de passe (8 caractères, une lettre et un chiffre, à confirmer). Un code à 6 chiffres arrive pour confirmer l’adresse, une seule fois ; ensuite, connexion avec le mot de passe. Adresse déjà inscrite : message qui renvoie vers la connexion."
     },
     {
      "nom": "Client",
