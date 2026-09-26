@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sessionDeLaRequete } from '@/lib/reseau/route-session';
 import { estCanal, estCible, type CanalPartage, type CibleLien } from '@/lib/reseau/codes';
 import { creerLienTracke, liensDuProprietaire, journaliser } from '@/lib/reseau/db';
-import { avancerMissions, produitParSlug } from '@/lib/reseau/missions-db';
+
 
 /**
  * Liens trackés d'un utilisateur — création et historique (§ 11, § 19).
@@ -45,9 +45,10 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Un partage compte pour les missions de type « partager » dès la création
-  // du lien : c'est le seul moment que Suguba observe réellement, l'envoi dans
-  // WhatsApp lui-même se passe hors de la plateforme.
+  // Créer un lien n'est PAS un partage (lot 2a, 2026-09-26) : avant, dix liens
+  // créés sans rien publier faisaient avancer une mission de dix. Les missions
+  // « partager » avancent désormais sur preuve de publication validée
+  // (/api/reseller/missions/preuve) ; ici, on journalise seulement.
   await journaliser({
     evenement: 'SHARE',
     acteurId: session.uid,
@@ -56,9 +57,6 @@ export async function POST(req: NextRequest) {
     sujetRef: lien.ref,
     linkCode: lien.code,
   });
-  if (session.role === 'reseller') {
-    await avancerMissions(session.uid, 'share', 1, lien.cible === 'product' ? await produitParSlug(lien.ref) : null);
-  }
 
   return NextResponse.json({ lien });
 }

@@ -11,7 +11,10 @@ import { listerMissions } from '@/lib/reseau/missions-db';
  * Suguba verserait des récompenses qu'aucun fournisseur n'a payées.
  */
 
-const TYPES = ['share', 'click', 'sale'] as const;
+// Pas de campagne payée « aux visites » (lot 2b, 2026-09-26) : les clics sont
+// mesurés, mais pas encore assez fiables pour être facturés au fournisseur.
+const TYPES = ['share', 'sale'] as const;
+const CANAUX = ['tous', 'whatsapp_statut', 'whatsapp_groupe', 'facebook', 'instagram', 'tiktok'] as const;
 
 export async function GET(req: NextRequest) {
   const acces = await exigerDroitFournisseur(req, 'sponsorisation');
@@ -33,7 +36,7 @@ export async function GET(req: NextRequest) {
     produits: (produits || []).map((p: any) => ({ id: p.id, nom: p.name })),
     campagnes: campagnes.map((c) => ({
       ...c,
-      budget: c.recompense * (c.maxParticipants || 0),
+      budgetMax: c.recompense * (c.maxParticipants || 0),
       avancementTotal: avancement.get(c.id) || 0,
     })),
   });
@@ -50,6 +53,8 @@ export async function POST(req: NextRequest) {
   const titre = typeof c.titre === 'string' ? c.titre.trim() : '';
   if (titre.length < 3) return NextResponse.json({ error: 'Donnez un titre à la campagne.' }, { status: 400 });
   if (!TYPES.includes(c.type)) return NextResponse.json({ error: 'Objectif de campagne inconnu.' }, { status: 400 });
+  // Canal choisi AVANT de payer : les preuves de publication devront en venir.
+  const canal = CANAUX.includes(c.canal) ? c.canal : 'tous';
 
   // Le produit doit appartenir au fournisseur : on ne finance pas la
   // promotion du catalogue d'un concurrent.
@@ -69,7 +74,7 @@ export async function POST(req: NextRequest) {
     finitLe = d.toISOString();
   }
 
-  const { data, error } = await admin.from('missions').insert({
+  const ligne = {
     title: titre.slice(0, 120),
     description: typeof c.description === 'string' ? c.description.slice(0, 600) : null,
     mission_type: c.type,
@@ -81,8 +86,11 @@ export async function POST(req: NextRequest) {
     ends_at: finitLe,
     max_participants: maxRevendeurs,
     status: 'draft',
-  }).select('id').maybeSingle();
-  if (error) return NextResponse.json({ error: 'Campagnes indisponibles pour le moment.' }, { status: 503 });
+  };
+  let { data, error } = await admin.from('missions').insert({ ...ligne, canal }).select('id').maybeSingle();
+  // Base pas encore mise à jour (colonne canal absente) : campagne sans canal imposé.
+  if (error && /canal/.test(error.message) && canal === 'tous') ({ data, error } = await admin.from('missions').insert(ligne).select('id').maybeSingle());
+  if (error) return NextResponse.json({ error: /canal/.test(error.message) ? 'Le choix du canal sera disponible après la mise à jour de la base par Suguba.' : 'Campagnes indisponibles pour le moment.' }, { status: 503 });
 
   return NextResponse.json({ id: data?.id, budget: recompense * maxRevendeurs });
 }

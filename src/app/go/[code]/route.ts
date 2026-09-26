@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { normaliserCodeLien, destinationDuLien } from '@/lib/reseau/codes';
 import { lienParCode, enregistrerClic, empreinteVisiteur, journaliser } from '@/lib/reseau/db';
 import { avancerMissions, produitParSlug } from '@/lib/reseau/missions-db';
+import { estRobotApercu } from '@/lib/reseau/missions';
+import { SESSION_COOKIE_NAME, verifySessionToken } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
 /**
@@ -64,7 +66,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ code
 
   // La mesure ne doit jamais retarder ni empêcher la redirection : une erreur
   // de comptage n'est pas une raison de perdre le visiteur.
-  try {
+  // Compteurs fiables (lot 2a) : un robot d'aperçu (WhatsApp, Facebook…) ou
+  // le revendeur qui ouvre son propre lien ne sont pas des visiteurs.
+  const robot = estRobotApercu(userAgent);
+  const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value).catch(() => null);
+  const proprietaire = Boolean(session && lien.ownerId && session.uid === lien.ownerId);
+
+  if (!robot && !proprietaire) try {
     await enregistrerClic({
       code,
       visiteur,
@@ -78,8 +86,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ code
       sujetRef: lien.ref,
       linkCode: code,
     });
-    if (lien.ownerId) {
-      await avancerMissions(lien.ownerId, 'click', 1, lien.cible === 'product' ? await produitParSlug(lien.ref) : null);
+    // Un même visiteur ne compte qu'une fois par mission.
+    if (lien.ownerId && !proprietaire) {
+      await avancerMissions(lien.ownerId, 'click', `visiteur:${visiteur}`, lien.cible === 'product' ? await produitParSlug(lien.ref) : null);
     }
   } catch (erreur) {
     console.error('[GO] Clic non compté:', (erreur as Error).message);

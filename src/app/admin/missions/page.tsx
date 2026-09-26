@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Target, Loader2, Plus, Play, Pause, Square } from 'lucide-react';
+import { Target, Loader2, Plus, Play, Pause, Square, Check, X, ExternalLink } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
 import { Field, Input, Textarea } from '@/components/ui/Field';
@@ -29,7 +29,16 @@ interface Mission {
   finitLe: string | null;
   supplierId: string | null;
   maxParticipants: number | null;
+  budget?: { engage: number; verse: number; restant: number; aValider: number; plafonne: boolean; recu: number; recuLe: string | null; reference: string | null };
+  canal?: string;
 }
+
+interface Preuve {
+  id: string; mission: string; revendeur: { nom: string; code: string | null };
+  canal: string; lien: string | null; note: string | null; photo: string | null; envoyeeLe: string;
+}
+
+const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
 
 const TON: Record<string, 'succes' | 'attente' | 'neutre'> = {
   active: 'succes', draft: 'attente', paused: 'neutre', ended: 'neutre',
@@ -51,8 +60,12 @@ export default function MissionsAdminPage() {
   const [objectif, setObjectif] = useState('10');
   const [recompense, setRecompense] = useState('5000');
   const [finitLe, setFinitLe] = useState('');
+  const [places, setPlaces] = useState('');
+  const [preuves, setPreuves] = useState<Preuve[]>([]);
 
   const charger = React.useCallback(() => {
+    fetch('/api/admin/missions/preuves', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null)).then((j) => setPreuves(j?.preuves || [])).catch(() => {});
     return fetch('/api/admin/missions')
       .then((r) => r.json())
       .then((data) => setMissions(data.missions || []))
@@ -73,6 +86,7 @@ export default function MissionsAdminPage() {
           titre, description, type,
           objectif: Number(objectif), recompense: Number(recompense),
           finitLe: finitLe || null,
+          maxParticipants: places ? Number(places) : null,
         }),
       });
       const data = await reponse.json();
@@ -137,7 +151,15 @@ export default function MissionsAdminPage() {
               <Field label="Date de fin" htmlFor="fin" aide="Laissez vide pour une mission sans limite.">
                 <Input id="fin" type="date" value={finitLe} onChange={(e) => setFinitLe(e.target.value)} />
               </Field>
+              <Field label="Nombre de gagnants maximum" htmlFor="places" aide="Fixe le budget. Vide = sans plafond (budget ouvert).">
+                <Input id="places" type="number" inputMode="numeric" min={1} value={places} onChange={(e) => setPlaces(e.target.value)} />
+              </Field>
             </div>
+            <p className="text-xs text-slate-700 bg-slate-50 rounded-2xl px-3 py-2">
+              {places && Number(places) > 0
+                ? <>Budget engagé : <strong>{fcfa((Number(recompense) || 0) * Number(places))}</strong> ({places} × {fcfa(Number(recompense) || 0)})</>
+                : 'Budget ouvert : chaque participant qui atteint l’objectif peut être payé. Fixez un nombre de gagnants pour le plafonner.'}
+            </p>
             <Button type="submit" disabled={envoi} fullWidth>
               {envoi ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
               Créer en brouillon
@@ -145,6 +167,8 @@ export default function MissionsAdminPage() {
           </form>
         </Card>
       )}
+
+      {preuves.length > 0 && <PreuvesAVerifier preuves={preuves} onMaj={charger} />}
 
       {chargement ? (
         <div className="space-y-3"><Skeleton className="h-24" /><Skeleton className="h-24" /></div>
@@ -169,11 +193,14 @@ export default function MissionsAdminPage() {
                 </div>
                 <StatusPill ton={TON[m.statut] || 'neutre'}>{LIBELLE_STATUT[m.statut] || m.statut}</StatusPill>
               </div>
-              {m.supplierId && (
-                <p className="text-xs font-bold text-amber-800 bg-amber-50 rounded-2xl px-3 py-2">
-                  Campagne fournisseur · budget {(m.recompense * (m.maxParticipants || 0)).toLocaleString('fr-FR')} F à encaisser avant activation
-                </p>
+              {m.budget && (
+                <div className="grid grid-cols-3 gap-2 text-xs">
+                  <p className="rounded-2xl bg-slate-50 px-3 py-2">Engagé<br /><strong className="text-slate-900">{m.budget.plafonne ? fcfa(m.budget.engage) : 'ouvert'}</strong></p>
+                  <p className="rounded-2xl bg-slate-50 px-3 py-2">Versé<br /><strong className="text-slate-900">{fcfa(m.budget.verse)}</strong></p>
+                  <p className="rounded-2xl bg-slate-50 px-3 py-2">{m.budget.plafonne ? 'Restant' : 'À valider'}<br /><strong className="text-slate-900">{fcfa(m.budget.plafonne ? m.budget.restant : m.budget.aValider)}</strong></p>
+                </div>
               )}
+              {m.supplierId && <BudgetCampagne mission={m} onMaj={charger} />}
 
               <div className="flex gap-2">
                 {m.statut !== 'active' && (
@@ -197,5 +224,141 @@ export default function MissionsAdminPage() {
         </div>
       )}
     </PageReseau>
+  );
+}
+
+/**
+ * Preuves de publication à vérifier (lot 2a, 2026-09-26) : seule une preuve
+ * validée fait avancer une mission « partager » ou « publier ».
+ */
+function PreuvesAVerifier({ preuves, onMaj }: { preuves: Preuve[]; onMaj: () => void }) {
+  const { toast } = useToast();
+  const [refus, setRefus] = useState<string | null>(null);
+  const [motif, setMotif] = useState('');
+  const [envoi, setEnvoi] = useState<string | null>(null);
+
+  const decider = async (preuveId: string, decision: 'valider' | 'refuser') => {
+    setEnvoi(preuveId);
+    try {
+      const r = await fetch('/api/admin/missions/preuves', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ preuveId, decision, motif }),
+      });
+      const j = await r.json().catch(() => null);
+      if (!r.ok) { toast(j?.error || 'Action impossible.', { ton: 'erreur' }); return; }
+      toast(decision === 'valider' ? (j.comptee ? 'Validée : elle compte pour la mission.' : 'Validée, mais la mission est terminée : elle ne compte pas.') : 'Refusée. Le revendeur voit le motif.', { ton: decision === 'valider' ? 'succes' : 'info' });
+      setRefus(null); setMotif('');
+      onMaj();
+    } catch {
+      toast('Connexion interrompue. Réessayez.', { ton: 'erreur' });
+    } finally {
+      setEnvoi(null);
+    }
+  };
+
+  return (
+    <section className="space-y-2.5">
+      <h2 className="text-xs font-bold uppercase tracking-wide text-slate-600 px-1">Preuves de publication à vérifier ({preuves.length})</h2>
+      {preuves.map((p) => (
+        <Card key={p.id} className="space-y-3">
+          <div className="flex gap-3">
+            {p.photo ? (
+              <a href={p.photo} target="_blank" rel="noopener noreferrer" className="block w-24 h-40 shrink-0 rounded-2xl overflow-hidden bg-slate-100 border border-slate-200">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={p.photo} alt={`Capture envoyée par ${p.revendeur.nom}`} className="w-full h-full object-cover" />
+              </a>
+            ) : <div className="w-24 h-40 shrink-0 rounded-2xl bg-slate-100" />}
+            <div className="min-w-0 text-xs text-slate-700 space-y-1">
+              <p className="text-sm font-bold text-slate-900">{p.mission}</p>
+              <p>{p.revendeur.nom}{p.revendeur.code ? ` · ${p.revendeur.code}` : ''}</p>
+              <p>Publié sur : <strong>{p.canal}</strong></p>
+              {p.lien && <a href={p.lien} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-suguba-profond underline break-all"><ExternalLink className="w-3 h-3" />Voir la publication</a>}
+              {p.note && <p>« {p.note} »</p>}
+              <p className="text-slate-500">Envoyée le {new Date(p.envoyeeLe).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
+            </div>
+          </div>
+          <p className="text-xs text-slate-500">Vérifiez que la publication montre bien le produit ou le lien Suguba, et qu’elle est publique.</p>
+          {refus === p.id ? (
+            <div className="space-y-2">
+              <Field label="Motif du refus (visible par le revendeur)" htmlFor={`motif-${p.id}`} requis>
+                <Input id={`motif-${p.id}`} value={motif} onChange={(e) => setMotif(e.target.value)} maxLength={300} placeholder="Ex : capture illisible, publication sans le lien" />
+              </Field>
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="ghost" onClick={() => setRefus(null)}>Annuler</Button>
+                <Button onClick={() => decider(p.id, 'refuser')} disabled={envoi === p.id || motif.trim().length < 3}>Refuser</Button>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="ghost" onClick={() => { setRefus(p.id); setMotif(''); }}><X className="w-4 h-4" />Refuser</Button>
+              <Button onClick={() => decider(p.id, 'valider')} disabled={envoi === p.id}><Check className="w-4 h-4" />Valider</Button>
+            </div>
+          )}
+        </Card>
+      ))}
+    </section>
+  );
+}
+
+/**
+ * Budget d'une campagne fournisseur (lot 2b, 2026-09-26) : elle ne s'active
+ * qu'une fois le budget (récompense × revendeurs) reçu en entier. L'admin note
+ * le montant total reçu et sa référence.
+ */
+function BudgetCampagne({ mission, onMaj }: { mission: Mission; onMaj: () => void }) {
+  const { toast } = useToast();
+  const du = mission.recompense * (mission.maxParticipants || 0);
+  const recu = mission.budget?.recu || 0;
+  const [ouvert, setOuvert] = useState(false);
+  const [montant, setMontant] = useState(String(du));
+  const [reference, setReference] = useState('');
+  const [envoi, setEnvoi] = useState(false);
+
+  const enregistrer = async () => {
+    setEnvoi(true);
+    try {
+      const r = await fetch('/api/admin/missions', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ missionId: mission.id, action: 'budget', montant: Number(montant), reference }),
+      });
+      const j = await r.json().catch(() => null);
+      if (!r.ok) { toast(j?.error || 'Enregistrement impossible.', { ton: 'erreur' }); return; }
+      toast('Paiement enregistré.', { ton: 'succes' });
+      setOuvert(false);
+      onMaj();
+    } finally {
+      setEnvoi(false);
+    }
+  };
+
+  return (
+    <div className={`rounded-2xl px-3 py-2 text-xs space-y-2 ${recu >= du ? 'bg-emerald-50 text-emerald-900' : 'bg-amber-50 text-amber-900'}`}>
+      <p className="font-bold">
+        Campagne fournisseur · budget {fcfa(du)} ·{' '}
+        {recu >= du ? `réglé${mission.budget?.recuLe ? ` le ${new Date(mission.budget.recuLe).toLocaleDateString('fr-FR')}` : ''}` : recu > 0 ? `${fcfa(recu)} reçus, reste ${fcfa(du - recu)}` : 'à encaisser avant activation'}
+        {mission.budget?.reference ? ` (réf. ${mission.budget.reference})` : ''}
+      </p>
+      {mission.canal && mission.canal !== 'tous' && <p>Canal demandé : {mission.canal.replace('_', ' ')}</p>}
+      {ouvert ? (
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="Montant total reçu (F)" htmlFor={`montant-${mission.id}`}>
+              <Input id={`montant-${mission.id}`} type="number" inputMode="numeric" min={0} value={montant} onChange={(e) => setMontant(e.target.value)} />
+            </Field>
+            <Field label="Référence" htmlFor={`ref-${mission.id}`} aide="Reçu, transaction Mobile Money…">
+              <Input id={`ref-${mission.id}`} value={reference} onChange={(e) => setReference(e.target.value)} maxLength={120} />
+            </Field>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Button size="sm" variant="ghost" onClick={() => setOuvert(false)}>Annuler</Button>
+            <Button size="sm" onClick={enregistrer} disabled={envoi}>Enregistrer</Button>
+          </div>
+        </div>
+      ) : (
+        <Button size="sm" variant="ghost" onClick={() => { setOuvert(true); setMontant(String(Math.max(recu, du))); }}>
+          {recu > 0 ? 'Modifier le paiement reçu' : 'Enregistrer le paiement reçu'}
+        </Button>
+      )}
+    </div>
   );
 }

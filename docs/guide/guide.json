@@ -192,6 +192,50 @@
  "journal": [
   {
    "date": "2026-09-26",
+   "titre": "Campagnes encadrées : budget réglé, canal, page de marque (lot 2b)",
+   "demande": "Un budget suivi pour chaque campagne (engagé, dépensé, restant), une page de marque, et le choix clair du canal avant de payer ; les clics mesurés ne rapportent pas encore d'argent.",
+   "realise": [
+    "Campagne fournisseur : canal choisi avant de payer ; les preuves de publication doivent venir de ce canal.",
+    "Plus de campagne fournisseur « aux visites » : partages ou ventes seulement.",
+    "Admin : « Enregistrer le paiement reçu » (montant, référence) ; activation refusée tant que le budget n'est pas réglé en entier (application + garde-fou en base).",
+    "Fournisseur : réglé, dépensé, restant (solde non utilisé en fin de campagne), montant restant à régler avant ouverture.",
+    "Page de marque /campagne/<id> (logo, couverture, produit, message, aperçu WhatsApp) ; les revendeurs la partagent avec leur code depuis leurs missions."
+   ],
+   "ecarts": [
+    "SQL à exécuter : supabase/A-EXECUTER-2026-09-26-campagnes.sql.",
+    "Paiement du budget hors application (Mobile Money, espèces) : l'admin l'enregistre ; pas de paiement en ligne ni de remboursement automatique du solde.",
+    "Les sponsorisations (packs d'affichage) n'ont pas encore ce suivi de paiement."
+   ],
+   "pages": [
+    "page-campagne",
+    "adm-missions",
+    "rev-missions",
+    "fou-campagnes"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-26",
+   "titre": "Missions : compteurs fiables et budget (lot 2a « Campagnes encadrées »)",
+   "demande": "Avant de facturer des campagnes, corriger les compteurs : un partage ne compte que sur une publication vérifiée, un visiteur n'est compté qu'une fois ; suivre le budget de chaque campagne.",
+   "realise": [
+    "Partages : créer un lien ne compte plus. Le revendeur envoie une preuve de publication (capture privée, canal, lien) ; seule une preuve validée par l'équipe fait avancer la mission, une capture ne sert qu'une fois.",
+    "Visites : un même visiteur ne compte qu'une fois par mission ; les clics du revendeur sur son propre lien et les robots d'aperçu (WhatsApp, Facebook, Telegram…) ne comptent ni en statistique ni en mission.",
+    "Progression atomique en base : clé unique par événement, mission active et dans ses dates vérifiées ; un même filleul ne compte qu'une fois.",
+    "Admin Missions : preuves à vérifier (Valider / Refuser avec motif), budget engagé / versé / restant, nombre de gagnants maximum à la création."
+   ],
+   "ecarts": [
+    "SQL à exécuter : supabase/A-EXECUTER-2026-09-26-missions-comptage.sql (avant : l'ancien comptage reste actif).",
+    "Pas encore de page de marque, de choix du canal avant paiement, ni de campagnes payées par les fournisseurs (lot 2b). Les clics ne rapportent pas d'argent."
+   ],
+   "pages": [
+    "rev-missions",
+    "adm-missions"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-26",
    "titre": "Priorité au réseau : boutiques fournisseurs et prix de gros (lot C)",
    "demande": "Boutiques revendeurs = vitrines commerciales ; boutiques fournisseurs masquées de l'annuaire client, en page de présentation sans achat direct par défaut ; article au prix de gros : offres des revendeurs à leur prix, pas d'offre parallèle au prix conseillé ; réglages admin, ouverture possible fournisseur par fournisseur.",
    "realise": [
@@ -1045,6 +1089,34 @@
    "capture": {
     "chemin": "/p/encre-205a-hp"
    }
+  },
+  {
+   "id": "page-campagne",
+   "role": "visiteur",
+   "titre": "Page d’une campagne",
+   "chemin": "/campagne/<id>",
+   "but": "Page de marque d’une campagne fournisseur : la marque, le produit mis en avant et le message. Partagée par les revendeurs avec leur code.",
+   "elements": [
+    {
+     "nom": "Marque",
+     "role": "Logo, couverture et nom du fournisseur, titre et message de la campagne."
+    },
+    {
+     "nom": "Votre partenaire",
+     "role": "Le revendeur qui a partagé la page."
+    },
+    {
+     "nom": "Voir et commander",
+     "role": "Ouvre la fiche du produit avec le code du revendeur. Prix « fixé par nos revendeurs » pour un article au prix de gros."
+    }
+   ],
+   "suite": [
+    {
+     "id": "fiche-produit",
+     "libelle": "La fiche du produit"
+    }
+   ],
+   "note": "Pas de capture : aucune campagne fournisseur active pour l’instant."
   },
   {
    "id": "devis-demande",
@@ -2337,6 +2409,18 @@
     {
      "nom": "Participer",
      "role": "Rejoint une mission ; la progression avance à chaque vente concernée."
+    },
+    {
+     "nom": "J’ai publié : envoyer la preuve",
+     "role": "Missions « partager » ou « publier » : capture de la publication (statut, groupe, Facebook…), lien facultatif. Seule une preuve validée par Suguba compte ; une même capture ne compte qu’une fois. Créer un lien ne compte plus comme un partage."
+    },
+    {
+     "nom": "Visites",
+     "role": "Chaque personne qui ouvre le lien compte une seule fois ; les clics du revendeur lui-même et les robots d’aperçu (WhatsApp, Facebook) ne comptent pas."
+    },
+    {
+     "nom": "Partager la page de la campagne",
+     "role": "Campagne d’un fournisseur : page de marque avec votre code ; les ventes qui en viennent vous sont attribuées."
     }
    ],
    "suite": [
@@ -2969,6 +3053,14 @@
     {
      "nom": "Nouvelle",
      "role": "Créer une campagne : produit, message, durée."
+    },
+    {
+     "nom": "Où les revendeurs doivent publier",
+     "role": "Canal choisi AVANT de payer (statut, groupes WhatsApp, Facebook…) ; chaque publication est vérifiée sur capture avant d’être comptée. Plus d’objectif « visites » : les clics ne se facturent pas encore."
+    },
+    {
+     "nom": "Réglé · Dépensé · Restant",
+     "role": "La campagne n’ouvre qu’une fois le budget reçu en entier ; seuls les objectifs validés sont dépensés ; le solde non utilisé est rendu ou reporté."
     }
    ],
    "suite": [
@@ -3504,6 +3596,18 @@
     {
      "nom": "Nouvelle mission",
      "role": "Type (ventes, partages…), produit éventuel, objectif, prime, dates."
+    },
+    {
+     "nom": "Preuves de publication à vérifier",
+     "role": "Capture, canal et lien envoyés par le revendeur : Valider (la mission avance d’un) ou Refuser avec un motif qu’il verra."
+    },
+    {
+     "nom": "Budget",
+     "role": "Engagé (récompense × nombre de gagnants maximum), versé, restant. Sans nombre de gagnants, le budget est ouvert."
+    },
+    {
+     "nom": "Enregistrer le paiement reçu",
+     "role": "Campagne fournisseur : montant total reçu et référence (reçu, transaction). L’activation est refusée tant que le budget n’est pas réglé en entier (application et base)."
     }
    ],
    "suite": [

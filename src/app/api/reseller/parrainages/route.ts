@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
   }
 
   await journaliser({ evenement: 'REFERRAL', acteurId: session.uid, resellerId: session.uid, sujetType: type });
-  await avancerMissions(session.uid, 'referral');
+  // Un même filleul ne compte qu'une fois (le parrainage existant est renvoyé).
+  await avancerMissions(session.uid, 'referral', `parrainage:${parrainage.id}`);
   return NextResponse.json({ parrainage });
 }

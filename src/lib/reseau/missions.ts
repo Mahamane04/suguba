@@ -72,3 +72,15 @@ export function joursRestants(finitLe: string | null, maintenant: Date): number 
   if (!Number.isFinite(delta)) return null;
   return Math.max(0, Math.ceil(delta / 86400000));
 }
+
+/**
+ * Robot d'aperçu de lien (2026-09-26, lot 2a) : quand un lien est collé dans
+ * WhatsApp, Facebook ou Telegram, leur serveur l'ouvre pour fabriquer
+ * l'aperçu. Ce n'est pas un visiteur : il ne doit ni compter comme clic ni
+ * faire avancer une mission.
+ */
+export function estRobotApercu(userAgent: string | null | undefined): boolean {
+  const ua = String(userAgent || '').toLowerCase();
+  if (!ua) return true;
+  return /whatsapp|facebookexternalhit|facebot|meta-externalagent|telegrambot|twitterbot|slackbot|discordbot|linkedinbot|skypeuripreview|googlebot|bingbot|applebot|bot\b|crawler|spider|preview|headless|curl\/|wget\/|python-requests|node-fetch|axios\//.test(ua);
+}
