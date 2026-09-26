@@ -209,7 +209,8 @@
     "compte-destinataires",
     "compte-commandes"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "a8c6c41"
   },
   {
    "date": "2026-09-26",
