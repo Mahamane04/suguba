@@ -539,6 +539,27 @@ export default function EconomicSettingsPanel() {
               info="Au-delà de ce délai après la livraison, la Caisse livreurs signale le livreur en orange ; au double, en rouge." />
             <Num l="Plafond d’espèces non versées" suffixe="F" v={r.plafondEspecesCollecteur ?? 150000} on={(v) => maj('plafondEspecesCollecteur', v)}
               info="Au-delà (ou après le double du délai), le livreur ou le fournisseur ne reçoit plus de nouvelle commande payée en espèces jusqu’à son versement. Les courses en cours, le SAV et le versement restent possibles. 0 = pas de plafond." />
+            <div className="sm:col-span-2 space-y-2 rounded-2xl bg-suguba-sauge p-3">
+              <p className="text-xs font-semibold text-slate-700 inline-flex items-center gap-1">
+                Paiement par carte bancaire (diaspora)
+                <InfoBulle texte="Ouvrez-le seulement après un vrai paiement test réussi par carte sur SasPay. Fermé, la page diaspora propose le paiement à la réception par le proche, et le serveur refuse la carte." />
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2" role="radiogroup" aria-label="Paiement par carte bancaire">
+                {([
+                  [false, 'Fermé', 'Le proche paie à la réception'],
+                  [true, 'Ouvert', 'Carte proposée sur la page diaspora'],
+                ] as const).map(([valeur, libelle, detail]) => {
+                  const actif = (r.paiementCarteVerifie === true) === valeur;
+                  return (
+                    <button key={libelle} type="button" role="radio" aria-checked={actif} onClick={() => maj('paiementCarteVerifie', valeur)}
+                      className={`rounded-2xl border p-2.5 text-left bg-white ${actif ? 'border-suguba-profond ring-1 ring-suguba-profond' : 'border-slate-200'}`}>
+                      <span className="block text-xs font-semibold text-slate-900">{libelle}</span>
+                      <span className="block text-xs text-slate-600">{detail}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <div className="sm:col-span-2 space-y-2">
               <p className="text-xs font-semibold text-slate-700">Frais par ville</p>
               {Object.entries(r.livraisonParVille).map(([ville, frais]) => (

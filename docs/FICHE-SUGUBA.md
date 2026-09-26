@@ -88,6 +88,10 @@ Un admin **sans rôle d'équipe n'a aucun droit** d'équipe.
   destinataires enregistrés proposés à la commande (« Pour qui commandez-vous ? »),
   « Commander à nouveau » au prix et au stock du jour, « Recommander » à un proche sans
   commission (le revendeur d'origine garde la vente).
+- **Diaspora (C3)** : même compte client, avec un proche au Mali (le proche indiqué à
+  l'inscription devient un destinataire enregistré). **Carte bancaire fermée par
+  défaut** (réglage admin, refusée aussi par le serveur) : tant qu'elle n'est pas
+  vérifiée par un vrai paiement test, le proche paie à la réception.
 - ⚠️ Les e-mails de connexion partent encore de l'expéditeur par défaut de Supabase et
   peuvent arriver en **spam**. Solution prévue : SMTP **Resend** + DNS du domaine
   `sugubaml.com` (chez Hostinger) — **pas encore vérifiés**.
@@ -460,7 +464,7 @@ ne quitte pas le serveur autrement (jamais envoyée puis cachée) :
 | Paiement | `src/lib/saspay.ts`, `/api/payments/saspay/*`, `/api/webhooks/saspay` |
 | Reçu et QR | `src/lib/recu-commande.ts`, `src/lib/qr-remise.ts`, `src/lib/remise-qr.ts` |
 | Stockage privé | buckets `sav-photos`, `etapes-photos`, `preuves-missions` |
-| Tests | `npm test` (250 tests, Node + PostgreSQL embarqué PGlite) |
+| Tests | `npm test` (253 tests, Node + PostgreSQL embarqué PGlite) |
 | Guide | `docs/guide/guide.json` + `/admin/guide` |
 
 **Variables d'environnement** (valeurs dans Vercel) : `NEXT_PUBLIC_SUPABASE_URL`,
@@ -519,8 +523,8 @@ données) :
 - Paiement en ligne des campagnes et sponsorisations, remboursement du solde non utilisé.
 - Prévenir le client sans compte d'une étape à valider (aujourd'hui, le fournisseur lui
   demande d'ouvrir son reçu).
-- **Compte client C3** : diaspora = même compte avec un destinataire au Mali ; n'afficher
-  le paiement par carte (SasPay) qu'après un vrai paiement test.
+- **Paiement par carte (diaspora)** : faire un vrai paiement test sur SasPay, puis ouvrir
+  le réglage « Paiement par carte bancaire (diaspora) ».
 
 **Configuration et comptes**
 - **E-mails en spam** : configurer Resend (SMTP + DNS chez Hostinger, sans toucher au SPF).

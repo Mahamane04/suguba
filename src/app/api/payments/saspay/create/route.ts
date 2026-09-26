@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { initierPayin, estReseau, estReseauGlobal, RESEAUX_MALI, RESEAUX_GLOBAUX } from '@/lib/saspay';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { chargerReglages } from '@/lib/platform-settings';
 
 /**
  * Démarre un encaissement SasPay pour une commande existante.
@@ -29,6 +30,11 @@ export async function POST(req: NextRequest) {
         { error: `Réseau inconnu. Réseaux acceptés : ${acceptes.join(', ')}.` },
         { status: 400 },
       );
+    }
+
+    // Carte bancaire (C3) : refusée tant que l'admin ne l'a pas ouverte après un vrai paiement test.
+    if (estReseauGlobal(network) && network === 'card' && (await chargerReglages()).reglages.paiementCarteVerifie !== true) {
+      return NextResponse.json({ error: 'Le paiement par carte n’est pas encore ouvert. Votre proche peut payer à la réception.' }, { status: 409 });
     }
 
     const admin = getSupabaseAdmin();

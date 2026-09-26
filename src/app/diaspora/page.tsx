@@ -9,6 +9,8 @@ import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
 import { useSugubaStore } from '@/lib/store';
 import OrderRecovery from '@/components/common/OrderRecovery';
+import ChoixDestinataire from '@/components/compte/ChoixDestinataire';
+import { useRouter } from 'next/navigation';
 import ChoicePicker from '@/components/ui/ChoicePicker';
 import { useOrderQuote } from '@/lib/useOrderQuote';
 import type { OrderInput } from '@/lib/order-input';
@@ -20,6 +22,13 @@ import {
 
 export default function DiasporaPortalPage() {
   const state = useSugubaStore();
+  const router = useRouter();
+  // Carte bancaire (C3) : proposée seulement une fois vérifiée par un vrai
+  // paiement test (réglage admin). Sinon, le proche paie à la réception.
+  const [carteOuverte, setCarteOuverte] = useState(false);
+  useEffect(() => {
+    fetch('/api/settings/public').then((r) => (r.ok ? r.json() : null)).then((j) => setCarteOuverte(j?.paiementCarte === true)).catch(() => undefined);
+  }, []);
 
   const [currency, setCurrency] = useState<'EUR' | 'USD' | 'XOF'>('EUR');
   // Seuls les produits réellement en vente : state.products[0] pouvait être
@@ -105,7 +114,9 @@ export default function DiasporaPortalPage() {
         city: 'Bamako',
         neighborhood: beneficiaryNeighborhood.trim(),
         landmark: `Commande Diaspora [${buyerCountry}] - Bénéficiaire : ${beneficiaryName}`,
-        deliveryNotes: `Paiement en ligne Diaspora (${currency}). Email acheteur : ${buyerEmail || 'Non spécifié'}`,
+        deliveryNotes: carteOuverte
+          ? `Paiement en ligne Diaspora (${currency}). Email acheteur : ${buyerEmail || 'Non spécifié'}`
+          : `Commande Diaspora : payée à la réception par le bénéficiaire. Email acheteur : ${buyerEmail || 'Non spécifié'}`,
       });
   };
 
@@ -116,6 +127,11 @@ export default function DiasporaPortalPage() {
     setErreurPaiement('');
     try {
       const commande = await submitOrder(data);
+      // Carte pas encore ouverte : commande normale, payée à la réception par le proche.
+      if (!carteOuverte) {
+        router.push(`/order-success/${commande.orderNumber}`);
+        return;
+      }
       const res = await fetch('/api/payments/saspay/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -167,7 +183,9 @@ export default function DiasporaPortalPage() {
               </h1>
 
               <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-                Payez en <strong>Euros (€), Dollars ($)</strong> par carte bancaire (Visa, Mastercard). 
+                {carteOuverte
+                  ? <>Payez en <strong>Euros (€), Dollars ($)</strong> par carte bancaire (Visa, Mastercard). </>
+                  : <>Vous commandez d’ici, <strong>votre proche paie à la réception</strong> (espèces ou Mobile Money). </>}
                 Suguba livre vos proches à Bamako et en régions, et vous suivez la commande en ligne avec son numéro.
               </p>
             </div>
@@ -202,7 +220,7 @@ export default function DiasporaPortalPage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6 border-t border-white/10 text-xs">
             <div className="flex items-center space-x-2">
               <CreditCard className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>Paiement Sécurisé CB (Visa/Mastercard)</span>
+              <span>{carteOuverte ? 'Paiement sécurisé par carte (Visa/Mastercard)' : 'Payé à la réception par votre proche'}</span>
             </div>
             <div className="flex items-center space-x-2">
               <Truck className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -286,7 +304,8 @@ export default function DiasporaPortalPage() {
               Commander et Faire Livrer à Bamako
             </h2>
             <p className="text-xs text-slate-500">
-              Remplissez les coordonnées de votre parent à Bamako. Le paiement se fait par Carte Bancaire en toute sécurité.
+              Remplissez les coordonnées de votre parent à Bamako.
+              {carteOuverte ? ' Le paiement se fait par carte bancaire en toute sécurité.' : ' Il paie à la réception, après avoir vérifié le colis.'}
             </p>
           </div>
 
@@ -317,6 +336,11 @@ export default function DiasporaPortalPage() {
             </div>
           ) : (
             <form onSubmit={handleDiasporaCheckout} className="space-y-6">
+              {/* Compte client (C3) : un proche enregistré remplit les coordonnées du bénéficiaire. */}
+              <ChoixDestinataire onChoisir={(c) => {
+                setBeneficiaryName(c.nom); setBeneficiaryPhone(c.telephone);
+                if (c.quartier) setBeneficiaryNeighborhood(c.quartier);
+              }} />
 
               {/* Product recap */}
               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 flex items-center justify-between">
@@ -417,8 +441,10 @@ export default function DiasporaPortalPage() {
                   <Lock className="w-4 h-4" />
                   <span>
                     {isProcessing
-                      ? 'Redirection vers le paiement sécurisé...'
-                      : devis ? `Régler ${formatPrice(devis.total)} par Carte Bancaire / Visa / Mastercard` : 'Calcul du total…'}
+                      ? (carteOuverte ? 'Redirection vers le paiement sécurisé...' : 'Enregistrement de la commande...')
+                      : !devis ? 'Calcul du total…'
+                      : carteOuverte ? `Régler ${formatPrice(devis.total)} par carte bancaire`
+                      : `Commander pour ${formatPrice(devis.total)}, payé à la réception`}
                   </span>
                 </button>
 
@@ -429,7 +455,9 @@ export default function DiasporaPortalPage() {
                 )}
 
                 <p className="text-xs text-slate-500 text-center">
-                  🔒 Paiement par carte sur la page sécurisée SasPay : Suguba ne voit ni ne conserve vos données bancaires.
+                  {carteOuverte
+                    ? '🔒 Paiement par carte sur la page sécurisée SasPay : Suguba ne voit ni ne conserve vos données bancaires.'
+                    : 'Votre proche paie à la livraison, en espèces ou par Mobile Money. Suivez la commande dans « Mes commandes » si vous êtes connecté.'}
                 </p>
               </div>
 

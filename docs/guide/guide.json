@@ -192,6 +192,27 @@
  "journal": [
   {
    "date": "2026-09-26",
+   "titre": "Compte client (C3) : diaspora",
+   "demande": "Lot C3 : la diaspora utilise le même compte client avec un destinataire au Mali ; le destinataire n’accède qu’à ce qui sert à la réception ; ne pas promettre un paiement par carte non vérifié.",
+   "realise": [
+    "Réglage « Paiement par carte bancaire (diaspora) », fermé par défaut ; le serveur refuse la carte tant qu’il est fermé.",
+    "Page diaspora honnête : sans carte ouverte, « payé à la réception par votre proche » (espèces ou Mobile Money), commande normale puis confirmation ; plus de mention Visa/Mastercard sans condition.",
+    "« Pour qui commandez-vous ? » sur la page diaspora (destinataires enregistrés) ; la commande rejoint « Mes commandes » de l’acheteur connecté.",
+    "Inscription diaspora : le proche indiqué devient un destinataire enregistré (« Proche au Mali »)."
+   ],
+   "ecarts": [
+    "Paiement par carte : à ouvrir par l’admin seulement après un vrai paiement test réussi sur SasPay (non testé à ce jour).",
+    "Le destinataire reçoit l’image du reçu via « Transmettre au destinataire » (inchangé) ; pas d’accès séparé au compte de l’acheteur."
+   ],
+   "pages": [
+    "diaspora",
+    "compte-destinataires",
+    "compte-commandes"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-26",
    "titre": "Compte client (C2) : favoris, destinataires, commander à nouveau, recommander",
    "demande": "Lot C2 du compte client : favoris, destinataires enregistrés (« Pour moi · Pour un proche »), « Commander à nouveau » au prix et au stock du jour, « Recommander à un proche » sans commission.",
    "realise": [
@@ -1859,6 +1880,14 @@
     {
      "nom": "Régler … par carte",
      "role": "Paiement en ligne par carte bancaire."
+    },
+    {
+     "nom": "Paiement",
+     "role": "Tant que la carte bancaire n’est pas ouverte par l’admin (après un vrai paiement test SasPay), la commande est payée à la réception par le proche (espèces ou Mobile Money) : aucune promesse de carte sur la page, et le serveur refuse la carte."
+    },
+    {
+     "nom": "Pour qui commandez-vous ?",
+     "role": "Compte connecté : un proche enregistré remplit les coordonnées du bénéficiaire. La commande rejoint « Mes commandes » de l’acheteur ; « Transmettre au destinataire » sur le reçu lui envoie seulement l’image du reçu utile à la réception."
     }
    ],
    "suite": [
@@ -2054,6 +2083,10 @@
     {
      "nom": "Client",
      "role": "Compte client facultatif : « J’achète : mes commandes et reçus sur tous mes téléphones ». Aucun formulaire professionnel, aucune validation. Lien direct : /register?role=customer."
+    },
+    {
+     "nom": "Diaspora",
+     "role": "Même compte client : le proche indiqué à l’inscription devient un destinataire enregistré ; les commandes rejoignent « Mes commandes »."
     }
    ],
    "suite": [
@@ -3738,6 +3771,10 @@
     {
      "nom": "Baisser la part Suguba",
      "role": "Réglages qui réduisent la part de Suguba (marge, taux, part revendeur relevée, code promo, gain sur le prix de gros) ou prix d’un produit qui ne lui laisse rien : droit « Baisser la part Suguba » (Super Admin) et motif obligatoire, gardés dans un journal non modifiable."
+    },
+    {
+     "nom": "Paiement par carte bancaire (diaspora)",
+     "role": "Réglages économiques : « Fermé » par défaut. À ouvrir seulement après un vrai paiement test réussi par carte sur SasPay."
     }
    ],
    "suite": [

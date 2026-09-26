@@ -21,6 +21,8 @@ export async function GET() {
       livraisonParVille: reglages.livraisonParVille,
       pointsRelais: reglages.pointsRelais.map((p) => ({ id: p.id, nom: p.nom, frais: p.frais, horaires: p.horaires })),
       retraitMinimum: reglages.retraitMinimum,
+      // Carte bancaire (diaspora) : proposée seulement une fois vérifiée par un paiement test.
+      paiementCarte: reglages.paiementCarteVerifie === true,
       // Frais de retrait payés par le revendeur : il doit les voir avant de valider.
       fraisRetrait: {
         saspayPct: reglages.fraisVersementPct,

@@ -28,7 +28,7 @@ const ROLES: { cle: Role; titre: string; detail: string; icone: React.ElementTyp
   { cle: 'reseller', titre: 'Revendeur', detail: 'Partagez des produits, touchez une commission', icone: Store },
   { cle: 'supplier', titre: 'Fournisseur', detail: 'Vendez votre stock via Suguba', icone: ShoppingBag },
   { cle: 'driver', titre: 'Livreur', detail: 'Livrez les commandes à Bamako', icone: Truck },
-  { cle: 'diaspora', titre: 'Diaspora', detail: 'Commandez pour vos proches au Mali', icone: Globe },
+  { cle: 'diaspora', titre: 'Diaspora', detail: 'Commandez pour vos proches au Mali : vos commandes vous suivent partout', icone: Globe },
 ];
 
 /**

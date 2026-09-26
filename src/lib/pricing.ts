@@ -207,6 +207,13 @@ export interface ReglagesPlateforme {
    * commande payée en espèces. 0 = pas de plafond.
    */
   plafondEspecesCollecteur?: number;
+  /**
+   * Paiement par carte bancaire (SasPay, réseaux internationaux) —
+   * 2026-09-26, compte client C3. Faux par défaut : la page diaspora ne le
+   * propose pas, et le serveur le refuse, tant qu'un vrai paiement test n'a
+   * pas été réussi et que l'admin ne l'a pas ouvert.
+   */
+  paiementCarteVerifie?: boolean;
 
   // ── Coûts fixes ──────────────────────────────────────────────────────
   coutsFixesMensuels: LigneCoutFixe[];
@@ -320,6 +327,7 @@ export const REGLAGES_PAR_DEFAUT: ReglagesPlateforme = {
   livreurGardeRemuneration: true,
   delaiVersementEspecesHeures: 24,
   plafondEspecesCollecteur: 150000,
+  paiementCarteVerifie: false,
   coutsFixesMensuels: [
     { libelle: 'Estimation provisoire globale — à remplacer par le détail ci-dessous', montant: 300000 },
     { libelle: 'Hébergement (Vercel)', montant: 0 },
@@ -1158,6 +1166,7 @@ export function completerReglages(partiels: Partial<ReglagesPlateforme> | null |
     r.delaiVersementEspecesHeures = Number.isFinite(d) && d >= 1 ? Math.round(d) : 24;
     const p = Number(r.plafondEspecesCollecteur);
     r.plafondEspecesCollecteur = Number.isFinite(p) && p >= 0 ? Math.round(p) : 150000;
+    r.paiementCarteVerifie = r.paiementCarteVerifie === true;
   }
   {
     const o = (r.fraisOperateurRetraitPct && typeof r.fraisOperateurRetraitPct === 'object' ? r.fraisOperateurRetraitPct : {}) as Partial<Record<MoyenRetraitMobile, number>>;

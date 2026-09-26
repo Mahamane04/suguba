@@ -157,6 +157,24 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // Diaspora (compte client C3) : le proche indiqué à l'inscription devient
+    // un destinataire enregistré, proposé à chaque commande. Sans effet si la
+    // table n'existe pas encore ou si le proche est déjà enregistré.
+    if (roleEffectif === 'diaspora' && metadata) {
+      const m = metadata as Record<string, unknown>;
+      const nom = typeof m.beneficiaryNameInMali === 'string' ? m.beneficiaryNameInMali.trim().slice(0, 80) : '';
+      const tel = typeof m.beneficiaryPhoneInMali === 'string' ? m.beneficiaryPhoneInMali.replace(/[^\d+]/g, '').slice(0, 20) : '';
+      if (nom.length >= 2 && tel.replace(/\D/g, '').length >= 8) {
+        const { data: deja } = await admin.from('destinataires').select('id').eq('profile_id', session.uid).eq('telephone', tel).maybeSingle();
+        if (!deja) {
+          await admin.from('destinataires').insert({
+            profile_id: session.uid, nom, telephone: tel, relation: 'Proche au Mali',
+            quartier: typeof m.beneficiaryNeighborhoodInMali === 'string' ? m.beneficiaryNeighborhoodInMali.slice(0, 80) || null : null,
+          });
+        }
+      }
+    }
+
     // Parrainage automatique (§ 12). Le code vient du formulaire, sinon du
     // cookie posé à l'arrivée sur le lien de parrainage : il survit ainsi à
     // l'aller-retour Google et au lien de connexion reçu par e-mail.
