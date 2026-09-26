@@ -212,7 +212,8 @@
     "compte-suspension",
     "devis-client"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "782e18b"
   },
   {
    "date": "2026-09-26",
