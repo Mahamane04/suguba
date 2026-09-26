@@ -31,6 +31,8 @@ export interface Sponsorisation {
   finitLe: string | null;
   impressions: number;
   clics: number;
+  /** Paiement (2026-09-26) : montant reçu, date, référence ; activation. */
+  paiement: { recu: number; recuLe: string | null; reference: string | null; activeeLe: string | null };
 }
 
 function versPack(r: any): Pack {
@@ -62,6 +64,10 @@ function versSponsorisation(r: any): Sponsorisation {
     finitLe: r.ends_at || null,
     impressions: Number(r.impressions) || 0,
     clics: Number(r.clicks) || 0,
+    paiement: {
+      recu: Number(r.paid_amount) || 0, recuLe: r.paid_at || null,
+      reference: r.payment_reference || null, activeeLe: r.activated_at || null,
+    },
   };
 }
 
@@ -172,13 +178,63 @@ export async function changerStatutSponsorisation(
 ): Promise<{ ok: boolean; erreur?: string }> {
   const a = getSupabaseAdmin();
   if (!a) return { ok: false, erreur: 'Base indisponible.' };
-  const { data, error } = await a.from('sponsorships').update({ status: statut }).eq('id', id).select('supplier_id, label').maybeSingle();
+
+  const maj: Record<string, unknown> = { status: statut };
+  if (statut === 'active') {
+    const { data: s } = await a.from('sponsorships').select('*').eq('id', id).maybeSingle();
+    if (!s) return { ok: false, erreur: 'Sponsorisation introuvable.' };
+    // Paiement (2026-09-26) : pas d'activation sans le prix réglé en entier.
+    if ('paid_amount' in s && (Number(s.paid_amount) || 0) < (Number(s.budget) || 0)) {
+      return { ok: false, erreur: `Pack pas encore réglé en entier (${(Number(s.budget) || 0).toLocaleString('fr-FR')} F attendus) : enregistrez le paiement reçu avant d’activer.` };
+    }
+    // La durée du pack démarre à la PREMIÈRE activation, pas à la demande :
+    // un pack payé tard ne perd pas de jours.
+    if ('activated_at' in s && !s.activated_at) {
+      const { data: pack } = s.plan_id ? await a.from('sponsorship_plans').select('duration_days').eq('id', s.plan_id).maybeSingle() : { data: null };
+      const maintenant = new Date();
+      maj.activated_at = maintenant.toISOString();
+      maj.starts_at = maintenant.toISOString();
+      if (pack) maj.ends_at = finDuPack(maintenant, Number(pack.duration_days) || 7);
+    }
+  }
+  const { data, error } = await a.from('sponsorships').update(maj).eq('id', id).select('supplier_id, label').maybeSingle();
+  if (error && /SPONSORISATION_NON_REGLEE/.test(error.message)) return { ok: false, erreur: 'Pack pas encore réglé en entier : enregistrez le paiement reçu avant d’activer.' };
   if (error) return { ok: false, erreur: error.message };
   if (data?.supplier_id && (statut === 'active' || statut === 'rejected')) {
     await notifier(data.supplier_id, {
       type: 'sponsorisation',
       titre: statut === 'active' ? 'Sponsorisation en ligne' : 'Sponsorisation refusée',
       texte: data.label || null,
+      lien: '/supplier/sponsorisation',
+    });
+  }
+  return { ok: true };
+}
+
+/**
+ * Paiement reçu d'une sponsorisation (2026-09-26) : montant TOTAL reçu à ce
+ * jour et sa référence (reçu, transaction Mobile Money…).
+ */
+export async function enregistrerPaiementSponsorisation(
+  id: string,
+  adminId: string,
+  montantBrut: unknown,
+  referenceBrute: unknown,
+): Promise<{ ok: boolean; erreur?: string }> {
+  const a = getSupabaseAdmin();
+  if (!a) return { ok: false, erreur: 'Base indisponible.' };
+  const montant = Math.round(Number(montantBrut));
+  const reference = typeof referenceBrute === 'string' ? referenceBrute.trim().slice(0, 120) : '';
+  if (!Number.isFinite(montant) || montant < 0 || montant > 100_000_000) return { ok: false, erreur: 'Montant invalide.' };
+  if (montant > 0 && reference.length < 3) return { ok: false, erreur: 'Indiquez la référence du paiement (reçu, transaction…).' };
+  const { data, error } = await a.from('sponsorships').update({
+    paid_amount: montant, paid_at: new Date().toISOString(), payment_reference: reference || null, paid_by: adminId,
+  }).eq('id', id).select('supplier_id, label, budget').maybeSingle();
+  if (error) return { ok: false, erreur: /paid_amount/.test(error.message) ? 'Le suivi du paiement sera disponible après la mise à jour de la base.' : 'Enregistrement impossible.' };
+  if (data?.supplier_id && montant >= (Number(data.budget) || 0) && montant > 0) {
+    await notifier(data.supplier_id, {
+      type: 'sponsorisation', titre: 'Paiement de sponsorisation reçu',
+      texte: `${montant.toLocaleString('fr-FR')} F reçus${data.label ? ` · ${data.label}` : ''}. Votre reçu est disponible.`,
       lien: '/supplier/sponsorisation',
     });
   }

@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { ancrerRevendeur, codeDansAdresse, normaliserCodeRevendeur, revendeurAncre } from '@/lib/ancrage-revendeur';
+import { cloudSyncService } from '@/lib/cloud-sync';
 
 /**
  * Garde le revendeur d'origine du visiteur (lot B, 2026-09-26) : à chaque
@@ -25,7 +26,12 @@ export default function AncrageRevendeur({ code }: { code?: string | null }) {
     let annule = false;
     fetch(`/api/shop/revendeur?code=${encodeURIComponent(candidat)}`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((j) => { if (!annule && j?.nom) ancrerRevendeur(candidat); })
+      .then((j) => {
+        if (annule || !j?.nom) return;
+        ancrerRevendeur(candidat);
+        // Les cartes des articles au prix de gros prennent aussitôt SON prix.
+        void cloudSyncService.rafraichirCatalogue(true);
+      })
       .catch(() => {});
     return () => { annule = true; };
   }, [pathname, code]);

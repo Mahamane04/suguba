@@ -122,6 +122,9 @@ class CloudSyncService {
           offreInclus: p.offre_inclus || null,
           modeCommande: p.mode_commande === 'devis' ? 'devis' : 'achat',
           etapes: normaliserEtapes(p.etapes),
+          prixCatalogue: p.prix_catalogue && Number(p.prix_catalogue.prix) > 0
+            ? { prix: Number(p.prix_catalogue.prix), mention: p.prix_catalogue.mention === 'partenaire' ? 'partenaire' : 'des' }
+            : null,
           sugubaMargin: Math.max(0, Number(p.public_price || 0) - Number(p.supplier_price || 0) - Number(p.reseller_commission || 0)),
           stockQuantity: Number(p.stock ?? 0),
           warrantyMonths: 0, // Aucune colonne garantie en base : ne jamais en afficher une inventée.

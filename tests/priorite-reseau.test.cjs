@@ -72,3 +72,18 @@ test('boutique fournisseur : prix retirés côté serveur, revendeurs partenaire
   assert.equal(ouverte.produits[0].prix, 30000);
   assert.equal(ouverte.presentation, null);
 });
+
+test('cartes : prix du partenaire, sinon « dès » le moins cher, sinon rien', async () => {
+  tables = base();
+  const { prixCataloguePrixDeGros } = require('../src/lib/offres-revendeurs.ts');
+  const produits = [gros, { id: 'p2', public_price: 5000, mode_prix: 'fixe' }];
+  let r = await prixCataloguePrixDeGros(admin, produits, null);
+  assert.deepEqual(r.get('p1'), { prix: 30000, mention: 'des' }, 'le moins cher des revendeurs actifs');
+  assert.equal(r.has('p2'), false, 'prix fixe : inchangé');
+  r = await prixCataloguePrixDeGros(admin, produits, 'SG-111111');
+  assert.deepEqual(r.get('p1'), { prix: 32000, mention: 'partenaire' }, 'le prix de SON revendeur, même plus cher');
+  r = await prixCataloguePrixDeGros(admin, produits, 'SG-333333');
+  assert.equal(r.get('p1').mention, 'des', 'revendeur suspendu : ignoré');
+  tables = { ...base(), reseller_shop_items: [] };
+  assert.equal((await prixCataloguePrixDeGros(admin, produits, null)).size, 0, 'aucune offre : prix conseillé');
+});

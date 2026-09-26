@@ -192,6 +192,28 @@
  "journal": [
   {
    "date": "2026-09-26",
+   "titre": "Prix revendeurs sur les cartes et paiement des sponsorisations",
+   "demande": "Cartes du catalogue : ne plus afficher le prix conseillé d'un article au prix de gros ; sponsorisations : suivi du paiement.",
+   "realise": [
+    "Cartes (visiteur) : prix du revendeur d'origine, sinon « dès » le moins cher des revendeurs actifs, sinon prix conseillé ; même règle que la fiche. Relu dès qu'un revendeur d'origine est retenu.",
+    "Sponsorisations : « Enregistrer le paiement reçu » (montant, référence) côté admin ; activation refusée sans le pack réglé en entier (application + base).",
+    "La durée du pack démarre à la première activation (avant : à la demande).",
+    "Fournisseur : « À régler » puis « Réglé le … » et reçu imprimable."
+   ],
+   "ecarts": [
+    "SQL à exécuter : supabase/A-EXECUTER-2026-09-26-sponsorisations-paiement.sql.",
+    "Paiement toujours hors application (Mobile Money, espèces)."
+   ],
+   "pages": [
+    "accueil",
+    "fou-sponsorisation",
+    "fou-sponsorisation-recu",
+    "adm-sponsorisations"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-26",
    "titre": "Campagnes encadrées : budget réglé, canal, page de marque (lot 2b)",
    "demande": "Un budget suivi pour chaque campagne (engagé, dépensé, restant), une page de marque, et le choix clair du canal avant de payer ; les clics mesurés ne rapportent pas encore d'argent.",
    "realise": [
@@ -906,6 +928,10 @@
     {
      "nom": "Garanties",
      "role": "Payez à la livraison · Livraison 24 h à Bamako · Code secret à la remise."
+    },
+    {
+     "nom": "Prix des articles au prix de gros",
+     "role": "Pour un visiteur : le prix de son revendeur d’origine (« Prix de votre partenaire »), sinon « dès » le moins cher des revendeurs, sinon le prix conseillé — comme sur la fiche."
     }
    ],
    "suite": [
@@ -3099,6 +3125,10 @@
     {
      "nom": "Envoyer la demande",
      "role": "Demande en attente : Suguba contacte pour le paiement, puis active."
+    },
+    {
+     "nom": "À régler · Réglé le … · Voir le reçu",
+     "role": "La sponsorisation démarre une fois le pack réglé en entier, pour sa durée complète ; le reçu imprimable apparaît dès que Suguba a enregistré le paiement."
     }
    ],
    "suite": [
@@ -3110,6 +3140,26 @@
    "capture": {
     "chemin": "/supplier/sponsorisation"
    }
+  },
+  {
+   "id": "fou-sponsorisation-recu",
+   "role": "fournisseur",
+   "titre": "Reçu de sponsorisation",
+   "chemin": "/supplier/sponsorisation/recu/<id>",
+   "but": "Reçu du paiement d’une sponsorisation : pack, montant reçu, date, référence, période d’affichage.",
+   "elements": [
+    {
+     "nom": "Imprimer / enregistrer en PDF",
+     "role": "Le reçu seul, prêt à imprimer."
+    }
+   ],
+   "suite": [
+    {
+     "id": "fou-sponsorisation",
+     "libelle": "Retour aux sponsorisations"
+    }
+   ],
+   "note": "Pas de capture : aucun paiement de sponsorisation enregistré pour l’instant."
   },
   {
    "id": "fou-analyses",
@@ -3642,6 +3692,10 @@
     {
      "nom": "Demandes",
      "role": "Activer une sponsorisation après paiement."
+    },
+    {
+     "nom": "Enregistrer le paiement reçu",
+     "role": "Montant total reçu et référence. L’activation est refusée tant que le pack n’est pas réglé en entier (application et base) ; la durée démarre à la première activation."
     }
    ],
    "suite": [

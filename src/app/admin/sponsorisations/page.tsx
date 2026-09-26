@@ -21,6 +21,7 @@ interface Pack {
 interface Sponsorisation {
   id: string; libelle: string | null; emplacement: string; budget: number;
   statut: string; impressions: number; clics: number; finitLe: string | null;
+  paiement?: { recu: number; recuLe: string | null; reference: string | null; activeeLe: string | null };
 }
 
 const TON: Record<string, 'succes' | 'attente' | 'danger' | 'neutre'> = {
@@ -144,6 +145,8 @@ export default function SponsorisationsAdminPage() {
                     <span className="flex items-center gap-1"><MousePointerClick className="w-3 h-3" />{s.clics} clics</span>
                   </p>
 
+                  <PaiementSponsorisation s={s} envoyer={envoyer} />
+
                   <div className="flex gap-2">
                     {s.statut !== 'active' && (
                       <Button size="sm" fullWidth onClick={() => envoyer({ sponsorisationId: s.id, statut: 'active' }, 'Sponsorisation activée.')}>
@@ -168,5 +171,48 @@ export default function SponsorisationsAdminPage() {
         </>
       )}
     </PageReseau>
+  );
+}
+
+/**
+ * Paiement d'une sponsorisation (2026-09-26) : elle ne s'active qu'une fois le
+ * prix du pack reçu en entier. L'admin note le montant total reçu et sa référence.
+ */
+function PaiementSponsorisation({ s, envoyer }: {
+  s: Sponsorisation; envoyer: (corps: Record<string, unknown>, succes: string) => Promise<void>;
+}) {
+  const recu = s.paiement?.recu || 0;
+  const regle = recu >= s.budget;
+  const [ouvert, setOuvert] = useState(false);
+  const [montant, setMontant] = useState(String(s.budget));
+  const [reference, setReference] = useState('');
+  return (
+    <div className={`rounded-2xl px-3 py-2 text-xs space-y-2 ${regle ? 'bg-emerald-50 text-emerald-900' : 'bg-amber-50 text-amber-900'}`}>
+      <p className="font-bold">
+        {regle
+          ? `Réglé${s.paiement?.recuLe ? ` le ${new Date(s.paiement.recuLe).toLocaleDateString('fr-FR')}` : ''}${s.paiement?.reference ? ` (réf. ${s.paiement.reference})` : ''}`
+          : recu > 0 ? `${recu.toLocaleString('fr-FR')} F reçus, reste ${(s.budget - recu).toLocaleString('fr-FR')} F` : `À encaisser avant activation : ${s.budget.toLocaleString('fr-FR')} F`}
+      </p>
+      {ouvert ? (
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <Field label="Montant total reçu (F)" htmlFor={`sp-montant-${s.id}`}>
+              <Input id={`sp-montant-${s.id}`} type="number" inputMode="numeric" min={0} value={montant} onChange={(e) => setMontant(e.target.value)} />
+            </Field>
+            <Field label="Référence" htmlFor={`sp-ref-${s.id}`} aide="Reçu, transaction…">
+              <Input id={`sp-ref-${s.id}`} value={reference} onChange={(e) => setReference(e.target.value)} maxLength={120} />
+            </Field>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <Button size="sm" variant="ghost" onClick={() => setOuvert(false)}>Annuler</Button>
+            <Button size="sm" onClick={async () => { await envoyer({ sponsorisationId: s.id, action: 'paiement', montant: Number(montant), reference }, 'Paiement enregistré.'); setOuvert(false); }}>Enregistrer</Button>
+          </div>
+        </div>
+      ) : (
+        <Button size="sm" variant="ghost" onClick={() => { setOuvert(true); setMontant(String(Math.max(recu, s.budget))); setReference(s.paiement?.reference || ''); }}>
+          {recu > 0 ? 'Modifier le paiement reçu' : 'Enregistrer le paiement reçu'}
+        </Button>
+      )}
+    </div>
   );
 }

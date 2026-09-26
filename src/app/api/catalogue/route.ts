@@ -4,6 +4,8 @@ import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { contexteFournisseur } from '@/lib/reseau/contexte-fournisseur';
 import { produitPourLecteur, type AccesCatalogue } from '@/lib/catalogue';
+import { prixCataloguePrixDeGros } from '@/lib/offres-revendeurs';
+import { normaliserCodeRevendeur } from '@/lib/ancrage-revendeur';
 
 /**
  * Catalogue des produits approuvés (2026-09-26, lot A) — remplace la lecture
@@ -27,8 +29,15 @@ export async function GET(req: NextRequest) {
   const { data, error } = await admin.from('products').select('*').eq('status', 'approved').order('created_at', { ascending: false });
   if (error) return NextResponse.json({ error: 'Catalogue indisponible.' }, { status: 503 });
 
+  // Visiteur : les articles au prix de gros affichent le prix des revendeurs
+  // (celui de son revendeur d'origine, sinon « dès » le moins cher), comme la
+  // fiche. Revendeurs, fournisseurs et admin gardent le prix conseillé.
+  const prixGros = acces.role === 'public'
+    ? await prixCataloguePrixDeGros(admin, data || [], normaliserCodeRevendeur(req.cookies.get('suguba_ref')?.value)).catch(() => new Map())
+    : new Map();
+
   return NextResponse.json(
-    { products: (data || []).map((p) => produitPourLecteur(p, acces)) },
+    { products: (data || []).map((p) => ({ ...produitPourLecteur(p, acces), ...(prixGros.has(p.id) ? { prix_catalogue: prixGros.get(p.id) } : {}) })) },
     // Réponse propre à chaque lecteur : jamais mise en cache partagé.
     { headers: { 'Cache-Control': 'private, no-store', Vary: 'Cookie' } },
   );

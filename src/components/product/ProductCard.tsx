@@ -25,6 +25,8 @@ export interface ProduitCarte {
   prixLibre?: boolean;
   /** « Service », « Installation incluse » ou « Remis par le vendeur » (2026-09-26). */
   etiquetteOffre?: string | null;
+  /** Article au prix de gros vu par un visiteur : prix des revendeurs (2026-09-26). */
+  mentionPrix?: 'partenaire' | 'des' | null;
 }
 
 export function carteDepuisProduit(p: Product): ProduitCarte {
@@ -35,7 +37,8 @@ export function carteDepuisProduit(p: Product): ProduitCarte {
     id: p.id,
     slug: p.slug,
     nom: p.name,
-    prix: p.publicPrice,
+    prix: p.prixCatalogue?.prix ?? p.publicPrice,
+    mentionPrix: p.prixCatalogue?.mention ?? null,
     categorie: p.category,
     images: p.images,
     enStock: p.stockQuantity > 0,
@@ -176,12 +179,15 @@ export default function ProductCard({
         ) : (
         <>
         <p className="text-base sm:text-lg font-bold text-slate-900 leading-none">
+          {produit.mentionPrix === 'des' && <span className="text-xs font-bold text-slate-500">dès </span>}
           {produit.prix.toLocaleString('fr-FR')} <span className="text-xs font-bold">F</span>
         </p>
         <p className="text-xs text-slate-500">
           {afficherCommission && (produit.commission ?? 0) > 0
             ? <>Vous gagnez <strong className="text-suguba-brand-dark">{produit.commission!.toLocaleString('fr-FR')} F</strong></>
-            : 'Payez à la livraison'}
+            : produit.mentionPrix === 'des' ? 'Prix de nos revendeurs'
+              : produit.mentionPrix === 'partenaire' ? 'Prix de votre partenaire'
+                : 'Payez à la livraison'}
         </p>
         </>
         )}

@@ -69,3 +69,48 @@ export async function protectionPrixDeGros(admin: SupabaseClient): Promise<boole
 }
 
 export const MESSAGE_ACHAT_VIA_REVENDEUR = 'Cet article est vendu par nos revendeurs partenaires, à leur prix. Choisissez l’offre d’un revendeur sur la fiche du produit.';
+
+/**
+ * Prix affiché sur les CARTES des articles au prix de gros (2026-09-26) —
+ * même règle que la fiche, pour qu'une carte ne montre jamais un prix que
+ * la fiche contredit :
+ *   1. client arrivé par un revendeur qui propose l'article → SON prix ;
+ *   2. sinon, des revendeurs le proposent → « dès » le moins cher ;
+ *   3. sinon → rien (la carte garde le prix conseillé, achat direct possible).
+ */
+export async function prixCataloguePrixDeGros(
+  admin: SupabaseClient,
+  produits: { id: string; public_price: number | string; mode_prix?: unknown }[],
+  codeRevendeur: string | null,
+): Promise<Map<string, { prix: number; mention: 'partenaire' | 'des' }>> {
+  const resultat = new Map<string, { prix: number; mention: 'partenaire' | 'des' }>();
+  const gros = produits.filter((p) => p.mode_prix === 'gros');
+  if (!gros.length) return resultat;
+  const ids = gros.map((p) => p.id);
+
+  const { data: lignes, error } = await admin.from('reseller_shop_items').select('reseller_id, product_id').in('product_id', ids).limit(5000);
+  if (error || !lignes?.length) return resultat;
+  const revendeurs = [...new Set(lignes.map((l: any) => l.reseller_id as string))];
+  const [{ data: roles }, { data: profils }, { data: prix }] = await Promise.all([
+    admin.from('profile_roles').select('profile_id, status').eq('role', 'reseller').in('profile_id', revendeurs),
+    admin.from('profiles').select('id, reseller_code').in('id', revendeurs),
+    admin.from('reseller_prices').select('reseller_id, product_id, price').in('product_id', ids).in('reseller_id', revendeurs),
+  ]);
+  const actifs = new Set((roles || []).filter((r: any) => r.status === 'active').map((r: any) => r.profile_id));
+  const codeDe = new Map((profils || []).map((p: any) => [p.id, p.reseller_code]));
+  const prixDe = new Map((prix || []).filter((x: any) => Number(x.price) > 0).map((x: any) => [`${x.reseller_id}:${x.product_id}`, Number(x.price)]));
+  const conseille = new Map(gros.map((p) => [p.id, Number(p.public_price) || 0]));
+
+  for (const l of lignes as any[]) {
+    if (!actifs.has(l.reseller_id)) continue;
+    const valeur = Math.round(prixDe.get(`${l.reseller_id}:${l.product_id}`) ?? conseille.get(l.product_id) ?? 0);
+    if (!(valeur > 0)) continue;
+    const actuel = resultat.get(l.product_id);
+    if (codeRevendeur && codeDe.get(l.reseller_id) === codeRevendeur) {
+      resultat.set(l.product_id, { prix: valeur, mention: 'partenaire' });
+    } else if (actuel?.mention !== 'partenaire' && (!actuel || valeur < actuel.prix)) {
+      resultat.set(l.product_id, { prix: valeur, mention: 'des' });
+    }
+  }
+  return resultat;
+}

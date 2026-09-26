@@ -138,6 +138,11 @@ export interface Product {
   offreInclus?: string | null;
   /** Comment le client commande (lot 1b) : achat direct, ou demande de devis. */
   modeCommande?: 'achat' | 'devis';
+  /**
+   * Prix de carte d'un article au prix de gros, pour un visiteur (2026-09-26) :
+   * celui de son revendeur d'origine, ou « dès » le moins cher des revendeurs.
+   */
+  prixCatalogue?: { prix: number; mention: 'partenaire' | 'des' } | null;
   /** Étapes de la prestation (lot 1c), validées une à une par le client. */
   etapes?: ('visite' | 'rendez_vous' | 'materiel' | 'installation' | 'prise_en_main')[];
   sugubaMargin: number;        // Marge nette Suguba (ex: 6 000 F)

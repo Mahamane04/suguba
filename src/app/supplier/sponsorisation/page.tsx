@@ -37,6 +37,7 @@ interface Sponsorisation {
   finitLe: string | null;
   impressions: number;
   clics: number;
+  paiement?: { recu: number; recuLe: string | null; reference: string | null; activeeLe: string | null };
 }
 
 interface Emplacement { valeur: string; libelle: string; description: string }
@@ -179,6 +180,16 @@ export default function SponsorisationPage() {
                     <span className="flex items-center gap-1"><MousePointerClick className="w-3 h-3" />{s.clics}</span>
                     <span>{s.budget.toLocaleString('fr-FR')} F</span>
                   </p>
+                  {s.statut !== 'rejected' && s.budget > 0 && ((s.paiement?.recu || 0) >= s.budget ? (
+                    <p className="text-xs text-emerald-800 flex items-center justify-between gap-2">
+                      <span>Réglé{s.paiement?.recuLe ? ` le ${new Date(s.paiement.recuLe).toLocaleDateString('fr-FR')}` : ''}</span>
+                      <a href={`/supplier/sponsorisation/recu/${encodeURIComponent(s.id)}`} className="font-bold underline min-h-11 inline-flex items-center">Voir le reçu</a>
+                    </p>
+                  ) : (
+                    <p className="text-xs text-amber-800">
+                      À régler : {(s.budget - (s.paiement?.recu || 0)).toLocaleString('fr-FR')} F — la sponsorisation démarre une fois réglée, pour la durée complète du pack.
+                    </p>
+                  ))}
                 </div>
               ))}
             </Card>
