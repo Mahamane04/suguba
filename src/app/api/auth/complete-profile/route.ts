@@ -7,7 +7,7 @@ import { chargerRoles, choisirRoleActif } from '@/lib/profile-roles';
 import { attribuerSlugFournisseur } from '@/lib/shop';
 
 // Rôles qu'une personne peut choisir elle-même en finalisant son inscription.
-const ROLES_INSCRIPTION: SugubaRole[] = ['reseller', 'supplier', 'driver', 'diaspora'];
+const ROLES_INSCRIPTION: SugubaRole[] = ['customer', 'reseller', 'supplier', 'driver', 'diaspora'];
 
 /**
  * Deuxième étape de l'inscription — nom, numéro WhatsApp et champs propres au

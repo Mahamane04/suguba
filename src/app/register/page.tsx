@@ -20,9 +20,11 @@ function GoogleIcon({ className }: { className?: string }) {
   );
 }
 
-type Role = 'reseller' | 'supplier' | 'driver' | 'diaspora';
+type Role = 'customer' | 'reseller' | 'supplier' | 'driver' | 'diaspora';
 
 const ROLES: { cle: Role; titre: string; detail: string; icone: React.ElementType }[] = [
+  // Compte client (2026-09-26, C1) : facultatif, sans validation ni dossier.
+  { cle: 'customer', titre: 'Client', detail: 'J’achète : mes commandes et reçus sur tous mes téléphones', icone: ShoppingCart },
   { cle: 'reseller', titre: 'Revendeur', detail: 'Partagez des produits, touchez une commission', icone: Store },
   { cle: 'supplier', titre: 'Fournisseur', detail: 'Vendez votre stock via Suguba', icone: ShoppingBag },
   { cle: 'driver', titre: 'Livreur', detail: 'Livrez les commandes à Bamako', icone: Truck },
@@ -41,7 +43,11 @@ const ROLES: { cle: Role; titre: string; detail: string; icone: React.ElementTyp
  * part.
  */
 export default function RegisterPage() {
-  const [role, setRole] = useState<Role>('reseller');
+  const [role, setRole] = useState<Role>(() => {
+    if (typeof window === 'undefined') return 'reseller';
+    const demande = new URLSearchParams(window.location.search).get('role');
+    return ROLES.some((r) => r.cle === demande) ? (demande as Role) : 'reseller';
+  });
   const [email, setEmail] = useState('');
   const [lienEnvoye, setLienEnvoye] = useState(false);
   const [envoi, setEnvoi] = useState(false);
@@ -114,8 +120,8 @@ export default function RegisterPage() {
               <ShoppingCart className="w-4 h-4" />
             </div>
             <div className="flex-1">
-              <p className="font-bold text-sm text-slate-900">Client</p>
-              <p className="text-xs text-slate-500">Pas besoin de compte pour acheter : commandez directement, vous payez à la livraison.</p>
+              <p className="font-bold text-sm text-slate-900">Acheter sans compte</p>
+              <p className="text-xs text-slate-500">Un compte n’est pas obligatoire : commandez directement, vous payez à la livraison.</p>
             </div>
             <ArrowRight className="w-4 h-4 text-slate-400 shrink-0" />
           </Link>

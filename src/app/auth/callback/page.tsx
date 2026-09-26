@@ -12,7 +12,7 @@ const DEST_BY_ROLE: Record<string, string> = {
   driver: '/driver',
   supplier: '/supplier',
   reseller: '/reseller',
-  customer: '/reseller',
+  customer: '/compte/commandes',
   diaspora: '/diaspora',
 };
 

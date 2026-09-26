@@ -5,6 +5,7 @@ import { creerCommande, OrderCreationError } from '@/lib/order-create';
 import { normaliserCodeLien } from '@/lib/reseau/codes';
 import { apresCommande, corpsAvecReferent } from '@/lib/reseau/attribution-commande';
 import { SESSION_COOKIE_NAME } from '@/lib/session';
+import { rattacherCommandes } from '@/lib/compte-client';
 
 export const runtime = 'nodejs';
 
@@ -39,6 +40,8 @@ export async function POST(req: NextRequest) {
     const result = await creerCommande(getSupabaseAdmin(), body, req.headers.get('Idempotency-Key'), session?.uid || null);
 
     if (result.created) await apresCommande(result.order, codeLien);
+    // Compte client (C1) : la commande rejoint le compte de l'acheteur connecté.
+    if (result.created) await rattacherCommandes(getSupabaseAdmin(), session, [{ id: result.order.id, resellerId: result.order.resellerId }]);
 
     return NextResponse.json({ success: true, ...result }, { status: result.created ? 201 : 200, headers });
   } catch (error) {

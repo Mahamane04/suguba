@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Header from '@/components/common/Header';
 import Button from '@/components/ui/Button';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
-import { devisAccessKey, rememberOrderAccess } from '@/lib/order-access-client';
+import { cleDuCompte, devisAccessKey, rememberOrderAccess } from '@/lib/order-access-client';
 import { whatsappHelper } from '@/lib/whatsapp-helper';
 import { CheckCircle2, Clock, FileText, QrCode, XCircle } from 'lucide-react';
 import FilMessages from '@/components/messagerie/FilMessages';
@@ -44,7 +44,8 @@ export default function DevisClientPage() {
   const [envoi, setEnvoi] = useState(false);
 
   const charger = useCallback(async () => {
-    const cle = devisAccessKey(numero);
+    // Compte client (C1) : sans clé sur ce téléphone, le propriétaire connecté en reçoit une.
+    const cle = devisAccessKey(numero) || await cleDuCompte('devis', numero);
     if (!cle) { setEtat('sans-cle'); return; }
     try {
       const r = await fetch('/api/devis/lire', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ numero, accessKey: cle }) });

@@ -6,10 +6,10 @@ import { chargerRoles, choisirRoleActif } from '@/lib/profile-roles';
 // Même règle qu'à la connexion : aucun rôle
 // ne peut s'auto-attribuer admin à la création, quel que soit le chemin de
 // connexion.
-// `customer` n'y figure plus : un client achète sans compte (commande invité,
-// suivi par numéro) et aucun espace client n'existe — un compte « client »
-// atterrissait sur /reseller, qui le refusait.
-const SELF_SERVE_ROLES: SugubaSession['role'][] = ['reseller', 'supplier', 'driver', 'diaspora'];
+// `customer` (2026-09-26, C1) : compte client facultatif — acheter reste
+// possible sans compte ; le compte retrouve ses commandes sur tout téléphone
+// (/compte/commandes). Aucune validation, aucun formulaire professionnel.
+const SELF_SERVE_ROLES: SugubaSession['role'][] = ['customer', 'reseller', 'supplier', 'driver', 'diaspora'];
 
 /**
  * Point d'entrée unique pour les connexions email et Google : le client a

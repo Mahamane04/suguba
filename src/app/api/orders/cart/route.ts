@@ -4,6 +4,9 @@ import { OrderCreationError } from '@/lib/order-create';
 import { creerPanier } from '@/lib/cart-create';
 import { normaliserCodeLien } from '@/lib/reseau/codes';
 import { apresCommande, corpsAvecReferent } from '@/lib/reseau/attribution-commande';
+import { verifyActiveSession } from '@/lib/active-session';
+import { SESSION_COOKIE_NAME } from '@/lib/session';
+import { rattacherCommandes } from '@/lib/compte-client';
 
 export const runtime = 'nodejs';
 
@@ -26,6 +29,9 @@ export async function POST(req: NextRequest) {
     const resultat = await creerPanier(getSupabaseAdmin(), body, req.headers.get('Idempotency-Key'));
     if (resultat.created) {
       for (const commande of resultat.orders) await apresCommande(commande, codeLien);
+      // Compte client (C1) : les commandes rejoignent le compte de l'acheteur connecté.
+      const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value).catch(() => null);
+      await rattacherCommandes(getSupabaseAdmin(), session, resultat.orders.map((o) => ({ id: o.id, resellerId: o.resellerId })));
     }
     return NextResponse.json({ success: true, ...resultat }, { status: resultat.created ? 201 : 200, headers });
   } catch (error) {

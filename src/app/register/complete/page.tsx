@@ -14,9 +14,10 @@ import { DEFAULT_DIAL_CODE } from '@/lib/dial-codes';
 import { DEFAULT_NEIGHBORHOOD } from '@/lib/bamako-neighborhoods';
 import { ArrowRight, Gift, Store, ShoppingBag, Truck, Globe, ShoppingCart, Check } from 'lucide-react';
 
-type Role = 'reseller' | 'supplier' | 'driver' | 'diaspora';
+type Role = 'customer' | 'reseller' | 'supplier' | 'driver' | 'diaspora';
 
 const ROLES: { cle: Role; titre: string; detail: string; icone: React.ElementType }[] = [
+  { cle: 'customer', titre: 'Client', detail: 'J’achète : je retrouve mes commandes sur tous mes téléphones', icone: ShoppingCart },
   { cle: 'reseller', titre: 'Revendeur', detail: 'Je partage des produits et je touche une commission', icone: Store },
   { cle: 'supplier', titre: 'Fournisseur', detail: 'J\'ai un stock et je veux le vendre via Suguba', icone: ShoppingBag },
   { cle: 'driver', titre: 'Livreur', detail: 'Je livre les commandes à Bamako', icone: Truck },
@@ -24,7 +25,7 @@ const ROLES: { cle: Role; titre: string; detail: string; icone: React.ElementTyp
 ];
 
 const DESTINATION: Record<string, string> = {
-  reseller: '/reseller', supplier: '/supplier', driver: '/driver', diaspora: '/diaspora', admin: '/admin',
+  customer: '/compte/commandes', reseller: '/reseller', supplier: '/supplier', driver: '/driver', diaspora: '/diaspora', admin: '/admin',
 };
 
 const estRole = (v: unknown): v is Role => ROLES.some((r) => r.cle === v);
@@ -221,7 +222,7 @@ function FinaliserInscription() {
           </div>
           <Link href="/" className="flex items-center gap-2 p-3 rounded-2xl bg-slate-50 text-xs text-slate-600 hover:bg-slate-100">
             <ShoppingCart className="w-4 h-4 shrink-0" />
-            <span><strong>Vous voulez seulement acheter ?</strong> Pas besoin de compte : commandez directement depuis le catalogue.</span>
+            <span><strong>Un compte n’est pas obligatoire pour acheter :</strong> vous pouvez aussi commander directement depuis le catalogue.</span>
           </Link>
         </section>
 
@@ -241,7 +242,7 @@ function FinaliserInscription() {
               </div>
             </Champ>
 
-            {role === 'reseller' && (
+            {(role === 'reseller' || role === 'customer') && (
               <>
                 <Champ label="Votre quartier à Bamako">
                   <NeighborhoodPicker value={neighborhood} onChange={setNeighborhood} />

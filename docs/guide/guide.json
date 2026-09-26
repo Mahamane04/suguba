@@ -192,6 +192,29 @@
  "journal": [
   {
    "date": "2026-09-26",
+   "titre": "Compte client (C1)",
+   "demande": "Audit « compte client » : pouvoir acheter sans compte ne suffit pas ; créer un compte client simple et facultatif, sans validation professionnelle, pour retrouver ses commandes sur tous ses téléphones. Choix : « Mes commandes » pour tout compte ; l’espace diaspora reste tel quel jusqu’au lot C3.",
+   "realise": [
+    "Inscription « Client » (nom, numéro, quartier), sans validation ; arrivée sur « Mes commandes ».",
+    "Commande, panier et devis passés connecté rattachés au compte de l’acheteur — jamais à l’admin, au livreur ni au revendeur qui saisit la vente pour son client ; la commande née d’un devis suit le compte.",
+    "« Mes commandes » : commandes et devis du compte ; reçus et devis ouverts sur n’importe quel téléphone (nouvelle clé délivrée au seul propriétaire, seul son hash est gardé).",
+    "« Ajouter à mon compte » : achats faits sans compte depuis ce téléphone, rattachés avec la clé de leur reçu ; jamais déplacés d’un autre compte.",
+    "Liens depuis le suivi, la confirmation de commande et le menu du compte (« Mes commandes »)."
+   ],
+   "ecarts": [
+    "Favoris, destinataires enregistrés, « commander à nouveau » et « recommander à un proche » : lot C2.",
+    "Diaspora (même compte avec un destinataire, paiement par carte à vérifier) : lot C3.",
+    "Un achat fait sans compte sur un autre téléphone ne peut être ajouté que depuis ce téléphone (preuve de la clé)."
+   ],
+   "pages": [
+    "compte-commandes",
+    "suivi",
+    "recu"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-26",
    "titre": "Protection Suguba — lot 3 : échanges, comptes liés, part Suguba, suspension",
    "demande": "Lot 3 de la « Protection Suguba » : messagerie interne rattachée aux dossiers avec détection des contournements ; comptes liés exclus des résultats payés ; réduction de la part Suguba seulement avec un droit dédié et un motif ; suspension motivée et contestable, sans effacer les engagements en cours.",
    "realise": [
@@ -1492,6 +1515,10 @@
     {
      "nom": "Retour au catalogue",
      "role": "Accueil."
+    },
+    {
+     "nom": "Mes commandes sur tous mes téléphones",
+     "role": "Lien vers le compte client (/compte/commandes)."
     }
    ],
    "suite": [
@@ -1503,6 +1530,38 @@
    "capture": {
     "chemin": "/track"
    }
+  },
+  {
+   "id": "compte-commandes",
+   "role": "visiteur",
+   "titre": "Mes commandes (compte client)",
+   "chemin": "/compte/commandes",
+   "but": "Retrouver ses commandes, reçus et devis sur tous ses téléphones avec un compte client, facultatif : acheter reste possible sans compte.",
+   "elements": [
+    {
+     "nom": "Liste des commandes",
+     "role": "Numéro, date, montant, état ; ouvre le reçu avec son QR, même sur un autre téléphone (une nouvelle clé est délivrée au propriétaire du compte)."
+    },
+    {
+     "nom": "Mes devis",
+     "role": "Les demandes de devis du compte, avec leur état."
+    },
+    {
+     "nom": "Ajouter à mon compte",
+     "role": "Achats faits sans compte depuis ce téléphone : ajoutés avec la clé de leur reçu (preuve d’accès), jamais sur la seule foi d’un numéro."
+    },
+    {
+     "nom": "Non connecté",
+     "role": "« Me connecter » ou « Créer mon compte client »."
+    }
+   ],
+   "suite": [
+    {
+     "id": "suivi",
+     "libelle": "Suivre ma commande"
+    }
+   ],
+   "note": "Pas de capture : nécessite un compte client connecté."
   },
   {
    "id": "recu",
@@ -1538,6 +1597,10 @@
     {
      "nom": "Contacter Suguba sur WhatsApp",
      "role": "Message pré-rempli avec le numéro de commande."
+    },
+    {
+     "nom": "Autre téléphone",
+     "role": "Commande passée avec un compte client : connecté, le reçu s’ouvre sur n’importe quel téléphone."
     }
    ],
    "suite": [
@@ -1890,6 +1953,10 @@
     {
      "nom": "2 · Vérifiez votre identité",
      "role": "Google, ou lien reçu par e-mail."
+    },
+    {
+     "nom": "Client",
+     "role": "Compte client facultatif : « J’achète : mes commandes et reçus sur tous mes téléphones ». Aucun formulaire professionnel, aucune validation. Lien direct : /register?role=customer."
     }
    ],
    "suite": [
@@ -1916,6 +1983,10 @@
     {
      "nom": "Enregistrer",
      "role": "Envoie le dossier. Revendeur : accès immédiat. Fournisseur et livreur : validation par Suguba."
+    },
+    {
+     "nom": "Client",
+     "role": "Nom, numéro WhatsApp et quartier seulement ; arrivée sur « Mes commandes »."
     }
    ],
    "suite": [

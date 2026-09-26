@@ -9,8 +9,7 @@ import ClocheNotifications from '@/components/reseau/ClocheNotifications';
 import IconePanier from '@/components/panier/IconePanier';
 import {
   ShoppingBag, Shield, Truck, Store, UserCheck,
-  ChevronDown, LogOut, Menu, X, Globe, LogIn, Search, Users
-} from 'lucide-react';
+  ChevronDown, LogOut, Menu, X, Globe, LogIn, Search, Users, PackageSearch } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { invaliderIdentite } from '@/lib/identite';
 import LogoSuguba from '@/components/ui/LogoSuguba';
@@ -20,7 +19,7 @@ const roleConfig: Record<UserRole, { label: string; icon: React.ElementType; pat
   supplier: { label: 'Fournisseur', icon: ShoppingBag, path: '/supplier' },
   driver: { label: 'Livreur', icon: Truck, path: '/driver' },
   admin: { label: 'Admin', icon: Shield, path: '/admin' },
-  customer: { label: 'Client', icon: UserCheck, path: '/' },
+  customer: { label: 'Client', icon: UserCheck, path: '/compte/commandes' },
   diaspora: { label: 'Diaspora', icon: Globe, path: '/diaspora' },
 };
 
@@ -170,6 +169,11 @@ export default function Header() {
                       {IconeRole && <IconeRole className="w-4 h-4 text-slate-400" />}
                       Mon espace
                     </Link>
+                    <Link href="/compte/commandes" onClick={() => setMenuCompte(false)} role="menuitem"
+                      className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-slate-700 hover:bg-slate-50">
+                      <PackageSearch className="w-4 h-4 text-slate-400" />
+                      Mes commandes
+                    </Link>
                     <Link href="/compte/profils" onClick={() => setMenuCompte(false)} role="menuitem"
                       className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-slate-700 hover:bg-slate-50">
                       <Users className="w-4 h-4 text-slate-400" />
@@ -216,6 +220,11 @@ export default function Header() {
                 className="flex items-center gap-3 px-3 py-3 rounded-xl bg-slate-100 text-slate-900 font-semibold">
                 <IconeRole className="w-4 h-4" />
                 Mon espace
+              </Link>
+              <Link href="/compte/commandes" onClick={() => setMenuMobile(false)}
+                className="flex items-center gap-3 px-3 py-3 rounded-xl text-slate-700 hover:bg-slate-50">
+                <PackageSearch className="w-4 h-4" />
+                Mes commandes
               </Link>
               <Link href="/compte/profils" onClick={() => setMenuMobile(false)}
                 className="flex items-center gap-3 px-3 py-3 rounded-xl text-slate-700 hover:bg-slate-50">

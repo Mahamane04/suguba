@@ -40,7 +40,8 @@ de l'un à l'autre dans **Compte › Profils**.
 
 | Rôle | Ce qu'il fait | Espace |
 |---|---|---|
-| **Client / visiteur** | Achète ou demande un devis, suit sa commande, valide les étapes d'une prestation, suit des boutiques. Pas besoin de compte. | `/`, `/p/…`, `/panier`, `/track`, `/recu/…`, `/devis/…` |
+| **Client / visiteur** | Achète ou demande un devis, suit sa commande, valide les étapes d'une prestation, suit des boutiques. **Pas besoin de compte.** | `/`, `/p/…`, `/panier`, `/track`, `/recu/…`, `/devis/…` |
+| **Client avec compte** (facultatif) | Retrouve ses commandes, reçus et devis **sur tous ses téléphones** ; ajoute les achats faits sans compte depuis son téléphone. | `/compte/commandes` |
 | **Revendeur** | Choisit des offres, les partage, vend, encaisse des commissions, ouvre sa boutique, participe aux missions et campagnes. | `/reseller/…` |
 | **Fournisseur** | Publie ses offres, répond aux devis, remet lui-même ou prépare pour le livreur, déclare les étapes, lance des campagnes. | `/supplier/…` |
 | **Livreur** | Récupère et livre les colis, encaisse les espèces, les remet à la caisse. | `/driver`, `/driver/earnings` |
@@ -70,10 +71,19 @@ Un admin **sans rôle d'équipe n'a aucun droit** d'équipe.
 
 - Connexion par **Google** ou **lien magique par e-mail** (pas de mot de passe, pas de SMS).
 - Après la première connexion, `/register/complete` demande les informations du rôle
-  (numéro WhatsApp, boutique, véhicule…).
+  (numéro WhatsApp, boutique, véhicule…). **Client** : nom, numéro et quartier seulement
+  (`/register?role=customer`), arrivée sur « Mes commandes ».
 - Ajouter un rôle à son compte : **Compte › Profils**.
-- Les dossiers revendeur, fournisseur et livreur sont **validés par un admin** avant
-  d'accéder à leur espace (`/pending-approval` en attendant).
+- Tous les rôles **naissent actifs** (la validation manuelle ne vérifiait rien) ; le
+  contrôle est là où il y a de la valeur : délai de sécurité et retraits pour le
+  revendeur, modération des produits pour le fournisseur, activation au guichet pour le
+  livreur.
+- **Compte client (C1)** : une commande, un panier ou un devis passé connecté rejoint le
+  compte de l'**acheteur** (jamais l'admin, le livreur ni le revendeur qui saisit la
+  vente pour son client). Sur un autre téléphone, le propriétaire connecté reçoit une
+  nouvelle clé pour ouvrir son reçu (seul son hash est gardé). Une ancienne commande ne
+  s'ajoute au compte qu'avec la clé de son reçu. « Mes commandes » est dans le menu de
+  tout compte.
 - ⚠️ Les e-mails de connexion partent encore de l'expéditeur par défaut de Supabase et
   peuvent arriver en **spam**. Solution prévue : SMTP **Resend** + DNS du domaine
   `sugubaml.com` (chez Hostinger) — **pas encore vérifiés**.
@@ -438,6 +448,7 @@ ne quitte pas le serveur autrement (jamais envoyée puis cachée) :
 | Missions | `src/lib/reseau/missions-db.ts` (`compter_evenement_mission`), `src/lib/reseau/preuves-missions.ts` |
 | Paiement au résultat | `src/lib/reseau/resultats*.ts`, `/api/reseau/visite`, SQL `enregistrer_resultat_campagne` / `decider_resultat_campagne`, tables `visites_mesurees` et `campagne_resultats` |
 | Trésorerie | `src/lib/caisse-livreur.ts` (plafond), `src/lib/paiements-recus.ts`, SQL `fonds_recus` / `liberer_commissions_echues`, tables `paiements_recus` et `tresorerie_reglages` |
+| Compte client | `src/lib/compte-client.ts`, `/api/compte/commandes`, colonnes `customer_profile_id`, table `acces_cles` |
 | Coordonnées | `src/lib/acces-contacts.ts` (règles par dossier), table `acces_coordonnees` |
 | Protection lot 3 | `src/lib/protection.ts` (baisses de la part Suguba, analyse des messages), `src/lib/messagerie.ts`, `src/lib/suspensions.ts`, SQL `comptes_lies`, tables `conversations`, `messages`, `journal_part_suguba`, `suspensions` |
 | Réglages | `platform_settings` (prix) et `reseau_reglages` (réseau) |
@@ -445,7 +456,7 @@ ne quitte pas le serveur autrement (jamais envoyée puis cachée) :
 | Paiement | `src/lib/saspay.ts`, `/api/payments/saspay/*`, `/api/webhooks/saspay` |
 | Reçu et QR | `src/lib/recu-commande.ts`, `src/lib/qr-remise.ts`, `src/lib/remise-qr.ts` |
 | Stockage privé | buckets `sav-photos`, `etapes-photos`, `preuves-missions` |
-| Tests | `npm test` (243 tests, Node + PostgreSQL embarqué PGlite) |
+| Tests | `npm test` (247 tests, Node + PostgreSQL embarqué PGlite) |
 | Guide | `docs/guide/guide.json` + `/admin/guide` |
 
 **Variables d'environnement** (valeurs dans Vercel) : `NEXT_PUBLIC_SUPABASE_URL`,
@@ -504,11 +515,12 @@ données) :
 - Paiement en ligne des campagnes et sponsorisations, remboursement du solde non utilisé.
 - Prévenir le client sans compte d'une étape à valider (aujourd'hui, le fournisseur lui
   demande d'ouvrir son reçu).
-- Retrouver son reçu sur un autre téléphone.
+- **Compte client C2** : favoris, destinataires enregistrés (« Pour moi · Pour un proche
+  au Mali »), « Commander à nouveau », « Recommander à un proche » sans commission.
+- **Compte client C3** : diaspora = même compte avec un destinataire au Mali ; n'afficher
+  le paiement par carte (SasPay) qu'après un vrai paiement test.
 
 **Configuration et comptes**
-- **Équipe fournisseur** : sa table n'existe pas en production (SQL de l'équipe jamais
-  exécuté) — inviter des membres ne fonctionne pas tant qu'il ne l'est pas.
 - **E-mails en spam** : configurer Resend (SMTP + DNS chez Hostinger, sans toucher au SPF).
 - **Compte principal** (`infos@microofficeml.com`) sans numéro WhatsApp.
 - **Ancien compte fournisseur** `microoffice16@yahoo.fr` (0 produit) : à supprimer ou non.

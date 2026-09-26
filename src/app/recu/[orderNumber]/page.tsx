@@ -11,7 +11,7 @@ import Sheet from '@/components/ui/Sheet';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 import { Field, Textarea } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
-import { orderAccessKey } from '@/lib/order-access-client';
+import { cleDuCompte, orderAccessKey } from '@/lib/order-access-client';
 import { contenuQrRemise } from '@/lib/qr-remise';
 import { dessinerRecu } from '@/lib/recu-image';
 import { whatsappHelper } from '@/lib/whatsapp-helper';
@@ -46,14 +46,20 @@ export default function RecuPage() {
   const [image, setImage] = useState(false);
 
   const charger = useCallback(async () => {
-    const cle = orderAccessKey(numero);
+    // Compte client (C1) : sans clé sur ce téléphone, le propriétaire connecté en reçoit une.
+    let cle = orderAccessKey(numero) || await cleDuCompte('commande', numero);
     if (!cle) { setEtat('sans-cle'); return; }
     setEtat('chargement');
     try {
-      const r = await fetch('/api/orders/recu', {
+      const lire = (k: string) => fetch('/api/orders/recu', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderNumber: numero, accessKey: cle }),
+        body: JSON.stringify({ orderNumber: numero, accessKey: k }),
       });
+      let r = await lire(cle);
+      if (r.status === 403) {
+        const autre = await cleDuCompte('commande', numero);
+        if (autre && autre !== cle) { cle = autre; r = await lire(cle); }
+      }
       const j = await r.json().catch(() => null);
       if (r.status === 403) { setEtat('sans-cle'); return; }
       if (!r.ok || !j?.recu) throw new Error(j?.error || 'Reçu indisponible. Réessayez.');
@@ -133,6 +139,9 @@ export default function RecuPage() {
             Pour protéger votre code de remise, le reçu n’est pas accessible avec le seul numéro de commande.
             Ouvrez ce lien sur le téléphone utilisé pour commander, ou demandez à la personne qui a commandé
             de vous transmettre le reçu.
+          </p>
+          <p className="text-sm text-slate-700">
+            Commande passée avec votre compte client ? <a href={`/login?next=${encodeURIComponent(`/recu/${numero}`)}`} className="font-bold underline">Connectez-vous</a> : vos reçus s’ouvrent sur tous vos téléphones.
           </p>
           <div className="flex flex-col gap-2">
             <Button href={`/track/${encodeURIComponent(numero)}`}>Suivre la commande #{numero}</Button>

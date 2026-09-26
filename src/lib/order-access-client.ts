@@ -105,3 +105,21 @@ export function clearPrivateSessionStorage(effacerRecus = false) {
     for (const key of Object.keys(localStorage)) if (key.startsWith(PREFIX_DURABLE) || key.startsWith(PREFIX_DEVIS)) localStorage.removeItem(key);
   } catch { /* Stockage indisponible. */ }
 }
+
+/**
+ * Compte client (2026-09-26, C1) : sur un téléphone qui n'a pas la clé, le
+ * propriétaire connecté du compte en reçoit une nouvelle pour ce reçu ou ce
+ * devis. null = pas connecté, ou achat qui n'est pas dans son compte.
+ */
+export async function cleDuCompte(type: 'commande' | 'devis', ref: string): Promise<string | null> {
+  try {
+    const r = await fetch('/api/compte/commandes', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'cle', type, ref }),
+    });
+    if (!r.ok) return null;
+    const { cle } = await r.json();
+    if (typeof cle !== 'string') return null;
+    if (type === 'commande') rememberOrderAccess(ref, cle); else rememberDevisAccess(ref, cle);
+    return cle;
+  } catch { return null; }
+}

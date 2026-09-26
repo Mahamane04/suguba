@@ -9,5 +9,8 @@ export async function hasOrderReceiptAccess(admin: SupabaseClient, orderNumber: 
   if (error) return false;
   if (data?.receipt?.order_number === orderNumber) return true;
   const cart = await admin.from('cart_creation_requests').select('receipts').eq('key_hash', hash).maybeSingle();
-  return !cart.error && Array.isArray(cart.data?.receipts) && cart.data.receipts.some((r: any) => r.order_number === orderNumber);
+  if (!cart.error && Array.isArray(cart.data?.receipts) && cart.data.receipts.some((r: any) => r.order_number === orderNumber)) return true;
+  // Compte client (C1) : clé délivrée au propriétaire du compte sur un autre téléphone.
+  const compte = await admin.from('acces_cles').select('ref').eq('key_hash', hash).eq('type', 'commande').maybeSingle();
+  return !compte.error && compte.data?.ref === orderNumber;
 }

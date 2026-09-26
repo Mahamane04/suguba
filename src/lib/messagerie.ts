@@ -1,7 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { analyserMessage, LIBELLE_MOTIF, type MotifMessage } from './protection';
 import { notifier } from './reseau/notifications';
-import { hashCle } from './devis';
+import { devisAccessible } from './devis';
 import { nomMasque } from './acces-contacts';
 
 /**
@@ -74,10 +74,9 @@ function autorise(c: any, auteur: Auteur): boolean {
 
 /** Le client du devis (numéro + clé du téléphone) ouvre le fil de son devis. */
 export async function filDuClient(admin: SupabaseClient, numero: unknown, cle: unknown) {
-  if (typeof numero !== 'string' || typeof cle !== 'string' || cle.length < 16) throw new MessageError('Ce devis s’ouvre sur le téléphone qui l’a demandé.', 403);
-  const { data: q } = await admin.from('quote_requests').select('id, supplier_id, access_key_hash').eq('quote_number', numero.trim()).maybeSingle();
-  if (!q || q.access_key_hash !== hashCle(cle)) throw new MessageError('Ce devis s’ouvre sur le téléphone qui l’a demandé.', 403);
-  return ouvrirFilDevis(admin, q);
+  const q = await devisAccessible(admin, numero, cle).catch(() => null);
+  if (!q) throw new MessageError('Ce devis s’ouvre sur le téléphone qui l’a demandé.', 403);
+  return ouvrirFilDevis(admin, { id: q.id, supplier_id: q.supplier_id });
 }
 
 // ── Lire ────────────────────────────────────────────────────────────────────

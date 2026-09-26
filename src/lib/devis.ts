@@ -217,13 +217,23 @@ export async function refuserDemande(admin: SupabaseClient, fournisseurId: strin
 }
 
 // ── 3. Côté client ──────────────────────────────────────────────────────────
-async function devisDuClient(admin: SupabaseClient, numero: unknown, cle: unknown) {
-  if (typeof numero !== 'string' || !numero.trim() || typeof cle !== 'string' || !CLE.test(cle)) {
-    throw new DevisError('Ce devis s’ouvre sur le téléphone qui l’a demandé.', 403);
-  }
-  const { data, error } = await admin.from('quote_requests').select('*')
-    .eq('quote_number', numero.trim()).eq('access_key_hash', hashCle(cle)).maybeSingle();
+/**
+ * Devis ouvert avec la clé du téléphone qui l'a demandé, ou avec une clé
+ * délivrée au propriétaire du compte client sur un autre téléphone (C1).
+ * null = pas d'accès.
+ */
+export async function devisAccessible(admin: SupabaseClient, numero: unknown, cle: unknown): Promise<Record<string, any> | null> {
+  if (typeof numero !== 'string' || !numero.trim() || typeof cle !== 'string' || !CLE.test(cle)) return null;
+  const { data, error } = await admin.from('quote_requests').select('*').eq('quote_number', numero.trim()).maybeSingle();
   if (error) indisponible();
+  if (!data) return null;
+  if (data.access_key_hash === hashCle(cle)) return data;
+  const { data: compte } = await admin.from('acces_cles').select('ref').eq('key_hash', hashCle(cle)).eq('type', 'devis').maybeSingle();
+  return compte?.ref === data.quote_number ? data : null;
+}
+
+async function devisDuClient(admin: SupabaseClient, numero: unknown, cle: unknown) {
+  const data = await devisAccessible(admin, numero, cle);
   if (!data) throw new DevisError('Ce devis s’ouvre sur le téléphone qui l’a demandé.', 403);
   return data;
 }
@@ -323,6 +333,10 @@ export async function deciderDevisClient(admin: SupabaseClient, numero: unknown,
   await admin.from('quote_requests').update({
     status: 'acceptee', order_id: commande.id, order_number: commande.orderNumber, decided_at: now,
   }).eq('id', q.id).eq('status', 'proposee');
+  // Compte client (C1) : la commande née du devis suit le compte de l'acheteur.
+  if (q.customer_profile_id) {
+    await admin.from('orders').update({ customer_profile_id: q.customer_profile_id }).eq('id', commande.id).is('customer_profile_id', null);
+  }
   // Avis seulement au premier passage (une nouvelle tentative rend le même
   // reçu : on ne prévient pas deux fois).
   if (q.status === 'proposee' && data.created !== false) {

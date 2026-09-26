@@ -163,6 +163,12 @@ export default function OrderSuccessPage({ params }: { params: Promise<{ orderNu
                 <span>Accueil</span>
               </Link>
             </div>
+            {/* Compte client (C1) : facultatif, pour retrouver ses commandes sur tous ses téléphones. */}
+            <Link href="/compte/commandes"
+              className="block rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-700 hover:bg-slate-50">
+              <span className="font-bold text-slate-900">Retrouvez vos commandes et reçus sur tous vos téléphones</span>
+              <span className="block">Avec un compte client, facultatif et gratuit.</span>
+            </Link>
           </div>
 
         </div>

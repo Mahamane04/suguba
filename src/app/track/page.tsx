@@ -77,6 +77,12 @@ export default function TrackIndexPage() {
           </p>
         </div>
 
+        <Link href="/compte/commandes"
+          className="block rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-700 hover:bg-slate-50">
+          <span className="font-bold text-slate-900">Mes commandes sur tous mes téléphones</span>
+          <span className="block">Connectez-vous à votre compte client, ou créez-le : c’est facultatif et gratuit.</span>
+        </Link>
+
         {recus.length > 0 && (
           <div className="bg-white rounded-3xl border border-slate-100 shadow-card p-2">
             <p className="px-3 pt-2 pb-1 text-xs font-bold text-slate-900">Mes reçus sur ce téléphone</p>

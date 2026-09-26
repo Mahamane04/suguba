@@ -12,7 +12,7 @@ const DEST_PAR_ROLE: Record<string, string> = {
   driver: '/driver',
   reseller: '/reseller',
   diaspora: '/diaspora',
-  customer: '/',
+  customer: '/compte/commandes',
 };
 
 /**
