@@ -8,6 +8,7 @@ import ShopShareBar from '@/components/shop/ShopShareBar';
 import type { Boutique } from '@/lib/shop';
 import BadgeConfiance from '@/components/ui/BadgeConfiance';
 import { quartierReconnu } from '@/lib/reseau/proximite';
+import AncrageRevendeur from '@/components/common/AncrageRevendeur';
 import { ShieldCheck, Truck, KeyRound, Store, Users, MapPin, Pencil, ImagePlus } from 'lucide-react';
 
 /**
@@ -63,6 +64,8 @@ export default function ShopView({
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
       <Header />
+      {/* Boutique d'un revendeur : il devient le revendeur d'origine du visiteur (lot B). */}
+      {estRevendeur && refCode && <AncrageRevendeur code={refCode} />}
 
       <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
         <section className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">

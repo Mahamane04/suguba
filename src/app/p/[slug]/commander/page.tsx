@@ -16,6 +16,8 @@ import ChoicePicker from '@/components/ui/ChoicePicker';
 import { Card, EmptyState, Skeleton } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
 import { MARGE_BAS_FLOTTANT } from '@/lib/mise-en-page';
+import { normaliserCodeRevendeur, revendeurAncre } from '@/lib/ancrage-revendeur';
+import PartenaireVisite from '@/components/common/PartenaireVisite';
 import {
   ArrowLeft, Minus, Plus, Bike, Store, Tag, ShieldCheck, Lock, Check,
   Navigation, Clock, PackageX, Info,
@@ -89,7 +91,15 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
   const clavierOuvert = useClavierOuvert();
   const product = state.products.find((p) => p.slug === slug);
 
-  const refCode = searchParams.get('ref');
+  // Code de l'adresse, sinon revendeur d'origine gardé sur l'appareil (lot B) :
+  // passer par l'accueil ou la boutique du fournisseur ne le fait plus perdre.
+  const [refAncre, setRefAncre] = useState<string | null>(null);
+  useEffect(() => { setRefAncre(revendeurAncre()); }, []);
+  // refUrl : l'offre choisie par le client (lien du revendeur) — seule
+  // transmise telle quelle. refAncre : simple provenance, que le serveur
+  // n'applique qu'après le revendeur déjà rattaché au téléphone du client.
+  const refUrl = normaliserCodeRevendeur(searchParams.get('ref'));
+  const refCode = refUrl || refAncre;
   const promoParam = (searchParams.get('promo') || '').toUpperCase();
   const quantiteInitiale = Math.min(50, Math.max(1, parseInt(searchParams.get('q') || '1', 10) || 1));
 
@@ -216,7 +226,9 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
       neighborhood: retrait ? 'Point Relais Partenaire' : neighborhood,
       landmark: retrait ? retrait.nom : landmark.trim(),
       deliveryNotes: retrait ? `Retrait en Point Relais : ${retrait.nom}` : deliveryNotes.trim() || undefined,
-      resellerCode: refCode || undefined,
+      // Code du lien seulement : la provenance (cookie) est appliquée par le
+      // serveur APRÈS le revendeur déjà rattaché au client (premier contact).
+      resellerCode: refUrl || undefined,
       pickupPointId: retrait?.id,
       promoCode: devis.codePromo || undefined,
       positionClient: retrait ? undefined : positionClient || undefined,
@@ -240,6 +252,7 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
             <Lock className="w-3 h-3" />
             Rien à payer maintenant
           </p>
+          <PartenaireVisite refUrl={refUrl} />
         </div>
       </div>
     </header>

@@ -10,6 +10,7 @@ import { Field, Input, Textarea } from '@/components/ui/Field';
 import { useSugubaStore } from '@/lib/store';
 import { rememberDevisAccess } from '@/lib/order-access-client';
 import { ArrowLeft, FileText } from 'lucide-react';
+import { normaliserCodeRevendeur } from '@/lib/ancrage-revendeur';
 
 /**
  * Demande de devis (2026-09-26, lot 1b) : pour une offre « sur devis » (kit
@@ -24,7 +25,9 @@ export default function DemandeDevisPage({ params }: { params: Promise<{ slug: s
   const searchParams = useSearchParams();
   const state = useSugubaStore();
   const product = state.products.find((p) => p.slug === slug);
-  const refCode = searchParams.get('ref');
+  // Code du lien seulement : la provenance gardée sur l'appareil est
+  // appliquée par le serveur, après le revendeur déjà rattaché (lot B).
+  const refUrl = normaliserCodeRevendeur(searchParams.get('ref'));
 
   const [nom, setNom] = useState('');
   const [telephone, setTelephone] = useState('');
@@ -66,7 +69,7 @@ export default function DemandeDevisPage({ params }: { params: Promise<{ slug: s
           accessKey: cle.current,
           demande: {
             productId: product.id, customerName: nom, customerPhone: telephone, city: ville,
-            neighborhood: quartier, landmark: repere, quantite, besoin, resellerCode: refCode || undefined,
+            neighborhood: quartier, landmark: repere, quantite, besoin, resellerCode: refUrl || undefined,
           },
         }),
       });
@@ -85,7 +88,7 @@ export default function DemandeDevisPage({ params }: { params: Promise<{ slug: s
     <div className="min-h-screen bg-slate-50">
       <Header />
       <main className="mx-auto max-w-xl px-4 py-5 space-y-4">
-        <Link href={`/p/${product.slug}${refCode ? `?ref=${encodeURIComponent(refCode)}` : ''}`}
+        <Link href={`/p/${product.slug}${refUrl ? `?ref=${encodeURIComponent(refUrl)}` : ''}`}
           className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900">
           <ArrowLeft className="w-4 h-4" /> {product.name}
         </Link>

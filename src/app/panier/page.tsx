@@ -18,6 +18,7 @@ import { useToast } from '@/components/ui/Toast';
 import { changerQuantite, retirerDuPanier, usePanier, viderPanier } from '@/lib/panier';
 import { sugubaStore, useQuartierClient, definirQuartierClient } from '@/lib/store';
 import type { Order } from '@/types';
+import PartenaireVisite from '@/components/common/PartenaireVisite';
 
 /**
  * Panier et validation (§ 29 et § 30 des écrans).
@@ -235,6 +236,7 @@ export default function PanierPage() {
               Continuer mes achats
             </button>
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Mon panier</h1>
+            <PartenaireVisite className="mt-1" />
           </div>
 
           <Card padding="p-0" className="overflow-hidden divide-y divide-slate-100">

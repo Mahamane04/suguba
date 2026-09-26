@@ -7,6 +7,7 @@ import ServiceWorkerRegister from '@/components/common/ServiceWorkerRegister';
 import WhatsAppFloatingButton from '@/components/common/WhatsAppFloatingButton';
 import PushNotificationManager from '@/components/common/PushNotificationManager';
 import CloudSyncInitializer from '@/components/common/CloudSyncInitializer';
+import AncrageRevendeur from '@/components/common/AncrageRevendeur';
 import AuthHashCatcher from '@/components/common/AuthHashCatcher';
 import PreviewBanner from '@/components/common/PreviewBanner';
 import { ToastProvider } from '@/components/ui/Toast';
@@ -55,6 +56,7 @@ export default function RootLayout({
       <body className="h-full flex flex-col antialiased font-sans selection:bg-suguba-brand selection:text-white">
         <AuthHashCatcher />
         <CloudSyncInitializer />
+        <AncrageRevendeur />
         <ServiceWorkerRegister />
         <OfflineStatus />
         <PwaInstallPrompt />

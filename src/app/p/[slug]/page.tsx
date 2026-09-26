@@ -16,6 +16,7 @@ import {
   ShieldCheck, Truck, Clock, Minus, Plus, CheckCircle2, ArrowRight, ArrowLeft, Handshake, Store,
 } from 'lucide-react';
 import { ETAPES, libelleTypeOffre, normaliserTypeOffre } from '@/lib/offre';
+import { normaliserCodeRevendeur, revendeurAncre } from '@/lib/ancrage-revendeur';
 
 const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} FCFA`;
 
@@ -28,7 +29,15 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   // de la visite en cours.
   const monCode = useCodeRevendeur();
 
-  const refCode = searchParams.get('ref');
+  // Code de l'adresse, sinon revendeur d'origine gardé sur l'appareil (lot B) :
+  // passer par l'accueil ou la boutique du fournisseur ne le fait plus perdre.
+  const [refAncre, setRefAncre] = useState<string | null>(null);
+  useEffect(() => { setRefAncre(revendeurAncre()); }, []);
+  // refUrl : l'offre choisie par le client (lien du revendeur) — seule
+  // transmise telle quelle. refAncre : simple provenance, que le serveur
+  // n'applique qu'après le revendeur déjà rattaché au téléphone du client.
+  const refUrl = normaliserCodeRevendeur(searchParams.get('ref'));
+  const refCode = refUrl || refAncre;
   const promoParam = searchParams.get('promo');
   // Corrige BUG-009 : un slug inexistant ne retombe plus sur un autre produit.
   const product = state.products.find(p => p.slug === resolvedParams.slug);
@@ -155,12 +164,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
     if (outOfStock) return;
     // Offre sur devis (lot 1b) : le client décrit son besoin au lieu de commander.
     if (surDevis) {
-      router.push(`/p/${product.slug}/devis${refCode ? `?ref=${encodeURIComponent(refCode)}` : ''}`);
+      router.push(`/p/${product.slug}/devis${refUrl ? `?ref=${encodeURIComponent(refUrl)}` : ''}`);
       return;
     }
     const parametres = new URLSearchParams();
     if (quantity > 1) parametres.set('q', String(quantity));
-    if (refCode) parametres.set('ref', refCode);
+    // Seul le lien du revendeur suit dans l'adresse ; la provenance gardée sur
+    // l'appareil est relue par la page de commande et par le serveur.
+    if (refUrl) parametres.set('ref', refUrl);
     if (promoParam) parametres.set('promo', promoParam);
     const suite = parametres.toString();
     router.push(`/p/${product.slug}/commander${suite ? `?${suite}` : ''}`);

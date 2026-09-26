@@ -192,6 +192,25 @@
  "journal": [
   {
    "date": "2026-09-26",
+   "titre": "Revendeur d'origine gardé pendant la navigation (lot B « Priorité au réseau »)",
+   "demande": "Changer de page ne doit pas effacer une attribution revendeur valide : un visiteur arrivé par un lien ou une boutique revendeur reste rattaché à ce revendeur jusqu'à sa commande ; un client déjà rattaché garde son revendeur.",
+   "realise": [
+    "Arrivée par /r/<code>, /boutique/<adresse> d'un revendeur ou un lien ?ref= : le revendeur est retenu 30 jours sur l'appareil (avant : seulement via /go/), après vérification qu'il est actif.",
+    "Premier contact : un autre lien ne remplace pas le revendeur déjà retenu.",
+    "À la commande (et à la demande de devis), le serveur décide : code du lien choisi, sinon revendeur déjà rattaché au téléphone, sinon provenance de l'appareil.",
+    "« Recommandé par … » sur la fiche produit et « Votre partenaire : … » à la commande et dans le panier, même sans ?ref= dans l'adresse ; le prix d'un article au prix de gros reste celui de ce revendeur."
+   ],
+   "ecarts": [
+    "Provenance liée au navigateur : un autre téléphone ou des cookies effacés la perdent (le client rouvre le lien du revendeur).",
+    "Un lien suivi /go/ d'un autre revendeur remplace encore la provenance (comportement antérieur conservé) ; un client déjà rattaché par téléphone reste à son revendeur."
+   ],
+   "pages": [
+    "fiche-produit"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-26",
    "titre": "Prix fournisseur privés (lot A « Priorité au réseau »)",
    "demande": "Les prix de gros et conditions professionnelles ne doivent pas être publics ; la restriction doit être appliquée côté serveur, pas seulement en masquant une page.",
    "realise": [
@@ -980,6 +999,10 @@
     {
      "nom": "Une question ? Écrivez-nous",
      "role": "Ouvre WhatsApp avec le nom du produit déjà écrit."
+    },
+    {
+     "nom": "Recommandé par …",
+     "role": "Le revendeur par qui le client est arrivé (lien, boutique /r/ ou /boutique/), même après être passé par l’accueil ou une autre boutique."
     }
    ],
    "suite": [
@@ -1090,6 +1113,10 @@
     {
      "nom": "Utiliser ma position actuelle",
      "role": "Livraison calculée à la distance exacte depuis le dépôt du vendeur ; le livreur est guidé jusqu’à vous."
+    },
+    {
+     "nom": "Votre partenaire : …",
+     "role": "Rappel du revendeur d’origine du client. Simple indication : l’attribution est décidée par le serveur à la commande."
     }
    ],
    "suite": [
@@ -1159,6 +1186,10 @@
     {
      "nom": "Barre flottante",
      "role": "← Retour · Total · Confirmer."
+    },
+    {
+     "nom": "Votre partenaire : …",
+     "role": "Rappel du revendeur d’origine du client. Simple indication : l’attribution est décidée par le serveur à la commande."
     }
    ],
    "suite": [
