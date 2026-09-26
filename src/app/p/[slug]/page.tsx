@@ -18,6 +18,7 @@ import {
 import { ETAPES, libelleTypeOffre, normaliserTypeOffre } from '@/lib/offre';
 import { normaliserCodeRevendeur, revendeurAncre } from '@/lib/ancrage-revendeur';
 import OffresRevendeurs, { type OffreRevendeurVue } from '@/components/product/OffresRevendeurs';
+import VisiteQualifiee from '@/components/product/VisiteQualifiee';
 
 const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} FCFA`;
 
@@ -211,6 +212,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 md:pb-16">
       <Header />
+      {/* Visite qualifiée (lot 3) : seulement arrivé par le lien d'un revendeur. */}
+      <VisiteQualifiee produitId={product.id} code={refUrl} />
 
       <div className="sticky top-16 z-40 bg-white/95 backdrop-blur-xs border-b border-slate-100">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 h-11 flex items-center justify-between gap-3">

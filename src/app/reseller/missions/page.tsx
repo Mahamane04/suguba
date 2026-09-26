@@ -12,6 +12,7 @@ import Button from '@/components/ui/Button';
 import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
 import { joursRestants, libelleType, progression, verbeType, type TypeMission } from '@/lib/reseau/missions';
+import { estTypeResultat, partRevendeur, DELAI_GARANTIE_JOURS, DUREE_MIN_VISITE_S } from '@/lib/reseau/resultats-constantes';
 
 /**
  * Missions du revendeur (§ 11 des écrans).
@@ -75,6 +76,7 @@ export default function MissionsRevendeurPage() {
   const [onglet, setOnglet] = useState<Onglet>('disponibles');
   const [enCours, setEnCours] = useState<string | null>(null);
   const [preuves, setPreuves] = useState<Preuve[]>([]);
+  const [gains, setGains] = useState<Record<string, { resultats: number; gagne: number; annules: number }>>({});
 
   const charger = React.useCallback(() => {
     fetch('/api/reseller/missions/preuves', { cache: 'no-store' })
@@ -84,6 +86,7 @@ export default function MissionsRevendeurPage() {
       .then((data) => {
         setMissions(data.missions || []);
         setParticipations(data.participations || []);
+        setGains(data.gains || {});
       })
       .catch(() => { /* liste vide : l'écran affiche son état vide */ })
       .finally(() => setChargement(false));
@@ -167,6 +170,9 @@ export default function MissionsRevendeurPage() {
           {visibles.map((m) => {
             const p = parMission.get(m.id);
             const pourcent = p ? progression(p.avancement, m.objectif) : 0;
+            // Campagne au résultat (lot 3) : payé à chaque résultat, pas à un objectif.
+            const auResultat = estTypeResultat(m.type);
+            const unite = m.type === 'visite_qualifiee' ? 'visite' : 'demande';
             const jours = joursRestants(m.finitLe, maintenant);
             return (
               <Card key={m.id} className="space-y-3">
@@ -174,7 +180,7 @@ export default function MissionsRevendeurPage() {
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-slate-900">{m.titre}</p>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      {libelleType(m.type)} · objectif {m.objectif} {verbeType(m.type)}
+                      {auResultat ? `${libelleType(m.type)} · payé à chaque ${unite}` : `${libelleType(m.type)} · objectif ${m.objectif} ${verbeType(m.type)}`}
                     </p>
                   </div>
                   {p?.statut === 'completed' && <StatusPill ton="attente">À valider</StatusPill>}
@@ -187,7 +193,9 @@ export default function MissionsRevendeurPage() {
                 <div className="flex flex-wrap items-center gap-2">
                   <StatusPill ton="succes">
                     <Gift className="w-3 h-3" />
-                    {m.recompense > 0 ? `${m.recompense.toLocaleString('fr-FR')} F` : m.recompenseLibelle || 'Récompense'}
+                    {auResultat
+                      ? `${partRevendeur(m.recompense).toLocaleString('fr-FR')} F par ${unite}`
+                      : m.recompense > 0 ? `${m.recompense.toLocaleString('fr-FR')} F` : m.recompenseLibelle || 'Récompense'}
                   </StatusPill>
                   {jours != null && (
                     <StatusPill ton={jours <= 2 ? 'danger' : 'neutre'}>
@@ -198,7 +206,21 @@ export default function MissionsRevendeurPage() {
                   <StatusPill ton="neutre">{m.participants} participant{m.participants > 1 ? 's' : ''}</StatusPill>
                 </div>
 
-                {p ? (
+                {p && auResultat ? (
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-bold text-slate-700">
+                      {gains[m.id]?.resultats || 0} {unite}{(gains[m.id]?.resultats || 0) > 1 ? 's' : ''} comptée{(gains[m.id]?.resultats || 0) > 1 ? 's' : ''} ·{' '}
+                      {(gains[m.id]?.gagne || 0).toLocaleString('fr-FR')} F gagnés
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {m.type === 'visite_qualifiee'
+                        ? `Une visite compte quand la personne qui ouvre votre lien reste ${DUREE_MIN_VISITE_S} secondes sur le produit. Chaque personne compte une fois ; vos propres visites ne comptent pas.`
+                        : 'Une demande compte quand le fournisseur répond au devis de votre client, ou quand Suguba confirme sa commande. Chaque client compte une fois.'}
+                      {` Vos gains sont retirables ${DELAI_GARANTIE_JOURS} jours après chaque résultat.`}
+                    </p>
+                    {m.supplierId && m.productId && p.statut === 'joined' && <PartagerCampagne mission={m} />}
+                  </div>
+                ) : p ? (
                   <div className="space-y-1.5">
                     <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
                       <div className="h-full bg-suguba-brand transition-all" style={{ width: `${pourcent}%` }} />

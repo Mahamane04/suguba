@@ -192,6 +192,29 @@
  "journal": [
   {
    "date": "2026-09-26",
+   "titre": "Rémunération au résultat (lot 3)",
+   "demande": "Lot 3 : rémunérer les visites et les demandes qualifiées. Choix validés : prix libre du fournisseur au-dessus d’un minimum (25 F la visite, 500 F la demande), 20 % pour Suguba et 80 % au revendeur, gains retirables après 7 jours, interrupteur désactivé au départ (mesure seule).",
+   "realise": [
+    "Deux nouveaux types de campagne fournisseur : visites qualifiées et demandes qualifiées, budget payé d’avance, pause automatique quand il est épuisé (garde-fou en base).",
+    "Visite qualifiée : arrivée par le lien d’un revendeur, 20 s sur le produit et un geste ; robots et revendeur lui-même exclus ; une fois par visiteur et par campagne ; 50 par revendeur et par jour.",
+    "Demande qualifiée comptée par la base : devis auquel le fournisseur répond, ou commande confirmée par l’appel ; un client une fois par campagne.",
+    "Gain de 80 % en attente 7 jours ; résultats suspects (même réseau) ou contestés par le fournisseur sous 48 h vérifiés par l’admin ; annulation qui rend le prix au budget.",
+    "Page admin « Qualité des mesures » : interrupteur, mesures des 30 derniers jours, résultats à vérifier."
+   ],
+   "ecarts": [
+    "Interrupteur désactivé : rien n’est payé et les fournisseurs ne voient pas encore ces campagnes tant que l’admin ne l’active pas.",
+    "Un tricheur patient peut encore simuler des visites (20 s par appareil) : plafond quotidien, contrôle du réseau et contestation limitent l’effet ; à surveiller sur la page qualité."
+   ],
+   "pages": [
+    "adm-resultats",
+    "fou-campagnes",
+    "rev-missions",
+    "adm-missions"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-26",
    "titre": "Prix revendeurs sur les cartes et paiement des sponsorisations",
    "demande": "Cartes du catalogue : ne plus afficher le prix conseillé d'un article au prix de gros ; sponsorisations : suivi du paiement.",
    "realise": [
@@ -1100,6 +1123,10 @@
     {
      "nom": "Vendu par nos revendeurs partenaires",
      "role": "Article au prix de gros ouvert sans revendeur : liste des revendeurs qui le proposent, à leur prix (« À partir de » le moins cher), avec « Choisir cette offre ». Remplace « Commander » tant qu’un revendeur le propose."
+    },
+    {
+     "nom": "Visite qualifiée (invisible)",
+     "role": "Arrivé par le lien d’un revendeur (?ref=), le visiteur qui reste 20 s et touche l’écran est compté comme visite qualifiée. Rien ne s’affiche ; aucune IP n’est gardée."
     }
    ],
    "suite": [
@@ -2447,6 +2474,10 @@
     {
      "nom": "Partager la page de la campagne",
      "role": "Campagne d’un fournisseur : page de marque avec votre code ; les ventes qui en viennent vous sont attribuées."
+    },
+    {
+     "nom": "Campagnes au résultat",
+     "role": "« Visites qualifiées » ou « Demandes qualifiées » : payé à chaque résultat (80 % du prix fixé par le fournisseur), sans objectif à atteindre. Une visite compte quand la personne reste 20 s sur le produit et touche l’écran ; une demande quand le fournisseur répond au devis ou que Suguba confirme la commande. Chaque personne ou client compte une fois ; gains retirables 7 jours après chaque résultat."
     }
    ],
    "suite": [
@@ -3081,12 +3112,20 @@
      "role": "Créer une campagne : produit, message, durée."
     },
     {
+     "nom": "Ce que vous payez",
+     "role": "Partages ou ventes (récompense par revendeur qui atteint l’objectif) ; et, quand Suguba a activé la rémunération au résultat : visites qualifiées (25 F minimum par visite) ou demandes qualifiées (500 F minimum par demande). Budget = prix × nombre de résultats achetés."
+    },
+    {
      "nom": "Où les revendeurs doivent publier",
-     "role": "Canal choisi AVANT de payer (statut, groupes WhatsApp, Facebook…) ; chaque publication est vérifiée sur capture avant d’être comptée. Plus d’objectif « visites » : les clics ne se facturent pas encore."
+     "role": "Canal choisi AVANT de payer (statut, groupes WhatsApp, Facebook…) ; chaque publication est vérifiée sur capture avant d’être comptée."
     },
     {
      "nom": "Réglé · Dépensé · Restant",
      "role": "La campagne n’ouvre qu’une fois le budget reçu en entier ; seuls les objectifs validés sont dépensés ; le solde non utilisé est rendu ou reporté."
+    },
+    {
+     "nom": "Voir les résultats",
+     "role": "Campagne au résultat : chaque visite ou demande payée, avec le revendeur qui l’a apportée. « Pas sérieux ? Contester » pendant 48 h : le prix est gelé jusqu’à la décision de Suguba ; un résultat annulé est remboursé au budget."
     }
    ],
    "suite": [
@@ -3658,6 +3697,10 @@
     {
      "nom": "Enregistrer le paiement reçu",
      "role": "Campagne fournisseur : montant total reçu et référence (reçu, transaction). L’activation est refusée tant que le budget n’est pas réglé en entier (application et base)."
+    },
+    {
+     "nom": "Campagnes au résultat",
+     "role": "Prix par résultat, budget consommé ; activation refusée tant que la rémunération au résultat est coupée ou que le budget prévu n’est pas réglé. Pause automatique quand le budget ne couvre plus un résultat. Elles ne se créent que côté fournisseur."
     }
    ],
    "suite": [
@@ -3897,6 +3940,42 @@
     {
      "id": "fiche-produit",
      "libelle": "Côté client : les offres des revendeurs sur la fiche"
+    }
+   ],
+   "note": "Pas de capture : page réservée aux admins (session de démonstration refusée pour les captures)."
+  },
+  {
+   "id": "adm-resultats",
+   "role": "admin",
+   "titre": "Qualité des mesures",
+   "chemin": "/admin/resultats",
+   "but": "Juger la fiabilité des visites mesurées avant de payer au résultat, allumer ou couper la rémunération au résultat, et vérifier les résultats suspects ou contestés.",
+   "elements": [
+    {
+     "nom": "Payer les résultats",
+     "role": "Interrupteur, désactivé par défaut : les visites sont mesurées, rien n’est payé, les fournisseurs ne peuvent pas créer de campagne au résultat. Permission « paramètres de la plateforme »."
+    },
+    {
+     "nom": "30 derniers jours",
+     "role": "Visites ouvertes, qualifiées (20 s + un geste), robots d’aperçu écartés, résultats payés et annulés, montant."
+    },
+    {
+     "nom": "À vérifier",
+     "role": "Résultats suspects (5 visites ou plus d’un même réseau en 24 h pour un revendeur) ou contestés par le fournisseur : Valider (gain en attente jusqu’à 7 jours après le résultat) ou Annuler (motif obligatoire, prix rendu au budget)."
+    },
+    {
+     "nom": "Par revendeur",
+     "role": "Visites qualifiées sur ouvertes, robots, pastille « du même réseau » quand beaucoup de visites viennent d’un même endroit le même jour."
+    },
+    {
+     "nom": "Derniers résultats",
+     "role": "Annulation possible tant que le gain n’est pas encore retirable."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-missions",
+     "libelle": "Missions et campagnes"
     }
    ],
    "note": "Pas de capture : page réservée aux admins (session de démonstration refusée pour les captures)."

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sessionAvecRole } from '@/lib/reseau/route-session';
 import { listerMissions, mesParticipations, rejoindreMission } from '@/lib/reseau/missions-db';
 import { journaliser } from '@/lib/reseau/db';
+import { gainsRevendeur } from '@/lib/reseau/resultats-db';
+import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
 /** Missions proposées au revendeur et sa participation (§ 13). */
 
@@ -9,11 +11,14 @@ export async function GET(req: NextRequest) {
   const session = await sessionAvecRole(req, 'reseller');
   if (!session) return NextResponse.json({ error: 'Session revendeur requise.' }, { status: 401 });
 
-  const [missions, participations] = await Promise.all([
+  const admin = getSupabaseAdmin();
+  const [missions, participations, gains] = await Promise.all([
     listerMissions({ statut: 'active' }),
     mesParticipations(session.uid),
+    // Campagnes au résultat (lot 3) : ce que chaque campagne a déjà rapporté.
+    admin ? gainsRevendeur(admin, session.uid) : Promise.resolve({}),
   ]);
-  return NextResponse.json({ missions, participations });
+  return NextResponse.json({ missions, participations, gains });
 }
 
 export async function POST(req: NextRequest) {

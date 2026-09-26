@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { exigerDroitFournisseur } from '@/lib/reseau/contexte-fournisseur';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { listerMissions } from '@/lib/reseau/missions-db';
+import { lireReglagesReseau } from '@/lib/reseau/recompenses';
+import { estTypeResultat, prixResultat, PRIX_MIN, type TypeResultat } from '@/lib/reseau/resultats-constantes';
 
 /**
  * Campagnes du fournisseur (§ page 24) — des missions financées par lui.
@@ -11,9 +13,10 @@ import { listerMissions } from '@/lib/reseau/missions-db';
  * Suguba verserait des récompenses qu'aucun fournisseur n'a payées.
  */
 
-// Pas de campagne payée « aux visites » (lot 2b, 2026-09-26) : les clics sont
-// mesurés, mais pas encore assez fiables pour être facturés au fournisseur.
-const TYPES = ['share', 'sale'] as const;
+// Pas de campagne payée « aux clics » bruts (lot 2b). Depuis le lot 3, les
+// campagnes au résultat (visites et demandes QUALIFIÉES) existent, mais
+// seulement quand l'admin a allumé la rémunération au résultat.
+const TYPES = ['share', 'sale', 'visite_qualifiee', 'demande_qualifiee'] as const;
 const CANAUX = ['tous', 'whatsapp_statut', 'whatsapp_groupe', 'facebook', 'instagram', 'tiktok'] as const;
 
 export async function GET(req: NextRequest) {
@@ -23,7 +26,7 @@ export async function GET(req: NextRequest) {
 
   const admin = getSupabaseAdmin();
   const { data: produits } = (await admin?.from('products').select('id, name').eq('supplier_id', fournisseurId).eq('status', 'approved').limit(200)) || { data: [] as any[] };
-  const campagnes = await listerMissions({ supplierId: fournisseurId });
+  const [campagnes, reglages] = await Promise.all([listerMissions({ supplierId: fournisseurId }), lireReglagesReseau()]);
 
   // Progression cumulée par campagne, pour l'écran de suivi.
   const avancement = new Map<string, number>();
@@ -34,9 +37,10 @@ export async function GET(req: NextRequest) {
 
   return NextResponse.json({
     produits: (produits || []).map((p: any) => ({ id: p.id, nom: p.name })),
+    resultatActif: reglages.remunerationResultat,
     campagnes: campagnes.map((c) => ({
       ...c,
-      budgetMax: c.recompense * (c.maxParticipants || 0),
+      budgetMax: c.recompense * (estTypeResultat(c.type) ? c.objectif : c.maxParticipants || 0),
       avancementTotal: avancement.get(c.id) || 0,
     })),
   });
@@ -62,9 +66,20 @@ export async function POST(req: NextRequest) {
   const { data: produit } = await admin.from('products').select('id').eq('id', c.produitId).eq('supplier_id', fournisseurId).maybeSingle();
   if (!produit) return NextResponse.json({ error: 'Ce produit ne fait pas partie de votre catalogue.' }, { status: 403 });
 
-  const objectif = Math.max(1, Math.min(1000, Math.round(Number(c.objectif) || 0)));
-  const recompense = Math.max(0, Math.min(100000, Math.round((Number(c.recompense) || 0) / 50) * 50));
+  const auResultat = estTypeResultat(c.type);
+  if (auResultat && !(await lireReglagesReseau()).remunerationResultat) {
+    return NextResponse.json({ error: 'Les campagnes payées au résultat ne sont pas encore ouvertes.' }, { status: 409 });
+  }
+  // Campagne au résultat : objectif = nombre de résultats achetés (jusqu'à
+  // 10 000 visites), récompense = prix d'UN résultat, au-dessus du minimum.
+  const objectif = Math.max(1, Math.min(auResultat ? 10000 : 1000, Math.round(Number(c.objectif) || 0)));
+  const recompense = auResultat
+    ? prixResultat(c.type, c.recompense) ?? 0
+    : Math.max(0, Math.min(100000, Math.round((Number(c.recompense) || 0) / 50) * 50));
   const maxRevendeurs = Math.max(1, Math.min(500, Math.round(Number(c.maxRevendeurs) || 0)));
+  if (auResultat && !recompense) {
+    return NextResponse.json({ error: `Prix par ${c.type === 'visite_qualifiee' ? 'visite' : 'demande'} : ${PRIX_MIN[c.type as TypeResultat]} F minimum.` }, { status: 400 });
+  }
   if (!(recompense > 0)) return NextResponse.json({ error: 'Indiquez la récompense par revendeur.' }, { status: 400 });
 
   let finitLe: string | null = null;
@@ -92,5 +107,5 @@ export async function POST(req: NextRequest) {
   if (error && /canal/.test(error.message) && canal === 'tous') ({ data, error } = await admin.from('missions').insert(ligne).select('id').maybeSingle());
   if (error) return NextResponse.json({ error: /canal/.test(error.message) ? 'Le choix du canal sera disponible après la mise à jour de la base par Suguba.' : 'Campagnes indisponibles pour le moment.' }, { status: 503 });
 
-  return NextResponse.json({ id: data?.id, budget: recompense * maxRevendeurs });
+  return NextResponse.json({ id: data?.id, budget: recompense * (auResultat ? objectif : maxRevendeurs) });
 }

@@ -22,7 +22,11 @@ export async function POST(req: NextRequest) {
   if (!(await adminPeut(session.uid, 'commission.configurer'))) {
     return NextResponse.json({ error: 'Votre rôle ne permet pas de modifier les primes.' }, { status: 403 });
   }
-  const reglages = await ecrireReglagesReseau(await req.json().catch(() => ({})));
+  // Seules les primes : les autres réglages ont leur page et leur permission.
+  const corps = await req.json().catch(() => ({})) as Record<string, unknown>;
+  const reglages = await ecrireReglagesReseau(Object.fromEntries(
+    ['primeParrainageClient', 'primeParrainageRevendeur'].filter((c) => c in corps).map((c) => [c, corps[c]]),
+  ));
   if (!reglages) return NextResponse.json({ error: 'Enregistrement impossible (migration réseau V2 appliquée ?).' }, { status: 503 });
   return NextResponse.json({ reglages });
 }

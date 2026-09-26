@@ -4,6 +4,7 @@
  */
 import { getSupabaseAdmin } from '../supabase-admin';
 import { ouverteALaParticipation, type TypeMission } from './missions';
+import { estTypeResultat } from './resultats-constantes';
 
 export interface MissionRow {
   id: string;
@@ -43,9 +44,12 @@ export interface ParticipationRow {
 
 function versMission(r: any, participants = 0, validees = 0, aValider = 0): MissionRow {
   const recompense = Number(r.reward_amount) || 0;
-  const places = r.max_participants ?? null;
+  // Campagne au résultat (lot 3) : récompense = prix d'UN résultat,
+  // objectif = nombre de résultats achetés, dépensé = budget consommé.
+  const auResultat = estTypeResultat(r.mission_type);
+  const places = auResultat ? (Number(r.objective) || 1) : r.max_participants ?? null;
   const engage = recompense * (places ?? participants);
-  const verse = recompense * validees;
+  const verse = auResultat ? Number(r.budget_consomme) || 0 : recompense * validees;
   // Campagne fournisseur : le restant se compte sur ce qu'il a RÉELLEMENT réglé.
   const recu = Number(r.budget_recu) || 0;
   const base = r.supplier_id ? recu : engage;

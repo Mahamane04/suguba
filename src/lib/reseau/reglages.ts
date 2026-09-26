@@ -25,6 +25,15 @@ export interface ReglagesReseau {
    * prix conseillé, qui court-circuiterait le réseau).
    */
   protectionPrixDeGros: boolean;
+
+  // ── Rémunération au résultat (2026-09-26, lot 3) ──────────────────────
+  /**
+   * Campagnes payées à la visite ou à la demande qualifiée. Désactivé par
+   * défaut : les visites sont mesurées, rien n'est payé, et les fournisseurs
+   * ne peuvent pas encore créer ces campagnes. La base relit ce réglage à
+   * chaque résultat (enregistrer_resultat_campagne).
+   */
+  remunerationResultat: boolean;
 }
 
 export const REGLAGES_RESEAU_DEFAUT: ReglagesReseau = {
@@ -34,6 +43,7 @@ export const REGLAGES_RESEAU_DEFAUT: ReglagesReseau = {
   venteDirecteFournisseurs: false,
   fournisseursVenteDirecte: [],
   protectionPrixDeGros: true,
+  remunerationResultat: false,
 };
 
 /** Le client peut-il acheter directement depuis la boutique de ce fournisseur ? */
@@ -62,6 +72,7 @@ export function normaliserReglagesReseau(brut: unknown): ReglagesReseau {
       ? [...new Set(o.fournisseursVenteDirecte.filter((x): x is string => typeof x === 'string' && /^[\w-]{1,64}$/.test(x)))].slice(0, 500)
       : [],
     protectionPrixDeGros: booleen(o.protectionPrixDeGros, REGLAGES_RESEAU_DEFAUT.protectionPrixDeGros),
+    remunerationResultat: booleen(o.remunerationResultat, REGLAGES_RESEAU_DEFAUT.remunerationResultat),
   };
 }
 

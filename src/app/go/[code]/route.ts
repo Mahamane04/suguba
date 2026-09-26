@@ -5,6 +5,7 @@ import { avancerMissions, produitParSlug } from '@/lib/reseau/missions-db';
 import { estRobotApercu } from '@/lib/reseau/missions';
 import { SESSION_COOKIE_NAME, verifySessionToken } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { mesurerRobot } from '@/lib/reseau/resultats-db';
 
 /**
  * Redirection trackée — /go/<code>.
@@ -92,6 +93,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ code
     }
   } catch (erreur) {
     console.error('[GO] Clic non compté:', (erreur as Error).message);
+  }
+
+  // Qualité des mesures (lot 3) : un robot d'aperçu sur un lien produit est
+  // compté à part, pour juger la part de trafic non humain.
+  if (robot && lien.ownerId && lien.cible === 'product') {
+    const admin = getSupabaseAdmin();
+    const produitId = await produitParSlug(lien.ref).catch(() => null);
+    if (admin && produitId) await mesurerRobot(admin, produitId, lien.ownerId, ip, userAgent).catch(() => undefined);
   }
 
   const destination = new URL(destinationDuLien(lien.cible, lien.ref, codeRevendeur, code), req.url);

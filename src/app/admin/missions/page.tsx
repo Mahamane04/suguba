@@ -9,6 +9,7 @@ import ChoicePicker from '@/components/ui/ChoicePicker';
 import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
 import { TYPES_MISSION, libelleType, verbeType, type TypeMission } from '@/lib/reseau/missions';
+import { estTypeResultat } from '@/lib/reseau/resultats-constantes';
 
 /**
  * Administration des missions (§ 48 des écrans).
@@ -140,7 +141,7 @@ export default function MissionsAdminPage() {
             <div className="grid grid-cols-2 gap-3">
               <Field label="Type" htmlFor="type">
                 <ChoicePicker id="type" valeur={type} onChange={(v) => setType(v as TypeMission)}
-                  choix={TYPES_MISSION.map((t) => ({ valeur: t.valeur, libelle: t.libelle }))} />
+                  choix={TYPES_MISSION.filter((t) => !estTypeResultat(t.valeur)).map((t) => ({ valeur: t.valeur, libelle: t.libelle }))} />
               </Field>
               <Field label={`Objectif (${verbeType(type)})`} htmlFor="objectif">
                 <Input id="objectif" type="number" inputMode="numeric" min={1} value={objectif} onChange={(e) => setObjectif(e.target.value)} />
@@ -188,7 +189,7 @@ export default function MissionsAdminPage() {
                   <p className="text-sm font-bold text-slate-900 truncate">{m.titre}</p>
                   <p className="text-xs text-slate-500 mt-0.5">
                     {libelleType(m.type)} · objectif {m.objectif} {verbeType(m.type)} ·{' '}
-                    {m.recompense.toLocaleString('fr-FR')} F · {m.participants} participant{m.participants > 1 ? 's' : ''}
+                    {m.recompense.toLocaleString('fr-FR')} F{estTypeResultat(m.type) ? ' par résultat' : ''} · {m.participants} participant{m.participants > 1 ? 's' : ''}
                   </p>
                 </div>
                 <StatusPill ton={TON[m.statut] || 'neutre'}>{LIBELLE_STATUT[m.statut] || m.statut}</StatusPill>
@@ -196,7 +197,7 @@ export default function MissionsAdminPage() {
               {m.budget && (
                 <div className="grid grid-cols-3 gap-2 text-xs">
                   <p className="rounded-2xl bg-slate-50 px-3 py-2">Engagé<br /><strong className="text-slate-900">{m.budget.plafonne ? fcfa(m.budget.engage) : 'ouvert'}</strong></p>
-                  <p className="rounded-2xl bg-slate-50 px-3 py-2">Versé<br /><strong className="text-slate-900">{fcfa(m.budget.verse)}</strong></p>
+                  <p className="rounded-2xl bg-slate-50 px-3 py-2">{estTypeResultat(m.type) ? 'Consommé' : 'Versé'}<br /><strong className="text-slate-900">{fcfa(m.budget.verse)}</strong></p>
                   <p className="rounded-2xl bg-slate-50 px-3 py-2">{m.budget.plafonne ? 'Restant' : 'À valider'}<br /><strong className="text-slate-900">{fcfa(m.budget.plafonne ? m.budget.restant : m.budget.aValider)}</strong></p>
                 </div>
               )}
@@ -307,7 +308,8 @@ function PreuvesAVerifier({ preuves, onMaj }: { preuves: Preuve[]; onMaj: () => 
  */
 function BudgetCampagne({ mission, onMaj }: { mission: Mission; onMaj: () => void }) {
   const { toast } = useToast();
-  const du = mission.recompense * (mission.maxParticipants || 0);
+  // Campagne au résultat (lot 3) : prix d'un résultat × nombre de résultats achetés.
+  const du = mission.recompense * (estTypeResultat(mission.type) ? mission.objectif : mission.maxParticipants || 0);
   const recu = mission.budget?.recu || 0;
   const [ouvert, setOuvert] = useState(false);
   const [montant, setMontant] = useState(String(du));

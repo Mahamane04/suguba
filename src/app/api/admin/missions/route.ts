@@ -4,6 +4,8 @@ import { adminPeut } from '@/lib/reseau/db';
 import { listerMissions } from '@/lib/reseau/missions-db';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { TYPES_MISSION } from '@/lib/reseau/missions';
+import { estTypeResultat } from '@/lib/reseau/resultats-constantes';
+import { lireReglagesReseau } from '@/lib/reseau/recompenses';
 
 /** Administration des missions (§ 48 des écrans). */
 
@@ -13,7 +15,8 @@ export async function GET(req: NextRequest) {
   if (!(await adminPeut(session.uid, 'mission.gerer'))) {
     return NextResponse.json({ error: 'Votre rôle ne donne pas accès aux missions.' }, { status: 403 });
   }
-  return NextResponse.json({ missions: await listerMissions(), types: TYPES_MISSION });
+  // Les campagnes au résultat (lot 3) ne se créent que côté fournisseur.
+  return NextResponse.json({ missions: await listerMissions(), types: TYPES_MISSION.filter((t) => !estTypeResultat(t.valeur)) });
 }
 
 export async function POST(req: NextRequest) {
@@ -54,8 +57,23 @@ export async function POST(req: NextRequest) {
     }
     if (corps.statut === 'active') {
       const { data: m } = await admin.from('missions').select('*').eq('id', corps.missionId).maybeSingle();
+      if (m && estTypeResultat(m.mission_type)) {
+        // Campagne au résultat (lot 3) : interrupteur allumé, budget prévu
+        // réglé à la première ouverture, puis de quoi payer un résultat.
+        if (!(await lireReglagesReseau()).remunerationResultat) {
+          return NextResponse.json({ error: 'La rémunération au résultat est désactivée : activez-la dans « Qualité des mesures » avant d’ouvrir cette campagne.' }, { status: 409 });
+        }
+        const prix = Number(m.reward_amount) || 0;
+        const recu = Number(m.budget_recu) || 0;
+        const consomme = Number(m.budget_consomme) || 0;
+        const prevu = prix * (Number(m.objective) || 1);
+        const attendu = consomme === 0 ? prevu : consomme + prix;
+        if (recu < attendu) {
+          return NextResponse.json({ error: `Budget pas encore réglé : ${attendu.toLocaleString('fr-FR')} F attendus, ${recu.toLocaleString('fr-FR')} F reçus.` }, { status: 409 });
+        }
+      }
       const du = (Number(m?.reward_amount) || 0) * (Number(m?.max_participants) || 0);
-      if (m?.supplier_id && 'budget_recu' in m && (Number(m.budget_recu) || 0) < du) {
+      if (m?.supplier_id && !estTypeResultat(m.mission_type) && 'budget_recu' in m && (Number(m.budget_recu) || 0) < du) {
         return NextResponse.json({ error: `Budget de la campagne pas encore réglé en entier (${du.toLocaleString('fr-FR')} F attendus) : enregistrez le paiement du fournisseur avant de l’activer.` }, { status: 409 });
       }
     }
@@ -68,7 +86,7 @@ export async function POST(req: NextRequest) {
   }
 
   const titre = typeof corps.titre === 'string' ? corps.titre.trim() : '';
-  const type = TYPES_MISSION.find((t) => t.valeur === corps.type)?.valeur;
+  const type = TYPES_MISSION.find((t) => t.valeur === corps.type && !estTypeResultat(t.valeur))?.valeur;
   if (titre.length < 3 || !type) {
     return NextResponse.json({ error: 'Titre et type de mission requis.' }, { status: 400 });
   }

@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import {
+  Gauge,
   ShoppingBag, Boxes, Store, Users, Wallet, Megaphone, Target,
   ShieldCheck, Settings, BarChart3, LifeBuoy, UserCog, Radio, ChevronRight, Gift, Banknote, FileText, Hammer, Network,
 } from 'lucide-react';
@@ -61,6 +62,7 @@ const DOMAINES: Domaine[] = [
     couleur: 'bg-fuchsia-50 text-fuchsia-700',
     entrees: [
       { libelle: 'Missions', href: '/admin/missions', icone: Target, aide: 'Créer et suivre les missions du réseau' },
+      { libelle: 'Qualité des mesures', href: '/admin/resultats', icone: Gauge, aide: 'Visites et demandes qualifiées, paiement au résultat' },
       { libelle: 'Sponsorisation', href: '/admin/sponsorisations', icone: Megaphone, aide: 'Packs, demandes, emplacements' },
       { libelle: 'Diffusion', href: '/admin/broadcast', icone: Radio, aide: 'Messages au réseau' },
     ],

@@ -2,7 +2,9 @@
  * Missions — logique PURE (§ 13 du cahier des charges).
  */
 
-export type TypeMission = 'share' | 'click' | 'sale' | 'referral' | 'post' | 'view';
+export type TypeMission = 'share' | 'click' | 'sale' | 'referral' | 'post' | 'view'
+  // Campagnes fournisseur payées au résultat (lot 3) : jamais créées par l'admin.
+  | 'visite_qualifiee' | 'demande_qualifiee';
 
 export const TYPES_MISSION: { valeur: TypeMission; libelle: string; verbe: string }[] = [
   { valeur: 'share',    libelle: 'Partager',            verbe: 'partages' },
@@ -11,6 +13,8 @@ export const TYPES_MISSION: { valeur: TypeMission; libelle: string; verbe: strin
   { valeur: 'referral', libelle: 'Parrainer',           verbe: 'parrainages' },
   { valeur: 'post',     libelle: 'Publier un visuel',   verbe: 'publications' },
   { valeur: 'view',     libelle: 'Faire visionner',     verbe: 'vues' },
+  { valeur: 'visite_qualifiee',  libelle: 'Visites qualifiées',  verbe: 'visites qualifiées' },
+  { valeur: 'demande_qualifiee', libelle: 'Demandes qualifiées', verbe: 'demandes qualifiées' },
 ];
 
 export function libelleType(type: TypeMission): string {
