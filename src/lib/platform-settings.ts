@@ -7,6 +7,7 @@
  */
 import { getSupabaseAdmin } from './supabase-admin';
 import { completerReglages, REGLAGES_PAR_DEFAUT, type ReglagesPlateforme } from './pricing';
+import { completerFraisPaiement } from './frais-paiement';
 
 export interface EtatReglages {
   reglages: ReglagesPlateforme;
@@ -24,9 +25,10 @@ export async function chargerReglages(strict = false): Promise<EtatReglages> {
   const admin = getSupabaseAdmin();
   if (!admin) return { reglages: REGLAGES_PAR_DEFAUT, confirme: false, majLe: null };
 
+  // `*` : inclut `tarifs_saspay` dès que la base l'a (SQL du 2026-09-27), sans casser avant.
   const { data, error } = await admin
     .from('platform_settings')
-    .select('valeurs, confirme, updated_at')
+    .select('*')
     .eq('id', 1)
     .maybeSingle();
 
@@ -39,8 +41,21 @@ export async function chargerReglages(strict = false): Promise<EtatReglages> {
   }
 
   return {
-    reglages: completerReglages(data.valeurs as Partial<ReglagesPlateforme>),
+    reglages: avecTarifsReleves(completerReglages(data.valeurs as Partial<ReglagesPlateforme>), data.tarifs_saspay),
     confirme: Boolean(data.confirme),
     majLe: data.updated_at || null,
   };
+}
+
+/**
+ * Tarifs SasPay relus automatiquement (colonne `tarifs_saspay`, voir
+ * tarifs-saspay.ts) : ils priment sur ceux gardés dans les réglages. Un réseau
+ * absent du relevé garde sa valeur enregistrée.
+ */
+function avecTarifsReleves(r: ReglagesPlateforme, brut: unknown): ReglagesPlateforme {
+  const b: any = brut && typeof brut === 'object' ? brut : null;
+  if (!b || !b.reseaux || typeof b.reseaux !== 'object' || Object.keys(b.reseaux).length === 0) return r;
+  const f = completerFraisPaiement(r.fraisPaiement);
+  const lus = completerFraisPaiement({ saspay: b }).saspay;
+  return { ...r, fraisPaiement: { ...f, saspay: { releveLe: lus.releveLe, reseaux: { ...f.saspay.reseaux, ...lus.reseaux } } } };
 }

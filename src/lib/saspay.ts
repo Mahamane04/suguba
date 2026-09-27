@@ -26,6 +26,8 @@
  * basculer d'un mode à l'autre sans préavis selon le routage SasPay.
  */
 
+import { lireTarifsSasPay, type TarifsSasPay } from './frais-paiement';
+
 const BASE_URL = 'https://api.saspay.me/api/v1';
 
 /** Suguba n'opère qu'au Mali. */
@@ -33,17 +35,20 @@ export const PAYS = 'ML';
 export const DEVISE = 'XOF';
 
 /**
- * Réseaux SasPay disponibles au Mali.
- * ⚠️ Wave n'y figure pas : SasPay ne le couvre pas au Mali, malgré sa
- * popularité locale. Ne pas l'ajouter ici « au cas où » — un code réseau
- * inconnu fait échouer l'appel en 422 (`invalid_method`).
- * Source : https://docs.saspay.me/api-reference/reference/formats
+ * Réseaux SasPay acceptés par Suguba au Mali.
+ * Wave ajouté le 2026-09-27 : `wave_ml` est actif sur le compte Suguba depuis
+ * le 2026-09-20 (GET /networks/ : « Wave Mali », is_active), encaissement et
+ * versement disponibles (GET /pricing/my-rates). La page « formats » de la
+ * documentation ne le liste pas encore. Comme Orange Money, Wave se paie sur
+ * une page hébergée : `checkout_url` est renvoyée, il faut y rediriger.
+ * Ne jamais ajouter un code « au cas où » : un code inconnu fait échouer
+ * l'appel en 422 (`invalid_method`).
  */
 export const RESEAUX_MALI = {
   orange_ml: 'Orange Money',
   moov_ml: 'Moov Money',
-  // Mobi Cash retiré le 2026-09-25 (choix du fondateur) : Suguba n'accepte
-  // qu'Orange Money et Moov Money, au paiement comme au retrait.
+  wave_ml: 'Wave',
+  // Mobi Cash retiré le 2026-09-25 (choix du fondateur).
 } as const;
 
 export type ReseauMali = keyof typeof RESEAUX_MALI;
@@ -349,6 +354,33 @@ export function verifierPayin(idTransaction: string): Promise<ResultatVerificati
 export function verifierPayout(idTransaction: string): Promise<ResultatVerification> {
   if (!idTransaction) return Promise.resolve({ ok: false, erreur: 'Id de transaction manquant.' });
   return verifier(`/payouts/${encodeURIComponent(idTransaction)}/verify/`, 'versement');
+}
+
+// ───────────────────────── Tarifs ─────────────────────────
+
+/**
+ * Tarifs réels du compte Suguba, réseau par réseau (2026-09-27) : la seule
+ * source fiable des frais SasPay. Lecture seule. Le relevé du 2026-09-27
+ * donnait 4 % en ADD_ON sur Orange Money et Moov Money — et non les 1,5 % des
+ * exemples de la documentation publique.
+ */
+export async function lireMesTarifs(delaiMs = 4000): Promise<{ ok: true; tarifs: TarifsSasPay } | { ok: false; erreur: string }> {
+  const c = config();
+  if (!c.cle) return { ok: false, erreur: 'Configuration SasPay incomplète : SASPAY_API_KEY.' };
+  try {
+    // Délai court : un SasPay lent ne doit jamais bloquer un paiement, les
+    // derniers tarifs connus servent alors (voir tarifs-saspay.ts).
+    const res = await fetch(`${BASE_URL}/pricing/my-rates/`, { method: 'GET', headers: entetes(c.cle), signal: AbortSignal.timeout(delaiMs) });
+    const json: any = await res.json().catch(() => ({}));
+    if (!res.ok) return { ok: false, erreur: messageErreur(json, 'Lecture des tarifs refusée par SasPay.').erreur };
+    const tarifs = lireTarifsSasPay(json, new Date().toISOString());
+    if (Object.keys(tarifs.reseaux).length === 0) return { ok: false, erreur: 'SasPay n’a renvoyé aucun tarif pour le Mali.' };
+    return { ok: true, tarifs };
+  } catch (error) {
+    const e = error as Error;
+    console.warn('[SASPAY] Tarifs illisibles :', e?.name === 'TimeoutError' ? `pas de réponse en ${delaiMs / 1000} s` : e?.message || e);
+    return { ok: false, erreur: e?.name === 'TimeoutError' ? 'SasPay n’a pas répondu à temps. Réessayez.' : 'SasPay injoignable.' };
+  }
 }
 
 // ───────────────────────── Webhooks ─────────────────────────

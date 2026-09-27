@@ -183,7 +183,6 @@ export default function ProductPricingModal({ product, isOpen, onClose }: Produc
                 <Ligne l="Prix de vente" v={f(tarif.prixVente)} fort />
                 <Ligne l="− Prix fournisseur" v={f(tarif.prixFournisseur)} classe="text-slate-300" />
                 <div className="border-t border-slate-800 my-1" />
-                <Ligne l="Frais de paiement" v={f(tarif.coutPaiement)} classe="text-slate-500" />
                 <Ligne l="Provision pour refus" v={f(tarif.provisionRefus)} classe="text-slate-500" />
                 <Ligne l="Part des coûts fixes" v={f(tarif.coutFixe)} classe="text-slate-500" />
                 <Ligne l="Message au client" v={f(tarif.coutMessage)} classe="text-slate-500" />

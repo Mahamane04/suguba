@@ -11,8 +11,9 @@ import EmptyState from '@/components/ui/EmptyState';
 import PaymentLogo, { moyenDepuisCode } from '@/components/ui/PaymentLogo';
 import { Wallet, Clock, CheckCircle2, History, AlertCircle, Building2, Loader2, Check } from 'lucide-react';
 import { calculerFraisRetrait, type DetailFraisRetrait, type TauxRetrait } from '@/lib/pricing';
+import { completerFraisPaiement } from '@/lib/frais-paiement';
 
-type Moyen = 'Orange Money' | 'Moov Money' | 'Agence Suguba';
+type Moyen = 'Orange Money' | 'Moov Money' | 'Wave' | 'Agence Suguba';
 
 interface Retrait {
   id: string;
@@ -30,12 +31,15 @@ interface Retrait {
 const CODE_MOYEN: Record<Moyen, string> = {
   'Orange Money': 'orange_money',
   'Moov Money': 'moov',
+  'Wave': 'wave',
   'Agence Suguba': 'cash',
 };
 
 const MOYENS: { id: Moyen; libelle: string; detail: string }[] = [
   { id: 'Orange Money', libelle: 'Orange Money', detail: 'Virement' },
   { id: 'Moov Money', libelle: 'Moov Money', detail: 'Virement' },
+  // Wave (2026-09-27) : versement SasPay disponible au Mali.
+  { id: 'Wave', libelle: 'Wave', detail: 'Virement' },
   { id: 'Agence Suguba', libelle: 'Espèces', detail: 'Au guichet' },
 ];
 
@@ -98,6 +102,8 @@ export default function ResellerPayoutsPage() {
         fraisVersementPct: Number(reglages.fraisRetrait.saspayPct) || 0,
         fraisOperateurRetraitPct: reglages.fraisRetrait.operateurPct,
         fraisRetraitSugubaPct: Number(reglages.fraisRetrait.sugubaPct) || 0,
+        // Vrai tarif SasPay de versement (2026-09-27), comme le serveur.
+        fraisPaiement: completerFraisPaiement(reglages.fraisPaiement),
       });
     }
     setChargement(false);
@@ -218,7 +224,7 @@ export default function ResellerPayoutsPage() {
             <form onSubmit={demander} className="space-y-4">
               <div>
                 <p className="text-xs font-bold text-slate-700 mb-2">Comment voulez-vous recevoir l&apos;argent ?</p>
-                <div role="radiogroup" aria-label="Moyen de retrait" className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <div role="radiogroup" aria-label="Moyen de retrait" className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   {MOYENS.map((m) => {
                     const actif = moyen === m.id;
                     return (

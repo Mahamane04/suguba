@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useToast } from '@/components/ui/Toast';
+import Button from '@/components/ui/Button';
 import {
   Calculator, ChevronDown, ChevronUp, Loader2, Plus, Trash2, AlertCircle, CheckCircle2, RotateCcw, ArrowRight, Info,
 } from 'lucide-react';
@@ -23,6 +24,20 @@ import {
   type ModePartSuguba,
   type ReglagesPlateforme,
 } from '@/lib/pricing';
+import {
+  calculerFraisPaiement,
+  completerFraisPaiement,
+  LIBELLES_MOYENS,
+  OPERATEURS_RETRAIT,
+  texteTranche,
+  type GrilleRetraitOperateur,
+  type MoyenPaiementClient,
+  type OperateurRetrait,
+  type PalierSasPay,
+  type ReglagesFraisPaiement,
+  type TarifsSasPay,
+  type TrancheRetrait,
+} from '@/lib/frais-paiement';
 
 // Espace insécable avant « F » : « 20 000 » et « F » ne se séparent jamais en fin de ligne.
 const enF = (n: number) => `${Math.round(n).toLocaleString('fr-FR')}\u00a0F`;
@@ -54,6 +69,7 @@ const MODES: [ModePartSuguba, string, string][] = [
 
 const SECTIONS = [
   ['modele', 'Rémunération'],
+  ['paiement', 'Frais de paiement'],
   ['impact', 'Vos produits'],
   ['gros', 'Prix de gros'],
   ['formules', 'Formules'],
@@ -99,6 +115,8 @@ export default function EconomicSettingsPanel({ ouvertParDefaut = false }: { ouv
   const [alertes, setAlertes] = useState<{ id: string; nom: string; statut: string; prixVente: number; prixMinimal: number }[]>([]);
   const [produits, setProduits] = useState<ProduitEnLigne[]>([]);
   const [exemple, setExemple] = useState({ fournisseur: 20000, part: 2000 });
+  // Tarifs SasPay relus automatiquement : ancien = relevé de plus de 6 heures.
+  const [releveAncien, setReleveAncien] = useState(false);
 
   useEffect(() => {
     fetch('/api/admin/settings')
@@ -109,6 +127,7 @@ export default function EconomicSettingsPanel({ ouvertParDefaut = false }: { ouv
           setInitial(JSON.stringify(json.reglages));
           setConfirme(Boolean(json.confirme));
           setProduits(json.produits || []);
+          setReleveAncien(json.tarifsSasPay?.ancien === true);
           if (!json.confirme) setOuvert(true);
         }
       })
@@ -280,7 +299,7 @@ export default function EconomicSettingsPanel({ ouvertParDefaut = false }: { ouv
             </div>
             <div className="sm:col-span-2 space-y-2 rounded-2xl bg-suguba-sauge p-3">
               <p className="text-xs font-semibold text-slate-700 inline-flex items-center gap-1">
-                Les coûts de Suguba (Mobile Money, refus, message…)
+                Les coûts de Suguba (refus, message, coûts fixes…)
                 <InfoBulle texte="Recommandé : « Payés sur la part Suguba ». Le client paie alors exactement prix fournisseur + part revendeur, rien de plus. Si votre part ne suffit pas à couvrir vos coûts, la marge nette apparaît en rouge dans les exemples ci-dessous : c'est votre perte sur la vente." />
               </p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2" role="radiogroup" aria-label="Qui paie les coûts de Suguba">
@@ -321,6 +340,21 @@ export default function EconomicSettingsPanel({ ouvertParDefaut = false }: { ouv
             <div className="sm:col-span-2">
               <OuVaLArgent r={r} exemple={exemple} setExemple={setExemple} />
             </div>
+          </Section>
+
+          {/* ── Frais de paiement, payés par le client ─────────────────── */}
+          <Section id="paiement" titre="Frais de paiement (payés par le client)"
+            aide="En espèces à la livraison : aucun frais. En Mobile Money : le client paie sa commande plus les frais ci-dessous, détaillés ligne par ligne avant qu'il valide.">
+            <FraisPaiementReglages f={completerFraisPaiement(r.fraisPaiement)} ancien={releveAncien}
+              onChange={(f) => maj('fraisPaiement', f)}
+              onRelu={(tarifs) => {
+                // Déjà enregistrés par la relecture : mis à jour à l'écran ET dans
+                // la référence, pour ne pas les signaler « non enregistrés ».
+                const avec = <T extends { fraisPaiement?: ReglagesFraisPaiement }>(o: T): T => ({ ...o, fraisPaiement: { ...completerFraisPaiement(o.fraisPaiement), saspay: tarifs } });
+                setR((prev) => (prev ? avec(prev) : prev));
+                setInitial((prev) => (prev ? JSON.stringify(avec(JSON.parse(prev))) : prev));
+                setReleveAncien(false);
+              }} />
           </Section>
 
           {/* ── Impact sur les produits en ligne ───────────────────────── */}
@@ -413,9 +447,10 @@ export default function EconomicSettingsPanel({ ouvertParDefaut = false }: { ouv
             aide={r.couvrirCoutsDansLePrix
               ? 'Ils forment le « plancher » : aucun prix ne descend en dessous, quel que soit votre taux.'
               : 'Payés sur la part Suguba : ils ne changent pas le prix client. Ils servent à calculer votre marge nette réelle.'}>
-            <Num l="Frais de paiement SasPay" suffixe="%" v={r.fraisPaiementPct} on={(v) => maj('fraisPaiementPct', v)}
-              aide="Sur l'article + la livraison encaissés."
-              info="Le vrai coût que SasPay facture sur l'encaissement Mobile Money. Ce n'est PAS une marge Suguba : le mettre à 0 ne fait pas disparaître ce coût, ça veut juste dire que Suguba le paierait de sa poche au lieu de le répercuter dans le prix." />
+            <p className="sm:col-span-2 text-xs text-slate-600">
+              Les frais de paiement Mobile Money ne sont plus un coût de Suguba : le client les paie (voir{' '}
+              <button type="button" className="underline font-semibold" onClick={() => allerA('paiement')}>Frais de paiement</button>).
+            </p>
             <div className="sm:col-span-2 space-y-2 rounded-2xl bg-suguba-sauge p-3">
               <p className="text-xs font-semibold text-slate-700">Provision pour refus à la livraison</p>
               <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Base de la provision">
@@ -489,20 +524,27 @@ export default function EconomicSettingsPanel({ ouvertParDefaut = false }: { ouv
           {/* ── Retraits ───────────────────────────────────────────────── */}
           <Section id="retraits" titre="Frais de retrait (payés par le revendeur)"
             aide="Déduits du montant retiré : le revendeur voit le détail et ce qu'il recevra avant de valider. Mobile Money : SasPay + opérateur + Suguba. Espèces au guichet : Suguba seulement.">
-            <Num l="Frais SasPay (retrait Mobile Money)" suffixe="%" v={r.fraisVersementPct} on={(v) => maj('fraisVersementPct', v)}
-              info="Ce que SasPay facture pour envoyer l'argent sur le téléphone du revendeur. Il le paie lui-même : ce n'est plus un coût pour Suguba." />
+            <div className="sm:col-span-2 rounded-2xl bg-suguba-sauge p-3 text-xs text-slate-700 space-y-0.5">
+              <p className="font-semibold">Frais SasPay d&apos;un versement : tarif du compte, relu seul chez SasPay</p>
+              {(['orange_ml', 'moov_ml', 'wave_ml'] as const).map((code) => {
+                const p = completerFraisPaiement(r.fraisPaiement).saspay.reseaux[code]?.versement[0];
+                return <p key={code}>{LIBELLES_MOYENS[code]} : <strong>{p ? textePalier(p) : `inconnu, taux de secours ${r.fraisVersementPct} %`}</strong></p>;
+              })}
+            </div>
+            <Num l="Taux SasPay de secours" suffixe="%" v={r.fraisVersementPct} on={(v) => maj('fraisVersementPct', v)}
+              info="Ne sert que pour un réseau dont SasPay n'a pas donné de tarif. Sinon, le vrai tarif SasPay s'applique. Le revendeur paie ces frais lui-même : ce n'est pas un coût pour Suguba." />
             <Num l="Frais Suguba (tous les retraits)" suffixe="%" v={r.fraisRetraitSugubaPct ?? 0} on={(v) => maj('fraisRetraitSugubaPct', v)}
               info="Pris sur chaque retrait, en Mobile Money comme en espèces au guichet. C'est un gain pour Suguba, en plus du % prélevé sur la part revendeur à la vente." />
-            {([['orange_money', 'Frais Orange Money'], ['moov', 'Frais Moov Money']] as const).map(([cle, libelle]) => (
+            {([['orange_money', 'Frais Orange Money'], ['moov', 'Frais Moov Money'], ['wave', 'Frais Wave']] as const).map(([cle, libelle]) => (
               <Num key={cle} l={libelle} suffixe="%" v={r.fraisOperateurRetraitPct?.[cle] ?? 0}
-                on={(v) => maj('fraisOperateurRetraitPct', { orange_money: 0, moov: 0, mobi_cash: 0, ...r.fraisOperateurRetraitPct, [cle]: v })}
+                on={(v) => maj('fraisOperateurRetraitPct', { orange_money: 0, moov: 0, wave: 0, mobi_cash: 0, ...r.fraisOperateurRetraitPct, [cle]: v })}
                 info="Frais propres à l'opérateur, en plus de SasPay. Laissez 0 si le taux SasPay les inclut déjà." />
             ))}
             <Num l="Retrait minimum revendeur" suffixe="F" v={r.retraitMinimum} on={(v) => maj('retraitMinimum', v)}
               info="Le montant minimum de commissions accumulées qu'un revendeur doit atteindre avant de pouvoir demander un retrait." />
             <div className="sm:col-span-2 rounded-2xl bg-suguba-sauge p-3 text-xs text-slate-700 space-y-0.5">
               <p className="font-semibold">Exemple : retrait de 10 000 F</p>
-              {([['orange_money', 'Orange Money'], ['moov', 'Moov Money'], ['cash', 'Espèces au guichet']] as const).map(([moyen, libelle]) => {
+              {([['orange_money', 'Orange Money'], ['moov', 'Moov Money'], ['wave', 'Wave'], ['cash', 'Espèces au guichet']] as const).map(([moyen, libelle]) => {
                 const d = calculerFraisRetrait(10000, moyen, r);
                 return (
                   <p key={moyen}>
@@ -793,7 +835,6 @@ function venteSimulee(r: ReglagesPlateforme, fournisseur: number, part: number) 
 function plusGrosCout(t: DetailTarif): [string, number] {
   const couts: [string, number][] = [
     ['la provision pour refus', t.provisionRefus],
-    ['les frais de paiement', t.coutPaiement],
     ['les coûts fixes', t.coutFixe],
     ['la livraison non couverte', t.deficitLivraison],
   ];
@@ -932,6 +973,225 @@ function PrixDeGrosReglages({ g, r, onChange }: { g: ReglagesPrixDeGros; r: Regl
 }
 
 // ─────────────────────────── Éléments de formulaire ───────────────────────────
+
+// ─────────────────────────── Frais de paiement ───────────────────────────
+
+/** « 4 % », « 2 % + 100 F », « 3,8 % (min. 450 F) ». */
+function textePalier(p: PalierSasPay): string {
+  const base = texteTranche(p);
+  const bornes = [p.plancher !== null ? `min. ${enF(p.plancher)}` : '', p.plafond !== null ? `max. ${enF(p.plafond)}` : ''].filter(Boolean);
+  return bornes.length ? `${base} (${bornes.join(', ')})` : base;
+}
+
+const MOYENS_EXEMPLE: MoyenPaiementClient[] = ['especes', 'orange_ml', 'moov_ml', 'wave_ml'];
+const RESEAUX_AFFICHES: { code: string; libelle: string }[] = [
+  { code: 'orange_ml', libelle: 'Orange Money' },
+  { code: 'moov_ml', libelle: 'Moov Money' },
+  { code: 'wave_ml', libelle: 'Wave' },
+  { code: 'card', libelle: 'Carte bancaire' },
+];
+
+/**
+ * Frais de paiement (2026-09-27) : rien n'est écrit en dur. Taux Suguba et
+ * État réglables ; grille de retrait de chaque opérateur PAR TRANCHES, à
+ * corriger ici dès qu'un opérateur change ses prix ; tarifs SasPay relus
+ * seuls chez SasPay toutes les heures ; exemple en direct des quatre moyens.
+ * Le client paie tous ces frais ; seuls les « frais de transaction Suguba »
+ * sont un gain.
+ */
+function FraisPaiementReglages({ f, ancien, onChange, onRelu }: {
+  f: ReglagesFraisPaiement;
+  ancien: boolean;
+  onChange: (f: ReglagesFraisPaiement) => void;
+  onRelu: (tarifs: TarifsSasPay) => void;
+}) {
+  const [exemple, setExemple] = useState(10000);
+  const [lecture, setLecture] = useState<'repos' | 'encours'>('repos');
+  const [avis, setAvis] = useState<{ ok: boolean; texte: string } | null>(null);
+
+  const majGrille = (op: OperateurRetrait, g: GrilleRetraitOperateur) =>
+    onChange({ ...f, retraitOperateur: { ...f.retraitOperateur, [op]: g } });
+
+  const relire = async () => {
+    setLecture('encours');
+    setAvis(null);
+    try {
+      const res = await fetch('/api/admin/saspay-tarifs');
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.tarifs) {
+        setAvis({ ok: false, texte: json.error || 'Lecture impossible. Réessayez.' });
+        return;
+      }
+      const tarifs = json.tarifs as TarifsSasPay;
+      // Seuls les réseaux proposés aux clients comptent.
+      const vue = (t: TarifsSasPay) => JSON.stringify(RESEAUX_AFFICHES.map(({ code }) => t.reseaux[code] || null));
+      const change = vue(tarifs) !== vue(f.saspay);
+      onRelu({ releveLe: tarifs.releveLe, reseaux: { ...f.saspay.reseaux, ...tarifs.reseaux } });
+      setAvis({ ok: true, texte: !json.enregistre
+        ? 'Tarifs relus, mais pas enregistrés : lancez le SQL du 2026-09-27 dans Supabase.'
+        : change ? 'SasPay a changé ses tarifs : ils s’appliquent dès maintenant aux paiements.' : 'Tarifs relus : inchangés.' });
+    } catch {
+      setAvis({ ok: false, texte: 'Erreur réseau : tarifs non relus.' });
+    } finally {
+      setLecture('repos');
+    }
+  };
+
+  return (
+    <>
+      <Num l="Frais de transaction Suguba" suffixe="%" v={f.plateformePct} on={(v) => onChange({ ...f, plateformePct: v })}
+        info="Le gain de Suguba sur chaque paiement Mobile Money, payé par le client. Le baisser demande le droit « Baisser la part Suguba » et un motif." />
+      <Num l="Fonds de soutien de l'État" suffixe="%" v={f.fondsSoutienPct} on={(v) => onChange({ ...f, fondsSoutienPct: v })}
+        info="Prélèvement de l'État sur les retraits Mobile Money (Ordonnance n° 2025-008/PT-RM du 7 février 2025, en vigueur depuis le 5 mars 2025). Wave doit aussi l'appliquer depuis la décision DGCC du 2 février 2026. L'argent reçu doit être retiré : ce prélèvement est répercuté au client." />
+
+      <div className="sm:col-span-2 space-y-2">
+        <p className="text-xs font-semibold text-slate-700 inline-flex items-center gap-1">
+          Frais de retrait des opérateurs
+          <InfoBulle texte="Ce que coûte le retrait de l'argent reçu, selon la grille de chaque opérateur. Aucune API ne publie ces grilles : corrigez-les ici dès qu'un opérateur change ses prix. Au-delà du plafond d'un retrait (dernière tranche), l'argent sort en plusieurs retraits." />
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
+          {OPERATEURS_RETRAIT.map((op) => (
+            <GrilleRetrait key={op} libelle={LIBELLES_MOYENS[op]} g={f.retraitOperateur[op]} onChange={(g) => majGrille(op, g)} />
+          ))}
+        </div>
+        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-700">
+          <span className="font-semibold">Argent reçu par carte : retiré par</span>
+          <div role="radiogroup" aria-label="Opérateur de retrait pour la carte" className="inline-flex flex-wrap gap-1.5">
+            {OPERATEURS_RETRAIT.map((op) => {
+              const actif = f.retraitCarteVia === op;
+              return (
+                <button key={op} type="button" role="radio" aria-checked={actif} onClick={() => onChange({ ...f, retraitCarteVia: op })}
+                  className={`min-h-[36px] px-3 rounded-full border text-xs font-semibold ${actif ? 'border-suguba-profond bg-suguba-menthe text-suguba-profond' : 'border-slate-200 bg-white text-slate-700'}`}>
+                  {LIBELLES_MOYENS[op]}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      <div className="sm:col-span-2 rounded-2xl border border-slate-200 p-3 space-y-2">
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <div>
+            <p className="text-xs font-semibold text-slate-700">Tarifs SasPay du compte Suguba</p>
+            <p className="text-xs text-slate-600">
+              {f.saspay.releveLe ? `Relevés chez SasPay le ${new Date(f.saspay.releveLe).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}` : 'Jamais relevés'}
+              {' · relus seuls dès que le relevé a plus de 6 heures, sans jamais ralentir un paiement.'}
+              {ancien && ' Relecture en cours en arrière-plan.'}
+            </p>
+          </div>
+          <Button type="button" variant="secondary" size="sm" onClick={relire} disabled={lecture === 'encours'}>
+            {lecture === 'encours' ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+            {lecture === 'encours' ? 'SasPay répond… (jusqu’à 30 s)' : 'Relire maintenant'}
+          </Button>
+        </div>
+        <div className="divide-y divide-slate-100">
+          {RESEAUX_AFFICHES.map(({ code, libelle }) => {
+            const t = f.saspay.reseaux[code];
+            const enc = t?.encaissement[0];
+            const ver = t?.versement[0];
+            return (
+              <div key={code} className="py-1.5 grid grid-cols-1 sm:grid-cols-3 gap-x-3 text-xs">
+                <span className="font-semibold text-slate-900">{libelle}</span>
+                <span className="text-slate-700">Paiement : {enc ? <><strong>{textePalier(enc)}</strong>{enc.mode === 'ADD_ON' ? ', ajoutés au client par SasPay' : ', retenus sur Suguba'}</> : 'non proposé'}</span>
+                <span className="text-slate-700">Versement : {ver ? <strong>{textePalier(ver)}</strong> : 'non proposé'}</span>
+              </div>
+            );
+          })}
+        </div>
+        {avis && (
+          <p role="status" className={`text-xs ${avis.ok ? 'text-suguba-brand-dark' : 'text-rose-700'}`}>{avis.texte}</p>
+        )}
+      </div>
+
+      <div className="sm:col-span-2 rounded-2xl bg-suguba-sauge p-3 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs font-semibold text-slate-700">Ce que paie le client, en direct</p>
+          <label className="flex items-center gap-2 text-xs text-slate-600">Commande de
+            <Montant valeur={exemple} libelle="Montant de la commande exemple" onChange={setExemple} />
+          </label>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2">
+          {MOYENS_EXEMPLE.map((moyen) => {
+            const d = calculerFraisPaiement(exemple, moyen, f);
+            const gainSuguba = d.lignes.find((l) => l.code === 'plateforme')?.montant || 0;
+            return (
+              <div key={moyen} className="rounded-2xl bg-white p-3 space-y-1.5">
+                <p className="text-xs font-semibold text-slate-900">{LIBELLES_MOYENS[moyen]}</p>
+                {d.lignes.length === 0 ? (
+                  <p className="text-xs text-suguba-brand-dark font-semibold">Sans frais</p>
+                ) : (
+                  <dl className="space-y-0.5 text-xs">
+                    {d.lignes.map((l) => (
+                      <div key={l.code} className="flex justify-between gap-2">
+                        <dt className="text-slate-600 min-w-0">{l.libelle}</dt>
+                        <dd className="tabular-nums text-slate-900 whitespace-nowrap">{enF(l.montant)}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                )}
+                <p className="text-sm text-slate-900 border-t border-slate-100 pt-1.5">
+                  Le client paie <strong className="tabular-nums">{enF(d.totalClient)}</strong>
+                </p>
+                {d.fraisTotal > 0 && (
+                  <p className="text-xs text-slate-600">
+                    Soit {String(Math.round((d.fraisTotal / Math.max(1, d.montantCommande)) * 1000) / 10).replace('.', ',')} % de plus · Suguba gagne {enF(gainSuguba)}
+                  </p>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </>
+  );
+}
+
+/** Grille de retrait d'un opérateur : tranches modifiables, source et date de vérification. */
+function GrilleRetrait({ libelle, g, onChange }: { libelle: string; g: GrilleRetraitOperateur; onChange: (g: GrilleRetraitOperateur) => void }) {
+  const majTranche = (i: number, cle: keyof TrancheRetrait, v: number) =>
+    onChange({ ...g, tranches: g.tranches.map((t, j) => (j === i ? { ...t, [cle]: v } : t)) });
+  const derniere = g.tranches[g.tranches.length - 1];
+  return (
+    <div className="rounded-2xl border border-slate-200 p-3 space-y-2">
+      <p className="text-sm font-semibold text-slate-900">Retrait {libelle}</p>
+      <div className="space-y-2">
+        {g.tranches.map((t, i) => (
+          <div key={i} className="rounded-xl bg-slate-50 p-2 space-y-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs font-semibold text-slate-700">Tranche {i + 1} · {texteTranche(t)}</span>
+              {g.tranches.length > 1 && (
+                <BoutonSupprimer libelle={`Supprimer la tranche ${i + 1} du retrait ${libelle}`}
+                  onClick={() => onChange({ ...g, tranches: g.tranches.filter((_, j) => j !== i) })} />
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              {([['min', 'De (F)'], ['max', 'À (F)'], ['pct', '%'], ['fixe', '+ frais fixes (F)']] as const).map(([cle, titre]) => (
+                <label key={cle} className="text-xs text-slate-600">{titre}
+                  <ChampNombre valeur={t[cle]} libelle={`Retrait ${libelle}, tranche ${i + 1}, ${titre}`} onChange={(v) => majTranche(i, cle, v)} className="w-full mt-1 text-right" />
+                </label>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      <BoutonAjouter onClick={() => onChange({ ...g, tranches: [...g.tranches, { min: (derniere?.max ?? 0) + 1, max: (derniere?.max ?? 0) + 1000000, pct: 0, fixe: 0 }] })}>
+        Ajouter une tranche
+      </BoutonAjouter>
+      <label className="block text-xs text-slate-600">Source
+        <input value={g.source} onChange={(e) => onChange({ ...g, source: e.target.value })} aria-label={`Source de la grille ${libelle}`}
+          className={`${CHAMP} w-full mt-1`} />
+      </label>
+      <div className="flex items-center justify-between gap-2 text-xs text-slate-600">
+        <span>{g.verifieLe ? `Vérifiée le ${new Date(g.verifieLe).toLocaleDateString('fr-FR')}` : 'Jamais vérifiée'}</span>
+        <button type="button" className="underline font-semibold text-suguba-profond"
+          onClick={() => onChange({ ...g, verifieLe: new Date().toISOString().slice(0, 10) })}>
+          Vérifiée aujourd&apos;hui
+        </button>
+      </div>
+    </div>
+  );
+}
 
 /** 16 px sur téléphone : en dessous, iPhone zoome dès qu'on touche le champ. */
 const CHAMP = 'h-11 px-3 rounded-xl border border-slate-200 bg-white text-base sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-suguba-profond/30 focus:border-suguba-profond';

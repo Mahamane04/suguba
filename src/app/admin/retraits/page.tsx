@@ -28,7 +28,7 @@ interface RetraitAdmin {
 
 const LIBELLE_MOYEN: Record<string, string> = {
   orange_money: 'Orange Money', moov: 'Moov Money', mobi_cash: 'Mobi Cash',
-  wave: 'Wave (non pris en charge)', cash: 'Espèces au guichet',
+  wave: 'Wave', cash: 'Espèces au guichet',
 };
 const fmt = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
 const jour = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
@@ -154,7 +154,7 @@ export default function RetraitsAdminPage() {
       <span className="inline-flex gap-2 justify-end">
         {r.moyen === 'cash'
           ? <Button size="sm" disabled={enCours === r.id} onClick={() => agir(r, 'payer_especes')}>Argent remis</Button>
-          : <Button size="sm" disabled={enCours === r.id || r.moyen === 'wave'} onClick={() => agir(r, 'virer')}>Envoyer le virement</Button>}
+          : <Button size="sm" disabled={enCours === r.id || r.moyen === 'mobi_cash'} onClick={() => agir(r, 'virer')}>Envoyer le virement</Button>}
         <Button size="sm" variant="danger" disabled={enCours === r.id} onClick={() => agir(r, 'rejeter')}>Refuser</Button>
       </span>
     ) } as Colonne<RetraitAdmin>] : []),

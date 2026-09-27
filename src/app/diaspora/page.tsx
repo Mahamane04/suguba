@@ -15,6 +15,7 @@ import ChoicePicker from '@/components/ui/ChoicePicker';
 import { useOrderQuote } from '@/lib/useOrderQuote';
 import type { OrderInput } from '@/lib/order-input';
 import { useOrderCheckout } from '@/lib/useOrderCheckout';
+import { calculerFraisPaiement, completerFraisPaiement, type ReglagesFraisPaiement } from '@/lib/frais-paiement';
 import { 
   Globe2, CreditCard, HeartHandshake, ShieldCheck, 
   Truck, ArrowRight, CheckCircle2, Phone, MapPin, Sparkles, Star, Camera, Lock
@@ -26,8 +27,14 @@ export default function DiasporaPortalPage() {
   // Carte bancaire (C3) : proposée seulement une fois vérifiée par un vrai
   // paiement test (réglage admin). Sinon, le proche paie à la réception.
   const [carteOuverte, setCarteOuverte] = useState(false);
+  // Frais d'un paiement par carte, payés par l'acheteur (2026-09-27) : le
+  // bouton annonce le montant réellement facturé, comme le serveur le calcule.
+  const [bareme, setBareme] = useState<ReglagesFraisPaiement>(() => completerFraisPaiement(null));
   useEffect(() => {
-    fetch('/api/settings/public').then((r) => (r.ok ? r.json() : null)).then((j) => setCarteOuverte(j?.paiementCarte === true)).catch(() => undefined);
+    fetch('/api/settings/public').then((r) => (r.ok ? r.json() : null)).then((j) => {
+      setCarteOuverte(j?.paiementCarte === true);
+      setBareme(completerFraisPaiement(j?.fraisPaiement));
+    }).catch(() => undefined);
   }, []);
 
   const [currency, setCurrency] = useState<'EUR' | 'USD' | 'XOF'>('EUR');
@@ -443,7 +450,7 @@ export default function DiasporaPortalPage() {
                     {isProcessing
                       ? (carteOuverte ? 'Redirection vers le paiement sécurisé...' : 'Enregistrement de la commande...')
                       : !devis ? 'Calcul du total…'
-                      : carteOuverte ? `Régler ${formatPrice(devis.total)} par carte bancaire`
+                      : carteOuverte ? `Régler ${formatPrice(calculerFraisPaiement(devis.total, 'card', bareme).totalClient)} par carte, frais de paiement compris`
                       : `Commander pour ${formatPrice(devis.total)}, payé à la réception`}
                   </span>
                 </button>

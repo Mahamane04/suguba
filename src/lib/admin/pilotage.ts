@@ -140,7 +140,6 @@ export const CHAMPS_SIMULATION: { cle: string; titre: string; unite: string }[] 
   { cle: 'commissionCiblePct', titre: 'Commission visée (prix recommandé)', unite: '% du prix fournisseur' },
   { cle: 'commissionMinimale', titre: 'Commission minimale', unite: 'F' },
   { cle: 'margeNetteMinPct', titre: 'Marge nette minimale Suguba', unite: '%' },
-  { cle: 'fraisPaiementPct', titre: 'Frais de paiement', unite: '%' },
   { cle: 'provisionRefusPct', titre: 'Provision pour refus', unite: '%' },
   { cle: 'coutMessageParCommande', titre: 'Coût des messages par commande', unite: 'F' },
   { cle: 'remunerationLivreur', titre: 'Rémunération du livreur', unite: 'F' },

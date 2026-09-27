@@ -29,6 +29,8 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 const RESEAU_PAR_METHODE: Record<string, ReseauMali> = {
   orange_money: 'orange_ml',
   moov: 'moov_ml',
+  // Wave : versement SasPay disponible au Mali depuis le 2026-09-20.
+  wave: 'wave_ml',
 };
 
 export async function POST(req: NextRequest) {
@@ -82,8 +84,8 @@ export async function POST(req: NextRequest) {
 
     const reseau = RESEAU_PAR_METHODE[withdrawal.payment_method];
     if (!reseau) {
-      // Cas concret : `wave`. SasPay ne couvre pas Wave au Mali — envoyer un
-      // code réseau inconnu ferait un 422 côté SasPay. Mieux vaut le dire.
+      // Cas concret : `mobi_cash`, retiré de Suguba. Envoyer un code réseau
+      // non accepté ferait un 422 côté SasPay : mieux vaut le dire.
       return NextResponse.json(
         {
           error: `SasPay ne prend pas en charge « ${withdrawal.payment_method} » au Mali. `

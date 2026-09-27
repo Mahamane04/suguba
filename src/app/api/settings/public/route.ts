@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { lireReglagesReseau } from '@/lib/reseau/recompenses';
 import { chargerReglages } from '@/lib/platform-settings';
+import { actualiserSiAncien } from '@/lib/tarifs-saspay';
+import { completerFraisPaiement } from '@/lib/frais-paiement';
 
 /**
  * Les seuls réglages que le navigateur a besoin de connaître :
@@ -16,6 +18,9 @@ import { chargerReglages } from '@/lib/platform-settings';
  */
 export async function GET() {
   const [{ reglages }, reseau] = await Promise.all([chargerReglages(), lireReglagesReseau()]);
+  // Tarifs SasPay enregistrés (instantané) ; relus chez SasPay APRÈS la
+  // réponse si le relevé a plus de 6 heures.
+  actualiserSiAncien(completerFraisPaiement(reglages.fraisPaiement));
   return NextResponse.json(
     {
       fraisLivraisonClient: reglages.fraisLivraisonClient,
@@ -32,6 +37,10 @@ export async function GET() {
         operateurPct: reglages.fraisOperateurRetraitPct,
         sugubaPct: reglages.fraisRetraitSugubaPct,
       },
+      // Frais d'un paiement Mobile Money, payés par le client (2026-09-27) :
+      // affichés ligne par ligne avant qu'il valide, avec le même calcul que
+      // le serveur. Ce sont des tarifs publics, aucun coût interne de Suguba.
+      fraisPaiement: reglages.fraisPaiement,
     },
     { headers: { 'Cache-Control': 'public, max-age=60' } },
   );

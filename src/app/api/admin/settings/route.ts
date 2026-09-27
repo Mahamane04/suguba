@@ -6,6 +6,8 @@ import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
 import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { chargerReglages } from '@/lib/platform-settings';
+import { actualiserSiAncien, releveAncien } from '@/lib/tarifs-saspay';
+import { completerFraisPaiement } from '@/lib/frais-paiement';
 import { adminPeut } from '@/lib/reseau/db';
 import { baissesPartSuguba } from '@/lib/protection';
 import {
@@ -39,6 +41,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Authentification admin requise.' }, { status: 401 });
   }
   const etat = await chargerReglages();
+  // Tarifs SasPay (2026-09-27) : ceux relus automatiquement ; relus en
+  // arrière-plan si le relevé a plus de 6 heures.
+  const fraisPaiement = completerFraisPaiement(etat.reglages.fraisPaiement);
+  actualiserSiAncien(fraisPaiement);
   // Produits en ligne (2026-09-24) : le panneau calcule en direct l'effet des
   // réglages en cours d'édition sur chacun, AVANT d'enregistrer.
   const admin = getSupabaseAdmin();
@@ -56,6 +62,7 @@ export async function GET(req: NextRequest) {
     produits: produits || [],
     totalCoutsFixes: totalCoutsFixes(etat.reglages),
     coutFixeParCommande: Math.round(coutFixeParCommande(etat.reglages)),
+    tarifsSasPay: { releveLe: fraisPaiement.saspay.releveLe, ancien: releveAncien(fraisPaiement) },
   });
 }
 

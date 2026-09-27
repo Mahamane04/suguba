@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { initierPayin, estReseau, estReseauGlobal, RESEAUX_MALI, RESEAUX_GLOBAUX } from '@/lib/saspay';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { chargerReglages } from '@/lib/platform-settings';
+import { calculerFraisPaiement, completerFraisPaiement, type MoyenPaiementClient } from '@/lib/frais-paiement';
 
 /**
  * Démarre un encaissement SasPay pour une commande existante.
@@ -10,6 +11,11 @@ import { chargerReglages } from '@/lib/platform-settings';
  * ⚠️ Le montant n'est JAMAIS lu depuis la requête : il est relu en base à
  * partir du seul numéro de commande. Accepter un montant fourni par le
  * navigateur laisserait n'importe qui régler 100 F une commande de 216 500 F.
+ *
+ * Frais de paiement (2026-09-27) : à la charge du client. Le montant demandé
+ * à SasPay = commande + frais Suguba, retrait opérateur et fonds de soutien de
+ * l'État ; SasPay ajoute lui-même ses propres frais (mode ADD_ON). Le détail
+ * est gardé sur la tentative de paiement (payment_attempts.fees).
  *
  * Deux issues possibles, dictées par SasPay et non par nous :
  *  - `urlCheckout` non vide → rediriger le client, aucun push ne partira
@@ -32,8 +38,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Tarifs SasPay enregistrés (tenus à jour en arrière-plan) : la même
+    // source que l'écran du client, et jamais d'attente de SasPay ici.
+    const { reglages } = await chargerReglages();
+
     // Carte bancaire (C3) : refusée tant que l'admin ne l'a pas ouverte après un vrai paiement test.
-    if (estReseauGlobal(network) && network === 'card' && (await chargerReglages()).reglages.paiementCarteVerifie !== true) {
+    if (estReseauGlobal(network) && network === 'card' && reglages.paiementCarteVerifie !== true) {
       return NextResponse.json({ error: 'Le paiement par carte n’est pas encore ouvert. Votre proche peut payer à la réception.' }, { status: 409 });
     }
 
@@ -85,10 +95,20 @@ export async function POST(req: NextRequest) {
       statut: tentative.status, urlCheckout: tentative.checkout_url || null,
       reseau: estReseauGlobal(network) ? RESEAUX_GLOBAUX[network] : RESEAUX_MALI[network] });
 
+    // Frais à la charge du client, calculés sur les réglages ENREGISTRÉS : le
+    // montant annoncé à l'écran est celui facturé.
+    const frais = calculerFraisPaiement(montant, network as MoyenPaiementClient, completerFraisPaiement(reglages.fraisPaiement));
+    // Trace de la tentative. Colonnes ajoutées par A-EXECUTER-2026-09-27-frais-paiement.sql :
+    // tant qu'il n'est pas lancé, le paiement fonctionne, seule la trace manque.
+    const { error: traceErr } = await admin.from('payment_attempts')
+      .update({ amount_requested: frais.montantDemande, fees: frais })
+      .eq('id', tentative.id);
+    if (traceErr) console.warn('[SASPAY] Frais non tracés (SQL du 2026-09-27 à lancer ?):', traceErr.message);
+
     const [prenom, ...resteNom] = String(commande.customer_name || 'Client Suguba').trim().split(/\s+/);
 
     const resultat = await initierPayin({
-      montant,
+      montant: frais.montantDemande,
       description: `Commande Suguba ${commande.order_number}`,
       reseau: network,
       client: {
@@ -132,6 +152,8 @@ export async function POST(req: NextRequest) {
       statut: resultat.statut || 'PENDING',
       urlCheckout: resultat.urlCheckout || null,
       reseau: estReseauGlobal(network) ? RESEAUX_GLOBAUX[network] : RESEAUX_MALI[network],
+      montantTotal: frais.totalClient,
+      frais: frais.lignes,
     });
   } catch (error: any) {
     console.error('[SASPAY] Erreur création paiement:', error);

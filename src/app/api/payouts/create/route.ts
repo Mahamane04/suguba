@@ -9,11 +9,12 @@ import { calculerFraisRetrait } from '@/lib/pricing';
 
 // Le retrait minimum vit dans les réglages de la plateforme (écran admin),
 // plus en dur ici : voir src/lib/pricing.ts, `retraitMinimum`.
-// Wave a disparu de cette table : SasPay ne le couvre pas au Mali, un
-// retrait Wave ne pourrait donc jamais être viré (voir migration-saspay.sql).
+// Wave revenu le 2026-09-27 : SasPay le couvre désormais au Mali (wave_ml,
+// versement disponible). `wave` était déjà accepté par payouts.payment_method.
 const PROVIDER_MAP: Record<string, string> = {
   'Orange Money': 'orange_money',
   'Moov Money': 'moov',
+  'Wave': 'wave',
   'Agence Suguba': 'cash',
 };
 
@@ -63,6 +64,7 @@ export async function POST(req: NextRequest) {
     const { reglages } = await chargerReglages(true);
     const minimum = reglages.retraitMinimum;
     if (parsedAmount < minimum) return NextResponse.json({ definitive: true, error: `Le montant minimum de retrait est de ${minimum} FCFA.` }, { status: 400 });
+    // Frais SasPay enregistrés (tenus à jour en arrière-plan) : la même source que l'aperçu du revendeur.
     const frais = calculerFraisRetrait(parsedAmount, moyen, reglages);
     if (frais.montantNet <= 0) {
       return NextResponse.json({ definitive: true, error: 'Montant trop faible une fois les frais déduits.' }, { status: 400 });

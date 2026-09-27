@@ -15,16 +15,31 @@ const r = P.completerReglages({
 test('par défaut : Suguba 1,5 % sur chaque retrait, opérateurs à 0', () => {
   const d = P.completerReglages({});
   assert.equal(d.fraisRetraitSugubaPct, 1.5);
-  assert.deepEqual(d.fraisOperateurRetraitPct, { orange_money: 0, moov: 0, mobi_cash: 0 });
+  assert.deepEqual(d.fraisOperateurRetraitPct, { orange_money: 0, moov: 0, wave: 0, mobi_cash: 0 });
 });
 
-test('Orange Money : SasPay + Orange + Suguba sont déduits du montant demandé', () => {
+test('Wave : vrai tarif SasPay de versement 3,8 %, 450 F au minimum (2026-09-27)', () => {
+  const f = P.calculerFraisRetrait(10000, 'wave', r);
+  assert.equal(f.fraisSaspay, 450);
+  assert.equal(f.fraisSuguba, 150);
+});
+
+test('Orange Money : SasPay (vrai tarif 2 % + 100 F) + Orange + Suguba sont déduits du montant demandé', () => {
   const f = P.calculerFraisRetrait(10000, 'orange_money', r);
-  assert.equal(f.fraisSaspay, 150);
+  assert.equal(f.fraisSaspay, 300);
   assert.equal(f.fraisOperateur, 100);
   assert.equal(f.fraisSuguba, 150);
-  assert.equal(f.fraisTotal, 400);
-  assert.equal(f.montantNet, 9600);
+  assert.equal(f.fraisTotal, 550);
+  assert.equal(f.montantNet, 9450);
+});
+
+test('Moov Money : vrai tarif SasPay 3,8 %, 450 F au minimum', () => {
+  assert.equal(P.calculerFraisRetrait(10000, 'moov', r).fraisSaspay, 450);
+  assert.equal(P.calculerFraisRetrait(100000, 'moov', r).fraisSaspay, 3800);
+});
+
+test('réseau sans tarif SasPay connu : le taux de secours s’applique', () => {
+  assert.equal(P.calculerFraisRetrait(10000, 'mobi_cash', r).fraisSaspay, 150);
 });
 
 test('chaque opérateur a son propre taux', () => {

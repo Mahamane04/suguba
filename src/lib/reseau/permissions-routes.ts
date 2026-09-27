@@ -59,6 +59,7 @@ export const PERMISSION_PAR_ROUTE: Record<string, Permission> = {
   'PATCH /api/admin/sav': 'commande.modifier',
   'GET /api/admin/settings': 'finance.lire',
   'PUT /api/admin/settings': 'plateforme.parametres',
+  'GET /api/admin/saspay-tarifs': 'plateforme.parametres',
   'POST /api/admin/unlock-commission': 'finance.payer',
   'GET /api/admin/reseau-reglages': 'finance.lire',
   'POST /api/admin/reseau-reglages': 'commission.configurer',

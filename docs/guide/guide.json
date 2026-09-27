@@ -192,6 +192,62 @@
  "journal": [
   {
    "date": "2026-09-27",
+   "titre": "Wave intégré, frais de retrait par tranches et tarifs SasPay relus automatiquement",
+   "demande": "« integre wave dabord ( et j’espère que les frais de retrait sont dynamique pas en dure et veirifie les vrais frais proposer par les operateur et saas paye ? ) »",
+   "realise": [
+    "Vrais frais vérifiés le 2026-09-27 : Orange Money Mali (orangemali.com) 50 F jusqu’à 5 000 F, 1 % jusqu’à 1 000 000 F, 10 000 F jusqu’à 1 500 000 F ; Moov Money Mali (moov-africa.ml) 0,9 % jusqu’à 1 000 000 F, 9 000 F jusqu’à 2 000 000 F ; Wave : retrait sans frais opérateur, 1 % de l’État obligatoire depuis la décision DGCC du 2 février 2026.",
+    "SasPay vérifié sur le compte Suguba : Wave Mali actif depuis le 20/09/2026 ; paiement Orange 4 %, Moov 4 %, Wave 5 % (ajoutés au client) ; versement Orange 2 % + 100 F, Moov et Wave 3,8 % (450 F minimum).",
+    "Wave intégré : choix du client à l’écran de paiement (page de paiement Wave via SasPay), retraits des revendeurs par Wave, virement Wave depuis l’admin.",
+    "Frais de retrait dynamiques : grille de chaque opérateur par tranches, modifiable dans Paramètres (source et date de vérification), au-delà du plafond d’un retrait l’argent sort en plusieurs retraits. Plus aucun taux écrit en dur dans le calcul : le code ne garde que des valeurs de départ.",
+    "Tarifs SasPay relus automatiquement : SasPay met 10 à 30 secondes à les donner, il n’est donc jamais interrogé pendant un paiement. Le serveur les relit en arrière-plan, après avoir répondu, dès que le relevé a plus de 6 heures, et les enregistre à part (ils ne touchent jamais aux réglages de l’équipe). « Relire maintenant » force la relecture.",
+    "Correction : la grille Moov par défaut était fausse (1 %) ; c’est 0,9 %. Orange prend 50 F sous 5 000 F.",
+    "Logo officiel Wave (fourni par le fondateur) : le symbole du manchot sur les écrans de paiement et de retrait."
+   ],
+   "ecarts": [
+    "Wave ne publie pas de grille officielle : « sans frais opérateur » est à confirmer en agence, et se corrige dans Paramètres.",
+    "Aucune API ne publie les grilles d’Orange, Moov et Wave : elles se mettent à jour dans Paramètres (seuls les tarifs SasPay se mettent à jour seuls).",
+    "Un vrai paiement Wave n’a pas été fait (il débiterait un vrai compte) : à tester avec un petit montant après la mise en ligne.",
+    "SQL à lancer : supabase/A-EXECUTER-2026-09-27-frais-paiement.sql ajoute aussi la colonne des tarifs SasPay relus. Sans lui, les tarifs de départ (relevé du 27/09/2026) servent."
+   ],
+   "pages": [
+    "commander",
+    "rev-gains",
+    "adm-retraits",
+    "adm-parametres"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-27",
+   "titre": "Frais de paiement à la charge du client, tarifs SasPay automatiques",
+   "demande": "« les frais de retrait orange money et aussi fond de soutient appliquer par l’etat (faire reche en ligne pour comprendre) doivent être a la charge du client […] calculer automatiquement les frais de saas pay 1.5% + 1% de suguba doit être reconnus comme frais de la transaction de la platforme […] donc les sans frais sont uniquement payement en cash ! revoir le système de calcule paramètre de commission plus proffessionel et dynamique »",
+   "realise": [
+    "Recherche : fonds de soutien de l’État = 1 % sur les retraits Mobile Money (Ordonnance n° 2025-008/PT-RM du 7 février 2025, en vigueur depuis le 5 mars 2025) ; retrait Orange Money Mali = 1 % jusqu’à 1 000 000 F, 10 000 F au-delà.",
+    "Tarifs SasPay lus à la source (API du compte Suguba) : 4 % sur Orange Money et Moov Money, déjà ajoutés au client par SasPay (mode ADD_ON) — et non 1,5 %. Suguba ne les ajoute donc pas une seconde fois : il les affiche.",
+    "Paiement en espèces à la livraison : sans aucun frais. Orange Money / Moov Money : le client paie la commande + frais de transaction Suguba (1 %) + retrait opérateur (1 %) + fonds de soutien de l’État (1 %) + SasPay (4 %). Exemple 10 000 F → 10 712 F débités.",
+    "Écran de paiement du client : coût affiché sur chaque moyen (« Sans frais », « + 712 F »), détail ligne par ligne avant de valider, bouton « Payer 10 712 FCFA », montant réellement payé sur l’écran « Paiement reçu ».",
+    "Le serveur demande à SasPay la commande + les frais Suguba, retrait et État ; le détail est gardé sur chaque tentative de paiement (SQL du 2026-09-27).",
+    "Moteur de prix : les frais de paiement ne sont plus un coût de Suguba (le client les paie) ; ils sortent du plancher et de la marge nette. L’ancien réglage « Frais de paiement SasPay 1,5 % » disparaît.",
+    "Retraits des revendeurs : frais SasPay au vrai tarif du compte (Orange 2 % + 100 F, Moov 3,8 % avec 450 F minimum) au lieu de 1,5 %.",
+    "Paramètres : nouvelle section « Frais de paiement » — taux réglables, tarifs SasPay relus d’un clic, comparaison en direct espèces / Orange / Moov. Baisser les frais de transaction Suguba demande le droit « Baisser la part Suguba » et un motif."
+   ],
+   "ecarts": [
+    "SQL à lancer dans Supabase : supabase/A-EXECUTER-2026-09-27-frais-paiement.sql (trace des frais par paiement). Sans lui, les paiements marchent, seule la trace manque.",
+    "Grille de retrait Moov Money : vérifiée et corrigée le même jour (0,9 %, pas 1 %) — voir « Wave intégré, frais de retrait par tranches… ».",
+    "Les frais sont calculés sur la commande ; SasPay calcule les siens sur le montant demandé (commande + frais Suguba) : c’est son tarif.",
+    "Carte bancaire : aucun tarif SasPay sur le compte (paiement par carte toujours fermé). Wave : intégré le même jour — voir l’entrée suivante.",
+    "Le modèle de commission lui-même (prélèvement sur la part revendeur) n’a pas changé : seuls les frais de paiement et leur calcul ont été revus.",
+    "Vérifié en local sur l’écran de paiement ; le panneau Paramètres n’a pas pu être vu à l’écran (connexion admin requise)."
+   ],
+   "pages": [
+    "commander",
+    "rev-gains",
+    "adm-parametres"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-27",
    "titre": "Barres de navigation de l’équipe au design system",
    "demande": "« les nav barre ne sont pas adapter au design système » (capture de Catalogue en tableau).",
    "realise": [
@@ -1766,6 +1822,10 @@
     {
      "nom": "Pour qui commandez-vous ?",
      "role": "Compte connecté : « Pour moi » ou un proche enregistré remplit nom, téléphone, quartier et repère ; « + Un proche » ouvre « Mes destinataires »."
+    },
+    {
+     "nom": "Après la commande : comment payer",
+     "role": "À la livraison en espèces : sans aucun frais. Orange Money, Moov Money ou Wave : chaque moyen affiche son coût (sur 10 000 F : Orange + 712 F, Moov + 702 F, Wave + 710 F), puis le détail avant de valider : frais de transaction Suguba (1 %), retrait de l’opérateur selon sa grille (Orange 1 %, Moov 0,9 %, Wave sans frais), fonds de soutien de l’État (1 %) et frais SasPay (Orange et Moov 4 %, Wave 5 %, ajoutés par SasPay). Le bouton annonce le total débité."
     }
    ],
    "suite": [
@@ -2908,11 +2968,11 @@
     },
     {
      "nom": "Mode de retrait",
-     "role": "Orange Money · Moov Money · Mobi Cash (virement) ou Espèces au guichet."
+     "role": "Orange Money · Moov Money · Wave (virement) ou Espèces au guichet."
     },
     {
      "nom": "Numéro · Montant",
-     "role": "Minimum 5 000 F. En dessous, le détail des frais (SasPay, opérateur, Suguba ; Suguba seulement en espèces) et « Vous recevrez … F »."
+     "role": "Minimum 5 000 F. En dessous, le détail des frais (SasPay au vrai tarif du compte, relu seul chez SasPay : Orange Money 2 % + 100 F, Moov Money et Wave 3,8 % avec 450 F minimum ; opérateur ; Suguba — Suguba seulement en espèces) et « Vous recevrez … F »."
     },
     {
      "nom": "Demander le virement",
@@ -4153,7 +4213,7 @@
     },
     {
      "nom": "Retraits en attente",
-     "role": "Tableau : revendeur, montant à verser, moyen (logo), téléphone, code, date ; « Envoyer le virement » (SasPay), « Argent remis » (espèces), « Refuser » (le montant retourne au solde). Au-dessus du seuil, la double validation demande l’accord d’un collègue (« Validations »)."
+     "role": "Tableau : revendeur, montant à verser, moyen (logo), téléphone, code, date ; « Envoyer le virement » (SasPay, Orange Money, Moov Money et Wave), « Argent remis » (espèces), « Refuser » (le montant retourne au solde). Au-dessus du seuil, la double validation demande l’accord d’un collègue (« Validations »)."
     },
     {
      "nom": "Virements en cours",
@@ -4189,7 +4249,11 @@
    "elements": [
     {
      "nom": "Réglages économiques",
-     "role": "Les mêmes qu’avant : mode de rémunération, coûts de Suguba, où va l’argent d’une vente, effet sur vos produits en ligne, coûts, livraison, codes promo, prix de gros. Une baisse de la part Suguba demande un motif, désormais dans une vraie fenêtre (plus la fenêtre du navigateur)."
+     "role": "Mode de rémunération, frais de paiement, où va l’argent d’une vente, effet sur vos produits en ligne, coûts, retraits, livraison, codes promo, prix de gros. Une baisse de la part Suguba (dont les frais de transaction Suguba) demande un motif, dans une vraie fenêtre."
+    },
+    {
+     "nom": "Frais de paiement (payés par le client)",
+     "role": "Frais de transaction Suguba (%), fonds de soutien de l’État (%). Grille de retrait d’Orange Money, Moov Money et Wave PAR TRANCHES (de, à, %, frais fixes), avec sa source et « Vérifiée aujourd’hui » ; ajouter ou supprimer une tranche. Opérateur de retrait de l’argent reçu par carte. Tarifs SasPay relus seuls chez SasPay dès que le relevé a plus de 6 heures, sans jamais ralentir un paiement ; « Relire maintenant » (SasPay met jusqu’à 30 secondes). « Ce que paie le client, en direct » : espèces, Orange, Moov, Wave côte à côte."
     },
     {
      "nom": "Tester un profil",

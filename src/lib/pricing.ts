@@ -18,13 +18,17 @@
  * appliquée était « marge Suguba non négative » — sans tenir compte d'aucun
  * coût. Un produit pouvait donc être vendu à perte sans que personne ne le voie.
  *
- * ── Deux choix de prudence ───────────────────────────────────────────────
- * 1. Les frais de paiement SasPay sont comptés sur TOUTES les commandes, même
- *    celles payées en espèces à la livraison. La part réelle espèces / mobile
- *    money n'est pas connue ; surestimer un coût protège la marge, le sous-
- *    estimer la détruit.
- * 2. La commission est arrondie VERS LE BAS. L'arrondir vers le haut prendrait
- *    les francs manquants sur le plancher, qui cesserait d'en être un.
+ * ── Frais de paiement : hors des coûts de Suguba (2026-09-27) ────────────
+ * Payer en espèces est gratuit ; payer par Mobile Money coûte des frais que le
+ * CLIENT paie en plus de sa commande (voir frais-paiement.ts). Ils ne sont
+ * donc plus un coût de Suguba et n'entrent ni dans le plancher ni dans la
+ * marge nette. Avant, 1,5 % « SasPay » étaient comptés sur toutes les ventes,
+ * espèces comprises — alors que le compte SasPay, en mode ADD_ON, fait déjà
+ * payer ses frais (4 %) au client.
+ *
+ * ── Un choix de prudence ─────────────────────────────────────────────────
+ * La commission est arrondie VERS LE BAS. L'arrondir vers le haut prendrait
+ * les francs manquants sur le plancher, qui cesserait d'en être un.
  *
  * Les coûts rattachés à la commande (livraison, message, coûts fixes) sont
  * comptés par UNITÉ vendue. Pour une commande de plusieurs articles, ils sont
@@ -33,6 +37,13 @@
 
 import { trouverQuartier, distanceKm, positionValide } from './bamako-quartiers';
 import { communeDuQuartier, riveDeLaCommune } from './bamako-neighborhoods';
+import {
+  completerFraisPaiement,
+  fraisVersementSasPay,
+  validerFraisPaiement,
+  FRAIS_PAIEMENT_PAR_DEFAUT,
+  type ReglagesFraisPaiement,
+} from './frais-paiement';
 
 export interface LigneCoutFixe {
   libelle: string;
@@ -111,16 +122,36 @@ export const FORMULES_BOUTIQUES_PAR_DEFAUT: FormuleBoutique[] = [
 export type ModePrix = 'fixe' | 'gros';
 
 /** Moyens de retrait (valeurs de `payouts.payment_method`) : Mobile Money, ou espèces au guichet. */
-export type MoyenRetraitMobile = 'orange_money' | 'moov' | 'mobi_cash';
+export type MoyenRetraitMobile = 'orange_money' | 'moov' | 'wave' | 'mobi_cash';
 export type MoyenRetrait = MoyenRetraitMobile | 'cash';
 
+/** Code réseau SasPay de chaque moyen de retrait Mobile Money. */
+const RESEAU_SASPAY_RETRAIT: Record<MoyenRetraitMobile, string> = {
+  orange_money: 'orange_ml',
+  moov: 'moov_ml',
+  wave: 'wave_ml',
+  mobi_cash: 'mobi_cash_ml',
+};
+
 export interface ReglagesPlateforme {
-  // ── Coûts variables, par commande ────────────────────────────────────
-  /** Frais SasPay d'encaissement, en % du montant encaissé (article + livraison). */
-  fraisPaiementPct: number;
+  // ── Frais de paiement, payés par le client (2026-09-27) ──────────────
   /**
-   * Frais SasPay d'un retrait Mobile Money, en % du montant retiré. Payés par
-   * celui qui retire (2026-09-24) : ce n'est plus un coût de Suguba.
+   * Frais d'un paiement Mobile Money ou carte, tous à la charge du client :
+   * transaction Suguba, retrait opérateur, fonds de soutien de l'État, tarif
+   * SasPay lu à la source. Espèces : aucun frais. Voir frais-paiement.ts.
+   */
+  fraisPaiement?: ReglagesFraisPaiement;
+  /**
+   * @deprecated 2026-09-27 — n'est plus un coût de Suguba : le client paie les
+   * frais de paiement (voir `fraisPaiement`). Gardé pour lire les anciens réglages.
+   */
+  fraisPaiementPct: number;
+
+  // ── Coûts variables, par commande ────────────────────────────────────
+  /**
+   * Taux de secours des frais SasPay d'un retrait Mobile Money, en %, pour un
+   * réseau dont le tarif SasPay n'est pas connu. Sinon le vrai palier SasPay
+   * s'applique (Orange : 2 % + 100 F). Payés par celui qui retire (2026-09-24).
    */
   fraisVersementPct: number;
   /** Frais de l'opérateur sur un retrait, en % (0 si déjà compris dans le taux SasPay). */
@@ -288,6 +319,7 @@ export interface ReglagesPlateforme {
  * les a pas remplacés par ses vraies dépenses.
  */
 export const REGLAGES_PAR_DEFAUT: ReglagesPlateforme = {
+  fraisPaiement: FRAIS_PAIEMENT_PAR_DEFAUT,
   fraisPaiementPct: 1.5,
   fraisVersementPct: 1.5,
   coutMessageParCommande: 20,
@@ -348,7 +380,7 @@ export const REGLAGES_PAR_DEFAUT: ReglagesPlateforme = {
   tauxPartSuguba: 8,
   minimumPartSuguba: 1000,
   couvrirCoutsDansLePrix: false,
-  fraisOperateurRetraitPct: { orange_money: 0, moov: 0, mobi_cash: 0 },
+  fraisOperateurRetraitPct: { orange_money: 0, moov: 0, wave: 0, mobi_cash: 0 },
   fraisRetraitSugubaPct: 1.5,
   prixDeGros: { modeGain: 'marge_revendeur', taux: 1, montantFixe: 0, margeConseilleePct: 15 },
   formulesBoutiques: FORMULES_BOUTIQUES_PAR_DEFAUT,
@@ -366,8 +398,8 @@ export type StatutTarif = 'ok' | 'sous_plancher' | 'commission_faible';
 export interface DetailTarif {
   prixFournisseur: number;
   prixVente: number;
-  // Décomposition du coût par commande
-  coutPaiement: number;
+  // Décomposition du coût par commande (les frais de paiement n'en font plus
+  // partie depuis le 2026-09-27 : le client les paie, voir frais-paiement.ts)
   provisionRefus: number;
   coutFixe: number;
   coutMessage: number;
@@ -427,15 +459,14 @@ export function coutCourseRefusee(r: ReglagesPlateforme): number {
   return 2 * Math.max(0, Number(r.remunerationLivreur) || 0);
 }
 
-/** Part des coûts qui croît avec le prix de vente (paiement, refus s'il est au prix, marge nette). */
+/** Part des coûts qui croît avec le prix de vente (refus s'il est au prix, marge nette). */
 function tauxProportionnel(r: ReglagesPlateforme): number {
-  return pct(r.fraisPaiementPct) + (provisionSurLaCourse(r) ? 0 : pct(r.provisionRefusPct)) + pct(r.margeNetteMinPct);
+  return (provisionSurLaCourse(r) ? 0 : pct(r.provisionRefusPct)) + pct(r.margeNetteMinPct);
 }
 
 /** Part du plancher qui ne dépend pas du prix de vente, en FCFA. */
 function chargesIndependantesDuPrix(r: ReglagesPlateforme): number {
   return (
-    pct(r.fraisPaiementPct) * r.fraisLivraisonClient +
     coutFixeParCommande(r) +
     (provisionSurLaCourse(r) ? pct(r.provisionRefusPct) * coutCourseRefusee(r) : 0) +
     r.coutMessageParCommande +
@@ -469,12 +500,11 @@ export function calculerTarif(
   const PF = Math.max(0, Number(prixFournisseur) || 0);
   const PV = Math.max(0, Number(prixVente) || 0);
 
-  const coutPaiement = pct(r.fraisPaiementPct) * (PV + r.fraisLivraisonClient);
   const provisionRefus = pct(r.provisionRefusPct) * (provisionSurLaCourse(r) ? coutCourseRefusee(r) : PV);
   const coutFixe = coutFixeParCommande(r);
   const coutMessage = r.coutMessageParCommande;
   const deficitLivraison = Math.max(0, r.remunerationLivreur - r.fraisLivraisonClient);
-  const coutParCommande = coutPaiement + provisionRefus + coutFixe + coutMessage + deficitLivraison;
+  const coutParCommande = provisionRefus + coutFixe + coutMessage + deficitLivraison;
   const margeNetteMinimale = pct(r.margeNetteMinPct) * PV;
   const plancher = coutParCommande + margeNetteMinimale;
   // Coûts non répercutés : ils sont payés sur la part de Suguba et ne
@@ -551,7 +581,6 @@ export function calculerTarif(
   return {
     prixFournisseur: PF,
     prixVente: PV,
-    coutPaiement: franc(coutPaiement),
     provisionRefus: franc(provisionRefus),
     coutFixe: franc(coutFixe),
     coutMessage: franc(coutMessage),
@@ -686,12 +715,11 @@ export function calculerTarifGros(prixGros: number, prixVente: number, r: Reglag
   const PV = Math.max(0, Number(prixVente) || 0);
   const g = r.prixDeGros;
 
-  const coutPaiement = pct(r.fraisPaiementPct) * (PV + r.fraisLivraisonClient);
   const provisionRefus = pct(r.provisionRefusPct) * (r.baseProvisionRefus === 'course' ? coutCourseRefusee(r) : PV);
   const coutFixe = coutFixeParCommande(r);
   const coutMessage = r.coutMessageParCommande;
   const deficitLivraison = Math.max(0, r.remunerationLivreur - r.fraisLivraisonClient);
-  const coutParCommande = coutPaiement + provisionRefus + coutFixe + coutMessage + deficitLivraison;
+  const coutParCommande = provisionRefus + coutFixe + coutMessage + deficitLivraison;
   const margeNetteMinimale = pct(r.margeNetteMinPct) * PV;
   const plancher = coutParCommande + margeNetteMinimale;
   const surcout = surcoutSugubaGros(PF, r);
@@ -716,7 +744,6 @@ export function calculerTarifGros(prixGros: number, prixVente: number, r: Reglag
   return {
     prixFournisseur: PF,
     prixVente: PV,
-    coutPaiement: franc(coutPaiement),
     provisionRefus: franc(provisionRefus),
     coutFixe: franc(coutFixe),
     coutMessage: franc(coutMessage),
@@ -1024,13 +1051,19 @@ export interface DetailFraisRetrait {
  * Frais d'un retrait (2026-09-24), payés par celui qui retire, calculés sur le
  * montant demandé. Mobile Money : frais SasPay + frais de l'opérateur + frais
  * Suguba. Espèces au guichet : seulement les frais Suguba.
+ *
+ * Frais SasPay (2026-09-27) : le vrai palier de versement du compte Suguba
+ * (Orange : 2 % + 100 F ; Moov : 3,8 %, 450 F minimum), lu dans
+ * `fraisPaiement.saspay`. `fraisVersementPct` ne sert plus que de secours pour
+ * un réseau sans tarif connu.
  */
-export type TauxRetrait = Pick<ReglagesPlateforme, 'fraisVersementPct' | 'fraisOperateurRetraitPct' | 'fraisRetraitSugubaPct'>;
+export type TauxRetrait = Pick<ReglagesPlateforme, 'fraisVersementPct' | 'fraisOperateurRetraitPct' | 'fraisRetraitSugubaPct' | 'fraisPaiement'>;
 
 export function calculerFraisRetrait(montant: number, moyen: MoyenRetrait | string, r: TauxRetrait): DetailFraisRetrait {
   const M = Math.max(0, Math.floor(Number(montant) || 0));
-  const mobile = moyen === 'orange_money' || moyen === 'moov' || moyen === 'mobi_cash';
-  const fraisSaspay = mobile ? Math.ceil(pct(r.fraisVersementPct) * M) : 0;
+  const mobile = moyen === 'orange_money' || moyen === 'moov' || moyen === 'wave' || moyen === 'mobi_cash';
+  const palier = mobile ? fraisVersementSasPay(M, RESEAU_SASPAY_RETRAIT[moyen as MoyenRetraitMobile], r.fraisPaiement?.saspay) : null;
+  const fraisSaspay = !mobile ? 0 : palier !== null ? palier : Math.ceil(pct(r.fraisVersementPct) * M);
   const fraisOperateur = mobile ? Math.ceil(pct(Number(r.fraisOperateurRetraitPct?.[moyen as MoyenRetraitMobile]) || 0) * M) : 0;
   const fraisSuguba = Math.ceil(pct(Number(r.fraisRetraitSugubaPct) || 0) * M);
   const fraisTotal = fraisSaspay + fraisOperateur + fraisSuguba;
@@ -1047,7 +1080,6 @@ export function calculerFraisRetrait(montant: number, moyen: MoyenRetrait | stri
 export function validerReglages(r: ReglagesPlateforme): string[] {
   const erreurs: string[] = [];
   const pourcentages: [keyof ReglagesPlateforme, string][] = [
-    ['fraisPaiementPct', 'Frais de paiement'],
     ['fraisVersementPct', 'Frais de versement'],
     ['provisionRefusPct', 'Provision pour refus'],
     ['margeNetteMinPct', 'Marge nette minimale'],
@@ -1062,8 +1094,8 @@ export function validerReglages(r: ReglagesPlateforme): string[] {
   }
   if (couvreLesCouts(r) && tauxProportionnel(r) >= 0.6) {
     erreurs.push(provisionSurLaCourse(r)
-      ? 'Paiement + marge nette dépassent 60 % du prix de vente : aucun prix ne resterait vendable.'
-      : 'Paiement + provision pour refus + marge nette dépassent 60 % du prix de vente : aucun prix ne resterait vendable.');
+      ? 'La marge nette dépasse 60 % du prix de vente : aucun prix ne resterait vendable.'
+      : 'Provision pour refus + marge nette dépassent 60 % du prix de vente : aucun prix ne resterait vendable.');
   }
   const montants: [keyof ReglagesPlateforme, string][] = [
     ['coutMessageParCommande', 'Coût du message'],
@@ -1077,7 +1109,7 @@ export function validerReglages(r: ReglagesPlateforme): string[] {
     const v = Number(r[cle]);
     if (!Number.isFinite(v) || v < 0) erreurs.push(`${libelle} : doit être un montant positif.`);
   }
-  for (const moyen of ['orange_money', 'moov', 'mobi_cash'] as const) {
+  for (const moyen of ['orange_money', 'moov', 'wave', 'mobi_cash'] as const) {
     const d = calculerFraisRetrait(10000, moyen, r);
     if (d.montantNet <= 0) erreurs.push('Frais de retrait : leur total doit rester sous 100 %.');
     const v = Number(r.fraisOperateurRetraitPct?.[moyen] ?? 0);
@@ -1092,6 +1124,7 @@ export function validerReglages(r: ReglagesPlateforme): string[] {
   if (r.modePartSuguba === 'prix_vente' && Number(r.tauxPartSuguba) >= 90) {
     erreurs.push('Part Suguba sur le prix de vente : au-delà de 90 %, aucun prix ne serait raisonnable.');
   }
+  erreurs.push(...validerFraisPaiement(completerFraisPaiement(r.fraisPaiement)));
   if (!Number.isFinite(r.volumeReference) || r.volumeReference < 1) {
     erreurs.push('Le volume de référence doit être d\'au moins 1 commande par mois.');
   }
@@ -1159,6 +1192,7 @@ export function completerReglages(partiels: Partial<ReglagesPlateforme> | null |
   }
   if (r.modeLivraisonBamako !== 'zones') r.modeLivraisonBamako = 'distance';
   if (r.baseProvisionRefus !== 'course') r.baseProvisionRefus = 'prix';
+  r.fraisPaiement = completerFraisPaiement(r.fraisPaiement);
   r.couvrirCoutsDansLePrix = r.couvrirCoutsDansLePrix === true;
   r.livreurGardeRemuneration = r.livreurGardeRemuneration !== false;
   {
@@ -1171,7 +1205,7 @@ export function completerReglages(partiels: Partial<ReglagesPlateforme> | null |
   {
     const o = (r.fraisOperateurRetraitPct && typeof r.fraisOperateurRetraitPct === 'object' ? r.fraisOperateurRetraitPct : {}) as Partial<Record<MoyenRetraitMobile, number>>;
     const lire = (v: unknown) => (Number.isFinite(Number(v)) && Number(v) >= 0 ? Number(v) : 0);
-    r.fraisOperateurRetraitPct = { orange_money: lire(o.orange_money), moov: lire(o.moov), mobi_cash: lire(o.mobi_cash) };
+    r.fraisOperateurRetraitPct = { orange_money: lire(o.orange_money), moov: lire(o.moov), wave: lire(o.wave), mobi_cash: lire(o.mobi_cash) };
     r.fraisRetraitSugubaPct = Number.isFinite(Number(r.fraisRetraitSugubaPct))
       ? Number(r.fraisRetraitSugubaPct)
       : (REGLAGES_PAR_DEFAUT.fraisRetraitSugubaPct as number);
