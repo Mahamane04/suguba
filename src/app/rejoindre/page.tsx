@@ -54,8 +54,8 @@ const ROLES: Record<RoleKey, {
     puce: 'bg-emerald-100 text-emerald-800', fond: 'from-emerald-600 to-green-700',
     quoiFaire: "Vous partagez un produit à votre réseau WhatsApp. Vous n'achetez rien, vous n'avancez rien : Suguba livre et encaisse, vous touchez votre commission.",
     etapes: [
-      'Compte Google + votre numéro et quartier',
-      'Suguba valide votre dossier (24-48h)',
+      'Compte Google ou e-mail, puis votre numéro et quartier',
+      'Votre espace revendeur s’ouvre tout de suite',
       'Vous partagez, le client est livré, vous êtes payé',
     ],
     cta: 'Devenir revendeur',
@@ -66,8 +66,8 @@ const ROLES: Record<RoleKey, {
     puce: 'bg-slate-100 text-slate-800', fond: 'from-slate-600 to-slate-700',
     quoiFaire: "Vous déposez vos produits. Le réseau de revendeurs les diffuse, nos livreurs les remettent au client. Vous ne gérez ni la vente ni la livraison.",
     etapes: [
-      'Compte Google + votre entreprise et quartier d\'entrepôt',
-      'Suguba valide votre dossier (24-48h)',
+      'Compte Google ou e-mail, puis votre entreprise et quartier d\'entrepôt',
+      'Suguba vérifie chaque produit avant sa mise en vente',
       'Vous déposez un produit, il part dans le réseau',
     ],
     cta: 'Devenir fournisseur',
@@ -78,8 +78,8 @@ const ROLES: Record<RoleKey, {
     puce: 'bg-amber-100 text-amber-800', fond: 'from-amber-600 to-orange-700',
     quoiFaire: "Vous récupérez les colis et vous les livrez à Bamako, avec votre moto ou votre véhicule. Vous encaissez le paiement à la remise.",
     etapes: [
-      'Compte Google + véhicule, immatriculation et zone',
-      'Suguba valide votre dossier (24-48h)',
+      'Compte Google ou e-mail, puis véhicule, immatriculation et zone',
+      'Passage au guichet Suguba avant vos premières courses',
       'Vous recevez vos courses, vous livrez, vous êtes payé',
     ],
     cta: 'Devenir livreur',
@@ -107,6 +107,17 @@ export default function RejoindrePage() {
 
   const [role, setRole] = useState<RoleKey>('reseller');
   const [erreur, setErreur] = useState<string | null>(null);
+  // Déjà connecté (2026-09-26) : pas de nouvelle inscription, on ajoute le
+  // profil au compte existant (/compte/profils). null = pas encore lu.
+  const [compte, setCompte] = useState<{ connecte: boolean; roles: Record<string, string> } | null>(null);
+  useEffect(() => {
+    fetch('/api/auth/me', { cache: 'no-store', credentials: 'same-origin' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((moi) => setCompte(moi?.authenticated
+        ? { connecte: true, roles: moi.roles || (moi.role ? { [moi.role]: moi.status } : {}) }
+        : { connecte: false, roles: {} }))
+      .catch(() => setCompte({ connecte: false, roles: {} }));
+  }, []);
 
   const actif = ROLES[role];
   const Icon = actif.icon;
@@ -246,6 +257,20 @@ export default function RejoindrePage() {
                 <Heart className="w-4 h-4" />
                 {actif.cta}
               </Button>
+            ) : compte?.connecte && compte.roles[role] ? (
+              <>
+                <Button href="/compte/profils" variant="ghost" size="lg" fullWidth className="border-transparent">
+                  Ouvrir mon espace {actif.label.toLowerCase()}
+                </Button>
+                <p className="text-xs text-white/70 text-center mt-2">Vous avez déjà ce profil sur votre compte.</p>
+              </>
+            ) : compte?.connecte ? (
+              <>
+                <Button href={`/compte/profils?ajouter=${role}`} variant="ghost" size="lg" fullWidth className="border-transparent">
+                  Ajouter le profil {actif.label.toLowerCase()} à mon compte
+                </Button>
+                <p className="text-xs text-white/70 text-center mt-2">Vous gardez votre compte : pas besoin de vous réinscrire.</p>
+              </>
             ) : (
               <>
                 <Button
@@ -257,10 +282,13 @@ export default function RejoindrePage() {
                   className="border-transparent"
                 >
                   <GoogleIcon className="w-5 h-5" />
-                  {actif.cta}
+                  Continuer avec Google
                 </Button>
+                <Link href={`/register?role=${role}`} className="mt-2 w-full min-h-[48px] inline-flex items-center justify-center rounded-2xl border border-white/40 text-sm font-bold text-white hover:bg-white/10 transition-colors">
+                  Créer mon compte avec mon e-mail
+                </Link>
                 <p className="text-xs text-white/70 text-center mt-2">
-                  Sans mot de passe · dossier en 2 minutes
+                  Dossier en 2 minutes
                 </p>
               </>
             )}
@@ -300,12 +328,14 @@ export default function RejoindrePage() {
           ))}
         </div>
 
-        <p className="text-center text-xs text-gray-500 pb-2">
-          Vous avez déjà un compte ?{' '}
-          <Link href="/login" className="font-bold text-suguba-brand-dark hover:underline">
-            Se connecter
-          </Link>
-        </p>
+        {!compte?.connecte && (
+          <p className="text-center text-xs text-gray-500 pb-2">
+            Vous avez déjà un compte ?{' '}
+            <Link href="/login" className="font-bold text-suguba-brand-dark hover:underline">
+              Se connecter
+            </Link>
+          </p>
+        )}
 
 
         <BoutiquesQuiRecrutent />

@@ -56,8 +56,13 @@ export default function MesProfilsPage() {
       .then((r) => r.json())
       .then((moi) => {
         if (!moi?.authenticated) { window.location.replace('/login?next=/compte/profils'); return; }
-        setRoles(moi.roles || { [moi.role]: moi.status });
+        const detenusMoi = moi.roles || { [moi.role]: moi.status };
+        setRoles(detenusMoi);
         setActif(moi.role);
+        // Arrivée depuis « Gagner de l'argent » (/rejoindre, 2026-09-26) :
+        // le formulaire du profil demandé est déjà ouvert.
+        const demande = new URLSearchParams(window.location.search).get('ajouter') as Role | null;
+        if (demande && AJOUTABLES.includes(demande) && !detenusMoi[demande]) setOuvert(demande);
         setNumeroManquant(typeof moi.phone === 'string' && moi.phone.includes('@'));
       })
       .catch(() => toast('Impossible de lire votre compte.', { ton: 'erreur' }));

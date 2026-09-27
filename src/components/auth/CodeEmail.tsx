@@ -8,7 +8,8 @@ import { DELAI_RENVOI_S, codeComplet, messageErreurEmail, nettoyerCode } from '@
 
 /**
  * Après l'envoi d'un e-mail Suguba (2026-09-26) : le client tape le code à
- * 6 chiffres reçu, OU clique sur le lien.
+ * 6 chiffres reçu (l'e-mail ne contient plus de lien depuis le
+ * 2026-09-26 : un lien vers un autre domaine l'envoyait en spam).
  *   connexion    : code de connexion sans mot de passe ;
  *   inscription  : confirmation de l'adresse, UNE seule fois ;
  *   recuperation : mot de passe oublié (ou premier mot de passe).
@@ -25,7 +26,7 @@ const TYPES: Record<Usage, ('email' | 'signup' | 'recovery')[]> = {
 };
 
 const TEXTES: Record<Usage, { titre: string; but: string }> = {
-  connexion: { titre: 'Vérifiez votre boîte mail', but: 'Tapez-le ci-dessous, ou cliquez sur le lien de l’e-mail.' },
+  connexion: { titre: 'Vérifiez votre boîte mail', but: 'Tapez-le ci-dessous.' },
   inscription: { titre: 'Confirmez votre adresse', but: 'Une seule fois : ensuite, vous vous connecterez avec votre mot de passe.' },
   recuperation: { titre: 'Vérifiez votre boîte mail', but: 'Tapez-le ci-dessous pour choisir votre mot de passe.' },
 };
