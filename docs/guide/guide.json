@@ -192,6 +192,26 @@
  "journal": [
   {
    "date": "2026-09-27",
+   "titre": "Unités de vente élargies : tissus, construction, minimum",
+   "demande": "Les tissus se vendent au mètre, d’autres au m² ; chercher les unités utiles aux fournisseurs.",
+   "realise": [
+    "Unités groupées : pièce, paire, douzaine, lot, paquet, carton, boîte ; mètre, yard, pagne (6 yards) ; m², kg, tonne, litre ; sac, bidon, rouleau, barre, feuille, voyage.",
+    "Contenu avec sa mesure et décimales (« sac de 50 kg », « carton de 1,44 m² », « rouleau de 100 m ») ; les lots déjà renseignés sont repris.",
+    "Quantité minimale par commande : affichée (« Minimum : 2 m »), sélecteurs et « Ajouter » démarrent au minimum, commande et panier refusés en dessous par le serveur."
+   ],
+   "ecarts": [
+    "Quantités à virgule (2,5 m) non prévues : commandes, stock et reçus sont en entiers.",
+    "Le panier ne bloque pas la baisse sous le minimum : le serveur refuse à la validation avec un message clair."
+   ],
+   "pages": [
+    "fiche-produit",
+    "fou-ajouter",
+    "adm-produits"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-27",
    "titre": "Vue client (V2) : unité de vente et ajout direct au panier",
    "demande": "Suite de l’analyse de la vue client : dire à quoi correspond le prix (unité, lot…) et permettre « Ajouter » au panier depuis la carte.",
    "realise": [
@@ -1360,7 +1380,7 @@
    "elements": [
     {
      "nom": "Prix et unité",
-     "role": "À côté du prix : ce qu’il couvre (« / unité », « / lot de 4 », « / kg »…), quand le vendeur l’a indiqué."
+     "role": "À côté du prix : ce qu’il couvre (« / m », « / pagne de 6 yards », « / sac de 50 kg », « / m² »…) et, s’il y en a un, le minimum (« Minimum : 2 m »). Le sélecteur de quantité démarre au minimum ; la commande en dessous est refusée."
     },
     {
      "nom": "Demander un devis",
@@ -3549,7 +3569,7 @@
     },
     {
      "nom": "Le prix correspond à",
-     "role": "À l’unité, par lot (nombre obligatoire), paquet, carton, paire, au kilo, au litre, au mètre. Aperçu : « Le client verra : Prix / lot de 4 ». Absent pour un service."
+     "role": "Unités groupées : à la pièce (unité, paire, douzaine, lot, paquet, carton, boîte), tissus (mètre, yard, pagne de 6 yards), surface/poids/volume (m², kg, tonne, litre), conditionnements (sac, bidon, rouleau, barre, feuille, voyage). Contenu avec sa mesure et décimales (« sac de 50 kg », « carton de 1,44 m² ») ; quantité minimale par commande (facultatif). Aperçu : « Le client verra : Prix / sac de 50 kg · Minimum : 5 sacs ». Absent pour un service."
     },
     {
      "nom": "Part du revendeur par vente",
@@ -4113,7 +4133,7 @@
     },
     {
      "nom": "Unité ?",
-     "role": "Précise à quoi correspond le prix d’un produit déjà en ligne (« lot de 4 »…). Le prix ne change pas. Droit « produit.moderer »."
+     "role": "Précise à quoi correspond le prix d’un produit déjà en ligne : unité, contenu (« de 50 kg ») et quantité minimale. Le prix ne change pas. Droit « produit.moderer »."
     },
     {
      "nom": "Fixer le prix",

@@ -1,6 +1,6 @@
 'use client';
 
-import { suffixeUnite } from '@/lib/unite-vente';
+import { suffixeUnite, texteMinimum } from '@/lib/unite-vente';
 import React, { useState, use, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Header from '@/components/common/Header';
@@ -49,6 +49,10 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   const catalogueCharge = useCatalogueCharge();
 
   const [quantity, setQuantity] = useState(1);
+  // Quantité minimale du vendeur (« minimum 2 m », 2026-09-27) : le
+  // sélecteur démarre et s'arrête au minimum ; le serveur l'impose aussi.
+  const quantiteMini = Math.max(1, Number(product?.quantiteMin) || 1);
+  useEffect(() => { setQuantity((q) => Math.max(q, quantiteMini)); }, [quantiteMini]);
 
   // Bloc « nom · prix · Commander » sous la photo. Dès qu'il passe sous
   // l'en-tête en défilant, le prix et « Commander » apparaissent dans la barre
@@ -179,7 +183,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   const unitPrice = devis?.prixUnitaire ?? product.publicPrice;
   // Via les revendeurs : le prix le plus bas de leurs offres, pas le prix conseillé.
   // Unité de vente (V2, 2026-09-27) : « / lot de 4 » à côté de chaque prix.
-  const unite = suffixeUnite(product.uniteVente, product.contenuLot);
+  const unite = suffixeUnite(product.uniteVente, product.contenuValeur, product.contenuMesure);
+  const minimum = texteMinimum(product.uniteVente, product.quantiteMin);
   const prixAffiche = viaRevendeurs ? Math.min(...offresGros!.offres.map((o) => o.prix)) : unitPrice;
   const aPartirDe = surDevis || viaRevendeurs;
 
@@ -322,6 +327,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                   {aPartirDe && <span className="block text-xs font-bold text-slate-500">À partir de</span>}
                   {Math.round(prixAffiche).toLocaleString('fr-FR')} <span className="text-base">FCFA</span>
                   {unite && <span className="block text-sm font-semibold text-slate-600">{unite}</span>}
+                  {minimum && <span className="block text-xs font-semibold text-slate-500">{minimum}</span>}
                 </p>
                 <Button type="button" onClick={allerCommander} disabled={outOfStock} className="shrink-0">
                   <span>{libelleAction}</span>
@@ -330,7 +336,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               </div>
               <SelecteurVariantes slug={product.slug} />
               {viaRevendeurs && <OffresRevendeurs id="offres-revendeurs" slug={product.slug} offres={offresGros!.offres} />}
-              {!surDevis && !viaRevendeurs && <BoutonAjoutPanier disabled={outOfStock} productId={product.id} quantite={1} />}
+              {!surDevis && !viaRevendeurs && <BoutonAjoutPanier disabled={outOfStock} productId={product.id} quantite={quantiteMini} />}
               <p className="text-xs text-slate-500">
                 Sans créer de compte · Payez à la livraison
               </p>
@@ -422,12 +428,15 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             <SelecteurVariantes slug={product.slug} />
 
             <div className="flex items-center justify-between">
-              <span className="text-sm font-bold text-slate-700">Quantité</span>
+              <span className="text-sm font-bold text-slate-700">
+                Quantité
+                {minimum && <span className="block text-xs font-semibold text-slate-500">{minimum}</span>}
+              </span>
               <div className="flex items-center rounded-2xl border border-slate-200">
                 <button
                   type="button"
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  disabled={quantity <= 1}
+                  onClick={() => setQuantity((q) => Math.max(quantiteMini, q - 1))}
+                  disabled={quantity <= quantiteMini}
                   aria-label="Diminuer la quantité"
                   className="w-10 h-10 flex items-center justify-center text-slate-700 disabled:text-slate-300"
                 >

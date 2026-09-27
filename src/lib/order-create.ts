@@ -1,4 +1,5 @@
 import { createHash, randomInt, randomUUID } from 'node:crypto';
+import { lireUniteVente, texteMinimum } from './unite-vente';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Order } from '@/types';
 import { calculerCommande, completerReglages, type Devis } from './pricing';
@@ -78,6 +79,10 @@ export async function creerCommande(admin: SupabaseClient | null, value: unknown
   if (productError) indisponible();
   if (!product || product.status !== 'approved' || Number(product.public_price) <= 0) {
     throw new OrderCreationError('Ce produit n’est pas disponible à la vente.', 400);
+  }
+  // Quantité minimale du vendeur (« minimum 2 m », 2026-09-27).
+  if (Number(product.quantite_min) > 1 && input.quantity < Number(product.quantite_min)) {
+    throw new OrderCreationError(`${texteMinimum(lireUniteVente(product.unite_vente), Number(product.quantite_min))} pour cet article.`, 400);
   }
 
   // Quartier du fournisseur — voir /api/orders/quote pour le détail : sans

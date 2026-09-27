@@ -140,8 +140,11 @@ export interface Product {
   modeCommande?: 'achat' | 'devis';
   /** Unité de vente (V2, 2026-09-27) : à quoi correspond le prix. null = non renseignée. */
   uniteVente?: import('@/lib/unite-vente').UniteVente | null;
-  /** Nombre d'articles d'un lot, d'un paquet ou d'un carton. */
-  contenuLot?: number | null;
+  /** Contenu et sa mesure : « sac de 50 kg », « carton de 1,44 m² ». */
+  contenuValeur?: number | null;
+  contenuMesure?: import('@/lib/unite-vente').MesureContenu | null;
+  /** Quantité minimale par commande (« minimum 2 m »). */
+  quantiteMin?: number | null;
   /** Groupe de variantes (couleurs, tailles…) : plusieurs choix sur la fiche. */
   variantGroup?: string | null;
   /**

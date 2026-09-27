@@ -29,10 +29,10 @@ export async function GET(req: NextRequest) {
 
   // Unité de vente (V2, 2026-09-27) : lue à part, pour que la liste reste
   // disponible tant que le SQL de l'unité n'est pas exécuté.
-  const unites = new Map<string, { unite: string | null; contenu: number | null }>();
-  const lectureUnites = await admin.from('products').select('id, unite_vente, contenu_lot').neq('status', 'archived');
+  const unites = new Map<string, { unite: string | null; contenu: number | null; mesure: string | null; min: number | null }>();
+  const lectureUnites = await admin.from('products').select('id, unite_vente, contenu_valeur, contenu_mesure, quantite_min').neq('status', 'archived');
   for (const u of lectureUnites.error ? [] : lectureUnites.data || []) {
-    unites.set(u.id, { unite: u.unite_vente ?? null, contenu: u.contenu_lot ?? null });
+    unites.set(u.id, { unite: u.unite_vente ?? null, contenu: u.contenu_valeur == null ? null : Number(u.contenu_valeur), mesure: u.contenu_mesure ?? null, min: u.quantite_min ?? null });
   }
 
   return NextResponse.json({
@@ -55,7 +55,9 @@ export async function GET(req: NextRequest) {
       fournisseurId: p.supplier_id || null,
       creeLe: p.created_at,
       uniteVente: unites.get(p.id)?.unite ?? null,
-      contenuLot: unites.get(p.id)?.contenu ?? null,
+      contenuValeur: unites.get(p.id)?.contenu ?? null,
+      contenuMesure: unites.get(p.id)?.mesure ?? null,
+      quantiteMin: unites.get(p.id)?.min ?? null,
     })),
     uniteDisponible: !lectureUnites.error,
   });

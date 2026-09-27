@@ -1,7 +1,7 @@
 'use client';
 
-import ChoixUniteVente from '@/components/produit/ChoixUniteVente';
-import { normaliserUniteVente, type UniteVente } from '@/lib/unite-vente';
+import ChoixUniteVente, { SAISIE_UNITE_VIDE, type SaisieUnite } from '@/components/produit/ChoixUniteVente';
+import { normaliserUniteVente } from '@/lib/unite-vente';
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/common/Header';
@@ -65,8 +65,7 @@ export default function NewSupplierProductPage() {
   const [etapes, setEtapes] = useState<CleEtape[]>([]);
   const [prixConseille, setPrixConseille] = useState<number>(0);
   // Unité de vente (V2, 2026-09-27) : à quoi correspond le prix.
-  const [uniteVente, setUniteVente] = useState<UniteVente | ''>('unite');
-  const [contenuLot, setContenuLot] = useState('');
+  const [saisieUnite, setSaisieUnite] = useState<SaisieUnite>(SAISIE_UNITE_VIDE);
   const [apercuGros, setApercuGros] = useState<{
     prixMinimal: number; prixConseille: number; conseilFournisseurRetenu: boolean;
     gainRevendeurAuConseil: number; modeGain?: string; taux?: number; montantFixe?: number;
@@ -101,7 +100,9 @@ export default function NewSupplierProductPage() {
       toast('Remplissez le nom, la description, le prix et le stock.', { ton: 'erreur' });
       return;
     }
-    const unite = normaliserUniteVente(typeOffre === 'service' ? '' : uniteVente, contenuLot);
+    const unite = typeOffre === 'service'
+      ? normaliserUniteVente('')
+      : normaliserUniteVente(saisieUnite.unite, saisieUnite.contenu, saisieUnite.mesure, saisieUnite.quantiteMin);
     if (!unite.ok) {
       toast(unite.erreur, { ton: 'erreur' });
       return;
@@ -134,7 +135,9 @@ export default function NewSupplierProductPage() {
       modeCommande,
       etapes: modeRemise !== 'livreur' ? etapes : [],
       uniteVente: unite.unite,
-      contenuLot: unite.contenu,
+      contenuValeur: unite.contenu,
+      contenuMesure: unite.mesure,
+      quantiteMin: unite.quantiteMin,
     });
 
     setIsSubmitting(false);
@@ -445,8 +448,7 @@ export default function NewSupplierProductPage() {
             </div>
 
             {typeOffre !== 'service' && (
-              <ChoixUniteVente id="unite-vente" unite={uniteVente} contenu={contenuLot}
-                onChange={(u, c) => { setUniteVente(u); setContenuLot(c); }} />
+              <ChoixUniteVente id="unite-vente" valeur={saisieUnite} onChange={setSaisieUnite} />
             )}
 
             {/* Prix de gros : prix conseillé facultatif + bornes calculées par le serveur */}

@@ -105,6 +105,10 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
   const quantiteInitiale = Math.min(50, Math.max(1, parseInt(searchParams.get('q') || '1', 10) || 1));
 
   const [quantity, setQuantity] = useState(quantiteInitiale);
+  // Quantité minimale du vendeur (« minimum 2 m », 2026-09-27) : le
+  // sélecteur démarre et s'arrête au minimum ; le serveur l'impose aussi.
+  const quantiteMini = Math.max(1, Number(product?.quantiteMin) || 1);
+  useEffect(() => { setQuantity((q) => Math.max(q, quantiteMini)); }, [quantiteMini]);
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [mode, setMode] = useState<'home_delivery' | 'pickup_point'>('home_delivery');
@@ -324,8 +328,8 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
                   <div className="flex items-center rounded-2xl border border-slate-200 bg-white">
                     <button
                       type="button"
-                      onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                      disabled={quantity <= 1}
+                      onClick={() => setQuantity((q) => Math.max(quantiteMini, q - 1))}
+                      disabled={quantity <= quantiteMini}
                       aria-label="Diminuer la quantité"
                       className="w-10 h-10 flex items-center justify-center text-slate-700 disabled:text-slate-300"
                     >

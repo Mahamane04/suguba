@@ -168,21 +168,21 @@ export async function POST(req: NextRequest) {
       modeCommande && (modeCommande === 'devis' || (existant && 'mode_commande' in existant)) ? { ...ligne, mode_commande: modeCommande } : ligne);
     // Unité de vente (V2, 2026-09-27) : envoyée seulement quand elle est
     // renseignée (ou que la colonne existe déjà), même principe que les autres.
-    let uniteVente: { unite_vente: string | null; contenu_lot: number | null } | undefined;
+    let uniteVente: { unite_vente: string | null; contenu_valeur: number | null; contenu_mesure: string | null; quantite_min: number | null } | undefined;
     if (product.uniteVente !== undefined) {
-      const u = normaliserUniteVente(product.uniteVente, product.contenuLot);
+      const u = normaliserUniteVente(product.uniteVente, product.contenuValeur, product.contenuMesure, product.quantiteMin);
       if (!u.ok) return NextResponse.json({ error: u.erreur }, { status: 400 });
-      uniteVente = { unite_vente: u.unite, contenu_lot: u.contenu };
+      uniteVente = { unite_vente: u.unite, contenu_valeur: u.contenu, contenu_mesure: u.mesure, quantite_min: u.quantiteMin };
     }
     const avecUnite = (ligne: Record<string, unknown>) =>
-      uniteVente && (uniteVente.unite_vente || (existant && 'unite_vente' in existant)) ? { ...ligne, ...uniteVente } : ligne;
+      uniteVente && (uniteVente.unite_vente || uniteVente.quantite_min || (existant && 'contenu_valeur' in existant)) ? { ...ligne, ...uniteVente } : ligne;
     const avecOffre = (ligne: Record<string, unknown>) => avecUnite(avecDevis(offre && (!offreParDefaut || colonnesOffre) ? { ...ligne, ...offre } : ligne));
 
     const erreurColonne = (e: { code?: string; message: string }) => {
       if (/etapes/.test(e.message)) {
         return NextResponse.json({ error: 'Les prestations à étapes seront disponibles après la mise à jour de la base par Suguba.' }, { status: 503 });
       }
-      if (/unite_vente|contenu_lot/.test(e.message)) {
+      if (/unite_vente|contenu_|quantite_min/.test(e.message)) {
         return NextResponse.json({ error: 'L’unité de vente sera disponible après la mise à jour de la base par Suguba.' }, { status: 503 });
       }
       if (/mode_commande/.test(e.message)) {

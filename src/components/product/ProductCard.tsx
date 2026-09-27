@@ -11,7 +11,7 @@ import { partagerProduit, prechargerImage, prechargerLienPartage, useCodeRevende
 import type { Product } from '@/types';
 import { libelleTypeOffre, normaliserTypeOffre } from '@/lib/offre';
 import { Loader2, Image as ImageIcon, ShoppingBag, Check } from 'lucide-react';
-import { ajoutDirectPossible, suffixeUnite } from '@/lib/unite-vente';
+import { ajoutDirectPossible, suffixeUnite, texteMinimum } from '@/lib/unite-vente';
 import { ajouterAuPanier } from '@/lib/panier';
 import { useToast } from '@/components/ui/Toast';
 
@@ -32,6 +32,10 @@ export interface ProduitCarte {
   mentionPrix?: 'partenaire' | 'des' | null;
   /** « / lot de 4 », « / kg »… (V2, 2026-09-27) ; vide si non renseignée. */
   suffixeUnite?: string;
+  /** « Minimum : 2 m » (quantité minimale du vendeur). */
+  minimum?: string;
+  /** Quantité ajoutée d'un geste : le minimum du vendeur, sinon 1. */
+  quantiteAjout?: number;
   /** Offre simple : « Ajouter » au panier depuis la carte. */
   ajoutDirect?: boolean;
   /** Variantes à choisir sur la fiche : bouton « Choisir ». */
@@ -53,7 +57,9 @@ export function carteDepuisProduit(p: Product): ProduitCarte {
     enStock: p.stockQuantity > 0,
     commission: p.resellerCommission,
     prixLibre: p.modePrix === 'gros',
-    suffixeUnite: suffixeUnite(p.uniteVente, p.contenuLot),
+    suffixeUnite: suffixeUnite(p.uniteVente, p.contenuValeur, p.contenuMesure),
+    minimum: texteMinimum(p.uniteVente, p.quantiteMin),
+    quantiteAjout: p.quantiteMin && p.quantiteMin > 1 ? p.quantiteMin : 1,
     ajoutDirect: ajoutDirectPossible({
       enStock: p.stockQuantity > 0, modeCommande: p.modeCommande, modePrix: p.modePrix,
       variantes: Boolean(p.variantGroup), modeRemise: p.modeRemise,
@@ -113,7 +119,7 @@ export default function ProductCard({
   const { toast } = useToast();
   const [ajoute, setAjoute] = useState(false);
   const ajouter = () => {
-    if (ajouterAuPanier(produit.id, 1) === 'plein') {
+    if (ajouterAuPanier(produit.id, produit.quantiteAjout ?? 1) === 'plein') {
       toast('Votre panier contient déjà 20 articles différents.', { ton: 'info' });
       return;
     }
@@ -213,6 +219,7 @@ export default function ProductCard({
           {produit.prix.toLocaleString('fr-FR')} <span className="text-xs font-bold">F</span>
           {produit.suffixeUnite && <span className="text-xs font-semibold text-slate-600"> {produit.suffixeUnite}</span>}
         </p>
+        {produit.minimum && <p className="text-xs font-semibold text-slate-600">{produit.minimum}</p>}
         <p className="text-xs text-slate-500">
           {afficherCommission && (produit.commission ?? 0) > 0
             ? <>Vous gagnez <strong className="text-suguba-brand-dark">{produit.commission!.toLocaleString('fr-FR')} F</strong></>

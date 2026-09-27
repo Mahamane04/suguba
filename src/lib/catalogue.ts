@@ -28,7 +28,7 @@ export const COLONNES_PUBLIQUES = [
  * ouvertes à la clé publique (aucun secret ; ajoutées après le verrouillage
  * du 2026-09-26) : variantes, unité de vente (V2, 2026-09-27).
  */
-export const COLONNES_VITRINE = ['variant_group', 'variant_label', 'unite_vente', 'contenu_lot'] as const;
+export const COLONNES_VITRINE = ['variant_group', 'variant_label', 'unite_vente', 'contenu_valeur', 'contenu_mesure', 'quantite_min'] as const;
 
 const COLONNES_REVENDEUR = ['reseller_commission'] as const;
 const COLONNES_FOURNISSEUR = ['supplier_price', 'reseller_commission', 'commission_proposee', 'pricing_status', 'pricing_computed_at'] as const;

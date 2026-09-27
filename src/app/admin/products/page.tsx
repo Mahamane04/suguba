@@ -1,7 +1,7 @@
 'use client';
 
-import ChoixUniteVente from '@/components/produit/ChoixUniteVente';
-import { normaliserUniteVente, suffixeUnite, type UniteVente } from '@/lib/unite-vente';
+import ChoixUniteVente, { type SaisieUnite } from '@/components/produit/ChoixUniteVente';
+import { normaliserUniteVente, suffixeUnite, type MesureContenu, type UniteVente } from '@/lib/unite-vente';
 import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Header from '@/components/common/Header';
@@ -30,7 +30,9 @@ interface ProduitAdmin {
   fournisseurId: string | null;
   creeLe: string;
   uniteVente: UniteVente | null;
-  contenuLot: number | null;
+  contenuValeur: number | null;
+  contenuMesure: MesureContenu | null;
+  quantiteMin: number | null;
 }
 
 type Filtre = 'nouveautes' | 'sans_photo' | 'tous';
@@ -71,23 +73,24 @@ export default function AdminProductsPage() {
   const [prixPour, setPrixPour] = useState<ProduitAdmin | null>(null);
   const [enCours, setEnCours] = useState<string | null>(null);
   // Unité de vente (V2, 2026-09-27) : éditeur ouvert pour un produit.
-  const [unitePour, setUnitePour] = useState<{ id: string; unite: UniteVente | ''; contenu: string } | null>(null);
+  const [unitePour, setUnitePour] = useState<{ id: string; saisie: SaisieUnite } | null>(null);
   const [uniteDisponible, setUniteDisponible] = useState(true);
   const { toast, confirmer } = useToast();
 
   const enregistrerUnite = async (p: ProduitAdmin) => {
     if (!unitePour) return;
-    const verif = normaliserUniteVente(unitePour.unite, unitePour.contenu);
+    const { unite, contenu, mesure, quantiteMin } = unitePour.saisie;
+    const verif = normaliserUniteVente(unite, contenu, mesure, quantiteMin);
     if (!verif.ok) { toast(verif.erreur, { ton: 'erreur' }); return; }
     setEnCours(p.id);
     try {
       const r = await fetch('/api/admin/products/unite', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId: p.id, uniteVente: verif.unite, contenuLot: verif.contenu }),
+        body: JSON.stringify({ productId: p.id, uniteVente: verif.unite, contenuValeur: verif.contenu, contenuMesure: verif.mesure, quantiteMin: verif.quantiteMin }),
       });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) { toast(j.error || 'Enregistrement impossible.', { ton: 'erreur' }); return; }
-      setProduits((liste) => liste && liste.map((x) => (x.id === p.id ? { ...x, uniteVente: verif.unite, contenuLot: verif.contenu } : x)));
+      setProduits((liste) => liste && liste.map((x) => (x.id === p.id ? { ...x, uniteVente: verif.unite, contenuValeur: verif.contenu, contenuMesure: verif.mesure, quantiteMin: verif.quantiteMin } : x)));
       setUnitePour(null);
       toast('Unité de vente enregistrée.', { ton: 'succes' });
     } finally {
@@ -256,13 +259,17 @@ export default function AdminProductsPage() {
                     <span>{p.images.length === 0 ? 'Photos' : `Photos (${p.images.length})`}</span>
                   </Button>
                   <Button
-                    onClick={() => setUnitePour(unitePour?.id === p.id ? null : { id: p.id, unite: p.uniteVente || '', contenu: p.contenuLot ? String(p.contenuLot) : '' })}
+                    onClick={() => setUnitePour(unitePour?.id === p.id ? null : { id: p.id, saisie: {
+                      unite: p.uniteVente || '', mesure: p.contenuMesure || '',
+                      contenu: p.contenuValeur ? String(p.contenuValeur).replace('.', ',') : '',
+                      quantiteMin: p.quantiteMin ? String(p.quantiteMin) : '',
+                    } })}
                     variant="ghost" size="sm" className="flex-1"
                     aria-expanded={unitePour?.id === p.id}
                     aria-label={`Unité de vente de ${p.nom}`}
                   >
                     <Package className="w-4 h-4" />
-                    <span>{p.uniteVente ? suffixeUnite(p.uniteVente, p.contenuLot).replace('/ ', '') : 'Unité ?'}</span>
+                    <span className="truncate">{p.uniteVente ? suffixeUnite(p.uniteVente, p.contenuValeur, p.contenuMesure).replace('/ ', '') : 'Unité ?'}</span>
                   </Button>
                   <Button onClick={() => setPrixPour(p)} variant="ghost" size="sm" className="flex-1" aria-label={`Fixer le prix de ${p.nom}`}>
                     <Tag className="w-4 h-4" />
@@ -288,8 +295,8 @@ export default function AdminProductsPage() {
                       <p className="text-xs text-slate-600">Exécutez d’abord le SQL A-EXECUTER-2026-09-27-unite-vente.sql dans Supabase.</p>
                     ) : (
                       <>
-                        <ChoixUniteVente id={`unite-${p.id}`} compact unite={unitePour.unite} contenu={unitePour.contenu}
-                          onChange={(u, c) => setUnitePour({ id: p.id, unite: u, contenu: c })} />
+                        <ChoixUniteVente id={`unite-${p.id}`} compact valeur={unitePour.saisie}
+                          onChange={(saisie) => setUnitePour({ id: p.id, saisie })} />
                         <div className="flex gap-2">
                           <Button size="sm" className="flex-1" disabled={enCours === p.id} onClick={() => enregistrerUnite(p)}>Enregistrer</Button>
                           <Button size="sm" variant="ghost" className="flex-1" onClick={() => setUnitePour(null)}>Annuler</Button>

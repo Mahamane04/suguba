@@ -1,4 +1,5 @@
 import { createHash, randomInt, randomUUID } from 'node:crypto';
+import { lireUniteVente, texteMinimum } from './unite-vente';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Order } from '@/types';
 import { completerReglages } from './pricing';
@@ -76,6 +77,10 @@ export async function creerPanier(admin: SupabaseClient | null, value: unknown, 
         data?.name ? `« ${data.name} » n’est plus disponible. Retirez-le du panier.` : 'Un article du panier n’est plus disponible.',
         400,
       );
+    }
+    // Quantité minimale du vendeur (« minimum 2 m », 2026-09-27).
+    if (Number(data.quantite_min) > 1 && ligne.quantity < Number(data.quantite_min)) {
+      throw new OrderCreationError(`« ${data.name} » : ${texteMinimum(lireUniteVente(data.unite_vente), Number(data.quantite_min)).toLowerCase()}. Modifiez la quantité dans le panier.`, 400);
     }
     produits.push(data);
   }
