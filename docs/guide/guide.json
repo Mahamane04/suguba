@@ -203,7 +203,7 @@
     "Vérifié : 14 tests du lot C (dont 7 sur un vrai moteur PostgreSQL : crédit, délai, attente des espèces, réserve, idempotence, virement payé ou refusé, retour de commande, retraits des revendeurs inchangés, droits), suite complète au vert ; page fournisseur et page revendeur vérifiées à l’écran, ordinateur et téléphone, avec des données d’exemple."
    ],
    "ecarts": [
-    "À exécuter avant la mise en ligne : supabase/A-EXECUTER-2026-09-27-retraits-fournisseurs.sql. Sans lui, « Mes paiements » affiche que les paiements fournisseurs ne sont pas encore ouverts, et le reste de l’application fonctionne comme avant.",
+    "SQL exécuté le 2026-09-27 (supabase/A-EXECUTER-2026-09-27-retraits-fournisseurs.sql) : table gains_fournisseurs, colonne payouts.beneficiaire et fonctions vérifiées présentes en production.",
     "Seules les commandes livrées après ce SQL créditent un solde (aucune commande n’était livrée au 27/09).",
     "Pas de déblocage anticipé d’un montant fournisseur par l’admin (il existe pour les commissions des revendeurs) : à ajouter si le besoin se présente.",
     "Champ « Délai avant retrait des fournisseurs » de Paramètres non vu à l’écran (connexion admin requise) ; vérifié par les tests et la vérification des types."
@@ -215,7 +215,8 @@
     "adm-parametres",
     "rev-gains"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "dda3f2c"
   },
   {
    "date": "2026-09-27",
