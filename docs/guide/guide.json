@@ -212,7 +212,8 @@
     "rev-gains",
     "adm-parametres"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "e5c82ab"
   },
   {
    "date": "2026-09-27",
