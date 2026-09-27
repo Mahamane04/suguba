@@ -1,5 +1,6 @@
 'use client';
 
+import { lireUniteVente } from './unite-vente';
 import { supabase, isSupabaseConfigured } from './supabase';
 import { sugubaStore } from './store';
 import { privateSessionGeneration } from './order-access-client';
@@ -121,6 +122,9 @@ class CloudSyncService {
           fraisRemise: Number(p.frais_remise) || 0,
           offreInclus: p.offre_inclus || null,
           modeCommande: p.mode_commande === 'devis' ? 'devis' : 'achat',
+          uniteVente: lireUniteVente(p.unite_vente),
+          contenuLot: Number(p.contenu_lot) > 0 ? Number(p.contenu_lot) : null,
+          variantGroup: p.variant_group || null,
           etapes: normaliserEtapes(p.etapes),
           prixCatalogue: p.prix_catalogue && Number(p.prix_catalogue.prix) > 0
             ? { prix: Number(p.prix_catalogue.prix), mention: p.prix_catalogue.mention === 'partenaire' ? 'partenaire' : 'des' }

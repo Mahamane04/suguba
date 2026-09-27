@@ -10,7 +10,10 @@ import { compterClic } from '@/lib/sponsorises';
 import { partagerProduit, prechargerImage, prechargerLienPartage, useCodeRevendeur } from '@/lib/partage';
 import type { Product } from '@/types';
 import { libelleTypeOffre, normaliserTypeOffre } from '@/lib/offre';
-import { Loader2, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Image as ImageIcon, ShoppingBag, Check } from 'lucide-react';
+import { ajoutDirectPossible, suffixeUnite } from '@/lib/unite-vente';
+import { ajouterAuPanier } from '@/lib/panier';
+import { useToast } from '@/components/ui/Toast';
 
 export interface ProduitCarte {
   id: string;
@@ -27,6 +30,12 @@ export interface ProduitCarte {
   etiquetteOffre?: string | null;
   /** Article au prix de gros vu par un visiteur : prix des revendeurs (2026-09-26). */
   mentionPrix?: 'partenaire' | 'des' | null;
+  /** « / lot de 4 », « / kg »… (V2, 2026-09-27) ; vide si non renseignée. */
+  suffixeUnite?: string;
+  /** Offre simple : « Ajouter » au panier depuis la carte. */
+  ajoutDirect?: boolean;
+  /** Variantes à choisir sur la fiche : bouton « Choisir ». */
+  aChoisir?: boolean;
 }
 
 export function carteDepuisProduit(p: Product): ProduitCarte {
@@ -44,6 +53,12 @@ export function carteDepuisProduit(p: Product): ProduitCarte {
     enStock: p.stockQuantity > 0,
     commission: p.resellerCommission,
     prixLibre: p.modePrix === 'gros',
+    suffixeUnite: suffixeUnite(p.uniteVente, p.contenuLot),
+    ajoutDirect: ajoutDirectPossible({
+      enStock: p.stockQuantity > 0, modeCommande: p.modeCommande, modePrix: p.modePrix,
+      variantes: Boolean(p.variantGroup), modeRemise: p.modeRemise,
+    }),
+    aChoisir: Boolean(p.variantGroup) && p.stockQuantity > 0,
   };
 }
 
@@ -95,6 +110,17 @@ export default function ProductCard({
   const [afficheOuverte, setAfficheOuverte] = useState(false);
   const lien = `/p/${produit.slug}${refCode ? `?ref=${encodeURIComponent(refCode)}` : ''}`;
   const enRupture = produit.enStock === false;
+  const { toast } = useToast();
+  const [ajoute, setAjoute] = useState(false);
+  const ajouter = () => {
+    if (ajouterAuPanier(produit.id, 1) === 'plein') {
+      toast('Votre panier contient déjà 20 articles différents.', { ton: 'info' });
+      return;
+    }
+    setAjoute(true);
+    toast(`${produit.nom} ajouté au panier.`, { ton: 'succes' });
+    setTimeout(() => setAjoute(false), 1800);
+  };
 
   const partager = async () => {
     setPreparation(true);
@@ -185,6 +211,7 @@ export default function ProductCard({
         <p className="text-base sm:text-lg font-bold text-slate-900 leading-none">
           {produit.mentionPrix === 'des' && <span className="text-xs font-bold text-slate-500">dès </span>}
           {produit.prix.toLocaleString('fr-FR')} <span className="text-xs font-bold">F</span>
+          {produit.suffixeUnite && <span className="text-xs font-semibold text-slate-600"> {produit.suffixeUnite}</span>}
         </p>
         <p className="text-xs text-slate-500">
           {afficherCommission && (produit.commission ?? 0) > 0
@@ -215,9 +242,18 @@ export default function ProductCard({
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <Button href={lien} variant={enRupture ? 'secondary' : 'primary'} size="sm" className="flex-1 !h-9 !py-0">
-                {enRupture ? 'Voir' : 'Acheter'}
-              </Button>
+              {produit.ajoutDirect ? (
+                // V2 (2026-09-27) : offre simple → ajout au panier sans quitter
+                // le catalogue ; le compteur de la barre du bas le confirme.
+                <Button type="button" onClick={ajouter} variant="primary" size="sm" className="flex-1 !h-9 !py-0"
+                  aria-label={`Ajouter ${produit.nom} au panier`}>
+                  {ajoute ? <><Check className="w-4 h-4" />Ajouté</> : <><ShoppingBag className="w-4 h-4" />Ajouter</>}
+                </Button>
+              ) : (
+                <Button href={lien} variant={enRupture ? 'secondary' : 'primary'} size="sm" className="flex-1 !h-9 !py-0">
+                  {enRupture ? 'Voir' : produit.aChoisir ? 'Choisir' : 'Acheter'}
+                </Button>
+              )}
               {boutonPartage(false)}
             </div>
           )}

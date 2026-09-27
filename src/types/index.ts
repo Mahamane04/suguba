@@ -138,6 +138,12 @@ export interface Product {
   offreInclus?: string | null;
   /** Comment le client commande (lot 1b) : achat direct, ou demande de devis. */
   modeCommande?: 'achat' | 'devis';
+  /** Unité de vente (V2, 2026-09-27) : à quoi correspond le prix. null = non renseignée. */
+  uniteVente?: import('@/lib/unite-vente').UniteVente | null;
+  /** Nombre d'articles d'un lot, d'un paquet ou d'un carton. */
+  contenuLot?: number | null;
+  /** Groupe de variantes (couleurs, tailles…) : plusieurs choix sur la fiche. */
+  variantGroup?: string | null;
   /**
    * Prix de carte d'un article au prix de gros, pour un visiteur (2026-09-26) :
    * celui de son revendeur d'origine, ou « dès » le moins cher des revendeurs.

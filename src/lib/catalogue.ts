@@ -23,6 +23,13 @@ export const COLONNES_PUBLIQUES = [
   'type_offre', 'mode_remise', 'frais_remise', 'offre_inclus', 'mode_commande', 'etapes',
 ] as const;
 
+/**
+ * Colonnes de vitrine servies par /api/catalogue à tout lecteur, mais PAS
+ * ouvertes à la clé publique (aucun secret ; ajoutées après le verrouillage
+ * du 2026-09-26) : variantes, unité de vente (V2, 2026-09-27).
+ */
+export const COLONNES_VITRINE = ['variant_group', 'variant_label', 'unite_vente', 'contenu_lot'] as const;
+
 const COLONNES_REVENDEUR = ['reseller_commission'] as const;
 const COLONNES_FOURNISSEUR = ['supplier_price', 'reseller_commission', 'commission_proposee', 'pricing_status', 'pricing_computed_at'] as const;
 
@@ -40,7 +47,7 @@ function garder(p: Record<string, unknown>, colonnes: readonly string[], dans: R
 /** Ce que ce lecteur peut voir d'un produit. */
 export function produitPourLecteur(p: Record<string, unknown>, acces: AccesCatalogue): Record<string, unknown> {
   if (acces.role === 'admin') return { ...p };
-  const vue = garder(p, COLONNES_PUBLIQUES, {});
+  const vue = garder(p, COLONNES_VITRINE, garder(p, COLONNES_PUBLIQUES, {}));
   if (acces.role === 'reseller') return garder(p, COLONNES_REVENDEUR, vue);
   if (acces.role === 'supplier' && acces.voitPrix && p.supplier_id === acces.fournisseurId) return garder(p, COLONNES_FOURNISSEUR, vue);
   return vue;

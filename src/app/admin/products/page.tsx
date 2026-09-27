@@ -1,5 +1,7 @@
 'use client';
 
+import ChoixUniteVente from '@/components/produit/ChoixUniteVente';
+import { normaliserUniteVente, suffixeUnite, type UniteVente } from '@/lib/unite-vente';
 import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import Header from '@/components/common/Header';
@@ -10,7 +12,7 @@ import ProductPricingModal from '@/components/admin/ProductPricingModal';
 import Button from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import type { Product } from '@/types';
-import { ArrowLeft, Camera, ImageOff, Loader2, Plus, Tag, Ban } from 'lucide-react';
+import { ArrowLeft, Camera, ImageOff, Loader2, Plus, Tag, Ban, Package } from 'lucide-react';
 
 interface ProduitAdmin {
   id: string;
@@ -27,6 +29,8 @@ interface ProduitAdmin {
   commission: number;
   fournisseurId: string | null;
   creeLe: string;
+  uniteVente: UniteVente | null;
+  contenuLot: number | null;
 }
 
 type Filtre = 'nouveautes' | 'sans_photo' | 'tous';
@@ -66,13 +70,37 @@ export default function AdminProductsPage() {
   const [photosPour, setPhotosPour] = useState<ProduitAdmin | null>(null);
   const [prixPour, setPrixPour] = useState<ProduitAdmin | null>(null);
   const [enCours, setEnCours] = useState<string | null>(null);
+  // Unité de vente (V2, 2026-09-27) : éditeur ouvert pour un produit.
+  const [unitePour, setUnitePour] = useState<{ id: string; unite: UniteVente | ''; contenu: string } | null>(null);
+  const [uniteDisponible, setUniteDisponible] = useState(true);
   const { toast, confirmer } = useToast();
+
+  const enregistrerUnite = async (p: ProduitAdmin) => {
+    if (!unitePour) return;
+    const verif = normaliserUniteVente(unitePour.unite, unitePour.contenu);
+    if (!verif.ok) { toast(verif.erreur, { ton: 'erreur' }); return; }
+    setEnCours(p.id);
+    try {
+      const r = await fetch('/api/admin/products/unite', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ productId: p.id, uniteVente: verif.unite, contenuLot: verif.contenu }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) { toast(j.error || 'Enregistrement impossible.', { ton: 'erreur' }); return; }
+      setProduits((liste) => liste && liste.map((x) => (x.id === p.id ? { ...x, uniteVente: verif.unite, contenuLot: verif.contenu } : x)));
+      setUnitePour(null);
+      toast('Unité de vente enregistrée.', { ton: 'succes' });
+    } finally {
+      setEnCours(null);
+    }
+  };
 
   const recharger = useCallback(async (choisirFiltre = false) => {
     try {
       const j = await fetch('/api/admin/products').then((r) => r.json());
       if (!j.produits) { setErreur(j.error || 'Chargement impossible.'); setProduits([]); return; }
       setProduits(j.produits);
+      setUniteDisponible(j.uniteDisponible !== false);
       if (choisirFiltre) {
         const liste: ProduitAdmin[] = j.produits;
         const aDesNouveautes = liste.some((p) => p.statut === 'approved' && p.fournisseurId && Date.now() - Date.parse(p.creeLe) < QUATORZE_JOURS);
@@ -227,6 +255,15 @@ export default function AdminProductsPage() {
                     <Camera className="w-4 h-4" />
                     <span>{p.images.length === 0 ? 'Photos' : `Photos (${p.images.length})`}</span>
                   </Button>
+                  <Button
+                    onClick={() => setUnitePour(unitePour?.id === p.id ? null : { id: p.id, unite: p.uniteVente || '', contenu: p.contenuLot ? String(p.contenuLot) : '' })}
+                    variant="ghost" size="sm" className="flex-1"
+                    aria-expanded={unitePour?.id === p.id}
+                    aria-label={`Unité de vente de ${p.nom}`}
+                  >
+                    <Package className="w-4 h-4" />
+                    <span>{p.uniteVente ? suffixeUnite(p.uniteVente, p.contenuLot).replace('/ ', '') : 'Unité ?'}</span>
+                  </Button>
                   <Button onClick={() => setPrixPour(p)} variant="ghost" size="sm" className="flex-1" aria-label={`Fixer le prix de ${p.nom}`}>
                     <Tag className="w-4 h-4" />
                     <span>{p.statut === 'approved' ? 'Prix' : 'Mettre en vente'}</span>
@@ -245,6 +282,22 @@ export default function AdminProductsPage() {
                     </Button>
                   )}
                 </div>
+                {unitePour?.id === p.id && (
+                  <div className="rounded-2xl bg-slate-50 p-3 space-y-2">
+                    {!uniteDisponible ? (
+                      <p className="text-xs text-slate-600">Exécutez d’abord le SQL A-EXECUTER-2026-09-27-unite-vente.sql dans Supabase.</p>
+                    ) : (
+                      <>
+                        <ChoixUniteVente id={`unite-${p.id}`} compact unite={unitePour.unite} contenu={unitePour.contenu}
+                          onChange={(u, c) => setUnitePour({ id: p.id, unite: u, contenu: c })} />
+                        <div className="flex gap-2">
+                          <Button size="sm" className="flex-1" disabled={enCours === p.id} onClick={() => enregistrerUnite(p)}>Enregistrer</Button>
+                          <Button size="sm" variant="ghost" className="flex-1" onClick={() => setUnitePour(null)}>Annuler</Button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
             ))}
           </div>

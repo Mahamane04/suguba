@@ -23,6 +23,7 @@ export const PERMISSION_PAR_ROUTE: Record<string, Permission> = {
   'POST /api/admin/products/price': 'produit.prix',
   'GET /api/admin/products': 'produit.lire',
   'POST /api/admin/products/status': 'produit.moderer',
+  'POST /api/admin/products/unite': 'produit.moderer',
   'POST /api/admin/promote': 'utilisateur.promouvoir',
   'GET /api/admin/reseau-stats': 'marketing.lire',
   'POST /api/admin/reset-otp-lock': 'utilisateur.moderer',

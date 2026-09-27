@@ -1,4 +1,5 @@
 import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
+import { normaliserUniteVente } from '@/lib/unite-vente';
 import { verifyActiveSession } from '@/lib/active-session';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
@@ -165,11 +166,24 @@ export async function POST(req: NextRequest) {
       etapes && (etapes.length > 0 || (existant && 'etapes' in existant)) ? { ...ligne, etapes: etapes.length ? etapes : null } : ligne;
     const avecDevis = (ligne: Record<string, unknown>) => avecEtapes(
       modeCommande && (modeCommande === 'devis' || (existant && 'mode_commande' in existant)) ? { ...ligne, mode_commande: modeCommande } : ligne);
-    const avecOffre = (ligne: Record<string, unknown>) => avecDevis(offre && (!offreParDefaut || colonnesOffre) ? { ...ligne, ...offre } : ligne);
+    // Unité de vente (V2, 2026-09-27) : envoyée seulement quand elle est
+    // renseignée (ou que la colonne existe déjà), même principe que les autres.
+    let uniteVente: { unite_vente: string | null; contenu_lot: number | null } | undefined;
+    if (product.uniteVente !== undefined) {
+      const u = normaliserUniteVente(product.uniteVente, product.contenuLot);
+      if (!u.ok) return NextResponse.json({ error: u.erreur }, { status: 400 });
+      uniteVente = { unite_vente: u.unite, contenu_lot: u.contenu };
+    }
+    const avecUnite = (ligne: Record<string, unknown>) =>
+      uniteVente && (uniteVente.unite_vente || (existant && 'unite_vente' in existant)) ? { ...ligne, ...uniteVente } : ligne;
+    const avecOffre = (ligne: Record<string, unknown>) => avecUnite(avecDevis(offre && (!offreParDefaut || colonnesOffre) ? { ...ligne, ...offre } : ligne));
 
     const erreurColonne = (e: { code?: string; message: string }) => {
       if (/etapes/.test(e.message)) {
         return NextResponse.json({ error: 'Les prestations à étapes seront disponibles après la mise à jour de la base par Suguba.' }, { status: 503 });
+      }
+      if (/unite_vente|contenu_lot/.test(e.message)) {
+        return NextResponse.json({ error: 'L’unité de vente sera disponible après la mise à jour de la base par Suguba.' }, { status: 503 });
       }
       if (/mode_commande/.test(e.message)) {
         return NextResponse.json({ error: 'Les offres sur devis seront disponibles après la mise à jour de la base par Suguba.' }, { status: 503 });
@@ -263,7 +277,7 @@ export async function POST(req: NextRequest) {
     // Offre : nature et mode de remise. Ne change pas le prix, donc pas de
     // nouvelle tarification.
     if (offre && (!offreParDefaut || colonnesOffre)) Object.assign(maj, offre);
-    Object.assign(maj, avecDevis({}));
+    Object.assign(maj, avecUnite(avecDevis({})));
 
     maj.status = statut;
     const { error } = await admin.from('products').update(maj).eq('id', product.id);

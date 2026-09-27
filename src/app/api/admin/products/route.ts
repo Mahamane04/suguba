@@ -27,6 +27,14 @@ export async function GET(req: NextRequest) {
     .order('created_at', { ascending: false });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  // Unité de vente (V2, 2026-09-27) : lue à part, pour que la liste reste
+  // disponible tant que le SQL de l'unité n'est pas exécuté.
+  const unites = new Map<string, { unite: string | null; contenu: number | null }>();
+  const lectureUnites = await admin.from('products').select('id, unite_vente, contenu_lot').neq('status', 'archived');
+  for (const u of lectureUnites.error ? [] : lectureUnites.data || []) {
+    unites.set(u.id, { unite: u.unite_vente ?? null, contenu: u.contenu_lot ?? null });
+  }
+
   return NextResponse.json({
     produits: (data || []).map((p) => ({
       id: p.id,
@@ -46,6 +54,9 @@ export async function GET(req: NextRequest) {
       // liste « Nouveautés fournisseurs », publiées automatiquement.
       fournisseurId: p.supplier_id || null,
       creeLe: p.created_at,
+      uniteVente: unites.get(p.id)?.unite ?? null,
+      contenuLot: unites.get(p.id)?.contenu ?? null,
     })),
+    uniteDisponible: !lectureUnites.error,
   });
 }

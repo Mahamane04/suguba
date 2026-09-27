@@ -1,5 +1,7 @@
 'use client';
 
+import ChoixUniteVente from '@/components/produit/ChoixUniteVente';
+import { normaliserUniteVente, type UniteVente } from '@/lib/unite-vente';
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/common/Header';
@@ -62,6 +64,9 @@ export default function NewSupplierProductPage() {
   const [modeCommande, setModeCommande] = useState<'achat' | 'devis'>('achat');
   const [etapes, setEtapes] = useState<CleEtape[]>([]);
   const [prixConseille, setPrixConseille] = useState<number>(0);
+  // Unité de vente (V2, 2026-09-27) : à quoi correspond le prix.
+  const [uniteVente, setUniteVente] = useState<UniteVente | ''>('unite');
+  const [contenuLot, setContenuLot] = useState('');
   const [apercuGros, setApercuGros] = useState<{
     prixMinimal: number; prixConseille: number; conseilFournisseurRetenu: boolean;
     gainRevendeurAuConseil: number; modeGain?: string; taux?: number; montantFixe?: number;
@@ -96,6 +101,11 @@ export default function NewSupplierProductPage() {
       toast('Remplissez le nom, la description, le prix et le stock.', { ton: 'erreur' });
       return;
     }
+    const unite = normaliserUniteVente(typeOffre === 'service' ? '' : uniteVente, contenuLot);
+    if (!unite.ok) {
+      toast(unite.erreur, { ton: 'erreur' });
+      return;
+    }
     if (isUploadingImage) {
       toast("Attendez la fin de l'envoi des photos.", { ton: 'info' });
       return;
@@ -123,6 +133,8 @@ export default function NewSupplierProductPage() {
       offreInclus: offreInclus.trim() || null,
       modeCommande,
       etapes: modeRemise !== 'livreur' ? etapes : [],
+      uniteVente: unite.unite,
+      contenuLot: unite.contenu,
     });
 
     setIsSubmitting(false);
@@ -431,6 +443,11 @@ export default function NewSupplierProductPage() {
                 />
               </div>
             </div>
+
+            {typeOffre !== 'service' && (
+              <ChoixUniteVente id="unite-vente" unite={uniteVente} contenu={contenuLot}
+                onChange={(u, c) => { setUniteVente(u); setContenuLot(c); }} />
+            )}
 
             {/* Prix de gros : prix conseillé facultatif + bornes calculées par le serveur */}
             {modePrix === 'gros' && (

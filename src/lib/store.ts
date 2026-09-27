@@ -324,6 +324,8 @@ export const sugubaStore = {
     offreInclus?: string | null;
     modeCommande?: Product['modeCommande'];
     etapes?: Product['etapes'];
+    uniteVente?: Product['uniteVente'];
+    contenuLot?: number | null;
   }): Promise<{
     product: Product;
     cloud: boolean;
@@ -350,6 +352,8 @@ export const sugubaStore = {
       offreInclus: data.offreInclus,
       modeCommande: data.modeCommande,
       etapes: data.etapes,
+      uniteVente: data.uniteVente ?? null,
+      contenuLot: data.contenuLot ?? null,
       sugubaMargin: Math.round(Number(data.supplierPrice) * 0.2),
       stockQuantity: Number(data.stockQuantity),
       warrantyMonths: Number(data.warrantyMonths) || 0,

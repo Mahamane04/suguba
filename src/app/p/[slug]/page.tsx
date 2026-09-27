@@ -1,5 +1,6 @@
 'use client';
 
+import { suffixeUnite } from '@/lib/unite-vente';
 import React, { useState, use, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Header from '@/components/common/Header';
@@ -177,6 +178,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   const libelleAction = outOfStock ? 'Rupture de stock' : surDevis ? 'Demander un devis' : viaRevendeurs ? 'Voir les offres' : 'Commander';
   const unitPrice = devis?.prixUnitaire ?? product.publicPrice;
   // Via les revendeurs : le prix le plus bas de leurs offres, pas le prix conseillé.
+  // Unité de vente (V2, 2026-09-27) : « / lot de 4 » à côté de chaque prix.
+  const unite = suffixeUnite(product.uniteVente, product.contenuLot);
   const prixAffiche = viaRevendeurs ? Math.min(...offresGros!.offres.map((o) => o.prix)) : unitPrice;
   const aPartirDe = surDevis || viaRevendeurs;
 
@@ -235,7 +238,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             }`}
           >
             <span className="text-sm font-bold text-slate-900 whitespace-nowrap">
-              {aPartirDe ? 'dès ' : ''}{Math.round(prixAffiche).toLocaleString('fr-FR')} F
+              {aPartirDe ? 'dès ' : ''}{Math.round(prixAffiche).toLocaleString('fr-FR')} F{unite && <span className="text-xs font-semibold text-slate-600"> {unite}</span>}
             </span>
             <button
               type="button"
@@ -318,6 +321,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 <p className="text-2xl font-bold text-suguba-brand whitespace-nowrap">
                   {aPartirDe && <span className="block text-xs font-bold text-slate-500">À partir de</span>}
                   {Math.round(prixAffiche).toLocaleString('fr-FR')} <span className="text-base">FCFA</span>
+                  {unite && <span className="block text-sm font-semibold text-slate-600">{unite}</span>}
                 </p>
                 <Button type="button" onClick={allerCommander} disabled={outOfStock} className="shrink-0">
                   <span>{libelleAction}</span>
@@ -412,7 +416,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             <div className="space-y-1">
               {typeOffreLibelle && <span className="inline-flex px-2.5 py-0.5 rounded-full bg-suguba-citron text-suguba-profond text-xs font-bold">{typeOffreLibelle}</span>}
               <h1 className="text-xl font-bold text-slate-900 leading-tight">{product.name}</h1>
-              <p className="text-3xl font-bold text-suguba-brand-dark">{aPartirDe && <span className="block text-xs font-bold text-slate-500">À partir de</span>}{fcfa(prixAffiche)}</p>
+              <p className="text-3xl font-bold text-suguba-brand-dark">{aPartirDe && <span className="block text-xs font-bold text-slate-500">À partir de</span>}{fcfa(prixAffiche)}{unite && <span className="text-base font-semibold text-slate-600"> {unite}</span>}</p>
             </div>
 
             <SelecteurVariantes slug={product.slug} />

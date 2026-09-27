@@ -192,6 +192,28 @@
  "journal": [
   {
    "date": "2026-09-27",
+   "titre": "Vue client (V2) : unité de vente et ajout direct au panier",
+   "demande": "Suite de l’analyse de la vue client : dire à quoi correspond le prix (unité, lot…) et permettre « Ajouter » au panier depuis la carte.",
+   "realise": [
+    "Unité de vente en base (unité, lot de N, paquet, carton, paire, kg, litre, mètre), contrôlée par la base.",
+    "Affichée à côté du prix sur les cartes et la fiche produit (« 36 500 F / lot de 4 ») ; rien d’affiché tant qu’elle n’est pas renseignée.",
+    "Fournisseur : « Le prix correspond à » dans « Ajouter un produit », avec aperçu. Admin : bouton « Unité ? » par produit pour les produits déjà en ligne.",
+    "Carte : « Ajouter » (panier) pour une offre simple ; « Choisir » pour les variantes ; « Acheter » (fiche) pour le prix de gros, le devis et la remise par le vendeur."
+   ],
+   "ecarts": [
+    "Unités des produits existants (encres…) à renseigner par l’admin : Produits → « Unité ? ».",
+    "Le panier et le reçu n’affichent pas encore l’unité."
+   ],
+   "pages": [
+    "accueil",
+    "fiche-produit",
+    "fou-ajouter",
+    "adm-produits"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-27",
    "titre": "Vue client (V1) : une barre d’achat",
    "demande": "Analyse de la vue client : navigation d’acheteur (Explorer/Accueil · Panier · Commandes · Compte), achat plus visible que WhatsApp, bulle flottante qui recouvre les produits. La carte boutique seule reste comme elle est.",
    "realise": [
@@ -1177,7 +1199,7 @@
     },
     {
      "nom": "Carte produit",
-     "role": "Photo et nom ouvrent la fiche. « Acheter » ouvre aussi la fiche. Le bouton WhatsApp partage le produit. « Acheter » est le bouton principal (vert foncé) ; le partage WhatsApp est une petite icône grise à côté."
+     "role": "Photo et nom ouvrent la fiche. « Acheter » ouvre aussi la fiche. Le bouton WhatsApp partage le produit. « Acheter » est le bouton principal (vert foncé) ; le partage WhatsApp est une petite icône grise à côté. Le prix porte son unité (« / lot de 4 ») quand elle est connue. Offre simple : « Ajouter » met l’article au panier sans quitter la page (le compteur du panier change) ; variantes à choisir : « Choisir » ; prix de gros, devis ou remise par le vendeur : « Acheter » ouvre la fiche."
     },
     {
      "nom": "Badge « Sponsorisé »",
@@ -1335,6 +1357,10 @@
    "chemin": "/p/<produit>",
    "but": "Tout sur un article : photos, prix, description, et les deux façons de l’acheter.",
    "elements": [
+    {
+     "nom": "Prix et unité",
+     "role": "À côté du prix : ce qu’il couvre (« / unité », « / lot de 4 », « / kg »…), quand le vendeur l’a indiqué."
+    },
     {
      "nom": "Demander un devis",
      "role": "Pour une offre sur devis : remplace « Commander » et le panier ; le prix est « à partir de »."
@@ -3521,6 +3547,10 @@
      "role": "Ce que le fournisseur touche sur chaque vente, et la quantité disponible."
     },
     {
+     "nom": "Le prix correspond à",
+     "role": "À l’unité, par lot (nombre obligatoire), paquet, carton, paire, au kilo, au litre, au mètre. Aperçu : « Le client verra : Prix / lot de 4 ». Absent pour un service."
+    },
+    {
      "nom": "Part du revendeur par vente",
      "role": "**Le fournisseur décide** combien il laisse au revendeur (en FCFA), en plus de son prix."
     },
@@ -4079,6 +4109,10 @@
     {
      "nom": "Modifier les photos",
      "role": "Remplacer ou ajouter des images."
+    },
+    {
+     "nom": "Unité ?",
+     "role": "Précise à quoi correspond le prix d’un produit déjà en ligne (« lot de 4 »…). Le prix ne change pas. Droit « produit.moderer »."
     },
     {
      "nom": "Fixer le prix",
