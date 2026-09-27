@@ -36,6 +36,8 @@ export async function GET() {
         saspayPct: reglages.fraisVersementPct,
         operateurPct: reglages.fraisOperateurRetraitPct,
         sugubaPct: reglages.fraisRetraitSugubaPct,
+        // Taux Suguba par bénéficiaire et par moyen (2026-09-27) : caisse / Mobile Money.
+        sugubaParRole: reglages.fraisRetraitSuguba,
       },
       // Frais d'un paiement Mobile Money, payés par le client (2026-09-27) :
       // affichés ligne par ligne avant qu'il valide, avec le même calcul que

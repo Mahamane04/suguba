@@ -10,8 +10,8 @@ import { useSugubaStore } from '@/lib/store';
 import EmptyState from '@/components/ui/EmptyState';
 import PaymentLogo, { moyenDepuisCode } from '@/components/ui/PaymentLogo';
 import { Wallet, Clock, CheckCircle2, History, AlertCircle, Building2, Loader2, Check } from 'lucide-react';
-import { calculerFraisRetrait, type DetailFraisRetrait, type TauxRetrait } from '@/lib/pricing';
-import { completerFraisPaiement } from '@/lib/frais-paiement';
+import { calculerFraisRetrait, tauxRetraitSuguba, type DetailFraisRetrait, type TauxRetrait } from '@/lib/pricing';
+import { completerFraisPaiement, estimerRetraitAgent, type OperateurRetrait } from '@/lib/frais-paiement';
 
 type Moyen = 'Orange Money' | 'Moov Money' | 'Wave' | 'Agence Suguba';
 
@@ -34,6 +34,16 @@ const CODE_MOYEN: Record<Moyen, string> = {
   'Wave': 'wave',
   'Agence Suguba': 'cash',
 };
+
+/** Opérateur Mobile Money de chaque moyen (pour estimer un retrait chez un agent). */
+const OPERATEUR_DU_MOYEN: Record<Moyen, OperateurRetrait | null> = {
+  'Orange Money': 'orange_ml',
+  'Moov Money': 'moov_ml',
+  'Wave': 'wave_ml',
+  'Agence Suguba': null,
+};
+
+const enPct = (n: number) => `${String(n).replace('.', ',')}\u00a0%`;
 
 const MOYENS: { id: Moyen; libelle: string; detail: string }[] = [
   { id: 'Orange Money', libelle: 'Orange Money', detail: 'Virement' },
@@ -102,6 +112,8 @@ export default function ResellerPayoutsPage() {
         fraisVersementPct: Number(reglages.fraisRetrait.saspayPct) || 0,
         fraisOperateurRetraitPct: reglages.fraisRetrait.operateurPct,
         fraisRetraitSugubaPct: Number(reglages.fraisRetrait.sugubaPct) || 0,
+        // Taux Suguba du revendeur, à la caisse et en Mobile Money (2026-09-27).
+        fraisRetraitSuguba: reglages.fraisRetrait.sugubaParRole,
         // Vrai tarif SasPay de versement (2026-09-27), comme le serveur.
         fraisPaiement: completerFraisPaiement(reglages.fraisPaiement),
       });
@@ -120,6 +132,11 @@ export default function ResellerPayoutsPage() {
   const assez = disponible >= retraitMinimum || Boolean(checkout.restore());
   // Même calcul que le serveur (/api/payouts/create) : ce qui est affiché est ce qui sera retenu.
   const frais: DetailFraisRetrait | null = taux && montant > 0 ? calculerFraisRetrait(montant, CODE_MOYEN[moyen], taux) : null;
+  const tauxSuguba = taux ? tauxRetraitSuguba(taux, 'revendeur', CODE_MOYEN[moyen]) : 0;
+  const tauxCaisse = taux ? tauxRetraitSuguba(taux, 'revendeur', 'cash') : 0;
+  // Information : ce que l'opérateur prélèverait sur un retrait d'espèces chez un agent.
+  const operateur = OPERATEUR_DU_MOYEN[moyen];
+  const agent = taux?.fraisPaiement && operateur && frais ? estimerRetraitAgent(frais.montantNet, operateur, taux.fraisPaiement) : null;
 
   useEffect(() => {
     const previous = checkout.restore();
@@ -299,16 +316,29 @@ export default function ResellerPayoutsPage() {
               </div>
 
               {frais && (
+                // Récapitulatif avant confirmation (audit du 2026-09-27) : ce qui
+                // est débité du solde, chaque frais, ce qui est reçu. Les frais
+                // sont figés avec la demande.
                 <div className="rounded-2xl bg-slate-50 p-3 text-xs text-slate-600 space-y-1">
-                  <p className="font-bold text-slate-700">Frais de retrait (à votre charge)</p>
-                  {frais.fraisSaspay > 0 && <p className="flex justify-between"><span>Frais de virement SasPay</span><span>− {enF(frais.fraisSaspay)}</span></p>}
-                  {frais.fraisOperateur > 0 && <p className="flex justify-between"><span>Frais {moyen}</span><span>− {enF(frais.fraisOperateur)}</span></p>}
-                  {frais.fraisSuguba > 0 && <p className="flex justify-between"><span>Frais Suguba</span><span>− {enF(frais.fraisSuguba)}</span></p>}
-                  <p className="flex justify-between pt-1 border-t border-slate-200 text-sm font-bold text-slate-900">
-                    <span>Vous recevrez</span><span>{enF(Math.max(0, frais.montantNet))}</span>
+                  <p className="font-bold text-slate-700">Avant de confirmer</p>
+                  <p className="flex justify-between gap-3"><span>Vous retirez de votre solde</span><span className="font-semibold text-slate-900 tabular-nums">{enF(frais.montantDemande)}</span></p>
+                  <p className="flex justify-between gap-3"><span>Moyen</span><span className="text-right">{moyen === 'Agence Suguba' ? 'Espèces à la caisse Suguba' : `${moyen} (virement)`}</span></p>
+                  <p className="flex justify-between gap-3"><span>Frais Suguba — {enPct(tauxSuguba)}</span><span className="tabular-nums">− {enF(frais.fraisSuguba)}</span></p>
+                  <p className="flex justify-between gap-3">
+                    <span>Autres frais applicables{frais.fraisSaspay > 0 ? ' (virement SasPay)' : ''}</span>
+                    <span className="tabular-nums">− {enF(frais.fraisSaspay + frais.fraisOperateur)}</span>
                   </p>
-                  {moyen !== 'Agence Suguba' && frais.fraisSaspay + frais.fraisOperateur > 0 && (
-                    <p>En espèces au guichet, seuls les frais Suguba s&apos;appliquent.</p>
+                  <p className="flex justify-between gap-3 pt-1 border-t border-slate-200 text-sm font-bold text-slate-900">
+                    <span>Vous recevrez</span><span className="tabular-nums">{enF(Math.max(0, frais.montantNet))}</span>
+                  </p>
+                  {agent && frais.montantNet > 0 && (
+                    <p>
+                      Si vous retirez ensuite cet argent en espèces chez un agent {moyen}, l&apos;opérateur prélèvera environ{' '}
+                      {enF(agent.total)}, dont {enF(agent.fraisEtat)} pour le fonds de soutien de l&apos;État. Suguba n&apos;en touche rien.
+                    </p>
+                  )}
+                  {moyen !== 'Agence Suguba' && (
+                    <p>À la caisse Suguba, en espèces : frais Suguba seulement ({enPct(tauxCaisse)}).</p>
                   )}
                 </div>
               )}

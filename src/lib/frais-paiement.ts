@@ -1,21 +1,25 @@
 /**
  * Frais d'un paiement client — 2026-09-27, décision du fondateur.
  *
- * ── La règle ─────────────────────────────────────────────────────────────
- * Payer en ESPÈCES à la livraison est gratuit. Payer par Mobile Money (ou par
- * carte) coûte des frais, et ces frais sont TOUS à la charge du client,
- * affichés ligne par ligne avant qu'il valide :
+ * ── La règle : chaque frais appartient à SON opération ──────────────────
+ * La vente crée les montants dus ; le paiement et le retrait déclenchent
+ * chacun leurs propres frais, jamais deux fois (audit du fondateur).
  *
- *   1. Frais de transaction Suguba   : `plateformePct` % de la commande ;
- *   2. Frais de retrait de l'opérateur : l'argent reçu doit être retiré pour
- *      payer fournisseurs et livreurs en espèces. Grille PAR TRANCHES,
- *      réglable par l'équipe, opérateur par opérateur ;
- *   3. Fonds de soutien de l'État   : 1 % prélevé sur tout retrait Mobile
- *      Money (Ordonnance n° 2025-008/PT-RM du 7 février 2025, en vigueur
- *      depuis le 5 mars 2025 ; appliqué aussi par Wave depuis la décision
- *      n° 2026-0001/MIC-DGCC du 2 février 2026) ;
- *   4. Frais SasPay                  : tarif du compte Suguba, lu EN DIRECT
- *      chez SasPay (GET /pricing/my-rates, voir tarifs-saspay.ts).
+ * Paiement (ce fichier) : en ESPÈCES à la livraison, gratuit. Par Mobile
+ * Money (ou carte), le client paie la commande plus les frais DU PAIEMENT :
+ *   1. Frais de transaction Suguba : `plateformePct` % de la commande ;
+ *   2. Frais SasPay : tarif du compte Suguba, relu automatiquement chez
+ *      SasPay (tarifs-saspay.ts), ajoutés par SasPay lui-même (ADD_ON).
+ *
+ * Retrait : les frais de l'opérateur et le fonds de soutien de l'État
+ * (1 %, Ordonnance n° 2025-008/PT-RM, en vigueur depuis le 5 mars 2025 ; Wave
+ * aussi depuis la décision n° 2026-0001/MIC-DGCC du 2 février 2026) ne sont
+ * PAS facturés au client : ils sont prélevés par l'opérateur quand un
+ * bénéficiaire retire des espèces chez un agent. Les grilles ci-dessous
+ * servent à l'en informer (`estimerRetraitAgent`) ; les frais Suguba d'un
+ * retrait sont calculés par calculerFraisRetrait (pricing.ts). Le 27/09, le
+ * client les a payés quelques heures : c'était facturer deux fois une sortie
+ * d'argent qui n'avait pas encore eu lieu.
  *
  * ── Grilles vérifiées le 2026-09-27, sur les sites des opérateurs ────────
  *   Orange Money Mali : 0–5 000 F → 50 F ; 5 001–1 000 000 F → 1 % ;
@@ -30,7 +34,7 @@
  *
  * ── ADD_ON ou DEDUCTED : ne jamais faire payer SasPay deux fois ──────────
  * En ADD_ON, SasPay ajoute LUI-MÊME ses frais au montant débité du client :
- * Suguba demande 10 300 F, le client est débité de 10 712 F. Les ajouter aussi
+ * Suguba demande 10 100 F, le client est débité de 10 504 F. Les ajouter aussi
  * côté Suguba les ferait payer deux fois. En DEDUCTED, SasPay les retient sur
  * ce que reçoit Suguba : le montant demandé est alors relevé juste assez pour
  * que Suguba reçoive bien la commande et ses frais.
@@ -43,7 +47,7 @@
 /** Moyens de paiement proposés au client. Les codes réseau sont ceux de SasPay. */
 export type MoyenPaiementClient = 'especes' | 'orange_ml' | 'moov_ml' | 'wave_ml' | 'card' | 'crypto';
 
-/** Opérateurs dont Suguba retire l'argent reçu (grille de retrait propre à chacun). */
+/** Opérateurs Mobile Money, chacun avec sa grille de retrait chez un agent. */
 export type OperateurRetrait = 'orange_ml' | 'moov_ml' | 'wave_ml';
 export const OPERATEURS_RETRAIT: OperateurRetrait[] = ['orange_ml', 'moov_ml', 'wave_ml'];
 
@@ -95,12 +99,10 @@ export interface GrilleRetraitOperateur {
 export interface ReglagesFraisPaiement {
   /** Frais de transaction Suguba, en % de la commande. C'est un gain pour Suguba. */
   plateformePct: number;
-  /** Prélèvement de l'État sur les retraits Mobile Money, en %. */
+  /** Prélèvement de l'État sur un retrait d'espèces chez un agent, en % (information). */
   fondsSoutienPct: number;
-  /** Grille de retrait de chaque opérateur. */
+  /** Grille de retrait chez un agent, par opérateur (information du bénéficiaire). */
   retraitOperateur: Record<OperateurRetrait, GrilleRetraitOperateur>;
-  /** Opérateur par lequel Suguba retire l'argent reçu par carte ou crypto. */
-  retraitCarteVia: OperateurRetrait;
   /** Derniers tarifs SasPay enregistrés — secours quand SasPay ne répond pas. */
   saspay: TarifsSasPay;
 }
@@ -161,7 +163,6 @@ export const FRAIS_PAIEMENT_PAR_DEFAUT: ReglagesFraisPaiement = {
   plateformePct: 1,
   fondsSoutienPct: 1,
   retraitOperateur: GRILLES_RETRAIT_PAR_DEFAUT,
-  retraitCarteVia: 'orange_ml',
   saspay: TARIFS_SASPAY_RELEVES,
 };
 
@@ -181,11 +182,9 @@ const nombre = (v: unknown, defaut = 0) => (v !== null && v !== '' && Number.isF
 const montantFrancs = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
 const enPct = (n: number) => `${String(n).replace('.', ',')} %`;
 
-/** Opérateur par lequel l'argent d'un paiement est retiré. */
-export function operateurDeRetrait(moyen: MoyenPaiementClient, f: Pick<ReglagesFraisPaiement, 'retraitCarteVia'>): OperateurRetrait | null {
-  if (moyen === 'especes') return null;
-  if (moyen === 'orange_ml' || moyen === 'moov_ml' || moyen === 'wave_ml') return moyen;
-  return f.retraitCarteVia;
+/** Opérateur Mobile Money d'un moyen de paiement (carte et crypto : aucun). */
+export function operateurDeRetrait(moyen: MoyenPaiementClient): OperateurRetrait | null {
+  return moyen === 'orange_ml' || moyen === 'moov_ml' || moyen === 'wave_ml' ? moyen : null;
 }
 
 /** Frais SasPay d'un montant selon ses paliers, ou null si aucun palier ne le couvre. */
@@ -231,7 +230,7 @@ export function fraisRetraitOperateur(montant: number, g: GrilleRetraitOperateur
 }
 
 export interface LigneFrais {
-  code: 'plateforme' | 'retrait' | 'etat' | 'saspay';
+  code: 'plateforme' | 'saspay';
   libelle: string;
   /** Explication courte : « 1 % », « 4 %, ajoutés par SasPay »… */
   detail: string;
@@ -277,21 +276,6 @@ export function calculerFraisPaiement(
   const plateforme = francSup(pct(f.plateformePct) * base);
   if (plateforme > 0) lignes.push({ code: 'plateforme', libelle: 'Frais de transaction Suguba', detail: enPct(f.plateformePct), montant: plateforme });
 
-  const operateur = operateurDeRetrait(moyen, f);
-  const grille = operateur ? f.retraitOperateur[operateur] : null;
-  if (operateur && grille) {
-    const r = fraisRetraitOperateur(base, grille);
-    if (r.frais > 0) {
-      lignes.push({
-        code: 'retrait',
-        libelle: `Frais de retrait ${LIBELLES_MOYENS[operateur]}`,
-        detail: r.retraits > 1 ? `${r.retraits} retraits` : r.tranche ? texteTranche(r.tranche) : '',
-        montant: r.frais,
-      });
-    }
-  }
-  const etat = francSup(pct(f.fondsSoutienPct) * base);
-  if (etat > 0) lignes.push({ code: 'etat', libelle: 'Fonds de soutien de l’État', detail: enPct(f.fondsSoutienPct), montant: etat });
 
   const avantSasPay = base + lignes.reduce((s, l) => s + l.montant, 0);
   const paliers = f.saspay.reseaux[moyen]?.encaissement;
@@ -320,6 +304,29 @@ export function calculerFraisPaiement(
 
   const fraisTotal = totalClient - base;
   return { moyen, montantCommande: base, lignes, fraisTotal, montantDemande, totalClient, tarifSasPayConnu: premier !== null };
+}
+
+export interface EstimationRetraitAgent {
+  operateur: OperateurRetrait;
+  /** Frais de l'opérateur selon sa grille. */
+  fraisOperateur: number;
+  /** Fonds de soutien de l'État. */
+  fraisEtat: number;
+  total: number;
+  /** Nombre de retraits nécessaires (au-delà du plafond d'un retrait). */
+  retraits: number;
+}
+
+/**
+ * Ce que coûterait le retrait de `montant` en espèces chez un agent de
+ * l'opérateur : prélevé par l'opérateur, jamais par Suguba. Affiché au
+ * bénéficiaire pour information, avant qu'il choisisse son moyen de retrait.
+ */
+export function estimerRetraitAgent(montant: number, operateur: OperateurRetrait, f: Pick<ReglagesFraisPaiement, 'retraitOperateur' | 'fondsSoutienPct'>): EstimationRetraitAgent {
+  const M = Math.max(0, Math.round(Number(montant) || 0));
+  const r = fraisRetraitOperateur(M, f.retraitOperateur[operateur]);
+  const fraisEtat = francSup(pct(f.fondsSoutienPct) * M);
+  return { operateur, fraisOperateur: r.frais, fraisEtat, total: r.frais + fraisEtat, retraits: r.retraits };
 }
 
 /** Frais SasPay d'un versement (retrait revendeur) sur `montant`, ou null si le tarif est inconnu. */
@@ -417,7 +424,6 @@ export function completerFraisPaiement(brut: unknown): ReglagesFraisPaiement {
     plateformePct: nombre(f.plateformePct, d.plateformePct),
     fondsSoutienPct: nombre(f.fondsSoutienPct, d.fondsSoutienPct),
     retraitOperateur,
-    retraitCarteVia: OPERATEURS_RETRAIT.includes(f.retraitCarteVia) ? f.retraitCarteVia : d.retraitCarteVia,
     saspay: s && Object.keys(reseaux).length > 0
       ? { releveLe: typeof s.releveLe === 'string' ? s.releveLe : null, reseaux }
       : d.saspay,

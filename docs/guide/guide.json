@@ -192,6 +192,30 @@
  "journal": [
   {
    "date": "2026-09-27",
+   "titre": "Audit du fondateur : vente, paiement et retrait séparés",
+   "demande": "« peux voir ce audit que je touve pertinant et voir comment integrer la correction » — audit : « la vente crée les montants dus ; le paiement et le retrait déclenchent leurs propres frais », quatre taux de retrait, Paramètres en quatre blocs, simulateur en trois étapes. Réponses : retirer les frais de retrait de la facture du client, lots A + B d’abord, fournisseurs payés en espèces et par Mobile Money.",
+   "realise": [
+    "Facture Mobile Money du client corrigée : seulement les frais du paiement (1 % Suguba + SasPay). Les frais de retrait de l’opérateur et le fonds de l’État n’y sont plus : c’était facturer une sortie d’argent qui n’avait pas eu lieu. Sur 10 000 F : Orange et Moov 10 504 F, Wave 10 605 F (au lieu de 10 712 F et 10 710 F).",
+    "Quatre taux Suguba de retrait : revendeur / fournisseur × caisse / Mobile Money, 0 % accepté tel quel, calculés au retrait sur le montant retiré, jamais à la vente. Baisser l’un d’eux demande le droit « Baisser la part Suguba » et un motif.",
+    "Écran de retrait du revendeur au format de l’audit : débité du solde, moyen, frais Suguba avec le taux, autres frais, reçu ; information sur le retrait d’espèces chez un agent. Les frais restent figés avec la demande ; un échec ou un refus rend tout le montant, sans frais.",
+    "Paramètres rangés en quatre blocs avec leur moment : Commission commerciale (à la vente) · Frais de paiement du client (à l’encaissement) · Frais de retrait des partenaires (au retrait) · Coûts et rentabilité (analyse). La commission dit en clair sa base et qui la paie.",
+    "Simulateur en trois étapes (vente, encaissement, retraits prévisionnels) et synthèse « Ce que Suguba garde » avec les coûts détaillés ligne par ligne, à la place de « Où va l’argent » et de l’ancienne simulation.",
+    "Vérifié avec les chiffres de l’audit : 100 000 F de gros vendu 110 000 F → 10 000 F au revendeur ; retrait caisse 1,5 % : 150 F de frais, 9 850 F reçus ; 5 000 F → 75 F, 4 925 F ; fournisseur caisse 98 500 F, à 0 % 100 000 F."
+   ],
+   "ecarts": [
+    "Lot C non fait : les fournisseurs n’ont pas encore de solde ni de demande de retrait dans l’application ; leurs deux taux servent au simulateur et serviront à leur futur espace de retrait.",
+    "Ancienne facture : pendant quelques heures le 27/09, le client payait aussi retrait opérateur et fonds de l’État. Aucun paiement Mobile Money n’avait encore eu lieu (aucune tentative en base).",
+    "Écran de retrait du revendeur vérifié par le calcul et les tests, pas à l’écran (connexion revendeur requise)."
+   ],
+   "pages": [
+    "commander",
+    "rev-gains",
+    "adm-parametres"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-27",
    "titre": "Wave intégré, frais de retrait par tranches et tarifs SasPay relus automatiquement",
    "demande": "« integre wave dabord ( et j’espère que les frais de retrait sont dynamique pas en dure et veirifie les vrais frais proposer par les operateur et saas paye ? ) »",
    "realise": [
@@ -1827,7 +1851,7 @@
     },
     {
      "nom": "Après la commande : comment payer",
-     "role": "À la livraison en espèces : sans aucun frais. Orange Money, Moov Money ou Wave : chaque moyen affiche son coût (sur 10 000 F : Orange + 712 F, Moov + 702 F, Wave + 710 F), puis le détail avant de valider : frais de transaction Suguba (1 %), retrait de l’opérateur selon sa grille (Orange 1 %, Moov 0,9 %, Wave sans frais), fonds de soutien de l’État (1 %) et frais SasPay (Orange et Moov 4 %, Wave 5 %, ajoutés par SasPay). Le bouton annonce le total débité."
+     "role": "À la livraison en espèces : sans aucun frais. Orange Money, Moov Money ou Wave : chaque moyen affiche son coût (sur 10 000 F : Orange et Moov + 504 F, Wave + 605 F), puis le détail avant de valider : frais de transaction Suguba (1 %) et frais SasPay (Orange et Moov 4 %, Wave 5 %, ajoutés par SasPay). Seulement les frais du paiement : les frais de retrait ne sont jamais facturés au client. Le bouton annonce le total débité."
     }
    ],
    "suite": [
@@ -2974,7 +2998,7 @@
     },
     {
      "nom": "Numéro · Montant",
-     "role": "Minimum 5 000 F. En dessous, le détail des frais (SasPay au vrai tarif du compte, relu seul chez SasPay : Orange Money 2 % + 100 F, Moov Money et Wave 3,8 % avec 450 F minimum ; opérateur ; Suguba — Suguba seulement en espèces) et « Vous recevrez … F »."
+     "role": "Minimum 5 000 F. Avant de confirmer : « Vous retirez de votre solde », le moyen, les frais Suguba avec leur taux (caisse ou Mobile Money), les autres frais (virement SasPay au vrai tarif du compte), « Vous recevrez ». En Mobile Money, une information : ce que l’opérateur prélèvera si l’argent est ensuite retiré en espèces chez un agent (fonds de l’État compris), sans que Suguba n’en touche rien."
     },
     {
      "nom": "Demander le virement",
@@ -4251,11 +4275,15 @@
    "elements": [
     {
      "nom": "Réglages économiques",
-     "role": "Mode de rémunération, frais de paiement, où va l’argent d’une vente, effet sur vos produits en ligne, coûts, retraits, livraison, codes promo, prix de gros. Une baisse de la part Suguba (dont les frais de transaction Suguba) demande un motif, dans une vraie fenêtre."
+     "role": "Rangés en quatre blocs, chacun avec le moment où il s’applique : Commission commerciale Suguba (à la vente : mode, taux, base et qui la paie, prix de gros, politique, codes promo) · Frais de paiement du client (à l’encaissement) · Frais de retrait des partenaires (au retrait) · Coûts et rentabilité (analyse : simulateur, produits en ligne, coûts variables et fixes). Puis Livraison et formules. Une baisse de la part Suguba (dont les frais de transaction et les taux de retrait) demande un motif, dans une vraie fenêtre."
     },
     {
      "nom": "Frais de paiement (payés par le client)",
-     "role": "Frais de transaction Suguba (%), fonds de soutien de l’État (%). Grille de retrait d’Orange Money, Moov Money et Wave PAR TRANCHES (de, à, %, frais fixes), avec sa source et « Vérifiée aujourd’hui » ; ajouter ou supprimer une tranche. Opérateur de retrait de l’argent reçu par carte. Tarifs SasPay relus seuls chez SasPay dès que le relevé a plus de 6 heures, sans jamais ralentir un paiement ; « Relire maintenant » (SasPay met jusqu’à 30 secondes). « Ce que paie le client, en direct » : espèces, Orange, Moov, Wave côte à côte."
+     "role": "Frais de transaction Suguba (%) et tarifs SasPay relus seuls chez SasPay dès que le relevé a plus de 6 heures, sans jamais ralentir un paiement (« Relire maintenant »). « Ce que paie le client, en direct » : espèces, Orange, Moov, Wave côte à côte. Dans « Frais de retrait des partenaires » : quatre taux Suguba (revendeur / fournisseur × caisse / Mobile Money, 0 % accepté), virement SasPay, exemple de retrait de 10 000 F, et les grilles de retrait chez un agent (Orange, Moov, Wave, fonds de l’État) pour information."
+    },
+    {
+     "nom": "Simulateur : vente, encaissement, retraits",
+     "role": "Un article imaginaire (prix de gros ou prix fixe) : 1 · Vente (montants dus au fournisseur et au revendeur, commission Suguba avec sa base et qui la paie) ; 2 · Encaissement (espèces ou Orange, Moov, Wave : frais du paiement) ; 3 · Retraits prévisionnels (moyen choisi par chacun, frais, montant reçu). « Ce que Suguba garde » : commission et frais de transaction, coûts détaillés ligne par ligne, résultat, puis le résultat si les retraits ont lieu comme simulé."
     },
     {
      "nom": "Tester un profil",

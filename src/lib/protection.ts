@@ -29,6 +29,15 @@ export function baissesPartSuguba(avant: Partial<ReglagesPlateforme>, apres: Par
   baisse('tauxPartSuguba', 'Taux de la part Suguba');
   baisse('minimumPartSuguba', 'Part minimale de Suguba par article');
   baisse('fraisRetraitSugubaPct', 'Frais Suguba sur les retraits');
+  // Quatre taux de retrait (2026-09-27) : revendeur / fournisseur × caisse / Mobile Money.
+  for (const role of ['revendeur', 'fournisseur'] as const) {
+    for (const [cle, moyen] of [['caisse', 'caisse'], ['mobile', 'Mobile Money']] as const) {
+      const r0 = avant.fraisRetraitSuguba?.[role]?.[cle]; const r1 = apres.fraisRetraitSuguba?.[role]?.[cle];
+      if (r0 !== undefined && r1 !== undefined && nombre(r1) < nombre(r0)) {
+        l.push({ cle: `fraisRetraitSuguba.${role}.${cle}`, libelle: `Frais Suguba sur les retraits ${role} (${moyen})`, avant: r0, apres: r1 });
+      }
+    }
+  }
   // Frais de transaction Suguba sur les paiements Mobile Money (2026-09-27).
   const t0 = avant.fraisPaiement?.plateformePct; const t1 = apres.fraisPaiement?.plateformePct;
   if (t0 !== undefined && t1 !== undefined && nombre(t1) < nombre(t0)) {

@@ -61,6 +61,7 @@ test('les frais ne sont plus un coût de Suguba sur la vente', () => {
 });
 
 test('des frais qui avaleraient tout le retrait sont refusés par la validation', () => {
-  const erreurs = P.validerReglages({ ...r, fraisRetraitSugubaPct: 60, fraisVersementPct: 50 });
+  const trop = { ...r.fraisRetraitSuguba, revendeur: { caisse: 1.5, mobile: 60 } };
+  const erreurs = P.validerReglages({ ...r, fraisRetraitSuguba: trop, fraisVersementPct: 50 });
   assert.ok(erreurs.some((e) => /retrait/i.test(e)));
 });

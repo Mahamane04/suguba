@@ -19,20 +19,21 @@ test('espèces à la livraison : aucun frais, jamais', () => {
   assert.equal(d.totalClient, 250000);
 });
 
-test('Orange Money, 10 000 F : Suguba 1 %, retrait 1 %, État 1 %, puis SasPay 4 % ajoutés par SasPay', () => {
+// Audit du fondateur (2026-09-27) : le client ne paie que les frais DE SON PAIEMENT.
+test('Orange Money, 10 000 F : Suguba 1 %, puis SasPay 4 % ajoutés par SasPay — rien d’autre', () => {
   const d = F.calculerFraisPaiement(10000, 'orange_ml', defaut);
   const par = Object.fromEntries(d.lignes.map((l) => [l.code, l.montant]));
-  assert.deepEqual(par, { plateforme: 100, retrait: 100, etat: 100, saspay: 412 });
-  // Suguba demande la commande + ses trois lignes ; SasPay ajoute les siennes au débit.
-  assert.equal(d.montantDemande, 10300);
-  assert.equal(d.totalClient, 10712);
-  assert.equal(d.fraisTotal, 712);
+  assert.deepEqual(par, { plateforme: 100, saspay: 404 });
+  // Suguba demande la commande + son 1 % ; SasPay ajoute ses frais au débit.
+  assert.equal(d.montantDemande, 10100);
+  assert.equal(d.totalClient, 10504);
 });
 
-test('au-delà de 1 000 000 F, le retrait Orange Money est un forfait de 10 000 F', () => {
-  const d = F.calculerFraisPaiement(1200000, 'orange_ml', defaut);
-  assert.equal(d.lignes.find((l) => l.code === 'retrait').montant, 10000);
-  assert.equal(d.lignes.find((l) => l.code === 'etat').montant, 12000);
+test('les frais de retrait et le fonds de l’État ne sont jamais facturés au client qui paie', () => {
+  for (const moyen of ['orange_ml', 'moov_ml', 'wave_ml', 'card']) {
+    const codes = F.calculerFraisPaiement(1200000, moyen, defaut).lignes.map((l) => l.code);
+    assert.ok(codes.every((c) => c === 'plateforme' || c === 'saspay'), moyen);
+  }
 });
 
 // Grilles officielles relevées le 2026-09-27 sur orangemali.com et moov-africa.ml.
@@ -48,8 +49,7 @@ test('au-delà du plafond d’un retrait Orange (1 500 000 F), l’argent sort e
   const r = F.fraisRetraitOperateur(2000000, defaut.retraitOperateur.orange_ml);
   assert.equal(r.retraits, 2);
   assert.equal(r.frais, 10000 + 5000);
-  const d = F.calculerFraisPaiement(2000000, 'orange_ml', defaut);
-  assert.equal(d.lignes.find((l) => l.code === 'retrait').detail, '2 retraits');
+  assert.equal(F.estimerRetraitAgent(2000000, 'orange_ml', defaut).retraits, 2);
 });
 
 test('grille Moov Money : 0,9 % jusqu’à 1 000 000 F, 9 000 F jusqu’à 2 000 000 F', () => {
@@ -58,16 +58,17 @@ test('grille Moov Money : 0,9 % jusqu’à 1 000 000 F, 9 000 F jusqu’à 2 000
   assert.equal(F.fraisRetraitOperateur(1500000, g).frais, 9000);
 });
 
-test('Wave : pas de frais de retrait opérateur, le 1 % de l’État s’applique, SasPay 5 %', () => {
+test('Wave : Suguba 1 %, puis SasPay 5 %', () => {
   const d = F.calculerFraisPaiement(10000, 'wave_ml', defaut);
   const par = Object.fromEntries(d.lignes.map((l) => [l.code, l.montant]));
-  assert.deepEqual(par, { plateforme: 100, etat: 100, saspay: 510 });
-  assert.equal(d.totalClient, 10710);
+  assert.deepEqual(par, { plateforme: 100, saspay: 505 });
+  assert.equal(d.totalClient, 10605);
 });
 
-test('carte : retirée par l’opérateur choisi par l’équipe', () => {
-  const parMoov = F.calculerFraisPaiement(10000, 'card', { ...defaut, retraitCarteVia: 'moov_ml' });
-  assert.equal(parMoov.lignes.find((l) => l.code === 'retrait').montant, 90);
+test('retrait d’espèces chez un agent : estimé pour informer le bénéficiaire (opérateur + État)', () => {
+  assert.deepEqual(F.estimerRetraitAgent(10000, 'orange_ml', defaut), { operateur: 'orange_ml', fraisOperateur: 100, fraisEtat: 100, total: 200, retraits: 1 });
+  assert.equal(F.estimerRetraitAgent(10000, 'moov_ml', defaut).total, 190);
+  assert.equal(F.estimerRetraitAgent(10000, 'wave_ml', defaut).total, 100);
 });
 
 test('grille modifiable : des tranches qui se chevauchent sont refusées', () => {
@@ -85,13 +86,13 @@ test('tarif SasPay en mode DEDUCTED : le montant demandé est relevé pour que S
   const d = F.calculerFraisPaiement(10000, 'orange_ml', f);
   const frais = F.fraisPalier(d.montantDemande, f.saspay.reseaux.orange_ml.encaissement).frais;
   assert.equal(d.montantDemande, d.totalClient);
-  assert.ok(d.montantDemande - frais >= 10300, 'après retenue SasPay, Suguba garde commande + frais');
+  assert.ok(d.montantDemande - frais >= 10100, 'après retenue SasPay, Suguba garde commande + frais');
 });
 
 test('tarif SasPay inconnu (carte) : les frais Suguba s’appliquent, SasPay est signalé inconnu', () => {
   const d = F.calculerFraisPaiement(10000, 'card', defaut);
   assert.equal(d.tarifSasPayConnu, false);
-  assert.equal(d.totalClient, 10300);
+  assert.equal(d.totalClient, 10100);
 });
 
 test('lecture de la réponse SasPay /pricing/my-rates : Mali et international seulement, indisponible = vide', () => {
@@ -194,11 +195,11 @@ test('la route de paiement demande à SasPay la commande + les frais, et garde l
   }));
   assert.equal(res.status, 200);
   const json = await res.json();
-  assert.equal(json.montantTotal, 10712);
-  assert.equal(calls.find((c) => c.payin).payin.montant, 10300, 'SasPay ajoute lui-même ses 4 %');
+  assert.equal(json.montantTotal, 10504);
+  assert.equal(calls.find((c) => c.payin).payin.montant, 10100, 'SasPay ajoute lui-même ses 4 %');
   const trace = calls.find((c) => c.table === 'payment_attempts' && c.op === 'update');
-  assert.equal(trace.patch.amount_requested, 10300);
-  assert.equal(trace.patch.fees.totalClient, 10712);
+  assert.equal(trace.patch.amount_requested, 10100);
+  assert.equal(trace.patch.fees.totalClient, 10504);
   // SasPay met 10 à 30 s à donner ses tarifs : jamais interrogé pendant un paiement.
   assert.equal(calls.some((c) => c.lectureTarifs), false);
 });
@@ -229,7 +230,7 @@ test('SasPay injoignable : la relecture échoue sans rien écrire', async () => 
   assert.equal(calls.some((c) => c.table === 'platform_settings' && c.op === 'update'), false);
 });
 
-test('Wave : la route de paiement l’accepte et demande commande + Suguba + État', async () => {
+test('Wave : la route de paiement l’accepte et demande commande + Suguba', async () => {
   state = { orders: [{ order_number: 'SG-WAVE0001', product_name: 'Article fictif', quantity: 1, total_amount: 10000, status: 'pending_call', payment_collected: false, customer_name: 'Client fictif', customer_phone: '+22300000000' }] };
   calls = [];
   const { POST } = require('../src/app/api/payments/saspay/create/route.ts');
@@ -239,6 +240,6 @@ test('Wave : la route de paiement l’accepte et demande commande + Suguba + Ét
   }));
   assert.equal(res.status, 200);
   assert.equal(calls.find((c) => c.payin).payin.reseau, 'wave_ml');
-  assert.equal(calls.find((c) => c.payin).payin.montant, 10200);
-  assert.equal((await res.json()).montantTotal, 10710);
+  assert.equal(calls.find((c) => c.payin).payin.montant, 10100);
+  assert.equal((await res.json()).montantTotal, 10605);
 });

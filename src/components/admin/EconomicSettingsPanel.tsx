@@ -7,7 +7,6 @@ import {
   Calculator, ChevronDown, ChevronUp, Loader2, Plus, Trash2, AlertCircle, CheckCircle2, RotateCcw, ArrowRight, Info,
 } from 'lucide-react';
 import {
-  calculerTarif,
   calculerFraisRetrait,
   calculerTarifGros,
   coutCourseRefusee,
@@ -20,24 +19,29 @@ import {
   prixDepuisPartRevendeur,
   totalCoutsFixes,
   validerReglages,
-  type DetailTarif,
   type ModePartSuguba,
   type ReglagesPlateforme,
+  ROLES_RETRAIT,
+  tauxRetraitSuguba,
+  type DetailFraisRetrait,
+  type MoyenRetrait,
+  type RoleRetrait,
 } from '@/lib/pricing';
 import {
   calculerFraisPaiement,
   completerFraisPaiement,
+  estimerRetraitAgent,
   LIBELLES_MOYENS,
   OPERATEURS_RETRAIT,
   texteTranche,
   type GrilleRetraitOperateur,
   type MoyenPaiementClient,
-  type OperateurRetrait,
   type PalierSasPay,
   type ReglagesFraisPaiement,
   type TarifsSasPay,
   type TrancheRetrait,
 } from '@/lib/frais-paiement';
+import { commissionExpliquee, simulerCycle, type EntreeCycle } from '@/lib/cycle-vente';
 
 // Espace insécable avant « F » : « 20 000 » et « F » ne se séparent jamais en fin de ligne.
 const enF = (n: number) => `${Math.round(n).toLocaleString('fr-FR')}\u00a0F`;
@@ -68,16 +72,11 @@ const MODES: [ModePartSuguba, string, string][] = [
 ];
 
 const SECTIONS = [
-  ['modele', 'Rémunération'],
-  ['paiement', 'Frais de paiement'],
-  ['impact', 'Vos produits'],
-  ['gros', 'Prix de gros'],
-  ['formules', 'Formules'],
-  ['couts', 'Coûts'],
-  ['retraits', 'Retraits'],
-  ['livraison', 'Livraison'],
-  ['promo', 'Codes promo'],
-  ['simulation', 'Simulation'],
+  ['bloc-commission', 'Commission'],
+  ['bloc-paiement', 'Paiement'],
+  ['bloc-retraits', 'Retraits'],
+  ['bloc-rentabilite', 'Rentabilité'],
+  ['bloc-autres', 'Livraison et formules'],
 ] as const;
 
 /**
@@ -114,7 +113,6 @@ export default function EconomicSettingsPanel({ ouvertParDefaut = false }: { ouv
   const [erreur, setErreur] = useState('');
   const [alertes, setAlertes] = useState<{ id: string; nom: string; statut: string; prixVente: number; prixMinimal: number }[]>([]);
   const [produits, setProduits] = useState<ProduitEnLigne[]>([]);
-  const [exemple, setExemple] = useState({ fournisseur: 20000, part: 2000 });
   // Tarifs SasPay relus automatiquement : ancien = relevé de plus de 6 heures.
   const [releveAncien, setReleveAncien] = useState(false);
 
@@ -146,18 +144,6 @@ export default function EconomicSettingsPanel({ ouvertParDefaut = false }: { ouv
   }, [modifie]);
 
   const erreursLocales = useMemo(() => (r ? validerReglages(r) : []), [r]);
-
-  // Tableau de simulation : pour chaque couple (prix fournisseur, part
-  // revendeur), le prix client et le partage, avec les réglages EN COURS.
-  const [simulations, setSimulations] = useState([
-    { fournisseur: 5000, part: 500 },
-    { fournisseur: 30000, part: 3000 },
-    { fournisseur: 155000, part: 15000 },
-  ]);
-  const lignesSimulation = useMemo(
-    () => (r ? simulations.map((s) => ({ ...s, ...venteSimulee(r, s.fournisseur, s.part) })) : []),
-    [r, simulations],
-  );
 
   const impact = useMemo(() => {
     if (!r) return [];
@@ -280,475 +266,496 @@ export default function EconomicSettingsPanel({ ouvertParDefaut = false }: { ouv
             </Avertissement>
           )}
 
-          {/* ── Rémunération de Suguba ─────────────────────────────────── */}
-          <Section id="modele" titre="Comment Suguba gagne de l'argent"
-            aide="Le fournisseur indique combien il laisse au revendeur. Choisissez comment Suguba se rémunère.">
-            <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-2" role="radiogroup" aria-label="Mode de rémunération">
-              {MODES.map(([cle, titre, detail]) => {
-                const actif = r.modePartSuguba === cle;
-                return (
-                  <button key={cle} type="button" role="radio" aria-checked={actif} onClick={() => maj('modePartSuguba', cle)}
-                    className={`text-left p-3 rounded-2xl border transition-colors ${
-                      actif ? 'border-suguba-profond bg-suguba-menthe ring-1 ring-suguba-profond' : 'border-slate-200 hover:bg-suguba-sauge'
-                    }`}>
-                    <p className="text-sm font-semibold text-slate-900">{titre}</p>
-                    <p className="text-xs text-slate-600 mt-0.5">{detail}</p>
-                  </button>
-                );
-              })}
-            </div>
-            <div className="sm:col-span-2 space-y-2 rounded-2xl bg-suguba-sauge p-3">
-              <p className="text-xs font-semibold text-slate-700 inline-flex items-center gap-1">
-                Les coûts de Suguba (refus, message, coûts fixes…)
-                <InfoBulle texte="Recommandé : « Payés sur la part Suguba ». Le client paie alors exactement prix fournisseur + part revendeur, rien de plus. Si votre part ne suffit pas à couvrir vos coûts, la marge nette apparaît en rouge dans les exemples ci-dessous : c'est votre perte sur la vente." />
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2" role="radiogroup" aria-label="Qui paie les coûts de Suguba">
-                {([
-                  [false, 'Payés sur la part Suguba', 'Le client paie fournisseur + revendeur, rien de plus'],
-                  [true, 'Ajoutés au prix client', 'Le prix est relevé jusqu’à couvrir les coûts (plancher)'],
-                ] as const).map(([valeur, libelle, detail]) => {
-                  const actif = (r.couvrirCoutsDansLePrix === true) === valeur;
+          <Bloc id="bloc-commission" titre="Commission commerciale Suguba" moment="S’applique à la vente">
+            {/* ── Rémunération de Suguba ─────────────────────────────────── */}
+            <Section id="modele" titre="Commission sur les articles à prix fixe"
+              aide="Le fournisseur indique combien il laisse au revendeur. Choisissez sur quoi Suguba prend sa commission, et qui la paie.">
+              <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-2" role="radiogroup" aria-label="Mode de rémunération">
+                {MODES.map(([cle, titre, detail]) => {
+                  const actif = r.modePartSuguba === cle;
                   return (
-                    <button key={libelle} type="button" role="radio" aria-checked={actif} onClick={() => maj('couvrirCoutsDansLePrix', valeur)}
-                      className={`rounded-2xl border p-2.5 text-left bg-white ${actif ? 'border-suguba-profond ring-1 ring-suguba-profond' : 'border-slate-200'}`}>
-                      <span className="block text-xs font-semibold text-slate-900">{libelle}</span>
-                      <span className="block text-xs text-slate-600">{detail}</span>
+                    <button key={cle} type="button" role="radio" aria-checked={actif} onClick={() => maj('modePartSuguba', cle)}
+                      className={`text-left p-3 rounded-2xl border transition-colors ${
+                        actif ? 'border-suguba-profond bg-suguba-menthe ring-1 ring-suguba-profond' : 'border-slate-200 hover:bg-suguba-sauge'
+                      }`}>
+                      <p className="text-sm font-semibold text-slate-900">{titre}</p>
+                      <p className="text-xs text-slate-600 mt-0.5">{detail}</p>
                     </button>
                   );
                 })}
               </div>
-            </div>
-            {r.modePartSuguba !== 'auto' && (
-              <>
-                <Num
-                  l={r.modePartSuguba === 'prix_vente' ? 'Part Suguba (% du prix de vente)'
-                    : r.modePartSuguba === 'prelevement_revendeur' ? 'Prélèvement Suguba (% de la part revendeur)'
-                      : 'Part Suguba (% de la part revendeur)'}
-                  suffixe="%" v={r.tauxPartSuguba} on={(v) => maj('tauxPartSuguba', v)}
-                  info={r.modePartSuguba === 'prelevement_revendeur'
-                    ? "Suguba garde ce % de la part que le fournisseur laisse au revendeur. Rien n'est ajouté au prix client. Exemple : part revendeur 500 F à 1 % → Suguba 5 F, le revendeur reçoit 495 F."
-                    : "Attention : dans ce mode, ce % est AJOUTÉ au prix payé par le client. Pour que le client paie seulement fournisseur + revendeur, choisissez « Prélevé sur le revendeur »."}
-                />
-                {/* Pas de minimum en francs quand Suguba se sert sur le revendeur :
-                    1 000 F sur une part de 500 F n'aurait aucun sens. */}
-                {r.modePartSuguba !== 'prelevement_revendeur' && (
-                  <Num l="Part minimale Suguba par vente" suffixe="F" v={r.minimumPartSuguba} on={(v) => maj('minimumPartSuguba', v)}
-                    info="Montant ajouté au prix client si le pourcentage ci-dessus donne moins que ça. À 0, rien de plus n'est ajouté." />
-                )}
-              </>
-            )}
-            <div className="sm:col-span-2">
-              <OuVaLArgent r={r} exemple={exemple} setExemple={setExemple} />
-            </div>
-          </Section>
-
-          {/* ── Frais de paiement, payés par le client ─────────────────── */}
-          <Section id="paiement" titre="Frais de paiement (payés par le client)"
-            aide="En espèces à la livraison : aucun frais. En Mobile Money : le client paie sa commande plus les frais ci-dessous, détaillés ligne par ligne avant qu'il valide.">
-            <FraisPaiementReglages f={completerFraisPaiement(r.fraisPaiement)} ancien={releveAncien}
-              onChange={(f) => maj('fraisPaiement', f)}
-              onRelu={(tarifs) => {
-                // Déjà enregistrés par la relecture : mis à jour à l'écran ET dans
-                // la référence, pour ne pas les signaler « non enregistrés ».
-                const avec = <T extends { fraisPaiement?: ReglagesFraisPaiement }>(o: T): T => ({ ...o, fraisPaiement: { ...completerFraisPaiement(o.fraisPaiement), saspay: tarifs } });
-                setR((prev) => (prev ? avec(prev) : prev));
-                setInitial((prev) => (prev ? JSON.stringify(avec(JSON.parse(prev))) : prev));
-                setReleveAncien(false);
-              }} />
-          </Section>
-
-          {/* ── Impact sur les produits en ligne ───────────────────────── */}
-          <Section id="impact" titre={`Vos produits en ligne (${impact.length})`}
-            aide="Calculé en direct avec les réglages ci-dessus, avant d'enregistrer. Enregistrer met à jour la commission ; le prix affiché au client ne change jamais tout seul.">
-            <div className="sm:col-span-2 space-y-2">
-              {impact.length === 0 ? (
-                <p className="text-xs text-slate-600">Aucun produit en ligne pour l&apos;instant.</p>
-              ) : (
+              <div className="sm:col-span-2 space-y-2 rounded-2xl bg-suguba-sauge p-3">
+                <p className="text-xs font-semibold text-slate-700 inline-flex items-center gap-1">
+                  Les coûts de Suguba (refus, message, coûts fixes…)
+                  <InfoBulle texte="Recommandé : « Payés sur la part Suguba ». Le client paie alors exactement prix fournisseur + part revendeur, rien de plus. Si votre part ne suffit pas à couvrir vos coûts, la perte apparaît dans le simulateur (bloc Coûts et rentabilité)." />
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2" role="radiogroup" aria-label="Qui paie les coûts de Suguba">
+                  {([
+                    [false, 'Payés sur la part Suguba', 'Le client paie fournisseur + revendeur, rien de plus'],
+                    [true, 'Ajoutés au prix client', 'Le prix est relevé jusqu’à couvrir les coûts (plancher)'],
+                  ] as const).map(([valeur, libelle, detail]) => {
+                    const actif = (r.couvrirCoutsDansLePrix === true) === valeur;
+                    return (
+                      <button key={libelle} type="button" role="radio" aria-checked={actif} onClick={() => maj('couvrirCoutsDansLePrix', valeur)}
+                        className={`rounded-2xl border p-2.5 text-left bg-white ${actif ? 'border-suguba-profond ring-1 ring-suguba-profond' : 'border-slate-200'}`}>
+                        <span className="block text-xs font-semibold text-slate-900">{libelle}</span>
+                        <span className="block text-xs text-slate-600">{detail}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              {r.modePartSuguba !== 'auto' && (
                 <>
-                  <p className="text-xs text-slate-700">
-                    {modifie
-                      ? <>Si vous enregistrez : <strong>{nbCommissionChange}</strong> commission(s) changent{nbARevoir > 0 && <>, <strong className="text-rose-700">{nbARevoir}</strong> produit(s) à revoir</>}.</>
-                      : nbARevoir > 0 ? <><strong className="text-rose-700">{nbARevoir}</strong> produit(s) à revoir avec les réglages actuels.</> : 'Tous les produits en ligne sont rentables avec les réglages actuels.'}
-                  </p>
-                  <ul className="divide-y divide-slate-100 rounded-2xl border border-slate-200">
-                    {impact.map(({ p, t, avant, conseille }) => (
-                      <li key={p.id} className="p-3 space-y-1">
-                        <div className="flex items-start justify-between gap-2">
-                          <p className="text-sm font-semibold text-slate-900 min-w-0 truncate">
-                            {p.name}
-                            {p.mode_prix === 'gros' && <span className="ml-1.5 align-middle rounded-full bg-suguba-citron text-suguba-profond text-xs font-semibold px-2 py-0.5">Prix de gros</span>}
-                          </p>
-                          <PastilleStatut statut={t.statut} margeNette={t.margeNetteSuguba} />
-                        </div>
-                        <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-slate-600 [&>span]:whitespace-nowrap">
-                          <span>Fournisseur <strong className="text-slate-900">{enF(t.prixFournisseur)}</strong></span>
-                          <span>Prix client <strong className="text-slate-900">{enF(t.prixVente)}</strong></span>
-                          <span className="inline-flex items-center gap-1">
-                            Revendeur{' '}
-                            {t.commission !== avant && <><s className="text-slate-600">{enF(avant)}</s><ArrowRight className="w-3 h-3" /></>}
-                            <strong className="text-slate-900">{enF(t.commission)}</strong>
-                          </span>
-                          <span>Marge Suguba <strong className={t.margeNetteSuguba < 0 ? 'text-rose-700' : 'text-slate-900'}>{enF(t.margeNetteSuguba)}</strong></span>
-                        </div>
-                        {Math.abs(conseille - t.prixVente) >= r.arrondiPrix && (
-                          <p className="text-xs text-slate-600">
-                            Prix conseillé avec ces réglages : <strong className="text-slate-800">{enF(conseille)}</strong>{' '}
-                            ({conseille < t.prixVente ? `${enF(t.prixVente - conseille)} de moins pour le client` : `${enF(conseille - t.prixVente)} de plus`}).
-                          </p>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
+                  <Num
+                    l={r.modePartSuguba === 'prix_vente' ? 'Part Suguba (% du prix de vente)'
+                      : r.modePartSuguba === 'prelevement_revendeur' ? 'Prélèvement Suguba (% de la part revendeur)'
+                        : 'Part Suguba (% de la part revendeur)'}
+                    suffixe="%" v={r.tauxPartSuguba} on={(v) => maj('tauxPartSuguba', v)}
+                    info={r.modePartSuguba === 'prelevement_revendeur'
+                      ? "Suguba garde ce % de la part que le fournisseur laisse au revendeur. Rien n'est ajouté au prix client. Exemple : part revendeur 500 F à 1 % → Suguba 5 F, le revendeur reçoit 495 F."
+                      : "Attention : dans ce mode, ce % est AJOUTÉ au prix payé par le client. Pour que le client paie seulement fournisseur + revendeur, choisissez « Prélevé sur le revendeur »."}
+                  />
+                  {/* Pas de minimum en francs quand Suguba se sert sur le revendeur :
+                      1 000 F sur une part de 500 F n'aurait aucun sens. */}
+                  {r.modePartSuguba !== 'prelevement_revendeur' && (
+                    <Num l="Part minimale Suguba par vente" suffixe="F" v={r.minimumPartSuguba} on={(v) => maj('minimumPartSuguba', v)}
+                      info="Montant ajouté au prix client si le pourcentage ci-dessus donne moins que ça. À 0, rien de plus n'est ajouté." />
+                  )}
                 </>
               )}
-            </div>
-          </Section>
+              <ExplicationCommission c={commissionExpliquee(r, 'fixe')} />
+            </Section>
 
-          {/* ── Prix de gros ──────────────────────────────────────────── */}
-          <Section id="gros" titre="Articles au prix de gros"
-            aide="Le fournisseur donne son prix de gros, le revendeur vend au prix qu’il veut (jamais sous le minimal). Choisissez comment Suguba se rémunère sur ces ventes : vous pouvez changer à tout moment.">
-            <PrixDeGrosReglages g={r.prixDeGros as ReglagesPrixDeGros} r={r} onChange={(g) => maj('prixDeGros', g)} />
-          </Section>
+            {/* ── Prix de gros ──────────────────────────────────────────── */}
+            <Section id="gros" titre="Articles au prix de gros"
+              aide="Le fournisseur donne son prix de gros, le revendeur vend au prix qu’il veut (jamais sous le minimal). Choisissez comment Suguba se rémunère sur ces ventes : vous pouvez changer à tout moment.">
+              <PrixDeGrosReglages g={r.prixDeGros as ReglagesPrixDeGros} r={r} onChange={(g) => maj('prixDeGros', g)} />
+              <ExplicationCommission c={commissionExpliquee(r, 'gros')} />
+            </Section>
 
-          {/* ── Formules boutiques ─────────────────────────────────────── */}
-          <Section id="formules" titre="Formules boutiques"
-            aide="Combien de boutiques un revendeur ou un fournisseur peut ouvrir. La formule à 0 F est la version gratuite. Les demandes Pro s’activent dans Back-office › Boutiques.">
-            <div className="sm:col-span-2 space-y-2">
-              {(r.formulesBoutiques || []).map((f, i) => (
-                <div key={f.id} className="flex gap-2 items-end">
-                  <label className="flex-1 min-w-0 text-xs font-semibold text-slate-700">Nom
-                    <input value={f.nom} aria-label="Nom de la formule" onChange={(e) => {
-                      const l = [...(r.formulesBoutiques || [])]; l[i] = { ...l[i], nom: e.target.value }; maj('formulesBoutiques', l);
-                    }} className={`${CHAMP} w-full mt-1`} />
-                  </label>
-                  <label className="w-28 shrink-0 text-xs font-semibold text-slate-700">F / mois
-                    <Montant large valeur={f.prixMensuel} libelle={`Prix de ${f.nom}`} onChange={(v) => {
-                      const l = [...(r.formulesBoutiques || [])]; l[i] = { ...l[i], prixMensuel: v }; maj('formulesBoutiques', l);
+            <Section titre="Politique commerciale"
+              aide={r.modePartSuguba === 'auto'
+                ? 'Mode automatique : ces valeurs calculent la commission de chaque produit.'
+                : 'La part revendeur et la commission visée ne servent qu’aux produits sans part revendeur choisie par le fournisseur.'}>
+              {r.couvrirCoutsDansLePrix && (
+                <Num l="Marge nette minimale Suguba" suffixe="% du prix" v={r.margeNetteMinPct} on={(v) => maj('margeNetteMinPct', v)}
+                  info="Seulement quand les coûts sont ajoutés au prix client : le prix est relevé jusqu'à ce que Suguba garde au moins ce % du prix de vente, une fois tous ses coûts payés." />
+              )}
+              <Num l="Part revendeur du reste à partager" suffixe="%" v={r.partRevendeurPct} on={(v) => maj('partRevendeurPct', v)}
+                info="Ne sert qu'en mode Automatique, ou pour un fournisseur qui n'a pas proposé de part revendeur : une fois les coûts et la marge minimale couverts, ce % du reste va au revendeur, le reste à Suguba." />
+              <Num l="Commission minimale pour être partagé" suffixe="F" v={r.commissionMinimale} on={(v) => maj('commissionMinimale', v)}
+                info="En dessous de ce montant, la commission est jugée trop faible : le produit reste vendable, mais n'est plus proposé au partage avec les revendeurs (statut « Commission trop faible » dans « Vos produits »)." />
+              <Num l="Commission visée (prix recommandé)" suffixe="% du prix fourn." v={r.commissionCiblePct} on={(v) => maj('commissionCiblePct', v)}
+                info="Sert seulement à calculer le « prix conseillé » suggéré au fournisseur — un objectif de commission pour le revendeur, en % du prix fournisseur. N'affecte jamais un prix déjà en ligne." />
+            </Section>
+
+            {/* ── Codes promo ────────────────────────────────────────────── */}
+            <Section id="promo" titre="Codes promo"
+              aide="La remise est prise sur la marge Suguba, jamais sur la commission du revendeur, et plafonnée pour ne jamais vendre à perte.">
+              <div className="sm:col-span-2 space-y-2">
+                {r.codesPromo.map((c, i) => (
+                  <div key={i} className="flex gap-2 items-center">
+                    <input value={c.code} aria-label="Code" onChange={(e) => {
+                      const l = [...r.codesPromo]; l[i] = { ...l[i], code: e.target.value.toUpperCase().replace(/\s/g, '') }; maj('codesPromo', l);
+                    }} className={`${CHAMP} flex-1 min-w-0 font-mono`} />
+                    <Montant valeur={c.remise} libelle={`Remise du code ${c.code}`} onChange={(v) => {
+                      const l = [...r.codesPromo]; l[i] = { ...l[i], remise: v }; maj('codesPromo', l);
                     }} />
-                  </label>
-                  <label className="w-20 shrink-0 text-xs font-semibold text-slate-700">Boutiques
-                    <Montant large valeur={f.boutiques} libelle={`Boutiques de ${f.nom}`} onChange={(v) => {
-                      const l = [...(r.formulesBoutiques || [])]; l[i] = { ...l[i], boutiques: Math.max(1, Math.round(v)) }; maj('formulesBoutiques', l);
-                    }} />
-                  </label>
-                  {f.prixMensuel > 0 && (
-                    <BoutonSupprimer libelle={`Supprimer ${f.nom}`} onClick={() => maj('formulesBoutiques', (r.formulesBoutiques || []).filter((_, j) => j !== i))} />
-                  )}
-                </div>
-              ))}
-              <BoutonAjouter onClick={() => maj('formulesBoutiques', [...(r.formulesBoutiques || []), { id: `formule_${Date.now().toString(36)}`, nom: 'Nouvelle formule', prixMensuel: 10000, boutiques: 10 }])}>
-                Ajouter une formule
-              </BoutonAjouter>
-            </div>
-          </Section>
+                    <label className="flex items-center gap-1.5 text-xs text-slate-700 min-h-[44px]">
+                      <input type="checkbox" className="w-4 h-4 accent-suguba-profond" checked={c.actif} onChange={(e) => {
+                        const l = [...r.codesPromo]; l[i] = { ...l[i], actif: e.target.checked }; maj('codesPromo', l);
+                      }} /><span>actif</span>
+                    </label>
+                    <BoutonSupprimer libelle={`Supprimer le code ${c.code}`} onClick={() => maj('codesPromo', r.codesPromo.filter((_, j) => j !== i))} />
+                  </div>
+                ))}
+                <BoutonAjouter onClick={() => maj('codesPromo', [...r.codesPromo, { code: 'NOUVEAU', remise: 1000, actif: false }])}>
+                  Ajouter un code
+                </BoutonAjouter>
+              </div>
+            </Section>
+          </Bloc>
 
-          {/* ── Coûts ──────────────────────────────────────────────────── */}
-          <Section id="couts" titre="Coûts variables, par commande"
-            aide={r.couvrirCoutsDansLePrix
-              ? 'Ils forment le « plancher » : aucun prix ne descend en dessous, quel que soit votre taux.'
-              : 'Payés sur la part Suguba : ils ne changent pas le prix client. Ils servent à calculer votre marge nette réelle.'}>
-            <p className="sm:col-span-2 text-xs text-slate-600">
-              Les frais de paiement Mobile Money ne sont plus un coût de Suguba : le client les paie (voir{' '}
-              <button type="button" className="underline font-semibold" onClick={() => allerA('paiement')}>Frais de paiement</button>).
-            </p>
-            <div className="sm:col-span-2 space-y-2 rounded-2xl bg-suguba-sauge p-3">
-              <p className="text-xs font-semibold text-slate-700">Provision pour refus à la livraison</p>
-              <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Base de la provision">
-                {([
-                  ['course', 'Sur la course perdue', 'Recommandé : le colis refusé revient, seule la course est perdue'],
-                  ['prix', 'Sur le prix du produit', 'Ancien calcul : pèse lourd sur les articles chers'],
-                ] as const).map(([valeur, libelle, aide]) => {
-                  const actif = (r.baseProvisionRefus || 'prix') === valeur;
-                  return (
-                    <button key={valeur} type="button" role="radio" aria-checked={actif} onClick={() => maj('baseProvisionRefus', valeur)}
-                      className={`rounded-2xl border p-2.5 text-left bg-white ${actif ? 'border-suguba-profond ring-1 ring-suguba-profond' : 'border-slate-200'}`}>
-                      <span className="block text-xs font-semibold text-slate-900">{libelle}</span>
-                      <span className="block text-xs text-slate-600">{aide}</span>
-                    </button>
-                  );
+          <Bloc id="bloc-paiement" titre="Frais de paiement du client" moment="S’applique à l’encaissement">
+            {/* ── Frais de paiement, payés par le client ─────────────────── */}
+            <Section id="paiement" titre="Frais de paiement (payés par le client)"
+              aide="En espèces à la livraison : aucun frais. En Mobile Money : le client paie sa commande plus les frais ci-dessous, détaillés ligne par ligne avant qu'il valide.">
+              <FraisPaiementReglages f={completerFraisPaiement(r.fraisPaiement)} ancien={releveAncien}
+                onChange={(f) => maj('fraisPaiement', f)}
+                onRelu={(tarifs) => {
+                  // Déjà enregistrés par la relecture : mis à jour à l'écran ET dans
+                  // la référence, pour ne pas les signaler « non enregistrés ».
+                  const avec = <T extends { fraisPaiement?: ReglagesFraisPaiement }>(o: T): T => ({ ...o, fraisPaiement: { ...completerFraisPaiement(o.fraisPaiement), saspay: tarifs } });
+                  setR((prev) => (prev ? avec(prev) : prev));
+                  setInitial((prev) => (prev ? JSON.stringify(avec(JSON.parse(prev))) : prev));
+                  setReleveAncien(false);
+                }} />
+            </Section>
+          </Bloc>
+
+          <Bloc id="bloc-retraits" titre="Frais de retrait des partenaires" moment="S’applique au retrait">
+            {/* ── Retraits : frais Suguba, au moment du retrait ─────────────── */}
+            <Section id="retraits" titre="Frais Suguba sur les retraits"
+              aide="Calculés au moment du retrait, sur le montant retiré du solde : retirer 10 000 F débite 10 000 F, les frais sont déduits et le bénéficiaire reçoit le reste. Jamais prélevés à la vente. 0 % est accepté tel quel.">
+              <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {ROLES_RETRAIT.map((role) => (
+                  <div key={role} className="rounded-2xl border border-slate-200 p-3 space-y-2">
+                    <p className="text-sm font-semibold text-slate-900">{role === 'revendeur' ? 'Revendeur' : 'Fournisseur'}</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {(['caisse', 'mobile'] as const).map((cle) => (
+                        <Num key={cle} l={cle === 'caisse' ? 'À la caisse' : 'Mobile Money'} suffixe="%"
+                          v={tousLesTaux(r)[role][cle]}
+                          on={(v) => { const t = tousLesTaux(r); maj('fraisRetraitSuguba', { ...t, [role]: { ...t[role], [cle]: v } }); }} />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="sm:col-span-2 text-xs text-slate-600">
+                Le fournisseur ne demande pas encore son retrait dans l&apos;application : son taux sert au simulateur et servira à son futur espace de retrait.
+                Remettre à Suguba les espèces collectées n&apos;est pas un retrait : aucun frais.
+              </p>
+              <div className="sm:col-span-2 rounded-2xl bg-suguba-sauge p-3 text-xs text-slate-700 space-y-0.5">
+                <p className="font-semibold">Autres frais d&apos;un retrait Mobile Money : le virement SasPay (tarif du compte, relu seul)</p>
+                {(['orange_ml', 'moov_ml', 'wave_ml'] as const).map((code) => {
+                  const p = completerFraisPaiement(r.fraisPaiement).saspay.reseaux[code]?.versement[0];
+                  return <p key={code}>{LIBELLES_MOYENS[code]} : <strong>{p ? textePalier(p) : `inconnu, taux de secours ${r.fraisVersementPct} %`}</strong></p>;
                 })}
               </div>
-              <Num l={r.baseProvisionRefus === 'course' ? 'Part des livraisons refusées' : 'Provision (% du prix de vente)'}
-                suffixe="%" v={r.provisionRefusPct} on={(v) => maj('provisionRefusPct', v)}
-                info="Une réserve mise de côté sur chaque vente pour absorber les livraisons refusées à la porte (fréquent en paiement à la livraison : 10 à 20 % de refus est courant). Sans elle, chaque refus serait une perte sèche pour Suguba." />
-              <p className="text-xs text-slate-600">
-                {r.baseProvisionRefus === 'course'
-                  ? <>Soit <strong>{enF((r.provisionRefusPct / 100) * coutCourseRefusee(r))}</strong> par commande ({r.provisionRefusPct} % × {enF(coutCourseRefusee(r))}, livreur aller + retour). En paiement à la livraison, 10 à 20 % de refus sont courants : mettez votre taux réel.</>
-                  : <>Soit <strong>{enF(r.provisionRefusPct * 1000)}</strong> sur un article à 100 000 F, <strong>{enF(r.provisionRefusPct * 4000)}</strong> sur un article à 400 000 F.</>}
-              </p>
-            </div>
-            <Num l="Message au client (SMS / WhatsApp)" suffixe="F" v={r.coutMessageParCommande} on={(v) => maj('coutMessageParCommande', v)}
-              info="Le coût du message envoyé au client pour chaque commande (confirmation, suivi). Compté comme un coût variable, donc inclus dans le plancher de prix de chaque vente." />
-          </Section>
-
-          <Section titre="Coûts fixes mensuels" aide="Répartis sur le volume de référence : c'est un objectif, pas le volume constaté.">
-            <div className="sm:col-span-2 space-y-2">
-              {r.coutsFixesMensuels.map((l, i) => (
-                <div key={i} className="flex gap-2">
-                  <input value={l.libelle} aria-label={`Libellé du coût ${i + 1}`} onChange={(e) => {
-                    const c = [...r.coutsFixesMensuels]; c[i] = { ...c[i], libelle: e.target.value }; maj('coutsFixesMensuels', c);
-                  }} className={`${CHAMP} flex-1 min-w-0`} />
-                  <Montant valeur={l.montant} libelle={`Montant du coût ${i + 1}`} onChange={(v) => {
-                    const c = [...r.coutsFixesMensuels]; c[i] = { ...c[i], montant: v }; maj('coutsFixesMensuels', c);
-                  }} />
-                  <BoutonSupprimer libelle={`Supprimer ${l.libelle}`} onClick={() => maj('coutsFixesMensuels', r.coutsFixesMensuels.filter((_, j) => j !== i))} />
-                </div>
+              <Num l="Taux SasPay de secours" suffixe="%" v={r.fraisVersementPct} on={(v) => maj('fraisVersementPct', v)}
+                info="Ne sert que pour un réseau dont SasPay n'a pas donné de tarif. Sinon, le vrai tarif SasPay s'applique. Payé par celui qui retire." />
+              {([['orange_money', 'Frais Orange Money en plus'], ['moov', 'Frais Moov Money en plus'], ['wave', 'Frais Wave en plus']] as const).map(([cle, libelle]) => (
+                <Num key={cle} l={libelle} suffixe="%" v={r.fraisOperateurRetraitPct?.[cle] ?? 0}
+                  on={(v) => maj('fraisOperateurRetraitPct', { orange_money: 0, moov: 0, wave: 0, mobi_cash: 0, ...r.fraisOperateurRetraitPct, [cle]: v })}
+                  info="Frais de l'opérateur sur le virement lui-même, en plus de SasPay. Laissez 0 si le tarif SasPay les inclut déjà : un même coût ne doit jamais être compté deux fois." />
               ))}
-              <BoutonAjouter onClick={() => maj('coutsFixesMensuels', [...r.coutsFixesMensuels, { libelle: 'Nouveau coût', montant: 0 }])}>
-                Ajouter un coût
-              </BoutonAjouter>
-            </div>
-            <Num l="Volume de référence (commandes/mois)" v={r.volumeReference} on={(v) => maj('volumeReference', v)}
-              info="Le total des coûts fixes ci-dessus (hébergement, salaires…) est divisé par ce nombre pour obtenir le coût fixe ajouté à chaque commande. Ce n'est pas le volume réellement constaté, juste un objectif : trop bas, ce coût explose et fait grimper tous les prix ; trop haut, il devient presque nul." />
-            <div className="bg-suguba-sauge rounded-2xl p-3 text-xs text-slate-700 self-end">
-              Total : <strong>{enF(totalCoutsFixes(r))}</strong> / mois, soit <strong>{enF(coutFixeParCommande(r))}</strong> par commande.
-            </div>
-          </Section>
+              <Num l="Retrait minimum" suffixe="F" v={r.retraitMinimum} on={(v) => maj('retraitMinimum', v)}
+                info="Le solde minimum qu'un bénéficiaire doit atteindre avant de pouvoir demander un retrait." />
+              <div className="sm:col-span-2 rounded-2xl bg-suguba-sauge p-3 text-xs text-slate-700 space-y-1">
+                <p className="font-semibold">Exemple : retrait de 10 000 F</p>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[20rem]">
+                    <thead>
+                      <tr className="text-left text-slate-600">
+                        <th className="font-semibold py-1 pr-2">Moyen</th>
+                        <th className="font-semibold py-1 pr-2 text-right">Le revendeur reçoit</th>
+                        <th className="font-semibold py-1 text-right">Le fournisseur reçoit</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {MOYENS_RETRAIT_EXEMPLE.map(([moyen, libelle]) => {
+                        const rev = calculerFraisRetrait(10000, moyen, r, 'revendeur');
+                        const fou = calculerFraisRetrait(10000, moyen, r, 'fournisseur');
+                        return (
+                          <tr key={moyen} className="border-t border-white">
+                            <td className="py-1 pr-2">{libelle}</td>
+                            <td className="py-1 pr-2 text-right tabular-nums"><strong>{enF(rev.montantNet)}</strong> <span className="text-slate-600">(Suguba {enF(rev.fraisSuguba)})</span></td>
+                            <td className="py-1 text-right tabular-nums"><strong>{enF(fou.montantNet)}</strong> <span className="text-slate-600">(Suguba {enF(fou.fraisSuguba)})</span></td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </Section>
 
-          <Section titre="Politique commerciale"
-            aide={r.modePartSuguba === 'auto'
-              ? 'Mode automatique : ces valeurs calculent la commission de chaque produit.'
-              : 'La part revendeur et la commission visée ne servent qu’aux produits sans part revendeur choisie par le fournisseur.'}>
-            {r.couvrirCoutsDansLePrix && (
-              <Num l="Marge nette minimale Suguba" suffixe="% du prix" v={r.margeNetteMinPct} on={(v) => maj('margeNetteMinPct', v)}
-                info="Seulement quand les coûts sont ajoutés au prix client : le prix est relevé jusqu'à ce que Suguba garde au moins ce % du prix de vente, une fois tous ses coûts payés." />
-            )}
-            <Num l="Part revendeur du reste à partager" suffixe="%" v={r.partRevendeurPct} on={(v) => maj('partRevendeurPct', v)}
-              info="Ne sert qu'en mode Automatique, ou pour un fournisseur qui n'a pas proposé de part revendeur : une fois les coûts et la marge minimale couverts, ce % du reste va au revendeur, le reste à Suguba." />
-            <Num l="Commission minimale pour être partagé" suffixe="F" v={r.commissionMinimale} on={(v) => maj('commissionMinimale', v)}
-              info="En dessous de ce montant, la commission est jugée trop faible : le produit reste vendable, mais n'est plus proposé au partage avec les revendeurs (statut « Commission trop faible » dans « Vos produits »)." />
-            <Num l="Commission visée (prix recommandé)" suffixe="% du prix fourn." v={r.commissionCiblePct} on={(v) => maj('commissionCiblePct', v)}
-              info="Sert seulement à calculer le « prix conseillé » suggéré au fournisseur — un objectif de commission pour le revendeur, en % du prix fournisseur. N'affecte jamais un prix déjà en ligne." />
-          </Section>
+            <Section id="agent" titre="Retrait en espèces chez un agent (pour information)"
+              aide="Prélevés par l'opérateur quand un bénéficiaire retire des espèces chez un agent Orange, Moov ou Wave. Suguba ne les encaisse pas et ne les facture à personne : ils sont montrés au revendeur avant son retrait. Aucune API ne publie ces grilles : corrigez-les ici dès qu'un opérateur change ses prix.">
+              <GrillesAgent f={completerFraisPaiement(r.fraisPaiement)} onChange={(f) => maj('fraisPaiement', f)} />
+            </Section>
+          </Bloc>
 
-          {/* ── Retraits ───────────────────────────────────────────────── */}
-          <Section id="retraits" titre="Frais de retrait (payés par le revendeur)"
-            aide="Déduits du montant retiré : le revendeur voit le détail et ce qu'il recevra avant de valider. Mobile Money : SasPay + opérateur + Suguba. Espèces au guichet : Suguba seulement.">
-            <div className="sm:col-span-2 rounded-2xl bg-suguba-sauge p-3 text-xs text-slate-700 space-y-0.5">
-              <p className="font-semibold">Frais SasPay d&apos;un versement : tarif du compte, relu seul chez SasPay</p>
-              {(['orange_ml', 'moov_ml', 'wave_ml'] as const).map((code) => {
-                const p = completerFraisPaiement(r.fraisPaiement).saspay.reseaux[code]?.versement[0];
-                return <p key={code}>{LIBELLES_MOYENS[code]} : <strong>{p ? textePalier(p) : `inconnu, taux de secours ${r.fraisVersementPct} %`}</strong></p>;
-              })}
-            </div>
-            <Num l="Taux SasPay de secours" suffixe="%" v={r.fraisVersementPct} on={(v) => maj('fraisVersementPct', v)}
-              info="Ne sert que pour un réseau dont SasPay n'a pas donné de tarif. Sinon, le vrai tarif SasPay s'applique. Le revendeur paie ces frais lui-même : ce n'est pas un coût pour Suguba." />
-            <Num l="Frais Suguba (tous les retraits)" suffixe="%" v={r.fraisRetraitSugubaPct ?? 0} on={(v) => maj('fraisRetraitSugubaPct', v)}
-              info="Pris sur chaque retrait, en Mobile Money comme en espèces au guichet. C'est un gain pour Suguba, en plus du % prélevé sur la part revendeur à la vente." />
-            {([['orange_money', 'Frais Orange Money'], ['moov', 'Frais Moov Money'], ['wave', 'Frais Wave']] as const).map(([cle, libelle]) => (
-              <Num key={cle} l={libelle} suffixe="%" v={r.fraisOperateurRetraitPct?.[cle] ?? 0}
-                on={(v) => maj('fraisOperateurRetraitPct', { orange_money: 0, moov: 0, wave: 0, mobi_cash: 0, ...r.fraisOperateurRetraitPct, [cle]: v })}
-                info="Frais propres à l'opérateur, en plus de SasPay. Laissez 0 si le taux SasPay les inclut déjà." />
-            ))}
-            <Num l="Retrait minimum revendeur" suffixe="F" v={r.retraitMinimum} on={(v) => maj('retraitMinimum', v)}
-              info="Le montant minimum de commissions accumulées qu'un revendeur doit atteindre avant de pouvoir demander un retrait." />
-            <div className="sm:col-span-2 rounded-2xl bg-suguba-sauge p-3 text-xs text-slate-700 space-y-0.5">
-              <p className="font-semibold">Exemple : retrait de 10 000 F</p>
-              {([['orange_money', 'Orange Money'], ['moov', 'Moov Money'], ['wave', 'Wave'], ['cash', 'Espèces au guichet']] as const).map(([moyen, libelle]) => {
-                const d = calculerFraisRetrait(10000, moyen, r);
-                return (
-                  <p key={moyen}>
-                    {libelle} : le revendeur reçoit <strong>{enF(d.montantNet)}</strong> (frais {enF(d.fraisTotal)}, dont Suguba {enF(d.fraisSuguba)})
+          <Bloc id="bloc-rentabilite" titre="Coûts et rentabilité" moment="Pour l’analyse : rien n’est prélevé">
+            {/* ── Simulateur du cycle complet ────────────────────────────── */}
+            <Section id="simulation" titre="Simulateur : vente, encaissement, retraits"
+              aide="Un article imaginaire, avec les réglages en cours. Chaque frais est rattaché à son opération ; les retraits restent prévisionnels.">
+              <SimulateurCycle r={r} />
+            </Section>
+
+            {/* ── Impact sur les produits en ligne ───────────────────────── */}
+            <Section id="impact" titre={`Vos produits en ligne (${impact.length})`}
+              aide="Calculé en direct avec les réglages ci-dessus, avant d'enregistrer. Enregistrer met à jour la commission ; le prix affiché au client ne change jamais tout seul.">
+              <div className="sm:col-span-2 space-y-2">
+                {impact.length === 0 ? (
+                  <p className="text-xs text-slate-600">Aucun produit en ligne pour l&apos;instant.</p>
+                ) : (
+                  <>
+                    <p className="text-xs text-slate-700">
+                      {modifie
+                        ? <>Si vous enregistrez : <strong>{nbCommissionChange}</strong> commission(s) changent{nbARevoir > 0 && <>, <strong className="text-rose-700">{nbARevoir}</strong> produit(s) à revoir</>}.</>
+                        : nbARevoir > 0 ? <><strong className="text-rose-700">{nbARevoir}</strong> produit(s) à revoir avec les réglages actuels.</> : 'Tous les produits en ligne sont rentables avec les réglages actuels.'}
+                    </p>
+                    <ul className="divide-y divide-slate-100 rounded-2xl border border-slate-200">
+                      {impact.map(({ p, t, avant, conseille }) => (
+                        <li key={p.id} className="p-3 space-y-1">
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-sm font-semibold text-slate-900 min-w-0 truncate">
+                              {p.name}
+                              {p.mode_prix === 'gros' && <span className="ml-1.5 align-middle rounded-full bg-suguba-citron text-suguba-profond text-xs font-semibold px-2 py-0.5">Prix de gros</span>}
+                            </p>
+                            <PastilleStatut statut={t.statut} margeNette={t.margeNetteSuguba} />
+                          </div>
+                          <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-slate-600 [&>span]:whitespace-nowrap">
+                            <span>Fournisseur <strong className="text-slate-900">{enF(t.prixFournisseur)}</strong></span>
+                            <span>Prix client <strong className="text-slate-900">{enF(t.prixVente)}</strong></span>
+                            <span className="inline-flex items-center gap-1">
+                              Revendeur{' '}
+                              {t.commission !== avant && <><s className="text-slate-600">{enF(avant)}</s><ArrowRight className="w-3 h-3" /></>}
+                              <strong className="text-slate-900">{enF(t.commission)}</strong>
+                            </span>
+                            <span>Marge Suguba <strong className={t.margeNetteSuguba < 0 ? 'text-rose-700' : 'text-slate-900'}>{enF(t.margeNetteSuguba)}</strong></span>
+                          </div>
+                          {Math.abs(conseille - t.prixVente) >= r.arrondiPrix && (
+                            <p className="text-xs text-slate-600">
+                              Prix conseillé avec ces réglages : <strong className="text-slate-800">{enF(conseille)}</strong>{' '}
+                              ({conseille < t.prixVente ? `${enF(t.prixVente - conseille)} de moins pour le client` : `${enF(conseille - t.prixVente)} de plus`}).
+                            </p>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </div>
+            </Section>
+
+            {/* ── Coûts ──────────────────────────────────────────────────── */}
+            <Section id="couts" titre="Coûts variables, par commande"
+              aide={r.couvrirCoutsDansLePrix
+                ? 'Ils forment le « plancher » : aucun prix ne descend en dessous, quel que soit votre taux.'
+                : 'Payés sur la part Suguba : ils ne changent pas le prix client. Ils servent à calculer votre marge nette réelle.'}>
+              <p className="sm:col-span-2 text-xs text-slate-600">
+                Les frais de paiement Mobile Money ne sont plus un coût de Suguba : le client les paie (voir{' '}
+                <button type="button" className="underline font-semibold" onClick={() => allerA('paiement')}>Frais de paiement</button>).
+              </p>
+              <div className="sm:col-span-2 space-y-2 rounded-2xl bg-suguba-sauge p-3">
+                <p className="text-xs font-semibold text-slate-700">Provision pour refus à la livraison</p>
+                <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Base de la provision">
+                  {([
+                    ['course', 'Sur la course perdue', 'Recommandé : le colis refusé revient, seule la course est perdue'],
+                    ['prix', 'Sur le prix du produit', 'Ancien calcul : pèse lourd sur les articles chers'],
+                  ] as const).map(([valeur, libelle, aide]) => {
+                    const actif = (r.baseProvisionRefus || 'prix') === valeur;
+                    return (
+                      <button key={valeur} type="button" role="radio" aria-checked={actif} onClick={() => maj('baseProvisionRefus', valeur)}
+                        className={`rounded-2xl border p-2.5 text-left bg-white ${actif ? 'border-suguba-profond ring-1 ring-suguba-profond' : 'border-slate-200'}`}>
+                        <span className="block text-xs font-semibold text-slate-900">{libelle}</span>
+                        <span className="block text-xs text-slate-600">{aide}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <Num l={r.baseProvisionRefus === 'course' ? 'Part des livraisons refusées' : 'Provision (% du prix de vente)'}
+                  suffixe="%" v={r.provisionRefusPct} on={(v) => maj('provisionRefusPct', v)}
+                  info="Une réserve mise de côté sur chaque vente pour absorber les livraisons refusées à la porte (fréquent en paiement à la livraison : 10 à 20 % de refus est courant). Sans elle, chaque refus serait une perte sèche pour Suguba." />
+                <p className="text-xs text-slate-600">
+                  {r.baseProvisionRefus === 'course'
+                    ? <>Soit <strong>{enF((r.provisionRefusPct / 100) * coutCourseRefusee(r))}</strong> par commande ({r.provisionRefusPct} % × {enF(coutCourseRefusee(r))}, livreur aller + retour). En paiement à la livraison, 10 à 20 % de refus sont courants : mettez votre taux réel.</>
+                    : <>Soit <strong>{enF(r.provisionRefusPct * 1000)}</strong> sur un article à 100 000 F, <strong>{enF(r.provisionRefusPct * 4000)}</strong> sur un article à 400 000 F.</>}
+                </p>
+              </div>
+              <Num l="Message au client (SMS / WhatsApp)" suffixe="F" v={r.coutMessageParCommande} on={(v) => maj('coutMessageParCommande', v)}
+                info="Le coût du message envoyé au client pour chaque commande (confirmation, suivi). Compté comme un coût variable, donc inclus dans le plancher de prix de chaque vente." />
+            </Section>
+
+            <Section titre="Coûts fixes mensuels" aide="Répartis sur le volume de référence : c'est un objectif, pas le volume constaté.">
+              <div className="sm:col-span-2 space-y-2">
+                {r.coutsFixesMensuels.map((l, i) => (
+                  <div key={i} className="flex gap-2">
+                    <input value={l.libelle} aria-label={`Libellé du coût ${i + 1}`} onChange={(e) => {
+                      const c = [...r.coutsFixesMensuels]; c[i] = { ...c[i], libelle: e.target.value }; maj('coutsFixesMensuels', c);
+                    }} className={`${CHAMP} flex-1 min-w-0`} />
+                    <Montant valeur={l.montant} libelle={`Montant du coût ${i + 1}`} onChange={(v) => {
+                      const c = [...r.coutsFixesMensuels]; c[i] = { ...c[i], montant: v }; maj('coutsFixesMensuels', c);
+                    }} />
+                    <BoutonSupprimer libelle={`Supprimer ${l.libelle}`} onClick={() => maj('coutsFixesMensuels', r.coutsFixesMensuels.filter((_, j) => j !== i))} />
+                  </div>
+                ))}
+                <BoutonAjouter onClick={() => maj('coutsFixesMensuels', [...r.coutsFixesMensuels, { libelle: 'Nouveau coût', montant: 0 }])}>
+                  Ajouter un coût
+                </BoutonAjouter>
+              </div>
+              <Num l="Volume de référence (commandes/mois)" v={r.volumeReference} on={(v) => maj('volumeReference', v)}
+                info="Le total des coûts fixes ci-dessus (hébergement, salaires…) est divisé par ce nombre pour obtenir le coût fixe ajouté à chaque commande. Ce n'est pas le volume réellement constaté, juste un objectif : trop bas, ce coût explose et fait grimper tous les prix ; trop haut, il devient presque nul." />
+              <div className="bg-suguba-sauge rounded-2xl p-3 text-xs text-slate-700 self-end">
+                Total : <strong>{enF(totalCoutsFixes(r))}</strong> / mois, soit <strong>{enF(coutFixeParCommande(r))}</strong> par commande.
+              </div>
+            </Section>
+          </Bloc>
+
+          <Bloc id="bloc-autres" titre="Livraison et formules" moment="Autres réglages">
+            {/* ── Livraison ──────────────────────────────────────────────── */}
+            <Section id="livraison" titre="Livraison">
+              <Num l="Frais par défaut (ville sans tarif)" suffixe="F" v={r.fraisLivraisonClient} on={(v) => maj('fraisLivraisonClient', v)}
+                info="Le tarif de livraison facturé au client quand sa ville n'a pas de tarif spécifique ci-dessous (ou, à Bamako, quand les quartiers ne sont pas reconnus pour le calcul à la distance)." />
+              <Num l="Rémunération du livreur" suffixe="F" v={r.remunerationLivreur} on={(v) => maj('remunerationLivreur', v)}
+                aide={r.remunerationLivreur > r.fraisLivraisonClient ? `${enF(r.remunerationLivreur - r.fraisLivraisonClient)} non couverts par le client, ajoutés au plancher.` : undefined}
+                info="Ce que Suguba paie au livreur par course. Si c'est plus que les frais de livraison facturés au client, la différence n'est pas couverte par le client : elle est ajoutée au plancher de coûts, ce qui relève le prix ailleurs." />
+              <div className="sm:col-span-2 space-y-2 rounded-2xl bg-suguba-sauge p-3">
+                <p className="text-xs font-semibold text-slate-700 inline-flex items-center gap-1">
+                  Espèces encaissées par le livreur
+                  <InfoBulle texte="Pour une commande payée à la livraison, le livreur encaisse l'argent puis le remet à la caisse Suguba (écran « Caisse livreurs »). Il peut garder sa rémunération sur place, ou tout verser et être payé à part." />
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2" role="radiogroup" aria-label="Rémunération du livreur sur les espèces">
+                  {([
+                    [true, 'Il garde sa rémunération', `Il verse les espèces moins ${enF(r.remunerationLivreur)} par course`],
+                    [false, 'Il verse tout', 'Suguba lui paie sa rémunération à part'],
+                  ] as const).map(([valeur, libelle, detail]) => {
+                    const actif = (r.livreurGardeRemuneration !== false) === valeur;
+                    return (
+                      <button key={libelle} type="button" role="radio" aria-checked={actif} onClick={() => maj('livreurGardeRemuneration', valeur)}
+                        className={`rounded-2xl border p-2.5 text-left bg-white ${actif ? 'border-suguba-profond ring-1 ring-suguba-profond' : 'border-slate-200'}`}>
+                        <span className="block text-xs font-semibold text-slate-900">{libelle}</span>
+                        <span className="block text-xs text-slate-600">{detail}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <Num l="Alerte espèces non versées après" suffixe="h" v={r.delaiVersementEspecesHeures ?? 24} on={(v) => maj('delaiVersementEspecesHeures', v)}
+                info="Au-delà de ce délai après la livraison, la Caisse livreurs signale le livreur en orange ; au double, en rouge." />
+              <Num l="Plafond d’espèces non versées" suffixe="F" v={r.plafondEspecesCollecteur ?? 150000} on={(v) => maj('plafondEspecesCollecteur', v)}
+                info="Au-delà (ou après le double du délai), le livreur ou le fournisseur ne reçoit plus de nouvelle commande payée en espèces jusqu’à son versement. Les courses en cours, le SAV et le versement restent possibles. 0 = pas de plafond." />
+              <div className="sm:col-span-2 space-y-2 rounded-2xl bg-suguba-sauge p-3">
+                <p className="text-xs font-semibold text-slate-700 inline-flex items-center gap-1">
+                  Paiement par carte bancaire (diaspora)
+                  <InfoBulle texte="Ouvrez-le seulement après un vrai paiement test réussi par carte sur SasPay. Fermé, la page diaspora propose le paiement à la réception par le proche, et le serveur refuse la carte." />
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2" role="radiogroup" aria-label="Paiement par carte bancaire">
+                  {([
+                    [false, 'Fermé', 'Le proche paie à la réception'],
+                    [true, 'Ouvert', 'Carte proposée sur la page diaspora'],
+                  ] as const).map(([valeur, libelle, detail]) => {
+                    const actif = (r.paiementCarteVerifie === true) === valeur;
+                    return (
+                      <button key={libelle} type="button" role="radio" aria-checked={actif} onClick={() => maj('paiementCarteVerifie', valeur)}
+                        className={`rounded-2xl border p-2.5 text-left bg-white ${actif ? 'border-suguba-profond ring-1 ring-suguba-profond' : 'border-slate-200'}`}>
+                        <span className="block text-xs font-semibold text-slate-900">{libelle}</span>
+                        <span className="block text-xs text-slate-600">{detail}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="sm:col-span-2 space-y-2">
+                <p className="text-xs font-semibold text-slate-700">Frais par ville</p>
+                {Object.entries(r.livraisonParVille).map(([ville, frais]) => (
+                  <div key={ville} className="flex gap-2">
+                    <input value={ville} readOnly aria-label="Ville" className={`${CHAMP} flex-1 min-w-0 bg-slate-50`} />
+                    <Montant valeur={frais} libelle={`Frais pour ${ville}`} onChange={(v) => maj('livraisonParVille', { ...r.livraisonParVille, [ville]: v })} />
+                    <BoutonSupprimer libelle={`Supprimer ${ville}`} onClick={() => {
+                      const c = { ...r.livraisonParVille }; delete c[ville]; maj('livraisonParVille', c);
+                    }} />
+                  </div>
+                ))}
+                <AjoutVille onAjout={(ville) => maj('livraisonParVille', { ...r.livraisonParVille, [ville]: r.fraisLivraisonClient })} />
+              </div>
+              <div className="sm:col-span-2 space-y-2 pt-2 border-t border-slate-100">
+                <p className="text-xs font-semibold text-slate-700">Calcul de la livraison à Bamako</p>
+                <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Mode de calcul">
+                  {([
+                    ['distance', 'À la distance', 'Base + prix au km'],
+                    ['zones', 'Par zones', 'Commune, rive, périphérie'],
+                  ] as const).map(([valeur, libelle, aide]) => {
+                    const actif = (r.modeLivraisonBamako || 'distance') === valeur;
+                    return (
+                      <button key={valeur} type="button" role="radio" aria-checked={actif}
+                        onClick={() => maj('modeLivraisonBamako', valeur)}
+                        className={`rounded-2xl border p-2.5 text-left ${actif ? 'border-suguba-profond ring-1 ring-suguba-profond bg-suguba-menthe' : 'border-slate-200 bg-white'}`}>
+                        <span className="block text-xs font-semibold text-slate-900">{libelle}</span>
+                        <span className="block text-xs text-slate-600">{aide}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              {r.modeLivraisonBamako === 'zones' && r.livraisonZonesBamako ? (
+                <div className="sm:col-span-2 space-y-2">
+                  <p className="text-xs text-slate-600">
+                    Rive gauche : Communes I à IV. Rive droite : Communes V et VI. S&apos;applique quand les
+                    quartiers du fournisseur et du client sont reconnus ; sinon, tarif « Bamako » ci-dessus.
                   </p>
-                );
-              })}
-            </div>
-          </Section>
-
-          {/* ── Livraison ──────────────────────────────────────────────── */}
-          <Section id="livraison" titre="Livraison">
-            <Num l="Frais par défaut (ville sans tarif)" suffixe="F" v={r.fraisLivraisonClient} on={(v) => maj('fraisLivraisonClient', v)}
-              info="Le tarif de livraison facturé au client quand sa ville n'a pas de tarif spécifique ci-dessous (ou, à Bamako, quand les quartiers ne sont pas reconnus pour le calcul à la distance)." />
-            <Num l="Rémunération du livreur" suffixe="F" v={r.remunerationLivreur} on={(v) => maj('remunerationLivreur', v)}
-              aide={r.remunerationLivreur > r.fraisLivraisonClient ? `${enF(r.remunerationLivreur - r.fraisLivraisonClient)} non couverts par le client, ajoutés au plancher.` : undefined}
-              info="Ce que Suguba paie au livreur par course. Si c'est plus que les frais de livraison facturés au client, la différence n'est pas couverte par le client : elle est ajoutée au plancher de coûts, ce qui relève le prix ailleurs." />
-            <div className="sm:col-span-2 space-y-2 rounded-2xl bg-suguba-sauge p-3">
-              <p className="text-xs font-semibold text-slate-700 inline-flex items-center gap-1">
-                Espèces encaissées par le livreur
-                <InfoBulle texte="Pour une commande payée à la livraison, le livreur encaisse l'argent puis le remet à la caisse Suguba (écran « Caisse livreurs »). Il peut garder sa rémunération sur place, ou tout verser et être payé à part." />
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2" role="radiogroup" aria-label="Rémunération du livreur sur les espèces">
-                {([
-                  [true, 'Il garde sa rémunération', `Il verse les espèces moins ${enF(r.remunerationLivreur)} par course`],
-                  [false, 'Il verse tout', 'Suguba lui paie sa rémunération à part'],
-                ] as const).map(([valeur, libelle, detail]) => {
-                  const actif = (r.livreurGardeRemuneration !== false) === valeur;
-                  return (
-                    <button key={libelle} type="button" role="radio" aria-checked={actif} onClick={() => maj('livreurGardeRemuneration', valeur)}
-                      className={`rounded-2xl border p-2.5 text-left bg-white ${actif ? 'border-suguba-profond ring-1 ring-suguba-profond' : 'border-slate-200'}`}>
-                      <span className="block text-xs font-semibold text-slate-900">{libelle}</span>
-                      <span className="block text-xs text-slate-600">{detail}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <Num l="Alerte espèces non versées après" suffixe="h" v={r.delaiVersementEspecesHeures ?? 24} on={(v) => maj('delaiVersementEspecesHeures', v)}
-              info="Au-delà de ce délai après la livraison, la Caisse livreurs signale le livreur en orange ; au double, en rouge." />
-            <Num l="Plafond d’espèces non versées" suffixe="F" v={r.plafondEspecesCollecteur ?? 150000} on={(v) => maj('plafondEspecesCollecteur', v)}
-              info="Au-delà (ou après le double du délai), le livreur ou le fournisseur ne reçoit plus de nouvelle commande payée en espèces jusqu’à son versement. Les courses en cours, le SAV et le versement restent possibles. 0 = pas de plafond." />
-            <div className="sm:col-span-2 space-y-2 rounded-2xl bg-suguba-sauge p-3">
-              <p className="text-xs font-semibold text-slate-700 inline-flex items-center gap-1">
-                Paiement par carte bancaire (diaspora)
-                <InfoBulle texte="Ouvrez-le seulement après un vrai paiement test réussi par carte sur SasPay. Fermé, la page diaspora propose le paiement à la réception par le proche, et le serveur refuse la carte." />
-              </p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2" role="radiogroup" aria-label="Paiement par carte bancaire">
-                {([
-                  [false, 'Fermé', 'Le proche paie à la réception'],
-                  [true, 'Ouvert', 'Carte proposée sur la page diaspora'],
-                ] as const).map(([valeur, libelle, detail]) => {
-                  const actif = (r.paiementCarteVerifie === true) === valeur;
-                  return (
-                    <button key={libelle} type="button" role="radio" aria-checked={actif} onClick={() => maj('paiementCarteVerifie', valeur)}
-                      className={`rounded-2xl border p-2.5 text-left bg-white ${actif ? 'border-suguba-profond ring-1 ring-suguba-profond' : 'border-slate-200'}`}>
-                      <span className="block text-xs font-semibold text-slate-900">{libelle}</span>
-                      <span className="block text-xs text-slate-600">{detail}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="sm:col-span-2 space-y-2">
-              <p className="text-xs font-semibold text-slate-700">Frais par ville</p>
-              {Object.entries(r.livraisonParVille).map(([ville, frais]) => (
-                <div key={ville} className="flex gap-2">
-                  <input value={ville} readOnly aria-label="Ville" className={`${CHAMP} flex-1 min-w-0 bg-slate-50`} />
-                  <Montant valeur={frais} libelle={`Frais pour ${ville}`} onChange={(v) => maj('livraisonParVille', { ...r.livraisonParVille, [ville]: v })} />
-                  <BoutonSupprimer libelle={`Supprimer ${ville}`} onClick={() => {
-                    const c = { ...r.livraisonParVille }; delete c[ville]; maj('livraisonParVille', c);
-                  }} />
-                </div>
-              ))}
-              <AjoutVille onAjout={(ville) => maj('livraisonParVille', { ...r.livraisonParVille, [ville]: r.fraisLivraisonClient })} />
-            </div>
-            <div className="sm:col-span-2 space-y-2 pt-2 border-t border-slate-100">
-              <p className="text-xs font-semibold text-slate-700">Calcul de la livraison à Bamako</p>
-              <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Mode de calcul">
-                {([
-                  ['distance', 'À la distance', 'Base + prix au km'],
-                  ['zones', 'Par zones', 'Commune, rive, périphérie'],
-                ] as const).map(([valeur, libelle, aide]) => {
-                  const actif = (r.modeLivraisonBamako || 'distance') === valeur;
-                  return (
-                    <button key={valeur} type="button" role="radio" aria-checked={actif}
-                      onClick={() => maj('modeLivraisonBamako', valeur)}
-                      className={`rounded-2xl border p-2.5 text-left ${actif ? 'border-suguba-profond ring-1 ring-suguba-profond bg-suguba-menthe' : 'border-slate-200 bg-white'}`}>
-                      <span className="block text-xs font-semibold text-slate-900">{libelle}</span>
-                      <span className="block text-xs text-slate-600">{aide}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            {r.modeLivraisonBamako === 'zones' && r.livraisonZonesBamako ? (
-              <div className="sm:col-span-2 space-y-2">
-                <p className="text-xs text-slate-600">
-                  Rive gauche : Communes I à IV. Rive droite : Communes V et VI. S&apos;applique quand les
-                  quartiers du fournisseur et du client sont reconnus ; sinon, tarif « Bamako » ci-dessus.
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  <Num l="Même commune" suffixe="F" v={r.livraisonZonesBamako.memeCommune}
-                    on={(v) => maj('livraisonZonesBamako', { ...r.livraisonZonesBamako!, memeCommune: v })} />
-                  <Num l="Même rive" suffixe="F" v={r.livraisonZonesBamako.memeRive}
-                    on={(v) => maj('livraisonZonesBamako', { ...r.livraisonZonesBamako!, memeRive: v })} />
-                  <Num l="Traverser le fleuve" suffixe="F" v={r.livraisonZonesBamako.autreRive}
-                    on={(v) => maj('livraisonZonesBamako', { ...r.livraisonZonesBamako!, autreRive: v })} />
-                  <Num l="Supplément périphérie" suffixe="F" v={r.livraisonZonesBamako.supplementPeripherie}
-                    on={(v) => maj('livraisonZonesBamako', { ...r.livraisonZonesBamako!, supplementPeripherie: v })} />
-                </div>
-              </div>
-            ) : (
-              <div className="sm:col-span-2 space-y-2">
-                <p className="text-xs text-slate-600">
-                  Remplace le tarif « Bamako » quand les quartiers du fournisseur ET du client sont reconnus.
-                  Base + (frais/km × distance à vol d&apos;oiseau), entre le minimum et le maximum.
-                  Exemple à 3 km : <strong className="text-slate-800">{enF(Math.min(r.livraisonDistanceBamako.fraisMaximum, Math.max(r.livraisonDistanceBamako.fraisMinimum, r.livraisonDistanceBamako.fraisBase + 3 * r.livraisonDistanceBamako.fraisParKm)))}</strong>.
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  <Num l="Frais de base" suffixe="F" v={r.livraisonDistanceBamako.fraisBase}
-                    on={(v) => maj('livraisonDistanceBamako', { ...r.livraisonDistanceBamako, fraisBase: v })}
-                    info="Le montant de départ du calcul, avant d'ajouter la distance. Formule : base + (frais/km × distance), plafonné entre le minimum et le maximum ci-dessous." />
-                  <Num l="Frais par km" suffixe="F" v={r.livraisonDistanceBamako.fraisParKm}
-                    on={(v) => maj('livraisonDistanceBamako', { ...r.livraisonDistanceBamako, fraisParKm: v })}
-                    info="Ajouté au frais de base pour chaque kilomètre à vol d'oiseau entre le dépôt du fournisseur et le client." />
-                  <Num l="Minimum" suffixe="F" v={r.livraisonDistanceBamako.fraisMinimum}
-                    on={(v) => maj('livraisonDistanceBamako', { ...r.livraisonDistanceBamako, fraisMinimum: v })} />
-                  <Num l="Maximum" suffixe="F" v={r.livraisonDistanceBamako.fraisMaximum}
-                    on={(v) => maj('livraisonDistanceBamako', { ...r.livraisonDistanceBamako, fraisMaximum: v })} />
-                </div>
-              </div>
-            )}
-            <div className="sm:col-span-2 space-y-2">
-              <p className="text-xs font-semibold text-slate-700">Points relais</p>
-              {r.pointsRelais.map((p, i) => (
-                <div key={p.id} className="flex gap-2">
-                  <input value={p.nom} aria-label="Nom du point relais" onChange={(e) => {
-                    const c = [...r.pointsRelais]; c[i] = { ...c[i], nom: e.target.value }; maj('pointsRelais', c);
-                  }} className={`${CHAMP} flex-1 min-w-0`} />
-                  <Montant valeur={p.frais} libelle={`Frais au point relais ${p.nom}`} onChange={(v) => {
-                    const c = [...r.pointsRelais]; c[i] = { ...c[i], frais: v }; maj('pointsRelais', c);
-                  }} />
-                </div>
-              ))}
-            </div>
-          </Section>
-
-          {/* ── Codes promo ────────────────────────────────────────────── */}
-          <Section id="promo" titre="Codes promo"
-            aide="La remise est prise sur la marge Suguba, jamais sur la commission du revendeur, et plafonnée pour ne jamais vendre à perte.">
-            <div className="sm:col-span-2 space-y-2">
-              {r.codesPromo.map((c, i) => (
-                <div key={i} className="flex gap-2 items-center">
-                  <input value={c.code} aria-label="Code" onChange={(e) => {
-                    const l = [...r.codesPromo]; l[i] = { ...l[i], code: e.target.value.toUpperCase().replace(/\s/g, '') }; maj('codesPromo', l);
-                  }} className={`${CHAMP} flex-1 min-w-0 font-mono`} />
-                  <Montant valeur={c.remise} libelle={`Remise du code ${c.code}`} onChange={(v) => {
-                    const l = [...r.codesPromo]; l[i] = { ...l[i], remise: v }; maj('codesPromo', l);
-                  }} />
-                  <label className="flex items-center gap-1.5 text-xs text-slate-700 min-h-[44px]">
-                    <input type="checkbox" className="w-4 h-4 accent-suguba-profond" checked={c.actif} onChange={(e) => {
-                      const l = [...r.codesPromo]; l[i] = { ...l[i], actif: e.target.checked }; maj('codesPromo', l);
-                    }} /><span>actif</span>
-                  </label>
-                  <BoutonSupprimer libelle={`Supprimer le code ${c.code}`} onClick={() => maj('codesPromo', r.codesPromo.filter((_, j) => j !== i))} />
-                </div>
-              ))}
-              <BoutonAjouter onClick={() => maj('codesPromo', [...r.codesPromo, { code: 'NOUVEAU', remise: 1000, actif: false }])}>
-                Ajouter un code
-              </BoutonAjouter>
-            </div>
-          </Section>
-
-          {/* ── Simulation ─────────────────────────────────────────────── */}
-          <Section id="simulation" titre="Simulation"
-            aide="Essayez des produits imaginaires avec les réglages en cours. Coûts = paiement, refus, message, livraison non couverte et coûts fixes. Les frais de retrait sont payés par le revendeur.">
-            <div className="sm:col-span-2 space-y-2">
-              {lignesSimulation.map((l, i) => (
-                <div key={i} className="rounded-2xl border border-slate-200 p-3 space-y-2">
-                  <div className="flex items-end gap-2">
-                    <label className="flex-1 text-xs font-semibold text-slate-700">Prix fournisseur
-                      <Montant large valeur={l.fournisseur} libelle="Prix fournisseur" onChange={(v) => setSimulations((s) => s.map((x, j) => (j === i ? { ...x, fournisseur: v } : x)))} />
-                    </label>
-                    <label className="flex-1 text-xs font-semibold text-slate-700">Part revendeur
-                      <Montant large valeur={l.part} libelle="Part revendeur" onChange={(v) => setSimulations((s) => s.map((x, j) => (j === i ? { ...x, part: v } : x)))} />
-                    </label>
-                    <BoutonSupprimer libelle="Supprimer la ligne" onClick={() => setSimulations((s) => s.filter((_, j) => j !== i))} />
+                  <div className="grid grid-cols-2 gap-2">
+                    <Num l="Même commune" suffixe="F" v={r.livraisonZonesBamako.memeCommune}
+                      on={(v) => maj('livraisonZonesBamako', { ...r.livraisonZonesBamako!, memeCommune: v })} />
+                    <Num l="Même rive" suffixe="F" v={r.livraisonZonesBamako.memeRive}
+                      on={(v) => maj('livraisonZonesBamako', { ...r.livraisonZonesBamako!, memeRive: v })} />
+                    <Num l="Traverser le fleuve" suffixe="F" v={r.livraisonZonesBamako.autreRive}
+                      on={(v) => maj('livraisonZonesBamako', { ...r.livraisonZonesBamako!, autreRive: v })} />
+                    <Num l="Supplément périphérie" suffixe="F" v={r.livraisonZonesBamako.supplementPeripherie}
+                      on={(v) => maj('livraisonZonesBamako', { ...r.livraisonZonesBamako!, supplementPeripherie: v })} />
                   </div>
-                  <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-slate-600 [&>span]:whitespace-nowrap">
-                    <span>Prix client <strong className="text-slate-900">{enF(l.prix)}</strong></span>
-                    <span>Revendeur <strong className="text-slate-900">{enF(l.t.commission)}</strong></span>
-                    <span>Part Suguba <strong className="text-slate-900">{enF(l.prix - l.fournisseur - l.t.commission)}</strong></span>
-                    <span>Coûts <strong className="text-slate-900">{enF(l.t.coutParCommande + l.t.fraisVersement)}</strong></span>
-                    <span>Marge nette <strong className={l.t.margeNetteSuguba < 0 ? 'text-rose-700' : 'text-slate-900'}>{enF(l.t.margeNetteSuguba)}</strong></span>
-                  </div>
-                  {l.notes.length > 0 && <p className="text-xs text-amber-800">{l.notes.join(' · ')}</p>}
                 </div>
-              ))}
-              <BoutonAjouter onClick={() => setSimulations((s) => [...s, { fournisseur: 20000, part: 2000 }])}>
-                Ajouter une ligne
-              </BoutonAjouter>
-            </div>
-          </Section>
+              ) : (
+                <div className="sm:col-span-2 space-y-2">
+                  <p className="text-xs text-slate-600">
+                    Remplace le tarif « Bamako » quand les quartiers du fournisseur ET du client sont reconnus.
+                    Base + (frais/km × distance à vol d&apos;oiseau), entre le minimum et le maximum.
+                    Exemple à 3 km : <strong className="text-slate-800">{enF(Math.min(r.livraisonDistanceBamako.fraisMaximum, Math.max(r.livraisonDistanceBamako.fraisMinimum, r.livraisonDistanceBamako.fraisBase + 3 * r.livraisonDistanceBamako.fraisParKm)))}</strong>.
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <Num l="Frais de base" suffixe="F" v={r.livraisonDistanceBamako.fraisBase}
+                      on={(v) => maj('livraisonDistanceBamako', { ...r.livraisonDistanceBamako, fraisBase: v })}
+                      info="Le montant de départ du calcul, avant d'ajouter la distance. Formule : base + (frais/km × distance), plafonné entre le minimum et le maximum ci-dessous." />
+                    <Num l="Frais par km" suffixe="F" v={r.livraisonDistanceBamako.fraisParKm}
+                      on={(v) => maj('livraisonDistanceBamako', { ...r.livraisonDistanceBamako, fraisParKm: v })}
+                      info="Ajouté au frais de base pour chaque kilomètre à vol d'oiseau entre le dépôt du fournisseur et le client." />
+                    <Num l="Minimum" suffixe="F" v={r.livraisonDistanceBamako.fraisMinimum}
+                      on={(v) => maj('livraisonDistanceBamako', { ...r.livraisonDistanceBamako, fraisMinimum: v })} />
+                    <Num l="Maximum" suffixe="F" v={r.livraisonDistanceBamako.fraisMaximum}
+                      on={(v) => maj('livraisonDistanceBamako', { ...r.livraisonDistanceBamako, fraisMaximum: v })} />
+                  </div>
+                </div>
+              )}
+              <div className="sm:col-span-2 space-y-2">
+                <p className="text-xs font-semibold text-slate-700">Points relais</p>
+                {r.pointsRelais.map((p, i) => (
+                  <div key={p.id} className="flex gap-2">
+                    <input value={p.nom} aria-label="Nom du point relais" onChange={(e) => {
+                      const c = [...r.pointsRelais]; c[i] = { ...c[i], nom: e.target.value }; maj('pointsRelais', c);
+                    }} className={`${CHAMP} flex-1 min-w-0`} />
+                    <Montant valeur={p.frais} libelle={`Frais au point relais ${p.nom}`} onChange={(v) => {
+                      const c = [...r.pointsRelais]; c[i] = { ...c[i], frais: v }; maj('pointsRelais', c);
+                    }} />
+                  </div>
+                ))}
+              </div>
+            </Section>
+
+            {/* ── Formules boutiques ─────────────────────────────────────── */}
+            <Section id="formules" titre="Formules boutiques"
+              aide="Combien de boutiques un revendeur ou un fournisseur peut ouvrir. La formule à 0 F est la version gratuite. Les demandes Pro s’activent dans Back-office › Boutiques.">
+              <div className="sm:col-span-2 space-y-2">
+                {(r.formulesBoutiques || []).map((f, i) => (
+                  <div key={f.id} className="flex gap-2 items-end">
+                    <label className="flex-1 min-w-0 text-xs font-semibold text-slate-700">Nom
+                      <input value={f.nom} aria-label="Nom de la formule" onChange={(e) => {
+                        const l = [...(r.formulesBoutiques || [])]; l[i] = { ...l[i], nom: e.target.value }; maj('formulesBoutiques', l);
+                      }} className={`${CHAMP} w-full mt-1`} />
+                    </label>
+                    <label className="w-28 shrink-0 text-xs font-semibold text-slate-700">F / mois
+                      <Montant large valeur={f.prixMensuel} libelle={`Prix de ${f.nom}`} onChange={(v) => {
+                        const l = [...(r.formulesBoutiques || [])]; l[i] = { ...l[i], prixMensuel: v }; maj('formulesBoutiques', l);
+                      }} />
+                    </label>
+                    <label className="w-20 shrink-0 text-xs font-semibold text-slate-700">Boutiques
+                      <Montant large valeur={f.boutiques} libelle={`Boutiques de ${f.nom}`} onChange={(v) => {
+                        const l = [...(r.formulesBoutiques || [])]; l[i] = { ...l[i], boutiques: Math.max(1, Math.round(v)) }; maj('formulesBoutiques', l);
+                      }} />
+                    </label>
+                    {f.prixMensuel > 0 && (
+                      <BoutonSupprimer libelle={`Supprimer ${f.nom}`} onClick={() => maj('formulesBoutiques', (r.formulesBoutiques || []).filter((_, j) => j !== i))} />
+                    )}
+                  </div>
+                ))}
+                <BoutonAjouter onClick={() => maj('formulesBoutiques', [...(r.formulesBoutiques || []), { id: `formule_${Date.now().toString(36)}`, nom: 'Nouvelle formule', prixMensuel: 10000, boutiques: 10 }])}>
+                  Ajouter une formule
+                </BoutonAjouter>
+              </div>
+            </Section>
+          </Bloc>
 
           {alertes.length > 0 && (
             <div className="bg-amber-50 border border-amber-300 rounded-2xl p-3 space-y-2">
@@ -812,114 +819,6 @@ function libelleMode(r: ReglagesPlateforme): string {
   }
 }
 
-/** Prix client et partage d'une vente, exactement comme à la publication d'un produit. */
-function venteSimulee(r: ReglagesPlateforme, fournisseur: number, part: number) {
-  const auto = r.modePartSuguba === 'auto' || !(part > 0);
-  if (auto) {
-    const prix = calculerTarif(fournisseur, 0, r).prixRecommande;
-    const t = calculerTarif(fournisseur, prix, r);
-    return { prix, t, prixCalcule: prix, releve: false, notes: [`calcul auto : ${enF(t.commission)} au revendeur`] };
-  }
-  const d = prixDepuisPartRevendeur(fournisseur, part, r);
-  const t = calculerTarif(fournisseur, d.prixVente, r, part);
-  const notes = [
-    t.prelevementSuguba > 0 ? `${enF(t.prelevementSuguba)} prélevés sur le revendeur` : '',
-    d.releveAuPlancher ? `relevé au plancher (sans lui : ${enF(d.prixCalcule)})` : '',
-    t.statut === 'commission_faible' ? 'part trop faible : pas proposé au partage' : '',
-    t.margeNetteSuguba < 0 ? `Suguba perd ${enF(-t.margeNetteSuguba)} sur cette vente` : '',
-  ].filter(Boolean);
-  return { prix: d.prixVente, t, prixCalcule: d.prixCalcule, releve: d.releveAuPlancher, notes };
-}
-
-/** Le plus gros coût d'une vente, pour expliquer un prix relevé. */
-function plusGrosCout(t: DetailTarif): [string, number] {
-  const couts: [string, number][] = [
-    ['la provision pour refus', t.provisionRefus],
-    ['les coûts fixes', t.coutFixe],
-    ['la livraison non couverte', t.deficitLivraison],
-  ];
-  return couts.sort((a, b) => b[1] - a[1])[0];
-}
-
-// ─────────────────────────── Où va l'argent ───────────────────────────
-
-function OuVaLArgent({ r, exemple, setExemple }: {
-  r: ReglagesPlateforme;
-  exemple: { fournisseur: number; part: number };
-  setExemple: (e: { fournisseur: number; part: number }) => void;
-}) {
-  const v = venteSimulee(r, exemple.fournisseur, exemple.part);
-  const { t, prix } = v;
-  const couts = t.coutParCommande + t.fraisVersement;
-  const marge = t.margeNetteSuguba;
-  const total = Math.max(1, prix);
-  const segments = [
-    { cle: 'Fournisseur', montant: t.prixFournisseur, classe: 'bg-slate-300' },
-    { cle: 'Revendeur', montant: t.commission, classe: 'bg-suguba-citron' },
-    { cle: 'Coûts', montant: couts, classe: 'bg-amber-300' },
-    { cle: 'Suguba', montant: Math.max(0, marge), classe: 'bg-suguba-profond' },
-  ];
-  const [nomCout, montantCout] = plusGrosCout(t);
-
-  return (
-    <div className="rounded-3xl bg-suguba-sauge p-4 space-y-3">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold text-slate-900">Où va l&apos;argent d&apos;une vente</p>
-          <p className="text-xs text-slate-600">Un produit exemple, avec les réglages en cours.</p>
-        </div>
-        <div className="text-right shrink-0">
-          <p className="text-xs text-slate-600">Le client paie</p>
-          <p className="text-lg font-semibold text-slate-900 tabular-nums">{enF(prix)}</p>
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        <label className="text-xs font-semibold text-slate-700">Prix fournisseur
-          <Montant large valeur={exemple.fournisseur} libelle="Prix fournisseur de l'exemple" onChange={(f) => setExemple({ ...exemple, fournisseur: f })} />
-        </label>
-        <label className="text-xs font-semibold text-slate-700">Part revendeur
-          <Montant large valeur={exemple.part} libelle="Part revendeur de l'exemple" onChange={(p) => setExemple({ ...exemple, part: p })} />
-        </label>
-      </div>
-      <div className="flex h-3 rounded-full overflow-hidden bg-white" aria-hidden="true">
-        {segments.map((s) => s.montant > 0 && (
-          <div key={s.cle} className={s.classe} style={{ width: `${(s.montant / total) * 100}%` }} />
-        ))}
-      </div>
-      <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-xs">
-        {segments.map((s) => (
-          <div key={s.cle} className="flex items-center justify-between gap-2">
-            <dt className="flex items-center gap-1.5 text-slate-600"><span className={`w-2.5 h-2.5 rounded-full ${s.classe}`} />{s.cle === 'Suguba' ? 'Suguba (net)' : s.cle}</dt>
-            <dd className="font-semibold text-slate-900 tabular-nums whitespace-nowrap">{s.cle === 'Suguba' ? enF(marge) : enF(s.montant)}</dd>
-          </div>
-        ))}
-      </dl>
-      {t.prelevementSuguba > 0 && (
-        <p className="text-xs text-slate-600">
-          Dont <strong>{enF(t.prelevementSuguba)}</strong> prélevés sur la part revendeur ({enF(t.commissionBrute)} → {enF(t.commission)}).
-        </p>
-      )}
-      {v.releve && (
-        <p className="text-xs text-slate-800 bg-white rounded-2xl p-2.5">
-          <strong>Prix relevé au plancher.</strong> Fournisseur + revendeur{r.modePartSuguba !== 'prelevement_revendeur' ? ' + part Suguba' : ''} donnaient{' '}
-          {enF(v.prixCalcule)} ; il faut {enF(prix)} pour couvrir {enF(couts)} de coûts par commande. Le plus lourd :{' '}
-          {nomCout} ({enF(montantCout)}). Tant que le plancher décide, changer votre taux ne change pas le prix client.
-        </p>
-      )}
-      {marge < 0 && (
-        <p className="text-xs text-rose-800 bg-rose-50 rounded-2xl p-2.5">
-          <strong>Suguba perd {enF(-marge)} sur cette vente.</strong> Sa part ({enF(prix - t.prixFournisseur - t.commission)}) ne
-          couvre pas ses coûts ({enF(couts)}). Pour équilibrer : augmenter le % prélevé, réduire les coûts, ou choisir
-          « Ajoutés au prix client ».
-        </p>
-      )}
-      {t.statut === 'commission_faible' && (
-        <p className="text-xs text-amber-800">Part revendeur sous le minimum ({enF(r.commissionMinimale)}) : ce produit ne serait pas proposé au partage.</p>
-      )}
-    </div>
-  );
-}
-
 // ─────────────────────────── Prix de gros ───────────────────────────
 
 function PrixDeGrosReglages({ g, r, onChange }: { g: ReglagesPrixDeGros; r: ReglagesPlateforme; onChange: (g: ReglagesPrixDeGros) => void }) {
@@ -974,6 +873,204 @@ function PrixDeGrosReglages({ g, r, onChange }: { g: ReglagesPrixDeGros; r: Regl
 
 // ─────────────────────────── Éléments de formulaire ───────────────────────────
 
+// ─────────────────────────── Blocs (audit du 2026-09-27) ───────────────────────────
+
+/**
+ * Un bloc de réglages. Le badge dit QUAND ces réglages s'appliquent — à la
+ * vente, à l'encaissement, au retrait — ou qu'ils ne prélèvent rien.
+ */
+function Bloc({ id, titre, moment, children }: { id: string; titre: string; moment: string; children: React.ReactNode }) {
+  return (
+    <div id={`reglage-${id}`} className="scroll-mt-4 rounded-3xl border border-slate-200 p-4 sm:p-5 space-y-6">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+        <h3 className="text-base font-semibold text-slate-900">{titre}</h3>
+        <span className="rounded-full bg-suguba-menthe text-suguba-profond text-xs font-semibold px-3 py-1">{moment}</span>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+/** Choix en pastilles (quelques options courtes). */
+function Choix<T extends string>({ libelle, valeur, options, onChange }: {
+  libelle: string; valeur: T; options: readonly (readonly [T, string])[]; onChange: (v: T) => void;
+}) {
+  return (
+    <div className="space-y-1">
+      <p className="text-xs font-semibold text-slate-700">{libelle}</p>
+      <div role="radiogroup" aria-label={libelle} className="flex flex-wrap gap-1.5">
+        {options.map(([v, texte]) => (
+          <button key={v} type="button" role="radio" aria-checked={valeur === v} onClick={() => onChange(v)}
+            className={`min-h-[36px] px-3 rounded-full border text-xs font-semibold ${valeur === v ? 'border-suguba-profond bg-suguba-menthe text-suguba-profond' : 'border-slate-200 bg-white text-slate-700'}`}>
+            {texte}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Les quatre taux de retrait, complets (ceux réglés, sinon l'ancien taux unique). */
+function tousLesTaux(r: ReglagesPlateforme): Record<RoleRetrait, { caisse: number; mobile: number }> {
+  const t = (role: RoleRetrait) => ({ caisse: tauxRetraitSuguba(r, role, 'cash'), mobile: tauxRetraitSuguba(r, role, 'orange_money') });
+  return { revendeur: t('revendeur'), fournisseur: t('fournisseur') };
+}
+
+const MOYENS_RETRAIT_EXEMPLE: readonly (readonly [MoyenRetrait, string])[] = [
+  ['cash', 'Caisse Suguba'], ['orange_money', 'Orange Money'], ['moov', 'Moov Money'], ['wave', 'Wave'],
+];
+const MOYENS_PAIEMENT_SIMU: readonly (readonly [MoyenPaiementClient, string])[] = [
+  ['especes', 'Espèces'], ['orange_ml', 'Orange'], ['moov_ml', 'Moov'], ['wave_ml', 'Wave'],
+];
+const MOYENS_RETRAIT_SIMU: readonly (readonly [MoyenRetrait, string])[] = [
+  ['cash', 'Caisse'], ['orange_money', 'Orange'], ['moov', 'Moov'], ['wave', 'Wave'],
+];
+
+/** Grilles de retrait chez un agent : information des bénéficiaires, rien n'est facturé par Suguba. */
+function GrillesAgent({ f, onChange }: { f: ReglagesFraisPaiement; onChange: (f: ReglagesFraisPaiement) => void }) {
+  return (
+    <>
+      <Num l="Fonds de soutien de l'État" suffixe="%" v={f.fondsSoutienPct} on={(v) => onChange({ ...f, fondsSoutienPct: v })}
+        info="Prélevé par l'opérateur sur un retrait d'espèces chez un agent (Ordonnance n° 2025-008/PT-RM du 7 février 2025, en vigueur depuis le 5 mars 2025 ; Wave aussi depuis la décision DGCC du 2 février 2026)." />
+      <div className="sm:col-span-2 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
+        {OPERATEURS_RETRAIT.map((op) => (
+          <GrilleRetrait key={op} libelle={LIBELLES_MOYENS[op]} g={f.retraitOperateur[op]}
+            onChange={(g) => onChange({ ...f, retraitOperateur: { ...f.retraitOperateur, [op]: g } })} />
+        ))}
+      </div>
+      <p className="sm:col-span-2 text-xs text-slate-600">
+        Retirer 10 000 F en espèces chez un agent, fonds de l&apos;État compris :{' '}
+        {OPERATEURS_RETRAIT.map((op, i) => (
+          <span key={op}>{i > 0 && ' · '}{LIBELLES_MOYENS[op]} <strong>{enF(estimerRetraitAgent(10000, op, f).total)}</strong></span>
+        ))}
+        .
+      </p>
+    </>
+  );
+}
+
+/**
+ * Simulateur du cycle complet (audit du 2026-09-27) : 1. la vente crée les
+ * montants dus ; 2. l'encaissement a ses frais ; 3. les retraits ont les
+ * leurs, PRÉVISIONNELS tant qu'ils n'ont pas eu lieu. Les coûts de Suguba
+ * sont détaillés, jamais retirés pour rendre le résultat positif.
+ */
+function SimulateurCycle({ r }: { r: ReglagesPlateforme }) {
+  const [e, setE] = useState<EntreeCycle>({
+    mode: 'gros', prixFournisseur: 100000, prixVenteRevendeur: 110000, partRevendeur: 2000,
+    paiement: 'especes', retraitFournisseur: 'cash', retraitRevendeur: 'cash',
+  });
+  const c = simulerCycle(e, r);
+  const maj = <K extends keyof EntreeCycle>(cle: K, v: EntreeCycle[K]) => setE((x) => ({ ...x, [cle]: v }));
+  // Clé = libellé : unique dans chaque liste (frais du paiement, coûts).
+  const ligne = (libelle: string, montant: number, signe = '', fort = false) => (
+    <div key={libelle} className={`flex justify-between gap-3 ${fort ? 'font-semibold text-slate-900' : ''}`}>
+      <dt className="min-w-0">{libelle}</dt>
+      <dd className="tabular-nums whitespace-nowrap">{signe}{enF(montant)}</dd>
+    </div>
+  );
+  const retrait = (titre: string, cle: 'retraitFournisseur' | 'retraitRevendeur', d: DetailFraisRetrait | null) => (
+    <div className="rounded-2xl bg-white p-3 space-y-2">
+      <Choix libelle={titre} valeur={e[cle]} options={MOYENS_RETRAIT_SIMU} onChange={(v) => maj(cle, v)} />
+      {d ? (
+        <dl className="text-xs text-slate-700 space-y-0.5">
+          {ligne('Retire de son solde', d.montantDemande)}
+          {ligne('Frais Suguba', d.fraisSuguba, '− ')}
+          {d.fraisSaspay + d.fraisOperateur > 0 && ligne('Autres frais (virement SasPay)', d.fraisSaspay + d.fraisOperateur, '− ')}
+          {ligne('Reçoit', d.montantNet, '', true)}
+        </dl>
+      ) : <p className="text-xs text-slate-600">Rien à retirer.</p>}
+    </div>
+  );
+  const resultat = (n: number) => <strong className={`tabular-nums ${n < 0 ? 'text-rose-700' : 'text-slate-900'}`}>{enF(n)}</strong>;
+
+  return (
+    <div className="sm:col-span-2 space-y-3">
+      <div className="flex flex-wrap items-end gap-3">
+        <Choix libelle="Article" valeur={e.mode} options={[['gros', 'Prix de gros'], ['fixe', 'Prix fixe']] as const} onChange={(v) => maj('mode', v)} />
+        <label className="text-xs font-semibold text-slate-700">{e.mode === 'gros' ? 'Prix de gros' : 'Prix fournisseur'}
+          <Montant large valeur={e.prixFournisseur} libelle="Prix du fournisseur" onChange={(v) => maj('prixFournisseur', v)} />
+        </label>
+        {e.mode === 'gros' ? (
+          <label className="text-xs font-semibold text-slate-700">Prix de vente du revendeur
+            <Montant large valeur={e.prixVenteRevendeur || 0} libelle="Prix de vente du revendeur" onChange={(v) => maj('prixVenteRevendeur', v)} />
+          </label>
+        ) : (
+          <label className="text-xs font-semibold text-slate-700">Part revendeur
+            <Montant large valeur={e.partRevendeur || 0} libelle="Part revendeur" onChange={(v) => maj('partRevendeur', v)} />
+          </label>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+        <div className="rounded-2xl bg-suguba-sauge p-3 space-y-2">
+          <p className="text-sm font-semibold text-slate-900">1 · Vente</p>
+          <dl className="text-xs text-slate-700 space-y-0.5">
+            {ligne('Prix payé par le client', c.vente.prixClient, '', true)}
+            {ligne('Dû au fournisseur', c.vente.duFournisseur)}
+            {ligne('Dû au revendeur', c.vente.duRevendeur)}
+            {ligne('Commission Suguba', c.vente.commissionSuguba)}
+          </dl>
+          <p className="text-xs text-slate-600">Commission : {c.vente.commission.base}, payée par {c.vente.commission.payeur}.</p>
+        </div>
+
+        <div className="rounded-2xl bg-suguba-sauge p-3 space-y-2">
+          <p className="text-sm font-semibold text-slate-900">2 · Encaissement</p>
+          <Choix libelle="Le client paie en" valeur={e.paiement} options={MOYENS_PAIEMENT_SIMU} onChange={(v) => maj('paiement', v)} />
+          {c.encaissement.lignes.length === 0 ? (
+            <p className="text-xs text-slate-700">Espèces : aucun frais de paiement.</p>
+          ) : (
+            <dl className="text-xs text-slate-700 space-y-0.5">
+              {c.encaissement.lignes.map((l) => ligne(`${l.libelle} (${l.detail})`, l.montant, '+ '))}
+              {ligne('Le client débourse', c.encaissement.totalClient, '', true)}
+            </dl>
+          )}
+          <p className="text-xs text-slate-600">Frais payés par le client, pour ce paiement seulement.</p>
+        </div>
+
+        <div className="rounded-2xl bg-suguba-sauge p-3 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-semibold text-slate-900">3 · Retraits</p>
+            <span className="rounded-full bg-white text-slate-700 text-xs font-semibold px-2.5 py-0.5">Prévisionnels</span>
+          </div>
+          {retrait('Le fournisseur retire par', 'retraitFournisseur', c.retraits.fournisseur)}
+          {retrait('Le revendeur retire par', 'retraitRevendeur', c.retraits.revendeur)}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 p-3 space-y-2">
+        <p className="text-sm font-semibold text-slate-900">Ce que Suguba garde</p>
+        <dl className="text-xs text-slate-700 space-y-0.5">
+          {ligne('Commission de la vente', c.vente.commissionSuguba, '+ ')}
+          {c.encaissement.gainSuguba > 0 && ligne('Frais de transaction du paiement', c.encaissement.gainSuguba, '+ ')}
+          {c.couts.lignes.map((l) => ligne(l.libelle, l.montant, '− '))}
+          <div className="flex justify-between gap-3 border-t border-slate-100 pt-1">
+            <dt>Résultat de la vente</dt><dd>{resultat(c.synthese.resultat)}</dd>
+          </div>
+          {ligne('Frais Suguba sur les retraits (prévisionnels)', c.synthese.previsionnel, '+ ')}
+          <div className="flex justify-between gap-3 font-semibold text-slate-900">
+            <dt>Si les retraits ont lieu comme simulé</dt><dd>{resultat(c.synthese.resultatAvecPrevisionnel)}</dd>
+          </div>
+        </dl>
+        <p className="text-xs text-slate-600">
+          Les frais des retraits ne comptent qu&apos;une fois le retrait fait : un bénéficiaire peut garder son solde.
+          Un résultat négatif se corrige par la commission ou les coûts réels, jamais en cachant une ligne.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/** Sur quoi la commission est calculée et qui la paie, écrit en clair. */
+function ExplicationCommission({ c }: { c: { base: string; payeur: string } }) {
+  return (
+    <div className="sm:col-span-2 rounded-2xl border border-slate-200 p-3 text-xs text-slate-700 space-y-0.5">
+      <p>Commission Suguba : <strong>{c.base}</strong>, payée par <strong>{c.payeur}</strong>.</p>
+      <p className="text-slate-600">Fixée à la vente. Les frais de paiement et de retrait sont réglés à part, au moment de chaque opération.</p>
+    </div>
+  );
+}
+
 // ─────────────────────────── Frais de paiement ───────────────────────────
 
 /** « 4 % », « 2 % + 100 F », « 3,8 % (min. 450 F) ». */
@@ -1009,8 +1106,6 @@ function FraisPaiementReglages({ f, ancien, onChange, onRelu }: {
   const [lecture, setLecture] = useState<'repos' | 'encours'>('repos');
   const [avis, setAvis] = useState<{ ok: boolean; texte: string } | null>(null);
 
-  const majGrille = (op: OperateurRetrait, g: GrilleRetraitOperateur) =>
-    onChange({ ...f, retraitOperateur: { ...f.retraitOperateur, [op]: g } });
 
   const relire = async () => {
     setLecture('encours');
@@ -1041,35 +1136,6 @@ function FraisPaiementReglages({ f, ancien, onChange, onRelu }: {
     <>
       <Num l="Frais de transaction Suguba" suffixe="%" v={f.plateformePct} on={(v) => onChange({ ...f, plateformePct: v })}
         info="Le gain de Suguba sur chaque paiement Mobile Money, payé par le client. Le baisser demande le droit « Baisser la part Suguba » et un motif." />
-      <Num l="Fonds de soutien de l'État" suffixe="%" v={f.fondsSoutienPct} on={(v) => onChange({ ...f, fondsSoutienPct: v })}
-        info="Prélèvement de l'État sur les retraits Mobile Money (Ordonnance n° 2025-008/PT-RM du 7 février 2025, en vigueur depuis le 5 mars 2025). Wave doit aussi l'appliquer depuis la décision DGCC du 2 février 2026. L'argent reçu doit être retiré : ce prélèvement est répercuté au client." />
-
-      <div className="sm:col-span-2 space-y-2">
-        <p className="text-xs font-semibold text-slate-700 inline-flex items-center gap-1">
-          Frais de retrait des opérateurs
-          <InfoBulle texte="Ce que coûte le retrait de l'argent reçu, selon la grille de chaque opérateur. Aucune API ne publie ces grilles : corrigez-les ici dès qu'un opérateur change ses prix. Au-delà du plafond d'un retrait (dernière tranche), l'argent sort en plusieurs retraits." />
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
-          {OPERATEURS_RETRAIT.map((op) => (
-            <GrilleRetrait key={op} libelle={LIBELLES_MOYENS[op]} g={f.retraitOperateur[op]} onChange={(g) => majGrille(op, g)} />
-          ))}
-        </div>
-        <div className="flex flex-wrap items-center gap-2 text-xs text-slate-700">
-          <span className="font-semibold">Argent reçu par carte : retiré par</span>
-          <div role="radiogroup" aria-label="Opérateur de retrait pour la carte" className="inline-flex flex-wrap gap-1.5">
-            {OPERATEURS_RETRAIT.map((op) => {
-              const actif = f.retraitCarteVia === op;
-              return (
-                <button key={op} type="button" role="radio" aria-checked={actif} onClick={() => onChange({ ...f, retraitCarteVia: op })}
-                  className={`min-h-[36px] px-3 rounded-full border text-xs font-semibold ${actif ? 'border-suguba-profond bg-suguba-menthe text-suguba-profond' : 'border-slate-200 bg-white text-slate-700'}`}>
-                  {LIBELLES_MOYENS[op]}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
       <div className="sm:col-span-2 rounded-2xl border border-slate-200 p-3 space-y-2">
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>

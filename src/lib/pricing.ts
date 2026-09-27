@@ -125,6 +125,12 @@ export type ModePrix = 'fixe' | 'gros';
 export type MoyenRetraitMobile = 'orange_money' | 'moov' | 'wave' | 'mobi_cash';
 export type MoyenRetrait = MoyenRetraitMobile | 'cash';
 
+/** Qui retire : un revendeur (ses commissions) ou un fournisseur (ce qui lui est dû). */
+export type RoleRetrait = 'revendeur' | 'fournisseur';
+export const ROLES_RETRAIT: RoleRetrait[] = ['revendeur', 'fournisseur'];
+/** Taux Suguba d'un retrait, en %, à la caisse et en Mobile Money. */
+export interface TauxRetraitSuguba { caisse: number; mobile: number }
+
 /** Code réseau SasPay de chaque moyen de retrait Mobile Money. */
 const RESEAU_SASPAY_RETRAIT: Record<MoyenRetraitMobile, string> = {
   orange_money: 'orange_ml',
@@ -156,8 +162,18 @@ export interface ReglagesPlateforme {
   fraisVersementPct: number;
   /** Frais de l'opérateur sur un retrait, en % (0 si déjà compris dans le taux SasPay). */
   fraisOperateurRetraitPct?: Record<MoyenRetraitMobile, number>;
-  /** Frais Suguba sur chaque retrait, Mobile Money ou espèces au guichet, en %. */
+  /**
+   * Ancien taux Suguba unique des retraits, en %. Ne sert plus que de valeur
+   * de départ des quatre taux ci-dessous quand ils n'ont jamais été réglés.
+   */
   fraisRetraitSugubaPct?: number;
+  /**
+   * Frais Suguba d'un retrait (2026-09-27, audit du fondateur), en %, par
+   * bénéficiaire et par moyen : revendeur / fournisseur × caisse / Mobile
+   * Money. Calculés AU RETRAIT sur le montant retiré, jamais à la vente.
+   * 0 est accepté tel quel.
+   */
+  fraisRetraitSuguba?: Record<RoleRetrait, TauxRetraitSuguba>;
   /** SMS ou message WhatsApp envoyé au client, en FCFA. */
   coutMessageParCommande: number;
   /**
@@ -1057,15 +1073,27 @@ export interface DetailFraisRetrait {
  * `fraisPaiement.saspay`. `fraisVersementPct` ne sert plus que de secours pour
  * un réseau sans tarif connu.
  */
-export type TauxRetrait = Pick<ReglagesPlateforme, 'fraisVersementPct' | 'fraisOperateurRetraitPct' | 'fraisRetraitSugubaPct' | 'fraisPaiement'>;
+export type TauxRetrait = Pick<ReglagesPlateforme, 'fraisVersementPct' | 'fraisOperateurRetraitPct' | 'fraisRetraitSugubaPct' | 'fraisRetraitSuguba' | 'fraisPaiement'>;
 
-export function calculerFraisRetrait(montant: number, moyen: MoyenRetrait | string, r: TauxRetrait): DetailFraisRetrait {
+/** Taux Suguba d'un retrait, selon le bénéficiaire et le moyen. 0 est un taux valable. */
+export function tauxRetraitSuguba(r: Pick<ReglagesPlateforme, 'fraisRetraitSugubaPct' | 'fraisRetraitSuguba'>, role: RoleRetrait, moyen: MoyenRetrait | string): number {
+  const v = r.fraisRetraitSuguba?.[role]?.[moyen === 'cash' ? 'caisse' : 'mobile'];
+  return Number.isFinite(Number(v)) ? Number(v) : Number(r.fraisRetraitSugubaPct) || 0;
+}
+
+/**
+ * `role` (2026-09-27, audit du fondateur) : un revendeur et un fournisseur
+ * peuvent avoir des taux différents, à la caisse comme en Mobile Money.
+ * Les frais ne sont JAMAIS prélevés à la vente : seulement ici, au retrait,
+ * sur le montant retiré du solde.
+ */
+export function calculerFraisRetrait(montant: number, moyen: MoyenRetrait | string, r: TauxRetrait, role: RoleRetrait = 'revendeur'): DetailFraisRetrait {
   const M = Math.max(0, Math.floor(Number(montant) || 0));
   const mobile = moyen === 'orange_money' || moyen === 'moov' || moyen === 'wave' || moyen === 'mobi_cash';
   const palier = mobile ? fraisVersementSasPay(M, RESEAU_SASPAY_RETRAIT[moyen as MoyenRetraitMobile], r.fraisPaiement?.saspay) : null;
   const fraisSaspay = !mobile ? 0 : palier !== null ? palier : Math.ceil(pct(r.fraisVersementPct) * M);
   const fraisOperateur = mobile ? Math.ceil(pct(Number(r.fraisOperateurRetraitPct?.[moyen as MoyenRetraitMobile]) || 0) * M) : 0;
-  const fraisSuguba = Math.ceil(pct(Number(r.fraisRetraitSugubaPct) || 0) * M);
+  const fraisSuguba = Math.ceil(Math.round(pct(tauxRetraitSuguba(r, role, moyen)) * M * 100) / 100);
   const fraisTotal = fraisSaspay + fraisOperateur + fraisSuguba;
   return { montantDemande: M, fraisSaspay, fraisOperateur, fraisSuguba, fraisTotal, montantNet: M - fraisTotal };
 }
@@ -1109,9 +1137,19 @@ export function validerReglages(r: ReglagesPlateforme): string[] {
     const v = Number(r[cle]);
     if (!Number.isFinite(v) || v < 0) erreurs.push(`${libelle} : doit être un montant positif.`);
   }
-  for (const moyen of ['orange_money', 'moov', 'wave', 'mobi_cash'] as const) {
-    const d = calculerFraisRetrait(10000, moyen, r);
-    if (d.montantNet <= 0) erreurs.push('Frais de retrait : leur total doit rester sous 100 %.');
+  for (const role of ROLES_RETRAIT) {
+    for (const cle of ['caisse', 'mobile'] as const) {
+      const v = Number(r.fraisRetraitSuguba?.[role]?.[cle] ?? r.fraisRetraitSugubaPct ?? 0);
+      if (!Number.isFinite(v) || v < 0 || v > 100) {
+        erreurs.push(`Frais Suguba sur les retraits (${role}, ${cle === 'caisse' ? 'caisse' : 'Mobile Money'}) : entre 0 et 100 %.`);
+      }
+    }
+  }
+  for (const moyen of ['orange_money', 'moov', 'wave', 'mobi_cash', 'cash'] as const) {
+    if (ROLES_RETRAIT.some((role) => calculerFraisRetrait(10000, moyen, r, role).montantNet <= 0)) {
+      erreurs.push('Frais de retrait : leur total doit rester sous 100 %.');
+    }
+    if (moyen === 'cash') continue;
     const v = Number(r.fraisOperateurRetraitPct?.[moyen] ?? 0);
     if (!Number.isFinite(v) || v < 0 || v > 100) erreurs.push('Frais opérateur : doivent être entre 0 et 100 %.');
   }
@@ -1209,6 +1247,13 @@ export function completerReglages(partiels: Partial<ReglagesPlateforme> | null |
     r.fraisRetraitSugubaPct = Number.isFinite(Number(r.fraisRetraitSugubaPct))
       ? Number(r.fraisRetraitSugubaPct)
       : (REGLAGES_PAR_DEFAUT.fraisRetraitSugubaPct as number);
+    // Quatre taux : ceux réglés, sinon l'ancien taux unique. 0 reste 0.
+    const t = (r.fraisRetraitSuguba && typeof r.fraisRetraitSuguba === 'object' ? r.fraisRetraitSuguba : {}) as Partial<Record<RoleRetrait, Partial<TauxRetraitSuguba>>>;
+    const taux = (v: unknown) => (v !== null && v !== '' && Number.isFinite(Number(v)) ? Number(v) : r.fraisRetraitSugubaPct as number);
+    r.fraisRetraitSuguba = {
+      revendeur: { caisse: taux(t.revendeur?.caisse), mobile: taux(t.revendeur?.mobile) },
+      fournisseur: { caisse: taux(t.fournisseur?.caisse), mobile: taux(t.fournisseur?.mobile) },
+    };
   }
   {
     const brutes = Array.isArray(r.formulesBoutiques) ? r.formulesBoutiques : [];
