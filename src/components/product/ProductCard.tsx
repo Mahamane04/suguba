@@ -122,8 +122,14 @@ export default function ProductCard({
       onMouseEnter={precharger}
       disabled={preparation}
       aria-label={`Partager ${produit.nom} sur WhatsApp`}
-      className={`h-9 rounded-2xl bg-suguba-wa hover:bg-[#1fbf5b] text-suguba-profond font-bold text-xs inline-flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] disabled:opacity-70 ${
-        pleineLargeur ? 'flex-1 min-w-0' : 'px-3 shrink-0'
+      // Vue client (V1, 2026-09-27) : partager reste possible mais ne doit
+      // plus concurrencer l'achat — bouton neutre à côté de « Acheter ».
+      // Catalogue revendeur (pleine largeur) : le partage EST l'action
+      // principale, il garde le vert WhatsApp.
+      className={`h-9 rounded-2xl font-bold text-xs inline-flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] disabled:opacity-70 ${
+        pleineLargeur
+          ? 'flex-1 min-w-0 bg-suguba-wa hover:bg-[#1fbf5b] text-suguba-profond'
+          : 'w-9 shrink-0 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
       }`}
     >
       {preparation ? <Loader2 className="w-4 h-4 animate-spin" /> : <WhatsAppIcon className="w-4 h-4" />}
@@ -132,9 +138,7 @@ export default function ProductCard({
           <span className="sm:hidden">Partager</span>
           <span className="hidden sm:inline">Partager sur WhatsApp</span>
         </>
-      ) : (
-        <span className="hidden sm:inline">Partager</span>
-      )}
+      ) : null}
     </button>
   );
 
@@ -211,7 +215,7 @@ export default function ProductCard({
             </div>
           ) : (
             <div className="flex items-center gap-2">
-              <Button href={lien} variant="secondary" size="sm" className="flex-1 !h-9 !py-0">
+              <Button href={lien} variant={enRupture ? 'secondary' : 'primary'} size="sm" className="flex-1 !h-9 !py-0">
                 {enRupture ? 'Voir' : 'Acheter'}
               </Button>
               {boutonPartage(false)}

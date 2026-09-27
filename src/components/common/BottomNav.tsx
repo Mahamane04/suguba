@@ -6,13 +6,15 @@ import { usePathname } from 'next/navigation';
 import { useSugubaStore } from '@/lib/store';
 import { useClavierOuvert } from '@/lib/useClavierOuvert';
 import { useBarreSurEcranVisible } from '@/lib/useBarreSurEcranVisible';
+import { usePanier } from '@/lib/panier';
 import {
   Home, Grid3X3, ShoppingCart, Wallet, TrendingUp,
   PackagePlus, ShieldCheck, Truck, Store, Users,
-  BarChart3, LifeBuoy, LogIn, PackageSearch, Boxes, ClipboardList
+  BarChart3, LifeBuoy, PackageSearch, Boxes, ClipboardList,
+  ShoppingBag, UserRound,
 } from 'lucide-react';
 
-type NavItem = { label: string; href: string; icon: React.ElementType };
+type NavItem = { label: string; href: string; icon: React.ElementType; panier?: boolean };
 
 /**
  * ⚠️ Chaque href ci-dessous doit correspondre à une page réellement présente
@@ -69,18 +71,27 @@ function getNavItems(role: string | null): NavItem[] {
         { label: 'Analyses',    href: '/admin/analytics',    icon: BarChart3  },
         { label: 'SAV',         href: '/admin/sav',          icon: LifeBuoy   },
       ];
+    case 'customer':
+      // Client connecté (V1, 2026-09-27) : il tombait dans le cas visiteur
+      // et voyait « Connexion » alors qu'il était connecté.
+      return [
+        { label: 'Accueil',   href: '/',                 icon: Home         },
+        { label: 'Panier',    href: '/panier',           icon: ShoppingBag, panier: true },
+        { label: 'Commandes', href: '/compte/commandes', icon: PackageSearch},
+        { label: 'Compte',    href: '/compte',           icon: UserRound    },
+      ];
     default:
-      // Visiteur non connecté — c'est-à-dire le client, l'utilisateur le plus
-      // important d'une vitrine produit. Il n'avait jusqu'ici AUCUNE barre de
-      // navigation : la fonction renvoyait un tableau vide et le composant se
-      // retirait entièrement du rendu.
+      // Visiteur non connecté — l'acheteur, l'utilisateur le plus important
+      // d'une vitrine produit. Barre d'achat (V1, 2026-09-27) : chercher,
+      // ajouter au panier, commander, retrouver sa commande. « Gagner de
+      // l'argent » reste sur l'accueil et dans Compte.
       return [
         // Libellés courts volontairement : la barre tronque à 56px, « Ma
         // commande » s'affichait « Ma comm… ».
-        { label: 'Boutique',  href: '/',          icon: Store        },
-        { label: 'Suivi',     href: '/track',     icon: PackageSearch},
-        { label: 'Gagner',    href: '/rejoindre', icon: TrendingUp   },
-        { label: 'Connexion', href: '/login',     icon: LogIn        },
+        { label: 'Accueil',   href: '/',       icon: Home         },
+        { label: 'Panier',    href: '/panier', icon: ShoppingBag, panier: true },
+        { label: 'Commandes', href: '/track',  icon: PackageSearch},
+        { label: 'Compte',    href: '/compte', icon: UserRound    },
       ];
   }
 }
@@ -123,11 +134,12 @@ export default function BottomNav() {
   const clavierOuvert = mesure ? clavier : champActif;
 
   const navItems = getNavItems(role);
+  const articlesPanier = usePanier().reduce((s, a) => s + a.quantity, 0);
 
   // Racines d'espace : elles ne doivent s'allumer qu'en correspondance exacte.
   // Sans « / » dans cette liste, `pathname.startsWith('/')` est toujours vrai
   // et l'onglet Boutique resterait allumé sur toutes les pages du site.
-  const RACINES = ['/', '/reseller', '/supplier', '/driver', '/admin'];
+  const RACINES = ['/', '/reseller', '/supplier', '/driver', '/admin', '/compte'];
 
   return (
     <>
@@ -174,7 +186,7 @@ export default function BottomNav() {
                     clignotement à chaque changement de page plutôt qu'une
                     transition fluide — remplacé par un simple fondu du
                     fond, qui suit naturellement le changement d'onglet. */}
-                <div className={`flex items-center justify-center w-8 h-8 rounded-xl transition-all duration-200 ${
+                <div className={`relative flex items-center justify-center w-8 h-8 rounded-xl transition-all duration-200 ${
                   isActive
                     ? 'bg-suguba-50 shadow-brand-sm'
                     : ''
@@ -185,6 +197,12 @@ export default function BottomNav() {
                     }`}
                     style={{ width: '1.125rem', height: '1.125rem' }}
                   />
+                  {item.panier && articlesPanier > 0 && (
+                    <span aria-label={`${articlesPanier} article${articlesPanier > 1 ? 's' : ''}`}
+                      className="absolute -top-1 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-suguba-profond text-white text-xs font-bold flex items-center justify-center tabular-nums">
+                      {articlesPanier > 9 ? '9+' : articlesPanier}
+                    </span>
+                  )}
                 </div>
                 <span
                   className={`text-xs mt-0.5 tracking-tight font-medium w-full text-center leading-tight transition-all duration-150 ${

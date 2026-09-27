@@ -10,7 +10,9 @@ import { useClavierOuvert } from '@/lib/useClavierOuvert';
 // flottante recouvrait les champs et les boutons principaux (captures). Elle
 // ne s'affiche que sur les vitrines de découverte ; ailleurs, l'aide reste
 // accessible par le menu et les liens « Une question ? » de chaque écran.
-const VISIBLE_SUR_EXACT = ['/', '/rejoindre'];
+// Retirée de l'accueil le 2026-09-27 (V1 vue client) : elle recouvrait les
+// cartes produits ; l'aide reste dans Compte → Aide et dans le menu.
+const VISIBLE_SUR_EXACT = ['/rejoindre'];
 const VISIBLE_SUR_PREFIXE = ['/s/', '/r/'];
 
 export default function WhatsAppFloatingButton() {

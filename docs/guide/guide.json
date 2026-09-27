@@ -1,5 +1,5 @@
 {
- "majLe": "2026-09-26",
+ "majLe": "2026-09-27",
  "roles": [
   {
    "cle": "visiteur",
@@ -57,8 +57,8 @@
   {
    "titre": "En bas de chaque page",
    "points": [
-    "**Menu du bas**, qui change selon le profil. Visiteur : Boutique · Suivi · Gagner · Connexion. Revendeur : Accueil · Catalogue · Ventes · Gains · Marketing. Fournisseur : Dashboard · Stocks · Ajouter · Réseau. Livreur : Courses · Portefeuille. Admin : Vue globale · Produits · Analyses · SAV.",
-    "**Bulle WhatsApp verte** : écrit directement au support Suguba (+223 89 46 00 00).",
+    "**Menu du bas**, qui change selon le profil. Visiteur et client : Accueil · Panier (avec son nombre d’articles) · Commandes · Compte — « Gagner de l’argent » est dans Compte et sur l’accueil. Revendeur : Accueil · Catalogue · Ventes · Gains · Marketing. Fournisseur : Dashboard · Stocks · Ajouter · Réseau. Livreur : Courses · Portefeuille. Admin : Vue globale · Produits · Analyses · SAV.",
+    "**Bulle WhatsApp verte** : écrit directement au support Suguba (+223 89 46 00 00). Plus sur l’accueil (elle recouvrait les produits) : l’aide est dans Compte → Aide.",
     "**Pendant une commande**, le menu du bas est remplacé par la barre flottante « Total + Confirmer »."
    ]
   },
@@ -190,6 +190,50 @@
   }
  ],
  "journal": [
+  {
+   "date": "2026-09-27",
+   "titre": "Vue client (V1) : une barre d’achat",
+   "demande": "Analyse de la vue client : navigation d’acheteur (Explorer/Accueil · Panier · Commandes · Compte), achat plus visible que WhatsApp, bulle flottante qui recouvre les produits. La carte boutique seule reste comme elle est.",
+   "realise": [
+    "Barre du bas du visiteur et du client : Accueil · Panier (compteur) · Commandes · Compte. Bug corrigé : un client connecté voyait la barre visiteur avec « Connexion ».",
+    "Nouvelle page Compte : commandes, favoris, destinataires, boutiques suivies, profils, Gagner de l’argent, Aide, déconnexion ; pour un visiteur, connexion ou création de compte (facultatif pour acheter).",
+    "Carte produit : « Acheter » en bouton principal vert foncé ; partage WhatsApp en petite icône neutre (le catalogue revendeur garde son grand bouton vert).",
+    "Bulle WhatsApp flottante retirée de l’accueil."
+   ],
+   "ecarts": [
+    "« Payez à la livraison » garde sa taille (déjà en petit texte ; grand sur la capture à cause du réglage de taille du téléphone).",
+    "Unité de vente (unité / lot) et bouton « Ajouter » sur la carte : lot V2.",
+    "Carte boutique seule : laissée telle quelle (décision)."
+   ],
+   "pages": [
+    "accueil",
+    "compte"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-26",
+   "titre": "E-mails sans lien (spams) et « Gagner de l’argent » pour les comptes connectés",
+   "demande": "Les e-mails de code arrivent toujours dans les spams : corriger. Puis : un client déjà inscrit (e-mail ou Google) qui clique « Gagner de l’argent » voyait l’inscription Google « sans mot de passe » et un faux délai de validation.",
+   "realise": [
+    "Modèle d’e-mail sans lien : le lien pointait vers le domaine technique de Supabase, différent de l’expéditeur @sugubaml.com — signal de phishing pour Yahoo et Gmail. Le code à 6 chiffres suffit.",
+    "Écran de code : « Tapez-le ci-dessous » (plus de mention du lien).",
+    "« Gagner de l’argent » : un compte connecté voit « Ajouter le profil … à mon compte » (vers « Mes profils », formulaire ouvert) ou « Ouvrir mon espace … » s’il l’a déjà — plus d’inscription en double.",
+    "Visiteur : Google OU « Créer mon compte avec mon e-mail » ; « Sans mot de passe » retiré.",
+    "Étapes corrigées : plus de « Suguba valide votre dossier (24-48h) » (faux : le compte est actif dès l’inscription) ; à la place, vérification des produits (fournisseur) et passage au guichet (livreur)."
+   ],
+   "ecarts": [
+    "Le modèle est à recoller par l’admin dans les 3 modèles Supabase (Confirm sign up, Reset password, Magic link).",
+    "La réputation d’un domaine d’envoi neuf se construit en quelques jours à quelques semaines ; « Non spam » et l’ajout aux contacts accélèrent."
+   ],
+   "pages": [
+    "connexion",
+    "mot-de-passe",
+    "rejoindre",
+    "compte-profils"
+   ],
+   "statut": "en local"
+  },
   {
    "date": "2026-09-26",
    "titre": "Connexion : mot de passe, adresse vérifiée une seule fois",
@@ -1131,7 +1175,7 @@
     },
     {
      "nom": "Carte produit",
-     "role": "Photo et nom ouvrent la fiche. « Acheter » ouvre aussi la fiche. Le bouton WhatsApp partage le produit."
+     "role": "Photo et nom ouvrent la fiche. « Acheter » ouvre aussi la fiche. Le bouton WhatsApp partage le produit. « Acheter » est le bouton principal (vert foncé) ; le partage WhatsApp est une petite icône grise à côté."
     },
     {
      "nom": "Badge « Sponsorisé »",
@@ -1176,6 +1220,30 @@
    "capture": {
     "chemin": "/"
    }
+  },
+  {
+   "id": "compte",
+   "role": "visiteur",
+   "titre": "Compte",
+   "chemin": "/compte",
+   "but": "Dernier onglet de la barre du bas : tout ce qui concerne ses achats et son compte, sans laisser croire qu’un compte est obligatoire pour acheter.",
+   "elements": [
+    {
+     "nom": "Connecté",
+     "role": "Mes commandes · Favoris · Destinataires · Boutiques suivies ; puis Mes profils, Gagner de l’argent avec Suguba, Aide (WhatsApp) et « Se déconnecter »."
+    },
+    {
+     "nom": "Visiteur",
+     "role": "« Se connecter » ou « Créer un compte » (un compte n’est pas obligatoire pour acheter) ; Suivre une commande, Boutiques suivies (sur ce téléphone), Gagner de l’argent, Aide."
+    }
+   ],
+   "suite": [
+    {
+     "id": "accueil",
+     "libelle": "Accueil"
+    }
+   ],
+   "note": "Pas de capture pour l’instant."
   },
   {
    "id": "menu-visiteur",
@@ -2022,15 +2090,19 @@
    "elements": [
     {
      "nom": "Revendeur · Fournisseur · Livreur · Diaspora",
-     "role": "Onglets : chacun explique comment ça marche et ce qu’on gagne."
+     "role": "Onglets : chacun explique comment ça marche, en trois étapes vraies (le compte est actif tout de suite ; produits d’un fournisseur vérifiés avant la vente ; livreur vu au guichet avant ses courses)."
     },
     {
-     "nom": "Devenir revendeur (ou équivalent)",
-     "role": "Lance l’inscription du profil choisi."
+     "nom": "Visiteur : « Continuer avec Google » / « Créer mon compte avec mon e-mail »",
+     "role": "Deux façons de s’inscrire ; l’e-mail mène à « Créer mon compte » avec le profil déjà choisi (mot de passe, adresse confirmée une fois)."
+    },
+    {
+     "nom": "Déjà connecté : « Ajouter le profil … à mon compte »",
+     "role": "Pas de nouvelle inscription : ouvre « Mes profils » avec le formulaire du profil déjà ouvert. Profil déjà détenu : « Ouvrir mon espace … »."
     },
     {
      "nom": "Se connecter",
-     "role": "Pour ceux qui ont déjà un compte."
+     "role": "Pour ceux qui ont déjà un compte ; masqué quand on est connecté."
     }
    ],
    "suite": [
@@ -2133,7 +2205,7 @@
     },
     {
      "nom": "Code reçu par e-mail",
-     "role": "Taper le code, ou cliquer le lien de l’e-mail. « Renvoyer le code » après 60 s."
+     "role": "Taper le code reçu. « Renvoyer le code » après 60 s."
     },
     {
      "nom": "Nouveau mot de passe",
@@ -2805,6 +2877,10 @@
     {
      "nom": "Devenir livreur / revendeur",
      "role": "Même principe ; votre historique et vos gains restent."
+    },
+    {
+     "nom": "Arrivée depuis « Gagner de l’argent »",
+     "role": "Le formulaire du profil choisi est déjà ouvert."
     }
    ],
    "suite": [
