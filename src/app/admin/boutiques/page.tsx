@@ -9,6 +9,7 @@ import Button from '@/components/ui/Button';
 import { Field, Input } from '@/components/ui/Field';
 import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
 import { useToast } from '@/components/ui/Toast';
+import TableauAdmin from '@/components/admin/TableauAdmin';
 
 /**
  * Toutes les boutiques (§ page 44). Une boutique masquée ou suspendue n'est plus publique.
@@ -63,7 +64,7 @@ export default function BoutiquesAdminPage() {
   const visibles = boutiques.filter((b) => !filtre || b.type === filtre);
 
   return (
-    <PageReseau titre="Boutiques" sousTitre="Toutes les vitrines du réseau." retour={{ href: '/admin/backoffice', libelle: 'Back-office' }} large
+    <PageReseau titre="Boutiques" sousTitre="Toutes les vitrines du réseau." large
       action={<Button size="sm" onClick={() => setCreation(!creation)}><Plus className="w-4 h-4" />Créer une boutique</Button>}>
 
       {creation && <CreerBoutique onFait={async () => { setCreation(false); await charger(); }} />}
@@ -101,34 +102,29 @@ export default function BoutiquesAdminPage() {
 
       <div className="flex gap-2 overflow-x-auto pb-1">
         {[['', 'Toutes'], ['supplier', 'Fournisseurs'], ['reseller', 'Revendeurs'], ['suguba', 'Suguba']].map(([v, l]) => (
-          <button key={v} onClick={() => setFiltre(v)} className={`px-4 h-10 rounded-full text-xs font-semibold whitespace-nowrap ${filtre === v ? 'bg-suguba-profond text-white' : 'bg-white text-slate-600 border border-slate-200'}`}>{l}</button>
+          <button key={v} type="button" aria-pressed={filtre === v} onClick={() => setFiltre(v)} className={`px-4 h-10 rounded-full text-sm font-semibold whitespace-nowrap ${filtre === v ? 'bg-suguba-profond text-white' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'}`}>{l}</button>
         ))}
       </div>
       {chargement ? <Skeleton className="h-32" /> : visibles.length === 0 ? (
         <EmptyState icone={Store} titre="Aucune boutique" />
       ) : (
-        <Card padding="p-0" className="overflow-hidden divide-y divide-slate-100">
-          {visibles.map((b) => {
-            const [libelle, ton] = STATUT[b.statut] || [b.statut, 'attente'];
-            return (
-              <div key={b.id} className="p-4 space-y-2">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-slate-900 truncate">{b.nom}</p>
-                    <p className="text-xs text-slate-500">{TYPE[b.type] || b.type}{b.principale ? '' : ' · boutique supplémentaire'} · /{b.slug} · {b.abonnes} abonné{b.abonnes > 1 ? 's' : ''}</p>
-                  </div>
-                  <StatusPill ton={ton}>{libelle}</StatusPill>
-                </div>
-                <div className="flex flex-wrap items-center gap-3 text-xs font-semibold">
-                  <Link href={`/boutique/${b.slug}`} target="_blank" className="inline-flex items-center gap-1 text-slate-600 min-h-[32px]"><ExternalLink className="w-3.5 h-3.5" />Voir</Link>
-                  {b.statut !== 'active' && <button onClick={() => changer(b.id, 'active')} className="text-suguba-brand-dark min-h-[32px]">Rendre publique</button>}
-                  {b.statut !== 'hidden' && <button onClick={() => changer(b.id, 'hidden')} className="text-amber-700 min-h-[32px]">Masquer</button>}
-                  {b.statut !== 'suspended' && <button onClick={() => changer(b.id, 'suspended')} className="text-rose-700 min-h-[32px]">Suspendre</button>}
-                </div>
-              </div>
-            );
-          })}
-        </Card>
+        <TableauAdmin<any> titre="Boutiques" memoire="boutiques" lignes={visibles} cleLigne={(b) => b.id}
+          colonnes={[
+            { cle: 'nom', titre: 'Boutique', fixe: true, tri: (b) => b.nom, rendu: (b) => (
+              <span className="block"><span className="block font-semibold text-slate-900">{b.nom}</span><span className="block text-xs text-slate-500">/{b.slug}</span></span>
+            ) },
+            { cle: 'type', titre: 'Type', tri: (b) => TYPE[b.type] || b.type, rendu: (b) => `${TYPE[b.type] || b.type}${b.principale ? '' : ' · supplémentaire'}` },
+            { cle: 'abonnes', titre: 'Abonnés', droite: true, tri: (b) => Number(b.abonnes) || 0, rendu: (b) => b.abonnes },
+            { cle: 'statut', titre: 'Statut', tri: (b) => b.statut, rendu: (b) => { const [libelle, ton] = STATUT[b.statut] || [b.statut, 'attente']; return <StatusPill ton={ton}>{libelle}</StatusPill>; } },
+            { cle: 'actions', titre: 'Actions', fixe: true, droite: true, rendu: (b) => (
+              <span className="inline-flex flex-wrap justify-end items-center gap-3 text-sm font-semibold">
+                <Link href={`/boutique/${b.slug}`} target="_blank" className="inline-flex items-center gap-1 text-slate-700 hover:underline min-h-[36px]"><ExternalLink className="w-3.5 h-3.5" />Voir</Link>
+                {b.statut !== 'active' && <button type="button" onClick={() => changer(b.id, 'active')} className="text-suguba-brand-dark hover:underline min-h-[36px]">Rendre publique</button>}
+                {b.statut !== 'hidden' && <button type="button" onClick={() => changer(b.id, 'hidden')} className="text-amber-800 hover:underline min-h-[36px]">Masquer</button>}
+                {b.statut !== 'suspended' && <button type="button" onClick={() => changer(b.id, 'suspended')} className="text-rose-700 hover:underline min-h-[36px]">Suspendre</button>}
+              </span>
+            ) },
+          ]} />
       )}
     </PageReseau>
   );

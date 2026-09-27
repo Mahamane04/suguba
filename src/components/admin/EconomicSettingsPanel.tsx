@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import { useToast } from '@/components/ui/Toast';
 import {
   Calculator, ChevronDown, ChevronUp, Loader2, Plus, Trash2, AlertCircle, CheckCircle2, RotateCcw, ArrowRight, Info,
 } from 'lucide-react';
@@ -84,8 +85,10 @@ const SECTIONS = [
  * Enregistrer recalcule automatiquement la commission de tous les produits
  * approuvés. Les prix de vente, eux, ne changent jamais tout seuls.
  */
-export default function EconomicSettingsPanel() {
-  const [ouvert, setOuvert] = useState(false);
+export default function EconomicSettingsPanel({ ouvertParDefaut = false }: { ouvertParDefaut?: boolean } = {}) {
+  const { demander } = useToast();
+  // Page dédiée « Paramètres et commissions » (U2) : ouvert d'emblée.
+  const [ouvert, setOuvert] = useState(ouvertParDefaut);
   const [r, setR] = useState<ReglagesPlateforme | null>(null);
   const [initial, setInitial] = useState('');
   const [confirme, setConfirme] = useState(true);
@@ -181,7 +184,10 @@ export default function EconomicSettingsPanel() {
       // Baisse de la part Suguba (Protection Suguba, lot 3) : motif obligatoire, gardé au journal.
       if (res.status === 409 && json.motifRequis) {
         const liste = (json.baisses || []).map((b: { libelle: string }) => `• ${b.libelle}`).join('\n');
-        const motif = window.prompt(`Ces changements réduisent la part de Suguba :\n${liste}\n\nMotif (promotion, lancement, accord commercial…) :`);
+        const motif = await demander({
+          titre: 'Ces changements réduisent la part de Suguba', message: liste,
+          libelle: 'Motif (promotion, lancement, accord commercial…)', min: 5, confirmer: 'Enregistrer',
+        });
         if (!motif) { setErreur('Rien n’a été enregistré : un motif est obligatoire pour baisser la part de Suguba.'); return; }
         res = await envoyer(motif);
         json = await res.json();

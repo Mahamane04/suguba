@@ -6,6 +6,7 @@ import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
 import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
+import { useCibleUrl, useDefilerVersCible } from '@/components/admin/contexte';
 import { anciennete } from '@/lib/admin/poste';
 
 interface Validation {
@@ -26,6 +27,9 @@ const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
 export default function ValidationsPage() {
   const { toast } = useToast();
   const [liste, setListe] = useState<Validation[] | null>(null);
+  // Lien direct (« À traiter ») : le dossier visé est surligné et amené à l'écran.
+  const cible = useCibleUrl();
+  useDefilerVersCible(cible, liste !== null);
   const [moi, setMoi] = useState('');
   const [erreur, setErreur] = useState('');
   const [migration, setMigration] = useState(false);
@@ -52,7 +56,7 @@ export default function ValidationsPage() {
   const autres = (liste || []).filter((v) => v.statut !== 'en_attente');
 
   const ligne = (v: Validation) => (
-    <li key={v.id} className="p-3 sm:p-4 space-y-2">
+    <li key={v.id} data-dossier={v.id} className={`p-3 sm:p-4 space-y-2 ${cible === v.id ? "bg-suguba-menthe" : ""}`}>
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm font-bold text-slate-900">{v.libelle}</span>
         {v.montant != null && <span className="text-sm font-bold tabular-nums text-slate-900">{fcfa(v.montant)}</span>}

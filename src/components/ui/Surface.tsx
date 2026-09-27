@@ -13,8 +13,9 @@ export function Card({
   children,
   className = '',
   padding = 'p-5',
-}: { children: React.ReactNode; className?: string; padding?: string }) {
-  return <div className={`bg-white rounded-3xl border border-slate-200 ${padding} ${className}`}>{children}</div>;
+  ...reste
+}: { children: React.ReactNode; className?: string; padding?: string } & Omit<React.HTMLAttributes<HTMLDivElement>, 'className' | 'children'> & { 'data-dossier'?: string }) {
+  return <div {...reste} className={`bg-white rounded-3xl border border-slate-200 ${padding} ${className}`}>{children}</div>;
 }
 
 /** En-tête d'écran : retour éventuel, titre, sous-titre, action à droite. */

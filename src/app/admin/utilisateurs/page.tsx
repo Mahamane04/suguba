@@ -5,17 +5,23 @@ import { Users, Search, ShieldCheck, Ban, RotateCcw } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Field';
-import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
+import { EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
+import TableauAdmin, { type Colonne } from '@/components/admin/TableauAdmin';
+import Panneau from '@/components/admin/Panneau';
 
-/** Annuaire admin (§ pages 38 à 41) : clients, revendeurs, fournisseurs, livreurs. */
+/**
+ * Annuaire admin (§ pages 38 à 41) : clients, revendeurs, fournisseurs,
+ * livreurs. Tableau et panneau latéral (badges, suspension) depuis U4
+ * (2026-09-27).
+ */
 
 type Onglet = 'clients' | 'revendeurs' | 'fournisseurs' | 'livreurs';
 const ONGLETS: [Onglet, string][] = [['revendeurs', 'Revendeurs'], ['fournisseurs', 'Fournisseurs'], ['livreurs', 'Livreurs'], ['clients', 'Clients']];
 const fcfa = (v: number) => `${Math.round(v || 0).toLocaleString('fr-FR')} F`;
 
 export default function UtilisateursPage() {
-  const { toast } = useToast();
+  const { toast, demander } = useToast();
   const [onglet, setOnglet] = useState<Onglet>('revendeurs');
   const [q, setQ] = useState('');
   // Lien de la recherche globale ou de « À traiter » (A1) : recherche pré-remplie.
@@ -48,102 +54,121 @@ export default function UtilisateursPage() {
     toast(succes + reste, { ton: 'succes' });
     await charger();
   };
-  const suspendreRole = (id: string) => {
-    const motif = window.prompt('Motif de la suspension (le partenaire le verra et pourra le contester) :');
-    if (!motif || motif.trim().length < 5) { if (motif !== null) toast('Motif trop court : 5 caractères minimum.', { ton: 'erreur' }); return; }
+  const suspendreRole = async (id: string) => {
+    const motif = await demander({
+      titre: 'Suspendre ce rôle ?', message: 'Le partenaire verra ce motif et pourra le contester.',
+      libelle: 'Motif de la suspension', min: 5, confirmer: 'Suspendre', danger: true,
+    });
+    if (!motif) return;
     action({ action: 'statut', profileId: id, statut: 'suspended', motif }, 'Rôle suspendu.');
   };
-  const reactiverRole = (id: string) => {
-    const decision = window.prompt('Décision (facultatif, le partenaire la verra) :');
+  const reactiverRole = async (id: string) => {
+    const decision = await demander({
+      titre: 'Réactiver ce rôle ?', message: 'Facultatif : le partenaire verra votre décision.',
+      libelle: 'Décision', min: 0, confirmer: 'Réactiver',
+    });
     if (decision === null) return;
     action({ action: 'statut', profileId: id, statut: 'active', decision }, 'Rôle réactivé.');
   };
 
+  const libelleStatut = (st: string) => (st === 'active' ? 'Actif' : st === 'suspended' ? 'Suspendu' : 'En attente');
+  const tonStatut = (st: string) => (st === 'active' ? 'succes' : st === 'suspended' ? 'danger' : 'attente') as 'succes' | 'danger' | 'attente';
+  const activite = (u: any) => onglet === 'revendeurs' ? `${u.stats.ventes || 0} vente(s) · ${fcfa(u.stats.commissions)}`
+    : onglet === 'fournisseurs' ? `${u.stats.produits || 0} produit(s) · ${u.stats.enVente || 0} en vente`
+    : `${u.stats.livraisons || 0} livraison(s)`;
+  const triActivite = (u: any) => onglet === 'revendeurs' ? Number(u.stats.ventes) || 0 : onglet === 'fournisseurs' ? Number(u.stats.produits) || 0 : Number(u.stats.livraisons) || 0;
+
+  const colonnesPartenaires: Colonne<any>[] = [
+    { cle: 'nom', titre: 'Nom', fixe: true, tri: (u) => u.nom || '', rendu: (u) => <span className="font-bold text-slate-900">{u.nom || 'Sans nom'}</span> },
+    { cle: 'telephone', titre: 'Téléphone', rendu: (u) => <span className="tabular-nums">{u.telephone || '—'}</span> },
+    { cle: 'email', titre: 'E-mail', cachee: true, rendu: (u) => u.email || '—' },
+    { cle: 'code', titre: 'Code', rendu: (u) => (u.code ? <span className="font-mono text-xs">{u.code}</span> : '—') },
+    { cle: 'ville', titre: 'Ville', cachee: true, tri: (u) => u.ville || '', rendu: (u) => u.ville || '—' },
+    { cle: 'activite', titre: 'Activité', tri: triActivite, rendu: activite },
+    { cle: 'badges', titre: 'Badges', rendu: (u) => (u.badges.length
+      ? <span className="flex flex-wrap gap-1">{u.badges.map((b: string) => <StatusPill key={b} ton="info">{badges.find((x) => x.cle === b)?.libelle || b.replace(/_/g, ' ')}</StatusPill>)}</span> : '—') },
+    { cle: 'inscrit', titre: 'Inscrit le', cachee: true, tri: (u) => u.inscritLe || '', rendu: (u) => (u.inscritLe ? new Date(u.inscritLe).toLocaleDateString('fr-FR') : '—') },
+    { cle: 'statut', titre: 'Statut', tri: (u) => u.statut, rendu: (u) => <StatusPill ton={tonStatut(u.statut)}>{libelleStatut(u.statut)}</StatusPill> },
+  ];
+  const colonnesClients: Colonne<any>[] = [
+    { cle: 'nom', titre: 'Client', fixe: true, tri: (c) => c.nom || '', rendu: (c) => <span className="font-bold text-slate-900">{c.nom}</span> },
+    { cle: 'telephone', titre: 'Téléphone', rendu: (c) => <span className="tabular-nums">{c.telephone}</span> },
+    { cle: 'referent', titre: 'Via', tri: (c) => c.referent || '', rendu: (c) => c.referent || '—' },
+    { cle: 'commandes', titre: 'Livrées / commandes', droite: true, tri: (c) => c.commandes, rendu: (c) => `${c.livrees} / ${c.commandes}` },
+    { cle: 'montant', titre: 'Montant', droite: true, tri: (c) => c.montant, rendu: (c) => <span className="font-semibold">{fcfa(c.montant)}</span> },
+  ];
+  const u = onglet !== 'clients' ? lignes.find((x) => x.id === ouvert) || null : null;
+
   return (
-    <PageReseau titre="Utilisateurs" sousTitre="Clients, revendeurs, fournisseurs et livreurs." retour={{ href: '/admin/backoffice', libelle: 'Back-office' }} large>
+    <PageReseau titre="Utilisateurs" sousTitre="Clients, revendeurs, fournisseurs et livreurs." large>
       <div className="flex gap-2 overflow-x-auto pb-1" role="tablist">
         {ONGLETS.map(([v, l]) => (
-          <button key={v} role="tab" aria-selected={onglet === v} onClick={() => setOnglet(v)}
-            className={`px-4 h-10 rounded-2xl text-xs font-bold whitespace-nowrap ${onglet === v ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 border border-slate-200'}`}>{l}</button>
+          <button key={v} role="tab" aria-selected={onglet === v} onClick={() => { setOnglet(v); setOuvert(null); }}
+            className={`px-4 h-10 rounded-full text-sm font-semibold whitespace-nowrap ${onglet === v ? 'bg-suguba-profond text-white' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'}`}>{l}</button>
         ))}
       </div>
-      <div className="relative">
+      <div className="relative max-w-xl">
         <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
         <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Nom, téléphone, e-mail, code" className="pl-10" aria-label="Rechercher" />
       </div>
 
       {chargement ? (
-        <div className="space-y-3"><Skeleton className="h-16" /><Skeleton className="h-16" /></div>
+        <Skeleton className="h-64" />
       ) : lignes.length === 0 ? (
         <EmptyState icone={Users} titre="Personne ici" texte={q ? 'Aucun résultat pour cette recherche.' : 'Aucun compte dans cette catégorie.'} />
       ) : onglet === 'clients' ? (
-        <Card padding="p-0" className="overflow-hidden divide-y divide-slate-100">
-          {lignes.map((c) => (
-            <div key={c.telephone} className="p-4 flex items-center justify-between gap-3">
-              <div className="min-w-0">
-                <p className="text-sm font-bold text-slate-900 truncate">{c.nom}</p>
-                <p className="text-xs text-slate-500">{c.telephone}{c.referent ? ` · via ${c.referent}` : ''}</p>
-              </div>
-              <div className="text-right shrink-0">
-                <p className="text-sm font-bold text-slate-900 tabular-nums">{fcfa(c.montant)}</p>
-                <p className="text-xs text-slate-500">{c.livrees}/{c.commandes} livrée{c.commandes > 1 ? 's' : ''}</p>
-              </div>
-            </div>
-          ))}
-        </Card>
+        <TableauAdmin titre="Clients" memoire="utilisateurs-clients" lignes={lignes} colonnes={colonnesClients} cleLigne={(c) => c.telephone} />
       ) : (
-        <div className="space-y-2.5">
-          {lignes.map((u) => (
-            <Card key={u.id} className="space-y-2">
-              <button type="button" className="w-full text-left flex items-start justify-between gap-3" onClick={() => setOuvert(ouvert === u.id ? null : u.id)} aria-expanded={ouvert === u.id}>
-                <div className="min-w-0">
-                  <p className="text-sm font-bold text-slate-900 truncate">{u.nom || 'Sans nom'}</p>
-                  <p className="text-xs text-slate-500 truncate">
-                    {[u.telephone, u.email, u.code, u.ville].filter(Boolean).join(' · ')}
-                  </p>
-                  <p className="text-xs text-slate-600 mt-0.5">
-                    {onglet === 'revendeurs' && `${u.stats.ventes || 0} vente(s) · ${fcfa(u.stats.commissions)} de commissions`}
-                    {onglet === 'fournisseurs' && `${u.stats.produits || 0} produit(s) · ${u.stats.enVente || 0} en vente`}
-                    {onglet === 'livreurs' && `${u.stats.livraisons || 0} livraison(s)`}
-                  </p>
-                </div>
-                <StatusPill ton={u.statut === 'active' ? 'succes' : u.statut === 'suspended' ? 'danger' : 'attente'}>
-                  {u.statut === 'active' ? 'Actif' : u.statut === 'suspended' ? 'Suspendu' : 'En attente'}
-                </StatusPill>
-              </button>
-              {u.suspension && (
-                <div className="rounded-2xl bg-rose-50 text-rose-900 px-3 py-2 text-xs space-y-1">
-                  <p><strong>Suspendu le {new Date(u.suspension.depuis).toLocaleDateString('fr-FR')}</strong> : {u.suspension.motif}</p>
-                  {u.suspension.contestation && <p className="text-amber-900"><strong>Contestation</strong> ({new Date(u.suspension.contesteeLe).toLocaleDateString('fr-FR')}) : {u.suspension.contestation}</p>}
-                </div>
-              )}
-              {u.badges.length > 0 && (
-                <div className="flex flex-wrap gap-1.5">{u.badges.map((b: string) => <StatusPill key={b} ton="info"><ShieldCheck className="w-3 h-3" />{badges.find((x) => x.cle === b)?.libelle || b.replace(/_/g, ' ')}</StatusPill>)}</div>
-              )}
-              {ouvert === u.id && (
-                <div className="pt-2 border-t border-slate-100 space-y-3">
-                  <div className="flex flex-wrap gap-1.5">
-                    {badges.map((b) => {
-                      const a = u.badges.includes(b.cle);
-                      return (
-                        <button key={b.cle} type="button" onClick={() => action({ action: 'badge', profileId: u.id, badge: b.cle, retirer: a }, a ? 'Badge retiré.' : 'Badge attribué.')}
-                          className={`px-3 min-h-[36px] rounded-full text-xs font-bold border ${a ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200'}`}>
-                          {a ? '✓ ' : '+ '}{b.libelle}
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {u.statut === 'suspended' ? (
-                    <Button size="sm" variant="ghost" onClick={() => reactiverRole(u.id)}><RotateCcw className="w-3.5 h-3.5" />Réactiver</Button>
-                  ) : (
-                    <Button size="sm" variant="danger" onClick={() => suspendreRole(u.id)}><Ban className="w-3.5 h-3.5" />Suspendre ce rôle</Button>
-                  )}
-                </div>
-              )}
-            </Card>
-          ))}
-        </div>
+        <TableauAdmin titre={ONGLETS.find(([v]) => v === onglet)?.[1] || 'Utilisateurs'} memoire={`utilisateurs-${onglet}`} lignes={lignes}
+          colonnes={colonnesPartenaires} cleLigne={(x) => x.id} onOuvrir={(x) => setOuvert(x.id)}
+          carteMobile={(x) => (
+            <div className="space-y-1">
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-sm font-bold text-slate-900 truncate">{x.nom || 'Sans nom'}</p>
+                <StatusPill ton={tonStatut(x.statut)}>{libelleStatut(x.statut)}</StatusPill>
+              </div>
+              <p className="text-xs text-slate-500 truncate">{[x.telephone, x.email, x.code, x.ville].filter(Boolean).join(' · ')}</p>
+              <p className="text-xs text-slate-600">{activite(x)}</p>
+            </div>
+          )} />
       )}
+
+      <Panneau ouvert={Boolean(u)} onFermer={() => setOuvert(null)} titre={u?.nom || 'Sans nom'}
+        sousTitre={u ? [u.telephone, u.email, u.code, u.ville].filter(Boolean).join(' · ') : undefined}>
+        {u && (
+          <>
+            <div className="flex flex-wrap items-center gap-2">
+              <StatusPill ton={tonStatut(u.statut)}>{libelleStatut(u.statut)}</StatusPill>
+              <span className="text-sm text-slate-600">{activite(u)}</span>
+            </div>
+            {u.suspension && (
+              <div className="rounded-2xl bg-rose-50 text-rose-900 px-3 py-2 text-sm space-y-1">
+                <p><strong>Suspendu le {new Date(u.suspension.depuis).toLocaleDateString('fr-FR')}</strong> : {u.suspension.motif}</p>
+                {u.suspension.contestation && <p className="text-amber-900"><strong>Contestation</strong> ({new Date(u.suspension.contesteeLe).toLocaleDateString('fr-FR')}) : {u.suspension.contestation}</p>}
+              </div>
+            )}
+            <section className="space-y-2" aria-labelledby="titre-badges">
+              <h3 id="titre-badges" className="text-sm font-bold text-slate-900">Badges</h3>
+              <div className="flex flex-wrap gap-1.5">
+                {badges.map((b) => {
+                  const a = u.badges.includes(b.cle);
+                  return (
+                    <button key={b.cle} type="button" aria-pressed={a} onClick={() => action({ action: 'badge', profileId: u.id, badge: b.cle, retirer: a }, a ? 'Badge retiré.' : 'Badge attribué.')}
+                      className={`px-3 min-h-[40px] rounded-full text-sm font-semibold border inline-flex items-center gap-1 ${a ? 'bg-suguba-profond text-white border-suguba-profond' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}`}>
+                      {a ? <ShieldCheck className="w-4 h-4" /> : '+'} {b.libelle}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+            {u.statut === 'suspended' ? (
+              <Button variant="ghost" onClick={() => reactiverRole(u.id)}><RotateCcw className="w-4 h-4" />Réactiver ce rôle</Button>
+            ) : (
+              <Button variant="danger" onClick={() => suspendreRole(u.id)}><Ban className="w-4 h-4" />Suspendre ce rôle</Button>
+            )}
+          </>
+        )}
+      </Panneau>
     </PageReseau>
   );
 }

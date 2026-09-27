@@ -68,7 +68,7 @@ export default function PrioriteReseauPage() {
   };
 
   return (
-    <PageReseau titre="Priorité au réseau" sousTitre="Qui vend aux clients : les revendeurs d’abord." retour={{ href: '/admin/backoffice', libelle: 'Back-office' }}>
+    <PageReseau titre="Priorité au réseau" sousTitre="Qui vend aux clients : les revendeurs d’abord.">
       {erreur ? <EmptyState icone={Network} titre="Réglages indisponibles" texte={erreur} /> : !r ? <Skeleton className="h-64" /> : (
         <>
           <Card className="space-y-4">

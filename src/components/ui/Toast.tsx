@@ -12,6 +12,7 @@ import Button from '@/components/ui/Button';
  *   const { toast, confirmer } = useToast();
  *   toast('Photos enregistrées', { ton: 'succes' });
  *   if (await confirmer({ titre: 'Retirer ce produit ?', danger: true })) { … }
+ *   const motif = await demander({ titre: 'Refuser ?', libelle: 'Motif', min: 5 }); // null = annulé
  *
  * Le fournisseur est monté une fois dans le layout.
  */
@@ -28,9 +29,22 @@ interface DemandeConfirmation {
   danger?: boolean;
 }
 
+/**
+ * Saisie d'un texte (motif, raison) — remplace `window.prompt` (U3,
+ * 2026-09-27) : la fenêtre du navigateur ne vérifiait rien et ressemblait à
+ * une erreur. Ici : libellé, longueur minimale, bouton désactivé tant que la
+ * saisie est trop courte.
+ */
+interface DemandeTexte extends DemandeConfirmation {
+  libelle: string;
+  min?: number;
+  placeholder?: string;
+}
+
 interface ContexteToast {
   toast: (texte: string, options?: { ton?: Ton; duree?: number }) => void;
   confirmer: (demande: DemandeConfirmation) => Promise<boolean>;
+  demander: (demande: DemandeTexte) => Promise<string | null>;
 }
 
 const Contexte = createContext<ContexteToast | null>(null);
@@ -43,8 +57,10 @@ const STYLE_TON: Record<Ton, { icone: React.ElementType; classe: string }> = {
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [demande, setDemande] = useState<DemandeConfirmation | null>(null);
+  const [demande, setDemande] = useState<(DemandeConfirmation & Partial<DemandeTexte>) | null>(null);
+  const [saisie, setSaisie] = useState('');
   const resoudre = useRef<((ok: boolean) => void) | null>(null);
+  const resoudreTexte = useRef<((texte: string | null) => void) | null>(null);
   const compteur = useRef(0);
 
   const toast = useCallback<ContexteToast['toast']>((texte, options) => {
@@ -69,9 +85,22 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     return new Promise<boolean>((resolve) => { resoudre.current = resolve; });
   }, []);
 
+  const demander = useCallback<ContexteToast['demander']>((d) => {
+    setSaisie('');
+    setDemande(d);
+    return new Promise<string | null>((resolve) => { resoudreTexte.current = resolve; });
+  }, []);
+
+  const texteValide = saisie.trim().length >= (demande?.min ?? 1);
   const repondre = (ok: boolean) => {
-    resoudre.current?.(ok);
-    resoudre.current = null;
+    if (demande?.libelle) {
+      if (ok && !texteValide) return;
+      resoudreTexte.current?.(ok ? saisie.trim() : null);
+      resoudreTexte.current = null;
+    } else {
+      resoudre.current?.(ok);
+      resoudre.current = null;
+    }
     setDemande(null);
   };
 
@@ -83,7 +112,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   }, [demande]);
 
   return (
-    <Contexte.Provider value={{ toast, confirmer }}>
+    <Contexte.Provider value={{ toast, confirmer, demander }}>
       {children}
 
       {/* Au-dessus de la barre du bas sur mobile. */}
@@ -122,11 +151,22 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           >
             <div className="space-y-1">
               <h2 id="confirmation-titre" className="text-base font-bold text-slate-900">{demande.titre}</h2>
-              {demande.message && <p className="text-sm text-slate-600">{demande.message}</p>}
+              {demande.message && <p className="text-sm text-slate-600 whitespace-pre-line">{demande.message}</p>}
             </div>
+            {demande.libelle && (
+              <form id="demande-texte" onSubmit={(e) => { e.preventDefault(); repondre(true); }} className="space-y-1.5">
+                <label htmlFor="demande-texte-champ" className="block text-sm font-semibold text-slate-800">{demande.libelle}</label>
+                <textarea id="demande-texte-champ" value={saisie} onChange={(e) => setSaisie(e.target.value)} rows={3} autoFocus
+                  placeholder={demande.placeholder} maxLength={500}
+                  className="w-full px-3.5 py-2.5 rounded-2xl border border-slate-300 text-base sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-suguba-profond" />
+                {demande.min && demande.min > 1 ? (
+                  <p className="text-xs text-slate-500">{saisie.trim().length < demande.min ? `Au moins ${demande.min} caractères.` : 'Ce motif est inscrit au journal.'}</p>
+                ) : null}
+              </form>
+            )}
             <div className="grid grid-cols-2 gap-2">
               <Button variant="ghost" onClick={() => repondre(false)}>{demande.annuler || 'Annuler'}</Button>
-              <Button variant={demande.danger ? 'danger' : 'primary'} onClick={() => repondre(true)} autoFocus>
+              <Button variant={demande.danger ? 'danger' : 'primary'} onClick={() => repondre(true)} autoFocus={!demande.libelle} disabled={Boolean(demande.libelle) && !texteValide}>
                 {demande.confirmer || 'Confirmer'}
               </Button>
             </div>
@@ -144,5 +184,6 @@ export function useToast(): ContexteToast {
   return {
     toast: (texte) => { if (typeof window !== 'undefined') window.alert(texte); },
     confirmer: async (d) => (typeof window !== 'undefined' ? window.confirm(d.titre) : false),
+    demander: async () => null,
   };
 }

@@ -28,8 +28,7 @@ export default function AccesCoordonneesPage() {
   }, []);
 
   return (
-    <PageReseau titre="Accès aux coordonnées" sousTitre="Qui a reçu les coordonnées de quels dossiers, sur 30 jours."
-      retour={{ href: '/admin/backoffice', libelle: 'Back-office' }}>
+    <PageReseau titre="Accès aux coordonnées" sousTitre="Qui a reçu les coordonnées de quels dossiers, sur 30 jours.">
       {erreur ? <EmptyState icone={Contact} titre="Journal indisponible" texte={erreur} />
         : !personnes ? <Skeleton className="h-48" />
         : migration ? <EmptyState icone={Contact} titre="Mise à jour de la base nécessaire" texte="Exécutez le SQL A-EXECUTER-2026-09-26-acces-coordonnees.sql dans Supabase, puis rechargez la page." />

@@ -12,7 +12,7 @@ import ProductPricingModal from '@/components/admin/ProductPricingModal';
 import Button from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import type { Product } from '@/types';
-import { ArrowLeft, Camera, ImageOff, Loader2, Plus, Tag, Ban, Package } from 'lucide-react';
+import { Camera, ImageOff, Loader2, Plus, Tag, Ban, Package } from 'lucide-react';
 
 interface ProduitAdmin {
   id: string;
@@ -164,11 +164,7 @@ export default function AdminProductsPage() {
     <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
       <Header />
 
-      <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 py-6 w-full space-y-5">
-        <Link href="/admin" className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900">
-          <ArrowLeft className="w-4 h-4" />
-          <span>Tableau de bord</span>
-        </Link>
+      <main className="flex-1 max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full space-y-5">
 
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
           <div>

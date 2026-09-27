@@ -9,9 +9,9 @@
 // ligne de commande, sur la machine d'un opérateur de confiance, avec la clé
 // service_role (jamais exposée au navigateur).
 //
-// Une fois ce premier admin créé, il peut en promouvoir d'autres directement
-// depuis le tableau de bord admin (POST /api/admin/promote), sans repasser
-// par ce script.
+// Une fois ce premier admin créé (et nommé Super Admin), il ajoute les autres
+// membres depuis « Équipe et permissions » (POST /api/admin/equipe, action
+// « ajouter »), sans repasser par ce script.
 //
 // Usage :
 //   NEXT_PUBLIC_SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=... \

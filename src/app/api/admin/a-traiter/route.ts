@@ -19,6 +19,15 @@ export async function GET(req: NextRequest) {
   const admin = getSupabaseAdmin();
   if (!admin) return NextResponse.json({ error: 'Base indisponible.' }, { status: 503 });
 
+  // Compteurs du menu (U3) : combien de dossiers attendent, par type, pour
+  // tout ce que ce membre a le droit de voir. Léger : ni affectations ni collègues.
+  if (req.nextUrl.searchParams.get('compteurs') === '1') {
+    const { taches, indisponibles } = await chargerTaches(admin, permissions);
+    const compteurs: Partial<Record<keyof typeof TACHES, number>> = {};
+    for (const t of taches) compteurs[t.type] = (compteurs[t.type] || 0) + 1;
+    return NextResponse.json({ compteurs, indisponibles }, { headers: { 'Cache-Control': 'private, no-store' } });
+  }
+
   const demande = req.nextUrl.searchParams.get('metier');
   const metier: Metier | 'toutes' = demande === 'toutes' ? 'toutes'
     : METIERS.some((m) => m.valeur === demande) ? (demande as Metier) : metierDuRole(teamRole);

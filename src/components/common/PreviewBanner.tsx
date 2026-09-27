@@ -45,7 +45,8 @@ export default function PreviewBanner() {
         moi?.authenticated ? { id: moi.uid, fullName: moi.fullName, phone: moi.phone, role: moi.role, city: moi.city } : null,
       );
       definirApercuAdmin(false);
-      router.push('/admin');
+      // « Tester un profil » est dans Paramètres depuis U2 (2026-09-27).
+      router.push('/admin/parametres');
     } finally {
       setSortie(false);
     }

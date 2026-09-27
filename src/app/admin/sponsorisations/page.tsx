@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button';
 import { Field, Input } from '@/components/ui/Field';
 import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
+import { classeCible, useCibleUrl, useDefilerVersCible } from '@/components/admin/contexte';
 import { EMPLACEMENTS } from '@/lib/reseau/sponsoring';
 import PaiementsRecus from '@/components/admin/PaiementsRecus';
 
@@ -41,6 +42,9 @@ export default function SponsorisationsAdminPage() {
   const [packs, setPacks] = useState<Pack[]>([]);
   const [sponsorisations, setSponsorisations] = useState<Sponsorisation[]>([]);
   const [chargement, setChargement] = useState(true);
+  // Lien direct (« À traiter ») : le dossier visé est surligné et amené à l'écran.
+  const cible = useCibleUrl();
+  useDefilerVersCible(cible, !chargement);
   const [prix, setPrix] = useState<Record<string, string>>({});
 
   const charger = React.useCallback(() => {
@@ -73,7 +77,6 @@ export default function SponsorisationsAdminPage() {
     <PageReseau
       titre="Sponsorisation"
       sousTitre="Packs, tarifs et demandes des fournisseurs."
-      retour={{ href: '/admin/backoffice', libelle: 'Back-office' }}
       large
     >
       {chargement ? (
@@ -130,7 +133,7 @@ export default function SponsorisationsAdminPage() {
           ) : (
             <div className="space-y-3">
               {sponsorisations.map((s) => (
-                <Card key={s.id} className="space-y-3">
+                <Card key={s.id} data-dossier={s.id} className={`space-y-3 ${classeCible(cible, s.id)}`}>
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
                       <p className="text-sm font-bold text-slate-900 truncate">{s.libelle || 'Sponsorisation'}</p>

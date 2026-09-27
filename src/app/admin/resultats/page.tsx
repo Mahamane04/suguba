@@ -37,7 +37,7 @@ const SEUIL_RESEAU = 5;
  * allume le paiement ; ensuite on vérifie les résultats suspects ou contestés.
  */
 export default function ResultatsPage() {
-  const { toast } = useToast();
+  const { toast, confirmer } = useToast();
   const [d, setD] = useState<Donnees | null>(null);
   const [erreur, setErreur] = useState('');
   const [envoi, setEnvoi] = useState(false);
@@ -50,7 +50,11 @@ export default function ResultatsPage() {
   const basculer = async () => {
     if (!d) return;
     const actif = !d.actif;
-    if (actif && !window.confirm('Activer le paiement au résultat ? Les fournisseurs pourront créer des campagnes payées à la visite ou à la demande, et les revendeurs seront payés.')) return;
+    if (actif && !(await confirmer({
+      titre: 'Activer le paiement au résultat ?',
+      message: 'Les fournisseurs pourront créer des campagnes payées à la visite ou à la demande, et les revendeurs seront payés.',
+      confirmer: 'Activer',
+    }))) return;
     setEnvoi(true);
     try {
       const r = await fetch('/api/admin/resultats', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'interrupteur', actif }) });
@@ -67,8 +71,7 @@ export default function ResultatsPage() {
   const taux = d?.total && vues > 0 ? Math.round((d.total.qualifiees / vues) * 100) : null;
 
   return (
-    <PageReseau titre="Qualité des mesures" sousTitre="Visites et demandes qualifiées, paiement au résultat."
-      retour={{ href: '/admin/backoffice', libelle: 'Back-office' }}>
+    <PageReseau titre="Qualité des mesures" sousTitre="Visites et demandes qualifiées, paiement au résultat.">
       {erreur ? <EmptyState icone={Gauge} titre="Page indisponible" texte={erreur} /> : !d ? <Skeleton className="h-64" /> : d.migrationRequise ? (
         <EmptyState icone={Gauge} titre="Mise à jour de la base nécessaire"
           texte="Exécutez le SQL A-EXECUTER-2026-09-26-campagnes-resultat.sql dans Supabase, puis rechargez la page." />

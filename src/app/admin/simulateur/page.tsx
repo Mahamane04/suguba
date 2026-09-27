@@ -38,7 +38,7 @@ export default function SimulateurPage() {
 
   return (
     <PageReseau titre="Simulateur de réglages" large sousTitre="Tester un changement sur les produits en vente, sans rien enregistrer.">
-      <Card className="!bg-amber-50 !border-amber-200 text-xs text-amber-900">Simulation : aucun réglage, prix ni commission n’est modifié. Pour appliquer, allez dans <Link href="/admin#reglages" className="underline font-bold">Paramètres et commissions</Link>.</Card>
+      <Card className="!bg-amber-50 !border-amber-200 text-xs text-amber-900">Simulation : aucun réglage, prix ni commission n’est modifié. Pour appliquer, allez dans <Link href="/admin/parametres" className="underline font-bold">Paramètres et commissions</Link>.</Card>
       {erreur ? <EmptyState icone={Calculator} titre="Simulation impossible" texte={erreur} />
         : !donnees ? <Skeleton className="h-64" />
         : (

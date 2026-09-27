@@ -121,7 +121,6 @@ export default function MissionsAdminPage() {
     <PageReseau
       titre="Missions"
       sousTitre="Ce que Suguba demande au réseau, et ce que ça rapporte."
-      retour={{ href: '/admin/backoffice', libelle: 'Back-office' }}
       large
       action={
         <Button size="sm" onClick={() => setFormulaireOuvert((v) => !v)}>

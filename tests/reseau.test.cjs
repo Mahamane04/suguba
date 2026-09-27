@@ -422,9 +422,11 @@ test('les routes partagées qui touchent à l’argent appliquent aussi la permi
 
 test('un membre Support ne peut ni payer ni changer les réglages', () => {
   const support = { teamRole: 'support', permissions: [] };
-  for (const cle of ['POST /api/admin/payouts', 'POST /api/payouts/initiate', 'PUT /api/admin/settings', 'POST /api/admin/products/price', 'POST /api/admin/promote']) {
+  for (const cle of ['POST /api/admin/payouts', 'POST /api/payouts/initiate', 'PUT /api/admin/settings', 'POST /api/admin/products/price']) {
     assert.equal(permissions.aLaPermission(support, PERMISSION_PAR_ROUTE[cle]), false, cle);
   }
+  // Ajouter quelqu'un à l'équipe (U1) : /api/admin/equipe exige la gestion de l'équipe.
+  assert.equal(permissions.aLaPermission(support, 'plateforme.equipe'), false);
   assert.equal(permissions.aLaPermission(support, PERMISSION_PAR_ROUTE['GET /api/admin/sav']), true);
   const finance = { teamRole: 'finance', permissions: [] };
   assert.equal(permissions.aLaPermission(finance, PERMISSION_PAR_ROUTE['POST /api/payouts/initiate']), true);

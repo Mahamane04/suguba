@@ -5,6 +5,7 @@ import { Product } from '@/types';
 import { sugubaStore, useSugubaStore } from '@/lib/store';
 import { X, ShieldCheck, AlertCircle, Loader2, Sparkles } from 'lucide-react';
 import ProductImage from '@/components/common/ProductImage';
+import { useToast } from '@/components/ui/Toast';
 import { calculerTarif, type ReglagesPlateforme } from '@/lib/pricing';
 
 interface ProductPricingModalProps {
@@ -26,6 +27,7 @@ interface ProductPricingModalProps {
  */
 export default function ProductPricingModal({ product, isOpen, onClose }: ProductPricingModalProps) {
   const state = useSugubaStore();
+  const { demander } = useToast();
   const [reglages, setReglages] = useState<ReglagesPlateforme | null>(null);
   const [confirme, setConfirme] = useState(true);
   const [prixVente, setPrixVente] = useState<number>(0);
@@ -76,7 +78,7 @@ export default function ProductPricingModal({ product, isOpen, onClose }: Produc
       let json = await res.json();
       // Prix sans part Suguba (Protection Suguba, lot 3) : motif obligatoire.
       if (res.status === 409 && json.motifRequis) {
-        const motif = window.prompt(`${json.error}\n\nMotif :`);
+        const motif = await demander({ titre: 'Prix sans part Suguba', message: json.error, libelle: 'Motif', min: 5, confirmer: 'Enregistrer ce prix' });
         if (!motif) { setErreur('Prix non enregistré : un motif est obligatoire.'); return; }
         res = await envoyer(motif);
         json = await res.json();

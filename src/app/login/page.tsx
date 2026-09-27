@@ -33,7 +33,7 @@ const quickRoles = [
   { role: 'reseller' as UserRole,  label: 'Revendeur',   icon: Store,       color: 'bg-emerald-50 text-emerald-700 border-emerald-200',  dest: '/reseller'  },
   { role: 'supplier' as UserRole,  label: 'Fournisseur', icon: ShoppingBag, color: 'bg-slate-50 text-slate-700 border-slate-200',            dest: '/supplier'  },
   { role: 'driver' as UserRole,    label: 'Livreur',     icon: Truck,       color: 'bg-amber-50 text-amber-700 border-amber-200',         dest: '/driver'    },
-  { role: 'admin' as UserRole,     label: 'Admin',       icon: Shield,      color: 'bg-slate-50 text-slate-700 border-slate-200',      dest: '/admin'     },
+  { role: 'admin' as UserRole,     label: 'Admin',       icon: Shield,      color: 'bg-slate-50 text-slate-700 border-slate-200',      dest: '/admin/a-traiter' },
 ];
 
 // Corrige BUG-003 : la "connexion rapide" n'existe plus qu'en développement

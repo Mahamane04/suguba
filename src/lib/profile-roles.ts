@@ -51,7 +51,7 @@ export async function chargerRoles(
   //
   // Sans cela, le repli ci-dessus avait un effet de falaise : il ne jouait
   // que tant que `profile_roles` était VIDE. Un compte promu admin par
-  // /api/admin/promote ou scripts/create-admin.js — qui n'écrivent que
+  // l'ancienne route /api/admin/promote ou scripts/create-admin.js — qui n'écrivaient que
   // `profiles.role` — perdait donc son rôle admin à la seconde où une
   // première ligne apparaissait dans profile_roles, par exemple en demandant
   // un rôle revendeur via /api/auth/request-role. La carte se serait alors

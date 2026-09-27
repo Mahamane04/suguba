@@ -113,7 +113,7 @@ export default function DiffusionPage() {
   };
 
   return (
-    <PageReseau titre="Diffusion" sousTitre="Prévenir tout un groupe du réseau en une fois." retour={{ href: '/admin/backoffice', libelle: 'Back-office' }}>
+    <PageReseau titre="Diffusion" sousTitre="Prévenir tout un groupe du réseau en une fois.">
       <Card className="space-y-4">
         <div className="space-y-2">
           <p className="text-xs font-bold text-slate-700">À qui ?</p>

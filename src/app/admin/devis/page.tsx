@@ -4,8 +4,11 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { AlertTriangle, FileText, Phone, RefreshCw, Search, Users } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
-import { Card, EmptyState, Skeleton, StatCard, StatusPill } from '@/components/ui/Surface';
+import { EmptyState, Skeleton, StatCard, StatusPill } from '@/components/ui/Surface';
 import Button from '@/components/ui/Button';
+import TableauAdmin, { type Colonne } from '@/components/admin/TableauAdmin';
+import Panneau from '@/components/admin/Panneau';
+import { useCibleUrl } from '@/components/admin/contexte';
 
 interface DevisAdmin {
   id: string;
@@ -45,13 +48,18 @@ const PASTILLE: Record<DevisAdmin['statut'], { libelle: string; ton: 'succes' | 
   refusee_fournisseur: { libelle: 'Refusé par le fournisseur', ton: 'neutre' },
   expiree: { libelle: 'Expiré', ton: 'neutre' },
 };
+const pastille = (d: DevisAdmin) => (
+  <StatusPill ton={d.enRetard ? 'danger' : PASTILLE[d.statut].ton}>{d.enRetard ? 'En retard' : PASTILLE[d.statut].libelle}</StatusPill>
+);
 
 /**
- * Devis — suivi admin (2026-09-26). Toutes les demandes de devis, pour
- * relancer un fournisseur qui tarde à répondre et contrôler les prix
- * proposés. Lecture seule : seul le fournisseur propose son prix.
+ * Devis — suivi admin (2026-09-26 ; tableau et panneau en U4, 2026-09-27).
+ * Toutes les demandes de devis, pour relancer un fournisseur qui tarde à
+ * répondre et contrôler les prix proposés. Lecture seule : seul le
+ * fournisseur propose son prix.
  */
 export default function DevisAdminPage() {
+  const cible = useCibleUrl();
   const [devis, setDevis] = useState<DevisAdmin[]>([]);
   const [relanceHeures, setRelanceHeures] = useState(24);
   const [chargement, setChargement] = useState(true);
@@ -59,6 +67,7 @@ export default function DevisAdminPage() {
   const [migration, setMigration] = useState(false);
   const [filtre, setFiltre] = useState<Filtre>('a_repondre');
   const [recherche, setRecherche] = useState('');
+  const [ouvert, setOuvert] = useState<string | null>(null);
 
   const charger = useCallback(async () => {
     setChargement(true);
@@ -77,6 +86,13 @@ export default function DevisAdminPage() {
     }
   }, []);
   useEffect(() => { charger(); }, [charger]);
+
+  // Lien direct (« À traiter ») : bon onglet, dossier ouvert.
+  useEffect(() => {
+    if (!cible) return;
+    const d = devis.find((x) => x.id === cible);
+    if (d) { setFiltre(filtreDe(d)); setOuvert(d.id); }
+  }, [cible, devis]);
 
   const groupes = useMemo(() => {
     const g: Record<Filtre, DevisAdmin[]> = { a_repondre: [], proposes: [], acceptes: [], clos: [] };
@@ -101,17 +117,31 @@ export default function DevisAdminPage() {
     ['clos', `Refusés / expirés (${groupes.clos.length})`],
   ];
 
+  const colonnes: Colonne<DevisAdmin>[] = [
+    { cle: 'numero', titre: 'Devis', fixe: true, tri: (d) => d.creeLe, rendu: (d) => (
+      <span className="block"><span className="block font-mono text-xs font-bold text-slate-900">{d.numero}</span><span className="block text-xs text-slate-500">{jour(d.creeLe)}</span></span>
+    ) },
+    { cle: 'produit', titre: 'Produit', tri: (d) => d.produit, rendu: (d) => <span className="block min-w-[160px]">{d.produit || 'Offre supprimée'} <span className="text-slate-500">× {d.quantite}</span></span> },
+    { cle: 'client', titre: 'Client', tri: (d) => d.client.nom, rendu: (d) => (
+      <span className="block"><span className="block font-semibold text-slate-900">{d.client.nom}</span><span className="block text-xs text-slate-500">{d.lieu}</span></span>
+    ) },
+    { cle: 'fournisseur', titre: 'Fournisseur', tri: (d) => d.fournisseur?.nom || '', rendu: (d) => d.fournisseur?.nom || '—' },
+    { cle: 'statut', titre: 'Statut', tri: (d) => d.statut, rendu: pastille },
+    { cle: 'attente', titre: 'Sans réponse depuis', tri: (d) => d.attenteHeures ?? -1, rendu: (d) => (d.statut === 'demande' && d.attenteHeures !== null
+      ? <span className={d.enRetard ? 'font-bold text-rose-700' : ''}>{attente(d.attenteHeures)}</span> : '—') },
+    { cle: 'montant', titre: 'Le client paie', droite: true, tri: (d) => d.prix?.client ?? null, rendu: (d) => (d.prix ? fcfa(d.prix.client) : '—') },
+    { cle: 'revendeur', titre: 'Revendeur', cachee: true, rendu: (d) => d.revendeur?.nom || d.revendeur?.code || '—' },
+  ];
+
+  const selectionne = devis.find((d) => d.id === ouvert) || null;
+
   return (
-    <PageReseau
-      titre="Devis"
-      sousTitre="Les demandes de devis des clients, et où elles en sont."
-      retour={{ href: '/admin', libelle: 'Console' }}
+    <PageReseau titre="Devis" large sousTitre="Les demandes de devis des clients, et où elles en sont."
       action={
         <Button variant="ghost" size="sm" onClick={() => charger()} disabled={chargement}>
           <RefreshCw className={`w-4 h-4 ${chargement ? 'animate-spin' : ''}`} /> Actualiser
         </Button>
-      }
-    >
+      }>
       {migration && (
         <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-2xl p-3">
           La table des devis n’existe pas encore : exécutez le SQL des devis dans Supabase.
@@ -124,22 +154,17 @@ export default function DevisAdminPage() {
         <StatCard label="Acceptés (montant client)" valeur={fcfa(acceptesMontant)} icone={FileText} />
       </div>
 
-      <label className="relative block">
+      <label className="relative block max-w-xl">
         <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-        <input
-          value={recherche}
-          onChange={(e) => setRecherche(e.target.value)}
-          placeholder="N° de devis, de commande, téléphone, client…"
-          aria-label="Rechercher un devis"
-          className="w-full h-11 pl-10 pr-3 rounded-2xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-suguba-brand/30"
-        />
+        <input value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder="N° de devis, de commande, téléphone, client…" aria-label="Rechercher un devis"
+          className="w-full h-11 pl-10 pr-3 rounded-2xl border border-slate-200 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-suguba-profond" />
       </label>
 
       {!terme && (
         <div className="flex gap-2 overflow-x-auto scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
           {FILTRES.map(([f, libelle]) => (
             <button key={f} type="button" onClick={() => setFiltre(f)} aria-pressed={filtre === f}
-              className={`shrink-0 min-h-[40px] px-4 rounded-full text-xs font-semibold ${filtre === f ? 'bg-suguba-profond text-white' : 'bg-white border border-slate-200 text-slate-700'}`}>
+              className={`shrink-0 min-h-[40px] px-4 rounded-full text-sm font-semibold ${filtre === f ? 'bg-suguba-profond text-white' : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50'}`}>
               {libelle}
             </button>
           ))}
@@ -147,77 +172,83 @@ export default function DevisAdminPage() {
       )}
 
       {chargement && devis.length === 0 ? <Skeleton className="h-40" /> : erreur ? (
-        <EmptyState icone={FileText} titre="Devis indisponibles" texte={erreur} />
+        <EmptyState icone={FileText} titre="Devis indisponibles" texte={erreur} action={<Button variant="ghost" onClick={() => charger()}>Réessayer</Button>} />
       ) : liste.length === 0 ? (
         <EmptyState icone={FileText} titre={terme ? 'Aucun devis trouvé' : 'Rien ici'}
           texte={terme ? 'Vérifiez le numéro ou le téléphone.' : filtre === 'a_repondre' ? 'Aucune demande n’attend de réponse.' : undefined} />
       ) : (
-        <div className="space-y-3">
-          {liste.map((d) => (
-            <Card key={d.id} className="space-y-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-slate-900">{d.produit || 'Offre supprimée'}</p>
-                  <p className="text-xs text-slate-500 font-mono">{d.numero} · {jour(d.creeLe)} · quantité {d.quantite}</p>
-                </div>
-                <StatusPill ton={d.enRetard ? 'danger' : PASTILLE[d.statut].ton}>
-                  {d.enRetard ? 'En retard' : PASTILLE[d.statut].libelle}
-                </StatusPill>
+        <TableauAdmin<DevisAdmin> titre="Devis" memoire="devis" lignes={liste} colonnes={colonnes} cleLigne={(d) => d.id}
+          onOuvrir={(d) => setOuvert(d.id)} cible={cible}
+          carteMobile={(d) => (
+            <div className="space-y-1">
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-sm font-semibold text-slate-900">{d.produit || 'Offre supprimée'}</p>
+                {pastille(d)}
               </div>
+              <p className="text-xs text-slate-500 font-mono">{d.numero} · {jour(d.creeLe)} · quantité {d.quantite}</p>
+              <p className="text-xs text-slate-600">{d.client.nom} · {d.fournisseur?.nom || 'fournisseur inconnu'}</p>
+            </div>
+          )} />
+      )}
 
-              {d.statut === 'demande' && d.attenteHeures !== null && (
-                <p className={`text-xs font-semibold ${d.enRetard ? 'text-red-700' : 'text-slate-600'}`}>
-                  Sans réponse depuis {attente(d.attenteHeures)}{d.enRetard ? ' : appelez le fournisseur.' : '.'}
-                </p>
-              )}
+      <Panneau ouvert={Boolean(selectionne)} onFermer={() => setOuvert(null)}
+        titre={selectionne ? `Devis ${selectionne.numero}` : ''}
+        sousTitre={selectionne ? `${selectionne.produit || 'Offre supprimée'} · quantité ${selectionne.quantite} · ${jour(selectionne.creeLe)}` : undefined}>
+        {selectionne && <DetailDevis d={selectionne} />}
+      </Panneau>
+    </PageReseau>
+  );
+}
 
-              <p className="text-sm text-slate-800 whitespace-pre-line bg-slate-50 rounded-2xl p-3">{d.besoin}</p>
-
-              <div className="grid sm:grid-cols-2 gap-2 text-xs text-slate-600">
-                <div className="rounded-2xl border border-slate-200 p-3 space-y-0.5">
-                  <p className="font-bold text-slate-900">Client</p>
-                  <p>{d.client.nom} · {d.lieu}</p>
-                  <a href={`tel:${d.client.telephone}`} className="inline-flex items-center gap-1 min-h-11 font-bold text-suguba-profond underline">
-                    <Phone className="w-3.5 h-3.5" /> {d.client.telephone}
-                  </a>
-                </div>
-                <div className="rounded-2xl border border-slate-200 p-3 space-y-0.5">
-                  <p className="font-bold text-slate-900">Fournisseur</p>
-                  <p>{d.fournisseur?.nom || '—'}</p>
-                  {d.fournisseur?.telephone && (
-                    <a href={`tel:${d.fournisseur.telephone}`} className="inline-flex items-center gap-1 min-h-11 font-bold text-suguba-profond underline">
-                      <Phone className="w-3.5 h-3.5" /> {d.fournisseur.telephone}
-                    </a>
-                  )}
-                </div>
-              </div>
-
-              {d.revendeur && (
-                <p className="text-xs text-slate-600 flex items-center gap-1">
-                  <Users className="w-3.5 h-3.5" /> Via le revendeur {d.revendeur.nom || ''}{d.revendeur.code ? ` (${d.revendeur.code})` : ''}
-                </p>
-              )}
-
-              {d.prix && (
-                <div className="text-xs text-slate-700 rounded-2xl border border-slate-200 p-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  <p>Prix fournisseur<br /><strong className="text-slate-900">{fcfa(d.prix.fournisseur)}</strong></p>
-                  <p>Gain revendeur<br /><strong className="text-slate-900">{fcfa(d.prix.gainRevendeur)}</strong></p>
-                  <p>Marge Suguba<br /><strong className="text-slate-900">{fcfa(d.prix.margeSuguba)}</strong></p>
-                  <p>Le client paie<br /><strong className="text-slate-900">{fcfa(d.prix.client)}</strong>{d.prix.livraison ? <span className="text-slate-500"> (dont remise {fcfa(d.prix.livraison)})</span> : null}</p>
-                </div>
-              )}
-              {d.conditions && <p className="text-xs text-slate-600">Conditions : {d.conditions}</p>}
-              {d.statut === 'proposee' && d.valableJusqu && <p className="text-xs text-slate-600">Valable jusqu’au {jour(d.valableJusqu)}</p>}
-              {d.motifRefus && <p className="text-xs text-slate-600">Motif du refus : {d.motifRefus}</p>}
-              {d.commande && (
-                <p className="text-xs font-bold text-emerald-800">
-                  Commande <Link href={`/admin/commandes?q=${encodeURIComponent(d.commande)}`} className="underline">{d.commande}</Link> créée.
-                </p>
-              )}
-            </Card>
-          ))}
+function DetailDevis({ d }: { d: DevisAdmin }) {
+  return (
+    <>
+      <div>{pastille(d)}</div>
+      {d.statut === 'demande' && d.attenteHeures !== null && (
+        <p className={`text-sm font-semibold ${d.enRetard ? 'text-rose-700' : 'text-slate-600'}`}>
+          Sans réponse depuis {attente(d.attenteHeures)}{d.enRetard ? ' : appelez le fournisseur.' : '.'}
+        </p>
+      )}
+      <p className="text-sm text-slate-800 whitespace-pre-line bg-slate-50 rounded-2xl p-3">{d.besoin}</p>
+      <div className="grid gap-2 text-sm text-slate-600">
+        <div className="rounded-2xl border border-slate-200 p-3 space-y-0.5">
+          <p className="font-bold text-slate-900">Client</p>
+          <p>{d.client.nom} · {d.lieu}</p>
+          <a href={`tel:${d.client.telephone}`} className="inline-flex items-center gap-1 min-h-[40px] font-bold text-suguba-profond underline">
+            <Phone className="w-3.5 h-3.5" /> {d.client.telephone}
+          </a>
+        </div>
+        <div className="rounded-2xl border border-slate-200 p-3 space-y-0.5">
+          <p className="font-bold text-slate-900">Fournisseur</p>
+          <p>{d.fournisseur?.nom || '—'}</p>
+          {d.fournisseur?.telephone && (
+            <a href={`tel:${d.fournisseur.telephone}`} className="inline-flex items-center gap-1 min-h-[40px] font-bold text-suguba-profond underline">
+              <Phone className="w-3.5 h-3.5" /> {d.fournisseur.telephone}
+            </a>
+          )}
+        </div>
+      </div>
+      {d.revendeur && (
+        <p className="text-sm text-slate-600 flex items-center gap-1">
+          <Users className="w-4 h-4" /> Via le revendeur {d.revendeur.nom || ''}{d.revendeur.code ? ` (${d.revendeur.code})` : ''}
+        </p>
+      )}
+      {d.prix && (
+        <div className="text-sm text-slate-700 rounded-2xl border border-slate-200 p-3 grid grid-cols-2 gap-2">
+          <p>Prix fournisseur<br /><strong className="text-slate-900">{fcfa(d.prix.fournisseur)}</strong></p>
+          <p>Gain revendeur<br /><strong className="text-slate-900">{fcfa(d.prix.gainRevendeur)}</strong></p>
+          <p>Marge Suguba<br /><strong className="text-slate-900">{fcfa(d.prix.margeSuguba)}</strong></p>
+          <p>Le client paie<br /><strong className="text-slate-900">{fcfa(d.prix.client)}</strong>{d.prix.livraison ? <span className="text-slate-500"> (dont remise {fcfa(d.prix.livraison)})</span> : null}</p>
         </div>
       )}
-    </PageReseau>
+      {d.conditions && <p className="text-sm text-slate-600">Conditions : {d.conditions}</p>}
+      {d.statut === 'proposee' && d.valableJusqu && <p className="text-sm text-slate-600">Valable jusqu’au {jour(d.valableJusqu)}</p>}
+      {d.motifRefus && <p className="text-sm text-slate-600">Motif du refus : {d.motifRefus}</p>}
+      {d.commande && (
+        <p className="text-sm font-bold text-suguba-profond">
+          Commande <Link href={`/admin/commandes?q=${encodeURIComponent(d.commande)}`} className="underline">{d.commande}</Link> créée.
+        </p>
+      )}
+    </>
   );
 }

@@ -80,7 +80,7 @@ export default function BoutiqueSugubaPage() {
   };
 
   return (
-    <PageReseau titre="Boutique Suguba" sousTitre="Suguba vendeuse de ses propres produits." retour={{ href: '/admin/backoffice', libelle: 'Back-office' }}
+    <PageReseau titre="Boutique Suguba" sousTitre="Suguba vendeuse de ses propres produits."
       action={<Button size="sm" href="/admin/products/new"><PackagePlus className="w-4 h-4" />Ajouter un produit</Button>}>
       {chargement ? <div className="space-y-3"><Skeleton className="h-24" /><Skeleton className="h-48" /></div>
         : !slug ? (

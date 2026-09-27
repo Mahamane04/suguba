@@ -1,14 +1,13 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
 import { useSugubaStore } from '@/lib/store';
 import { 
   BarChart3, MessageCircle, Calendar, CheckCircle2, 
-  TrendingUp, ShoppingBag, Truck, Users, ArrowLeft, Copy, Check, ShieldCheck
+  TrendingUp, ShoppingBag, Truck, Users, Copy, Check, ShieldCheck
 } from 'lucide-react';
 
 export default function AdminDailyReportPage() {
@@ -78,20 +77,13 @@ export default function AdminDailyReportPage() {
     <div className="min-h-screen flex flex-col bg-slate-50 pb-16">
       <Header />
 
-      <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
+      <main className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full space-y-6">
         
         {/* Navigation & Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <Link 
-              href="/admin" 
-              className="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-600 hover:text-slate-900"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Retour à la console Suguba Ops</span>
-            </Link>
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
-              Rapport Flash Quotidien du Fondateur
+              Rapport du soir
             </h1>
             <p className="text-xs text-slate-500 capitalize">
               Synthèse opérationnelle pour le {todayStr}.
@@ -120,7 +112,7 @@ export default function AdminDailyReportPage() {
           </div>
 
           <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-1">
-            <span className="text-xs font-bold text-slate-500 uppercase">Volume Global (GMV)</span>
+            <span className="text-xs font-bold text-slate-500 uppercase">Volume des commandes</span>
             <p className="text-2xl font-bold text-slate-900">
               {totalGmv.toLocaleString('fr-FR')} <span className="text-xs font-normal">F</span>
             </p>

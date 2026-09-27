@@ -7,6 +7,7 @@ import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Field';
 import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
+import { classeCible, useCibleUrl, useDefilerVersCible } from '@/components/admin/contexte';
 
 interface Message { id: string; texte: string; motifs: string[]; auteur: string; nom: string; envoyeLe: string; dejaRefuses: number }
 const AUTEUR: Record<string, string> = { revendeur: 'Revendeur', fournisseur: 'Fournisseur', client: 'Client' };
@@ -19,6 +20,9 @@ const AUTEUR: Record<string, string> = { revendeur: 'Revendeur', fournisseur: 'F
 export default function MessagesAdminPage() {
   const { toast } = useToast();
   const [liste, setListe] = useState<Message[] | null>(null);
+  // Lien direct (« À traiter ») : le dossier visé est surligné et amené à l'écran.
+  const cible = useCibleUrl();
+  useDefilerVersCible(cible, liste !== null);
   const [erreur, setErreur] = useState('');
   const [migration, setMigration] = useState(false);
   const [refus, setRefus] = useState<string | null>(null);
@@ -45,7 +49,7 @@ export default function MessagesAdminPage() {
   };
 
   return (
-    <PageReseau titre="Messages à vérifier" sousTitre="Numéros, liens et propositions de traiter hors Suguba." retour={{ href: '/admin/backoffice', libelle: 'Back-office' }}>
+    <PageReseau titre="Messages à vérifier" sousTitre="Numéros, liens et propositions de traiter hors Suguba.">
       {erreur ? <EmptyState icone={MessageSquareWarning} titre="Page indisponible" texte={erreur} />
         : !liste ? <Skeleton className="h-40" />
         : migration ? <EmptyState icone={MessageSquareWarning} titre="Mise à jour de la base nécessaire" texte="Exécutez le SQL A-EXECUTER-2026-09-26-protection-lot3.sql dans Supabase, puis rechargez la page." />
@@ -53,7 +57,7 @@ export default function MessagesAdminPage() {
         : (
           <div className="space-y-3">
             {liste.map((m) => (
-              <Card key={m.id} className="space-y-2">
+              <Card key={m.id} data-dossier={m.id} className={`space-y-2 ${classeCible(cible, m.id)}`}>
                 <div className="flex items-start justify-between gap-3">
                   <p className="text-xs text-slate-600">{AUTEUR[m.auteur] || m.auteur}{m.nom ? ` · ${m.nom}` : ''} · {new Date(m.envoyeLe).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
                   {m.dejaRefuses > 0 && <StatusPill ton="danger">{m.dejaRefuses} déjà refusé{m.dejaRefuses > 1 ? 's' : ''}</StatusPill>}

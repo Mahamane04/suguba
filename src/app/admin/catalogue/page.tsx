@@ -32,7 +32,7 @@ function versParams(f: FiltresCatalogue, page?: number): URLSearchParams {
  * dédié). Photos et prix se gèrent toujours dans « Produits ».
  */
 export default function CatalogueTableauPage() {
-  const { toast } = useToast();
+  const { toast, demander: demanderTexte } = useToast();
   const [filtres, setFiltres] = useState<FiltresCatalogue>(FILTRES_PAR_DEFAUT);
   const [page, setPage] = useState(1);
   const [donnees, setDonnees] = useState<Reponse | null>(null);
@@ -76,8 +76,11 @@ export default function CatalogueTableauPage() {
   const trier = (tri: FiltresCatalogue['tri']) => changer({ tri, sens: filtres.tri === tri && filtres.sens === 'desc' ? 'asc' : 'desc' });
 
   async function enregistrerVue() {
-    const nom = window.prompt('Nom de la vue (ex. « Sans unité », « Électroménager »)');
-    if (!nom?.trim()) return;
+    const nom = await demanderTexte({
+      titre: 'Enregistrer cette vue', message: 'Filtres et colonnes actuels, retrouvés en un clic (visibles par vous seul).',
+      libelle: 'Nom de la vue', placeholder: 'Ex. : Sans unité', min: 2, confirmer: 'Enregistrer',
+    });
+    if (!nom) return;
     const r = await fetch('/api/admin/vues', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ page: 'catalogue', nom, config: { filtres, colonnes } }) });
     const j = await r.json().catch(() => ({}));
     if (!r.ok) { toast(j.error || 'Enregistrement impossible.', { ton: 'erreur' }); return; }

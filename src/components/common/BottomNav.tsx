@@ -7,10 +7,11 @@ import { useSugubaStore } from '@/lib/store';
 import { useClavierOuvert } from '@/lib/useClavierOuvert';
 import { useBarreSurEcranVisible } from '@/lib/useBarreSurEcranVisible';
 import { usePanier } from '@/lib/panier';
+import { useDansPosteAdmin } from '@/components/admin/contexte';
 import {
   Home, Grid3X3, ShoppingCart, Wallet, TrendingUp,
   PackagePlus, ShieldCheck, Truck, Store, Users,
-  BarChart3, LifeBuoy, PackageSearch, Boxes, ClipboardList,
+  LifeBuoy, PackageSearch, Boxes, ClipboardList,
   ShoppingBag, UserRound,
 } from 'lucide-react';
 
@@ -62,14 +63,13 @@ function getNavItems(role: string | null): NavItem[] {
       ];
     case 'admin':
       return [
-        { label: 'Accueil', href: '/admin',              icon: Home       },
-        // La modération, les commandes et les retraits sont tous des blocs de
-        // /admin lui-même : les trois anciennes entrées menaient à des 404.
-        // /admin/products existe depuis le 2026-09-11 (catalogue complet,
-        // photos) et donne accès à « Nouveau produit ».
-        { label: 'Produits',    href: '/admin/products',     icon: Boxes      },
-        { label: 'Analyses',    href: '/admin/analytics',    icon: BarChart3  },
-        { label: 'SAV',         href: '/admin/sav',          icon: LifeBuoy   },
+        // Hors de l'espace équipe seulement (sur le site) : dans l'espace
+        // équipe, son menu remplace cette barre (U3, 2026-09-27). « À
+        // traiter » est la page d'arrivée de chaque membre depuis A1.
+        { label: 'À traiter', href: '/admin/a-traiter',  icon: ClipboardList },
+        { label: 'Commandes', href: '/admin/commandes',  icon: ShoppingBag },
+        { label: 'Produits',  href: '/admin/products',   icon: Boxes      },
+        { label: 'SAV',       href: '/admin/sav',        icon: LifeBuoy   },
       ];
     case 'customer':
       // Client connecté (V1, 2026-09-27) : il tombait dans le cas visiteur
@@ -140,6 +140,11 @@ export default function BottomNav() {
   // Sans « / » dans cette liste, `pathname.startsWith('/')` est toujours vrai
   // et l'onglet Boutique resterait allumé sur toutes les pages du site.
   const RACINES = ['/', '/reseller', '/supplier', '/driver', '/admin', '/compte'];
+
+  // Espace équipe (U3, 2026-09-27) : son propre menu remplace cette barre,
+  // qui menait encore à l'ancien tableau de bord.
+  const dansPoste = useDansPosteAdmin();
+  if (dansPoste) return null;
 
   return (
     <>

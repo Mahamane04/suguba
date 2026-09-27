@@ -4,9 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { SESSION_COOKIE_NAME } from '@/lib/session';
-import { modeRemiseCommande } from '@/lib/offre';
-import { chargerReglages } from '@/lib/platform-settings';
-import { estPayeEnEspeces, etatEspecesCollecteur, MESSAGE_PLAFOND } from '@/lib/caisse-livreur';
+import { appliquerMajCommande } from '@/lib/commande-admin';
 
 /** Mises à jour internes uniquement. Création atomique : /api/orders/create. */
 
@@ -97,29 +95,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, cloud: true, created: false, inchange: true });
     }
 
-    // Offre remise par le fournisseur (2026-09-26) : aucun livreur Suguba. Le
-    // fournisseur l'organise lui-même depuis son espace (/api/supplier/remise).
-    if (modeRemiseCommande(existing.pricing_snapshot) !== 'livreur'
-        && (statut === 'dispatched' || (maj.assigned_driver_id && maj.assigned_driver_id !== existing.assigned_driver_id))) {
-      return NextResponse.json({ error: 'Remise assurée par le fournisseur : aucun livreur Suguba à assigner.' }, { status: 409 });
-    }
-    if (statut === 'dispatched' && !(maj.assigned_driver_id ?? existing.assigned_driver_id)) return NextResponse.json({ error: 'Choisissez un livreur avant le dispatch.' }, { status: 400 });
-    if (maj.assigned_driver_id) {
-      const { data: driver, error: driverError } = await admin.from('drivers').select('active_status').eq('profile_id', maj.assigned_driver_id).maybeSingle();
-      if (driverError || !driver?.active_status) return NextResponse.json({ error: 'Livreur non autorisé au dispatch.' }, { status: 403 });
-      // Plafond d'espèces (Protection Suguba) : un livreur qui n'a pas reversé
-      // ne reçoit pas de NOUVELLE course payée en espèces.
-      if (maj.assigned_driver_id !== existing.assigned_driver_id && estPayeEnEspeces(existing.payment_method)) {
-        const { reglages } = await chargerReglages();
-        const etat = await etatEspecesCollecteur(admin, reglages, String(maj.assigned_driver_id));
-        if (etat.bloque) return NextResponse.json({ error: `${etat.raison} ${MESSAGE_PLAFOND}` }, { status: 409 });
-      }
-    }
-    const { data: updated, error } = await admin.from('orders').update(maj).eq('id', order.id).eq('status', existing.status).select('id').maybeSingle();
-    if (error) return NextResponse.json({ error: 'Mise à jour non confirmée. Actualisez puis réessayez.' }, { status: 500 });
-
-    if (!updated) return NextResponse.json({ error: 'Commande modifiée ailleurs. Actualisez.' }, { status: 409 });
-    // Le trigger de la migration-audit-integrite effectue les effets métier atomiquement.
+    // Contrôles communs avec les actions de la page Commandes (lot U2) :
+    // remise par le fournisseur, livreur actif, plafond d'espèces, et refus
+    // si la commande a changé entre-temps.
+    const resultat = await appliquerMajCommande(admin, existing, maj, session.role);
+    if (!resultat.ok) return NextResponse.json({ error: resultat.error }, { status: resultat.status });
 
     return NextResponse.json({ success: true, cloud: true, created: false });
   } catch (error: any) {

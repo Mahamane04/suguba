@@ -1,43 +1,61 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
-import Link from 'next/link';
-import Header from '@/components/common/Header';
-import BottomNav from '@/components/common/BottomNav';
-import Footer from '@/components/common/Footer';
 import CreateSavTicketModal from '@/components/admin/CreateSavTicketModal';
 import ChoicePicker from '@/components/ui/ChoicePicker';
 import Sheet from '@/components/ui/Sheet';
 import ScannerQr from '@/components/driver/ScannerQr';
+import PageReseau from '@/components/reseau/PageReseau';
+import Button from '@/components/ui/Button';
+import { Card, EmptyState, StatCard, StatusPill } from '@/components/ui/Surface';
+import { useToast } from '@/components/ui/Toast';
+import TableauAdmin, { type Colonne } from '@/components/admin/TableauAdmin';
+import Panneau, { Info } from '@/components/admin/Panneau';
+import { useCibleUrl, usePermission, usePosteAdmin } from '@/components/admin/contexte';
 import { lireQrRemise } from '@/lib/qr-remise';
 import { useSugubaStore } from '@/lib/store';
 import { SavTicket } from '@/types';
-import {
-  ShieldAlert, ShieldCheck, RefreshCw, Truck,
-  Phone, MessageCircle, ArrowLeft, Plus, CheckCircle2, Clock, Wrench,
-  Bike, AlertTriangle, QrCode, Image as ImageIcon,
-} from 'lucide-react';
+import { LifeBuoy, Truck, Phone, MessageCircle, Plus, CheckCircle2, Bike, QrCode, Image as ImageIcon, Loader2 } from 'lucide-react';
 
 /**
- * Les tickets viennent désormais de /api/admin/sav, plus du store local :
- * une réclamation saisie ici était auparavant invisible à tout autre admin
- * et perdue au vidage du cache. Voir supabase/migration-sav.sql.
+ * Service après-vente (refait en U4, 2026-09-27 : tableau, panneau latéral).
+ *
+ * Les tickets viennent de /api/admin/sav, plus du store local : une
+ * réclamation saisie ici était auparavant invisible à tout autre admin et
+ * perdue au vidage du cache. Voir supabase/migration-sav.sql.
  */
+
+type Filtre = 'open' | 'courier_dispatched' | 'resolved' | 'tous';
+const STATUT_SAV: Record<string, [string, 'danger' | 'attente' | 'succes' | 'neutre']> = {
+  open: ['Coursier à envoyer', 'danger'], courier_dispatched: ['Coursier en route', 'attente'],
+  swapped: ['Échangé', 'succes'], resolved: ['Résolu', 'succes'], rejected: ['Refusé', 'neutre'],
+};
+const RESOLUTION: Record<string, string> = { swap_new: 'Échange contre un neuf (72 h)', repair: 'Réparation', refund: 'Remboursement' };
+const jour = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+const pastille = (t: SavTicket) => { const [l, ton] = STATUT_SAV[t.status] || [t.status, 'neutre']; return <StatusPill ton={ton}>{l}</StatusPill>; };
+
 export default function AdminSavPage() {
   const state = useSugubaStore();
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [selectedTicketForDispatch, setSelectedTicketForDispatch] = useState<SavTicket | null>(null);
-  const [tickets, setTickets] = useState<SavTicket[]>([]);
+  const { toast } = useToast();
+  const { rafraichir } = usePosteAdmin();
+  const peutModifier = usePermission('commande.modifier');
+  const cible = useCibleUrl();
+  const [creation, setCreation] = useState(false);
+  const [tickets, setTickets] = useState<SavTicket[] | null>(null);
+  const [erreur, setErreur] = useState('');
   const [livreurs, setLivreurs] = useState<Array<{ id: string; fullName: string }>>([]);
-  const [livreurChoisi, setLivreurChoisi] = useState<Record<string, string>>({});
+  const [livreurChoisi, setLivreurChoisi] = useState('');
+  const [filtre, setFiltre] = useState<Filtre>('open');
+  const [ouvert, setOuvert] = useState<string | null>(null);
+  const [enCours, setEnCours] = useState(false);
 
-  const deliveredOrders = state.orders.filter(o => o.status === 'delivered');
+  const deliveredOrders = state.orders.filter((o) => o.status === 'delivered');
 
   const chargerTickets = useCallback(() => {
-    fetch('/api/admin/sav')
-      .then((res) => (res.ok ? res.json() : { tickets: [] }))
-      .then((json) => setTickets(json.tickets || []))
-      .catch(() => {});
+    fetch('/api/admin/sav', { cache: 'no-store' })
+      .then(async (res) => { const j = await res.json(); if (!res.ok) throw new Error(j.error || 'Réclamations illisibles.'); return j; })
+      .then((json) => { setTickets(json.tickets || []); setErreur(''); })
+      .catch((e) => { setErreur((e as Error).message); setTickets((t) => t ?? []); });
   }, []);
 
   useEffect(() => {
@@ -47,6 +65,14 @@ export default function AdminSavPage() {
       .then((json) => setLivreurs(json.drivers || []))
       .catch(() => {});
   }, [chargerTickets]);
+
+  // Lien direct (« À traiter ») : le bon onglet, le dossier ouvert.
+  useEffect(() => {
+    const t = cible && tickets?.find((x) => x.id === cible);
+    if (!t) return;
+    setFiltre(t.status === 'open' || t.status === 'courier_dispatched' || t.status === 'resolved' ? t.status : 'tous');
+    setOuvert(t.id);
+  }, [cible, tickets]);
 
   // Scanner un reçu client (2026-09-25) : retrouve la commande à partir du QR.
   // Seul le numéro de commande est lu ; le code de remise contenu dans le QR
@@ -76,310 +102,195 @@ export default function AdminSavPage() {
     }
   };
 
-  const ticketsAffiches = filtreCommande ? tickets.filter((t) => t.orderNumber === filtreCommande) : tickets;
-  const openTickets = tickets.filter(t => t.status === 'open');
-  const inProgressTickets = tickets.filter(t => t.status === 'courier_dispatched');
-  const resolvedTickets = tickets.filter(t => t.status === 'resolved');
-
-  const handleDispatchCourier = async (ticketId: string, driverId: string) => {
-    await fetch('/api/admin/sav', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ticketId, action: 'dispatch', driverId }),
-    });
-    setSelectedTicketForDispatch(null);
-    chargerTickets();
+  // Les anciennes actions ignoraient la réponse du serveur : un échec passait inaperçu.
+  const agir = async (corps: Record<string, unknown>, succes: string) => {
+    setEnCours(true);
+    try {
+      const r = await fetch('/api/admin/sav', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(corps) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) { toast(j.error || 'Action impossible.', { ton: 'erreur', duree: 7000 }); return; }
+      toast(succes, { ton: 'succes' });
+      setOuvert(null);
+      chargerTickets();
+      rafraichir();
+    } catch {
+      toast('Action non confirmée. Vérifiez votre connexion.', { ton: 'erreur' });
+    } finally {
+      setEnCours(false);
+    }
   };
 
-  const handleResolveTicket = async (ticketId: string) => {
-    await fetch('/api/admin/sav', {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ticketId,
-        action: 'resolve',
-        notes: 'Échange neuf remis au client et pièce défectueuse retournée au fournisseur.',
-      }),
-    });
-    chargerTickets();
-  };
+  const tous = tickets || [];
+  const parCommande = filtreCommande ? tous.filter((t) => t.orderNumber === filtreCommande) : tous;
+  const liste = filtreCommande || filtre === 'tous' ? parCommande : parCommande.filter((t) => t.status === filtre);
+  const nombre = (s: SavTicket['status']) => tous.filter((t) => t.status === s).length;
+  const FILTRES: [Filtre, string][] = [
+    ['open', `Coursier à envoyer (${nombre('open')})`], ['courier_dispatched', `Coursier en route (${nombre('courier_dispatched')})`],
+    ['resolved', `Résolus (${nombre('resolved')})`], ['tous', `Tous (${tous.length})`],
+  ];
+
+  const colonnes: Colonne<SavTicket>[] = [
+    { cle: 'numero', titre: 'Dossier', fixe: true, tri: (t) => t.createdAt, rendu: (t) => (
+      <span className="block"><span className="block font-mono text-xs font-bold text-slate-900">{t.ticketNumber}</span><span className="block text-xs text-slate-500">{jour(t.createdAt)}</span></span>
+    ) },
+    { cle: 'commande', titre: 'Commande', tri: (t) => t.orderNumber, rendu: (t) => <span className="font-mono text-xs">{t.orderNumber}</span> },
+    { cle: 'produit', titre: 'Produit', tri: (t) => t.productName, rendu: (t) => <span className="block min-w-[140px]">{t.productName}</span> },
+    { cle: 'client', titre: 'Client', tri: (t) => t.customerName, rendu: (t) => (
+      <span className="block"><span className="block font-semibold text-slate-900">{t.customerName}</span><span className="block text-xs text-slate-500 tabular-nums">{t.customerPhone}</span></span>
+    ) },
+    { cle: 'resolution', titre: 'Solution', cachee: true, rendu: (t) => RESOLUTION[t.resolutionType] || t.resolutionType },
+    { cle: 'fournisseur', titre: 'Fournisseur', cachee: true, tri: (t) => t.supplierName || '', rendu: (t) => t.supplierName || '—' },
+    { cle: 'coursier', titre: 'Coursier', tri: (t) => t.driverName || '', rendu: (t) => t.driverName || '—' },
+    { cle: 'statut', titre: 'Statut', tri: (t) => t.status, rendu: pastille },
+  ];
+
+  const ticket = tous.find((t) => t.id === ouvert) || null;
+  const choix = livreurChoisi || livreurs[0]?.id || '';
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
-      <Header />
+    <PageReseau titre="Service après-vente" large
+      sousTitre="Pannes sous garantie, réclamations et échanges à domicile à Bamako."
+      action={
+        <span className="flex flex-wrap gap-2">
+          <Button size="sm" variant="ghost" onClick={() => setScanOuvert(true)}><QrCode className="w-4 h-4" />Scanner un reçu</Button>
+          {peutModifier && <Button size="sm" onClick={() => setCreation(true)}><Plus className="w-4 h-4" />Ouvrir un dossier SAV</Button>}
+        </span>
+      }>
 
-      <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
-        
-        {/* Header & Title */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <Link 
-              href="/admin" 
-              className="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-600 hover:text-slate-900"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Retour à la console Suguba Ops</span>
-            </Link>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
-              Desk SAV, Garantie & Gestion des Échanges 72h
-            </h1>
-            <p className="text-xs text-slate-500">
-              Traitement des pannes sous garantie, réclamations et remplacements à domicile à Bamako.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-2 self-start sm:self-auto">
-            <button
-              onClick={() => setScanOuvert(true)}
-              className="flex items-center gap-2 min-h-11 px-4 bg-suguba-profond hover:bg-suguba-profond-2 text-white font-bold rounded-2xl text-xs shadow-md active:scale-95"
-            >
-              <QrCode className="w-4 h-4 text-suguba-citron" />
-              <span>Scanner un reçu</span>
-            </button>
-            <button
-              onClick={() => setIsCreateModalOpen(true)}
-              className="flex items-center space-x-2 min-h-11 px-4 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-2xl text-xs shadow-md transition-all active:scale-95"
-            >
-              <Plus className="w-4 h-4 stroke-[3]" />
-              <span>Ouvrir un Dossier SAV</span>
-            </button>
-          </div>
+      {filtreCommande && (
+        <div className="flex items-center justify-between gap-3 rounded-2xl bg-suguba-menthe border border-suguba-profond/20 px-4 py-2.5 text-sm">
+          <span className="text-slate-900">Demandes de la commande <strong className="font-mono">{filtreCommande}</strong> ({parCommande.length})</span>
+          <button type="button" onClick={() => setFiltreCommande(null)} className="min-h-[40px] px-3 font-bold text-suguba-profond underline">Tout afficher</button>
         </div>
+      )}
 
-        {filtreCommande && (
-          <div className="flex items-center justify-between gap-3 rounded-2xl bg-suguba-menthe border border-suguba-profond/20 px-4 py-2.5 text-sm">
-            <span className="text-slate-900">Demandes de la commande <strong className="font-mono">#{filtreCommande}</strong> ({ticketsAffiches.length})</span>
-            <button type="button" onClick={() => setFiltreCommande(null)} className="min-h-11 px-3 font-bold text-suguba-profond underline">Tout afficher</button>
-          </div>
+      <div className="grid grid-cols-3 gap-3">
+        <StatCard label="Coursier à envoyer" valeur={tickets ? nombre('open') : '—'} aide="À traiter en priorité" />
+        <StatCard label="Coursier en route" valeur={tickets ? nombre('courier_dispatched') : '—'} aide="Échange en cours" />
+        <StatCard label="Résolus" valeur={tickets ? nombre('resolved') : '—'} aide="Dossiers clos" />
+      </div>
+
+      {!filtreCommande && (
+        <div className="flex gap-2 overflow-x-auto pb-1" role="group" aria-label="Statut">
+          {FILTRES.map(([f, libelle]) => (
+            <button key={f} type="button" aria-pressed={filtre === f} onClick={() => setFiltre(f)}
+              className={`px-3.5 h-10 rounded-full text-sm font-semibold whitespace-nowrap ${filtre === f ? 'bg-suguba-profond text-white' : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'}`}>{libelle}</button>
+          ))}
+        </div>
+      )}
+
+      {erreur && <p role="alert" className="text-sm text-rose-700">{erreur}</p>}
+      {tickets === null ? <Card padding="p-8" className="text-sm text-slate-500 text-center">Chargement des réclamations…</Card>
+        : liste.length === 0 ? (
+          <EmptyState icone={LifeBuoy} titre={filtreCommande ? 'Aucune demande SAV pour cette commande' : 'Rien dans cette file'}
+            texte={filtre === 'open' && !filtreCommande ? 'Aucune réclamation n’attend de coursier.' : undefined} />
+        ) : (
+          <TableauAdmin<SavTicket> titre="Réclamations" memoire="sav" lignes={liste} colonnes={colonnes} cleLigne={(t) => t.id}
+            onOuvrir={(t) => setOuvert(t.id)} cible={cible}
+            carteMobile={(t) => (
+              <div className="space-y-1">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="text-sm font-bold text-slate-900">{t.productName}</p>
+                  {pastille(t)}
+                </div>
+                <p className="text-xs text-slate-500 font-mono">{t.ticketNumber} · commande {t.orderNumber} · {jour(t.createdAt)}</p>
+                <p className="text-xs text-slate-600">{t.customerName}</p>
+              </div>
+            )} />
         )}
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="bg-white p-4 rounded-3xl border border-rose-200 shadow-xs space-y-1">
-            <span className="text-xs font-bold text-rose-700 uppercase">Dossiers Ouverts</span>
-            <p className="text-2xl font-bold text-rose-600">{openTickets.length}</p>
-            <p className="text-xs text-slate-500">À traiter en priorité</p>
-          </div>
-
-          <div className="bg-white p-4 rounded-3xl border border-amber-200 shadow-xs space-y-1">
-            <span className="text-xs font-bold text-amber-700 uppercase">Échanges en Cours</span>
-            <p className="text-2xl font-bold text-amber-600">{inProgressTickets.length}</p>
-            <p className="text-xs text-slate-500">Livreur moto en mission</p>
-          </div>
-
-          <div className="bg-white p-4 rounded-3xl border border-emerald-200 shadow-xs space-y-1">
-            <span className="text-xs font-bold text-emerald-700 uppercase">Dossiers Résolus</span>
-            <p className="text-2xl font-bold text-emerald-600">{resolvedTickets.length}</p>
-            <p className="text-xs text-slate-500">Échanges réussis sous 72h</p>
-          </div>
-
-          <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-xs space-y-1">
-            <span className="text-xs font-bold text-slate-500 uppercase">Taux de Résolution</span>
-            <p className="text-2xl font-bold text-slate-900">100%</p>
-            <p className="text-xs text-slate-500">Engagement Qualité Suguba</p>
-          </div>
-        </div>
-
-        {/* Active Tickets List */}
-        <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div className="flex items-center space-x-2">
-              <ShieldAlert className="w-5 h-5 text-rose-600" />
-              <h2 className="font-bold text-sm text-slate-900">
-                File des Réclamations & Échanges sous Garantie ({tickets.length})
-              </h2>
+      <Panneau ouvert={Boolean(ticket)} onFermer={() => setOuvert(null)}
+        titre={ticket ? `Dossier SAV ${ticket.ticketNumber}` : ''}
+        sousTitre={ticket ? `Commande ${ticket.orderNumber} · ${ticket.productName}` : undefined}>
+        {ticket && (
+          <>
+            <div>{pastille(ticket)}</div>
+            <dl>
+              <Info libelle="Client">{ticket.customerName}</Info>
+              <Info libelle="Téléphone"><a href={`tel:${ticket.customerPhone}`} className="text-suguba-profond hover:underline tabular-nums">{ticket.customerPhone}</a></Info>
+              <Info libelle="Solution">{RESOLUTION[ticket.resolutionType] || ticket.resolutionType}</Info>
+              {ticket.supplierName && <Info libelle="Fournisseur">{ticket.supplierName}</Info>}
+              {ticket.driverName && <Info libelle="Coursier">{ticket.driverName}{ticket.driverPhone ? ` (${ticket.driverPhone})` : ''}</Info>}
+              {ticket.status === 'courier_dispatched' && ticket.swapOtp && <Info libelle="Code secret d’échange"><span className="font-mono text-rose-700">{ticket.swapOtp}</span></Info>}
+              <Info libelle="Ouvert le">{jour(ticket.createdAt)}</Info>
+            </dl>
+            <div className="space-y-1">
+              <p className="text-sm font-bold text-slate-900">Panne déclarée</p>
+              <p className="text-sm text-slate-800 bg-slate-50 rounded-2xl p-3 whitespace-pre-line">{ticket.issueDescription}</p>
             </div>
-            <span className="text-xs font-bold text-slate-500">
-              Garantie Certifiée
-            </span>
-          </div>
+            {/Photos jointes : \d/.test(ticket.issueDescription || '') && (
+              photos[ticket.id] === undefined ? (
+                <Button variant="ghost" size="sm" onClick={() => chargerPhotos(ticket.id)}><ImageIcon className="w-4 h-4" />Voir les photos du client</Button>
+              ) : photos[ticket.id] === 'chargement' ? (
+                <p className="text-sm text-slate-500">Chargement des photos…</p>
+              ) : (photos[ticket.id] as string[]).length === 0 ? (
+                <p className="text-sm text-slate-500">Photos introuvables.</p>
+              ) : (
+                <div className="flex gap-2 flex-wrap">
+                  {(photos[ticket.id] as string[]).map((url, i) => (
+                    <a key={url} href={url} target="_blank" rel="noopener noreferrer" aria-label={`Photo ${i + 1} du client`}>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={url} alt={`Photo ${i + 1} du client`} className="w-24 h-24 object-cover rounded-xl border border-slate-200" />
+                    </a>
+                  ))}
+                </div>
+              )
+            )}
+            {ticket.notes && <p className="text-sm text-slate-600 italic">Notes : {ticket.notes}</p>}
 
-          {ticketsAffiches.length === 0 ? (
-            <div className="p-8 text-center text-xs text-slate-500">
-              {filtreCommande ? 'Aucune demande SAV pour cette commande.' : 'Aucun dossier SAV en cours. Tout fonctionne parfaitement !'}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {ticketsAffiches.map((ticket) => {
-                const isResolved = ticket.status === 'resolved';
-                const isDispatched = ticket.status === 'courier_dispatched';
+            {ticket.status !== 'resolved' && ticket.status !== 'rejected' && (
+              <div className="grid grid-cols-2 gap-2">
+                <Button href={`tel:${ticket.customerPhone}`} variant="secondary" size="sm"><Phone className="w-4 h-4" />Appeler le client</Button>
+                <Button variant="whatsapp" size="sm" target="_blank" rel="noopener noreferrer"
+                  href={`https://api.whatsapp.com/send?phone=${ticket.customerPhone.replace(/\D/g, '')}&text=${encodeURIComponent(`Bonjour ${ticket.customerName}, votre dossier SAV ${ticket.ticketNumber} sur Suguba Mali a été pris en charge. Un livreur passe pour l’échange de votre ${ticket.productName}.`)}`}>
+                  <MessageCircle className="w-4 h-4" />Suivi WhatsApp
+                </Button>
+              </div>
+            )}
 
-                const whatsappClientUrl = `https://api.whatsapp.com/send?phone=${ticket.customerPhone.replace(/\D/g, '')}&text=${encodeURIComponent(
-                  `Bonjour ${ticket.customerName}, votre dossier SAV #${ticket.ticketNumber} sur Suguba Mali a été pris en charge. Un livreur est en cours de passage pour l'échange de votre ${ticket.productName} sous garantie.`
-                )}`;
+            {peutModifier && ticket.status === 'open' && (
+              <Card padding="p-4" className="space-y-2 !bg-slate-50">
+                <p className="text-sm font-semibold text-slate-800">Envoyer un coursier</p>
+                {livreurs.length === 0 ? <p className="text-sm text-slate-600">Aucun livreur actif : vérifiez-en un dans « Livreurs ».</p> : (
+                  <>
+                    <ChoicePicker ariaLabel="Coursier" valeur={choix} onChange={setLivreurChoisi} choix={livreurs.map((d) => ({ valeur: d.id, libelle: d.fullName }))} />
+                    <Button fullWidth disabled={enCours || !choix} onClick={() => agir({ ticketId: ticket.id, action: 'dispatch', driverId: choix }, 'Coursier envoyé.')}>
+                      {enCours ? <Loader2 className="w-4 h-4 animate-spin" /> : <Truck className="w-4 h-4" />}Envoyer ce coursier
+                    </Button>
+                  </>
+                )}
+              </Card>
+            )}
+            {peutModifier && ticket.status === 'courier_dispatched' && (
+              <Button fullWidth disabled={enCours} onClick={() => agir({
+                ticketId: ticket.id, action: 'resolve',
+                notes: 'Échange neuf remis au client et pièce défectueuse retournée au fournisseur.',
+              }, 'Dossier clos.')}>
+                {enCours ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}Échange réussi : clore le dossier
+              </Button>
+            )}
+            {ticket.status === 'courier_dispatched' && (
+              <p className="text-xs text-slate-500 flex items-center gap-1"><Bike className="w-3.5 h-3.5" />Le coursier remet le produit neuf contre le code secret d’échange du client.</p>
+            )}
+          </>
+        )}
+      </Panneau>
 
-                return (
-                  <div 
-                    key={ticket.id}
-                    className={`p-4 sm:p-5 rounded-3xl border ${
-                      isResolved ? 'bg-slate-50/50 border-slate-200 opacity-80' :
-                      isDispatched ? 'bg-amber-50/40 border-amber-300 shadow-xs' :
-                      'bg-rose-50/40 border-rose-300 shadow-xs'
-                    } space-y-3`}
-                  >
-                    {/* Top Row */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/60 pb-3">
-                      <div className="flex items-center space-x-2">
-                        <span className="font-mono font-bold text-xs px-2.5 py-1 bg-slate-900 text-white rounded-lg">
-                          #{ticket.ticketNumber}
-                        </span>
-                        <span className="font-bold text-xs text-slate-900">
-                          Commande #{ticket.orderNumber} • {ticket.productName}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center space-x-2">
-                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold flex items-center gap-1 ${
-                          isResolved ? 'bg-emerald-100 text-emerald-800' :
-                          isDispatched ? 'bg-amber-100 text-amber-900 animate-pulse' :
-                          'bg-rose-100 text-rose-900'
-                        }`}>
-                          {isResolved && <><CheckCircle2 className="w-3 h-3" />DOSSIER RÉSOLU</>}
-                          {isDispatched && <><Bike className="w-3 h-3" />COURSIER ASSIGNÉ</>}
-                          {ticket.status === 'open' && <><AlertTriangle className="w-3 h-3" />EN ATTENTE ASSIGNATION</>}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Ticket Details */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                      <div className="space-y-1">
-                        <p className="text-slate-600">Client : <strong className="text-slate-900">{ticket.customerName}</strong> ({ticket.customerPhone})</p>
-                        <p className="text-slate-600">Résolution : <strong className="text-rose-800 uppercase font-bold">{ticket.resolutionType === 'swap_new' ? 'Échange Neuf 72h' : ticket.resolutionType}</strong></p>
-                        <p className="text-slate-600 font-medium">Panne déclarée : <span className="text-slate-900 font-bold bg-white p-1 rounded-md border border-slate-200 block mt-1 whitespace-pre-line">{ticket.issueDescription}</span></p>
-                        {/Photos jointes : \d/.test(ticket.issueDescription || '') && (
-                          photos[ticket.id] === undefined ? (
-                            <button type="button" onClick={() => chargerPhotos(ticket.id)}
-                              className="min-h-11 px-3 rounded-xl border border-slate-200 bg-white text-xs font-bold text-slate-800 inline-flex items-center gap-1.5">
-                              <ImageIcon className="w-4 h-4" /> Voir les photos du client
-                            </button>
-                          ) : photos[ticket.id] === 'chargement' ? (
-                            <p className="text-xs text-slate-500">Chargement des photos…</p>
-                          ) : (photos[ticket.id] as string[]).length === 0 ? (
-                            <p className="text-xs text-slate-500">Photos introuvables.</p>
-                          ) : (
-                            <div className="flex gap-2 flex-wrap">
-                              {(photos[ticket.id] as string[]).map((url, i) => (
-                                <a key={url} href={url} target="_blank" rel="noopener noreferrer" aria-label={`Photo ${i + 1} du client`}>
-                                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img src={url} alt={`Photo ${i + 1} du client`} className="w-24 h-24 object-cover rounded-xl border border-slate-200" />
-                                </a>
-                              ))}
-                            </div>
-                          )
-                        )}
-                      </div>
-
-                      <div className="space-y-1 bg-white p-3 rounded-2xl border border-slate-200">
-                        {isDispatched && (
-                          <>
-                            <p className="text-amber-900 font-bold flex items-center gap-1"><Bike className="w-3.5 h-3.5" />Coursier : {ticket.driverName} ({ticket.driverPhone})</p>
-                            <p className="text-xs text-slate-700">Code Secret Échange OTP : <strong className="font-mono text-rose-700">{ticket.swapOtp}</strong></p>
-                          </>
-                        )}
-                        {ticket.notes && <p className="text-xs text-slate-500 italic">Notes : {ticket.notes}</p>}
-                      </div>
-                    </div>
-
-                    {/* Actions Row */}
-                    {!isResolved && (
-                      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-200/60">
-                        <a
-                          href={`tel:${ticket.customerPhone}`}
-                          className="py-2 px-3 bg-slate-900 hover:bg-black text-white font-bold rounded-xl text-xs flex items-center space-x-1"
-                        >
-                          <Phone className="w-3.5 h-3.5" />
-                          <span>Appeler Client</span>
-                        </a>
-
-                        <a
-                          href={whatsappClientUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="py-2 px-3 bg-suguba-wa hover:bg-[#20bd5a] text-suguba-profond font-bold rounded-xl text-xs flex items-center space-x-1"
-                        >
-                          <MessageCircle className="w-3.5 h-3.5 fill-current" />
-                          <span>WhatsApp Suivi</span>
-                        </a>
-
-                        {/* Le livreur est choisi parmi les vrais comptes actifs
-                            (/api/admin/drivers/active) : l'ancienne version
-                            envoyait `state.drivers[0]`, un livreur fictif. */}
-                        {ticket.status === 'open' && (
-                          livreurs.length === 0 ? (
-                            <span className="py-2 px-3 text-xs text-slate-500 italic">
-                              Aucun livreur actif à assigner
-                            </span>
-                          ) : (
-                            <div className="flex items-center gap-1.5">
-                              <ChoicePicker
-                                ariaLabel="Livreur"
-                                className="w-40"
-                                valeur={livreurChoisi[ticket.id] || livreurs[0].id}
-                                onChange={(v) => setLivreurChoisi((m) => ({ ...m, [ticket.id]: v }))}
-                                choix={livreurs.map((d) => ({ valeur: d.id, libelle: d.fullName }))}
-                              />
-                              <button
-                                onClick={() => handleDispatchCourier(ticket.id, livreurChoisi[ticket.id] || livreurs[0].id)}
-                                className="py-2 px-3 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs flex items-center space-x-1 shadow-xs shrink-0"
-                              >
-                                <Truck className="w-3.5 h-3.5" />
-                                <span>Assigner</span>
-                              </button>
-                            </div>
-                          )
-                        )}
-
-                        {isDispatched && (
-                          <button
-                            onClick={() => handleResolveTicket(ticket.id)}
-                            className="py-2 px-3 bg-suguba-profond hover:bg-suguba-profond-2 text-white font-bold rounded-xl text-xs flex items-center space-x-1 shadow-xs"
-                          >
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            <span>Valider Échange Réussi & Clôturer</span>
-                          </button>
-                        )}
-                      </div>
-                    )}
-
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-        </div>
-
-      </main>
-
-      {/* Create SAV Modal */}
-      {isCreateModalOpen && (
-        <CreateSavTicketModal
-          orders={deliveredOrders}
-          isOpen={isCreateModalOpen}
-          onClose={() => setIsCreateModalOpen(false)}
-          onCreated={chargerTickets}
-        />
+      {creation && (
+        <CreateSavTicketModal orders={deliveredOrders} isOpen={creation} onClose={() => setCreation(false)} onCreated={() => { chargerTickets(); rafraichir(); }} />
       )}
 
       <Sheet ouvert={scanOuvert} onFermer={fermerScan} titre="Scanner un reçu client"
         sousTitre="Retrouvez la commande à partir du QR du reçu Suguba.">
         {commandeScannee ? (
           <div className="space-y-3">
-            <p className="text-sm text-slate-700">Commande <strong className="font-mono text-slate-900">#{commandeScannee}</strong></p>
+            <p className="text-sm text-slate-700">Commande <strong className="font-mono text-slate-900">{commandeScannee}</strong></p>
             <div className="grid gap-2">
-              <Link href={`/admin/commandes?q=${encodeURIComponent(commandeScannee)}`}
-                className="min-h-12 rounded-2xl bg-suguba-profond text-white text-sm font-bold inline-flex items-center justify-center">
-                Voir la commande
-              </Link>
-              <button type="button" onClick={() => { setFiltreCommande(commandeScannee); fermerScan(); }}
-                className="min-h-12 rounded-2xl border border-slate-200 text-sm font-bold text-slate-800">
-                Ses demandes SAV ({tickets.filter((t) => t.orderNumber === commandeScannee).length})
-              </button>
-              <button type="button" onClick={() => setCommandeScannee(null)}
-                className="min-h-11 text-sm font-bold text-slate-600">
-                Scanner un autre reçu
-              </button>
+              <Button href={`/admin/commandes?q=${encodeURIComponent(commandeScannee)}`} fullWidth>Voir la commande</Button>
+              <Button variant="ghost" fullWidth onClick={() => { setFiltreCommande(commandeScannee); fermerScan(); }}>
+                Ses demandes SAV ({tous.filter((t) => t.orderNumber === commandeScannee).length})
+              </Button>
+              <button type="button" onClick={() => setCommandeScannee(null)} className="min-h-[44px] text-sm font-bold text-slate-600">Scanner un autre reçu</button>
             </div>
           </div>
         ) : (
@@ -390,9 +301,6 @@ export default function AdminSavPage() {
           </div>
         )}
       </Sheet>
-
-      <Footer />
-      <BottomNav />
-    </div>
+    </PageReseau>
   );
 }

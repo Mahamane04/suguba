@@ -37,7 +37,7 @@ export const LECTEURS: Record<TypeTache, Lecteur> = {
     .map((o: any) => ({
       type: 'commande_a_confirmer', id: o.id, titre: `Commande ${o.order_number}`,
       detail: [o.customer_name, o.product_name].filter(Boolean).join(' · '), depuis: iso(o.created_at),
-      lien: `/admin/commandes?q=${encodeURIComponent(o.order_number)}`, montant: Number(o.total_amount) || null,
+      lien: `/admin/commandes?statut=pending_call&q=${encodeURIComponent(o.order_number)}`, montant: Number(o.total_amount) || null,
     })),
 
   livraison_a_attribuer: async (a) => (await lignes(a.from('orders')
@@ -46,7 +46,7 @@ export const LECTEURS: Record<TypeTache, Lecteur> = {
     .map((o: any) => ({
       type: 'livraison_a_attribuer', id: o.id, titre: `Commande ${o.order_number}`,
       detail: [o.neighborhood, o.city].filter(Boolean).join(', ') + (o.payment_method === 'cash' ? ' · espèces à encaisser' : ''),
-      depuis: iso(o.created_at), lien: `/admin/commandes?q=${encodeURIComponent(o.order_number)}`, montant: Number(o.total_amount) || null,
+      depuis: iso(o.created_at), lien: `/admin/commandes?statut=confirmed&q=${encodeURIComponent(o.order_number)}`, montant: Number(o.total_amount) || null,
     })),
 
   retrait_a_payer: async (a) => (await lignes(a.from('payouts')
@@ -55,7 +55,7 @@ export const LECTEURS: Record<TypeTache, Lecteur> = {
     .map((p: any) => ({
       type: 'retrait_a_payer', id: p.id, titre: `Retrait de ${p.reseller_name || 'un partenaire'}`,
       detail: p.payment_method ? String(p.payment_method) : 'Mobile Money', depuis: iso(p.created_at),
-      lien: '/admin#retraits', montant: Number(p.amount) || null,
+      lien: `/admin/retraits?id=${encodeURIComponent(p.id)}`, montant: Number(p.amount) || null,
     })),
 
   versement_en_retard: async (a) => {
@@ -68,7 +68,7 @@ export const LECTEURS: Record<TypeTache, Lecteur> = {
       .map((c) => ({
         type: 'versement_en_retard' as const, id: c.driverId, titre: `Espèces chez ${c.nom}`,
         detail: `${fcfa(c.aVerser)} à verser`, depuis: iso(c.plusAncienne),
-        lien: '/admin/caisse-livreurs', montant: c.aVerser,
+        lien: `/admin/caisse-livreurs?id=${encodeURIComponent(c.driverId)}`, montant: c.aVerser,
       }));
   },
 
@@ -80,7 +80,7 @@ export const LECTEURS: Record<TypeTache, Lecteur> = {
     const depuis = new Map(etapes.map((e: any) => [e.order_id, e.created_at]));
     return commandes.map((o: any) => ({
       type: 'prestation_contestee' as const, id: o.id, titre: `Prestation ${o.order_number}`,
-      detail: o.product_name || '', depuis: iso(depuis.get(o.id)), lien: '/admin/prestations',
+      detail: o.product_name || '', depuis: iso(depuis.get(o.id)), lien: `/admin/prestations?id=${encodeURIComponent(o.id)}`,
     }));
   },
 
@@ -88,7 +88,7 @@ export const LECTEURS: Record<TypeTache, Lecteur> = {
     .select('id, created_at').eq('statut', 'en_attente').order('created_at', { ascending: true }).limit(LIMITE)))
     .map((m: any) => ({
       type: 'message_a_verifier', id: m.id, titre: 'Message retenu',
-      detail: 'Numéro, lien ou proposition hors Suguba repéré', depuis: iso(m.created_at), lien: '/admin/messages',
+      detail: 'Numéro, lien ou proposition hors Suguba repéré', depuis: iso(m.created_at), lien: `/admin/messages?id=${encodeURIComponent(m.id)}`,
     })),
 
   verification_en_attente: async (a) => (await lignes(a.from('verification_requests')
@@ -96,21 +96,21 @@ export const LECTEURS: Record<TypeTache, Lecteur> = {
     .map((v: any) => ({
       type: 'verification_en_attente', id: v.id, titre: 'Pièce à vérifier',
       detail: ({ identity: 'Pièce d’identité', selfie: 'Selfie', location: 'Localisation', business: 'Entreprise', phone: 'Téléphone', email: 'E-mail' } as Record<string, string>)[v.kind] || v.kind,
-      depuis: iso(v.created_at), lien: '/admin/verifications',
+      depuis: iso(v.created_at), lien: `/admin/verifications?id=${encodeURIComponent(v.id)}`,
     })),
 
   produit_a_verifier: async (a) => (await lignes(a.from('products')
     .select('id, name, supplier_name, created_at').in('status', ['submitted', 'pending']).order('created_at', { ascending: true }).limit(LIMITE)))
     .map((p: any) => ({
       type: 'produit_a_verifier', id: p.id, titre: p.name || 'Produit',
-      detail: p.supplier_name || '', depuis: iso(p.created_at), lien: '/admin/products',
+      detail: p.supplier_name || '', depuis: iso(p.created_at), lien: `/admin/products?q=${encodeURIComponent(p.name || '')}`,
     })),
 
   sav_ouvert: async (a) => (await lignes(a.from('sav_tickets')
     .select('id, ticket_number, order_number, customer_name, created_at').in('status', ['open', 'courier_dispatched']).order('created_at', { ascending: true }).limit(LIMITE)))
     .map((t: any) => ({
       type: 'sav_ouvert', id: t.id, titre: `SAV ${t.ticket_number || ''}`.trim(),
-      detail: [t.order_number, t.customer_name].filter(Boolean).join(' · '), depuis: iso(t.created_at), lien: '/admin/sav',
+      detail: [t.order_number, t.customer_name].filter(Boolean).join(' · '), depuis: iso(t.created_at), lien: `/admin/sav?id=${encodeURIComponent(t.id)}`,
     })),
 
   devis_sans_reponse: async (a) => (await lignes(a.from('quote_requests')
@@ -119,7 +119,7 @@ export const LECTEURS: Record<TypeTache, Lecteur> = {
     .order('created_at', { ascending: true }).limit(LIMITE)))
     .map((d: any) => ({
       type: 'devis_sans_reponse', id: d.id, titre: 'Demande de devis',
-      detail: `Sans réponse du fournisseur depuis plus de ${HEURES_DEVIS} h`, depuis: iso(d.created_at), lien: '/admin/devis',
+      detail: `Sans réponse du fournisseur depuis plus de ${HEURES_DEVIS} h`, depuis: iso(d.created_at), lien: `/admin/devis?id=${encodeURIComponent(d.id)}`,
     })),
 
   validation_a_decider: async (a) => (await lignes(a.from('validations_admin')
@@ -127,7 +127,7 @@ export const LECTEURS: Record<TypeTache, Lecteur> = {
     .map((v: any) => ({
       type: 'validation_a_decider', id: v.id,
       titre: ({ retrait: 'Paiement d’un retrait', avance_commission: 'Avance d’une commission', part_suguba: 'Baisse de la part Suguba' } as Record<string, string>)[v.type] || v.type,
-      detail: 'Préparé par un collègue : à approuver par un autre membre', depuis: iso(v.cree_le), lien: '/admin/validations',
+      detail: 'Préparé par un collègue : à approuver par un autre membre', depuis: iso(v.cree_le), lien: `/admin/validations?id=${encodeURIComponent(v.id)}`,
       montant: v.montant == null ? null : Number(v.montant),
     })),
 
@@ -135,7 +135,7 @@ export const LECTEURS: Record<TypeTache, Lecteur> = {
     .select('id, label, budget, created_at').eq('status', 'pending').order('created_at', { ascending: true }).limit(LIMITE)))
     .map((s: any) => ({
       type: 'sponsorisation_a_examiner', id: s.id, titre: s.label || 'Sponsorisation',
-      detail: 'En attente de décision', depuis: iso(s.created_at), lien: '/admin/sponsorisations', montant: Number(s.budget) || null,
+      detail: 'En attente de décision', depuis: iso(s.created_at), lien: `/admin/sponsorisations?id=${encodeURIComponent(s.id)}`, montant: Number(s.budget) || null,
     })),
 };
 

@@ -5,21 +5,20 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { UserRole } from '@/types';
-import { sugubaStore, useSugubaStore } from '@/lib/store';
+import { useSugubaStore } from '@/lib/store';
 import ClocheNotifications from '@/components/reseau/ClocheNotifications';
 import IconePanier from '@/components/panier/IconePanier';
 import {
   ShoppingBag, Shield, Truck, Store, UserCheck,
   ChevronDown, LogOut, Menu, X, Globe, LogIn, Search, Users, PackageSearch } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
-import { invaliderIdentite } from '@/lib/identite';
+import { deconnecter } from '@/lib/deconnexion';
 import LogoSuguba from '@/components/ui/LogoSuguba';
 
 const roleConfig: Record<UserRole, { label: string; icon: React.ElementType; path: string }> = {
   reseller: { label: 'Revendeur', icon: Store, path: '/reseller' },
   supplier: { label: 'Fournisseur', icon: ShoppingBag, path: '/supplier' },
   driver: { label: 'Livreur', icon: Truck, path: '/driver' },
-  admin: { label: 'Admin', icon: Shield, path: '/admin' },
+  admin: { label: 'Admin', icon: Shield, path: '/admin/a-traiter' },
   customer: { label: 'Client', icon: UserCheck, path: '/compte/commandes' },
   diaspora: { label: 'Diaspora', icon: Globe, path: '/diaspora' },
 };
@@ -71,13 +70,7 @@ export default function Header() {
   const seDeconnecter = useCallback(async () => {
     setMenuCompte(false);
     setMenuMobile(false);
-    const result = await fetch('/api/auth/logout', { method: 'POST' }).catch(() => null);
-    if (!result?.ok) { window.alert('Déconnexion non confirmée. Rétablissez la connexion puis réessayez.'); return; }
-    invaliderIdentite();
-    await supabase?.auth.signOut({ scope: 'local' }).catch(() => undefined);
-    // Met à jour le store partagé tout de suite : BottomNav (et tout le
-    // reste de l'app) le lit en direct, sans attendre un rechargement.
-    sugubaStore.definirUtilisateur(null, true);
+    if (!(await deconnecter())) { window.alert('Déconnexion non confirmée. Rétablissez la connexion puis réessayez.'); return; }
     router.push('/');
   }, [router]);
 
@@ -98,12 +91,15 @@ export default function Header() {
   const prenom = state.currentUser.fullName?.trim().split(/\s+/)[0] || '';
   // Sans nom au profil, « Mon compte » : le rôle est déjà écrit juste dessous.
   const nomAffiche = prenom || 'Mon compte';
-  // Poste de travail admin (A1) : sur ordinateur, son menu latéral remplace l'en-tête.
+  // Poste de travail de l'équipe (A1, U3) : sa barre et son menu remplacent
+  // l'en-tête public, sur ordinateur comme sur téléphone (trois barres
+  // s'empilaient sur téléphone). Déconnexion : dans le menu de l'équipe.
   const dansPoste = useDansPosteAdmin();
+  if (dansPoste) return null;
 
   return (
     <header
-      className={`sticky top-0 z-50 transition-all duration-200 border-b border-slate-100 ${dansPoste ? 'lg:hidden ' : ''}${
+      className={`sticky top-0 z-50 transition-all duration-200 border-b border-slate-100 ${
         defile ? 'bg-white/95 backdrop-blur-md shadow-sm' : 'bg-white'
       }`}
     >

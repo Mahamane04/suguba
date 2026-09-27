@@ -55,7 +55,9 @@ export async function GET(req: NextRequest) {
         if (['42P01', 'PGRST205', '42703'].includes(String(error.code))) return [];
         throw error;
       }
-      return (data || []).map((p: any) => ({ titre: p.reference, detail: `${Math.round(Number(p.montant) || 0).toLocaleString('fr-FR')} F${p.cible ? ` · ${p.cible}` : ''}${p.annule_le ? ' · annulé' : ''}`, lien: '/admin#retraits' }));
+      return (data || []).map((p: any) => ({ titre: p.reference, detail: `${Math.round(Number(p.montant) || 0).toLocaleString('fr-FR')} F${p.cible ? ` · ${p.cible}` : ''}${p.annule_le ? ' · annulé' : ''}`,
+        // Paiement reçu pour une campagne (missions) ou une sponsorisation : la page où il figure.
+        lien: p.cible === 'campagne' ? '/admin/missions' : '/admin/sponsorisations' }));
     },
   };
 

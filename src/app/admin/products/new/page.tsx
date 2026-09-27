@@ -155,11 +155,11 @@ export default function AdminNewProductPage() {
       <main className="flex-1 max-w-3xl mx-auto px-4 sm:px-6 py-6 w-full space-y-5">
 
         <Link
-          href="/admin"
+          href="/admin/products"
           className="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-600 hover:text-slate-900"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Retour au tableau de bord</span>
+          <span>Produits</span>
         </Link>
 
         <div className="space-y-1">
@@ -194,10 +194,10 @@ export default function AdminNewProductPage() {
                 Ajouter un autre produit
               </button>
               <button
-                onClick={() => router.push('/admin')}
+                onClick={() => router.push('/admin/products')}
                 className="bg-slate-900 hover:bg-black text-white font-bold py-3 px-6 rounded-2xl text-xs transition-colors"
               >
-                Retour au tableau de bord
+                Voir les produits
               </button>
             </div>
           </div>

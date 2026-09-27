@@ -7,6 +7,7 @@ import { Card, EmptyState, Skeleton, StatCard, StatusPill } from '@/components/u
 import Button from '@/components/ui/Button';
 import { Field, Textarea } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
+import { classeCible, useCibleUrl, useDefilerVersCible } from '@/components/admin/contexte';
 
 interface Etape {
   position: number;
@@ -47,6 +48,9 @@ export default function PrestationsAdminPage() {
   const [prestations, setPrestations] = useState<Prestation[]>([]);
   const [attenteHeures, setAttenteHeures] = useState(48);
   const [chargement, setChargement] = useState(true);
+  // Lien direct (« À traiter ») : le dossier visé est surligné et amené à l'écran.
+  const cible = useCibleUrl();
+  useDefilerVersCible(cible, !chargement);
   const [erreur, setErreur] = useState('');
   const [migration, setMigration] = useState(false);
 
@@ -75,7 +79,6 @@ export default function PrestationsAdminPage() {
     <PageReseau
       titre="Prestations"
       sousTitre="Installations et services en plusieurs étapes, validées par le client."
-      retour={{ href: '/admin', libelle: 'Console' }}
       action={
         <Button variant="ghost" size="sm" onClick={() => charger()} disabled={chargement}>
           <RefreshCw className={`w-4 h-4 ${chargement ? 'animate-spin' : ''}`} /> Actualiser
@@ -102,7 +105,7 @@ export default function PrestationsAdminPage() {
       ) : (
         <div className="space-y-3">
           {prestations.map((p) => (
-            <Card key={p.orderId} className="space-y-3">
+            <Card key={p.orderId} data-dossier={p.orderId} className={`space-y-3 ${classeCible(cible, p.orderId)}`}>
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-slate-900">{p.produit}</p>

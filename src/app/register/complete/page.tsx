@@ -89,7 +89,7 @@ function FinaliserInscription() {
     (async () => {
       const me = await fetch('/api/auth/me').then((r) => (r.ok ? r.json() : null)).catch(() => null);
       if (me?.authenticated) {
-        if (me.role === 'admin') { router.replace('/admin'); return; }
+        if (me.role === 'admin') { router.replace('/admin/a-traiter'); return; }
         setRole(estRole(me.role) ? me.role : null);
         setMode('existant');
         return;

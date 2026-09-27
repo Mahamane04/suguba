@@ -70,12 +70,13 @@ export const RUBRIQUES: Rubrique[] = [
   ] },
   { cle: 'reseau', titre: 'Utilisateurs et réseau', entrees: [
     { libelle: 'Utilisateurs', href: '/admin/utilisateurs', permission: 'utilisateur.lire' },
+    { libelle: 'Livreurs', href: '/admin/livreurs', permission: 'livraison.lire' },
     { libelle: 'Boutiques', href: '/admin/boutiques', permission: 'boutique.lire' },
     { libelle: 'Vérifications', href: '/admin/verifications', permission: 'verification.lire' },
     { libelle: 'Accès aux coordonnées', href: '/admin/acces-coordonnees', permission: 'commande.lire' },
   ] },
   { cle: 'finance', titre: 'Finance', entrees: [
-    { libelle: 'Retraits et commissions', href: '/admin#retraits', permission: 'finance.lire' },
+    { libelle: 'Retraits et commissions', href: '/admin/retraits', permission: 'finance.lire' },
     { libelle: 'Caisse livreurs', href: '/admin/caisse-livreurs', permission: 'finance.lire' },
     { libelle: 'Récompenses', href: '/admin/recompenses', permission: 'finance.lire' },
   ] },
@@ -90,7 +91,7 @@ export const RUBRIQUES: Rubrique[] = [
     { libelle: 'Accueil client', href: '/admin/accueil', permission: 'plateforme.parametres' },
     { libelle: 'Simulateur de réglages', href: '/admin/simulateur', permission: 'finance.lire' },
     { libelle: 'Priorité au réseau', href: '/admin/priorite-reseau', permission: 'boutique.lire' },
-    { libelle: 'Paramètres et commissions', href: '/admin#reglages', permission: 'plateforme.parametres' },
+    { libelle: 'Paramètres et commissions', href: '/admin/parametres', permission: 'plateforme.parametres' },
   ] },
   { cle: 'equipe', titre: 'Équipe et sécurité', entrees: [
     { libelle: 'Équipe et permissions', href: '/admin/equipe', permission: 'plateforme.equipe' },
@@ -100,6 +101,32 @@ export const RUBRIQUES: Rubrique[] = [
     { libelle: 'Validations', href: '/admin/validations', permission: 'finance.payer' },
   ] },
 ];
+
+/**
+ * Compteurs du menu (U3, 2026-09-27) : les tâches « À traiter » de chaque
+ * type s'affichent à côté de la page où on les traite. « À traiter »
+ * lui-même montre le total.
+ */
+export const TYPES_PAR_ENTREE: Record<string, TypeTache[]> = {
+  '/admin/commandes': ['commande_a_confirmer', 'livraison_a_attribuer'],
+  '/admin/retraits': ['retrait_a_payer'],
+  '/admin/caisse-livreurs': ['versement_en_retard'],
+  '/admin/prestations': ['prestation_contestee'],
+  '/admin/messages': ['message_a_verifier'],
+  '/admin/verifications': ['verification_en_attente'],
+  '/admin/products': ['produit_a_verifier'],
+  '/admin/sav': ['sav_ouvert'],
+  '/admin/devis': ['devis_sans_reponse'],
+  '/admin/sponsorisations': ['sponsorisation_a_examiner'],
+  '/admin/validations': ['validation_a_decider'],
+};
+
+/** Nombre à afficher à côté d'une entrée de menu (0 = rien). */
+export function compteurEntree(href: string, compteurs: Partial<Record<TypeTache, number>> | null): number {
+  if (!compteurs) return 0;
+  if (href === '/admin/a-traiter') return Object.values(compteurs).reduce((s, n) => s + (n || 0), 0);
+  return (TYPES_PAR_ENTREE[href] || []).reduce((s, t) => s + (compteurs[t] || 0), 0);
+}
 
 /** Rubriques et entrées que ce membre peut ouvrir ; rubriques vides retirées. */
 export function rubriquesVisibles(permissions: readonly string[], rubriques: Rubrique[] = RUBRIQUES): Rubrique[] {

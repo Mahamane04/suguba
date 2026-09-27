@@ -70,8 +70,7 @@ export default function RechercheAdminPage() {
   }
 
   return (
-    <PageReseau titre="Recherche" sousTitre="Les mots des clients et un essai de la recherche."
-      retour={{ href: '/admin/backoffice', libelle: 'Back-office' }}>
+    <PageReseau titre="Recherche" sousTitre="Les mots des clients et un essai de la recherche.">
       <Card className="text-xs text-slate-600 space-y-1">
         <p>La recherche ignore les accents et les majuscules, tolère les fautes de frappe et cherche dans le nom, la catégorie et la description.</p>
         <p className="font-semibold text-slate-800">Un synonyme relie un mot des clients à un mot du catalogue : « frigo » trouve alors les réfrigérateurs, et inversement.</p>

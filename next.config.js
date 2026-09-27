@@ -9,6 +9,14 @@ const nextConfig = {
       { key: 'Content-Security-Policy', value: "object-src 'none'; base-uri 'self'; frame-ancestors 'self'" },
     ] }, { source: '/api/:path*', headers: [{ key: 'Cache-Control', value: 'private, no-store' }] }];
   },
+  // Anciennes adresses de l'espace équipe (U3, 2026-09-27) : le sommaire
+  // « Back-office » est remplacé par le menu latéral ; les ancres de l'ancien
+  // tableau de bord sont devenues des pages.
+  async redirects() {
+    return [
+      { source: '/admin/backoffice', destination: '/admin/a-traiter', permanent: false },
+    ];
+  },
   // Guide des parcours (page cachée /admin/guide) : lu sur disque à
   // l'exécution, hors de /public — Vercel doit l'embarquer explicitement.
   outputFileTracingIncludes: {

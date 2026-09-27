@@ -99,7 +99,6 @@ export default function RecompensesAdminPage() {
     <PageReseau
       titre="Récompenses"
       sousTitre="Missions atteintes et parrainages à valider avant versement."
-      retour={{ href: '/admin/backoffice', libelle: 'Back-office' }}
       large
     >
       {chargement ? (

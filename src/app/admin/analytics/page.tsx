@@ -1,14 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import Link from 'next/link';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
 import { useSugubaStore } from '@/lib/store';
 import { 
-  TrendingUp, DollarSign, Download, ArrowLeft, 
-  BarChart3, PieChart, ShoppingBag, Truck, Wallet, ShieldCheck 
+  TrendingUp, DollarSign, Download, BarChart3, PieChart, ShoppingBag, Truck, Wallet, ShieldCheck 
 } from 'lucide-react';
 
 export default function AdminAnalyticsPage() {
@@ -85,20 +83,13 @@ export default function AdminAnalyticsPage() {
     <div className="min-h-screen flex flex-col bg-slate-50 pb-16">
       <Header />
 
-      <main className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
+      <main className="flex-1 max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full space-y-6">
         
         {/* Navigation & Title */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="space-y-1">
-            <Link 
-              href="/admin" 
-              className="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-600 hover:text-slate-900"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              <span>Retour à la console Suguba Ops</span>
-            </Link>
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
-              Tableau de Bord Financier & Trésorerie
+              Analyses
             </h1>
             <p className="text-xs text-slate-500">
               Suivi en temps réel des marges Suguba, volumes d&apos;affaires et export comptable.
@@ -134,7 +125,7 @@ export default function AdminAnalyticsPage() {
           {/* Volume d'Affaires Total (GMV) */}
           <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-1">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Volume d&apos;Affaires (GMV)</span>
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Volume des commandes</span>
               <div className="w-7 h-7 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center">
                 <ShoppingBag className="w-4 h-4" />
               </div>

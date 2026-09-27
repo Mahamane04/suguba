@@ -33,7 +33,7 @@ export const MODULES: Module[] = [
   { cle: 'remunerationResultat', titre: 'Payer les résultats des campagnes', ouvre: 'Les visites et demandes qualifiées sont payées aux revendeurs ; les fournisseurs peuvent créer ces campagnes.',
     continue: 'Fermé : les visites restent mesurées, rien n’est payé ; les gains déjà acquis restent dus.', permission: 'plateforme.parametres', interrupteur: 'resultats', lien: '/admin/resultats' },
   { cle: 'paiementCarte', titre: 'Paiement par carte (diaspora)', ouvre: 'La carte bancaire est proposée sur la page diaspora.',
-    continue: 'Fermé : le serveur refuse la carte ; paiement à la livraison et Mobile Money continuent.', permission: 'plateforme.parametres', interrupteur: null, lien: '/admin#reglages' },
+    continue: 'Fermé : le serveur refuse la carte ; paiement à la livraison et Mobile Money continuent.', permission: 'plateforme.parametres', interrupteur: null, lien: '/admin/parametres' },
   { cle: 'mfaObligatoire', titre: 'Double authentification obligatoire', ouvre: 'Chaque membre de l’équipe doit utiliser un code d’application à la connexion.',
     continue: 'Désactivée : qui l’a activée continue de saisir son code.', permission: 'plateforme.equipe', interrupteur: null, lien: '/admin/securite' },
   { cle: 'doubleValidation', titre: 'Double validation', ouvre: 'Retraits et avances au-dessus du seuil, baisses de la part Suguba : approbation d’un collègue.',
@@ -64,14 +64,14 @@ export function diagnostiquerRetrait(r: { id: string; status: string; payment_me
   if (r.status === 'completed') return { titre, etat: 'Payé', raisons: [{ bloquant: false, texte: 'Ce retrait est déjà payé.' }] };
   if (r.status === 'rejected') return { titre, etat: 'Rejeté', raisons: [{ bloquant: false, texte: 'Ce retrait a été rejeté ; les gains sont revenus sur le solde du partenaire.' }] };
   if (r.status === 'processing') raisons.push({ bloquant: true, texte: 'Virement en cours chez l’opérateur : attendre sa confirmation (ne pas relancer un autre retrait).' });
-  if (r.payment_method === 'cash') raisons.push({ bloquant: false, texte: 'Retrait en agence : à payer en espèces au guichet, puis « Payé ».', lien: '/admin#retraits', libelleLien: 'Retraits' });
+  if (r.payment_method === 'cash') raisons.push({ bloquant: false, texte: 'Retrait en agence : à payer en espèces au guichet, puis « Payé ».', lien: '/admin/retraits', libelleLien: 'Retraits' });
   else if (!ctx.reseauxMobile.includes(r.payment_method)) raisons.push({ bloquant: true, texte: `« ${r.payment_method} » n’est pas pris en charge pour les virements : demandez au partenaire un numéro Orange Money ou Moov Money.` });
   if (ctx.seuil > 0 && r.amount >= ctx.seuil) {
     if (ctx.validation === 'approuvee') raisons.push({ bloquant: false, texte: 'Double validation : approuvée par un collègue, le paiement peut être lancé.' });
     else if (ctx.validation === 'en_attente') raisons.push({ bloquant: true, texte: `Double validation : au-dessus du seuil (${fcfa(ctx.seuil)}), en attente de l’approbation d’un collègue.`, lien: '/admin/validations', libelleLien: 'Validations' });
     else raisons.push({ bloquant: true, texte: `Double validation : au-dessus du seuil (${fcfa(ctx.seuil)}). Lancez le paiement : une demande d’approbation partira à un collègue.` });
   }
-  if (!raisons.some((x) => x.bloquant) && r.status === 'pending') raisons.push({ bloquant: false, texte: 'Rien ne bloque : le retrait peut être payé.', lien: '/admin#retraits', libelleLien: 'Retraits' });
+  if (!raisons.some((x) => x.bloquant) && r.status === 'pending') raisons.push({ bloquant: false, texte: 'Rien ne bloque : le retrait peut être payé.', lien: '/admin/retraits', libelleLien: 'Retraits' });
   return { titre, etat: r.status === 'pending' ? 'En attente' : 'En cours', raisons };
 }
 
@@ -82,7 +82,7 @@ export function diagnostiquerCommission(c: { id: string; status: string; amount:
   const raisons: Raison[] = [];
   switch (c.status) {
     case 'available': return { titre, etat: 'Disponible', raisons: [{ bloquant: false, texte: 'Disponible : le revendeur peut la retirer.' }] };
-    case 'reserved': return { titre, etat: 'Réservée', raisons: [{ bloquant: false, texte: 'Réservée pour une demande de retrait en cours.', lien: '/admin#retraits', libelleLien: 'Retraits' }] };
+    case 'reserved': return { titre, etat: 'Réservée', raisons: [{ bloquant: false, texte: 'Réservée pour une demande de retrait en cours.', lien: '/admin/retraits', libelleLien: 'Retraits' }] };
     case 'paid': return { titre, etat: 'Payée', raisons: [{ bloquant: false, texte: 'Déjà versée au revendeur.' }] };
     case 'reversed': return { titre, etat: 'Annulée', raisons: [{ bloquant: false, texte: 'Annulée (commande annulée ou retournée).' }] };
   }

@@ -29,7 +29,7 @@ const PROFILS: Record<Role, { libelle: string; icone: React.ElementType; espace:
   reseller: { libelle: 'Revendeur', icone: Store, espace: '/reseller', atout: 'Partagez les produits sur WhatsApp et touchez une commission sur chaque vente, sans stock.' },
   supplier: { libelle: 'Fournisseur', icone: ShoppingBag, espace: '/supplier', atout: 'Mettez vos articles en ligne : les revendeurs les vendent pour vous, Suguba livre.' },
   driver: { libelle: 'Livreur', icone: Truck, espace: '/driver', atout: 'Livrez les commandes dans votre zone et soyez payé à chaque course.' },
-  admin: { libelle: 'Admin', icone: Shield, espace: '/admin', atout: '' },
+  admin: { libelle: 'Admin', icone: Shield, espace: '/admin/a-traiter', atout: '' },
   diaspora: { libelle: 'Diaspora', icone: Globe, espace: '/diaspora', atout: '' },
 };
 

@@ -9,9 +9,10 @@ import Button from '@/components/ui/Button';
 import EmptyState from '@/components/ui/EmptyState';
 import { Field, Input } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
+import { classeCible, useCibleUrl, useDefilerVersCible } from '@/components/admin/contexte';
 import RecuVersementModal from '@/components/common/RecuVersementModal';
 import { calculerAVerser, niveauRetard, type CaisseLivreur, type Versement } from '@/lib/caisse-livreur';
-import { AlertTriangle, ArrowLeft, Banknote, ChevronDown, Phone, Receipt, RefreshCw, Settings } from 'lucide-react';
+import { AlertTriangle, Banknote, ChevronDown, Phone, Receipt, RefreshCw, Settings } from 'lucide-react';
 
 const fmt = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
 const jour = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—');
@@ -34,6 +35,9 @@ export default function CaisseLivreursPage() {
   const [d, setD] = useState<Donnees | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
   const [chargement, setChargement] = useState(true);
+  // Lien direct (« À traiter ») : le dossier visé est surligné et amené à l'écran.
+  const cible = useCibleUrl();
+  useDefilerVersCible(cible, !chargement);
   const [ouvert, setOuvert] = useState<Record<string, boolean>>({});
   const [saisiePour, setSaisiePour] = useState<CaisseLivreur | null>(null);
   const [recu, setRecu] = useState<{ v: Versement; nom: string; tel: string | null } | null>(null);
@@ -64,12 +68,9 @@ export default function CaisseLivreursPage() {
     <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
       <Header />
 
-      <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 py-6 w-full space-y-5">
+      <main className="flex-1 max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
           <div className="space-y-1">
-            <Link href="/admin" className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900">
-              <ArrowLeft className="w-4 h-4" /> Retour à la console
-            </Link>
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Caisse livreurs</h1>
             <p className="text-xs text-slate-500">Les espèces encaissées à la livraison, et ce que chaque livreur a remis à Suguba.</p>
           </div>
@@ -100,7 +101,7 @@ export default function CaisseLivreursPage() {
                 <p className="text-2xl font-bold text-slate-900">{enRetard}</p>
                 <p className="text-xs text-slate-500">Espèces gardées plus de {d.delaiHeures} h</p>
               </div>
-              <Link href="/admin#reglages" className="p-4 rounded-3xl bg-white border border-slate-200 hover:border-slate-300 space-y-1 block">
+              <Link href="/admin/parametres" className="p-4 rounded-3xl bg-white border border-slate-200 hover:border-slate-300 space-y-1 block">
                 <p className="text-xs font-bold uppercase text-slate-500 inline-flex items-center gap-1"><Settings className="w-3.5 h-3.5" /> Règle en vigueur</p>
                 <p className="text-sm font-bold text-slate-900">
                   {d.livreurGardeRemuneration ? `Le livreur garde ${fmt(d.remunerationParCourse)} par course` : 'Le livreur verse tout'}
@@ -118,7 +119,7 @@ export default function CaisseLivreursPage() {
                   const du = Math.max(0, c.aVerser - c.ecartCumule);
                   const deplie = ouvert[c.driverId];
                   return (
-                    <section key={c.driverId} className="bg-white rounded-3xl border border-slate-200 p-4 space-y-3">
+                    <section key={c.driverId} data-dossier={c.driverId} className={`bg-white rounded-3xl border border-slate-200 p-4 space-y-3 ${classeCible(cible, c.driverId)}`}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1 space-y-0.5">
                           <p className="font-bold text-slate-900 truncate">{c.nom}</p>

@@ -38,7 +38,7 @@
    "titre": "Admin Suguba",
    "lettre": "A",
    "acces": "Connecté comme admin (ou membre d’équipe)",
-   "intro": "L’équipe Suguba confirme les commandes, assigne les livreurs, modère le catalogue, paie les revendeurs et anime le réseau. Menu du bas : Vue globale · Produits · Analyses · SAV.",
+   "intro": "L’équipe Suguba confirme les commandes, attribue les livreurs, modère le catalogue, paie les revendeurs et anime le réseau. Sur ordinateur, menu latéral en huit rubriques avec le nombre de dossiers en attente ; sur téléphone, « Suguba · Équipe » ouvre le même menu.",
    "sessionDemo": "admin"
   }
  ],
@@ -143,11 +143,11 @@
    "etapes": [
     {
      "texte": "Appel de confirmation",
-     "page": "adm-vue"
+     "page": "adm-commandes"
     },
     {
      "texte": "Assignation d’un livreur",
-     "page": "adm-vue"
+     "page": "adm-commandes"
     },
     {
      "texte": "Course du livreur",
@@ -163,7 +163,7 @@
     },
     {
      "texte": "Commission débloquée puis retrait payé",
-     "page": "adm-vue"
+     "page": "adm-retraits"
     }
    ]
   }
@@ -190,6 +190,40 @@
   }
  ],
  "journal": [
+  {
+   "date": "2026-09-27",
+   "titre": "Admin U1 à U4 : le poste de travail de l’équipe",
+   "demande": "« peux ton continuer a ameliorer l’UI/UX de la panel super admin ( fait l’analyse par toi même pour me donner ton avis ) », puis, après l’analyse : « lance U1 à U4 ».",
+   "realise": [
+    "U1 — Équipe : « Ajouter un membre » cherche un compte existant par e-mail, nom ou téléphone et donne son rôle en une étape ; ses sessions sont fermées pour qu’il revienne avec son menu. Rôle modifiable dans la liste, « Retirer » avec motif (journal), état de la double authentification. Le dernier Super Admin ne peut être ni rétrogradé ni retiré. L’ancien « Promouvoir » par téléphone, qui créait un profil fantôme pour un numéro inconnu, est supprimé.",
+    "U2 — Agir là où on voit : Commandes confirme après l’appel et attribue un livreur, aussi à plusieurs commandes d’un coup, avec les mêmes règles serveur qu’avant. Nouvelles pages Retraits et commissions (le lien « #retraits » était cassé), Livreurs, Paramètres et commissions. La vue d’ensemble ne garde que les chiffres et les files. Dans « À traiter », « Ouvrir » affiche le dossier dans un panneau : une commande s’y confirme ou s’y attribue, les autres dossiers ouvrent leur page sur le bon dossier, surligné.",
+    "U3 — Poste ordinateur : pages en pleine largeur ; menu avec icônes, compteurs de dossiers en attente et rubriques repliables ; en bas du menu, notifications, voir le site et « Se déconnecter » (impossible sur ordinateur jusqu’ici). Téléphone : une seule barre au lieu de trois. Sept fenêtres du navigateur remplacées par de vraies fenêtres de saisie. Ancien sommaire Back-office supprimé (l’adresse mène à « À traiter »), jargon anglais retiré.",
+    "U4 — Tableaux : Commandes, Utilisateurs, Boutiques, Devis, SAV, Vérifications et Retraits : tri par colonne, choix des colonnes, ligne cliquable vers le panneau, cartes sur téléphone. SAV : une action refusée s’affiche désormais ; le faux « taux de résolution 100 % » écrit en dur est retiré."
+   ],
+   "ecarts": [
+    "Tri des tableaux sur la page affichée (50 commandes par page), pas sur toute la base.",
+    "Sélection de plusieurs lignes seulement là où une action groupée a du sens : attribuer plusieurs commandes au même livreur.",
+    "Captures retirées pour les écrans refaits : la session de démonstration n’a pas de rôle d’équipe et ne peut plus les afficher. Vérification visuelle faite sur la coque (menu, barres, largeur) seulement.",
+    "La page Livreurs ne vérifie que les livreurs ; les onglets explicatifs Fournisseurs / Revendeurs / Diaspora de l’ancienne vue d’ensemble, sans action, sont retirés.",
+    "Rien à lancer dans Supabase : aucune table ni colonne ajoutée."
+   ],
+   "pages": [
+    "adm-equipe",
+    "adm-a-traiter",
+    "adm-vue",
+    "adm-commandes",
+    "adm-retraits",
+    "adm-livreurs",
+    "adm-parametres",
+    "adm-utilisateurs",
+    "adm-boutiques",
+    "adm-devis",
+    "adm-sav",
+    "adm-verifications",
+    "adm-backoffice"
+   ],
+   "statut": "en local"
+  },
   {
    "date": "2026-09-27",
    "titre": "Admin A5 : pilotage",
@@ -4026,92 +4060,130 @@
   {
    "id": "adm-vue",
    "role": "admin",
-   "titre": "Vue globale (tableau de bord)",
+   "titre": "Vue d’ensemble",
    "chemin": "/admin",
-   "but": "Le poste de pilotage quotidien : tout ce qui attend une action aujourd’hui.",
+   "but": "Les chiffres du moment et les files qui attendent une action. Plus aucune action ni réglage ici : chacun a sa page (U2, 2026-09-27).",
    "elements": [
     {
-     "nom": "Dispatch : remise par le fournisseur",
-     "role": "Pour une offre remise par le fournisseur, aucun livreur à assigner : il l'organise depuis son espace. Le serveur refuse aussi d'y affecter un livreur."
+     "nom": "Chiffres",
+     "role": "Volume des commandes · Commissions générées · Appels à passer · Retraits à payer."
     },
     {
-     "nom": "Raccourcis",
-     "role": "Produits · SAV & retours · Analyses · Rapport du soir · Diffusion."
+     "nom": "Files qui attendent une action",
+     "role": "Une carte par file non vide (commandes à confirmer, livraisons à attribuer, retraits, produits, pièces, SAV…), avec le nombre et le geste attendu ; un clic mène à la page où on la traite. Seulement les files que le rôle permet de voir."
     },
     {
-     "nom": "Tester un profil",
-     "role": "Ouvre l’espace Client, Revendeur, Fournisseur ou Diaspora avec un compte test (bandeau jaune « Aperçu admin », bouton « Quitter l’aperçu »). Les actions faites en aperçu sont réelles."
-    },
-    {
-     "nom": "Chiffres clés",
-     "role": "Volume (GMV) · Commissions · Appels à passer · Retraits en attente."
-    },
-    {
-     "nom": "Réglages économiques",
-     "role": "Tout l’argent de Suguba au même endroit. Une bulle **(i)** explique chaque réglage peu évident. **Mode de rémunération** (« Prélevé sur le revendeur », % du prix de vente, % ajouté au prix, automatique). **Les coûts de Suguba** : « Payés sur la part Suguba » (le client paie fournisseur + revendeur, rien de plus ; une perte s’affiche en rouge) ou « Ajoutés au prix client » (prix relevé au plancher). **Où va l’argent d’une vente** : barre fournisseur / revendeur / coûts / Suguba, et pourquoi le prix est relevé au plancher. **Vos produits en ligne** : effet des réglages en cours sur chaque produit avant d’enregistrer. Coûts (provision pour refus sur la course ou sur le prix), coûts fixes, livraison, codes promo, simulation. Barre « Enregistrer / Annuler » en bas. **Prix de gros** : comment Suguba gagne sur ces articles (% de la marge du revendeur, % ajouté au prix de gros, montant fixe ou rien), avec exemple. **Formules boutiques** : prix et nombre de boutiques de chaque formule."
-    },
-    {
-     "nom": "Livreurs — guichet",
-     "role": "Espèces remises par les livreurs, à vérifier."
-    },
-    {
-     "nom": "Desk appel confirmation",
-     "role": "Commandes à confirmer par téléphone."
-    },
-    {
-     "nom": "Modération catalogue",
-     "role": "Produits en attente de validation et de prix."
-    },
-    {
-     "nom": "Dispatch",
-     "role": "Assigner un livreur aux commandes confirmées."
-    },
-    {
-     "nom": "Retraits des revendeurs",
-     "role": "Payer par Mobile Money, ou « Payer en espèces » avec le code du retrait (WTH-…)."
-    },
-    {
-     "nom": "Sécurité antifraude",
-     "role": "Commissions bloquées pendant la période de sécurité, et leur déblocage."
-    },
-    {
-     "nom": "Validation des inscriptions",
-     "role": "Fournisseurs · Livreurs · Revendeurs à valider."
-    },
-    {
-     "nom": "Tous les domaines",
-     "role": "Vers le back-office et ses rubriques."
-    },
-    {
-     "nom": "Débloquer avant terme",
-     "role": "Sur une vente en espèces pas encore reversée, c’est une AVANCE de Suguba : motif obligatoire, gardé avec le nom de l’admin et la date. Réglages économiques : « Plafond d’espèces non versées »."
-    },
-    {
-     "nom": "Baisser la part Suguba",
-     "role": "Réglages qui réduisent la part de Suguba (marge, taux, part revendeur relevée, code promo, gain sur le prix de gros) ou prix d’un produit qui ne lui laisse rien : droit « Baisser la part Suguba » (Super Admin) et motif obligatoire, gardés dans un journal non modifiable."
-    },
-    {
-     "nom": "Paiement par carte bancaire (diaspora)",
-     "role": "Réglages économiques : « Fermé » par défaut. À ouvrir seulement après un vrai paiement test réussi par carte sur SasPay."
+     "nom": "Tout voir dans « À traiter »",
+     "role": "La file complète, avec responsables et panneau de dossier."
     }
    ],
    "suite": [
     {
-     "id": "adm-backoffice",
-     "libelle": "Back-office"
+     "id": "adm-a-traiter",
+     "libelle": "À traiter"
     },
     {
      "id": "adm-commandes",
      "libelle": "Commandes"
     },
     {
-     "id": "adm-produits",
-     "libelle": "Produits"
+     "id": "adm-retraits",
+     "libelle": "Retraits et commissions"
     }
    ],
-   "capture": {
-    "chemin": "/admin"
-   }
+   "note": "Pas de capture : écran refait en U1–U4 (2026-09-27) ; la session de démonstration n’a pas de rôle d’équipe et ne peut plus l’afficher."
+  },
+  {
+   "id": "adm-livreurs",
+   "role": "admin",
+   "titre": "Livreurs",
+   "chemin": "/admin/livreurs",
+   "but": "Vérifier les livreurs au guichet (sorti de l’ancienne vue d’ensemble), puis voir ceux à qui attribuer des courses.",
+   "elements": [
+    {
+     "nom": "Livreurs — vérification au guichet",
+     "role": "Livreurs à rencontrer : l’agent a vu la personne, sa moto et ses papiers, et écrit ce qu’il a constaté. La vérification donne le droit de recevoir des courses."
+    },
+    {
+     "nom": "Livreurs actifs",
+     "role": "Tableau : nom, téléphone (appel direct), véhicule."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-commandes",
+     "libelle": "Commandes"
+    }
+   ],
+   "note": "Pas de capture : écran refait en U1–U4 (2026-09-27) ; la session de démonstration n’a pas de rôle d’équipe et ne peut plus l’afficher."
+  },
+  {
+   "id": "adm-retraits",
+   "role": "admin",
+   "titre": "Retraits et commissions",
+   "chemin": "/admin/retraits",
+   "but": "Payer les revendeurs (sortis de l’ancienne vue d’ensemble, dont le lien « #retraits » était cassé) et débloquer une commission avant terme.",
+   "elements": [
+    {
+     "nom": "Guichet : retrait en espèces par code",
+     "role": "Le revendeur présente son code WTH-… ; « Payer en espèces » demande confirmation une fois l’argent remis."
+    },
+    {
+     "nom": "Retraits en attente",
+     "role": "Tableau : revendeur, montant à verser, moyen (logo), téléphone, code, date ; « Envoyer le virement » (SasPay), « Argent remis » (espèces), « Refuser » (le montant retourne au solde). Au-dessus du seuil, la double validation demande l’accord d’un collègue (« Validations »)."
+    },
+    {
+     "nom": "Virements en cours",
+     "role": "Marqués payés à la confirmation du réseau ; « Vérifier ou reprendre »."
+    },
+    {
+     "nom": "Commissions dans leur délai de sécurité",
+     "role": "« Débloquer avant terme » : si les espèces de la commande ne sont pas reversées, c’est une avance de Suguba et un motif est demandé."
+    },
+    {
+     "nom": "Lecture seule",
+     "role": "Sans le droit de payer, la page se consulte sans bouton d’action."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-validations",
+     "libelle": "Validations"
+    },
+    {
+     "id": "adm-caisse",
+     "libelle": "Caisse livreurs"
+    }
+   ],
+   "note": "Pas de capture : écran refait en U1–U4 (2026-09-27) ; la session de démonstration n’a pas de rôle d’équipe et ne peut plus l’afficher."
+  },
+  {
+   "id": "adm-parametres",
+   "role": "admin",
+   "titre": "Paramètres et commissions",
+   "chemin": "/admin/parametres",
+   "but": "Tout l’argent de Suguba au même endroit : réglages économiques (sortis de l’ancienne vue d’ensemble, U2). Aussi « Tester un profil » et le nettoyage de l’affichage de cet appareil.",
+   "elements": [
+    {
+     "nom": "Réglages économiques",
+     "role": "Les mêmes qu’avant : mode de rémunération, coûts de Suguba, où va l’argent d’une vente, effet sur vos produits en ligne, coûts, livraison, codes promo, prix de gros. Une baisse de la part Suguba demande un motif, désormais dans une vraie fenêtre (plus la fenêtre du navigateur)."
+    },
+    {
+     "nom": "Tester un profil",
+     "role": "Ouvre l’espace Client, Revendeur, Fournisseur ou Diaspora avec un compte de test (bandeau « Aperçu admin », « Quitter l’aperçu » ramène ici). Les actions faites en aperçu sont réelles."
+    },
+    {
+     "nom": "Affichage de cet appareil",
+     "role": "Vide les données de démonstration gardées par ce navigateur. Ne supprime rien en base."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-simulateur",
+     "libelle": "Simulateur de réglages"
+    }
+   ],
+   "note": "Pas de capture : écran refait en U1–U4 (2026-09-27) ; la session de démonstration n’a pas de rôle d’équipe et ne peut plus l’afficher."
   },
   {
    "id": "adm-a-traiter",
@@ -4122,7 +4194,7 @@
    "elements": [
     {
      "nom": "Menu latéral (ordinateur)",
-     "role": "Huit rubriques — Pilotage, Opérations, Catalogue, Utilisateurs et réseau, Finance, Visibilité et campagnes, Contrôle de la plateforme, Équipe et sécurité — avec seulement les pages que le rôle permet d’ouvrir. Badge Production / Local / Prévisualisation. Sur téléphone : « Menu équipe »."
+     "role": "Huit rubriques repliables, une icône par page et, à côté, le nombre de dossiers en attente (mis à jour toutes les 2 minutes et au retour sur l’onglet). En bas : nom et métier, Notifications, Voir le site, Se déconnecter. Badge Production / Local / Prévisualisation. Sur téléphone : une seule barre « Suguba · Équipe » ouvre le même menu."
     },
     {
      "nom": "Rechercher (Ctrl K)",
@@ -4138,7 +4210,7 @@
     },
     {
      "nom": "Ligne de dossier",
-     "role": "Type, ancienneté (orange après 4 h, rouge après 24 h), montant, action attendue et responsable. « Ouvrir » mène à la page du dossier ; « Prendre », « Transférer » (seulement à un collègue qui a le droit de le traiter) et « Libérer »."
+     "role": "Type, ancienneté (orange après 4 h, rouge après 24 h), montant, action attendue et responsable. « Ouvrir » affiche le dossier dans le panneau latéral ; « Prendre » le met à votre nom."
     },
     {
      "nom": "Lecture impossible pour…",
@@ -4146,13 +4218,21 @@
     },
     {
      "nom": "Notes",
-     "role": "Notes internes du dossier, jamais visibles par le client ; ajout seulement. Si un collègue a changé le responsable entre-temps, l’action est refusée avec son nom : actualiser avant de décider."
+     "role": "Dans le panneau : notes internes du dossier, jamais visibles par le client ; ajout seulement."
+    },
+    {
+     "nom": "Panneau du dossier",
+     "role": "Sans quitter la file. Une commande s’y confirme ou s’y attribue directement (mêmes gestes que dans Commandes). Les autres dossiers : « Ouvrir le dossier » mène à leur page, sur le bon dossier surligné ; « Pourquoi c’est bloqué ? » pour un retrait ou une sponsorisation. Responsable : Prendre · Transférer (seulement à un collègue qui a le droit de le traiter) · Libérer. Si un collègue a changé le responsable entre-temps, l’action est refusée avec son nom."
     }
    ],
    "suite": [
     {
-     "id": "adm-backoffice",
-     "libelle": "Back-office"
+     "id": "adm-commandes",
+     "libelle": "Commandes"
+    },
+    {
+     "id": "adm-vue",
+     "libelle": "Vue d’ensemble"
     }
    ],
    "note": "Pas de capture : page réservée aux admins (session de démonstration refusée pour les captures)."
@@ -4351,8 +4431,8 @@
    ],
    "suite": [
     {
-     "id": "adm-backoffice",
-     "libelle": "Back-office"
+     "id": "adm-a-traiter",
+     "libelle": "À traiter"
     }
    ],
    "note": "Rien n’est enregistré : appliquer se fait dans « Paramètres et commissions ». Droit « finance.lire »."
@@ -4384,48 +4464,22 @@
   {
    "id": "adm-backoffice",
    "role": "admin",
-   "titre": "Back-office",
+   "titre": "Back-office (ancien sommaire)",
    "chemin": "/admin/backoffice",
-   "but": "Le sommaire de l’administration, rangé par domaine. Chaque membre de l’équipe ne peut agir que selon son rôle.",
+   "but": "Remplacé par le menu latéral de l’équipe (U3, 2026-09-27). L’adresse /admin/backoffice mène désormais à « À traiter ».",
    "elements": [
     {
-     "nom": "Commerce",
-     "role": "Commandes · Produits · Nouveau produit · Recherche · Boutique Suguba."
-    },
-    {
-     "nom": "Utilisateurs",
-     "role": "Utilisateurs · Boutiques."
-    },
-    {
-     "nom": "Finance",
-     "role": "Retraits et commissions · Récompenses · Analyses · Rapport du soir."
-    },
-    {
-     "nom": "Réseau",
-     "role": "Missions · Sponsorisation · Diffusion · Vérifications."
-    },
-    {
-     "nom": "Organisation",
-     "role": "Service après-vente · Équipe et permissions · Paramètres et commissions · Checklist de lancement."
+     "nom": "Redirection",
+     "role": "Un ancien lien ou favori arrive sur « À traiter »."
     }
    ],
    "suite": [
     {
-     "id": "adm-commandes",
-     "libelle": "Commandes"
-    },
-    {
-     "id": "adm-utilisateurs",
-     "libelle": "Utilisateurs"
-    },
-    {
-     "id": "adm-equipe",
-     "libelle": "Équipe"
+     "id": "adm-a-traiter",
+     "libelle": "À traiter"
     }
    ],
-   "capture": {
-    "chemin": "/admin/backoffice"
-   }
+   "note": "Page supprimée : l’adresse redirige vers « À traiter »."
   },
   {
    "id": "adm-recherche",
@@ -4449,8 +4503,8 @@
    ],
    "suite": [
     {
-     "id": "adm-backoffice",
-     "libelle": "Back-office"
+     "id": "adm-a-traiter",
+     "libelle": "À traiter"
     }
    ],
    "note": "Pas de capture : page réservée aux admins (session de démonstration refusée pour les captures)."
@@ -4460,23 +4514,35 @@
    "role": "admin",
    "titre": "Commandes",
    "chemin": "/admin/commandes",
-   "but": "Toutes les commandes, avec recherche et filtres par statut.",
+   "but": "Toutes les commandes, et les gestes du centre d’appels : confirmer après l’appel, attribuer un livreur (une commande ou une tournée).",
    "elements": [
     {
-     "nom": "Filtres",
-     "role": "Toutes · À confirmer · Confirmée · Livreur assigné · En livraison · Livrée · Annulée · Retournée."
+     "nom": "Statuts",
+     "role": "À confirmer · À attribuer · Livreur en route · En livraison · Livrée · Annulée · Retournée · Toutes, avec leur nombre."
     },
     {
      "nom": "Recherche",
-     "role": "Numéro, client, téléphone, produit, code revendeur."
+     "role": "Numéro, client, téléphone, produit, code revendeur. Un lien avec un numéro précis ouvre directement la commande."
     },
     {
-     "nom": "Carte commande",
-     "role": "Client, date, quartier, numéro, produit, montant, statut. Les paniers regroupent leurs commandes."
+     "nom": "Tableau",
+     "role": "Commande (panier signalé), date, client, produit, quartier, total, statut, livreur ; revendeur et paiement en colonnes à afficher. Tri en cliquant sur un en-tête ; « Colonnes » choisit ce qui s’affiche (retenu par ce navigateur). Sur téléphone : une carte par commande."
     },
     {
-     "nom": "Gérer sur la vue globale",
-     "role": "Les actions (appel, dispatch) se font sur la vue globale."
+     "nom": "Confirmer",
+     "role": "Sur une commande à confirmer (droit « modifier les commandes ») : elle passe « À attribuer ». Refusé si elle a changé entre-temps."
+    },
+    {
+     "nom": "Attribuer · Changer de livreur",
+     "role": "Ouvre la commande dans le panneau pour choisir le livreur. Refusé si le livreur n’est pas actif, a dépassé son plafond d’espèces, ou si la remise est faite par le fournisseur."
+    },
+    {
+     "nom": "Attribution groupée",
+     "role": "Cocher plusieurs commandes à attribuer, choisir un livreur, « Attribuer à ce livreur » (20 au plus). Chaque commande est contrôlée à part ; celles refusées sont listées avec la raison."
+    },
+    {
+     "nom": "Panneau de la commande",
+     "role": "Appeler · Relance WhatsApp (français) · Bambara ; « Client joint : confirmer la commande » ; choix du livreur ; détails (paiement, repère, revendeur, code de ramassage) ; « Renvoyer le code de livraison au client » ; « Pourquoi c’est bloqué ? » ; notes internes."
     },
     {
      "nom": "Exporter (CSV)",
@@ -4485,14 +4551,15 @@
    ],
    "suite": [
     {
-     "id": "adm-vue",
-     "libelle": "Vue globale"
+     "id": "adm-a-traiter",
+     "libelle": "À traiter"
+    },
+    {
+     "id": "adm-livreurs",
+     "libelle": "Livreurs"
     }
    ],
-   "note": "Nom et téléphone du client masqués sur la capture.",
-   "capture": {
-    "chemin": "/admin/commandes"
-   }
+   "note": "Pas de capture : écran refait en U1–U4 (2026-09-27) ; la session de démonstration n’a pas de rôle d’équipe et ne peut plus l’afficher."
   },
   {
    "id": "adm-produits",
@@ -4649,7 +4716,7 @@
    "role": "admin",
    "titre": "Utilisateurs",
    "chemin": "/admin/utilisateurs",
-   "but": "Tous les comptes, par profil, avec leur activité.",
+   "but": "Clients, revendeurs, fournisseurs et livreurs, en tableau. Badges et suspension dans le panneau.",
    "elements": [
     {
      "nom": "Onglets",
@@ -4660,12 +4727,12 @@
      "role": "Nom, téléphone, e-mail, code."
     },
     {
-     "nom": "Carte",
-     "role": "Statut (Actif…), code revendeur, ventes et commissions."
+     "nom": "Tableau",
+     "role": "Nom, téléphone, code, activité (ventes et commissions, produits, ou livraisons), badges, statut ; e-mail, ville et date d’inscription en colonnes à afficher. Clients : téléphone, « via », livrées / commandes, montant."
     },
     {
-     "nom": "Suspendre ce rôle",
-     "role": "Motif obligatoire (le partenaire le voit et peut le contester) ; la réponse indique les commandes en cours et les gains qui restent dus, à traiter à part. La contestation s’affiche sur la fiche."
+     "nom": "Panneau",
+     "role": "Clic sur une ligne : état de la suspension et contestation éventuelle, badges à attribuer ou retirer, « Suspendre ce rôle » (motif obligatoire, visible par le partenaire) ou « Réactiver ce rôle » (décision facultative)."
     }
    ],
    "suite": [
@@ -4674,21 +4741,26 @@
      "libelle": "Vérifications"
     }
    ],
-   "note": "Noms, téléphones et e-mails masqués sur la capture.",
-   "capture": {
-    "chemin": "/admin/utilisateurs"
-   }
+   "note": "Pas de capture : écran refait en U1–U4 (2026-09-27) ; la session de démonstration n’a pas de rôle d’équipe et ne peut plus l’afficher."
   },
   {
    "id": "adm-verifications",
    "role": "admin",
    "titre": "Vérifications",
    "chemin": "/admin/verifications",
-   "but": "File d’attente des demandes de badge : identité (pièce privée, consultable 10 minutes), appel téléphonique, quartier.",
+   "but": "Pièces déposées par les comptes, en attente d’examen, en tableau.",
    "elements": [
     {
-     "nom": "Approuver · Refuser",
-     "role": "Le badge s’affiche aussitôt sur la boutique du revendeur."
+     "nom": "Tableau",
+     "role": "Compte, téléphone (à appeler pour une vérification de téléphone), pièce, date de dépôt, document à ouvrir."
+    },
+    {
+     "nom": "Valider · Refuser",
+     "role": "Avec le droit de décider ; « Refuser » demande confirmation. Sans ce droit : lecture seule."
+    },
+    {
+     "nom": "Lien direct",
+     "role": "Depuis « À traiter », la pièce visée est surlignée."
     }
    ],
    "suite": [
@@ -4697,9 +4769,7 @@
      "libelle": "Côté revendeur"
     }
    ],
-   "capture": {
-    "chemin": "/admin/verifications"
-   }
+   "note": "Pas de capture : écran refait en U1–U4 (2026-09-27) ; la session de démonstration n’a pas de rôle d’équipe et ne peut plus l’afficher."
   },
   {
    "id": "adm-boutiques",
@@ -4721,8 +4791,8 @@
      "role": "Fournisseurs, revendeurs, Suguba."
     },
     {
-     "nom": "Rendre publique · Masquer · Suspendre",
-     "role": "Une boutique masquée ou suspendue n’est plus visible."
+     "nom": "Tableau · Voir · Rendre publique · Masquer · Suspendre",
+     "role": "Boutique (adresse), type, abonnés, statut ; actions sur chaque ligne. Tri par colonne."
     }
    ],
    "suite": [
@@ -4731,9 +4801,7 @@
      "libelle": "Utilisateurs"
     }
    ],
-   "capture": {
-    "chemin": "/admin/boutiques"
-   }
+   "note": "Pas de capture : écran refait en U1–U4 (2026-09-27) ; la session de démonstration n’a pas de rôle d’équipe et ne peut plus l’afficher."
   },
   {
    "id": "adm-missions",
@@ -4842,31 +4910,40 @@
    "role": "admin",
    "titre": "Équipe et permissions",
    "chemin": "/admin/equipe",
-   "but": "Qui a le droit de faire quoi dans le back-office.",
+   "but": "Qui fait partie de l’équipe, et ce que chacun a le droit de faire. Ajouter un membre, changer son rôle, le retirer.",
    "elements": [
     {
-     "nom": "Rôle d’équipe",
-     "role": "Support, finance, catalogue… chaque rôle donne un ensemble de permissions."
+     "nom": "Ajouter un membre",
+     "role": "Cherche un compte EXISTANT par e-mail, nom ou téléphone (la personne crée d’abord son compte Suguba), puis choisit son rôle dans la même fenêtre. Ses sessions ouvertes sont fermées : à sa prochaine connexion, elle arrive sur « À traiter » avec le menu de son rôle. Son compte client ou partenaire reste intact."
     },
     {
-     "nom": "Appliquer ce rôle",
-     "role": "Enregistre le rôle du membre."
+     "nom": "Liste des membres",
+     "role": "Nom et contact, rôle d’équipe, double authentification (Activée / Non activée), membre depuis. Vous d’abord, puis les comptes sans rôle (« Affectation requise » : aucun menu tant qu’un rôle n’est pas choisi)."
     },
     {
-     "nom": "Tous les droits",
-     "role": "Un admin sans rôle attribué garde tous les droits."
+     "nom": "Rôle d’équipe · Enregistrer",
+     "role": "Changer le rôle d’un membre. Personne ne modifie ses propres droits ; le dernier Super Admin ne peut pas être rétrogradé."
+    },
+    {
+     "nom": "Retirer",
+     "role": "Motif obligatoire (inscrit au journal). Droits retirés et sessions fermées tout de suite ; le compte retrouve son autre profil (revendeur, fournisseur…) ou redevient client. Impossible pour soi-même ou pour le dernier Super Admin."
+    },
+    {
+     "nom": "Sécurité de l’équipe",
+     "role": "Lien vers la double authentification obligatoire, la déconnexion à distance et les dernières connexions."
     }
    ],
    "suite": [
     {
-     "id": "adm-backoffice",
-     "libelle": "Back-office"
+     "id": "adm-securite",
+     "libelle": "Sécurité de l’équipe"
+    },
+    {
+     "id": "adm-journal",
+     "libelle": "Journal des actions"
     }
    ],
-   "note": "Noms et contacts masqués sur la capture.",
-   "capture": {
-    "chemin": "/admin/equipe"
-   }
+   "note": "Pas de capture : écran refait en U1–U4 (2026-09-27) ; la session de démonstration n’a pas de rôle d’équipe et ne peut plus l’afficher."
   },
   {
    "id": "adm-acces-coordonnees",
@@ -4961,7 +5038,7 @@
    "role": "admin",
    "titre": "Devis",
    "chemin": "/admin/devis",
-   "but": "Toutes les demandes de devis des clients : qui attend une réponse, les prix proposés et les devis acceptés. Lecture seule : seul le fournisseur propose son prix.",
+   "but": "Les demandes de devis des clients, en tableau ; le détail s’ouvre dans le panneau. Lecture seule : seul le fournisseur propose son prix.",
    "elements": [
     {
      "nom": "À répondre · Proposés · Acceptés · Refusés / expirés",
@@ -4978,6 +5055,10 @@
     {
      "nom": "Recherche",
      "role": "Par numéro de devis ou de commande, téléphone, client ou fournisseur."
+    },
+    {
+     "nom": "Tableau et panneau",
+     "role": "Devis, produit, client, fournisseur, statut, attente, montant ; clic sur une ligne : besoin du client, téléphones, prix détaillé, conditions, commande créée."
     }
    ],
    "suite": [
@@ -5095,25 +5176,33 @@
   {
    "id": "adm-sav",
    "role": "admin",
-   "titre": "SAV & retours",
+   "titre": "Service après-vente",
    "chemin": "/admin/sav",
-   "but": "Réclamations, garanties et échanges sous 72 h.",
+   "but": "Pannes sous garantie, réclamations et échanges à domicile, en tableau ; chaque dossier s’ouvre dans le panneau.",
    "elements": [
     {
-     "nom": "Scanner un reçu",
-     "role": "Scanne le QR du reçu d'un client pour retrouver sa commande (« Voir la commande ») et ses demandes SAV. Ne lit que le numéro de commande : ne valide ni livraison ni retour."
+     "nom": "Chiffres",
+     "role": "Coursier à envoyer · Coursier en route · Résolus."
     },
     {
-     "nom": "Voir les photos du client",
-     "role": "Sur une demande envoyée depuis le reçu : les photos jointes (3 max), en liens privés valables 10 minutes."
+     "nom": "Statuts",
+     "role": "Coursier à envoyer · Coursier en route · Résolus · Tous."
+    },
+    {
+     "nom": "Tableau",
+     "role": "Dossier, commande, produit, client, coursier, statut ; solution et fournisseur en colonnes à afficher."
+    },
+    {
+     "nom": "Panneau du dossier",
+     "role": "Détails, panne déclarée, « Voir les photos du client », Appeler le client, Suivi WhatsApp, « Envoyer ce coursier », puis « Échange réussi : clore le dossier ». Une action refusée s’affiche désormais."
+    },
+    {
+     "nom": "Scanner un reçu",
+     "role": "Retrouve la commande à partir du QR du reçu Suguba (sans rien valider)."
     },
     {
      "nom": "Ouvrir un dossier SAV",
-     "role": "Commande, motif, action (échange, remboursement)."
-    },
-    {
-     "nom": "File des réclamations",
-     "role": "Dossiers en cours et leur état."
+     "role": "Nouvelle réclamation sur une commande livrée."
     }
    ],
    "suite": [
@@ -5122,14 +5211,12 @@
      "libelle": "Politique de garantie"
     }
    ],
-   "capture": {
-    "chemin": "/admin/sav"
-   }
+   "note": "Pas de capture : écran refait en U1–U4 (2026-09-27) ; la session de démonstration n’a pas de rôle d’équipe et ne peut plus l’afficher."
   },
   {
    "id": "adm-analyses",
    "role": "admin",
-   "titre": "Analyses financières",
+   "titre": "Analyses",
    "chemin": "/admin/analytics",
    "but": "Chiffre d’affaires, marges, commissions, trésorerie.",
    "elements": [
