@@ -207,7 +207,7 @@
     "Wave ne publie pas de grille officielle : « sans frais opérateur » est à confirmer en agence, et se corrige dans Paramètres.",
     "Aucune API ne publie les grilles d’Orange, Moov et Wave : elles se mettent à jour dans Paramètres (seuls les tarifs SasPay se mettent à jour seuls).",
     "Un vrai paiement Wave n’a pas été fait (il débiterait un vrai compte) : à tester avec un petit montant après la mise en ligne.",
-    "SQL à lancer : supabase/A-EXECUTER-2026-09-27-frais-paiement.sql ajoute aussi la colonne des tarifs SasPay relus. Sans lui, les tarifs de départ (relevé du 27/09/2026) servent."
+    "SQL lancé le 2026-09-27 (supabase/A-EXECUTER-2026-09-27-frais-paiement.sql) : trace des frais par paiement et tarifs SasPay relus — premier relevé automatique enregistré en production à 16 h 23 UTC."
    ],
    "pages": [
     "commander",
@@ -215,7 +215,8 @@
     "adm-retraits",
     "adm-parametres"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "43fb292"
   },
   {
    "date": "2026-09-27",
@@ -232,7 +233,7 @@
     "Paramètres : nouvelle section « Frais de paiement » — taux réglables, tarifs SasPay relus d’un clic, comparaison en direct espèces / Orange / Moov. Baisser les frais de transaction Suguba demande le droit « Baisser la part Suguba » et un motif."
    ],
    "ecarts": [
-    "SQL à lancer dans Supabase : supabase/A-EXECUTER-2026-09-27-frais-paiement.sql (trace des frais par paiement). Sans lui, les paiements marchent, seule la trace manque.",
+    "SQL lancé le 2026-09-27 (supabase/A-EXECUTER-2026-09-27-frais-paiement.sql) : trace des frais par paiement et tarifs SasPay relus — premier relevé automatique enregistré en production à 16 h 23 UTC.",
     "Grille de retrait Moov Money : vérifiée et corrigée le même jour (0,9 %, pas 1 %) — voir « Wave intégré, frais de retrait par tranches… ».",
     "Les frais sont calculés sur la commande ; SasPay calcule les siens sur le montant demandé (commande + frais Suguba) : c’est son tarif.",
     "Carte bancaire : aucun tarif SasPay sur le compte (paiement par carte toujours fermé). Wave : intégré le même jour — voir l’entrée suivante.",
@@ -244,7 +245,8 @@
     "rev-gains",
     "adm-parametres"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "43fb292"
   },
   {
    "date": "2026-09-27",
