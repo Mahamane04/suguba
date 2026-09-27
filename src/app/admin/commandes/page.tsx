@@ -26,6 +26,11 @@ const fcfa = (v: number) => `${Math.round(v).toLocaleString('fr-FR')} F`;
 export default function CommandesAdminPage() {
   const [statut, setStatut] = useState('');
   const [q, setQ] = useState('');
+  // Export CSV (A4) : seulement avec le droit « donnees.exporter ».
+  const [peutExporter, setPeutExporter] = useState(false);
+  useEffect(() => { fetch('/api/admin/poste', { cache: 'no-store' }).then((r) => r.json()).then((p) => setPeutExporter((p.permissions || []).includes('donnees.exporter'))).catch(() => undefined); }, []);
+  // Lien de la recherche globale ou de « À traiter » (A1) : recherche pré-remplie.
+  useEffect(() => { const d = new URLSearchParams(window.location.search).get('q'); if (d) setQ(d); }, []);
   const [commandes, setCommandes] = useState<any[]>([]);
   const [compteurs, setCompteurs] = useState<Record<string, number>>({});
   const [chargement, setChargement] = useState(true);
@@ -86,7 +91,10 @@ export default function CommandesAdminPage() {
 
   return (
     <PageReseau titre="Commandes" sousTitre="Toutes les commandes, avec recherche." retour={{ href: '/admin/backoffice', libelle: 'Back-office' }} large
-      action={<Link href="/admin" className="text-xs font-bold text-slate-600 underline min-h-[32px] inline-flex items-center">Gérer sur la vue globale</Link>}>
+      action={<span className="inline-flex items-center gap-3">
+        {peutExporter && <a href={`/api/admin/export?type=commandes${statut ? `&statut=${encodeURIComponent(statut)}` : ''}`} className="text-xs font-bold text-slate-600 underline min-h-[32px] inline-flex items-center">Exporter (CSV)</a>}
+        <Link href="/admin" className="text-xs font-bold text-slate-600 underline min-h-[32px] inline-flex items-center">Gérer sur la vue globale</Link>
+      </span>}>
       <div className="flex gap-2 overflow-x-auto pb-1">
         <button onClick={() => { setStatut(''); setPage(1); }} className={`px-3.5 h-10 rounded-2xl text-xs font-bold whitespace-nowrap ${!statut ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 border border-slate-200'}`}>Toutes</button>
         {STATUTS.map(([v, l]) => (

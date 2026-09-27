@@ -20,6 +20,8 @@ export const PERMISSIONS = [
   'verification.lire', 'verification.decider',
   'livraison.lire', 'livraison.gerer',
   'plateforme.parametres', 'plateforme.equipe',
+  // Exporter des listes (CSV) : réservé, chaque export est journalisé (A4, 2026-09-27).
+  'donnees.exporter',
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];

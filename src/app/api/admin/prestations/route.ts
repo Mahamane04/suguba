@@ -1,3 +1,4 @@
+import { avecJournal } from '@/lib/admin/journal-route';
 import { verifyActiveSession } from '@/lib/active-session';
 import { NextRequest, NextResponse } from 'next/server';
 import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
@@ -37,6 +38,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  return avecJournal(req, 'POST /api/admin/prestations', () => postInterne(req));
+}
+
+async function postInterne(req: NextRequest) {
   const refus = await refusSansPermissionAdmin(req, 'POST /api/admin/prestations');
   if (refus) return refus;
   if (!(await exigerAdmin(req))) return NextResponse.json({ error: 'Authentification admin requise.' }, { status: 401 });

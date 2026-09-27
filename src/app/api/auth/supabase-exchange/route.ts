@@ -1,4 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { lireSecurite } from '@/lib/admin/securite';
+import { aalDuJeton, decisionMfa } from '@/lib/admin/securite-regles';
+import { journaliserAction } from '@/lib/admin/journal';
 import { createSessionToken, SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS, SugubaSession, ProfileStatus } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { chargerRoles, choisirRoleActif } from '@/lib/profile-roles';
@@ -128,6 +131,25 @@ export async function POST(req: NextRequest) {
     const carteRoles = await chargerRoles(uid, role, status);
     const actif = choisirRoleActif(carteRoles, role);
 
+    // Double authentification de l'équipe (A3, 2026-09-27) : un membre qui
+    // l'a activée doit saisir son code à chaque connexion ; si elle est rendue
+    // obligatoire, il doit l'activer. Aucune session n'est émise avant.
+    if (carteRoles.admin === 'active') {
+      const { data: membre } = await admin.from('admin_team_members').select('profile_id').eq('profile_id', uid).maybeSingle();
+      if (membre) {
+        const [{ mfaObligatoire }, facteurs] = await Promise.all([
+          lireSecurite(admin),
+          admin.auth.admin.mfa.listFactors({ userId: authUserId }).catch(() => ({ data: null, error: new Error('mfa') })),
+        ]);
+        if (facteurs.error) {
+          return NextResponse.json({ error: 'Vérification de la double authentification impossible. Réessayez.' }, { status: 503 });
+        }
+        const verifies = (facteurs.data?.factors || []).filter((f: { status: string }) => f.status === 'verified').length;
+        const decision = decisionMfa({ estMembre: true, facteursVerifies: verifies, aal: aalDuJeton(accessToken), obligatoire: mfaObligatoire });
+        if (decision !== 'ok') return NextResponse.json({ success: false, needsMfa: decision });
+      }
+    }
+
     const token = await createSessionToken({
       uid,
       phone: profile?.phone || email,
@@ -147,6 +169,13 @@ export async function POST(req: NextRequest) {
       hasPhone: Boolean(profile?.phone),
     });
     res.cookies.set(SESSION_COOKIE_NAME, token, SESSION_COOKIE_OPTIONS);
+    // Connexions de l'équipe (A3) : visibles dans « Sécurité de l'équipe ».
+    if (carteRoles.admin === 'active') {
+      await journaliserAction(admin, {
+        auteurId: uid, action: 'connexion', dossier: `membre:${uid}`,
+        apres: { appareil: (req.headers.get('user-agent') || '').slice(0, 160), aal: aalDuJeton(accessToken) },
+      });
+    }
     return res;
   } catch (error: any) {
     console.error('[API supabase-exchange ERROR]', error);

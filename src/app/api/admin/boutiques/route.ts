@@ -1,3 +1,4 @@
+import { avecJournal } from '@/lib/admin/journal-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { randomUUID } from 'node:crypto';
 import { sessionAvecRole } from '@/lib/reseau/route-session';
@@ -95,6 +96,10 @@ async function creerCompteEtBoutique(corps: Record<string, any>): Promise<NextRe
 }
 
 export async function POST(req: NextRequest) {
+  return avecJournal(req, 'POST /api/admin/boutiques', () => postInterne(req));
+}
+
+async function postInterne(req: NextRequest) {
   const session = await sessionAvecRole(req, 'admin');
   if (!session) return NextResponse.json({ error: 'Session admin requise.' }, { status: 401 });
   if (!(await adminPeut(session.uid, 'boutique.moderer'))) return NextResponse.json({ error: 'Votre rôle ne permet pas de modérer une boutique.' }, { status: 403 });

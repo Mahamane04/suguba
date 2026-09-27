@@ -48,6 +48,22 @@ export default function BoutiqueSugubaPage() {
     }).catch(() => undefined).finally(() => setChargement(false));
   }, [toast]);
 
+  // Création explicite (A1, 2026-09-27) : ouvrir la page ne crée plus rien.
+  const creer = async () => {
+    setEnvoi(true);
+    try {
+      const r = await fetch('/api/admin/boutique-suguba', { method: 'POST' });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.boutique) { toast(d.error || 'Création impossible.', { ton: 'erreur' }); return; }
+      const b = d.boutique;
+      setSlug(b.slug); setAbonnes(b.abonnes); setNom(b.nom); setAccroche(b.accroche || '');
+      setDescription(b.description || ''); setLogo(b.logo); setCouverture(b.couverture); setGalerie(b.galerie || []); setQuartier(b.quartier || '');
+      toast('Boutique Suguba créée.', { ton: 'succes' });
+    } finally {
+      setEnvoi(false);
+    }
+  };
+
   const enregistrer = async (extra: Record<string, unknown> = {}) => {
     setEnvoi(true);
     try {
@@ -67,7 +83,12 @@ export default function BoutiqueSugubaPage() {
     <PageReseau titre="Boutique Suguba" sousTitre="Suguba vendeuse de ses propres produits." retour={{ href: '/admin/backoffice', libelle: 'Back-office' }}
       action={<Button size="sm" href="/admin/products/new"><PackagePlus className="w-4 h-4" />Ajouter un produit</Button>}>
       {chargement ? <div className="space-y-3"><Skeleton className="h-24" /><Skeleton className="h-48" /></div>
-        : !slug ? <EmptyState icone={Store} titre="Boutique indisponible" texte="La mise à jour du réseau n’est pas encore appliquée sur la base." />
+        : !slug ? (
+          <div className="space-y-3">
+            <EmptyState icone={Store} titre="La boutique Suguba n’existe pas encore" texte="Créez-la pour vendre les produits de Suguba sous sa propre vitrine." />
+            <div className="text-center"><Button type="button" onClick={creer} disabled={envoi}>{envoi ? 'Création…' : 'Créer la boutique Suguba'}</Button></div>
+          </div>
+        )
         : (
           <>
             <div className="grid grid-cols-2 gap-3">

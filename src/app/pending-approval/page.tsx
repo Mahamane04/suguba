@@ -7,7 +7,7 @@ import EtapesInscription from '@/components/common/EtapesInscription';
 import { Clock, ShieldCheck, LogOut, CheckCircle2 } from 'lucide-react';
 
 const DEST_PAR_ROLE: Record<string, string> = {
-  admin: '/admin',
+  admin: '/admin/a-traiter',
   supplier: '/supplier',
   driver: '/driver',
   reseller: '/reseller',

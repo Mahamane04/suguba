@@ -1,3 +1,4 @@
+import { avecJournal } from '@/lib/admin/journal-route';
 import { verifyActiveSession } from '@/lib/active-session';
 import { annoncerBaissePrix, annoncerNouveauProduit } from '@/lib/reseau/notifications';
 import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
@@ -25,6 +26,10 @@ import { adminPeut } from '@/lib/reseau/db';
  * chaque vente. La réponse donne le prix minimal et le prix recommandé.
  */
 export async function POST(req: NextRequest) {
+  return avecJournal(req, 'POST /api/admin/products/price', () => postInterne(req));
+}
+
+async function postInterne(req: NextRequest) {
   const refusEquipe = await refusSansPermissionAdmin(req, 'POST /api/admin/products/price');
   if (refusEquipe) return refusEquipe;
   const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value);

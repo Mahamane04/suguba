@@ -1,3 +1,4 @@
+import { avecJournal } from '@/lib/admin/journal-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
 import { sessionAvecRole } from '@/lib/reseau/route-session';
@@ -34,6 +35,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  return avecJournal(req, 'POST /api/admin/recherche-synonymes', () => postInterne(req));
+}
+
+async function postInterne(req: NextRequest) {
   const { refus, admin } = await garde(req, await refusSansPermissionAdmin(req, 'POST /api/admin/recherche-synonymes'));
   if (refus) return refus;
   const corps = await req.json().catch(() => ({}));
@@ -56,6 +61,10 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  return avecJournal(req, 'DELETE /api/admin/recherche-synonymes', () => deleteInterne(req));
+}
+
+async function deleteInterne(req: NextRequest) {
   const { refus, admin } = await garde(req, await refusSansPermissionAdmin(req, 'DELETE /api/admin/recherche-synonymes'));
   if (refus) return refus;
   const id = req.nextUrl.searchParams.get('id') || '';

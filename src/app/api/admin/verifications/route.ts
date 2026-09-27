@@ -1,3 +1,4 @@
+import { avecJournal } from '@/lib/admin/journal-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { sessionAvecRole } from '@/lib/reseau/route-session';
 import { adminPeut } from '@/lib/reseau/db';
@@ -15,6 +16,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  return avecJournal(req, 'POST /api/admin/verifications', () => postInterne(req));
+}
+
+async function postInterne(req: NextRequest) {
   const session = await sessionAvecRole(req, 'admin');
   if (!session) return NextResponse.json({ error: 'Session admin requise.' }, { status: 401 });
   if (!(await adminPeut(session.uid, 'verification.decider'))) {

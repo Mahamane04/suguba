@@ -25,7 +25,7 @@ const ROLES: { cle: Role; titre: string; detail: string; icone: React.ElementTyp
 ];
 
 const DESTINATION: Record<string, string> = {
-  customer: '/compte/commandes', reseller: '/reseller', supplier: '/supplier', driver: '/driver', diaspora: '/diaspora', admin: '/admin',
+  customer: '/compte/commandes', reseller: '/reseller', supplier: '/supplier', driver: '/driver', diaspora: '/diaspora', admin: '/admin/a-traiter',
 };
 
 const estRole = (v: unknown): v is Role => ROLES.some((r) => r.cle === v);

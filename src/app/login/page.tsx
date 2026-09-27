@@ -41,7 +41,7 @@ const quickRoles = [
 // ce flag client qui ne fait que masquer/afficher le bloc — le blocage réel
 // se fait dans /api/auth/demo-login, non falsifiable depuis le navigateur.
 const ESPACE_PAR_ROLE: Record<string, string> = {
-  admin: '/admin', supplier: '/supplier', driver: '/driver', reseller: '/reseller', diaspora: '/diaspora',
+  admin: '/admin/a-traiter', supplier: '/supplier', driver: '/driver', reseller: '/reseller', diaspora: '/diaspora',
 };
 
 const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === 'true';

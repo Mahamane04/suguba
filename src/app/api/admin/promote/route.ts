@@ -1,3 +1,4 @@
+import { avecJournal } from '@/lib/admin/journal-route';
 import { verifyActiveSession } from '@/lib/active-session';
 import { NextRequest, NextResponse } from 'next/server';
 import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
@@ -13,6 +14,10 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
  * procédure de bootstrap.
  */
 export async function POST(req: NextRequest) {
+  return avecJournal(req, 'POST /api/admin/promote', () => postInterne(req));
+}
+
+async function postInterne(req: NextRequest) {
   const refusEquipe = await refusSansPermissionAdmin(req, 'POST /api/admin/promote');
   if (refusEquipe) return refusEquipe;
   const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value);

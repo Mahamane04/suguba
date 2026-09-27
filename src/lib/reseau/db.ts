@@ -314,6 +314,16 @@ export async function membreEquipe(profileId: string): Promise<MembreEquipe | nu
 }
 
 /**
+ * Permissions effectives d'un membre de l'équipe (lot A1, 2026-09-27) : sert
+ * aux écrans qui s'adaptent aux droits (menu, file « À traiter », recherche
+ * globale). Liste vide = aucun droit (pas de membre, ou erreur de lecture).
+ */
+export async function permissionsDuMembre(profileId: string): Promise<{ permissions: Permission[]; teamRole: string | null }> {
+  const membre = await membreEquipe(profileId);
+  return { permissions: permissionsEffectives(membre), teamRole: membre?.teamRole ?? null };
+}
+
+/**
  * L'admin connecté a-t-il cette permission ? Un admin sans ligne d'équipe
  * n’obtient aucun droit implicite. L’affectation explicite est obligatoire.
  */

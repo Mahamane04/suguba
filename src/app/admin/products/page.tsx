@@ -73,6 +73,8 @@ export default function AdminProductsPage() {
   const [prixPour, setPrixPour] = useState<ProduitAdmin | null>(null);
   const [enCours, setEnCours] = useState<string | null>(null);
   // Unité de vente (V2, 2026-09-27) : éditeur ouvert pour un produit.
+  const [qProduit, setQProduit] = useState('');
+  useEffect(() => { const d = new URLSearchParams(window.location.search).get('q'); if (d) setQProduit(d); }, []);
   const [unitePour, setUnitePour] = useState<{ id: string; saisie: SaisieUnite } | null>(null);
   const [uniteDisponible, setUniteDisponible] = useState(true);
   const { toast, confirmer } = useToast();
@@ -120,7 +122,10 @@ export default function AdminProductsPage() {
   const tous = produits || [];
   const nouveautes = tous.filter((p) => p.statut === 'approved' && p.fournisseurId && Date.now() - Date.parse(p.creeLe) < QUATORZE_JOURS);
   const sansPhoto = tous.filter((p) => p.images.length === 0);
-  const affiches = filtre === 'nouveautes' ? nouveautes : filtre === 'sans_photo' ? sansPhoto : tous;
+  const selonFiltre = filtre === 'nouveautes' ? nouveautes : filtre === 'sans_photo' ? sansPhoto : tous;
+  // Recherche (A1) : venue de la recherche globale (?q=) ou tapée ici ; porte sur la liste entière.
+  const qNorm = qProduit.trim().toLowerCase();
+  const affiches = qNorm ? (produits || []).filter((p) => `${p.nom} ${p.fournisseur} ${p.categorie}`.toLowerCase().includes(qNorm)) : selonFiltre;
 
   const retirer = async (p: ProduitAdmin) => {
     const ok = await confirmer({
@@ -201,6 +206,10 @@ export default function AdminProductsPage() {
             </button>
           ))}
         </div>
+
+        <input type="search" value={qProduit} onChange={(e) => setQProduit(e.target.value)} aria-label="Rechercher un produit"
+          placeholder="Rechercher un produit, un fournisseur, une catégorie…"
+          className="w-full h-11 px-3.5 rounded-2xl bg-white border border-slate-200 text-base sm:text-sm" />
 
         {erreur && <p className="p-3 rounded-2xl bg-rose-50 border border-rose-100 text-xs font-bold text-rose-700">{erreur}</p>}
 

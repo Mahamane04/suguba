@@ -1,3 +1,5 @@
+import { avecJournal } from '@/lib/admin/journal-route';
+import { exigerValidation, marquerExecutee } from '@/lib/admin/securite';
 import { verifyActiveSession } from '@/lib/active-session';
 import { NextRequest, NextResponse } from 'next/server';
 import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
@@ -13,6 +15,10 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
  * pouvait toujours pas la retirer.
  */
 export async function POST(req: NextRequest) {
+  return avecJournal(req, 'POST /api/admin/unlock-commission', () => postInterne(req));
+}
+
+async function postInterne(req: NextRequest) {
   const refusEquipe = await refusSansPermissionAdmin(req, 'POST /api/admin/unlock-commission');
   if (refusEquipe) return refusEquipe;
   const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value);
@@ -34,7 +40,7 @@ export async function POST(req: NextRequest) {
   // Vente payée en espèces dont l'argent n'est pas encore chez Suguba
   // (Protection Suguba, 2026-09-26) : débloquer = AVANCER le gain sur la
   // trésorerie de Suguba. Permis, mais jamais sans motif, et tracé.
-  const { data: com } = await admin.from('commissions').select('order_id').eq('id', commissionId).maybeSingle();
+  const { data: com } = await admin.from('commissions').select('order_id, amount, reseller_id').eq('id', commissionId).maybeSingle();
   let avance = false;
   if (com?.order_id) {
     const { data: recus, error: e } = await admin.rpc('fonds_recus', { p_order_id: com.order_id });
@@ -43,6 +49,17 @@ export async function POST(req: NextRequest) {
   if (avance && motif.length < 5) {
     return NextResponse.json({ error: 'Les espèces de cette vente ne sont pas encore reversées à Suguba : indiquez le motif de l’avance.', motifRequis: true }, { status: 409 });
   }
+
+  // Double validation (A3) : une grosse avance sur la trésorerie de Suguba
+  // exige l'approbation d'un autre membre.
+  const validation = avance
+    ? await exigerValidation(admin, {
+      type: 'avance_commission', dossier: `commission:${commissionId}`, montant: Number(com?.amount) || 0,
+      resume: { beneficiaire: com?.reseller_id || null, commande: com?.order_id || null },
+      demandeurId: session.uid,
+    })
+    : { ok: true as const, validationId: null };
+  if (!validation.ok) return NextResponse.json(validation.corps, { status: validation.status });
 
   // Seule une commission encore bloquée peut être débloquée : ne jamais
   // « re-débloquer » une commission déjà réservée pour un retrait ou payée,
@@ -65,5 +82,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Commission introuvable ou déjà débloquée.' }, { status: 409 });
   }
 
+  await marquerExecutee(admin, validation.validationId);
   return NextResponse.json({ success: true });
 }

@@ -1,3 +1,4 @@
+import { avecJournal } from '@/lib/admin/journal-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
 import { sessionAvecRole } from '@/lib/reseau/route-session';
@@ -26,6 +27,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  return avecJournal(req, 'POST /api/admin/paiements-recus', () => postInterne(req));
+}
+
+async function postInterne(req: NextRequest) {
   const refus = await refusSansPermissionAdmin(req, 'POST /api/admin/paiements-recus');
   if (refus) return refus;
   const session = await sessionAvecRole(req, 'admin');

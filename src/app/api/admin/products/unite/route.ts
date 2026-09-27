@@ -1,3 +1,4 @@
+import { avecJournal } from '@/lib/admin/journal-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
 import { sessionAvecRole } from '@/lib/reseau/route-session';
@@ -10,6 +11,10 @@ import { normaliserUniteVente } from '@/lib/unite-vente';
  * champ existe. Le prix ne change pas : pas de nouvelle tarification.
  */
 export async function POST(req: NextRequest) {
+  return avecJournal(req, 'POST /api/admin/products/unite', () => postInterne(req));
+}
+
+async function postInterne(req: NextRequest) {
   const refus = await refusSansPermissionAdmin(req, 'POST /api/admin/products/unite');
   if (refus) return refus;
   if (!(await sessionAvecRole(req, 'admin'))) return NextResponse.json({ error: 'Session admin requise.' }, { status: 401 });

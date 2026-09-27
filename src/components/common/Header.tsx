@@ -1,5 +1,6 @@
 'use client';
 
+import { useDansPosteAdmin } from '@/components/admin/contexte';
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
@@ -97,10 +98,12 @@ export default function Header() {
   const prenom = state.currentUser.fullName?.trim().split(/\s+/)[0] || '';
   // Sans nom au profil, « Mon compte » : le rôle est déjà écrit juste dessous.
   const nomAffiche = prenom || 'Mon compte';
+  // Poste de travail admin (A1) : sur ordinateur, son menu latéral remplace l'en-tête.
+  const dansPoste = useDansPosteAdmin();
 
   return (
     <header
-      className={`sticky top-0 z-50 transition-all duration-200 border-b border-slate-100 ${
+      className={`sticky top-0 z-50 transition-all duration-200 border-b border-slate-100 ${dansPoste ? 'lg:hidden ' : ''}${
         defile ? 'bg-white/95 backdrop-blur-md shadow-sm' : 'bg-white'
       }`}
     >

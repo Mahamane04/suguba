@@ -192,6 +192,109 @@
  "journal": [
   {
    "date": "2026-09-27",
+   "titre": "Admin A5 : pilotage",
+   "demande": "Lot A5 : centre des modules (interrupteurs dispersés réunis), diagnostic « Pourquoi c’est bloqué ? », simulateur de réglages, éditeur de l’accueil.",
+   "realise": [
+    "Centre des modules : 7 modules avec leur état, ce qu’ils ouvrent et ce qui continue une fois fermés ; interrupteurs directs quand le rôle le permet, lien vers le réglage détaillé sinon.",
+    "Accueil client : afficher ou masquer À la une, Boutiques près de chez vous, Gagner de l’argent et Garanties, avec aperçu avant publication.",
+    "« Pourquoi c’est bloqué ? » pour commandes, retraits, commissions et sponsorisations, avec le lien où agir ; lien « Pourquoi ? » dans « À traiter ».",
+    "Simulateur : effet avant / après d’un changement de 9 réglages économiques sur les produits en vente, sans rien enregistrer."
+   ],
+   "ecarts": [
+    "Programmation d’une ouverture à une date : non faite.",
+    "Ordre des blocs de l’accueil : fixe (affichage ou non seulement)."
+   ],
+   "pages": [
+    "adm-modules",
+    "adm-accueil",
+    "adm-diagnostic",
+    "adm-simulateur"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-27",
+   "titre": "Admin A4 : listes professionnelles",
+   "demande": "Lot A4 : tableaux (tri, filtres, colonnes, vues enregistrées) chargés par le serveur, export CSV réservé et journalisé, actions groupées limitées avec aperçu.",
+   "realise": [
+    "« Catalogue en tableau » : recherche, statut, catégorie, sans photo, sans unité, tri par colonne, pagination serveur (sur tout le catalogue).",
+    "Colonnes au choix et vues enregistrées par membre.",
+    "Actions groupées : catégorie ou unité de vente, sur la page ou sur tous les résultats du filtre (500 au plus), avec aperçu avant/après et exclusions expliquées ; pas de prix, pas de suppression.",
+    "Export CSV du catalogue et des commandes : nouveau droit « donnees.exporter » (Super Admin), jamais les coordonnées des clients, formules de tableur neutralisées, chaque export au journal."
+   ],
+   "ecarts": [
+    "SQL A-EXECUTER-2026-09-27-admin-a4.sql à exécuter pour enregistrer des vues (le tableau fonctionne sans).",
+    "Commandes : déjà paginées côté serveur ; seul l’export y est ajouté."
+   ],
+   "pages": [
+    "adm-catalogue-tableau"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-27",
+   "titre": "Admin A3 : sécurité de l’équipe",
+   "demande": "Lot A3 : double authentification des membres, sessions et déconnexion à distance, double validation au-delà d’un seuil (remboursement/retrait, bénéficiaire, part Suguba, gros montants).",
+   "realise": [
+    "Double authentification (application d’authentification) : exigée à chaque connexion d’un membre qui l’a activée ; peut être rendue obligatoire pour toute l’équipe. Aucune session n’est émise avant le code.",
+    "« Déconnecter partout » par membre : toutes ses sessions émises avant sont refusées. Dernières connexions (appareil, code vérifié) visibles.",
+    "Double validation, seuil réglable (0 = désactivée) : paiement d’un retrait (Mobile Money ou guichet), avance d’une commission, baisse de la part Suguba. Un autre membre approuve dans « Validations » ; un changement de montant ou de bénéficiaire rend l’approbation caduque ; l’approbation sert une seule fois. La base interdit d’approuver sa propre demande.",
+    "« Validation à décider » ajoutée à « À traiter » (Finance)."
+   ],
+   "ecarts": [
+    "SQL A-EXECUTER-2026-09-27-admin-a3.sql à exécuter ; vérifier dans Supabase (Authentication → Multi-Factor) que « TOTP » est activé.",
+    "Changement de bénéficiaire : le numéro est figé dans chaque demande de retrait (empreinte) ; il n’existe pas d’écran séparé de changement de bénéficiaire à protéger.",
+    "Remboursements client : pas de circuit de remboursement dans l’application à ce jour."
+   ],
+   "pages": [
+    "adm-securite",
+    "adm-validations",
+    "double-authentification"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-27",
+   "titre": "Admin A2 : journal des actions et notes internes",
+   "demande": "Lot A2 : journal général (qui, quoi, quand, motif, avant/après) non modifiable, notes internes par dossier, alerte si un collègue a modifié le même dossier.",
+   "realise": [
+    "Journal automatique : les 32 actions admin (POST, PUT, PATCH, suppression) de /api/admin inscrites dès qu’elles réussissent — membre, action, dossier déduit, motif, résumé des champs (secrets masqués).",
+    "La base refuse toute modification ou suppression du journal et des notes.",
+    "Page « Journal des actions » (Équipe et sécurité) : filtres par dossier et action, détail de chaque action.",
+    "Notes internes sur chaque dossier de « À traiter », jamais visibles par le client.",
+    "Alerte de modification concurrente : prendre, transférer ou libérer un dossier qu’un collègue vient de changer est refusé, avec son nom."
+   ],
+   "ecarts": [
+    "SQL A-EXECUTER-2026-09-27-admin-a2.sql à exécuter : sans lui, le journal et les notes restent vides (les actions elles-mêmes fonctionnent).",
+    "L’alerte de modification concurrente couvre les responsables de dossiers ; les autres écrans gardent leurs propres contrôles d’état (commande déjà confirmée, retrait déjà payé…)."
+   ],
+   "pages": [
+    "adm-journal",
+    "adm-a-traiter"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-27",
+   "titre": "Admin A1 : poste de travail de l’équipe",
+   "demande": "Back-office pour une équipe sur ordinateur, cinq métiers (support, finance, catalogue, marketing, livraisons) : lot A1 — navigation, recherche globale, « À traiter » par métier avec responsables, correctif boutique Suguba.",
+   "realise": [
+    "Poste de travail sur toutes les pages /admin : menu latéral en huit rubriques filtré par les droits de chacun, environnement affiché ; tiroir « Menu équipe » sur téléphone.",
+    "Recherche globale Ctrl K : commandes, produits, personnes, boutiques, paiements reçus — chaque groupe seulement si le membre a le droit de le lire (contrôle serveur).",
+    "« À traiter » : 11 types de dossiers (commandes à confirmer, livraisons à attribuer, retraits, espèces non versées, prestations contestées, messages retenus, pièces, produits, SAV, devis sans réponse, sponsorisations), par métier, plus anciens d’abord ; Prendre / Transférer / Libérer ; sources illisibles signalées.",
+    "Page d’arrivée des admins : « À traiter ». Commandes, Utilisateurs et Produits s’ouvrent filtrés depuis la recherche.",
+    "Boutique Suguba : ouvrir la page ne la crée plus ; bouton « Créer la boutique Suguba »."
+   ],
+   "ecarts": [
+    "Responsables de dossiers : SQL A-EXECUTER-2026-09-27-admin-a1.sql à exécuter (sans lui, la file s’affiche mais « Prendre » est refusé)."
+   ],
+   "pages": [
+    "adm-a-traiter"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-27",
    "titre": "Unités de vente élargies : tissus, construction, minimum",
    "demande": "Les tissus se vendent au mètre, d’autres au m² ; chercher les unités utiles aux fournisseurs.",
    "realise": [
@@ -4009,6 +4112,274 @@
    }
   },
   {
+   "id": "adm-a-traiter",
+   "role": "admin",
+   "titre": "À traiter",
+   "chemin": "/admin/a-traiter",
+   "but": "La file de travail de l’équipe : les dossiers qui attendent une décision, les plus anciens d’abord, avec leur responsable. Page d’arrivée de chaque membre après connexion.",
+   "elements": [
+    {
+     "nom": "Menu latéral (ordinateur)",
+     "role": "Huit rubriques — Pilotage, Opérations, Catalogue, Utilisateurs et réseau, Finance, Visibilité et campagnes, Contrôle de la plateforme, Équipe et sécurité — avec seulement les pages que le rôle permet d’ouvrir. Badge Production / Local / Prévisualisation. Sur téléphone : « Menu équipe »."
+    },
+    {
+     "nom": "Rechercher (Ctrl K)",
+     "role": "Commandes, produits, personnes, boutiques et paiements reçus, selon les droits du membre. ↑ ↓ pour choisir, Entrée pour ouvrir."
+    },
+    {
+     "nom": "Métier",
+     "role": "Chacun arrive sur son métier (Support, Finance, Catalogue, Marketing, Livraisons) ; la Direction voit tous les métiers."
+    },
+    {
+     "nom": "Tous / Mes dossiers / Sans responsable",
+     "role": "Filtre selon le responsable du dossier."
+    },
+    {
+     "nom": "Ligne de dossier",
+     "role": "Type, ancienneté (orange après 4 h, rouge après 24 h), montant, action attendue et responsable. « Ouvrir » mène à la page du dossier ; « Prendre », « Transférer » (seulement à un collègue qui a le droit de le traiter) et « Libérer »."
+    },
+    {
+     "nom": "Lecture impossible pour…",
+     "role": "Une source illisible est signalée : une liste vide ne veut alors pas dire « rien à traiter »."
+    },
+    {
+     "nom": "Notes",
+     "role": "Notes internes du dossier, jamais visibles par le client ; ajout seulement. Si un collègue a changé le responsable entre-temps, l’action est refusée avec son nom : actualiser avant de décider."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-backoffice",
+     "libelle": "Back-office"
+    }
+   ],
+   "note": "Pas de capture : page réservée aux admins (session de démonstration refusée pour les captures)."
+  },
+  {
+   "id": "adm-journal",
+   "role": "admin",
+   "titre": "Journal des actions",
+   "chemin": "/admin/journal",
+   "but": "Voir qui a fait quoi, quand, sur quel dossier et pourquoi. Toute action admin réussie y est inscrite automatiquement ; personne ne peut la modifier ni l’effacer.",
+   "elements": [
+    {
+     "nom": "Filtres",
+     "role": "Par dossier (commande, produit, identifiant…) et par action (payouts, products/price, note…)."
+    },
+    {
+     "nom": "Ligne",
+     "role": "Date, membre, action, motif, dossier ; un clic montre les champs envoyés (secrets masqués)."
+    },
+    {
+     "nom": "Voir plus",
+     "role": "50 actions par page, des plus récentes aux plus anciennes."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-a-traiter",
+     "libelle": "À traiter"
+    }
+   ],
+   "note": "Réservé à qui gère l’équipe (droit « plateforme.equipe »). Pas de capture : page réservée aux admins."
+  },
+  {
+   "id": "adm-securite",
+   "role": "admin",
+   "titre": "Sécurité de l’équipe",
+   "chemin": "/admin/securite",
+   "but": "Protéger les comptes de l’équipe : double authentification, double validation des opérations sensibles, connexions et déconnexion à distance.",
+   "elements": [
+    {
+     "nom": "Double authentification obligatoire",
+     "role": "À la prochaine connexion, chaque membre qui ne l’a pas doit l’activer (application d’authentification sur son téléphone). Qui l’a activée saisit son code à chaque connexion, même si elle n’est pas obligatoire."
+    },
+    {
+     "nom": "Double validation à partir de (F)",
+     "role": "Paiement d’un retrait ou avance de commission à partir de ce montant, et toute baisse de la part Suguba : une personne prépare, un collègue approuve. 0 = désactivée (par défaut)."
+    },
+    {
+     "nom": "Activer ma double authentification",
+     "role": "Ouvre la page d’activation (QR code à scanner, puis premier code)."
+    },
+    {
+     "nom": "Tableau des membres",
+     "role": "Rôle, double authentification (Activée / Pas encore), 5 dernières connexions (appareil, code vérifié), « Déconnecter partout » : ferme toutes ses sessions immédiatement."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-validations",
+     "libelle": "Validations"
+    }
+   ],
+   "note": "Droit « plateforme.equipe ». Pas de capture : page réservée aux admins."
+  },
+  {
+   "id": "adm-validations",
+   "role": "admin",
+   "titre": "Validations",
+   "chemin": "/admin/validations",
+   "but": "Approuver ou refuser les opérations sensibles préparées par un collègue. On ne peut jamais approuver sa propre demande.",
+   "elements": [
+    {
+     "nom": "En attente",
+     "role": "Type (retrait, avance de commission, baisse de part), montant, qui l’a demandé, détail (bénéficiaire, téléphone…). « Approuver », ou « Refuser » avec un motif."
+    },
+    {
+     "nom": "Après approbation",
+     "role": "Le demandeur (ou un collègue) relance l’opération : elle passe une fois. Si le montant ou le bénéficiaire change, l’approbation devient caduque et une nouvelle demande part."
+    },
+    {
+     "nom": "Historique",
+     "role": "Approuvées, refusées, exécutées, caduques, avec qui a décidé."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-a-traiter",
+     "libelle": "À traiter"
+    }
+   ],
+   "note": "Pas de capture : page réservée aux admins."
+  },
+  {
+   "id": "adm-modules",
+   "role": "admin",
+   "titre": "Centre des modules",
+   "chemin": "/admin/modules",
+   "but": "Voir en un seul endroit ce qui est ouvert ou fermé sur Suguba, et ce que chaque module ouvre ou laisse continuer.",
+   "elements": [
+    {
+     "nom": "Carte de module",
+     "role": "Ouvert / Fermé, ce qu’il ouvre, ce qui continue une fois fermé (les dossiers engagés suivent leur cours)."
+    },
+    {
+     "nom": "Ouvrir / Fermer",
+     "role": "Directement ici pour l’annuaire des fournisseurs, la vente directe, la protection des prix de gros et « Payer les résultats » (avec confirmation) ; selon les droits du rôle."
+    },
+    {
+     "nom": "Réglage détaillé",
+     "role": "Ouvre la page du réglage (carte bancaire, double authentification, double validation…) avec ses propres contrôles."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-accueil",
+     "libelle": "Accueil client"
+    }
+   ],
+   "note": "Pas de capture : page réservée aux admins."
+  },
+  {
+   "id": "adm-accueil",
+   "role": "admin",
+   "titre": "Accueil client",
+   "chemin": "/admin/accueil",
+   "but": "Choisir les blocs affichés sur l’accueil des clients, voir l’aperçu, puis publier.",
+   "elements": [
+    {
+     "nom": "Blocs",
+     "role": "À la une, Boutiques près de chez vous, Gagner de l’argent, Garanties. La recherche, les catégories et le catalogue restent toujours affichés."
+    },
+    {
+     "nom": "Aperçu",
+     "role": "Schéma de téléphone avec les blocs choisis, et la liste des changements non publiés."
+    },
+    {
+     "nom": "Publier / Annuler les changements",
+     "role": "Publier rend les changements visibles par les clients en une minute environ."
+    }
+   ],
+   "suite": [
+    {
+     "id": "accueil",
+     "libelle": "Accueil"
+    }
+   ],
+   "note": "Droit « plateforme.parametres ». Pas de capture : page réservée aux admins."
+  },
+  {
+   "id": "adm-diagnostic",
+   "role": "admin",
+   "titre": "Pourquoi c’est bloqué ?",
+   "chemin": "/admin/diagnostic",
+   "but": "Comprendre en français simple ce qui retient une commande, un retrait, une commission ou une sponsorisation, et aller à l’écran où agir.",
+   "elements": [
+    {
+     "nom": "Type et référence",
+     "role": "Commande (numéro SG-…), retrait (code), commission ou sponsorisation (identifiant), selon les droits du rôle."
+    },
+    {
+     "nom": "Raisons",
+     "role": "Chaque raison bloquante en rouge, avec le lien vers la bonne page (Validations, Caisse livreurs, Sponsorisations…). Lecture seule : rien pour ignorer un contrôle."
+    },
+    {
+     "nom": "Depuis « À traiter »",
+     "role": "Lien « Pourquoi ? » sur les commandes, livraisons, retraits et sponsorisations."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-a-traiter",
+     "libelle": "À traiter"
+    }
+   ],
+   "note": "Pas de capture : page réservée aux admins."
+  },
+  {
+   "id": "adm-simulateur",
+   "role": "admin",
+   "titre": "Simulateur de réglages",
+   "chemin": "/admin/simulateur",
+   "but": "Tester l’effet d’un changement économique (part revendeur, commissions, frais, marge minimale…) sur les 40 derniers produits en vente, sans rien enregistrer.",
+   "elements": [
+    {
+     "nom": "Réglages à tester",
+     "role": "Valeur actuelle rappelée ; seules les cases remplies changent."
+    },
+    {
+     "nom": "Totaux",
+     "role": "Marge nette Suguba, commissions revendeurs et produits non proposés aux revendeurs, avant / après."
+    },
+    {
+     "nom": "Tableau",
+     "role": "Par produit : commission et marge nette après, écart avec avant ; marge négative en rouge."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-backoffice",
+     "libelle": "Back-office"
+    }
+   ],
+   "note": "Rien n’est enregistré : appliquer se fait dans « Paramètres et commissions ». Droit « finance.lire »."
+  },
+  {
+   "id": "double-authentification",
+   "role": "admin",
+   "titre": "Double authentification",
+   "chemin": "/securite/double-authentification",
+   "but": "Code à 6 chiffres d’une application (Google Authenticator, Microsoft Authenticator, Authy), en plus du mot de passe ou de Google, pour les membres de l’équipe.",
+   "elements": [
+    {
+     "nom": "Première fois",
+     "role": "Scanner le QR code (ou saisir la clé), puis taper le premier code."
+    },
+    {
+     "nom": "Connexions suivantes",
+     "role": "Taper le code affiché par l’application ; retour automatique à la connexion."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-a-traiter",
+     "libelle": "À traiter"
+    }
+   ],
+   "note": "Pas de capture : étape liée à un vrai compte."
+  },
+  {
    "id": "adm-backoffice",
    "role": "admin",
    "titre": "Back-office",
@@ -4104,6 +4475,10 @@
     {
      "nom": "Gérer sur la vue globale",
      "role": "Les actions (appel, dispatch) se font sur la vue globale."
+    },
+    {
+     "nom": "Exporter (CSV)",
+     "role": "Avec le droit « donnees.exporter » : export des commandes (filtre de statut appliqué), sans téléphone ni nom du client ; journalisé."
     }
    ],
    "suite": [
@@ -4158,6 +4533,46 @@
    "capture": {
     "chemin": "/admin/products"
    }
+  },
+  {
+   "id": "adm-catalogue-tableau",
+   "role": "admin",
+   "titre": "Catalogue en tableau",
+   "chemin": "/admin/catalogue",
+   "but": "Travailler le catalogue sur ordinateur : chercher dans tout le catalogue, trier, choisir ses colonnes, enregistrer ses vues, modifier plusieurs produits à la fois, exporter.",
+   "elements": [
+    {
+     "nom": "Recherche et filtres",
+     "role": "Produit, fournisseur ou identifiant ; statut ; catégorie ; « Sans photo » ; « Sans unité ». Faits par le serveur sur TOUT le catalogue, 50 lignes par page."
+    },
+    {
+     "nom": "Tri",
+     "role": "Clic sur l’en-tête Produit, Fournisseur, Prix, Stock ou Créé le (encore un clic : ordre inverse)."
+    },
+    {
+     "nom": "Colonnes",
+     "role": "Choisir les colonnes affichées (Photos et Créé le masquées par défaut). Confort seulement : ne change aucun droit."
+    },
+    {
+     "nom": "Mes vues / Enregistrer la vue",
+     "role": "Filtres, tri et colonnes enregistrés sous un nom, propres à chaque membre (20 par liste)."
+    },
+    {
+     "nom": "Sélection et actions groupées",
+     "role": "Cases à cocher ; « Sélectionner les N résultats du filtre » (500 au plus). Changer la catégorie ou l’unité de vente : « Voir l’aperçu » montre les produits modifiés (avant → après) et les exclus avec la raison, puis « Confirmer ». Jamais les prix ni la suppression. Droit « produit.moderer »."
+    },
+    {
+     "nom": "Exporter (CSV)",
+     "role": "Droit « donnees.exporter » (Super Admin par défaut). Fichier pour Excel ; chaque export est journalisé."
+    }
+   ],
+   "suite": [
+    {
+     "id": "adm-produits",
+     "libelle": "Produits (photos et prix)"
+    }
+   ],
+   "note": "Pas de capture : page réservée aux admins."
   },
   {
    "id": "adm-produit-nouveau",

@@ -18,6 +18,8 @@ export default function UtilisateursPage() {
   const { toast } = useToast();
   const [onglet, setOnglet] = useState<Onglet>('revendeurs');
   const [q, setQ] = useState('');
+  // Lien de la recherche globale ou de « À traiter » (A1) : recherche pré-remplie.
+  useEffect(() => { const d = new URLSearchParams(window.location.search).get('q'); if (d) setQ(d); }, []);
   const [lignes, setLignes] = useState<any[]>([]);
   const [badges, setBadges] = useState<{ cle: string; libelle: string }[]>([]);
   const [chargement, setChargement] = useState(true);

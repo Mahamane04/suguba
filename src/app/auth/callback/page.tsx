@@ -8,7 +8,7 @@ import type { Session } from '@supabase/supabase-js';
 import { Loader2, ShieldAlert } from 'lucide-react';
 
 const DEST_BY_ROLE: Record<string, string> = {
-  admin: '/admin',
+  admin: '/admin/a-traiter',
   driver: '/driver',
   supplier: '/supplier',
   reseller: '/reseller',
@@ -92,6 +92,13 @@ export default function AuthCallbackPage() {
           if (refCode) params.set('ref', refCode);
           aller(`/register/complete?${params.toString()}`);
         };
+
+        // Double authentification de l'équipe (A3) : code à saisir, ou à
+        // activer si elle est obligatoire. Retour ici ensuite, même adresse.
+        if (json.needsMfa) {
+          aller(`/securite/double-authentification?etape=${json.needsMfa}&suite=${encodeURIComponent(window.location.pathname + window.location.search)}`);
+          return;
+        }
 
         // Adresse inconnue et aucun rôle choisi (connexion depuis /login) :
         // rien n'a été créé. La personne choisit son profil sur la page

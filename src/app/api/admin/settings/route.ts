@@ -1,3 +1,5 @@
+import { avecJournal } from '@/lib/admin/journal-route';
+import { exigerValidation, marquerExecutee } from '@/lib/admin/securite';
 import { verifyActiveSession } from '@/lib/active-session';
 import { NextRequest, NextResponse } from 'next/server';
 import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
@@ -58,6 +60,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
+  return avecJournal(req, 'PUT /api/admin/settings', () => putInterne(req));
+}
+
+async function putInterne(req: NextRequest) {
   const refusEquipe = await refusSansPermissionAdmin(req, 'PUT /api/admin/settings');
   if (refusEquipe) return refusEquipe;
   const session = await exigerAdmin(req);
@@ -80,6 +86,7 @@ export async function PUT(req: NextRequest) {
   // modification technique. Droit dédié, motif obligatoire, trace gardée.
   const { reglages: actuels } = await chargerReglages();
   const baisses = baissesPartSuguba(actuels, reglages);
+  let validationPart: string | null = null;
   const motif = typeof body.motif === 'string' ? body.motif.trim().slice(0, 500) : '';
   if (baisses.length > 0) {
     if (!(await adminPeut(session.uid, 'marge.reduire'))) {
@@ -88,6 +95,15 @@ export async function PUT(req: NextRequest) {
     if (motif.length < 5) {
       return NextResponse.json({ error: 'Ces changements réduisent la part de Suguba : indiquez le motif (promotion, lancement, accord commercial…).', motifRequis: true, baisses }, { status: 409 });
     }
+    // Double validation (A3) : quand elle est active, une baisse de la part
+    // Suguba doit être approuvée par un autre membre ayant le même droit.
+    const validation = await exigerValidation(admin, {
+      type: 'part_suguba', dossier: 'reglages:part-suguba', montant: null,
+      resume: { baisses: baisses.map((b) => ({ libelle: b.libelle, avant: b.avant, apres: b.apres })), motif },
+      demandeurId: session.uid,
+    });
+    if (!validation.ok) return NextResponse.json(validation.corps, { status: validation.status });
+    validationPart = validation.validationId;
     const { error: eJournal } = await admin.from('journal_part_suguba').insert({ admin_id: session.uid, motif, changements: baisses });
     if (eJournal) {
       return NextResponse.json({ error: 'Journal de la part Suguba indisponible : enregistrement annulé. Réessayez.' }, { status: 503 });
@@ -102,6 +118,7 @@ export async function PUT(req: NextRequest) {
     updated_by: session.uid,
   });
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  await marquerExecutee(admin, validationPart);
 
   // ── Recalcul des commissions de tous les produits approuvés ─────────────
   const { data: produits } = await admin

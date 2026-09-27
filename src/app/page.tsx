@@ -1,5 +1,6 @@
 'use client';
 
+import { BLOCS_ACCUEIL_DEFAUT, normaliserBlocsAccueil, type BlocsAccueil } from '@/lib/reseau/reglages';
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Header from '@/components/common/Header';
@@ -45,6 +46,12 @@ export default function HomePage() {
     if (c) setSelectedCategory(c);
   }, []);
   const [search, setSearch] = useState('');
+  // Blocs de l'accueil réglés par l'équipe (A5, 2026-09-27) : tous visibles
+  // tant que la réponse n'est pas arrivée ou si elle échoue.
+  const [blocs, setBlocs] = useState<BlocsAccueil>(BLOCS_ACCUEIL_DEFAUT);
+  useEffect(() => {
+    fetch('/api/settings/public').then((r) => (r.ok ? r.json() : null)).then((j) => { if (j?.accueil) setBlocs(normaliserBlocsAccueil(j.accueil)); }).catch(() => undefined);
+  }, []);
   // « Livrer à … » (2026-09-12, inspiré des apps de livraison à Bamako) :
   // fixé une fois ici, il pré-remplit le quartier de la fenêtre de commande
   // (voir /p/[slug]) au lieu de le redemander à chaque produit.
@@ -204,14 +211,18 @@ export default function HomePage() {
         </div>
 
         {/* Emplacement sponsorisé « bandeau d'accueil » (§ 17). */}
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-5 empty:hidden">
-          <ALaUne />
-        </div>
+        {blocs.a_la_une && (
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-5 empty:hidden">
+            <ALaUne />
+          </div>
+        )}
 
         {/* Boutiques du quartier choisi et des environs (2026-09-18). */}
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-5 empty:hidden">
-          <BoutiquesDuQuartier quartier={quartierClient} />
-        </div>
+        {blocs.boutiques_quartier && (
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-5 empty:hidden">
+            <BoutiquesDuQuartier quartier={quartierClient} />
+          </div>
+        )}
 
         {/* ══════════════════════════════════════════════
             CATALOGUE — immédiatement sous la recherche
@@ -278,6 +289,7 @@ export default function HomePage() {
         {/* ══════════════════════════════════════════════
             DEVENIR PARTENAIRE — discret, une seule porte d'entrée
         ══════════════════════════════════════════════ */}
+        {blocs.gagner && (
         <section className="py-6 px-4 sm:px-6">
           <div className="max-w-4xl mx-auto">
             <Link
@@ -301,10 +313,12 @@ export default function HomePage() {
             </Link>
           </div>
         </section>
+        )}
 
         {/* ══════════════════════════════════════════════
             RÉASSURANCE CLIENT
         ══════════════════════════════════════════════ */}
+        {blocs.garanties && (
         <section className="pb-8 px-4 sm:px-6">
           <div className="max-w-4xl mx-auto">
             <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-100 shadow-card">
@@ -346,6 +360,7 @@ export default function HomePage() {
             </div>
           </div>
         </section>
+        )}
 
       </main>
 

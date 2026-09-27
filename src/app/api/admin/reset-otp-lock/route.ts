@@ -1,3 +1,4 @@
+import { avecJournal } from '@/lib/admin/journal-route';
 import { verifyActiveSession } from '@/lib/active-session';
 import { NextRequest, NextResponse } from 'next/server';
 import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
@@ -6,6 +7,10 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
 /** Débloque une commande verrouillée après 3 échecs OTP — admin uniquement. */
 export async function POST(req: NextRequest) {
+  return avecJournal(req, 'POST /api/admin/reset-otp-lock', () => postInterne(req));
+}
+
+async function postInterne(req: NextRequest) {
   const refusEquipe = await refusSansPermissionAdmin(req, 'POST /api/admin/reset-otp-lock');
   if (refusEquipe) return refusEquipe;
   const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value);

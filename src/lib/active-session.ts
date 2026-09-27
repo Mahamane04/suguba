@@ -1,4 +1,5 @@
 import { verifySessionToken, type SugubaSession, type SugubaRole, type ProfileStatus } from './session';
+import { sessionRevoquee } from './admin/securite-regles';
 import { getSupabaseAdmin } from './supabase-admin';
 import { permissionsEffectives } from './reseau/permissions';
 import { PERMISSION_PAR_ROUTE } from './reseau/permissions-routes';
@@ -14,9 +15,13 @@ export async function verifyActiveSession(token: string | undefined, allowPendin
     const { data: profile, error } = await admin.from('profiles')
       .select('role, status, phone').eq('id', uid).maybeSingle();
     if (error || !profile || !['active', ...(allowPending ? ['pending_approval'] : [])].includes(profile.status)) return null;
-    const { data: rows, error: rolesError } = await admin.from('profile_roles')
-      .select('role, status').eq('profile_id', uid);
+    const [{ data: rows, error: rolesError }, revocation] = await Promise.all([
+      admin.from('profile_roles').select('role, status').eq('profile_id', uid),
+      // « Déconnecter partout » (A3, 2026-09-27) ; table absente = aucune révocation.
+      admin.from('sessions_revocations').select('avant').eq('profile_id', uid).maybeSingle(),
+    ]);
     if (rolesError) return null;
+    if (!revocation.error && sessionRevoquee(session.iat, revocation.data?.avant)) return null;
     const roles: Partial<Record<SugubaRole, ProfileStatus>> = {};
     for (const row of rows || []) roles[row.role as SugubaRole] = row.status;
     if (!roles[profile.role as SugubaRole]) roles[profile.role as SugubaRole] = profile.status;

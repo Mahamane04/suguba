@@ -34,7 +34,17 @@ export interface ReglagesReseau {
    * chaque résultat (enregistrer_resultat_campagne).
    */
   remunerationResultat: boolean;
+
+  /**
+   * Blocs de l'accueil client (A5, 2026-09-27) : affichés ou non. Le
+   * catalogue et la recherche restent toujours visibles.
+   */
+  accueilBlocs: BlocsAccueil;
 }
+
+export type CleBlocAccueil = 'a_la_une' | 'boutiques_quartier' | 'gagner' | 'garanties';
+export type BlocsAccueil = Record<CleBlocAccueil, boolean>;
+export const BLOCS_ACCUEIL_DEFAUT: BlocsAccueil = { a_la_une: true, boutiques_quartier: true, gagner: true, garanties: true };
 
 export const REGLAGES_RESEAU_DEFAUT: ReglagesReseau = {
   primeParrainageClient: 500,
@@ -44,6 +54,7 @@ export const REGLAGES_RESEAU_DEFAUT: ReglagesReseau = {
   fournisseursVenteDirecte: [],
   protectionPrixDeGros: true,
   remunerationResultat: false,
+  accueilBlocs: BLOCS_ACCUEIL_DEFAUT,
 };
 
 /** Le client peut-il acheter directement depuis la boutique de ce fournisseur ? */
@@ -73,7 +84,14 @@ export function normaliserReglagesReseau(brut: unknown): ReglagesReseau {
       : [],
     protectionPrixDeGros: booleen(o.protectionPrixDeGros, REGLAGES_RESEAU_DEFAUT.protectionPrixDeGros),
     remunerationResultat: booleen(o.remunerationResultat, REGLAGES_RESEAU_DEFAUT.remunerationResultat),
+    accueilBlocs: normaliserBlocsAccueil(o.accueilBlocs),
   };
+}
+
+export function normaliserBlocsAccueil(brut: unknown): BlocsAccueil {
+  const o = brut && typeof brut === 'object' ? (brut as Record<string, unknown>) : {};
+  return Object.fromEntries((Object.keys(BLOCS_ACCUEIL_DEFAUT) as CleBlocAccueil[])
+    .map((k) => [k, typeof o[k] === 'boolean' ? o[k] : BLOCS_ACCUEIL_DEFAUT[k]])) as BlocsAccueil;
 }
 
 export function primeDuParrainage(reglages: ReglagesReseau, type: 'customer' | 'reseller' | 'supplier'): number {

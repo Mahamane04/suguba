@@ -1,3 +1,5 @@
+import { avecJournal } from '@/lib/admin/journal-route';
+import { exigerValidation, marquerExecutee } from '@/lib/admin/securite';
 import { verifyActiveSession } from '@/lib/active-session';
 import { NextRequest, NextResponse } from 'next/server';
 import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
@@ -62,6 +64,10 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  return avecJournal(req, 'POST /api/admin/payouts', () => postInterne(req));
+}
+
+async function postInterne(req: NextRequest) {
   const refusEquipe = await refusSansPermissionAdmin(req, 'POST /api/admin/payouts');
   if (refusEquipe) return refusEquipe;
   const session = await sessionAdmin(req);
@@ -78,7 +84,7 @@ export async function POST(req: NextRequest) {
 
   const { data: retrait } = await admin
     .from('payouts')
-    .select('id, payment_method, status')
+    .select('id, payment_method, status, amount, phone_number, reseller_name')
     .eq('id', String(id).trim().toUpperCase())
     .maybeSingle();
 
@@ -90,10 +96,22 @@ export async function POST(req: NextRequest) {
   if (action === 'payer_especes' && retrait.payment_method !== 'cash') {
     return NextResponse.json({ error: 'Ce retrait se règle par Mobile Money.' }, { status: 422 });
   }
+  // Double validation (A3) : payer un gros retrait au guichet exige
+  // l'approbation d'un autre membre (le rejet, lui, n'engage pas d'argent).
+  const validation = action === 'payer_especes'
+    ? await exigerValidation(admin, {
+      type: 'retrait', dossier: `retrait:${retrait.id}`, montant: Number(retrait.amount) || 0,
+      resume: { beneficiaire: retrait.reseller_name || null, telephone: retrait.phone_number || null, methode: retrait.payment_method },
+      demandeurId: session.uid,
+    })
+    : { ok: true as const, validationId: null };
+  if (!validation.ok) return NextResponse.json(validation.corps, { status: validation.status });
+
   const { data, error } = await admin.rpc('finalize_payout_atomic', {
     p_expected_status: 'pending', p_id: retrait.id, p_status: action === 'payer_especes' ? 'completed' : 'rejected',
     p_reference: action === 'payer_especes' ? `GUICHET ${session.uid}` : null,
   });
   if (error || !data) return NextResponse.json({ error: 'Retrait non validé. Vérifiez le grand-livre avant de réessayer.' }, { status: 503 });
+  await marquerExecutee(admin, validation.validationId);
   return NextResponse.json({ success: true });
 }

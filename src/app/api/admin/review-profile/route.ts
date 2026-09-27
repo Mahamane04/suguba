@@ -1,3 +1,4 @@
+import { avecJournal } from '@/lib/admin/journal-route';
 import { verifyActiveSession } from '@/lib/active-session';
 import { NextRequest, NextResponse } from 'next/server';
 import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
@@ -10,6 +11,10 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
  * devient exploitable qu'après ce passage, jamais automatiquement.
  */
 export async function POST(req: NextRequest) {
+  return avecJournal(req, 'POST /api/admin/review-profile', () => postInterne(req));
+}
+
+async function postInterne(req: NextRequest) {
   const refusEquipe = await refusSansPermissionAdmin(req, 'POST /api/admin/review-profile');
   if (refusEquipe) return refusEquipe;
   const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value);

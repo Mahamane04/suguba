@@ -1,4 +1,5 @@
 import { verifyActiveSession } from '@/lib/active-session';
+import { exigerValidation, marquerExecutee } from '@/lib/admin/securite';
 import { NextRequest, NextResponse } from 'next/server';
 import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
 import { initierPayout, RESEAUX_MALI, type ReseauMali } from '@/lib/saspay';
@@ -98,11 +99,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Montant de retrait invalide.' }, { status: 422 });
     }
 
+    // Double validation (A3) : au-dessus du seuil, un AUTRE membre doit avoir
+    // approuvé exactement ce retrait (montant et bénéficiaire).
+    const validation = withdrawal.status === 'pending'
+      ? await exigerValidation(admin, {
+        type: 'retrait', dossier: `retrait:${withdrawal.id}`, montant,
+        resume: { beneficiaire: withdrawal.reseller_name || null, telephone: withdrawal.phone_number || null, methode: withdrawal.payment_method },
+        demandeurId: session.uid,
+      })
+      : { ok: true as const, validationId: null };
+    if (!validation.ok) return NextResponse.json(validation.corps, { status: validation.status });
+
     // Réserve vérifiée et passage en processing avant l'appel. Les reprises
     // utilisent la même clé prestataire, y compris après une réponse perdue.
     const { data: verrouille, error: lockError } = await admin.rpc('begin_payout_transfer', { p_id: withdrawal.id });
     if (lockError || !verrouille) return NextResponse.json({ error: 'Versement non initié. Vérifiez le retrait et sa réserve.' }, { status: 409 });
     if (verrouille.payment_transaction_id) return NextResponse.json({ success: true, statut: 'processing', transactionId: verrouille.payment_transaction_id });
+    await marquerExecutee(admin, validation.validationId);
 
     const [prenom, ...resteNom] = String(withdrawal.reseller_name || 'Revendeur Suguba').trim().split(/\s+/);
 

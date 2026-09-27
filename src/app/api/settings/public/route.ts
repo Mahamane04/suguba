@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { lireReglagesReseau } from '@/lib/reseau/recompenses';
 import { chargerReglages } from '@/lib/platform-settings';
 
 /**
@@ -14,7 +15,7 @@ import { chargerReglages } from '@/lib/platform-settings';
  * soumettant à /api/orders/quote.
  */
 export async function GET() {
-  const { reglages } = await chargerReglages();
+  const [{ reglages }, reseau] = await Promise.all([chargerReglages(), lireReglagesReseau()]);
   return NextResponse.json(
     {
       fraisLivraisonClient: reglages.fraisLivraisonClient,
@@ -23,6 +24,8 @@ export async function GET() {
       retraitMinimum: reglages.retraitMinimum,
       // Carte bancaire (diaspora) : proposée seulement une fois vérifiée par un paiement test.
       paiementCarte: reglages.paiementCarteVerifie === true,
+      // Blocs de l'accueil affichés (A5, 2026-09-27) : réglés par l'équipe.
+      accueil: reseau.accueilBlocs,
       // Frais de retrait payés par le revendeur : il doit les voir avant de valider.
       fraisRetrait: {
         saspayPct: reglages.fraisVersementPct,
