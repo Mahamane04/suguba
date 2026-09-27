@@ -210,7 +210,8 @@
     "adm-diagnostic",
     "adm-simulateur"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "1f6bf67"
   },
   {
    "date": "2026-09-27",
@@ -223,13 +224,13 @@
     "Export CSV du catalogue et des commandes : nouveau droit « donnees.exporter » (Super Admin), jamais les coordonnées des clients, formules de tableur neutralisées, chaque export au journal."
    ],
    "ecarts": [
-    "SQL A-EXECUTER-2026-09-27-admin-a4.sql à exécuter pour enregistrer des vues (le tableau fonctionne sans).",
     "Commandes : déjà paginées côté serveur ; seul l’export y est ajouté."
    ],
    "pages": [
     "adm-catalogue-tableau"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "1f6bf67"
   },
   {
    "date": "2026-09-27",
@@ -242,7 +243,6 @@
     "« Validation à décider » ajoutée à « À traiter » (Finance)."
    ],
    "ecarts": [
-    "SQL A-EXECUTER-2026-09-27-admin-a3.sql à exécuter ; vérifier dans Supabase (Authentication → Multi-Factor) que « TOTP » est activé.",
     "Changement de bénéficiaire : le numéro est figé dans chaque demande de retrait (empreinte) ; il n’existe pas d’écran séparé de changement de bénéficiaire à protéger.",
     "Remboursements client : pas de circuit de remboursement dans l’application à ce jour."
    ],
@@ -251,7 +251,8 @@
     "adm-validations",
     "double-authentification"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "1f6bf67"
   },
   {
    "date": "2026-09-27",
@@ -265,14 +266,14 @@
     "Alerte de modification concurrente : prendre, transférer ou libérer un dossier qu’un collègue vient de changer est refusé, avec son nom."
    ],
    "ecarts": [
-    "SQL A-EXECUTER-2026-09-27-admin-a2.sql à exécuter : sans lui, le journal et les notes restent vides (les actions elles-mêmes fonctionnent).",
     "L’alerte de modification concurrente couvre les responsables de dossiers ; les autres écrans gardent leurs propres contrôles d’état (commande déjà confirmée, retrait déjà payé…)."
    ],
    "pages": [
     "adm-journal",
     "adm-a-traiter"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "1f6bf67"
   },
   {
    "date": "2026-09-27",
@@ -291,7 +292,8 @@
    "pages": [
     "adm-a-traiter"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "1f6bf67"
   },
   {
    "date": "2026-09-27",
