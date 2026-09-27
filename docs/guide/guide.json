@@ -222,7 +222,8 @@
     "adm-verifications",
     "adm-backoffice"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "5e8c45c"
   },
   {
    "date": "2026-09-27",
