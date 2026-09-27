@@ -1,11 +1,12 @@
 # SUGUBA — Fiche de référence
 
-> Mise à jour le **26 septembre 2026** (offres et services, devis, prestations à étapes,
-> « Priorité au réseau », campagnes encadrées, paiement des sponsorisations,
-> rémunération au résultat, **Protection Suguba** : trésorerie, coordonnées par
-> dossier, messagerie, comptes liés, part Suguba sous droit dédié, suspension motivée ;
-> **compte client** : commandes sur tous les téléphones, favoris, destinataires,
-> diaspora). Résumé de
+> Mise à jour le **27 septembre 2026** : **frais de paiement à la charge du client**
+> (espèces sans frais), **Wave**, tarifs SasPay relus automatiquement, **vente, paiement
+> et retrait séparés** (audit du fondateur), **solde et retraits des fournisseurs**
+> (lot C), **poste de travail de l'équipe** (À traiter, recherche, journal, double
+> authentification, double validation, tableaux), **unités de vente** et barre d'achat
+> du client. Avant : offres et services, devis, prestations à étapes, « Priorité au
+> réseau », campagnes, rémunération au résultat, Protection Suguba, compte client. Résumé de
 > tout ce qu'il faut savoir sur la plateforme : à quoi elle sert, qui fait quoi, comment
 > l'argent circule, comment elle est protégée et comment on la fait évoluer. Pour le
 > détail page par page, voir le **guide des parcours** (`/admin/guide`, réservé à
@@ -19,7 +20,7 @@ Suguba est une plateforme de **social commerce malienne** : des **fournisseurs**
 leurs offres (produits, services, installations), des **revendeurs** les partagent
 (WhatsApp, Facebook, leur boutique) sans avoir de stock et touchent une commission, des
 **livreurs** — ou le fournisseur lui-même — remettent la commande au client, qui paie
-**à la remise** ou par **Orange / Moov Money**. Suguba prend une part sur chaque vente et
+**à la remise** ou par **Orange Money, Moov Money ou Wave**. Suguba prend une part sur chaque vente et
 orchestre le tout. Les **boutiques revendeurs sont les vitrines de vente** ; les
 fournisseurs alimentent le réseau.
 
@@ -29,7 +30,7 @@ fournisseurs alimentent le réseau.
 | Code | GitHub `Mahamane04/suguba` (branche `main`) |
 | Hébergement | **Vercel** — chaque `git push` sur `main` déploie automatiquement |
 | Base de données | **Supabase** (PostgreSQL) |
-| Paiements | **SasPay** (Orange Money Mali, Moov Money Mali) ; carte bancaire **fermée** tant qu'un vrai paiement test n'a pas été fait |
+| Paiements | **SasPay** (Orange Money, Moov Money et **Wave** au Mali) ; carte bancaire **fermée** tant qu'un vrai paiement test n'a pas été fait |
 | Support | WhatsApp **+223 89 46 00 00** |
 
 ---
@@ -44,10 +45,10 @@ de l'un à l'autre dans **Compte › Profils**.
 | **Client / visiteur** | Achète ou demande un devis, suit sa commande, valide les étapes d'une prestation, suit des boutiques. **Pas besoin de compte.** | `/`, `/p/…`, `/panier`, `/track`, `/recu/…`, `/devis/…` |
 | **Client avec compte** (facultatif) | Retrouve ses commandes, reçus et devis **sur tous ses téléphones** ; ajoute les achats faits sans compte depuis son téléphone ; favoris, destinataires enregistrés, « Commander à nouveau », « Recommander ». | `/compte/commandes`, `/compte/favoris`, `/compte/destinataires` |
 | **Revendeur** | Choisit des offres, les partage, vend, encaisse des commissions, ouvre sa boutique, participe aux missions et campagnes. | `/reseller/…` |
-| **Fournisseur** | Publie ses offres, répond aux devis, remet lui-même ou prépare pour le livreur, déclare les étapes, lance des campagnes. | `/supplier/…` |
+| **Fournisseur** | Publie ses offres, répond aux devis, remet lui-même ou prépare pour le livreur, déclare les étapes, lance des campagnes, **retire ce que Suguba lui doit** (« Mes paiements »). | `/supplier/…` |
 | **Livreur** | Récupère et livre les colis, encaisse les espèces, les remet à la caisse. | `/driver`, `/driver/earnings` |
 | **Diaspora** | Commande depuis l'étranger pour un proche au Mali, avec le **même compte client** (proche enregistré, commandes dans « Mes commandes »). Le proche paie à la réception tant que la carte n'est pas ouverte. | `/diaspora` |
-| **Admin / équipe Suguba** | Confirme, assigne, modère, paie, suit devis et prestations, règle l'économie et la priorité au réseau. | `/admin/…` |
+| **Admin / équipe Suguba** | Confirme, assigne, modère, paie revendeurs et fournisseurs, suit devis et prestations, règle l'économie et la priorité au réseau. Arrive sur **« À traiter »**. | `/admin/…` |
 
 ### Équipe admin et permissions
 
@@ -56,15 +57,25 @@ Chaque membre de l'équipe a un **rôle d'équipe** qui lui donne des **permissi
 
 | Rôle d'équipe | Droits principaux |
 |---|---|
-| Super Admin | Tout, y compris gérer l'équipe et **baisser la part Suguba** (droit dédié, motif obligatoire) |
+| Super Admin | Tout, y compris gérer l'équipe, **baisser la part Suguba** (droit dédié, motif obligatoire) et **exporter les données** (CSV) |
 | Responsable fournisseurs | Produits, prix, boutiques, vérifications |
 | Responsable revendeurs | Réseau, missions, marketing |
 | Support | Lire / modifier les commandes (dont devis et prestations) |
 | Responsable livraison | Livreurs et courses |
-| Finance | Commissions, retraits, caisse livreurs, **paiements reçus** (campagnes, sponsorisations) |
+| Finance | Commissions, retraits des revendeurs **et des fournisseurs**, caisse livreurs, **paiements reçus** (campagnes, sponsorisations), validations |
 | Marketing / Modérateur | Campagnes, sponsorisation / modération |
 
 Un admin **sans rôle d'équipe n'a aucun droit** d'équipe.
+
+**Poste de travail de l'équipe** (27/09) : menu latéral en huit rubriques filtré par les
+droits de chacun, avec le nombre de dossiers en attente ; **« À traiter »** (11 types de
+dossiers par métier, « Prendre », transférer, notes internes) ; **recherche Ctrl K**
+(commandes, produits, personnes, boutiques, paiements) ; **journal des actions** (toute
+action admin, non modifiable) ; **double authentification** (obligatoire pour toute
+l'équipe si réglé) et « Déconnecter partout » ; **double validation** au-dessus d'un
+seuil (retrait, avance d'une commission, baisse de la part Suguba : un autre membre
+approuve dans « Validations ») ; tableaux triables avec colonnes au choix ; « Pourquoi
+c'est bloqué ? » ; centre des modules.
 
 ---
 
@@ -106,7 +117,7 @@ Client commande ─► Suguba appelle pour confirmer ─► Qui remet ?
      │                                                │
      ▼                                  ┌─────────────┴──────────────┐
 Paie à la remise                        ▼                            ▼
-  ou Orange/Moov Money        Livreur Suguba : ramassage   Fournisseur : « Organiser la remise »
+  ou Orange/Moov/Wave         Livreur Suguba : ramassage   Fournisseur : « Organiser la remise »
                               chez le fournisseur          (+ étapes éventuelles, validées
                                         │                    par le client sur son reçu)
                                         └─────────────┬──────────────┘
@@ -117,17 +128,18 @@ Paie à la remise                        ▼                            ▼
                                                Commande livrée
                ┌──────────────────────────────────────┤
                ▼                                      ▼
-  Espèces remises à la caisse Suguba      Commission du revendeur bloquée
-  (reçu de versement)                     quelques jours ; en espèces, retirable
-                                          seulement une fois l'argent versé
+  Espèces remises à la caisse Suguba      Commission du revendeur ET montant du
+  (reçu de versement)                     fournisseur bloqués quelques jours ; en
+                                          espèces, retirables une fois l'argent versé
 ```
 
 1. **Commande** : créée par le serveur en une seule transaction (commande + commission +
    reçu). Prix, numéro et code sont calculés **côté serveur**. Une coupure réseau ne crée
    pas de doublon (« Reprendre ma commande »).
-2. **Paiement** : **à la remise** (espèces, par défaut) ou **Orange / Moov Money** via
-   SasPay. L'encaissement passe **toujours par Suguba**, y compris quand le fournisseur
-   remet lui-même (il remet les espèces à la caisse).
+2. **Paiement** : **à la remise** (espèces, par défaut, **sans frais**) ou **Orange Money,
+   Moov Money ou Wave** via SasPay, **frais du paiement à la charge du client** (voir
+   « L'argent »). L'encaissement passe **toujours par Suguba**, y compris quand le
+   fournisseur remet lui-même (il remet les espèces à la caisse).
 3. **Reçu Suguba avec QR de remise** (`/recu/<n°>`) : QR, **code écrit dessous**, articles,
    montants, étapes de la prestation le cas échéant. Enregistrable en image ou en PDF,
    gardé **90 jours sur le téléphone** qui a commandé (« Suivre ma commande › Mes reçus »),
@@ -137,9 +149,11 @@ Paie à la remise                        ▼                            ▼
 4. **Remise** : scan du QR (ou saisie du code) par le livreur **ou par le fournisseur**
    qui remet lui-même. Le scan affiche sans valider ; « Confirmer la remise » valide.
    3 essais faux (au total) = commande bloquée.
-5. **Commission** : bloquée après la livraison (14 jours nouveau revendeur, 7 vérifié,
-   3 VIP), puis retirable — pour une vente **en espèces**, seulement une fois l'argent
-   reversé à la caisse Suguba (voir « Caisse livreurs et trésorerie »).
+5. **Commission et montant du fournisseur** : la commission du revendeur est bloquée
+   après la livraison (14 jours nouveau revendeur, 7 vérifié, 3 VIP) ; le montant dû au
+   fournisseur s'ajoute à son solde, bloqué pendant le délai réglé (7 jours par défaut).
+   Puis retirables — pour une vente **en espèces**, seulement une fois l'argent reversé à
+   la caisse Suguba (voir « Caisse livreurs et trésorerie »).
 6. **Après la livraison** : « **Signaler un problème avec un article** » depuis le reçu
    (motif, souhait, **jusqu'à 3 photos**) → **SAV & retours**.
 
@@ -186,6 +200,11 @@ Suivi public d'une commande : `/track` (numéro + téléphone, tentatives limit�
 ---
 
 ## 6. L'argent
+
+**La règle (audit du fondateur, 27/09)** : la **vente** crée les montants dus (au
+fournisseur, au revendeur, et la commission de Suguba) ; le **paiement** et le
+**retrait** déclenchent chacun leurs propres frais, payés par celui qui les provoque,
+**jamais deux fois** et jamais à la mauvaise étape.
 
 ### Prix d'un produit
 
@@ -263,15 +282,52 @@ allume l'interrupteur **« Payer les résultats »** (Admin › Qualité des mes
   plafond, contrôle du réseau et contestation en limitent l'effet — surveiller la page
   qualité.
 
-### Retraits des revendeurs
+### Frais de paiement (payés par le client)
+
+| Moyen | Le client paie (commande de 10 000 F) |
+|---|---|
+| Espèces à la remise | **10 000 F** — aucun frais |
+| Orange Money · Moov Money | **10 504 F** = commande + **1 % Suguba** (frais de transaction) + **4 % SasPay** |
+| Wave | **10 605 F** = commande + 1 % Suguba + **5 % SasPay** |
+
+- Affiché sur chaque moyen avant de choisir (« Sans frais », « + 504 F »), détail ligne
+  par ligne, bouton « Payer 10 504 FCFA ». Le détail est gardé sur chaque tentative.
+- Les frais de **retrait** de l'opérateur et le **fonds de soutien de l'État** (1 %) ne
+  sont **pas** sur la facture du client : ils concernent une sortie d'argent, pas un
+  paiement.
+- **Tarifs SasPay relus automatiquement** en arrière-plan dès que le relevé a plus de
+  6 heures (SasPay met 10 à 30 s à répondre : jamais pendant un paiement) ; « Relire
+  maintenant » dans Paramètres.
+
+### Retraits des revendeurs et des fournisseurs
+
+Frais calculés **au retrait**, sur le montant retiré (retirer 10 000 F débite 10 000 F ;
+les frais sont déduits, le bénéficiaire reçoit le reste) — jamais à la vente.
 
 | Moyen | Frais |
 |---|---|
-| Orange / Moov Money | SasPay + opérateur + **1,5 % Suguba** |
-| Espèces à l'agence | **1,5 % Suguba** seulement |
+| Orange · Moov · Wave (virement) | **Frais Suguba** (taux Mobile Money) + **virement SasPay** au vrai tarif du compte : Orange 2 % + 100 F, Moov et Wave 3,8 % (450 F minimum) |
+| Espèces au guichet Suguba | **Frais Suguba** (taux caisse) seulement |
 
-Le revendeur voit avant de valider **combien il recevra**. Retrait minimum réglable
-(5 000 F par défaut).
+- **Quatre taux Suguba** réglables : revendeur / fournisseur × caisse / Mobile Money
+  (1,5 % chacun par défaut, **0 % accepté**). Les baisser exige le droit « Baisser la part
+  Suguba » et un motif.
+- Avant de confirmer : débité du solde, moyen, frais Suguba avec le taux, autres frais,
+  **« Vous recevrez »**. Information seulement : ce que l'opérateur prélèvera si l'argent
+  est ensuite retiré chez un agent (grilles Orange, Moov, Wave et fonds de l'État,
+  modifiables dans Paramètres) — Suguba n'en touche rien.
+- **Frais figés avec la demande** ; un virement échoué ou un refus rend **tout** le
+  montant au solde. Retrait minimum réglable (5 000 F par défaut).
+- **Fournisseurs (lot C)** : à chaque commande livrée, le montant dû (prix fournisseur
+  **figé à la commande** × quantité, **+ ses frais de remise s'il livre lui-même**)
+  s'ajoute à son solde, bloqué pendant le **délai avant retrait des fournisseurs** (7 jours
+  par défaut, 0 à 60, réglable), puis retirable une fois l'argent de la vente chez
+  Suguba. Une commande retournée l'annule. Page **« Mes paiements »** : disponible, en
+  attente, en cours de retrait, déjà versé, détail par commande, historique. **Seul le
+  propriétaire** du compte fournisseur voit et retire l'argent (pas ses collaborateurs).
+- L'équipe paie tout depuis **Admin › Retraits** (une seule file, type Revendeur /
+  Fournisseur) : virement SasPay, « Argent remis » au guichet, « Refuser » ; double
+  validation au-dessus du seuil.
 
 ### Caisse livreurs (espèces) et trésorerie
 
@@ -297,9 +353,14 @@ Le revendeur voit avant de valider **combien il recevra**. Retrait minimum régl
 
 ### Où se règle tout ça
 
-- **Admin › Paramètres** (`/admin#reglages`) : part Suguba, coûts, prix de gros, frais,
-  retraits, livraison, points relais, caisse (délai d'alerte, **plafond d'espèces**),
-  codes promo, formules boutiques.
+- **Admin › Paramètres** (`/admin/parametres`), en **quatre blocs** avec leur moment :
+  Commission commerciale Suguba (à la vente : mode, taux, base et qui la paie, prix de
+  gros, codes promo) · Frais de paiement du client (à l'encaissement : frais de
+  transaction, tarifs SasPay) · Frais de retrait des partenaires (au retrait : quatre
+  taux, virement SasPay, retrait minimum, **délai avant retrait des fournisseurs**,
+  grilles des agents) · Coûts et rentabilité (analyse : **simulateur vente →
+  encaissement → retraits**, coûts détaillés). Puis livraison, points relais, caisse
+  (délai d'alerte, **plafond d'espèces**), formules boutiques.
 - **Admin › Priorité au réseau** : annuaire, achat direct, prix de gros.
 - **Admin › Récompenses** : primes de parrainage, missions à payer.
 - **Admin › Qualité des mesures** : interrupteur « Payer les résultats », mesures des 30
@@ -312,7 +373,9 @@ Le revendeur voit avant de valider **combien il recevra**. Retrait minimum régl
 
 ## 7. Fonctionnalités par espace
 
-**Client** : catalogue et recherche (résultats pendant la saisie), fiches (étiquettes
+**Client** : barre du bas **Accueil · Panier · Commandes · Compte**, catalogue et recherche
+(résultats pendant la saisie), prix avec son **unité de vente** (« / lot de 4 », « / sac
+de 50 kg », minimum de commande), « Ajouter » au panier depuis la carte, fiches (étiquettes
 Service / Installation incluse, « Ce qui est inclus », « Comment ça se passe », offres
 des revendeurs, **cœur favori**, « Recommander »), panier, commande ou **demande de
 devis** sans compte, suivi, **reçu QR** (image, PDF, transmission, **validation des
@@ -327,7 +390,8 @@ publication**, **campagnes au résultat** (gain par visite ou demande), partage 
 de campagne, **questions aux fournisseurs** sur leurs offres, gains « en attente du
 versement des espèces », calendrier, créateur de visuels, badge.
 
-**Fournisseur** : ajout d'offres (nature, qui remet, étapes, devis, variantes, photos),
+**Fournisseur** : **Mes paiements** (solde, retraits Mobile Money ou guichet), ajout
+d'offres (nature, qui remet, étapes, devis, variantes, photos, **unité de vente**),
 inventaire, **commandes** (préparer, organiser la remise, déclarer les étapes, remettre en
 scannant le reçu), **demandes de devis**, revendeurs, ambassadeurs, **campagnes**
 (canal, budget réglé / dépensé / restant, **visites et demandes qualifiées** avec
@@ -338,7 +402,10 @@ des revendeurs** et **messages des devis**, analyses, boutique (page de présent
 **Livreur** : courses (coordonnées du client seulement pendant la course), carte, scan du
 QR du client (ou code), portefeuille (espèces à remettre, plafond d'encaissement).
 
-**Admin** : tableau de bord, commandes, produits et prix, utilisateurs, vérifications,
+**Admin** : **À traiter**, recherche Ctrl K, tableau de bord, commandes (confirmer et
+attribuer, aussi en groupe), **catalogue en tableau** (filtres, vues, actions groupées,
+export CSV), **Retraits** (revendeurs et fournisseurs), Livreurs, **Validations**,
+**Journal des actions**, **centre des modules**, produits et prix, utilisateurs, vérifications,
 boutiques, **Priorité au réseau**, SAV & retours (« Scanner un reçu »), **Devis**,
 **Prestations**, caisse livreurs (plafond, avance motivée), **missions** (preuves à
 vérifier, paiements reçus des campagnes), **Qualité des mesures** (paiement au
@@ -382,6 +449,10 @@ contestation), diffusion, analyses, rapport du soir, équipe, paramètres, guide
 - **Permissions d'équipe** par route (`src/lib/reseau/permissions-routes.ts`) ; un test
   échoue si une route admin n'en a pas.
 - `/admin/guide` : administrateur général uniquement.
+- **Équipe** : double authentification (obligatoire si réglé ; aucune session avant le
+  code), « Déconnecter partout », **double validation** des gros montants, **journal des
+  actions** que la base refuse de modifier ou d'effacer, export CSV sous droit dédié (jamais
+  les coordonnées des clients).
 
 **Données**
 - **RLS** activée ; tables sensibles lisibles par le serveur seulement.
@@ -441,6 +512,10 @@ ne quitte pas le serveur autrement (jamais envoyée puis cachée) :
   modifiable à la main ; demande qualifiée faite avec le numéro du revendeur jamais
   payée.
 - Paiement SasPay confirmé par **webhook signé** et revérifié.
+- **Retraits** (revendeur et fournisseur) : solde **réservé sous verrou** dans la base
+  (jamais plus que le disponible ; une demande envoyée deux fois = un seul retrait), frais
+  figés, bénéficiaire toujours pris de la session ; un retrait fournisseur passe par
+  **son** grand-livre, un retrait revendeur par ses commissions.
 - Reçus (commande, devis) ouverts seulement avec la **clé secrète du téléphone** qui a
   commandé, ou avec une **nouvelle clé délivrée au propriétaire connecté** du compte
   client (seul son hash est gardé) ; une ancienne commande ne s'ajoute à un compte
@@ -468,7 +543,11 @@ ne quitte pas le serveur autrement (jamais envoyée puis cachée) :
 | Style | Tailwind CSS 3 + jetons `suguba-*` |
 | Base | Supabase PostgreSQL, RLS, fonctions et déclencheurs de garde |
 | Accès serveur | `getSupabaseAdmin()` (`src/lib/supabase-admin.ts`) |
-| Moteur de prix | `src/lib/pricing.ts` |
+| Moteur de prix | `src/lib/pricing.ts` ; cycle vente → encaissement → retraits `src/lib/cycle-vente.ts` |
+| Frais de paiement | `src/lib/frais-paiement.ts` (facture du client, grilles des agents), `src/lib/tarifs-saspay.ts` (relecture en arrière-plan), colonne `platform_settings.tarifs_saspay` |
+| Retraits | `src/lib/retraits-affichage.ts`, `src/components/retraits/` (formulaire et historique communs), `/api/payouts/create` (revendeur), `/api/supplier/retraits` et `/api/supplier/gains` (fournisseur), SQL `creer_retrait_fournisseur` / `finalize_payout_atomic` / `begin_payout_transfer`, colonne `payouts.beneficiaire` |
+| Solde fournisseur | `src/lib/gains-fournisseur.ts`, table `gains_fournisseurs` (déclencheur à la livraison, `liberer_gains_fournisseurs_echus`) |
+| Poste de l'équipe | `src/lib/admin/` (À traiter, journal, sécurité, pilotage), `src/components/admin/` |
 | Catalogue | `/api/catalogue`, `src/lib/catalogue.ts` (colonnes par rôle) |
 | Offres | `src/lib/offre.ts` (nature, remise, étapes), `src/lib/devis.ts`, `src/lib/etapes.ts` |
 | Réseau | `src/lib/ancrage-revendeur.ts`, `src/lib/offres-revendeurs.ts`, `src/lib/presentation-fournisseur.ts`, réglages `reseau_reglages` |
@@ -480,10 +559,10 @@ ne quitte pas le serveur autrement (jamais envoyée puis cachée) :
 | Protection lot 3 | `src/lib/protection.ts` (baisses de la part Suguba, analyse des messages), `src/lib/messagerie.ts`, `src/lib/suspensions.ts`, SQL `comptes_lies`, tables `conversations`, `messages`, `journal_part_suguba`, `suspensions` |
 | Réglages | `platform_settings` (prix) et `reseau_reglages` (réseau) |
 | Session | `src/lib/session.ts`, `src/lib/active-session.ts`, `src/middleware.ts` |
-| Paiement | `src/lib/saspay.ts`, `/api/payments/saspay/*`, `/api/webhooks/saspay` |
+| Paiement | `src/lib/saspay.ts` (Orange, Moov, Wave), `/api/payments/saspay/*`, `/api/webhooks/saspay` |
 | Reçu et QR | `src/lib/recu-commande.ts`, `src/lib/qr-remise.ts`, `src/lib/remise-qr.ts` |
 | Stockage privé | buckets `sav-photos`, `etapes-photos`, `preuves-missions` |
-| Tests | `npm test` (253 tests, Node + PostgreSQL embarqué PGlite) |
+| Tests | `npm test` (382 tests, Node + PostgreSQL embarqué PGlite) |
 | Guide | `docs/guide/guide.json` + `/admin/guide` |
 
 **Variables d'environnement** (valeurs dans Vercel) : `NEXT_PUBLIC_SUPABASE_URL`,
@@ -506,7 +585,7 @@ ne quitte pas le serveur autrement (jamais envoyée puis cachée) :
 
 ---
 
-## 12. Points ouverts (au 26/09/2026)
+## 12. Points ouverts (au 27/09/2026)
 
 **À essayer en vrai avec vos comptes** (rien de tout cela n'a encore tourné sur de vraies
 données) :
@@ -536,8 +615,24 @@ données) :
   favori, destinataire, « Commander à nouveau », bouton « Recommander ».
 - **Diaspora** : page `/diaspora` sans promesse de carte, commande payée à la réception,
   proche enregistré proposé.
+- **Paiement Wave** : un vrai paiement d'un petit montant (jamais fait : il débite un vrai
+  compte), puis un paiement Orange ou Moov pour voir la facture (10 504 F pour 10 000 F).
+- **Retrait fournisseur de bout en bout** : commande test livrée → montant « Disponible
+  le … » dans « Mes paiements » → délai passé (ou délai réglé à 0) → retrait au guichet
+  → « Argent remis » dans Admin › Retraits → « Versé ».
+- **Double validation** : régler un petit seuil, payer un retrait, approbation par un
+  autre membre dans « Validations ».
 
 **Prochaines évolutions**
+- **Provision pour refus** : « sur le prix » coûte 4 400 F sur un article vendu
+  110 000 F ; « sur la course perdue » la ramènerait à environ 80 F — à décider.
+- **Déblocage anticipé d'un montant fournisseur** par l'admin (il existe pour les
+  commissions des revendeurs) : à ajouter si le besoin se présente.
+- **Grilles de retrait chez un agent** (Orange, Moov, Wave) : aucune API ne les publie,
+  elles se corrigent à la main dans Paramètres ; Wave « sans frais opérateur » est à
+  confirmer en agence.
+- Quantités à virgule (2,5 m) non prévues ; le panier et le reçu n'affichent pas encore
+  l'unité de vente.
 - Messagerie : pièces jointes (photos) dans les échanges.
 - Comptes liés : une même personne avec deux numéros n'est pas détectée automatiquement.
 - **Engagement de non-contournement** fournisseur / revendeur : à faire rédiger et

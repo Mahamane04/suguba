@@ -7,7 +7,8 @@ import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
 /**
- * Retraits des revendeurs, côté admin (2026-09-11).
+ * Retraits des revendeurs et des fournisseurs (lot C, 2026-09-27), côté admin
+ * (2026-09-11).
  *
  * Le tableau de bord lisait les retraits dans la mémoire LOCALE du
  * navigateur (state.withdrawals) : une demande faite par un revendeur depuis
@@ -21,6 +22,10 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
  *        webhook SasPay pour un virement (settle_commissions_for_withdrawal).
  *   POST { id, action: 'rejeter' } → `rejected` + commissions rendues au
  *        revendeur (release_commissions_for_withdrawal).
+ *
+ * Un retrait de fournisseur suit exactement les mêmes actions : la base
+ * consomme ou rend SON solde (gains_fournisseurs), voir
+ * finalize_payout_atomic dans A-EXECUTER-2026-09-27-retraits-fournisseurs.sql.
  *
  * Un virement mobile money, lui, part par /api/payouts/initiate (SasPay).
  */
@@ -51,7 +56,9 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     retraits: (data || []).map((r) => ({
       id: r.id,
-      revendeur: r.reseller_name || 'Revendeur',
+      revendeur: r.reseller_name || (r.beneficiaire === 'fournisseur' ? 'Fournisseur' : 'Revendeur'),
+      // Colonne du lot C : absente tant que son SQL n'a pas été exécuté.
+      beneficiaire: r.beneficiaire === 'fournisseur' ? 'fournisseur' : 'revendeur',
       montant: Number(r.amount) || 0,
       montantDemande: r.montant_demande != null ? Number(r.montant_demande) : null,
       frais: r.frais_retrait != null ? Number(r.frais_retrait) : null,

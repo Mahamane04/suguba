@@ -24,6 +24,8 @@ interface RetraitAdmin {
   telephone: string; statut: string; creeLe: string;
   /** Retiré du solde, et frais payés par le revendeur (null pour les retraits d'avant le 2026-09-24). */
   montantDemande?: number | null; frais?: number | null;
+  /** Lot C (2026-09-27) : un fournisseur retire aussi ce que Suguba lui doit. */
+  beneficiaire?: 'revendeur' | 'fournisseur';
 }
 
 const LIBELLE_MOYEN: Record<string, string> = {
@@ -141,7 +143,12 @@ export default function RetraitsAdminPage() {
   };
 
   const colonnes: Colonne<RetraitAdmin>[] = [
-    { cle: 'revendeur', titre: 'Revendeur', fixe: true, tri: (r) => r.revendeur, rendu: (r) => <span className="font-bold text-slate-900">{r.revendeur}</span> },
+    { cle: 'revendeur', titre: 'Bénéficiaire', fixe: true, tri: (r) => r.revendeur, rendu: (r) => (
+      <span className="inline-flex flex-col">
+        <span className="font-bold text-slate-900">{r.revendeur}</span>
+        <span className="text-xs text-slate-500">{r.beneficiaire === 'fournisseur' ? 'Fournisseur' : 'Revendeur'}</span>
+      </span>
+    ) },
     { cle: 'montant', titre: 'À verser', droite: true, tri: (r) => r.montant, rendu: (r) => <span className="font-bold">{fmt(r.montant)}</span> },
     { cle: 'frais', titre: 'Demandé · frais', cachee: true, droite: true, rendu: (r) => (r.frais ?? 0) > 0 ? `${fmt(r.montantDemande ?? r.montant)} · ${fmt(r.frais as number)}` : '—' },
     { cle: 'moyen', titre: 'Moyen', tri: (r) => r.moyen, rendu: (r) => (
@@ -165,7 +172,7 @@ export default function RetraitsAdminPage() {
 
   return (
     <PageReseau titre="Retraits et commissions" large
-      sousTitre="Payer les revendeurs : virement Orange Money ou Moov Money via SasPay, ou espèces au guichet."
+      sousTitre="Payer les revendeurs et les fournisseurs : virement Orange Money, Moov Money ou Wave via SasPay, ou espèces au guichet."
       action={<Button variant="ghost" size="sm" onClick={() => { setRetraits(null); charger(); }} aria-label="Actualiser"><RefreshCw className="w-4 h-4" /></Button>}>
 
       {peutPayer === false && (
@@ -189,7 +196,7 @@ export default function RetraitsAdminPage() {
         <h2 id="titre-retraits" className="text-sm font-bold text-slate-900">Retraits en attente{retraits ? ` (${enAttente.length})` : ''}</h2>
         {erreur && <p role="alert" className="text-sm text-rose-700">{erreur}</p>}
         {retraits === null ? <Skeleton className="h-40" />
-          : enAttente.length === 0 ? <EmptyState icone={Wallet} titre="Aucun retrait en attente" texte="Les nouvelles demandes des revendeurs apparaîtront ici." />
+          : enAttente.length === 0 ? <EmptyState icone={Wallet} titre="Aucun retrait en attente" texte="Les nouvelles demandes des revendeurs et des fournisseurs apparaîtront ici." />
           : <TableauAdmin titre="Retraits en attente" memoire="retraits" lignes={enAttente} colonnes={colonnes} cleLigne={(r) => r.id} cible={cible} />}
         {enVirement.length > 0 && (
           <Card padding="p-4" className="text-sm text-slate-600 space-y-1">

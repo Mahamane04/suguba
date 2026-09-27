@@ -5,60 +5,12 @@ import { PayoutCheckout, payoutSessionStorage } from '@/lib/payout-submit';
 import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
-import Button from '@/components/ui/Button';
+import FormulaireRetrait from '@/components/retraits/FormulaireRetrait';
+import HistoriqueRetraits from '@/components/retraits/HistoriqueRetraits';
 import { useSugubaStore } from '@/lib/store';
-import EmptyState from '@/components/ui/EmptyState';
-import PaymentLogo, { moyenDepuisCode } from '@/components/ui/PaymentLogo';
-import { Wallet, Clock, CheckCircle2, History, AlertCircle, Building2, Loader2, Check } from 'lucide-react';
-import { calculerFraisRetrait, tauxRetraitSuguba, type DetailFraisRetrait, type TauxRetrait } from '@/lib/pricing';
-import { completerFraisPaiement, estimerRetraitAgent, type OperateurRetrait } from '@/lib/frais-paiement';
-
-type Moyen = 'Orange Money' | 'Moov Money' | 'Wave' | 'Agence Suguba';
-
-interface Retrait {
-  id: string;
-  montant: number;
-  moyen: string;
-  telephone: string;
-  statut: string;
-  reference: string | null;
-  creeLe: string;
-  montantDemande?: number | null;
-  frais?: number | null;
-}
-
-/** Moyen affiché → valeur enregistrée (`payouts.payment_method`), qui fixe les frais. */
-const CODE_MOYEN: Record<Moyen, string> = {
-  'Orange Money': 'orange_money',
-  'Moov Money': 'moov',
-  'Wave': 'wave',
-  'Agence Suguba': 'cash',
-};
-
-/** Opérateur Mobile Money de chaque moyen (pour estimer un retrait chez un agent). */
-const OPERATEUR_DU_MOYEN: Record<Moyen, OperateurRetrait | null> = {
-  'Orange Money': 'orange_ml',
-  'Moov Money': 'moov_ml',
-  'Wave': 'wave_ml',
-  'Agence Suguba': null,
-};
-
-const enPct = (n: number) => `${String(n).replace('.', ',')}\u00a0%`;
-
-const MOYENS: { id: Moyen; libelle: string; detail: string }[] = [
-  { id: 'Orange Money', libelle: 'Orange Money', detail: 'Virement' },
-  { id: 'Moov Money', libelle: 'Moov Money', detail: 'Virement' },
-  // Wave (2026-09-27) : versement SasPay disponible au Mali.
-  { id: 'Wave', libelle: 'Wave', detail: 'Virement' },
-  { id: 'Agence Suguba', libelle: 'Espèces', detail: 'Au guichet' },
-];
-
-const STATUTS: Record<string, { libelle: string; classe: string }> = {
-  pending: { libelle: 'En attente', classe: 'bg-amber-50 text-amber-800' },
-  processing: { libelle: 'Virement en cours', classe: 'bg-amber-50 text-amber-800' },
-  completed: { libelle: 'Versé', classe: 'bg-suguba-brand/10 text-suguba-brand-dark' },
-  rejected: { libelle: 'Refusé', classe: 'bg-rose-50 text-rose-700' },
-};
+import { Clock, CheckCircle2, Loader2 } from 'lucide-react';
+import type { TauxRetrait } from '@/lib/pricing';
+import { tauxRetraitPublics, type RetraitAffiche } from '@/lib/retraits-affichage';
 
 const enF = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
 
@@ -72,25 +24,17 @@ const enF = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
  * (/api/reseller/payouts), demande envoyée directement à /api/payouts/create,
  * qui revérifie le solde et le réserve.
  *
- * Retrait en espèces : le numéro du retrait (WTH-…), enregistré en base, sert
- * de référence au guichet. L'ancien « code guichet » était généré dans le
- * navigateur et enregistré nulle part : le guichet n'aurait rien pu vérifier.
+ * Le formulaire de retrait et l'historique sont communs avec l'espace
+ * fournisseur (lot C, 2026-09-27) : src/components/retraits.
  */
 export default function ResellerPayoutsPage() {
   const state = useSugubaStore();
   const checkout = useMemo(() => new PayoutCheckout(`suguba_payout_attempt:${state.currentUser.id}`, payoutSessionStorage), [state.currentUser.id]);
   const [soldes, setSoldes] = useState<{ disponible: number; attente: number; attenteFonds: number; verse: number } | null>(null);
-  const [retraits, setRetraits] = useState<Retrait[]>([]);
+  const [retraits, setRetraits] = useState<RetraitAffiche[]>([]);
   const [retraitMinimum, setRetraitMinimum] = useState(5000);
   const [taux, setTaux] = useState<TauxRetrait | null>(null);
   const [chargement, setChargement] = useState(true);
-
-  const [moyen, setMoyen] = useState<Moyen>('Orange Money');
-  const [telephone, setTelephone] = useState('');
-  const [montant, setMontant] = useState<number>(0);
-  const [envoi, setEnvoi] = useState(false);
-  const [erreur, setErreur] = useState('');
-  const [succes, setSucces] = useState<{ code: string; montant: number; net: number; moyen: Moyen; telephone: string } | null>(null);
 
   const charger = useCallback(async () => {
     const [moi, hist, reglages] = await Promise.all([
@@ -107,64 +51,14 @@ export default function ResellerPayoutsPage() {
     });
     setRetraits(Array.isArray(hist?.retraits) ? hist.retraits : []);
     if (reglages?.retraitMinimum) setRetraitMinimum(Number(reglages.retraitMinimum));
-    if (reglages?.fraisRetrait) {
-      setTaux({
-        fraisVersementPct: Number(reglages.fraisRetrait.saspayPct) || 0,
-        fraisOperateurRetraitPct: reglages.fraisRetrait.operateurPct,
-        fraisRetraitSugubaPct: Number(reglages.fraisRetrait.sugubaPct) || 0,
-        // Taux Suguba du revendeur, à la caisse et en Mobile Money (2026-09-27).
-        fraisRetraitSuguba: reglages.fraisRetrait.sugubaParRole,
-        // Vrai tarif SasPay de versement (2026-09-27), comme le serveur.
-        fraisPaiement: completerFraisPaiement(reglages.fraisPaiement),
-      });
-    }
+    const t = tauxRetraitPublics(reglages);
+    if (t) setTaux(t);
     setChargement(false);
   }, []);
 
   useEffect(() => { charger(); }, [charger]);
 
-  // Numéro de la personne connectée par défaut, dès qu'il est connu.
-  useEffect(() => {
-    if (!telephone && state.currentUser.phone) setTelephone(state.currentUser.phone);
-  }, [state.currentUser.phone, telephone]);
-
   const disponible = soldes?.disponible ?? 0;
-  const assez = disponible >= retraitMinimum || Boolean(checkout.restore());
-  // Même calcul que le serveur (/api/payouts/create) : ce qui est affiché est ce qui sera retenu.
-  const frais: DetailFraisRetrait | null = taux && montant > 0 ? calculerFraisRetrait(montant, CODE_MOYEN[moyen], taux) : null;
-  const tauxSuguba = taux ? tauxRetraitSuguba(taux, 'revendeur', CODE_MOYEN[moyen]) : 0;
-  const tauxCaisse = taux ? tauxRetraitSuguba(taux, 'revendeur', 'cash') : 0;
-  // Information : ce que l'opérateur prélèverait sur un retrait d'espèces chez un agent.
-  const operateur = OPERATEUR_DU_MOYEN[moyen];
-  const agent = taux?.fraisPaiement && operateur && frais ? estimerRetraitAgent(frais.montantNet, operateur, taux.fraisPaiement) : null;
-
-  useEffect(() => {
-    const previous = checkout.restore();
-    if (previous) {
-      setMontant(previous.input.amount); setTelephone(previous.input.payoutPhone); setMoyen(previous.input.payoutProvider as Moyen);
-      setErreur('Une demande attend sa confirmation. Reprenez-la avec les mêmes informations.');
-    }
-  }, [checkout]);
-
-  const demander = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErreur('');
-    if (montant < retraitMinimum) { setErreur(`Le minimum de retrait est de ${enF(retraitMinimum)}.`); return; }
-    if (!checkout.restore() && montant > disponible) { setErreur('Ce montant dépasse votre solde disponible.'); return; }
-    if (telephone.replace(/\D/g, '').length < 8) { setErreur('Indiquez un numéro valide.'); return; }
-
-    setEnvoi(true);
-    try {
-      const json = await checkout.submit({ amount: montant, payoutProvider: moyen, payoutPhone: telephone });
-      setSucces({ code: json.withdrawalCode, montant, net: Number(json.frais?.montantNet) || montant, moyen, telephone });
-      setMontant(0);
-      await charger();
-    } catch (error) {
-      setErreur(error instanceof Error ? error.message : 'Erreur réseau, reprenez cette demande.');
-    } finally {
-      setEnvoi(false);
-    }
-  };
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
@@ -207,194 +101,19 @@ export default function ResellerPayoutsPage() {
           </div>
         )}
 
-        {/* Retrait */}
-        <div className="bg-white rounded-3xl border border-slate-200 p-5 space-y-4">
-          <h2 className="font-bold text-base text-slate-900 flex items-center gap-2">
-            <Wallet className="w-5 h-5 text-suguba-brand" />
-            <span>Retirer mes gains</span>
-          </h2>
+        <FormulaireRetrait
+          role="revendeur"
+          titre="Retirer mes gains"
+          checkout={checkout}
+          disponible={disponible}
+          retraitMinimum={retraitMinimum}
+          taux={taux}
+          chargement={chargement}
+          telephoneParDefaut={state.currentUser.phone}
+          onEnregistre={charger}
+        />
 
-          {succes ? (
-            <div className="rounded-2xl bg-suguba-brand/5 border border-suguba-brand/20 p-5 text-center space-y-3">
-              <CheckCircle2 className="w-10 h-10 text-suguba-brand mx-auto" />
-              {succes.moyen === 'Agence Suguba' ? (
-                <>
-                  <p className="font-bold text-slate-900">Retrait de {enF(succes.montant)} enregistré</p>
-                  <p className="text-sm text-slate-600">Vous recevrez <strong>{enF(succes.net)}</strong> en espèces, frais déduits.</p>
-                  <p className="text-sm text-slate-600">
-                    Présentez ce numéro au guichet Suguba (Hamdallaye ACI 2000, Bamako), avec votre pièce d&apos;identité :
-                  </p>
-                  <p className="font-mono text-2xl font-bold text-slate-900 tracking-wider">{succes.code}</p>
-                </>
-              ) : (
-                <>
-                  <p className="font-bold text-slate-900">Demande de {enF(succes.montant)} envoyée</p>
-                  <p className="text-sm text-slate-600">
-                    Vous recevrez <strong>{enF(succes.net)}</strong> sur {succes.moyen} ({succes.telephone}), frais déduits.
-                    Suivez son état dans l&apos;historique ci-dessous.
-                  </p>
-                </>
-              )}
-              <Button variant="ghost" size="sm" onClick={() => setSucces(null)}>Faire une autre demande</Button>
-            </div>
-          ) : (
-            <form onSubmit={demander} className="space-y-4">
-              <div>
-                <p className="text-xs font-bold text-slate-700 mb-2">Comment voulez-vous recevoir l&apos;argent ?</p>
-                <div role="radiogroup" aria-label="Moyen de retrait" className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {MOYENS.map((m) => {
-                    const actif = moyen === m.id;
-                    return (
-                      <button
-                        key={m.id}
-                        type="button"
-                        role="radio"
-                        aria-checked={actif}
-                        onClick={() => setMoyen(m.id)}
-                        className={`relative p-3 rounded-2xl border flex items-center gap-2.5 text-left transition-all ${
-                          actif
-                            ? 'border-suguba-brand bg-suguba-brand/5 ring-1 ring-suguba-brand'
-                            : 'border-slate-200 bg-white hover:border-slate-300'
-                        }`}
-                      >
-                        <PaymentLogo moyen={m.id === 'Agence Suguba' ? 'especes' : moyenDepuisCode(m.id)} taille="md" />
-                        <span className="min-w-0">
-                          <span className="block text-sm font-bold text-slate-900 leading-tight">{m.libelle}</span>
-                          <span className="block text-xs text-slate-500">{m.detail}</span>
-                        </span>
-                        {actif && (
-                          <span className="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-suguba-brand text-white flex items-center justify-center">
-                            <Check className="w-2.5 h-2.5" strokeWidth={3} />
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {moyen === 'Agence Suguba' && (
-                <p className="rounded-2xl bg-slate-50 p-3 text-xs text-slate-600 flex items-start gap-2">
-                  <Building2 className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
-                  <span>Vous recevrez un numéro de retrait à présenter au guichet Suguba de Hamdallaye ACI 2000, avec votre pièce d&apos;identité.</span>
-                </p>
-              )}
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <label className="block text-xs font-bold text-slate-700">
-                  {moyen === 'Agence Suguba' ? 'Votre numéro de téléphone' : `Numéro ${moyen}`}
-                  <input
-                    type="tel"
-                    inputMode="tel"
-                    value={telephone}
-                    onChange={(e) => setTelephone(e.target.value)}
-                    placeholder="76 12 34 56"
-                    className="mt-1 w-full h-12 px-3.5 rounded-2xl border border-slate-200 bg-slate-50 text-base font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-suguba-brand/30 focus:border-suguba-brand"
-                  />
-                </label>
-                <label className="block text-xs font-bold text-slate-700">
-                  <span className="flex items-center justify-between">
-                    <span>Montant (F)</span>
-                    {disponible > 0 && (
-                      <button type="button" onClick={() => setMontant(disponible)} className="text-xs font-bold text-suguba-brand">
-                        Tout retirer
-                      </button>
-                    )}
-                  </span>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    min={0}
-                    step={500}
-                    value={montant || ''}
-                    onChange={(e) => setMontant(parseInt(e.target.value) || 0)}
-                    placeholder={String(retraitMinimum)}
-                    className="mt-1 w-full h-12 px-3.5 rounded-2xl border border-slate-200 bg-slate-50 text-base font-bold text-slate-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-suguba-brand/30 focus:border-suguba-brand"
-                  />
-                  <span className="text-xs font-normal text-slate-500 mt-1 block">Minimum {enF(retraitMinimum)}</span>
-                </label>
-              </div>
-
-              {frais && (
-                // Récapitulatif avant confirmation (audit du 2026-09-27) : ce qui
-                // est débité du solde, chaque frais, ce qui est reçu. Les frais
-                // sont figés avec la demande.
-                <div className="rounded-2xl bg-slate-50 p-3 text-xs text-slate-600 space-y-1">
-                  <p className="font-bold text-slate-700">Avant de confirmer</p>
-                  <p className="flex justify-between gap-3"><span>Vous retirez de votre solde</span><span className="font-semibold text-slate-900 tabular-nums">{enF(frais.montantDemande)}</span></p>
-                  <p className="flex justify-between gap-3"><span>Moyen</span><span className="text-right">{moyen === 'Agence Suguba' ? 'Espèces à la caisse Suguba' : `${moyen} (virement)`}</span></p>
-                  <p className="flex justify-between gap-3"><span>Frais Suguba — {enPct(tauxSuguba)}</span><span className="tabular-nums">− {enF(frais.fraisSuguba)}</span></p>
-                  <p className="flex justify-between gap-3">
-                    <span>Autres frais applicables{frais.fraisSaspay > 0 ? ' (virement SasPay)' : ''}</span>
-                    <span className="tabular-nums">− {enF(frais.fraisSaspay + frais.fraisOperateur)}</span>
-                  </p>
-                  <p className="flex justify-between gap-3 pt-1 border-t border-slate-200 text-sm font-bold text-slate-900">
-                    <span>Vous recevrez</span><span className="tabular-nums">{enF(Math.max(0, frais.montantNet))}</span>
-                  </p>
-                  {agent && frais.montantNet > 0 && (
-                    <p>
-                      Si vous retirez ensuite cet argent en espèces chez un agent {moyen}, l&apos;opérateur prélèvera environ{' '}
-                      {enF(agent.total)}, dont {enF(agent.fraisEtat)} pour le fonds de soutien de l&apos;État. Suguba n&apos;en touche rien.
-                    </p>
-                  )}
-                  {moyen !== 'Agence Suguba' && (
-                    <p>À la caisse Suguba, en espèces : frais Suguba seulement ({enPct(tauxCaisse)}).</p>
-                  )}
-                </div>
-              )}
-
-              {erreur && (
-                <p className="rounded-2xl bg-rose-50 border border-rose-100 p-3 text-xs font-bold text-rose-700 flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />{erreur}
-                </p>
-              )}
-
-              <Button type="submit" size="lg" fullWidth disabled={envoi || chargement || !assez}>
-                {envoi ? 'Envoi…' : moyen === 'Agence Suguba' ? 'Obtenir mon numéro de retrait' : 'Demander le virement'}
-              </Button>
-              {!chargement && !assez && (
-                <p className="text-xs text-slate-500 text-center">
-                  Vous pourrez retirer dès que votre solde disponible atteint {enF(retraitMinimum)}.
-                </p>
-              )}
-            </form>
-          )}
-        </div>
-
-        {/* Historique */}
-        <div className="bg-white rounded-3xl border border-slate-200 p-5 space-y-3">
-          <h2 className="font-bold text-base text-slate-900 flex items-center gap-2">
-            <History className="w-5 h-5 text-slate-500" />
-            <span>Historique des retraits</span>
-          </h2>
-          {retraits.length === 0 ? (
-            <EmptyState icon={Wallet} title="Aucun retrait pour le moment." />
-          ) : (
-            <div className="divide-y divide-slate-100">
-              {retraits.map((r) => {
-                const s = STATUTS[r.statut] || { libelle: r.statut, classe: 'bg-slate-100 text-slate-600' };
-                return (
-                  <div key={r.id} className="py-3 flex items-center justify-between gap-3">
-                    <div className="min-w-0 flex items-center gap-3">
-                      <PaymentLogo moyen={/agence|cash|esp/i.test(r.moyen) ? 'especes' : moyenDepuisCode(r.moyen)} taille="md" />
-                      <div className="min-w-0">
-                        <p className="text-sm font-bold text-slate-900">{enF(r.montant)} · {r.moyen}</p>
-                        {(r.frais ?? 0) > 0 && (
-                          <p className="text-xs text-slate-500">Demandé {enF(r.montantDemande ?? r.montant)}, frais {enF(r.frais as number)}</p>
-                        )}
-                        <p className="text-xs text-slate-500 truncate">
-                          {new Date(r.creeLe).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
-                          {' · '}<span className="font-mono">{r.id}</span>
-                        </p>
-                      </div>
-                    </div>
-                    <span className={`px-2.5 py-1 rounded-full text-xs font-bold shrink-0 ${s.classe}`}>{s.libelle}</span>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        <HistoriqueRetraits retraits={retraits} />
       </main>
 
       <BottomNav />

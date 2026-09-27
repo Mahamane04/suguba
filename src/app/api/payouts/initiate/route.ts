@@ -7,7 +7,8 @@ import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 
 /**
- * Déclenche le versement d'une commission de revendeur via SasPay.
+ * Déclenche le versement d'un retrait via SasPay : commission d'un revendeur,
+ * ou montant dû à un fournisseur (lot C, 2026-09-27).
  *
  * ── Ce qui a changé en migrant depuis momo-gateway (CinetPay) ────────────
  * L'ancienne passerelle basculait en « mode simulation » dès qu'aucune clé
@@ -58,7 +59,8 @@ export async function POST(req: NextRequest) {
 
     const { data: withdrawal, error: fetchErr } = await admin
       .from('payouts')
-      .select('id, amount, payment_method, phone_number, reseller_name, status')
+      // Toutes les colonnes : `beneficiaire` (lot C) n'existe qu'une fois son SQL exécuté.
+      .select('*')
       .eq('id', withdrawalId)
       .maybeSingle();
 
@@ -90,7 +92,7 @@ export async function POST(req: NextRequest) {
         {
           error: `SasPay ne prend pas en charge « ${withdrawal.payment_method} » au Mali. `
             + `Réseaux disponibles : ${Object.values(RESEAUX_MALI).join(', ')}. `
-            + `Demandez au revendeur un numéro sur l'un de ces réseaux.`,
+            + `Demandez au bénéficiaire un numéro sur l'un de ces réseaux.`,
         },
         { status: 422 },
       );
@@ -119,15 +121,17 @@ export async function POST(req: NextRequest) {
     if (verrouille.payment_transaction_id) return NextResponse.json({ success: true, statut: 'processing', transactionId: verrouille.payment_transaction_id });
     await marquerExecutee(admin, validation.validationId);
 
-    const [prenom, ...resteNom] = String(withdrawal.reseller_name || 'Revendeur Suguba').trim().split(/\s+/);
+    // Lot C (2026-09-27) : le même virement paie aussi un fournisseur.
+    const fournisseur = withdrawal.beneficiaire === 'fournisseur';
+    const [prenom, ...resteNom] = String(withdrawal.reseller_name || (fournisseur ? 'Fournisseur Suguba' : 'Revendeur Suguba')).trim().split(/\s+/);
 
     const resultat = await initierPayout({
       montant,
-      description: `Commission Suguba — retrait ${withdrawal.id}`,
+      description: `${fournisseur ? 'Paiement fournisseur' : 'Commission'} Suguba — retrait ${withdrawal.id}`,
       reseau,
       msisdn: withdrawal.phone_number,
       beneficiaire: {
-        prenom: prenom || 'Revendeur',
+        prenom: prenom || (fournisseur ? 'Fournisseur' : 'Revendeur'),
         nom: resteNom.join(' ') || 'Suguba',
         telephone: withdrawal.phone_number,
       },

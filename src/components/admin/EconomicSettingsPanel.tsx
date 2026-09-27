@@ -413,8 +413,7 @@ export default function EconomicSettingsPanel({ ouvertParDefaut = false }: { ouv
                 ))}
               </div>
               <p className="sm:col-span-2 text-xs text-slate-600">
-                Le fournisseur ne demande pas encore son retrait dans l&apos;application : son taux sert au simulateur et servira à son futur espace de retrait.
-                Remettre à Suguba les espèces collectées n&apos;est pas un retrait : aucun frais.
+                Le fournisseur retire son argent depuis « Mes paiements », au taux fournisseur. Remettre à Suguba les espèces collectées n&apos;est pas un retrait : aucun frais.
               </p>
               <div className="sm:col-span-2 rounded-2xl bg-suguba-sauge p-3 text-xs text-slate-700 space-y-0.5">
                 <p className="font-semibold">Autres frais d&apos;un retrait Mobile Money : le virement SasPay (tarif du compte, relu seul)</p>
@@ -432,6 +431,9 @@ export default function EconomicSettingsPanel({ ouvertParDefaut = false }: { ouv
               ))}
               <Num l="Retrait minimum" suffixe="F" v={r.retraitMinimum} on={(v) => maj('retraitMinimum', v)}
                 info="Le solde minimum qu'un bénéficiaire doit atteindre avant de pouvoir demander un retrait." />
+              {/* Lot C (2026-09-27) : lu aussi par la base, à chaque livraison. */}
+              <Num l="Délai avant retrait des fournisseurs" suffixe="jours" v={r.delaiGainFournisseurJours} on={(v) => maj('delaiGainFournisseurJours', v)}
+                info="Après la livraison, le montant dû au fournisseur reste bloqué ce nombre de jours (le temps d'un éventuel retour), puis devient retirable dès que l'argent de la vente est chez Suguba. Entre 0 et 60 jours. S'applique aux livraisons suivantes." />
               <div className="sm:col-span-2 rounded-2xl bg-suguba-sauge p-3 text-xs text-slate-700 space-y-1">
                 <p className="font-semibold">Exemple : retrait de 10 000 F</p>
                 <div className="overflow-x-auto">

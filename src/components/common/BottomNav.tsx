@@ -45,6 +45,8 @@ function getNavItems(role: string | null): NavItem[] {
         // Commandes à préparer et code de ramassage (2026-09-24). Le réseau
         // reste accessible depuis le tableau de bord.
         { label: 'Commandes',   href: '/supplier/commandes',    icon: ClipboardList },
+        // Solde et retraits du fournisseur (lot C, 2026-09-27).
+        { label: 'Paiements',   href: '/supplier/paiements',    icon: Wallet },
       ];
     case 'driver':
       return [

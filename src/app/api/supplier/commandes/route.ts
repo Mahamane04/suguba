@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { etapesCommande, modeRemiseCommande } from '@/lib/offre';
 import { lireEtapes } from '@/lib/etapes';
 import { clientVisiblePourRemise, journaliserAcces } from '@/lib/acces-contacts';
+import { montantDuFournisseur } from '@/lib/gains-fournisseur';
 
 /**
  * Commandes à préparer côté fournisseur (2026-09-24).
@@ -23,7 +24,7 @@ import { clientVisiblePourRemise, journaliserAcces } from '@/lib/acces-contacts'
  */
 
 const LIMITE = 200;
-const COLONNES = 'id, order_number, product_id, product_name, product_image, quantity, status, created_at, delivered_at, neighborhood, city, assigned_driver_name, pricing_snapshot, assigned_driver_id, customer_name, customer_phone, landmark, total_amount, payment_method, payment_collected';
+const COLONNES = 'id, order_number, product_id, product_name, product_image, quantity, status, created_at, delivered_at, neighborhood, city, assigned_driver_name, pricing_snapshot, assigned_driver_id, customer_name, customer_phone, landmark, total_amount, payment_method, payment_collected, delivery_fee';
 
 export async function GET(req: NextRequest) {
   const acces = await exigerDroitFournisseur(req, 'commandes');
@@ -53,8 +54,6 @@ export async function GET(req: NextRequest) {
   const etapes = await lireEtapes(admin, avecEtapes).catch(() => new Map());
 
   const commandes = (data || []).map((o: any) => {
-    const tarif = o.pricing_snapshot?.devis?.tarif;
-    const unitaire = typeof tarif?.prixFournisseur === 'number' ? tarif.prixFournisseur : prixFournisseur.get(o.product_id) || 0;
     // Le code ne sert qu'entre la confirmation et le ramassage : ensuite il ne
     // doit plus circuler.
     const modeRemise = modeRemiseCommande(o.pricing_snapshot);
@@ -69,7 +68,8 @@ export async function GET(req: NextRequest) {
       produit: o.product_name,
       image: o.product_image || null,
       quantite: Number(o.quantity) || 1,
-      montantFournisseur: unitaire * (Number(o.quantity) || 1),
+      // Même règle que son solde (lot C) : prix figé × quantité, + frais de remise s'il livre lui-même.
+      montantFournisseur: montantDuFournisseur(o, prixFournisseur.get(o.product_id) || 0),
       statut: o.status,
       creeLe: o.created_at,
       livreeLe: o.delivered_at || null,

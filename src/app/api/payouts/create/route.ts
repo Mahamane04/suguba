@@ -6,17 +6,12 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { libererCommissionsEchues } from '@/lib/commissions';
 import { chargerReglages } from '@/lib/platform-settings';
 import { calculerFraisRetrait } from '@/lib/pricing';
+import { CODE_MOYEN_RETRAIT, recuRetrait } from '@/lib/retraits-affichage';
 
 // Le retrait minimum vit dans les réglages de la plateforme (écran admin),
 // plus en dur ici : voir src/lib/pricing.ts, `retraitMinimum`.
-// Wave revenu le 2026-09-27 : SasPay le couvre désormais au Mali (wave_ml,
-// versement disponible). `wave` était déjà accepté par payouts.payment_method.
-const PROVIDER_MAP: Record<string, string> = {
-  'Orange Money': 'orange_money',
-  'Moov Money': 'moov',
-  'Wave': 'wave',
-  'Agence Suguba': 'cash',
-};
+// Moyens acceptés : src/lib/retraits-affichage.ts, communs aux revendeurs et
+// aux fournisseurs (lot C, 2026-09-27).
 
 /**
  * Corrige la dernière partie de BUG-006/BUG-008 : la création de retrait
@@ -51,7 +46,7 @@ export async function POST(req: NextRequest) {
     const { withdrawalCode, amount, payoutProvider, payoutPhone } = body;
 
     const parsedAmount = Number(amount);
-    const moyen = PROVIDER_MAP[payoutProvider];
+    const moyen = CODE_MOYEN_RETRAIT[payoutProvider];
     if (!Number.isSafeInteger(parsedAmount) || parsedAmount <= 0 || !moyen || typeof withdrawalCode !== 'string' || !/^[A-Za-z0-9-]{8,100}$/.test(withdrawalCode) || typeof payoutPhone !== 'string' || !/^\+?[0-9 ()-]{8,30}$/.test(payoutPhone)) return NextResponse.json({ definitive: true, error: 'Montant, référence, moyen ou téléphone invalide.' }, { status: 400 });
     const hash = (v: string) => createHash('sha256').update(v).digest('hex');
     const key = hash(withdrawalCode), fingerprint = hash(JSON.stringify([parsedAmount, moyen, payoutPhone]));
@@ -59,7 +54,7 @@ export async function POST(req: NextRequest) {
     if (readError) return NextResponse.json({ error: 'Vérification de la demande indisponible.' }, { status: 503 });
     if (previous) {
       if (previous.request_fingerprint !== fingerprint) return NextResponse.json({ error: 'Reprenez la demande avec ses informations initiales.' }, { status: 409 });
-      return NextResponse.json(payoutReceipt(previous));
+      return NextResponse.json(recuRetrait(previous));
     }
     const { reglages } = await chargerReglages(true);
     const minimum = reglages.retraitMinimum;
@@ -97,14 +92,10 @@ export async function POST(req: NextRequest) {
       const conflit = error?.message === 'IDEMPOTENCY_CONFLICT';
       return NextResponse.json({ definitive: insuffisant, error: insuffisant ? 'Solde disponible insuffisant.' : conflit ? 'Cette référence correspond à une autre demande.' : 'Retrait non enregistré. Réessayez avec la même référence.' }, { status: insuffisant || conflit ? 409 : 503 });
     }
-    return NextResponse.json(payoutReceipt(retrait));
+    return NextResponse.json(recuRetrait(retrait));
   } catch (error: any) {
     console.error('[API payouts/create ERROR]', error);
     return NextResponse.json({ error: 'Retrait non confirmé. Réessayez avec la même référence.' }, { status: 503 });
   }
 }
 
-function payoutReceipt(retrait: any) {
-  return { success: true, cloud: true, withdrawalCode: retrait.id,
-    frais: { fraisSaspay: Number(retrait.detail_frais?.saspay || 0), fraisOperateur: Number(retrait.detail_frais?.operateur || 0), fraisSuguba: Number(retrait.detail_frais?.suguba || 0), montantDemande: Number(retrait.montant_demande), montantNet: Number(retrait.amount), fraisTotal: Number(retrait.frais_retrait) } };
-}

@@ -18,7 +18,8 @@ export type DroitFournisseur =
   | 'analyses'        // voir les chiffres
   | 'fiche'           // coordonnées officielles, quartier de l'entrepôt
   | 'commandes'       // voir les commandes à préparer et le code de ramassage
-  | 'equipe';         // inviter / retirer des collaborateurs
+  | 'equipe'          // inviter / retirer des collaborateurs
+  | 'retraits';       // voir le solde et retirer l'argent (propriétaire seul, lot C)
 
 export const ROLES_COLLABORATEUR: { valeur: RoleCollaborateur; libelle: string; description: string; droits: DroitFournisseur[] }[] = [
   {
@@ -38,7 +39,7 @@ export const ROLES_COLLABORATEUR: { valeur: RoleCollaborateur; libelle: string; 
   },
 ];
 
-const TOUS: DroitFournisseur[] = ['catalogue', 'boutique', 'revendeurs', 'sponsorisation', 'analyses', 'fiche', 'equipe', 'commandes'];
+const TOUS: DroitFournisseur[] = ['catalogue', 'boutique', 'revendeurs', 'sponsorisation', 'analyses', 'fiche', 'equipe', 'commandes', 'retraits'];
 
 export function droitsDuRole(role: RoleEquipeFournisseur): DroitFournisseur[] {
   if (role === 'proprietaire') return TOUS;

@@ -4,7 +4,8 @@ type Storage = Pick<globalThis.Storage, 'getItem' | 'setItem' | 'removeItem'>;
 export class PayoutCheckout {
   private attempt: Attempt | null = null;
   private pending: Promise<any> | null = null;
-  constructor(private name: string, private storage: Storage, private send: typeof fetch = (...args) => fetch(...args)) {}
+  // `endpoint` : /api/payouts/create (revendeur) ou /api/supplier/retraits (fournisseur, lot C).
+  constructor(private name: string, private storage: Storage, private send: typeof fetch = (...args) => fetch(...args), private endpoint = '/api/payouts/create') {}
   restore(): Attempt | null {
     if (this.attempt) return this.attempt;
     try {
@@ -25,7 +26,7 @@ export class PayoutCheckout {
     return this.pending;
   }
   private async execute(attempt: Attempt) {
-    const response = await this.send('/api/payouts/create', {
+    const response = await this.send(this.endpoint, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...attempt.input, withdrawalCode: attempt.key }),
     });

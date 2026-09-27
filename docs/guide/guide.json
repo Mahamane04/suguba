@@ -22,7 +22,7 @@
    "titre": "Fournisseur",
    "lettre": "F",
    "acces": "Connecté comme fournisseur validé",
-   "intro": "Le fournisseur dépose ses produits, gère son stock et s’appuie sur le réseau de revendeurs. Menu du bas : Dashboard · Stocks · Ajouter · Réseau.",
+   "intro": "Le fournisseur dépose ses produits, gère son stock, s’appuie sur le réseau de revendeurs et retire ce que Suguba lui doit pour ses commandes livrées. Menu du bas : Accueil · Stocks · Ajouter · Commandes · Paiements.",
    "sessionDemo": "supplier"
   },
   {
@@ -38,7 +38,7 @@
    "titre": "Admin Suguba",
    "lettre": "A",
    "acces": "Connecté comme admin (ou membre d’équipe)",
-   "intro": "L’équipe Suguba confirme les commandes, attribue les livreurs, modère le catalogue, paie les revendeurs et anime le réseau. Sur ordinateur, menu latéral en huit rubriques avec le nombre de dossiers en attente ; sur téléphone, « Suguba · Équipe » ouvre le même menu.",
+   "intro": "L’équipe Suguba confirme les commandes, attribue les livreurs, modère le catalogue, paie les revendeurs et les fournisseurs et anime le réseau. Sur ordinateur, menu latéral en huit rubriques avec le nombre de dossiers en attente ; sur téléphone, « Suguba · Équipe » ouvre le même menu.",
    "sessionDemo": "admin"
   }
  ],
@@ -162,7 +162,7 @@
      "page": "adm-caisse"
     },
     {
-     "texte": "Commission débloquée puis retrait payé",
+     "texte": "Commission du revendeur et montant du fournisseur débloqués, puis retraits payés",
      "page": "adm-retraits"
     }
    ]
@@ -190,6 +190,33 @@
   }
  ],
  "journal": [
+  {
+   "date": "2026-09-27",
+   "titre": "Lot C : solde et retraits des fournisseurs",
+   "demande": "« tu peux lancer le lot C » — lot C proposé après l’audit : solde fournisseur crédité à la livraison puis disponible après un délai de sécurité, comme pour les revendeurs ; demande de retrait en caisse ou Mobile Money avec récapitulatif et frais figés ; paiement par l’admin, avec régularisation si le retrait échoue. Fournisseurs payés en espèces et par Mobile Money.",
+   "realise": [
+    "Grand-livre des fournisseurs dans la base : à la livraison, le montant dû s’inscrit (prix fournisseur figé à la commande × quantité, plus les frais de remise quand le fournisseur livre lui-même), bloqué pendant le délai réglé dans Paramètres (7 jours par défaut), puis disponible une fois l’argent de la vente chez Suguba (même règle que les revendeurs). Une commande retournée l’annule.",
+    "« Mes paiements » dans l’espace fournisseur (menu du bas et tableau de bord) : disponible, en attente avec la date du prochain montant, en cours de retrait, déjà versé ; le détail par commande livrée ; l’historique des retraits.",
+    "Demande de retrait au format de l’audit, avec les taux Suguba du FOURNISSEUR (caisse / Mobile Money) et le vrai tarif SasPay ; frais figés avec la demande ; solde réservé sous verrou (jamais plus que le disponible, une demande envoyée deux fois ne crée qu’un retrait). Réservée au propriétaire du compte : aucun collaborateur ne voit ni ne retire l’argent.",
+    "Admin › Retraits : les demandes des fournisseurs arrivent dans la même file que celles des revendeurs, avec leur type ; mêmes actions (virement SasPay, espèces au guichet, refus) et même double validation. Un virement échoué ou un refus rend le montant au solde du fournisseur.",
+    "Formulaire et historique des retraits désormais communs au revendeur et au fournisseur : un seul calcul, un seul récapitulatif. « Vous recevez » des commandes fournisseur suit la même règle que le solde.",
+    "Vérifié : 14 tests du lot C (dont 7 sur un vrai moteur PostgreSQL : crédit, délai, attente des espèces, réserve, idempotence, virement payé ou refusé, retour de commande, retraits des revendeurs inchangés, droits), suite complète au vert ; page fournisseur et page revendeur vérifiées à l’écran, ordinateur et téléphone, avec des données d’exemple."
+   ],
+   "ecarts": [
+    "À exécuter avant la mise en ligne : supabase/A-EXECUTER-2026-09-27-retraits-fournisseurs.sql. Sans lui, « Mes paiements » affiche que les paiements fournisseurs ne sont pas encore ouverts, et le reste de l’application fonctionne comme avant.",
+    "Seules les commandes livrées après ce SQL créditent un solde (aucune commande n’était livrée au 27/09).",
+    "Pas de déblocage anticipé d’un montant fournisseur par l’admin (il existe pour les commissions des revendeurs) : à ajouter si le besoin se présente.",
+    "Champ « Délai avant retrait des fournisseurs » de Paramètres non vu à l’écran (connexion admin requise) ; vérifié par les tests et la vérification des types."
+   ],
+   "pages": [
+    "fou-paiements",
+    "fou-commandes",
+    "adm-retraits",
+    "adm-parametres",
+    "rev-gains"
+   ],
+   "statut": "en local"
+  },
   {
    "date": "2026-09-27",
    "titre": "Audit du fondateur : vente, paiement et retrait séparés",
@@ -3599,8 +3626,8 @@
      "role": "Ma boutique · Mes revendeurs · Analyses · Mon équipe · Sponsorisation · Campagnes."
     },
     {
-     "nom": "Commandes à préparer",
-     "role": "Vers la page Commandes, avec les codes de ramassage."
+     "nom": "Commandes à préparer · Mes paiements",
+     "role": "Vers la page Commandes (codes de ramassage) et vers le solde et les retraits."
     }
    ],
    "suite": [
@@ -3615,6 +3642,10 @@
     {
      "id": "fou-reseau",
      "libelle": "Ma boutique & revendeurs"
+    },
+    {
+     "id": "fou-paiements",
+     "libelle": "Mes paiements"
     }
    ],
    "capture": {
@@ -3680,7 +3711,7 @@
     },
     {
      "nom": "Vous recevez",
-     "role": "Votre prix fournisseur × la quantité."
+     "role": "Votre prix fournisseur × la quantité, plus vos frais de remise quand vous livrez vous-même (vous reversez alors tout l’argent à la caisse). Le même montant s’ajoute à « Mes paiements » à la livraison."
     },
     {
      "nom": "Contact du client (remise par vous)",
@@ -3691,12 +3722,60 @@
     {
      "id": "fou-accueil",
      "libelle": "Tableau de bord"
+    },
+    {
+     "id": "fou-paiements",
+     "libelle": "Mes paiements"
     }
    ],
    "note": "Nom et téléphone du client ne sont pas affichés : la livraison passe par Suguba.",
    "capture": {
     "chemin": "/supplier/commandes"
    }
+  },
+  {
+   "id": "fou-paiements",
+   "role": "fournisseur",
+   "titre": "Mes paiements",
+   "chemin": "/supplier/paiements",
+   "but": "Ce que Suguba doit au fournisseur pour ses commandes livrées, et son retrait par Mobile Money ou en espèces au guichet.",
+   "elements": [
+    {
+     "nom": "Disponible au retrait",
+     "role": "Montants dont le délai de sécurité est passé et dont l’argent est chez Suguba."
+    },
+    {
+     "nom": "En attente · En cours de retrait · Déjà versé",
+     "role": "En attente : délai de sécurité en cours (réglé dans Paramètres, 7 jours par défaut), avec la date du prochain montant disponible ; la ligne « Dont … en attente de l’argent de la livraison » signale une vente payée en espèces pas encore reversée à la caisse. En cours de retrait : demandé, pas encore versé. Déjà versé : le total reçu."
+    },
+    {
+     "nom": "Retirer mon argent",
+     "role": "Même formulaire que le revendeur : Orange Money · Moov Money · Wave (virement) ou Espèces au guichet, numéro, montant (5 000 F minimum). Avant de confirmer : débité du solde, moyen, frais Suguba au taux FOURNISSEUR (caisse ou Mobile Money), virement SasPay au vrai tarif, « Vous recevrez ». Les frais sont figés avec la demande ; un échec ou un refus rend tout le montant."
+    },
+    {
+     "nom": "Commandes livrées",
+     "role": "Une ligne par commande : produit, numéro, date de livraison, montant et son état (Disponible le …, Attend l’argent de la livraison, Disponible, En cours de retrait, Versé, Annulé si la commande est retournée)."
+    },
+    {
+     "nom": "Historique des retraits",
+     "role": "Toutes les demandes, leur état, et les frais déduits. En espèces : le numéro WTH-… à présenter au guichet."
+    },
+    {
+     "nom": "Réservé au propriétaire",
+     "role": "Un collaborateur de l’équipe (stock, commercial, marketing) voit « Seul le propriétaire du compte fournisseur voit le solde et demande les retraits »."
+    }
+   ],
+   "suite": [
+    {
+     "id": "fou-commandes",
+     "libelle": "Commandes"
+    },
+    {
+     "id": "adm-retraits",
+     "libelle": "Côté admin : retraits"
+    }
+   ],
+   "note": "Pas de capture : le solde n’existe qu’une fois le SQL du lot C exécuté et une première commande livrée ; la page a été vérifiée à l’écran avec des données d’exemple, sans écriture en base."
   },
   {
    "id": "fou-devis",
@@ -4232,15 +4311,15 @@
    "role": "admin",
    "titre": "Retraits et commissions",
    "chemin": "/admin/retraits",
-   "but": "Payer les revendeurs (sortis de l’ancienne vue d’ensemble, dont le lien « #retraits » était cassé) et débloquer une commission avant terme.",
+   "but": "Payer les revendeurs et les fournisseurs (sortis de l’ancienne vue d’ensemble, dont le lien « #retraits » était cassé) et débloquer une commission avant terme.",
    "elements": [
     {
      "nom": "Guichet : retrait en espèces par code",
-     "role": "Le revendeur présente son code WTH-… ; « Payer en espèces » demande confirmation une fois l’argent remis."
+     "role": "Le revendeur ou le fournisseur présente son code WTH-… ; « Payer en espèces » demande confirmation une fois l’argent remis."
     },
     {
      "nom": "Retraits en attente",
-     "role": "Tableau : revendeur, montant à verser, moyen (logo), téléphone, code, date ; « Envoyer le virement » (SasPay, Orange Money, Moov Money et Wave), « Argent remis » (espèces), « Refuser » (le montant retourne au solde). Au-dessus du seuil, la double validation demande l’accord d’un collègue (« Validations »)."
+     "role": "Tableau : bénéficiaire (nom, et « Revendeur » ou « Fournisseur »), montant à verser, moyen (logo), téléphone, code, date ; « Envoyer le virement » (SasPay, Orange Money, Moov Money et Wave), « Argent remis » (espèces), « Refuser » (le montant retourne au solde du bénéficiaire). Au-dessus du seuil, la double validation demande l’accord d’un collègue (« Validations »)."
     },
     {
      "nom": "Virements en cours",
@@ -4280,7 +4359,7 @@
     },
     {
      "nom": "Frais de paiement (payés par le client)",
-     "role": "Frais de transaction Suguba (%) et tarifs SasPay relus seuls chez SasPay dès que le relevé a plus de 6 heures, sans jamais ralentir un paiement (« Relire maintenant »). « Ce que paie le client, en direct » : espèces, Orange, Moov, Wave côte à côte. Dans « Frais de retrait des partenaires » : quatre taux Suguba (revendeur / fournisseur × caisse / Mobile Money, 0 % accepté), virement SasPay, exemple de retrait de 10 000 F, et les grilles de retrait chez un agent (Orange, Moov, Wave, fonds de l’État) pour information."
+     "role": "Frais de transaction Suguba (%) et tarifs SasPay relus seuls chez SasPay dès que le relevé a plus de 6 heures, sans jamais ralentir un paiement (« Relire maintenant »). « Ce que paie le client, en direct » : espèces, Orange, Moov, Wave côte à côte. Dans « Frais de retrait des partenaires » : quatre taux Suguba (revendeur / fournisseur × caisse / Mobile Money, 0 % accepté), virement SasPay, retrait minimum, délai avant retrait des fournisseurs (7 jours par défaut, 0 à 60), exemple de retrait de 10 000 F, et les grilles de retrait chez un agent (Orange, Moov, Wave, fonds de l’État) pour information."
     },
     {
      "nom": "Simulateur : vente, encaissement, retraits",

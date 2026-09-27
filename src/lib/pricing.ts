@@ -287,6 +287,12 @@ export interface ReglagesPlateforme {
   arrondiPrix: number;
   /** Montant minimal d'un retrait revendeur, en FCFA. */
   retraitMinimum: number;
+  /**
+   * Délai de sécurité des fournisseurs, en jours (lot C, 2026-09-27) : le
+   * montant dû pour une commande livrée devient retirable après ce délai.
+   * Lu aussi par la base (déclencheur gains_fournisseur_suivre_commande).
+   */
+  delaiGainFournisseurJours: number;
 
   // ── Part revendeur fixée par le fournisseur ──────────────────────────
   /** Mode de rémunération de Suguba (voir ModePartSuguba). */
@@ -334,6 +340,10 @@ export interface ReglagesPlateforme {
  * l'écran des réglages l'annonce comme « non confirmé » tant que l'admin ne
  * les a pas remplacés par ses vraies dépenses.
  */
+/** Délai de sécurité des fournisseurs quand l'équipe ne l'a pas réglé (même valeur que la base). */
+export const DELAI_GAIN_FOURNISSEUR_PAR_DEFAUT = 7;
+export const DELAI_GAIN_FOURNISSEUR_MAX = 60;
+
 export const REGLAGES_PAR_DEFAUT: ReglagesPlateforme = {
   fraisPaiement: FRAIS_PAIEMENT_PAR_DEFAUT,
   fraisPaiementPct: 1.5,
@@ -392,6 +402,7 @@ export const REGLAGES_PAR_DEFAUT: ReglagesPlateforme = {
   arrondiCommission: 250,
   arrondiPrix: 500,
   retraitMinimum: 5000,
+  delaiGainFournisseurJours: DELAI_GAIN_FOURNISSEUR_PAR_DEFAUT,
   modePartSuguba: 'prix_vente',
   tauxPartSuguba: 8,
   minimumPartSuguba: 1000,
@@ -1137,6 +1148,12 @@ export function validerReglages(r: ReglagesPlateforme): string[] {
     const v = Number(r[cle]);
     if (!Number.isFinite(v) || v < 0) erreurs.push(`${libelle} : doit être un montant positif.`);
   }
+  {
+    const j = Number(r.delaiGainFournisseurJours);
+    if (!Number.isInteger(j) || j < 0 || j > DELAI_GAIN_FOURNISSEUR_MAX) {
+      erreurs.push(`Délai avant retrait des fournisseurs : un nombre entier de jours entre 0 et ${DELAI_GAIN_FOURNISSEUR_MAX}.`);
+    }
+  }
   for (const role of ROLES_RETRAIT) {
     for (const cle of ['caisse', 'mobile'] as const) {
       const v = Number(r.fraisRetraitSuguba?.[role]?.[cle] ?? r.fraisRetraitSugubaPct ?? 0);
@@ -1239,6 +1256,12 @@ export function completerReglages(partiels: Partial<ReglagesPlateforme> | null |
     const p = Number(r.plafondEspecesCollecteur);
     r.plafondEspecesCollecteur = Number.isFinite(p) && p >= 0 ? Math.round(p) : 150000;
     r.paiementCarteVerifie = r.paiementCarteVerifie === true;
+    // Même bornes que la base : un nombre de jours entier entre 0 et 60.
+    const brut = r.delaiGainFournisseurJours as unknown;
+    const j = typeof brut === 'number' ? brut : typeof brut === 'string' && brut.trim() ? Number(brut) : NaN;
+    r.delaiGainFournisseurJours = Number.isFinite(j)
+      ? Math.min(DELAI_GAIN_FOURNISSEUR_MAX, Math.max(0, Math.round(j)))
+      : DELAI_GAIN_FOURNISSEUR_PAR_DEFAUT;
   }
   {
     const o = (r.fraisOperateurRetraitPct && typeof r.fraisOperateurRetraitPct === 'object' ? r.fraisOperateurRetraitPct : {}) as Partial<Record<MoyenRetraitMobile, number>>;

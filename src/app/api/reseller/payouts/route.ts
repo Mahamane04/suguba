@@ -2,14 +2,8 @@ import { verifyActiveSession } from '@/lib/active-session';
 import { NextRequest, NextResponse } from 'next/server';
 import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-
-const LIBELLE_MOYEN: Record<string, string> = {
-  orange_money: 'Orange Money',
-  moov: 'Moov Money',
-  mobi_cash: 'Mobi Cash',
-  cash: 'Espèces au guichet',
-  wave: 'Wave',
-};
+import { retraitAffiche } from '@/lib/retraits-affichage';
+import { lotCAbsent } from '@/lib/gains-fournisseur';
 
 /**
  * Historique RÉEL des retraits du revendeur connecté (2026-09-11).
@@ -17,6 +11,9 @@ const LIBELLE_MOYEN: Record<string, string> = {
  * La page des gains affichait les retraits des données de démonstration :
  * « Total déjà retiré & reçu : 184 000 FCFA » pour un compte qui n'avait
  * jamais rien vendu.
+ *
+ * Lot C (2026-09-27) : une même personne peut être revendeur ET fournisseur.
+ * Seuls ses retraits de revendeur apparaissent ici.
  */
 export async function GET(req: NextRequest) {
   const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value);
@@ -27,26 +24,15 @@ export async function GET(req: NextRequest) {
   const admin = getSupabaseAdmin();
   if (!admin) return NextResponse.json({ retraits: [] });
 
-  const { data, error } = await admin
-    .from('payouts')
-    .select('*')
-    .eq('reseller_id', session.uid)
-    .order('created_at', { ascending: false })
-    .limit(50);
+  const lire = (seulementRevendeur: boolean) => {
+    let q = admin.from('payouts').select('*').eq('reseller_id', session.uid);
+    if (seulementRevendeur) q = q.eq('beneficiaire', 'revendeur');
+    return q.order('created_at', { ascending: false }).limit(50);
+  };
+  let { data, error } = await lire(true);
+  // SQL du lot C pas encore exécuté : pas de colonne, donc aucun retrait fournisseur à écarter.
+  if (error && lotCAbsent(error)) ({ data, error } = await lire(false));
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  return NextResponse.json({
-    retraits: (data || []).map((p) => ({
-      id: p.id,
-      montant: Number(p.amount) || 0,
-      // Colonnes ajoutées le 2026-09-24 : absentes des anciens retraits.
-      montantDemande: p.montant_demande != null ? Number(p.montant_demande) : null,
-      frais: p.frais_retrait != null ? Number(p.frais_retrait) : null,
-      moyen: LIBELLE_MOYEN[p.payment_method] || p.payment_method || '—',
-      telephone: p.phone_number || '',
-      statut: p.status,
-      reference: p.payment_transaction_id || null,
-      creeLe: p.created_at,
-    })),
-  });
+  return NextResponse.json({ retraits: (data || []).map(retraitAffiche) });
 }

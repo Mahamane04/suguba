@@ -13,6 +13,7 @@
 import type { NextRequest } from 'next/server';
 import { getSupabaseAdmin } from '../supabase-admin';
 import { sessionAvecRole } from './route-session';
+import type { SugubaSession } from '../session';
 import { droitsDuRole, type DroitFournisseur, type RoleEquipeFournisseur } from './equipe-fournisseur';
 
 export interface ContexteFournisseur {
@@ -57,7 +58,7 @@ export async function contexteFournisseur(personneId: string): Promise<ContexteF
 export async function exigerDroitFournisseur(
   req: NextRequest,
   droit: DroitFournisseur | null,
-): Promise<{ ok: true; contexte: ContexteFournisseur } | { ok: false; statut: number; erreur: string }> {
+): Promise<{ ok: true; contexte: ContexteFournisseur; session: SugubaSession } | { ok: false; statut: number; erreur: string }> {
   const session = await sessionAvecRole(req, 'supplier');
   if (!session) return { ok: false, statut: 401, erreur: 'Session fournisseur requise.' };
   const contexte = await contexteFournisseur(session.uid);
@@ -65,5 +66,6 @@ export async function exigerDroitFournisseur(
   if (droit && !contexte.droits.includes(droit)) {
     return { ok: false, statut: 403, erreur: 'Votre rôle dans l’équipe ne permet pas cette action.' };
   }
-  return { ok: true, contexte };
+  // La session suit, pour les actions qui exigent en plus un compte validé (retrait).
+  return { ok: true, contexte, session };
 }

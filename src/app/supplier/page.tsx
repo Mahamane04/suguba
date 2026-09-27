@@ -9,7 +9,7 @@ import { Store as StoreIcone, Users as UsersIcone, Megaphone as MegaphoneIcone, 
 import Button from '@/components/ui/Button';
 import PhotosProduitModal from '@/components/product/PhotosProduitModal';
 import {
-  Plus, ShieldCheck, Clock, Store, Package, Users, XCircle, Camera, ClipboardList, FileText
+  Plus, ShieldCheck, Clock, Store, Package, Users, XCircle, Camera, ClipboardList, FileText, Wallet
 } from 'lucide-react';
 
 interface SupplierProduct {
@@ -117,6 +117,11 @@ export default function SupplierDashboardPage() {
             <Button href="/supplier/commandes" variant="ghost">
               <ClipboardList className="w-4 h-4" />
               <span>Commandes à préparer</span>
+            </Button>
+            {/* Solde et retraits (lot C, 2026-09-27). */}
+            <Button href="/supplier/paiements" variant="ghost">
+              <Wallet className="w-4 h-4" />
+              <span>Mes paiements</span>
             </Button>
             <Button href="/supplier/devis" variant="ghost">
               <FileText className="w-4 h-4" />
