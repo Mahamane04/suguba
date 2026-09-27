@@ -208,7 +208,8 @@
     "fou-ajouter",
     "adm-produits"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "b5aae8f"
   },
   {
    "date": "2026-09-27",
