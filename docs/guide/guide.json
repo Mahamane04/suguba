@@ -209,7 +209,8 @@
     "adm-catalogue-tableau",
     "adm-diagnostic"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "e0ea9cb"
   },
   {
    "date": "2026-09-27",
