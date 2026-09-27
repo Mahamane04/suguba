@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Download, Columns3, Save, Trash2, ChevronUp, ChevronDown, Table2 } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
+import ChoicePicker from '@/components/ui/ChoicePicker';
 import { Card, EmptyState, Skeleton } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
 import ChoixUniteVente, { SAISIE_UNITE_VIDE, type SaisieUnite } from '@/components/produit/ChoixUniteVente';
@@ -128,42 +129,41 @@ export default function CatalogueTableauPage() {
     <PageReseau titre="Catalogue en tableau" large sousTitre="Filtrer, trier, sélectionner et modifier plusieurs produits à la fois."
       action={<Link href="/admin/products" className="text-xs font-bold text-suguba-brand-dark underline">Photos et prix : Produits</Link>}>
 
+      {/* Barre de filtres aux composants du design system (menus ChoicePicker,
+          pas de menus déroulants du navigateur), 2026-09-27. */}
       <div className="flex flex-wrap gap-2 items-center">
         <input type="search" value={filtres.q} onChange={(e) => changer({ q: e.target.value })} aria-label="Rechercher"
-          placeholder="Produit, fournisseur, identifiant…" className="flex-1 min-w-[14rem] h-10 px-3 rounded-xl border border-slate-200 bg-white text-sm" />
-        <select value={filtres.statut} onChange={(e) => changer({ statut: e.target.value as FiltresCatalogue['statut'] })} aria-label="Statut" className="h-10 px-2 rounded-xl border border-slate-200 bg-white text-sm">
-          <option value="">Tous les statuts</option>
-          {Object.entries(STATUTS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-        </select>
-        <select value={filtres.categorie} onChange={(e) => changer({ categorie: e.target.value })} aria-label="Catégorie" className="h-10 px-2 rounded-xl border border-slate-200 bg-white text-sm max-w-[14rem]">
-          <option value="">Toutes les catégories</option>
-          {(donnees?.categories || []).map((c) => <option key={c} value={c}>{c}</option>)}
-        </select>
-        <label className="inline-flex items-center gap-1.5 text-sm"><input type="checkbox" checked={filtres.sansPhoto} onChange={(e) => changer({ sansPhoto: e.target.checked })} />Sans photo</label>
-        <label className="inline-flex items-center gap-1.5 text-sm"><input type="checkbox" checked={filtres.sansUnite} onChange={(e) => changer({ sansUnite: e.target.checked })} />Sans unité</label>
+          placeholder="Produit, fournisseur, identifiant…" className="flex-1 min-w-[14rem] min-h-12 px-4 rounded-2xl border border-slate-200 bg-white text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-suguba-profond" />
+        <ChoicePicker ariaLabel="Statut" className="w-full sm:w-48" valeur={filtres.statut} onChange={(v) => changer({ statut: v as FiltresCatalogue['statut'] })}
+          choix={[{ valeur: '', libelle: 'Tous les statuts' }, ...Object.entries(STATUTS).map(([v, l]) => ({ valeur: v, libelle: l }))]} />
+        <ChoicePicker ariaLabel="Catégorie" className="w-full sm:w-56" valeur={filtres.categorie} onChange={(v) => changer({ categorie: v })}
+          choix={[{ valeur: '', libelle: 'Toutes les catégories' }, ...(donnees?.categories || []).map((c) => ({ valeur: c, libelle: c }))]} />
+        <label className="inline-flex items-center gap-2 min-h-[40px] px-1 text-sm text-slate-800 cursor-pointer"><input type="checkbox" className="w-4 h-4 accent-suguba-profond" checked={filtres.sansPhoto} onChange={(e) => changer({ sansPhoto: e.target.checked })} />Sans photo</label>
+        <label className="inline-flex items-center gap-2 min-h-[40px] px-1 text-sm text-slate-800 cursor-pointer"><input type="checkbox" className="w-4 h-4 accent-suguba-profond" checked={filtres.sansUnite} onChange={(e) => changer({ sansUnite: e.target.checked })} />Sans unité</label>
       </div>
 
       <div className="flex flex-wrap gap-2 items-center">
-        <select aria-label="Vues enregistrées" value="" onChange={(e) => { const v = vues.find((x) => x.id === e.target.value); if (v) appliquerVue(v); }} className="h-9 px-2 rounded-xl border border-slate-200 bg-white text-sm">
-          <option value="">{vues.length ? 'Mes vues…' : 'Aucune vue enregistrée'}</option>
-          {vues.map((v) => <option key={v.id} value={v.id}>{v.nom}</option>)}
-        </select>
+        {vues.length > 0 && (
+          <ChoicePicker ariaLabel="Vues enregistrées" className="w-full sm:w-56" valeur="" placeholder="Mes vues…"
+            onChange={(id) => { const v = vues.find((x) => x.id === id); if (v) appliquerVue(v); }}
+            choix={vues.map((v) => ({ valeur: v.id, libelle: v.nom }))} />
+        )}
         <Button type="button" variant="ghost" size="sm" onClick={enregistrerVue}><Save className="w-4 h-4" />Enregistrer la vue</Button>
         {vues.length > 0 && (
           <details className="relative">
-            <summary className="list-none cursor-pointer h-9 px-3 rounded-xl text-sm font-semibold text-slate-600 inline-flex items-center gap-1 hover:bg-slate-100"><Trash2 className="w-4 h-4" />Vues</summary>
-            <div className="absolute z-20 mt-1 w-56 bg-white border border-slate-200 rounded-xl shadow-lg p-2 space-y-1">
-              {vues.map((v) => <button key={v.id} type="button" onClick={() => supprimerVue(v)} className="w-full text-left text-sm px-2 py-1 rounded-lg hover:bg-rose-50">Retirer « {v.nom} »</button>)}
+            <summary className="list-none cursor-pointer min-h-[40px] px-4 rounded-full text-sm font-semibold text-suguba-profond inline-flex items-center gap-1.5 hover:bg-suguba-sauge"><Trash2 className="w-4 h-4" />Retirer une vue</summary>
+            <div className="absolute z-20 mt-1.5 w-60 bg-white border border-slate-200 rounded-2xl shadow-float p-1.5 space-y-0.5">
+              {vues.map((v) => <button key={v.id} type="button" onClick={() => supprimerVue(v)} className="w-full text-left text-sm min-h-11 px-3 rounded-xl hover:bg-rose-50 text-slate-800">Retirer « {v.nom} »</button>)}
             </div>
           </details>
         )}
         <div className="relative">
           <Button type="button" variant="ghost" size="sm" aria-expanded={menuColonnes} onClick={() => setMenuColonnes((o) => !o)}><Columns3 className="w-4 h-4" />Colonnes</Button>
           {menuColonnes && (
-            <div className="absolute z-20 mt-1 w-48 bg-white border border-slate-200 rounded-xl shadow-lg p-2 space-y-1">
+            <div className="absolute z-20 mt-1.5 w-56 bg-white border border-slate-200 rounded-2xl shadow-float p-1.5 space-y-0.5">
               {COLONNES_CATALOGUE.map((c) => (
-                <label key={c.cle} className="flex items-center gap-2 text-sm px-1">
-                  <input type="checkbox" checked={colonnes.includes(c.cle)} disabled={c.cle === 'nom'}
+                <label key={c.cle} className="flex items-center gap-2 text-sm min-h-10 px-2 rounded-xl hover:bg-slate-50 cursor-pointer">
+                  <input type="checkbox" className="w-4 h-4 accent-suguba-profond" checked={colonnes.includes(c.cle)} disabled={c.cle === 'nom'}
                     onChange={(e) => setColonnes((l) => e.target.checked ? [...l, c.cle] : l.filter((x) => x !== c.cle))} />{c.titre}
                 </label>
               ))}
@@ -171,7 +171,7 @@ export default function CatalogueTableauPage() {
           )}
         </div>
         {peutExporter && (
-          <a href={`/api/admin/export?type=catalogue&${versParams(filtres)}`} className="h-9 px-3 rounded-xl text-sm font-semibold text-slate-700 inline-flex items-center gap-1 hover:bg-slate-100">
+          <a href={`/api/admin/export?type=catalogue&${versParams(filtres)}`} className="min-h-[40px] px-4 rounded-full border border-slate-200 bg-white hover:bg-suguba-sauge text-sm font-semibold text-suguba-profond inline-flex items-center gap-1.5">
             <Download className="w-4 h-4" />Exporter (CSV)
           </a>
         )}
@@ -179,26 +179,24 @@ export default function CatalogueTableauPage() {
       </div>
 
       {peutModifier && nbSelection > 0 && (
-        <Card className="!bg-slate-900 !border-slate-900 text-white space-y-3">
+        <Card className="!bg-suguba-profond !border-suguba-profond text-white space-y-3">
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <strong>{nbSelection} sélectionné{nbSelection > 1 ? 's' : ''}</strong>
             {toutePage && !tousLeFiltre && donnees && donnees.total > ids.length && (
-              <button type="button" onClick={() => setTousLeFiltre(true)} className="underline">Sélectionner les {Math.min(donnees.total, 500)} résultats du filtre</button>
+              <button type="button" onClick={() => setTousLeFiltre(true)} className="underline min-h-[40px]">Sélectionner les {Math.min(donnees.total, 500)} résultats du filtre</button>
             )}
-            {tousLeFiltre && <span className="text-emerald-200">Tous les résultats du filtre (500 au plus)</span>}
-            <button type="button" onClick={() => { setSelection(new Set()); setTousLeFiltre(false); setApercu(null); setAction(''); }} className="underline ml-auto">Annuler la sélection</button>
+            {tousLeFiltre && <span className="text-suguba-citron font-semibold">Tous les résultats du filtre (500 au plus)</span>}
+            <button type="button" onClick={() => { setSelection(new Set()); setTousLeFiltre(false); setApercu(null); setAction(''); }} className="underline ml-auto min-h-[40px]">Annuler la sélection</button>
           </div>
-          <div className="flex flex-wrap gap-2 items-end">
-            <select aria-label="Action groupée" value={action} onChange={(e) => { setAction(e.target.value as typeof action); setApercu(null); }} className="h-9 px-2 rounded-xl text-slate-900 text-sm">
-              <option value="">Choisir une action…</option>
-              <option value="categorie">Changer la catégorie</option>
-              <option value="unite">Changer l’unité de vente</option>
-            </select>
-            {action === 'categorie' && <input value={categorieCible} onChange={(e) => setCategorieCible(e.target.value)} placeholder="Nouvelle catégorie" aria-label="Nouvelle catégorie" list="categories-existantes" className="h-9 px-3 rounded-xl text-slate-900 text-sm" />}
+          <div className="flex flex-wrap gap-2 items-center">
+            <ChoicePicker ariaLabel="Action groupée" className="w-full sm:w-64" valeur={action} placeholder="Choisir une action…"
+              onChange={(v) => { setAction(v as typeof action); setApercu(null); }}
+              choix={[{ valeur: 'categorie', libelle: 'Changer la catégorie' }, { valeur: 'unite', libelle: 'Changer l’unité de vente' }]} />
+            {action === 'categorie' && <input value={categorieCible} onChange={(e) => setCategorieCible(e.target.value)} placeholder="Nouvelle catégorie" aria-label="Nouvelle catégorie" list="categories-existantes" className="min-h-12 px-4 rounded-2xl bg-white text-slate-900 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-suguba-citron" />}
             <datalist id="categories-existantes">{(donnees?.categories || []).map((c) => <option key={c} value={c} />)}</datalist>
-            {action && <Button type="button" size="sm" variant="secondary" disabled={envoi} onClick={() => demander(false)}>Voir l’aperçu</Button>}
+            {action && <Button type="button" variant="citron" disabled={envoi} onClick={() => demander(false)}>Voir l’aperçu</Button>}
           </div>
-          {action === 'unite' && <div className="bg-white rounded-xl p-3 text-slate-900 max-w-md"><ChoixUniteVente id="unite-groupe" compact valeur={uniteCible} onChange={setUniteCible} /></div>}
+          {action === 'unite' && <div className="bg-white rounded-2xl p-3 text-slate-900 max-w-md"><ChoixUniteVente id="unite-groupe" compact valeur={uniteCible} onChange={setUniteCible} /></div>}
         </Card>
       )}
 

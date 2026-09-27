@@ -187,3 +187,20 @@ test('tableaux : les listes de travail passent en tableau, ligne → panneau', (
   assert.match(tableau, /md:hidden/, 'cartes sur téléphone');
   assert.match(lire('src/components/admin/Panneau.tsx'), /useModalFocus/);
 });
+
+test('barres de navigation de l’équipe aux règles du design system', () => {
+  const poste = lire('src/components/admin/PosteAdmin.tsx');
+  assert.doesNotMatch(poste, /emerald-|\bgray-|text-\[1[01]px\]|font-extrabold|font-black|rose-/, 'jetons Suguba seulement, rouge réservé aux erreurs, jamais sous text-xs');
+  assert.match(poste, /<LogoSuguba clair/);
+  assert.match(poste, /bg-suguba-citron text-suguba-profond font-bold/, 'élément actif en citron');
+  assert.match(poste, /rounded-full/, 'entrées en pilule');
+  // Plus aucun menu déroulant du navigateur dans l'espace équipe : ChoicePicker.
+  const fichiers = [];
+  const parcourir = (d) => { for (const n of readdirSync(d)) { const p = path.join(d, n); if (statSync(p).isDirectory()) parcourir(p); else if (n.endsWith('.tsx')) fichiers.push(p); } };
+  parcourir(path.join(__dirname, '../src/app/admin'));
+  parcourir(path.join(__dirname, '../src/components/admin'));
+  assert.deepEqual(fichiers.filter((f) => /<select\b/.test(readFileSync(f, 'utf8'))).map((f) => path.relative(path.join(__dirname, '..'), f)), []);
+  assert.doesNotMatch(lire('src/app/admin/catalogue/page.tsx'), /bg-slate-900/, 'barre de sélection en vert profond, pas en noir');
+  // Le bandeau « Installer l'application » passait sous le menu fixe.
+  assert.match(lire('src/components/common/PwaInstallPrompt.tsx'), /pathname\.startsWith\('\/admin'\)\) return null/);
+});

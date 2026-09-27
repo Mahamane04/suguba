@@ -192,6 +192,27 @@
  "journal": [
   {
    "date": "2026-09-27",
+   "titre": "Barres de navigation de l’équipe au design system",
+   "demande": "« les nav barre ne sont pas adapter au design système » (capture de Catalogue en tableau).",
+   "realise": [
+    "Menu de l’équipe refait selon la charte : logo Suguba, fond vert profond, page ouverte en citron, entrées en pilule, jetons de couleur Suguba (plus de verts « emerald »), aucun texte sous 13 px, badge « Production » sans rouge (le rouge est réservé aux erreurs).",
+    "Bas du menu sur plusieurs lignes : « Se déconnecter » ne se coupe plus en deux ; initiale, nom et métier, cloche des notifications.",
+    "Barre du téléphone : menu, logo, environnement et recherche, boutons ronds.",
+    "Le bandeau « Installer l’application sur votre téléphone » ne s’affiche plus dans l’espace équipe (il passait sous le menu, texte coupé) et prend les couleurs de la charte ailleurs.",
+    "Catalogue en tableau : barre de sélection vert profond (au lieu de noire), menus Statut, Catégorie, Vues et Action groupée du design system à la place des menus du navigateur ; même chose pour « Transférer à… » (À traiter) et le type de dossier (Pourquoi c’est bloqué ?)."
+   ],
+   "ecarts": [
+    "Les pages anciennes non touchées par les lots d’équipe (Analyses, Rapport du soir, détails de Produits) gardent quelques couleurs hors charte à l’intérieur de la page : à convertir au prochain passage, comme le prévoit la charte."
+   ],
+   "pages": [
+    "adm-a-traiter",
+    "adm-catalogue-tableau",
+    "adm-diagnostic"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-09-27",
    "titre": "Admin U1 à U4 : le poste de travail de l’équipe",
    "demande": "« peux ton continuer a ameliorer l’UI/UX de la panel super admin ( fait l’analyse par toi même pour me donner ton avis ) », puis, après l’analyse : « lance U1 à U4 ».",
    "realise": [
@@ -4195,7 +4216,7 @@
    "elements": [
     {
      "nom": "Menu latéral (ordinateur)",
-     "role": "Huit rubriques repliables, une icône par page et, à côté, le nombre de dossiers en attente (mis à jour toutes les 2 minutes et au retour sur l’onglet). En bas : nom et métier, Notifications, Voir le site, Se déconnecter. Badge Production / Local / Prévisualisation. Sur téléphone : une seule barre « Suguba · Équipe » ouvre le même menu."
+     "role": "Aux couleurs de la charte : fond vert profond, logo Suguba, page ouverte en citron. Huit rubriques repliables, une icône par page et, à côté, le nombre de dossiers en attente (mis à jour toutes les 2 minutes et au retour sur l’onglet). En bas : nom et métier, Notifications, Voir le site, Se déconnecter. Badge Production (discret) / Local / Prévisualisation (marqués). Sur téléphone : une seule barre (menu, logo, recherche) ouvre le même menu."
     },
     {
      "nom": "Rechercher (Ctrl K)",
@@ -4634,6 +4655,10 @@
     {
      "nom": "Exporter (CSV)",
      "role": "Droit « donnees.exporter » (Super Admin par défaut). Fichier pour Excel ; chaque export est journalisé."
+    },
+    {
+     "nom": "Menus du design system",
+     "role": "Statut, catégorie, vues enregistrées et action groupée s’ouvrent dans les menus Suguba (plus les menus du navigateur) ; la barre de sélection est vert profond."
     }
    ],
    "suite": [

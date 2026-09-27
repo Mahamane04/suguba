@@ -1,9 +1,11 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { Download, Smartphone, X, Check } from 'lucide-react';
 
 export default function PwaInstallPrompt() {
+  const pathname = usePathname() || '';
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [isIos, setIsIos] = useState(false);
@@ -51,35 +53,41 @@ export default function PwaInstallPrompt() {
   };
 
   if (!showPrompt && !isIos) return null;
+  // Espace équipe (2026-09-27) : on y travaille sur ordinateur, et ce bandeau
+  // se glissait sous le menu latéral fixe (texte coupé « …votre téléphone »).
+  if (pathname.startsWith('/admin')) return null;
 
   return (
     <>
       {/* Small floating install banner for mobile users */}
-      <div className="bg-gradient-to-r from-emerald-900 to-slate-900 text-white px-4 py-2.5 flex items-center justify-between text-xs border-b border-emerald-800/60">
-        <div className="flex items-center space-x-2 min-w-0">
-          <div className="w-6 h-6 rounded-lg bg-emerald-600 flex items-center justify-center shrink-0">
-            <Smartphone className="w-3.5 h-3.5 text-white" />
+      <div className="bg-suguba-profond text-white px-4 py-2 flex items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2 min-w-0">
+          <div className="w-7 h-7 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+            <Smartphone className="w-4 h-4 text-suguba-citron" />
           </div>
           <p className="font-medium truncate">
             Installer l&apos;application <strong>Suguba</strong> sur votre téléphone
           </p>
         </div>
 
-        <div className="flex items-center space-x-2 shrink-0">
+        <div className="flex items-center gap-1 shrink-0">
           <button
+            type="button"
             onClick={handleInstallClick}
-            className="px-3 py-1 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold rounded-lg text-xs transition-transform active:scale-95 shadow-xs"
+            className="min-h-[36px] px-4 bg-suguba-citron hover:bg-[#b9e94f] text-suguba-profond font-semibold rounded-full text-xs transition-transform active:scale-95"
           >
             Installer
           </button>
           <button
+            type="button"
+            aria-label="Fermer"
             onClick={() => {
               setShowPrompt(false);
               setIsIos(false);
             }}
-            className="text-slate-500 hover:text-white p-1"
+            className="w-9 h-9 rounded-full text-white/70 hover:text-white hover:bg-white/10 inline-flex items-center justify-center"
           >
-            <X className="w-3.5 h-3.5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
       </div>
@@ -88,7 +96,7 @@ export default function PwaInstallPrompt() {
       {showIosGuide && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
           <div className="bg-white rounded-3xl p-6 max-w-sm w-full space-y-4 text-slate-900 text-center">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto">
+            <div className="w-12 h-12 rounded-2xl bg-suguba-menthe text-suguba-profond flex items-center justify-center mx-auto">
               <Download className="w-6 h-6" />
             </div>
             <h3 className="font-bold text-base">Installer sur iPhone / iPad</h3>

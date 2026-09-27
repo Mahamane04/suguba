@@ -131,7 +131,7 @@ export default function CommandesAdminPage() {
       return (
         <span className="block">
           <span className="font-bold text-slate-900 font-mono text-xs">{c.numero}</span>
-          {n > 1 && <span className="block text-[11px] text-slate-500">Panier de {n} articles</span>}
+          {n > 1 && <span className="block text-xs text-slate-500">Panier de {n} articles</span>}
         </span>
       );
     } },

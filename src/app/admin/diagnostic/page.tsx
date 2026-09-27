@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { HelpCircle, Ban, CheckCircle2 } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
+import ChoicePicker from '@/components/ui/ChoicePicker';
 import { Card } from '@/components/ui/Surface';
 import { TYPES_DIAGNOSTIC, type Diagnostic } from '@/lib/admin/pilotage';
 
@@ -37,13 +38,12 @@ function Contenu() {
     <PageReseau titre="Pourquoi c’est bloqué ?" sousTitre="La raison en clair, et où agir.">
       <Card>
         <form onSubmit={(e) => { e.preventDefault(); lancer(type, ref); }} className="flex flex-wrap gap-2 items-end">
-          <label className="text-xs font-bold text-slate-700">Type
-            <select value={type} onChange={(e) => setType(e.target.value)} className="block mt-1 h-10 px-2 rounded-xl border border-slate-300 text-sm">
-              {TYPES_DIAGNOSTIC.map((t) => <option key={t.cle} value={t.cle}>{t.titre}</option>)}
-            </select>
-          </label>
+          <div className="w-full sm:w-56">
+            <span id="diagnostic-type" className="block mb-1 text-xs font-bold text-slate-700">Type</span>
+            <ChoicePicker ariaLabel="Type de dossier" valeur={type} onChange={setType} choix={TYPES_DIAGNOSTIC.map((t) => ({ valeur: t.cle, libelle: t.titre }))} />
+          </div>
           <label className="flex-1 min-w-[12rem] text-xs font-bold text-slate-700">Référence
-            <input value={ref} onChange={(e) => setRef(e.target.value)} placeholder={def?.aide} className="block w-full mt-1 h-10 px-3 rounded-xl border border-slate-300 text-sm" />
+            <input value={ref} onChange={(e) => setRef(e.target.value)} placeholder={def?.aide} className="block w-full mt-1 min-h-12 px-4 rounded-2xl border border-slate-200 text-base sm:text-sm font-normal focus:outline-none focus:ring-2 focus:ring-suguba-profond" />
           </label>
           <Button type="submit" disabled={envoi || !ref.trim()}>{envoi ? 'Analyse…' : 'Expliquer'}</Button>
         </form>
@@ -55,7 +55,7 @@ function Contenu() {
           <ul className="space-y-2">
             {resultat.raisons.map((r, i) => (
               <li key={i} className={`flex gap-2 text-sm ${r.bloquant ? 'text-rose-800' : 'text-slate-700'}`}>
-                {r.bloquant ? <Ban className="w-4 h-4 mt-0.5 shrink-0" /> : <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-emerald-700" />}
+                {r.bloquant ? <Ban className="w-4 h-4 mt-0.5 shrink-0" /> : <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0 text-suguba-brand-dark" />}
                 <span>{r.texte}{r.lien && <> — <Link href={r.lien} className="font-bold underline">{r.libelleLien || 'Ouvrir'}</Link></>}</span>
               </li>
             ))}

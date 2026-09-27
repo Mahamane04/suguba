@@ -6,6 +6,7 @@ import { Inbox, RefreshCw, AlertTriangle, UserCheck, ArrowRightLeft, X, HelpCirc
 import NotesInternes from '@/components/admin/NotesInternes';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
+import ChoicePicker from '@/components/ui/ChoicePicker';
 import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
 import Panneau, { Info } from '@/components/admin/Panneau';
@@ -211,12 +212,8 @@ function Responsable({ tache, donnees, enCours, affecter }: {
         {!moi && <Button size="sm" variant="ghost" disabled={enCours} onClick={() => affecter(tache, 'prendre')}><UserCheck className="w-4 h-4" />Prendre</Button>}
         {collegues.length > 0 && (transfert ? (
           <span className="inline-flex items-center gap-1">
-            <label htmlFor="transfert-collegue" className="sr-only">Transférer à</label>
-            <select id="transfert-collegue" defaultValue="" onChange={(e) => e.target.value && affecter(tache, 'transferer', e.target.value)}
-              className="h-10 px-3 rounded-full border border-slate-300 text-sm font-semibold bg-white">
-              <option value="" disabled>Transférer à…</option>
-              {collegues.map((c) => <option key={c.id} value={c.id}>{c.nom}</option>)}
-            </select>
+            <ChoicePicker ariaLabel="Transférer à" className="w-56" valeur="" placeholder="Transférer à…"
+              onChange={(id) => affecter(tache, 'transferer', id)} choix={collegues.map((c) => ({ valeur: c.id, libelle: c.nom }))} />
             <button type="button" aria-label="Annuler le transfert" onClick={() => setTransfert(false)} className="w-10 h-10 inline-flex items-center justify-center text-slate-500"><X className="w-4 h-4" /></button>
           </span>
         ) : (
