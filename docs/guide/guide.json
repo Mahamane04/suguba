@@ -209,7 +209,8 @@
     "accueil",
     "compte"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "4725444"
   },
   {
    "date": "2026-09-26",
@@ -232,7 +233,8 @@
     "rejoindre",
     "compte-profils"
    ],
-   "statut": "en local"
+   "statut": "en ligne",
+   "commit": "c0c7ac0"
   },
   {
    "date": "2026-09-26",
