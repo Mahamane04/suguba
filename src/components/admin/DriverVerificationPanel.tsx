@@ -35,7 +35,7 @@ interface Livreur {
  * l'inscription. Il décide du droit de recevoir des courses, donc de prendre
  * en charge des colis et de l'argent.
  */
-export default function DriverVerificationPanel() {
+export default function DriverVerificationPanel({onFait}: {onFait?: () => void} = {}) {
   const [livreurs, setLivreurs] = useState<Livreur[]>([]);
   const [chargement, setChargement] = useState(true);
   const [cloud, setCloud] = useState(true);
@@ -77,6 +77,7 @@ export default function DriverVerificationPanel() {
       setOuvert(null);
       setConstat('');
       await charger();
+      onFait?.();
     } catch {
       setErreur('Erreur réseau.');
     } finally {

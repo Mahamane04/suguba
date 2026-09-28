@@ -91,13 +91,11 @@ export const LECTEURS: Record<TypeTache, Lecteur> = {
       detail: 'Numéro, lien ou proposition hors Suguba repéré', depuis: iso(m.created_at), lien: `/admin/messages?id=${encodeURIComponent(m.id)}`,
     })),
 
-  verification_en_attente: async (a) => (await lignes(a.from('verification_requests')
-    .select('id, kind, created_at').eq('status', 'pending').order('created_at', { ascending: true }).limit(LIMITE)))
-    .map((v: any) => ({
-      type: 'verification_en_attente', id: v.id, titre: 'Pièce à vérifier',
-      detail: ({ identity: 'Pièce d’identité', selfie: 'Selfie', location: 'Localisation', business: 'Entreprise', phone: 'Téléphone', email: 'E-mail' } as Record<string, string>)[v.kind] || v.kind,
-      depuis: iso(v.created_at), lien: `/admin/verifications?id=${encodeURIComponent(v.id)}`,
-    })),
+  verification_en_attente: async (a) => {
+    const demandes = await lignes(a.from('verification_requests').select('id, profile_id, kind, created_at').eq('status','pending').order('created_at',{ascending:true}).limit(LIMITE));
+    const profils = demandes.length ? await lignes(a.from('profiles').select('id, full_name').in('id', demandes.map((d:any)=>d.profile_id))) : [];
+    return demandes.map((v:any)=>({type:'verification_en_attente' as const,id:v.id,titre:`Vérifier ${profils.find((p:any)=>p.id===v.profile_id)?.full_name || 'ce compte'}`,detail:({identity:'Pièce d’identité',selfie:'Photo de vous',location:'Localisation',business:'Entreprise',phone:'Téléphone',email:'E-mail'} as Record<string,string>)[v.kind] || v.kind,depuis:iso(v.created_at),lien:`/admin/verifications?id=${encodeURIComponent(v.id)}`}));
+  },
 
   produit_a_verifier: async (a) => (await lignes(a.from('products')
     .select('id, name, supplier_name, created_at').in('status', ['submitted', 'pending']).order('created_at', { ascending: true }).limit(LIMITE)))

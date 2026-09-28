@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import React, { useCallback, useEffect, useState } from 'react';
 import { CheckCircle2, XCircle, ClipboardCheck } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
@@ -63,7 +64,8 @@ export default function ValidationsPage() {
         <StatusPill ton={STATUT[v.statut]?.ton || 'neutre'}>{STATUT[v.statut]?.libelle || v.statut}</StatusPill>
       </div>
       <p className="text-xs text-slate-600">Demandé par <strong>{v.demandeur}</strong> {anciennete(v.creeLe)} · dossier <code>{v.dossier}</code></p>
-      <pre className="text-xs text-slate-700 bg-slate-50 rounded-xl p-2 whitespace-pre-wrap break-all">{JSON.stringify(v.resume, null, 2)}</pre>
+      <dl className="grid sm:grid-cols-2 gap-2 rounded-xl bg-slate-50 p-3 text-sm">{Object.entries(v.resume).map(([k,val])=><div key={k}><dt className="text-slate-500">{({beneficiaire:'Bénéficiaire',telephone:'Téléphone',methode:'Moyen de paiement',motif:'Motif',baisses:'Changements',commande:'Commande'} as Record<string,string>)[k] || k.replace(/_/g,' ')}</dt><dd className="break-words">{Array.isArray(val)?val.map((x:any,i)=><p key={i}>{x.libelle || 'Changement'} : {String(x.avant ?? '')} → {String(x.apres ?? '')}</p>):val && typeof val==='object'?Object.entries(val).map(([cle,valeur])=><p key={cle}>{cle.replace(/_/g,' ')} : {String(valeur)}</p>):String(val ?? '—')}</dd></div>)}</dl>
+      {v.statut === 'approuvee' && <Link className="inline-flex min-h-11 items-center underline font-semibold" href={v.type === 'part_suguba' ? '/admin/parametres' : `/admin/retraits?id=${encodeURIComponent(v.dossier.split(':').slice(1).join(':'))}`}>Reprendre l’opération dans son dossier</Link>}
       {v.decideur && <p className="text-xs text-slate-600">Décidé par <strong>{v.decideur}</strong>{v.motif ? ` — ${v.motif}` : ''}</p>}
       {v.statut === 'en_attente' && (v.demandeurId === moi
         ? <p className="text-xs font-semibold text-amber-800">Votre demande : un collègue doit l’approuver.</p>
@@ -84,7 +86,7 @@ export default function ValidationsPage() {
   );
 
   return (
-    <PageReseau titre="Validations" large sousTitre="Opérations sensibles : une personne prépare, un collègue approuve.">
+    <PageReseau titre="Approbations financières" large sousTitre="Opérations sensibles : une personne prépare, un collègue approuve.">
       {erreur ? <EmptyState icone={ClipboardCheck} titre="Indisponible" texte={erreur} />
         : migration ? <EmptyState icone={ClipboardCheck} titre="Mise à jour de la base nécessaire" texte="Exécutez le SQL A-EXECUTER-2026-09-27-admin-a3.sql dans Supabase." />
         : !liste ? <Skeleton className="h-64" />

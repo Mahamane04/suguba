@@ -1,4 +1,6 @@
 'use client';
+import { useFinance } from '@/lib/admin/useFinance';
+
 
 import React from 'react';
 import Link from 'next/link';
@@ -43,11 +45,9 @@ export default function VueEnsemblePage() {
   const { poste, compteurs } = usePosteAdmin();
   const pret = state.ordersSync === 'ready';
 
-  const volume = state.orders.reduce((s, o) => s + o.totalAmount, 0);
-  const commissions = state.commissions
-    .filter((c) => c.status === 'available' || c.status === 'locked')
-    .reduce((s, c) => s + c.amount, 0);
-
+  const {data:finance,error:erreurFinance} = useFinance();
+  const volume = finance?.volumeCree ?? 0;
+  const commissions = finance ? finance.grandLivre.available + finance.grandLivre.locked : 0;
   const types = (Object.keys(DESTINATION) as TypeTache[]).filter((t) => poste?.permissions.includes(TACHES[t].permission));
   const nombre = (t: TypeTache) => compteurs?.[t] || 0;
   const enAttente = types.filter((t) => nombre(t) > 0);
@@ -55,9 +55,10 @@ export default function VueEnsemblePage() {
 
   return (
     <PageReseau titre="Vue d’ensemble" large sousTitre="Les chiffres du moment et les files qui attendent une action.">
+      {erreurFinance && <p role="alert" className="text-rose-800">{erreurFinance}</p>}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard label="Volume des commandes" valeur={pret ? fcfa(volume) : '—'} aide={pret ? `${state.orders.length} commandes au total` : 'Total pas encore chargé'} />
-        <StatCard label="Commissions générées" valeur={fcfa(commissions)} aide="Pour le réseau de revendeurs" />
+        <StatCard label="Volume des commandes" valeur={finance ? fcfa(volume) : '—'} aide={pret ? `${finance?.creees ?? 0} commandes au total` : 'Total pas encore chargé'} />
+        <StatCard label="Commissions disponibles et verrouillées" valeur={finance ? fcfa(commissions) : '—'} aide="Grand-livre serveur, hors réservées et payées" />
         <StatCard label="Appels à passer" valeur={compteurs ? nombre('commande_a_confirmer') : '—'} aide="Commandes à confirmer par téléphone" />
         <StatCard label="Retraits à payer" valeur={compteurs ? nombre('retrait_a_payer') : '—'} aide="Mobile Money ou espèces" />
       </div>

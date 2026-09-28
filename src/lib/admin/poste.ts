@@ -1,7 +1,7 @@
 /**
  * Poste de travail admin (lot A1, 2026-09-27) — règles PURES.
  *
- * L'équipe Suguba travaille surtout sur ordinateur : un menu latéral en huit
+ * L'équipe Suguba travaille surtout sur ordinateur : un menu latéral en six
  * rubriques, filtré selon les droits de chacun, une recherche globale et une
  * file « À traiter » par métier. Ce module ne lit rien : il décide quoi
  * montrer à qui. Les droits restent contrôlés par le SERVEUR sur chaque
@@ -46,7 +46,7 @@ export interface Rubrique { cle: string; titre: string; entrees: EntreeMenu[] }
  * PERMISSION_PAR_ROUTE), pour que le menu ne promette jamais une page que le
  * serveur refusera.
  */
-export const RUBRIQUES: Rubrique[] = [
+const RUBRIQUES_DETAIL: Rubrique[] = [
   { cle: 'pilotage', titre: 'Pilotage', entrees: [
     { libelle: 'À traiter', href: '/admin/a-traiter', permission: null },
     { libelle: 'Vue d’ensemble', href: '/admin', permission: 'finance.lire' },
@@ -59,11 +59,11 @@ export const RUBRIQUES: Rubrique[] = [
     { libelle: 'Devis', href: '/admin/devis', permission: 'commande.lire' },
     { libelle: 'Prestations', href: '/admin/prestations', permission: 'commande.lire' },
     { libelle: 'Service après-vente', href: '/admin/sav', permission: 'commande.lire' },
-    { libelle: 'Messages à vérifier', href: '/admin/messages', permission: 'utilisateur.moderer' },
+    { libelle: 'Modération des messages', href: '/admin/messages', permission: 'utilisateur.moderer' },
   ] },
   { cle: 'catalogue', titre: 'Catalogue', entrees: [
     { libelle: 'Produits', href: '/admin/products', permission: 'produit.lire' },
-    { libelle: 'Catalogue en tableau', href: '/admin/catalogue', permission: 'produit.lire' },
+    { libelle: 'Catalogue', href: '/admin/catalogue', permission: 'produit.lire' },
     { libelle: 'Nouveau produit', href: '/admin/products/new', permission: 'produit.moderer' },
     { libelle: 'Recherche et synonymes', href: '/admin/recherche', permission: 'produit.lire' },
     { libelle: 'Boutique Suguba', href: '/admin/boutique-suguba', permission: 'boutique.moderer' },
@@ -72,7 +72,7 @@ export const RUBRIQUES: Rubrique[] = [
     { libelle: 'Utilisateurs', href: '/admin/utilisateurs', permission: 'utilisateur.lire' },
     { libelle: 'Livreurs', href: '/admin/livreurs', permission: 'livraison.lire' },
     { libelle: 'Boutiques', href: '/admin/boutiques', permission: 'boutique.lire' },
-    { libelle: 'Vérifications', href: '/admin/verifications', permission: 'verification.lire' },
+    { libelle: 'Identité et documents', href: '/admin/verifications', permission: 'verification.lire' },
     { libelle: 'Accès aux coordonnées', href: '/admin/acces-coordonnees', permission: 'commande.lire' },
   ] },
   { cle: 'finance', titre: 'Finance', entrees: [
@@ -98,8 +98,18 @@ export const RUBRIQUES: Rubrique[] = [
     { libelle: 'Guide des parcours', href: '/admin/guide', permission: 'plateforme.equipe' },
     { libelle: 'Journal des actions', href: '/admin/journal', permission: 'plateforme.equipe' },
     { libelle: 'Sécurité de l’équipe', href: '/admin/securite', permission: 'plateforme.equipe' },
-    { libelle: 'Validations', href: '/admin/validations', permission: 'finance.payer' },
+    { libelle: 'Approbations financières', href: '/admin/validations', permission: 'finance.payer' },
   ] },
+];
+
+/** Six destinations desktop, with permissions retained on every child. */
+export const RUBRIQUES: Rubrique[] = [
+  {cle:'pilotage',titre:'Aujourd’hui',entrees:RUBRIQUES_DETAIL[0].entrees.filter(e=>['/admin/a-traiter','/admin'].includes(e.href))},
+  {cle:'operations',titre:'Commandes',entrees:RUBRIQUES_DETAIL[1].entrees.filter(e=>e.href!=='/admin/messages')},
+  {cle:'catalogue',titre:'Catalogue',entrees:RUBRIQUES_DETAIL[2].entrees.filter(e=>!['/admin/products/new','/admin/boutique-suguba','/admin/products'].includes(e.href))},
+  {cle:'reseau',titre:'Réseau',entrees:[...RUBRIQUES_DETAIL[3].entrees.filter(e=>e.href!=='/admin/acces-coordonnees'),...RUBRIQUES_DETAIL[1].entrees.filter(e=>e.href==='/admin/messages')]},
+  {cle:'finance',titre:'Finance',entrees:[...RUBRIQUES_DETAIL[4].entrees,...RUBRIQUES_DETAIL[7].entrees.filter(e=>e.href==='/admin/validations')]},
+  {cle:'plus',titre:'Plus',entrees:[...RUBRIQUES_DETAIL[0].entrees.filter(e=>!['/admin/a-traiter','/admin'].includes(e.href)),...RUBRIQUES_DETAIL[5].entrees,...RUBRIQUES_DETAIL[6].entrees,...RUBRIQUES_DETAIL[7].entrees.filter(e=>e.href!=='/admin/validations'),...RUBRIQUES_DETAIL[3].entrees.filter(e=>e.href==='/admin/acces-coordonnees')]},
 ];
 
 /**
@@ -114,7 +124,7 @@ export const TYPES_PAR_ENTREE: Record<string, TypeTache[]> = {
   '/admin/prestations': ['prestation_contestee'],
   '/admin/messages': ['message_a_verifier'],
   '/admin/verifications': ['verification_en_attente'],
-  '/admin/products': ['produit_a_verifier'],
+  '/admin/catalogue': ['produit_a_verifier'],
   '/admin/sav': ['sav_ouvert'],
   '/admin/devis': ['devis_sans_reponse'],
   '/admin/sponsorisations': ['sponsorisation_a_examiner'],

@@ -24,18 +24,18 @@ test('menu : chaque entrée mène à une page qui existe', () => {
     const fichier = path.join(__dirname, '../src/app', chemin, 'page.tsx');
     assert.ok(existsSync(fichier), `${e.libelle} → ${chemin}`);
   }
-  assert.equal(poste.RUBRIQUES.length, 8, 'huit rubriques');
+  assert.equal(poste.RUBRIQUES.length, 6, 'six destinations');
 });
 
 test('menu : filtré selon les droits, rubriques vides retirées', () => {
   const support = poste.rubriquesVisibles(permissionsDuRole('support'));
   const titres = support.map((r) => r.titre);
-  assert.ok(titres.includes('Opérations'));
+  assert.ok(titres.includes('Commandes'));
   assert.ok(!titres.includes('Finance'), 'le support ne voit pas la finance');
   assert.ok(!titres.includes('Équipe et sécurité'));
   assert.ok(support[0].entrees.some((e) => e.href === '/admin/a-traiter'), '« À traiter » pour tous');
   const tout = poste.rubriquesVisibles(permissionsDuRole('super_admin'));
-  assert.equal(tout.length, 8);
+  assert.equal(tout.length, 6);
   assert.deepEqual(poste.rubriquesVisibles([]), [], 'sans rôle d’équipe : aucun menu, seulement le message « demandez un rôle »');
 });
 

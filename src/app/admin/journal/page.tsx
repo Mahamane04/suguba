@@ -1,5 +1,6 @@
 'use client';
 
+import ChoicePicker from '@/components/ui/ChoicePicker';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ScrollText, Search } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
@@ -49,7 +50,7 @@ export default function JournalPage() {
         </label>
         <label>
           <span className="sr-only">Action</span>
-          <input value={action} onChange={(e) => setAction(e.target.value)} placeholder="Action (payouts, products/price, note…)" className="w-full h-10 px-3 rounded-xl border border-slate-200 bg-white text-sm" />
+          <ChoicePicker ariaLabel="Type d’action" valeur={action} onChange={setAction} choix={[{valeur:'',libelle:'Toutes les actions'},{valeur:'payouts',libelle:'Retraits'},{valeur:'products/price',libelle:'Prix des produits'},{valeur:'verifications',libelle:'Identité et documents'},{valeur:'settings',libelle:'Réglages économiques'},{valeur:'note',libelle:'Notes de dossier'}]}/>
         </label>
       </div>
       {erreur ? <EmptyState icone={ScrollText} titre="Journal indisponible" texte={erreur} />

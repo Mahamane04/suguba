@@ -23,7 +23,10 @@ export interface EtatReglages {
 
 export async function chargerReglages(strict = false): Promise<EtatReglages> {
   const admin = getSupabaseAdmin();
-  if (!admin) return { reglages: REGLAGES_PAR_DEFAUT, confirme: false, majLe: null };
+  if (!admin) {
+    if (strict) throw new Error('Réglages indisponibles. Réessayez.');
+    return { reglages: REGLAGES_PAR_DEFAUT, confirme: false, majLe: null };
+  }
 
   // `*` : inclut `tarifs_saspay` dès que la base l'a (SQL du 2026-09-27), sans casser avant.
   const { data, error } = await admin

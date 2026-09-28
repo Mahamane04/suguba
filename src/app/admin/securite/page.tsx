@@ -83,10 +83,11 @@ export default function SecuritePage() {
                   <span className="block text-xs text-slate-500">Un membre qui l’a activée doit déjà saisir son code à chaque connexion.</span></span>
               </label>
               <div className="space-y-1">
+                <p className="font-semibold text-sm">{Number(seuil) > 0 ? 'Double approbation activée' : 'Double approbation désactivée'}</p>
                 <label htmlFor="seuil" className="block text-sm font-bold text-slate-800">Double validation à partir de (F CFA)</label>
                 <input id="seuil" inputMode="numeric" value={seuil} onChange={(e) => setSeuil(e.target.value.replace(/\D/g, '').slice(0, 9))}
                   className="w-48 h-10 px-3 rounded-xl border border-slate-300 text-sm font-bold tabular-nums" />
-                <p className="text-xs text-slate-500">Paiement d’un retrait ou avance de commission à partir de ce montant, et toute baisse de la part Suguba : une personne prépare, un collègue approuve (Validations). 0 = désactivée.</p>
+                <p className="text-xs text-slate-500">Paiement d’un retrait ou avance de commission à partir de ce montant, et toute baisse de la part Suguba : une personne prépare, un collègue approuve (Approbations financières). Saisir 0 désactive cette protection.</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Button type="button" onClick={enregistrer} disabled={envoi}>Enregistrer</Button>

@@ -168,11 +168,12 @@ export default function AdminProductsPage() {
 
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Produits</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Catalogue — cartes</h1>
             <p className="text-xs text-slate-500">
               Les dépôts des fournisseurs partent en vente automatiquement au prix recommandé. Vérifiez-les ici après coup.
             </p>
           </div>
+          <Button href="/admin/catalogue" variant="ghost" size="sm">Vue tableau</Button>
           <Button href="/admin/products/new" size="sm">
             <Plus className="w-4 h-4" />
             <span>Nouveau produit</span>

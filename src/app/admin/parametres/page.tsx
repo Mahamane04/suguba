@@ -66,13 +66,13 @@ export default function ParametresAdminPage() {
     <PageReseau titre="Paramètres et commissions" large sousTitre="Coûts, marge minimale, commissions, livraison. Chaque changement est inscrit au journal.">
       <EconomicSettingsPanel ouvertParDefaut />
 
-      <div className="grid lg:grid-cols-2 gap-4">
+      <details className="rounded-2xl border border-slate-200 bg-white p-5"><summary className="cursor-pointer font-semibold">Outils avancés de cet appareil</summary><div className="grid lg:grid-cols-2 gap-4 mt-4">
         {peutApercu && (
           <Card className="!bg-amber-50 !border-amber-200 space-y-3" padding="p-5">
             <div className="flex items-start gap-2.5">
               <Eye className="w-5 h-5 text-amber-900 shrink-0 mt-0.5" />
               <div>
-                <h2 className="text-sm font-bold text-amber-950">Tester un profil</h2>
+                <h2 className="text-sm font-bold text-amber-950">Ouvrir un compte de test réel</h2>
                 <p className="text-xs text-amber-900">Ouvre l’espace choisi avec un compte de test dédié (jamais le vôtre). ⚠️ Les actions faites en aperçu écrivent pour de vrai : à nettoyer vous-même ensuite.</p>
               </div>
             </div>
@@ -99,7 +99,7 @@ export default function ParametresAdminPage() {
             <Button variant="ghost" size="sm" onClick={() => vider(false)}>Vider aussi le catalogue</Button>
           </div>
         </Card>
-      </div>
+      </div></details>
     </PageReseau>
   );
 }

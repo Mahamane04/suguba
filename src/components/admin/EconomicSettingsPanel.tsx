@@ -71,6 +71,8 @@ const MODES: [ModePartSuguba, string, string][] = [
   ['auto', 'Automatique', 'Le fournisseur ne choisit rien : Suguba calcule la commission.'],
 ];
 
+const SectionActive = React.createContext('bloc-commission');
+
 const SECTIONS = [
   ['bloc-commission', 'Commission'],
   ['bloc-paiement', 'Paiement'],
@@ -104,11 +106,14 @@ export default function EconomicSettingsPanel({ ouvertParDefaut = false }: { ouv
   const { demander } = useToast();
   // Page dédiée « Paramètres et commissions » (U2) : ouvert d'emblée.
   const [ouvert, setOuvert] = useState(ouvertParDefaut);
+  const [sectionActive, setSectionActive] = useState('bloc-commission');
+  const panneau = React.useRef<HTMLDivElement>(null);
   const [r, setR] = useState<ReglagesPlateforme | null>(null);
   const [initial, setInitial] = useState('');
   const [confirme, setConfirme] = useState(true);
   const [chargement, setChargement] = useState(true);
   const [envoi, setEnvoi] = useState(false);
+  const [recalculAReprendre, setRecalculAReprendre] = useState(false);
   const [message, setMessage] = useState('');
   const [erreur, setErreur] = useState('');
   const [alertes, setAlertes] = useState<{ id: string; nom: string; statut: string; prixVente: number; prixMinimal: number }[]>([]);
@@ -117,8 +122,10 @@ export default function EconomicSettingsPanel({ ouvertParDefaut = false }: { ouv
   const [releveAncien, setReleveAncien] = useState(false);
 
   useEffect(() => {
+    const section = new URLSearchParams(window.location.search).get('section');
+    if (SECTIONS.some(([id]) => id === section)) setSectionActive(section!);
     fetch('/api/admin/settings')
-      .then((res) => res.json())
+      .then(async (res) => { const json = await res.json(); if (!res.ok || !json.reglages) throw new Error(json.error || 'Réglages indisponibles.'); return json; })
       .then((json) => {
         if (json.reglages) {
           setR(json.reglages);
@@ -175,6 +182,8 @@ export default function EconomicSettingsPanel({ ouvertParDefaut = false }: { ouv
 
   const enregistrer = async () => {
     if (!r) return;
+    const invalide = panneau.current?.querySelector<HTMLInputElement>('input:invalid');
+    if (invalide) { invalide.reportValidity(); return; }
     setErreur('');
     setMessage('');
     setEnvoi(true);
@@ -182,7 +191,7 @@ export default function EconomicSettingsPanel({ ouvertParDefaut = false }: { ouv
       const envoyer = (motif?: string) => fetch('/api/admin/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ reglages: r, motif }),
+        body: JSON.stringify({ reglages: r, baseReglages: JSON.parse(initial), motif }),
       });
       let res = await envoyer();
       let json = await res.json();
@@ -202,29 +211,38 @@ export default function EconomicSettingsPanel({ ouvertParDefaut = false }: { ouv
         return;
       }
       setConfirme(true);
-      setInitial(JSON.stringify(r));
+      setR(json.reglages || r);
+      setInitial(JSON.stringify(json.reglages || r));
       setAlertes(json.alertes || []);
+      setRecalculAReprendre(Boolean(json.avertissement));
       // Les commissions affichées « avant » deviennent celles qu'on vient d'écrire.
-      setProduits((liste) => liste.map((p) => {
+      if (!json.avertissement) setProduits((liste) => liste.map((p) => {
         const t = tarifProduit({
           prixFournisseur: Number(p.supplier_price), prixVente: Number(p.public_price),
           commissionProposee: p.commission_proposee, modePrix: p.mode_prix === 'gros' ? 'gros' : 'fixe',
-        }, r);
+        }, json.reglages || r);
         return { ...p, reseller_commission: t.commission };
       }));
-      setMessage(`Réglages enregistrés. Commission recalculée sur ${json.recalcules} produit(s) en ligne.`);
+      setMessage(`Réglages enregistrés. Commission recalculée sur ${json.recalcules} produit(s) en ligne.${json.avertissement ? ` ${json.avertissement}` : ''}`);
     } catch {
-      setErreur('Erreur réseau : rien n\'a été enregistré.');
+      setErreur('Connexion interrompue : l’enregistrement n’a pas pu être confirmé. Rechargez avant de réessayer.');
     } finally {
       setEnvoi(false);
     }
   };
 
-  const allerA = (id: string) => document.getElementById(`reglage-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const allerA = (id: string) => {
+    const invalide = panneau.current?.querySelector<HTMLInputElement>('input:invalid');
+    if (invalide) { invalide.reportValidity(); return; }
+    const groupes: Record<string, string> = { couts: 'bloc-rentabilite', impact: 'bloc-rentabilite', simulation: 'bloc-rentabilite', paiement: 'bloc-paiement', livraison: 'bloc-autres' };
+    setSectionActive(groupes[id] || id);
+    setOuvert(true);
+    requestAnimationFrame(() => panneau.current?.scrollIntoView({ block: 'start' }));
+  };
   const coutProvisoire = r?.coutsFixesMensuels.some((l) => /provisoire/i.test(l.libelle) && Number(l.montant) > 0);
 
   return (
-    <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-4">
+    <div ref={panneau} className="scroll-mt-16 lg:scroll-mt-4 bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-4">
       <button type="button" onClick={() => setOuvert((o) => !o)} aria-expanded={ouvert} className="w-full flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 text-left min-w-0">
           <div className="w-9 h-9 rounded-full bg-suguba-menthe text-suguba-profond flex items-center justify-center shrink-0">
@@ -242,16 +260,18 @@ export default function EconomicSettingsPanel({ ouvertParDefaut = false }: { ouv
         {ouvert ? <ChevronUp className="w-4 h-4 text-slate-600 shrink-0" /> : <ChevronDown className="w-4 h-4 text-slate-600 shrink-0" />}
       </button>
 
+      {erreur && !r && <div role="alert" className="p-4 rounded-xl bg-rose-50 text-rose-800">{erreur} <button onClick={() => window.location.reload()} className="underline">Réessayer</button></div>}
       {ouvert && r && (
-        <div className="space-y-6">
-          <nav aria-label="Sections des réglages" className="-mx-5 px-5 flex gap-2 overflow-x-auto scrollbar-none">
+        <SectionActive.Provider value={sectionActive}><div className="space-y-6">
+          <nav aria-label="Sections des réglages" className="sticky top-14 lg:top-0 z-20 bg-white py-3 grid grid-cols-2 xl:grid-cols-5 gap-2">
             {SECTIONS.map(([id, libelle]) => (
-              <button key={id} type="button" onClick={() => allerA(id)}
-                className="shrink-0 min-h-[36px] px-3.5 rounded-full border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:border-suguba-profond">
+              <button key={id} type="button" onClick={() => allerA(id)} aria-pressed={sectionActive === id}
+                className={`min-h-[44px] px-3.5 rounded-xl border text-sm font-semibold ${sectionActive === id ? "bg-suguba-profond text-white border-suguba-profond" : "border-slate-200 bg-white text-slate-700 hover:border-suguba-profond"}`}>
                 {libelle}
               </button>
             ))}
           </nav>
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-slate-50 p-4 text-sm"><p>Les changements restent en brouillon jusqu’à l’enregistrement. Les commandes existantes ne changent pas.</p><button type="button" className="font-semibold underline" onClick={() => allerA('impact')}>Simuler et voir l’impact</button></div>
 
           {!confirme && (
             <Avertissement>
@@ -291,7 +311,7 @@ export default function EconomicSettingsPanel({ ouvertParDefaut = false }: { ouv
                 </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2" role="radiogroup" aria-label="Qui paie les coûts de Suguba">
                   {([
-                    [false, 'Payés sur la part Suguba', 'Le client paie fournisseur + revendeur, rien de plus'],
+                    [false, 'Payés sur la part Suguba', 'Les coûts sont absorbés par Suguba, sans supplément de coûts au client'],
                     [true, 'Ajoutés au prix client', 'Le prix est relevé jusqu’à couvrir les coûts (plancher)'],
                   ] as const).map(([valeur, libelle, detail]) => {
                     const actif = (r.couvrirCoutsDansLePrix === true) === valeur;
@@ -477,7 +497,7 @@ export default function EconomicSettingsPanel({ ouvertParDefaut = false }: { ouv
             </Section>
 
             {/* ── Impact sur les produits en ligne ───────────────────────── */}
-            <Section id="impact" titre={`Vos produits en ligne (${impact.length})`}
+            <Section id="impact" titre={`Produits analysés (${impact.length}${impact.length === 300 ? ' — aperçu limité à 300' : ''})`}
               aide="Calculé en direct avec les réglages ci-dessus, avant d'enregistrer. Enregistrer met à jour la commission ; le prix affiché au client ne change jamais tout seul.">
               <div className="sm:col-span-2 space-y-2">
                 {impact.length === 0 ? (
@@ -487,7 +507,7 @@ export default function EconomicSettingsPanel({ ouvertParDefaut = false }: { ouv
                     <p className="text-xs text-slate-700">
                       {modifie
                         ? <>Si vous enregistrez : <strong>{nbCommissionChange}</strong> commission(s) changent{nbARevoir > 0 && <>, <strong className="text-rose-700">{nbARevoir}</strong> produit(s) à revoir</>}.</>
-                        : nbARevoir > 0 ? <><strong className="text-rose-700">{nbARevoir}</strong> produit(s) à revoir avec les réglages actuels.</> : 'Tous les produits en ligne sont rentables avec les réglages actuels.'}
+                        : nbARevoir > 0 ? <><strong className="text-rose-700">{nbARevoir}</strong> produit(s) à revoir avec les réglages actuels.</> : 'Les produits de cet aperçu sont rentables avec les réglages actuels.'}
                     </p>
                     <ul className="divide-y divide-slate-100 rounded-2xl border border-slate-200">
                       {impact.map(({ p, t, avant, conseille }) => (
@@ -796,15 +816,15 @@ export default function EconomicSettingsPanel({ ouvertParDefaut = false }: { ouv
                   <RotateCcw className="w-3.5 h-3.5" /> Annuler
                 </button>
               )}
-              <button type="button" onClick={enregistrer} disabled={envoi || !modifie || erreursLocales.length > 0}
+              <button type="button" onClick={enregistrer} disabled={envoi || (!modifie && !recalculAReprendre) || erreursLocales.length > 0}
                 className="min-h-[44px] px-5 rounded-full bg-suguba-profond text-white text-sm font-semibold inline-flex items-center gap-2 disabled:opacity-40 active:scale-[0.98] transition-transform">
                 {envoi && <Loader2 className="w-4 h-4 animate-spin" />}
-                Enregistrer
+                {recalculAReprendre && !modifie ? 'Reprendre l’actualisation du catalogue' : 'Enregistrer les modifications'}
               </button>
             </div>
           </div>
           )}
-        </div>
+        </div></SectionActive.Provider>
       )}
     </div>
   );
@@ -882,6 +902,8 @@ function PrixDeGrosReglages({ g, r, onChange }: { g: ReglagesPrixDeGros; r: Regl
  * vente, à l'encaissement, au retrait — ou qu'ils ne prélèvent rien.
  */
 function Bloc({ id, titre, moment, children }: { id: string; titre: string; moment: string; children: React.ReactNode }) {
+  const active = React.useContext(SectionActive);
+  if (active !== id) return null;
   return (
     <div id={`reglage-${id}`} className="scroll-mt-4 rounded-3xl border border-slate-200 p-4 sm:p-5 space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
@@ -1284,6 +1306,7 @@ function ChampNombre({ valeur, onChange, libelle, className }: { valeur: number;
       onChange={(e) => {
         setTexte(e.target.value);
         const n = lireNombre(e.target.value);
+        e.target.setCustomValidity(n === null || !e.target.value.trim() ? "Saisissez un nombre positif ou zéro." : "");
         if (n !== null) onChange(n);
       }}
       className={`${CHAMP} ${className} tabular-nums`} />
@@ -1311,7 +1334,7 @@ function Num({ l, v, on, suffixe, aide, info }: { l: string; v: number; on: (v: 
     <label className="block text-xs font-semibold text-slate-700">
       <span className="inline-flex items-center gap-1">{l}{info && <InfoBulle texte={info} />}</span>
       <div className="flex items-center mt-1">
-        <ChampNombre valeur={v} onChange={on} className="flex-1 min-w-0" />
+        <ChampNombre valeur={v} onChange={on} libelle={l} className="flex-1 min-w-0" />
         {suffixe && <span className="ml-2 text-xs font-normal text-slate-600 whitespace-nowrap">{suffixe}</span>}
       </div>
       {aide && <span className="block mt-1 text-xs font-normal text-slate-600">{aide}</span>}

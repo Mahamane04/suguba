@@ -1,5 +1,7 @@
 'use client';
 
+import { createPortal } from 'react-dom';
+import { useModalFocus } from '@/hooks/useModalFocus';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -143,21 +145,22 @@ export default function PosteAdmin({ children }: { children: React.ReactNode }) 
   const [poste, setPoste] = useState<Poste | null>(null);
   const [compteurs, setCompteurs] = useState<ValeurPoste['compteurs']>(null);
   const [tiroir, setTiroir] = useState(false);
+  const {host:menuHost,ref:menuRef} = useModalFocus(tiroir, () => setTiroir(false));
   const [recherche, setRecherche] = useState(false);
   const [env, setEnv] = useState({ libelle: '', classe: '' });
-  const [repliees, setRepliees] = useState<string[]>([]);
+  const [repliees, setRepliees] = useState<string[]>(['catalogue','reseau','finance','plus']);
   const [sortie, setSortie] = useState(false);
 
   const chargerCompteurs = useCallback(() => {
     fetch('/api/admin/a-traiter?compteurs=1', { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
-      .then((j) => { if (j?.compteurs) setCompteurs(j.compteurs); })
-      .catch(() => undefined);
+      .then((j) => { setCompteurs(j?.compteurs && !j.indisponibles?.length ? j.compteurs : null); })
+      .catch(() => setCompteurs(null));
   }, []);
 
   useEffect(() => {
     setEnv(environnement());
-    try { const v = JSON.parse(localStorage.getItem(CLE_REPLIEES) || '[]'); if (Array.isArray(v)) setRepliees(v); } catch { /* stockage indisponible */ }
+    try { const v = JSON.parse(localStorage.getItem(CLE_REPLIEES) || '["catalogue","reseau","finance","plus"]'); if (Array.isArray(v)) setRepliees(v); } catch { /* stockage indisponible */ }
     fetch('/api/admin/poste', { cache: 'no-store' })
       .then((r) => (r.ok ? r.json() : null))
       .then((p) => {
@@ -266,8 +269,8 @@ export default function PosteAdmin({ children }: { children: React.ReactNode }) 
           <button type="button" onClick={ouvrirRecherche} aria-label="Rechercher" className={ROND}><Search className="w-5 h-5" /></button>
         </div>
       </div>
-      {tiroir && (
-        <div className="lg:hidden fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-label="Menu de l’équipe">
+      {tiroir && menuHost && createPortal(
+        <div ref={menuRef} tabIndex={-1} className="fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-label="Menu de l’équipe">
           <button type="button" aria-label="Fermer le menu" className="absolute inset-0 bg-slate-900/50" onClick={() => setTiroir(false)} />
           <div className="absolute inset-y-0 left-0 w-72 max-w-[85vw] bg-suguba-profond flex flex-col">
             <button type="button" onClick={() => setTiroir(false)} aria-label="Fermer" className={`absolute top-4 right-3 ${ROND}`}><X className="w-5 h-5" /></button>
@@ -275,7 +278,7 @@ export default function PosteAdmin({ children }: { children: React.ReactNode }) 
             <div className="flex-1 overflow-y-auto">{navigation(() => setTiroir(false))}</div>
             {pied}
           </div>
-        </div>
+        </div>, menuHost
       )}
 
       <div className="lg:pl-64">{children}</div>

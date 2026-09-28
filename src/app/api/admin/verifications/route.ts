@@ -12,7 +12,11 @@ export async function GET(req: NextRequest) {
   if (!(await adminPeut(session.uid, 'verification.lire'))) {
     return NextResponse.json({ error: 'Votre rôle ne donne pas accès aux vérifications.' }, { status: 403 });
   }
-  return NextResponse.json({ demandes: await fileDattente() });
+  const statut = req.nextUrl.searchParams.get('statut') || 'pending';
+  if (!['pending', 'approved', 'rejected'].includes(statut)) return NextResponse.json({ error: 'Statut invalide.' }, { status: 400 });
+  const page = Math.max(1, Math.min(10000, Number(req.nextUrl.searchParams.get('page')) || 1));
+  try { return NextResponse.json({ demandes: await fileDattente(50, statut as 'pending' | 'approved' | 'rejected', Math.floor(page)) }); }
+  catch (e) { return NextResponse.json({ error: (e as Error).message }, { status: 503 }); }
 }
 
 export async function POST(req: NextRequest) {

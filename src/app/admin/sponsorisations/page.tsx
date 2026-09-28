@@ -89,7 +89,7 @@ export default function SponsorisationsAdminPage() {
               <p className="text-xs text-slate-500 mt-0.5">Le prix et les quotas restent entièrement modifiables ici.</p>
             </div>
             {packs.length === 0 ? (
-              <p className="text-xs text-slate-500">Aucun pack. Appliquez la migration réseau pour installer les packs de départ.</p>
+              <p className="text-xs text-slate-500">Offres non configurées. Demandez au responsable de la plateforme de préparer les offres de visibilité.</p>
             ) : (
               <div className="space-y-3">
                 {packs.map((p) => (

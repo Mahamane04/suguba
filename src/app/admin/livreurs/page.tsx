@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import PageReseau from '@/components/reseau/PageReseau';
 import DriverVerificationPanel from '@/components/admin/DriverVerificationPanel';
 import TableauAdmin from '@/components/admin/TableauAdmin';
@@ -22,16 +22,18 @@ export default function LivreursAdminPage() {
   const [actifs, setActifs] = useState<LivreurActif[] | null>(null);
   const [erreur, setErreur] = useState('');
 
-  useEffect(() => {
+  const charger = useCallback(() => {
+    setErreur('');
     fetch('/api/admin/drivers/active', { cache: 'no-store' })
       .then(async (r) => { const j = await r.json(); if (!r.ok) throw new Error(j.error || 'Liste illisible.'); return j; })
       .then((j) => setActifs(Array.isArray(j.drivers) ? j.drivers : []))
       .catch((e) => { setErreur((e as Error).message); setActifs([]); });
   }, []);
+  useEffect(charger, [charger]);
 
   return (
     <PageReseau titre="Livreurs" large sousTitre="Vérification au guichet, puis livreurs actifs à qui attribuer des courses.">
-      <DriverVerificationPanel />
+      <DriverVerificationPanel onFait={charger} />
 
       <section className="space-y-2" aria-labelledby="titre-actifs">
         <h2 id="titre-actifs" className="text-sm font-bold text-slate-900">Livreurs actifs{actifs ? ` (${actifs.length})` : ''}</h2>

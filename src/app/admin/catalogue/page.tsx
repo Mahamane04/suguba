@@ -126,8 +126,8 @@ export default function CatalogueTableauPage() {
   );
 
   return (
-    <PageReseau titre="Catalogue en tableau" large sousTitre="Filtrer, trier, sélectionner et modifier plusieurs produits à la fois."
-      action={<Link href="/admin/products" className="text-xs font-bold text-suguba-brand-dark underline">Photos et prix : Produits</Link>}>
+    <PageReseau titre="Catalogue" large sousTitre="Filtrer, trier, sélectionner et modifier plusieurs produits à la fois."
+      action={<Link href="/admin/products" className="text-xs font-bold text-suguba-brand-dark underline">Vue cartes · photos et prix</Link>}>
 
       {/* Barre de filtres aux composants du design system (menus ChoicePicker,
           pas de menus déroulants du navigateur), 2026-09-27. */}

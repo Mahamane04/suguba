@@ -97,6 +97,14 @@ export async function POST(req: NextRequest) {
       supplierName = ownSupplier?.company_name || supplierName;
     }
 
+    if (!estFournisseur && supplierId) {
+      const {data: fournisseur, error: erreurFournisseur} = await admin.from('suppliers').select('profile_id, company_name').eq('profile_id', supplierId).maybeSingle();
+      if (erreurFournisseur) return NextResponse.json({error:'Fournisseur indisponible.'},{status:503});
+      if (!fournisseur) return NextResponse.json({error:'Sélectionnez un fournisseur existant ou le stock Suguba.'},{status:400});
+      supplierName = fournisseur.company_name;
+    }
+    if (!estFournisseur && !supplierId) supplierName = 'Suguba';
+
     const descriptif = {
       name: product.name,
       category: product.category,

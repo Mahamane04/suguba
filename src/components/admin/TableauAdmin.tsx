@@ -146,7 +146,7 @@ export default function TableauAdmin<T>({ lignes, colonnes, cleLigne, memoire, t
       </div>
 
       {/* Ordinateur et tablette */}
-      <div className="hidden md:block bg-white rounded-3xl border border-slate-200 overflow-x-auto lg:overflow-visible">
+      <div className="hidden md:block bg-white rounded-3xl border border-slate-200 overflow-x-auto">
         <table className="w-full text-sm" aria-label={titre}>
           <thead>
             <tr className="text-left text-xs font-bold text-slate-600">

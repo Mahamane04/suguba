@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Header from '@/components/common/Header';
@@ -32,6 +32,10 @@ export default function AdminNewProductPage() {
   const [category, setCategory] = useState(FAMILLES_CATEGORIES[0].categories[0]);
   const [description, setDescription] = useState('');
   const [supplierName, setSupplierName] = useState('');
+  const [supplierId,setSupplierId] = useState('');
+  const [fournisseurs,setFournisseurs] = useState<{profile_id:string;company_name:string}[]>([]);
+  const [erreurFournisseurs,setErreurFournisseurs] = useState('');
+  useEffect(()=>{fetch('/api/admin/products/suppliers').then(async r=>{const j=await r.json();if(!r.ok)throw Error(j.error);setFournisseurs(j.fournisseurs);}).catch(()=>setErreurFournisseurs('Liste des fournisseurs indisponible. Rechargez avant de rattacher un produit.'));},[]);
   const [supplierPrice, setSupplierPrice] = useState<number>(0);
   const [publicPrice, setPublicPrice] = useState<number>(0);
   const [stockQuantity, setStockQuantity] = useState<number>(10);
@@ -94,7 +98,7 @@ export default function AdminNewProductPage() {
       // Créé en attente ; la publication (prix + commission) suit juste après
       // via /api/admin/products/price.
       status: 'submitted',
-      supplierId: null,
+      supplierId: supplierId || null,
       supplierName: supplierName || 'Suguba',
       createdAt: new Date().toISOString(),
     };
@@ -141,7 +145,7 @@ export default function AdminNewProductPage() {
   };
 
   const resetForm = () => {
-    setName(''); setDescription(''); setSupplierName('');
+    setName(''); setDescription(''); setSupplierName('');setSupplierId('');
     setSupplierPrice(0); setPublicPrice(0); setStockQuantity(10);
     setCommissionCalculee(null); setPublieOk(false);
     setImages([]); setUploaderKey((k) => k + 1);
@@ -205,14 +209,14 @@ export default function AdminNewProductPage() {
           <form onSubmit={handleSubmit} className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Nom du produit *</label>
-              <input
+              <label htmlFor="champ-Nom-du-produit-" className="block text-xs font-bold text-slate-700 mb-1">Nom du produit *</label>
+              <input id="champ-Nom-du-produit-"
                 type="text"
                 required
                 placeholder="Ex: Ventilateur Rechargeable 16 pouces"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:bg-white focus:outline-slate-600"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base font-medium text-slate-900 focus:bg-white focus:outline-slate-600"
               />
             </div>
 
@@ -230,26 +234,20 @@ export default function AdminNewProductPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Fournisseur (optionnel)</label>
-                <input
-                  type="text"
-                  placeholder="Laisser vide = stock Suguba"
-                  value={supplierName}
-                  onChange={(e) => setSupplierName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:bg-white"
-                />
+                <label htmlFor="fournisseur" className="block text-sm font-bold text-slate-700 mb-1">Propriétaire du stock</label>
+                <ChoicePicker id="fournisseur" ariaLabel="Propriétaire du stock" valeur={supplierId} onChange={v=>{setSupplierId(v);setSupplierName(fournisseurs.find(f=>f.profile_id===v)?.company_name || 'Suguba');}} choix={[{valeur:'',libelle:'Stock Suguba'},...fournisseurs.map(f=>({valeur:f.profile_id,libelle:f.company_name}))]}/>{erreurFournisseurs && <p role="alert" className="text-rose-800 text-sm">{erreurFournisseurs}</p>}
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Description *</label>
-              <textarea
+              <label htmlFor="champ-Description-" className="block text-xs font-bold text-slate-700 mb-1">Description *</label>
+              <textarea id="champ-Description-"
                 rows={3}
                 required
                 placeholder="Caractéristiques, garantie, contenu de la boîte..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-medium text-slate-900 focus:bg-white focus:outline-slate-600"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base font-medium text-slate-900 focus:bg-white focus:outline-slate-600"
               />
             </div>
 
@@ -267,8 +265,8 @@ export default function AdminNewProductPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Prix fournisseur (FCFA) *</label>
-                  <input
+                  <label htmlFor="champ-Prix-fournisseur-FCFA-" className="block text-xs font-bold text-slate-700 mb-1">Prix fournisseur (FCFA) *</label>
+              <input id="champ-Prix-fournisseur-FCFA-"
                     type="number"
                     min={0}
                     step={500}
@@ -279,8 +277,8 @@ export default function AdminNewProductPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Prix public (FCFA) *</label>
-                  <input
+                  <label htmlFor="champ-Prix-public-FCFA-" className="block text-xs font-bold text-slate-700 mb-1">Prix public (FCFA) *</label>
+              <input id="champ-Prix-public-FCFA-"
                     type="number"
                     required
                     min={0}
@@ -302,8 +300,8 @@ export default function AdminNewProductPage() {
               </p>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Quantité en stock *</label>
-                <input
+                <label htmlFor="champ-Quantit-en-stock-" className="block text-xs font-bold text-slate-700 mb-1">Quantité en stock *</label>
+              <input id="champ-Quantit-en-stock-"
                   type="number"
                   required
                   min={1}

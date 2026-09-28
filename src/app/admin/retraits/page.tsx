@@ -8,7 +8,7 @@ import TableauAdmin, { type Colonne } from '@/components/admin/TableauAdmin';
 import { Card, EmptyState, Skeleton } from '@/components/ui/Surface';
 import PaymentLogo, { moyenDepuisCode } from '@/components/ui/PaymentLogo';
 import { useToast } from '@/components/ui/Toast';
-import { useSugubaStore } from '@/lib/store';
+import { useFinance } from '@/lib/admin/useFinance';
 import { useCibleUrl, usePermission, usePosteAdmin } from '@/components/admin/contexte';
 
 /**
@@ -36,7 +36,7 @@ const fmt = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
 const jour = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 
 export default function RetraitsAdminPage() {
-  const state = useSugubaStore();
+  const {data:finance,error:erreurFinance,refresh:rafraichirFinance} = useFinance();
   const { confirmer, demander, toast } = useToast();
   const { rafraichir } = usePosteAdmin();
   const peutPayer = usePermission('finance.payer');
@@ -44,6 +44,12 @@ export default function RetraitsAdminPage() {
   const [retraits, setRetraits] = useState<RetraitAdmin[] | null>(null);
   const [erreur, setErreur] = useState('');
   const [enCours, setEnCours] = useState<string | null>(null);
+  const [historique,setHistorique] = useState<RetraitAdmin[] | null>(null);
+  const [pageHistorique,setPageHistorique] = useState(1);
+  const [erreurHistorique,setErreurHistorique] = useState('');
+  const [historiqueOuvert,setHistoriqueOuvert] = useState(false);
+  const [revisionHistorique,setRevisionHistorique] = useState(0);
+  useEffect(()=>{if(!historiqueOuvert)return;let actif=true;setHistorique(null);setErreurHistorique('');fetch(`/api/admin/payouts?historique=1&page=${pageHistorique}`).then(async r=>{const j=await r.json();if(!r.ok)throw Error(j.error);if(actif)setHistorique(j.retraits);}).catch(e=>{if(actif)setErreurHistorique(e.message);});return()=>{actif=false;};},[historiqueOuvert,pageHistorique,revisionHistorique]);
   const [code, setCode] = useState('');
   const [retourGuichet, setRetourGuichet] = useState('');
 
@@ -104,6 +110,8 @@ export default function RetraitsAdminPage() {
       setEnCours(null);
       charger();
       rafraichir();
+      void rafraichirFinance();
+      setRevisionHistorique(v=>v+1);
     }
   };
 
@@ -139,6 +147,7 @@ export default function RetraitsAdminPage() {
       toast('Erreur réseau.', { ton: 'erreur' });
     } finally {
       setEnCours(null);
+      void rafraichirFinance();
     }
   };
 
@@ -167,13 +176,13 @@ export default function RetraitsAdminPage() {
     ) } as Colonne<RetraitAdmin>] : []),
   ];
 
-  const verrouillees = state.commissions.filter((c) => c.status === 'locked');
+  const verrouillees = finance?.verrouillees || [];
   type Commission = (typeof verrouillees)[number];
 
   return (
     <PageReseau titre="Retraits et commissions" large
       sousTitre="Payer les revendeurs et les fournisseurs : virement Orange Money, Moov Money ou Wave via SasPay, ou espèces au guichet."
-      action={<Button variant="ghost" size="sm" onClick={() => { setRetraits(null); charger(); }} aria-label="Actualiser"><RefreshCw className="w-4 h-4" /></Button>}>
+      action={<Button variant="ghost" size="sm" onClick={() => { setRetraits(null); charger(); void rafraichirFinance(); setRevisionHistorique(v=>v+1); }} aria-label="Actualiser"><RefreshCw className="w-4 h-4" /></Button>}>
 
       {peutPayer === false && (
         <Card padding="p-4" className="!bg-slate-50 text-sm text-slate-700">Lecture seule : votre rôle ne permet pas de payer ni de refuser un retrait.</Card>
@@ -195,7 +204,7 @@ export default function RetraitsAdminPage() {
       <section className="space-y-2" aria-labelledby="titre-retraits">
         <h2 id="titre-retraits" className="text-sm font-bold text-slate-900">Retraits en attente{retraits ? ` (${enAttente.length})` : ''}</h2>
         {erreur && <p role="alert" className="text-sm text-rose-700">{erreur}</p>}
-        {retraits === null ? <Skeleton className="h-40" />
+        {erreur ? null : retraits === null ? <Skeleton className="h-40" />
           : enAttente.length === 0 ? <EmptyState icone={Wallet} titre="Aucun retrait en attente" texte="Les nouvelles demandes des revendeurs et des fournisseurs apparaîtront ici." />
           : <TableauAdmin titre="Retraits en attente" memoire="retraits" lignes={enAttente} colonnes={colonnes} cleLigne={(r) => r.id} cible={cible} />}
         {enVirement.length > 0 && (
@@ -210,10 +219,13 @@ export default function RetraitsAdminPage() {
         )}
       </section>
 
+      <section className="space-y-3"><Button variant="ghost" onClick={()=>setHistoriqueOuvert(v=>!v)}>{historiqueOuvert?'Fermer l’historique':'Historique des retraits payés et refusés'}</Button>
+        {historiqueOuvert && (erreurHistorique ? <p role="alert" className="text-rose-800">{erreurHistorique}</p> : historique === null ? <Skeleton className="h-24"/> : <><TableauAdmin titre="Historique des retraits" memoire="historique-retraits" lignes={historique} cleLigne={r=>r.id} colonnes={[...colonnes.filter(c=>c.cle!=='actions').map(c=>c.cle==='montant'?{...c,titre:'Montant'}:c),{cle:'statut',titre:'État',rendu:(r:RetraitAdmin)=>r.statut==='completed'?'Payé':'Refusé'}]}/><div className="flex gap-4 items-center"><Button variant="ghost" disabled={pageHistorique===1} onClick={()=>setPageHistorique(p=>p-1)}>Précédent</Button><span>Page {pageHistorique}</span><Button variant="ghost" disabled={historique.length<200} onClick={()=>setPageHistorique(p=>p+1)}>Suivant</Button></div></>)}
+      </section>
       <section className="space-y-2" aria-labelledby="titre-commissions">
-        <h2 id="titre-commissions" className="text-sm font-bold text-slate-900 flex items-center gap-2"><Lock className="w-4 h-4" />Commissions dans leur délai de sécurité ({verrouillees.length})</h2>
+        <h2 id="titre-commissions" className="text-sm font-bold text-slate-900 flex items-center gap-2"><Lock className="w-4 h-4" />Commissions dans leur délai de sécurité ({finance ? verrouillees.length : '—'})</h2>
         <p className="text-xs text-slate-500">Débloquer avant terme rend la commission retirable tout de suite. Si les espèces de la commande ne sont pas encore reversées, c’est une avance de Suguba : un motif est demandé.</p>
-        {verrouillees.length === 0 ? (
+        {erreurFinance ? <p role="alert" className="text-rose-800">{erreurFinance} <button onClick={rafraichirFinance}>Réessayer</button></p> : !finance ? <Skeleton className="h-24" /> : verrouillees.length === 0 ? (
           <Card padding="p-4" className="text-sm text-slate-500">Aucune commission verrouillée en ce moment.</Card>
         ) : (
           <TableauAdmin<Commission> titre="Commissions verrouillées" memoire="commissions-verrouillees" lignes={verrouillees} cleLigne={(c) => c.id}
@@ -221,8 +233,8 @@ export default function RetraitsAdminPage() {
               { cle: 'revendeur', titre: 'Revendeur', fixe: true, tri: (c) => c.resellerName, rendu: (c) => <span className="font-bold text-slate-900">{c.resellerName}</span> },
               { cle: 'montant', titre: 'Montant', droite: true, tri: (c) => c.amount, rendu: (c) => fmt(c.amount) },
               { cle: 'produit', titre: 'Produit', rendu: (c) => c.productName },
-              { cle: 'delai', titre: 'Délai', rendu: (c) => `J+${c.safetyWindowDays}` },
-              { cle: 'deblocage', titre: 'Déblocage prévu', tri: (c) => c.unlockAt, rendu: (c) => new Date(c.unlockAt).toLocaleDateString('fr-FR') },
+              { cle: 'delai', titre: 'Délai', rendu: (c) => c.safetyWindowDays == null ? 'Selon la commande' : `J+${c.safetyWindowDays}` },
+              { cle: 'deblocage', titre: 'Déblocage prévu', tri: (c) => c.unlockAt || '', rendu: (c) => c.unlockAt ? new Date(c.unlockAt).toLocaleDateString('fr-FR') : 'Non renseigné' },
               ...(peutPayer ? [{ cle: 'action', titre: 'Action', fixe: true, droite: true, rendu: (c: Commission) => (
                 <Button size="sm" variant="ghost" disabled={enCours === c.id} onClick={() => debloquer(c.id)}>Débloquer avant terme</Button>
               ) }] : []),

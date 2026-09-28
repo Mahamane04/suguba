@@ -21,7 +21,7 @@ import { journaliserAction } from './journal';
 
 const CLES_ID = [
   'dossier', 'orderId', 'orderNumber', 'productId', 'payoutId', 'driverId', 'profileId', 'userId', 'uid',
-  'ticketId', 'packId', 'sponsorshipId', 'sponsorisationId', 'missionId', 'verificationId', 'messageId',
+  'ticketId', 'packId', 'sponsorshipId', 'sponsorisationId', 'missionId', 'verificationId', 'demandeId', 'messageId',
   'storeId', 'boutiqueId', 'commissionId', 'paiementId', 'id', 'slug',
 ] as const;
 

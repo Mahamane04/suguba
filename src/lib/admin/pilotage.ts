@@ -104,13 +104,13 @@ export function diagnostiquerCommande(o: { order_number: string; status: string;
     case 'dispatched': case 'in_transit': raisons.push({ bloquant: false, texte: 'En cours de livraison.' }); break;
     case 'delivered':
       raisons.push({ bloquant: false, texte: 'Livrée.' });
-      if (o.payment_method === 'cash' && o.assigned_driver_id && !o.cash_remittance_id) raisons.push({ bloquant: true, texte: 'Espèces encaissées pas encore reversées à Suguba : la commission du revendeur attend ce versement.', lien: '/admin/caisse-livreurs', libelleLien: 'Caisse livreurs' });
+      if (['cash', 'cash_on_delivery'].includes(o.payment_method || '') && o.assigned_driver_id && !o.cash_remittance_id) raisons.push({ bloquant: true, texte: 'Espèces encaissées pas encore reversées à Suguba : la commission du revendeur attend ce versement.', lien: '/admin/caisse-livreurs', libelleLien: 'Caisse livreurs' });
       break;
     case 'cancelled': raisons.push({ bloquant: false, texte: 'Annulée.' }); break;
     case 'returned': raisons.push({ bloquant: false, texte: 'Retournée.' }); break;
     default: raisons.push({ bloquant: false, texte: `Statut « ${o.status} ».` });
   }
-  return { titre, etat: o.status, raisons };
+  return { titre, etat: ({pending_call:'À confirmer',confirmed:'Confirmée',dispatched:'Attribuée',in_transit:'En livraison',delivered:'Livrée',cancelled:'Annulée',returned:'Retournée'} as Record<string,string>)[o.status] || 'État non reconnu', raisons };
 }
 
 export function diagnostiquerSponsorisation(s: { id: string; label: string | null; status: string; budget: number; paid_amount: number }): Diagnostic {

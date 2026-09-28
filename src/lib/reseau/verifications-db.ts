@@ -14,6 +14,7 @@ export interface DemandeVerification {
   note: string | null;
   creeLe: string;
   examineLe: string | null;
+  examinePar?: string | null;
 }
 
 function versDemande(r: any): DemandeVerification {
@@ -91,21 +92,23 @@ export async function deposerVerification(params: {
   return { ok: true };
 }
 
-export async function fileDattente(limite = 50): Promise<(DemandeVerification & { nom: string | null; telephone: string | null })[]> {
+export async function fileDattente(limite = 50, statut: 'pending' | 'approved' | 'rejected' = 'pending', page = 1): Promise<(DemandeVerification & { nom: string | null; telephone: string | null })[]> {
   const a = getSupabaseAdmin();
-  if (!a) return [];
+  if (!a) throw new Error('Vérifications indisponibles. Réessayez.');
   const { data, error } = await a
     .from('verification_requests')
     .select('*')
-    .eq('status', 'pending')
+    .eq('status', statut)
     .order('created_at', { ascending: true })
-    .limit(limite);
-  if (error || !data || data.length === 0) return [];
+    .range((page - 1) * limite, page * limite - 1);
+  if (error) throw new Error('Vérifications indisponibles. Réessayez.');
+  if (!data?.length) return [];
 
-  const { data: profils } = await a
+  const { data: profils, error: erreurProfils } = await a
     .from('profiles')
     .select('id, full_name, phone')
-    .in('id', data.map((d: any) => d.profile_id));
+    .in('id', [...new Set(data.flatMap((d: any) => [d.profile_id, d.reviewed_by].filter(Boolean)))]);
+  if (erreurProfils) throw new Error('Comptes indisponibles. Réessayez.');
   const index = new Map((profils || []).map((p: any) => [p.id, p]));
 
   // Pièces privées : une URL signée de dix minutes, générée à chaque
@@ -121,6 +124,7 @@ export async function fileDattente(limite = 50): Promise<(DemandeVerification & 
     document: await signer(d.document_url),
     nom: index.get(d.profile_id)?.full_name || null,
     telephone: index.get(d.profile_id)?.phone || null,
+    examinePar: index.get(d.reviewed_by)?.full_name || null,
   })));
 }
 
@@ -133,11 +137,19 @@ export async function deciderVerification(params: {
   const a = getSupabaseAdmin();
   if (!a) return { ok: false, erreur: 'Base indisponible.' };
 
+  const note = params.note?.trim() || '';
+  if (note.length < 5) return { ok: false, erreur: 'Indiquez le constat ou le motif de la décision (5 caractères minimum).' };
+  const { data: dossier, error: lecture } = await a.from('verification_requests').select('id, kind, document_url, status').eq('id', params.demandeId).maybeSingle();
+  if (lecture) return { ok: false, erreur: 'Dossier indisponible. Réessayez.' };
+  if (!dossier || dossier.status !== 'pending') return { ok: false, erreur: 'Demande déjà traitée ou introuvable.' };
+  if (params.decision === 'approved' && ['identity', 'selfie', 'business'].includes(dossier.kind) && !dossier.document_url?.startsWith('prive:')) {
+    return { ok: false, erreur: 'Le justificatif privé est manquant. Demandez un nouveau dépôt.' };
+  }
   const { data: demande, error } = await a
     .from('verification_requests')
     .update({
       status: params.decision,
-      note: params.note || null,
+      note,
       reviewed_at: new Date().toISOString(),
       reviewed_by: params.adminId,
     })
@@ -151,10 +163,10 @@ export async function deciderVerification(params: {
   if (params.decision === 'approved') await reevaluerBadges(demande.profile_id);
   await notifier(demande.profile_id, {
     type: 'verification',
-    titre: params.decision === 'approved' ? 'Document validé ✅' : 'Document à renvoyer',
+    titre: params.decision === 'approved' ? 'Vérification validée' : 'Vérification à compléter',
     texte: params.decision === 'approved'
-      ? 'Votre profil vérifié progresse.'
-      : params.note || 'Le document n’a pas pu être validé. Envoyez une photo plus nette.',
+      ? 'Votre vérification a été validée par Suguba.'
+      : note,
     lien: '/reseller/verification',
   });
   return { ok: true };

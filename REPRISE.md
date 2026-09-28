@@ -1,5 +1,9 @@
 # Suguba — Fiche de reprise (11 septembre 2026)
 
+> **Complément local du 28 septembre 2026 — admin, ordinateur puis mobile (non déployé).**
+> Corrections de l’audit des 37 pages : vérifications avec erreurs explicites et décisions motivées/historisées ; agrégats financiers serveur et périodes réelles ; paramètres en cinq sections avec brouillon commun, simulation, contrôle des saisies et protection contre l’écrasement concurrent ; reprise du recalcul du catalogue ; fournisseur explicite à la création ; navigation six rubriques et menu clavier. Rapport : `docs/qa/admin-corrections-2026-09-28.md` ; preuves fictives : `audit-local/2026-09-28-corrections/`.
+> Validation : build réussi, 389 tests automatisés réussis et 7 scénarios HTTP locaux réussis. Aucune nouvelle migration, aucun paiement, aucune écriture ni aucun déploiement de production. La fusion complète cartes/tableau du catalogue et le dossier personne unifié restent des évolutions produit. Les validations locales ne décrivent pas l’état du site déployé.
+
 > **Complément local du 24 septembre 2026 — clôture des corrections d’audit (non déployées).**
 > Le rapport à jour est `audit-local/2026-09-24/cloture/rapport-final.md` ; il complète le rapport de corrections précédent. Les validations locales ne décrivent pas la production.
 > Le code de remise n’est plus retourné dans les reçus, suivis, feeds ou exports, même au créateur/admin. Le SMS vise uniquement le numéro enregistré en base ; le support doit posséder `commande.modifier`. La remise exige un nouveau code et un acquittement d’envoi enregistré. Les codes des anciens reçus sont invalides pour une remise active ; prévoir leur nouvel envoi avant toute ouverture.

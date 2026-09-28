@@ -42,14 +42,16 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Authentification admin requise.' }, { status: 401 });
   }
   const admin = getSupabaseAdmin();
-  if (!admin) return NextResponse.json({ retraits: [] });
+  if (!admin) return NextResponse.json({ error: 'Retraits indisponibles.' }, {status:503});
 
-  const { data, error } = await admin
+  const historique = req.nextUrl.searchParams.get('historique') === '1';
+  const page = Math.max(1, Math.floor(Number(req.nextUrl.searchParams.get('page')) || 1));
+  let lecture = admin
     .from('payouts')
     .select('*')
-    .in('status', ['pending', 'processing'])
-    .order('created_at', { ascending: true })
-    .limit(200);
+    .in('status', historique ? ['completed', 'rejected'] : ['pending', 'processing'])
+    .order('created_at', { ascending: !historique });
+  const { data, error } = await (historique ? lecture.range((page - 1) * 200, page * 200 - 1) : lecture.limit(200));
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 

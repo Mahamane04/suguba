@@ -34,7 +34,7 @@ export const STATUTS_COMMANDE: [string, string, Ton][] = [
   ['pending_call', 'À confirmer', 'attente'], ['confirmed', 'À attribuer', 'info'], ['dispatched', 'Livreur en route', 'info'],
   ['in_transit', 'En livraison', 'info'], ['delivered', 'Livrée', 'succes'], ['cancelled', 'Annulée', 'danger'], ['returned', 'Retournée', 'neutre'],
 ];
-const LIBELLE_PAIEMENT: Record<string, string> = { cash: 'Espèces à la livraison', orange_money: 'Orange Money', moov: 'Moov Money', card: 'Carte', carte: 'Carte' };
+const LIBELLE_PAIEMENT: Record<string, string> = { cash_on_delivery: 'Espèces à la livraison', cash: 'Espèces à la livraison', orange_money: 'Orange Money', moov: 'Moov Money', card: 'Carte', carte: 'Carte' };
 export const fcfa = (v: number) => `${Math.round(v).toLocaleString('fr-FR')} F`;
 export const quand = (iso: string) => new Date(iso).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 export const statutCommande = (s: string) => STATUTS_COMMANDE.find(([v]) => v === s);

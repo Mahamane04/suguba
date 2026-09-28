@@ -1,3 +1,4 @@
+import { fusionnerBrouillon } from '@/lib/admin/settings-draft';
 import { avecJournal } from '@/lib/admin/journal-route';
 import { exigerValidation, marquerExecutee } from '@/lib/admin/securite';
 import { verifyActiveSession } from '@/lib/active-session';
@@ -40,7 +41,8 @@ export async function GET(req: NextRequest) {
   if (!(await exigerAdmin(req))) {
     return NextResponse.json({ error: 'Authentification admin requise.' }, { status: 401 });
   }
-  const etat = await chargerReglages();
+  let etat;
+  try { etat = await chargerReglages(true); } catch { return NextResponse.json({ error: 'Réglages indisponibles. Réessayez.' }, { status: 503 }); }
   // Tarifs SasPay (2026-09-27) : ceux relus automatiquement ; relus en
   // arrière-plan si le relevé a plus de 6 heures.
   const fraisPaiement = completerFraisPaiement(etat.reglages.fraisPaiement);
@@ -48,7 +50,7 @@ export async function GET(req: NextRequest) {
   // Produits en ligne (2026-09-24) : le panneau calcule en direct l'effet des
   // réglages en cours d'édition sur chacun, AVANT d'enregistrer.
   const admin = getSupabaseAdmin();
-  const { data: produits } = admin
+  const { data: produits, error: erreurProduits } = admin
     ? await admin
       .from('products')
       // `*` : inclut mode_prix dès que la base l'a (articles au prix de gros).
@@ -56,7 +58,8 @@ export async function GET(req: NextRequest) {
       .eq('status', 'approved')
       .order('created_at', { ascending: false })
       .limit(300)
-    : { data: [] };
+    : { data: [], error: null };
+  if (erreurProduits) return NextResponse.json({ error: 'Impact catalogue indisponible. Réessayez.' }, { status: 503 });
   return NextResponse.json({
     ...etat,
     produits: produits || [],
@@ -82,16 +85,29 @@ async function putInterne(req: NextRequest) {
   if (!admin) return NextResponse.json({ error: 'Base indisponible.' }, { status: 503 });
 
   const body = await req.json().catch(() => ({}));
-  const reglages = completerReglages(body.reglages as Partial<ReglagesPlateforme>);
+  if (!body.reglages || typeof body.reglages !== 'object' || Array.isArray(body.reglages)) return NextResponse.json({ error: 'Réglages requis.' }, { status: 400 });
+  if (!body.baseReglages || typeof body.baseReglages !== 'object' || Array.isArray(body.baseReglages)) return NextResponse.json({ error: 'Rechargez les réglages avant de les modifier.' }, { status: 409 });
+  let etat;
+  try { etat = await chargerReglages(true); } catch { return NextResponse.json({ error: 'Réglages indisponibles.' }, { status: 503 }); }
+  const actuels = etat.reglages;
+  let reglages: ReglagesPlateforme;
+  try { reglages = completerReglages(body.reglages as Partial<ReglagesPlateforme>); }
+  catch { return NextResponse.json({ error: 'Format des réglages invalide.' }, { status: 400 }); }
+  if (body.baseReglages) {
+    try { reglages = fusionnerBrouillon(actuels, completerReglages(body.baseReglages), reglages); }
+    catch (e) { return NextResponse.json({ error: (e as Error).message }, { status: 409 }); }
+  }
 
-  const erreurs = validerReglages(reglages);
+  let erreurs: string[];
+  try { erreurs = validerReglages(reglages); }
+  catch { return NextResponse.json({ error: 'Format des réglages invalide.' }, { status: 400 }); }
   if (erreurs.length > 0) {
     return NextResponse.json({ error: erreurs.join(' '), erreurs }, { status: 400 });
   }
 
   // Protection Suguba (lot 3) : baisser la part de Suguba n'est pas une
   // modification technique. Droit dédié, motif obligatoire, trace gardée.
-  const { reglages: actuels } = await chargerReglages();
+
   const baisses = baissesPartSuguba(actuels, reglages);
   let validationPart: string | null = null;
   const motif = typeof body.motif === 'string' ? body.motif.trim().slice(0, 500) : '';
@@ -117,24 +133,30 @@ async function putInterne(req: NextRequest) {
     }
   }
 
-  const { error } = await admin.from('platform_settings').upsert({
-    id: 1,
-    valeurs: reglages,
-    confirme: true,
-    updated_at: new Date().toISOString(),
-    updated_by: session.uid,
-  });
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  const valeur = { id: 1, valeurs: reglages, confirme: true, updated_at: new Date().toISOString(), updated_by: session.uid };
+  // Compare-and-swap protects changes made between our read and write.
+  const sauvegarde = body.baseReglages
+    ? etat.majLe
+      ? await admin.from('platform_settings').update(valeur).eq('id', 1).eq('updated_at', etat.majLe).select('id').maybeSingle()
+      : await admin.from('platform_settings').insert(valeur).select('id').maybeSingle()
+    : await admin.from('platform_settings').upsert(valeur);
+  if (sauvegarde.error || (body.baseReglages && !sauvegarde.data)) return NextResponse.json({ error: 'Enregistrement non effectué : les réglages ont changé ou la base est indisponible. Rechargez avant de réessayer.' }, { status: 409 });
   await marquerExecutee(admin, validationPart);
 
   // ── Recalcul des commissions de tous les produits approuvés ─────────────
-  const { data: produits } = await admin
-    .from('products')
-    .select('*')
-    .eq('status', 'approved');
+  const produits: any[] = [];
+  let erreurLectureProduits = false;
+  for (let page = 0; page < 100; page++) {
+    const { data, error } = await admin.from('products').select('*').eq('status', 'approved').order('id').range(page * 1000, page * 1000 + 999);
+    if (error) { erreurLectureProduits = true; break; }
+    produits.push(...(data || []));
+    if (!data || data.length < 1000) break;
+    if (page === 99) erreurLectureProduits = true;
+  }
 
   const alertes: { id: string; nom: string; statut: string; prixVente: number; prixMinimal: number }[] = [];
   let recalcules = 0;
+  let echecs = 0;
   const maintenant = new Date().toISOString();
 
   for (const p of produits || []) {
@@ -152,11 +174,13 @@ async function putInterne(req: NextRequest) {
       .from('products')
       .update({ reseller_commission: t.commission, pricing_status: t.statut, pricing_computed_at: maintenant })
       .eq('id', p.id);
-    if (!majErr) recalcules++;
+    if (!majErr) recalcules++; else echecs++;
   }
 
   return NextResponse.json({
     success: true,
+    reglages,
+    avertissement: erreurLectureProduits || echecs > 0 ? 'Les réglages sont sauvegardés, mais certaines commissions du catalogue n’ont pas été actualisées. Vérifiez le catalogue avant de poursuivre.' : null,
     recalcules,
     alertes,
     totalCoutsFixes: totalCoutsFixes(reglages),

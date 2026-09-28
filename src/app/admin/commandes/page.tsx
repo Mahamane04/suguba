@@ -176,7 +176,7 @@ export default function CommandesAdminPage() {
       {erreur ? (
         <div role="alert" className="rounded-3xl bg-rose-50 text-rose-800 p-4 space-y-2"><p>{erreur}</p><Button variant="ghost" onClick={() => setRetry((v) => v + 1)}>Réessayer</Button></div>
       ) : chargement ? <Skeleton className="h-64" />
-        : commandes.length === 0 ? <EmptyState icone={ShoppingBag} titre="Aucune commande" texte={filtre ? 'Rien dans ce statut pour cette recherche.' : undefined} />
+        : commandes.length === 0 ? <EmptyState icone={ShoppingBag} titre={q || filtre ? "Aucun résultat" : "Aucune commande"} texte={q || filtre ? "Aucune commande ne correspond à ces filtres." : undefined} action={q || filtre ? <Button variant="ghost" onClick={() => {setQ('');setFiltre('');setPage(1);}}>Effacer les filtres</Button> : undefined} />
         : (
           <TableauAdmin<Commande> titre="Commandes" memoire="commandes" lignes={commandes} colonnes={colonnes} cleLigne={(c) => c.id}
             onOuvrir={(c) => setOuverte(c.id)}
