@@ -16,8 +16,8 @@ import { Check } from 'lucide-react';
 // « Validation Suguba » a disparu le 2026-09-10 avec la validation manuelle
 // des comptes : l'étape 3 est désormais l'arrivée dans son espace.
 const ETAPES = [
-  { numero: 1, titre: 'Connexion' },
-  { numero: 2, titre: 'Votre profil' },
+  { numero: 1, titre: 'Profil et connexion' },
+  { numero: 2, titre: 'Vos informations' },
   { numero: 3, titre: 'Votre espace' },
 ];
 
@@ -29,7 +29,7 @@ export default function EtapesInscription({ etapeActuelle }: { etapeActuelle: 1 
         const active = etape.numero === etapeActuelle;
 
         return (
-          <li key={etape.numero} className="flex-1 flex flex-col items-center text-center relative">
+          <li key={etape.numero} aria-current={active ? 'step' : undefined} className="flex-1 flex flex-col items-center text-center relative">
             {/* Trait de liaison vers l'étape précédente */}
             {i > 0 && (
               <span

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Store, ShoppingBag, Truck, Shield, Globe, ArrowRight, Plus, Loader2, Check } from 'lucide-react';
+import { Store, ShoppingBag, Truck, Shield, Globe, ShoppingCart, ArrowRight, Plus, Loader2, Check } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import { Card } from '@/components/ui/Surface';
 import Button from '@/components/ui/Button';
@@ -23,9 +23,10 @@ import { useToast } from '@/components/ui/Toast';
  * livreur. Aucun second compte, aucune perte.
  */
 
-type Role = 'reseller' | 'supplier' | 'driver' | 'admin' | 'diaspora';
+type Role = 'customer' | 'reseller' | 'supplier' | 'driver' | 'admin' | 'diaspora';
 
 const PROFILS: Record<Role, { libelle: string; icone: React.ElementType; espace: string; atout: string }> = {
+  customer: { libelle: 'Client', icone: ShoppingCart, espace: '/compte/commandes', atout: 'Retrouvez vos achats et reçus.' },
   reseller: { libelle: 'Revendeur', icone: Store, espace: '/reseller', atout: 'Partagez les produits sur WhatsApp et touchez une commission sur chaque vente, sans stock.' },
   supplier: { libelle: 'Fournisseur', icone: ShoppingBag, espace: '/supplier', atout: 'Mettez vos articles en ligne : les revendeurs les vendent pour vous, Suguba livre.' },
   driver: { libelle: 'Livreur', icone: Truck, espace: '/driver', atout: 'Livrez les commandes dans votre zone et soyez payé à chaque course.' },
@@ -63,7 +64,7 @@ export default function MesProfilsPage() {
         // le formulaire du profil demandé est déjà ouvert.
         const demande = new URLSearchParams(window.location.search).get('ajouter') as Role | null;
         if (demande && AJOUTABLES.includes(demande) && !detenusMoi[demande]) setOuvert(demande);
-        setNumeroManquant(typeof moi.phone === 'string' && moi.phone.includes('@'));
+        setNumeroManquant(!moi.phone || (typeof moi.phone === 'string' && moi.phone.includes('@')));
       })
       .catch(() => toast('Impossible de lire votre compte.', { ton: 'erreur' }));
   }, [toast]);
@@ -100,7 +101,7 @@ export default function MesProfilsPage() {
       toast(`Profil ${PROFILS[role].libelle} ajouté.`, { ton: 'succes' });
       window.location.replace(PROFILS[role].espace);
     } catch {
-      toast('Erreur réseau : rien n’a été modifié.', { ton: 'erreur' });
+      toast('Connexion interrompue : rechargez vos profils pour vérifier si l’ajout a abouti.', { ton: 'erreur' });
     } finally {
       setEnvoi(false);
     }
@@ -136,12 +137,14 @@ export default function MesProfilsPage() {
       {aAjouter.length > 0 && (
         <Card className="space-y-3">
           <div>
-            <h2 className="text-sm font-semibold text-slate-900">Ajouter un profil</h2>
+            <h2 className="text-base font-semibold text-slate-900">Quelle activité voulez-vous ajouter ?</h2>
             <p className="text-xs text-slate-500">
               Pas besoin d’un nouveau compte : votre historique, vos gains et vos clients restent là.
             </p>
           </div>
-          {aAjouter.map((r) => {
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3" role="group" aria-label="Profils à ajouter">{aAjouter.map(r=>{const P=PROFILS[r];return <button key={r} type="button" aria-pressed={ouvert===r} disabled={envoi} onClick={()=>setOuvert(r)} className={`text-left rounded-2xl border-2 p-4 space-y-2 focus-visible:ring-4 focus-visible:ring-emerald-300 ${ouvert===r?'border-emerald-700 bg-emerald-50':'border-slate-200 bg-white'}`}><P.icone className="w-5 h-5 text-emerald-800"/><span className="block text-sm font-bold">{r==='reseller'?'Vendre sans stock':r==='supplier'?'Vendre mes produits':'Livrer des colis'} · {P.libelle}</span><span className="block text-xs text-slate-600">{P.atout}</span></button>})}</div>
+          <p className="text-sm text-slate-600">Sélectionnez une activité pour voir les informations nécessaires. Le profil sera ajouté uniquement après votre confirmation.</p>
+          {aAjouter.filter(r=>r===ouvert).map((r) => {
             const P = PROFILS[r];
             const deplie = ouvert === r;
             return (
@@ -156,6 +159,9 @@ export default function MesProfilsPage() {
                 </button>
                 {deplie && (
                   <div className="space-y-3">
+                    <p className="text-sm font-semibold text-emerald-900">Profil à ajouter : {P.libelle}. Vos autres profils restent disponibles.</p>
+                    {r==='driver' && <p className="text-sm text-slate-600">Votre espace sera accessible après l’ajout. Vos papiers et votre véhicule doivent être contrôlés au guichet Suguba avant de recevoir des courses.</p>}
+                    {r==='supplier' && <p className="text-sm text-slate-600">Renseignez votre boutique ; vous pourrez ensuite proposer vos produits à la validation de Suguba.</p>}
                     {numeroManquant && (
                       <Field label="Votre numéro WhatsApp" htmlFor="p-telephone" requis aide="Indispensable pour vous prévenir de vos commandes et de vos gains — votre compte n'en a pas encore.">
                         <div className="flex gap-2">

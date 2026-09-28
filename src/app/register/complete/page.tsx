@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
+import ChoixProfil, { ResumeProfil, estProfil, PROFILS_INSCRIPTION, type ProfilInscription as Role } from '@/components/auth/ChoixProfil';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/common/Header';
 import DialCodePicker from '@/components/common/DialCodePicker';
@@ -14,21 +15,11 @@ import { DEFAULT_DIAL_CODE } from '@/lib/dial-codes';
 import { DEFAULT_NEIGHBORHOOD } from '@/lib/bamako-neighborhoods';
 import { ArrowRight, Gift, Store, ShoppingBag, Truck, Globe, ShoppingCart, Check } from 'lucide-react';
 
-type Role = 'customer' | 'reseller' | 'supplier' | 'driver' | 'diaspora';
-
-const ROLES: { cle: Role; titre: string; detail: string; icone: React.ElementType }[] = [
-  { cle: 'customer', titre: 'Client', detail: 'J’achète : je retrouve mes commandes sur tous mes téléphones', icone: ShoppingCart },
-  { cle: 'reseller', titre: 'Revendeur', detail: 'Je partage des produits et je touche une commission', icone: Store },
-  { cle: 'supplier', titre: 'Fournisseur', detail: 'J\'ai un stock et je veux le vendre via Suguba', icone: ShoppingBag },
-  { cle: 'driver', titre: 'Livreur', detail: 'Je livre les commandes à Bamako', icone: Truck },
-  { cle: 'diaspora', titre: 'Diaspora', detail: 'Je commande depuis l\'étranger pour mes proches', icone: Globe },
-];
-
 const DESTINATION: Record<string, string> = {
   customer: '/compte/commandes', reseller: '/reseller', supplier: '/supplier', driver: '/driver', diaspora: '/diaspora', admin: '/admin/a-traiter',
 };
 
-const estRole = (v: unknown): v is Role => ROLES.some((r) => r.cle === v);
+const estRole = (v: unknown): v is Role => estProfil(v);
 
 /**
  * Finalisation de l'inscription — étape obligatoire entre la preuve d'identité
@@ -90,7 +81,9 @@ function FinaliserInscription() {
       const me = await fetch('/api/auth/me').then((r) => (r.ok ? r.json() : null)).catch(() => null);
       if (me?.authenticated) {
         if (me.role === 'admin') { router.replace('/admin/a-traiter'); return; }
-        setRole(estRole(me.role) ? me.role : null);
+        if (me.phone && !me.phone.includes('@')) { router.replace('/compte/profils'); return; }
+        setFullName(f => f || me.fullName || '');
+        setRole(estRole(roleUrl) ? roleUrl : estRole(me.role) ? me.role : null);
         setMode('existant');
         return;
       }
@@ -184,42 +177,19 @@ function FinaliserInscription() {
   }
 
   return (
-    <div className="max-w-lg mx-auto px-4 sm:px-6 py-8 w-full space-y-6">
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-8 w-full space-y-6">
       <EtapesInscription etapeActuelle={2} />
 
       <div className="text-center space-y-1">
         <h1 className="text-xl font-bold text-slate-900">Finalisez votre inscription</h1>
-        <p className="text-sm text-slate-500">Votre identité est vérifiée. Encore une minute et vous êtes dans votre espace.</p>
+        <p className="text-sm text-slate-500">Votre connexion est confirmée. Vérifiez le profil choisi, puis renseignez vos coordonnées.</p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* 1. Qui êtes-vous ? */}
-        <section className="bg-white rounded-3xl p-5 border border-slate-200 space-y-3">
-          <h2 className="font-bold text-sm text-slate-900">1. Vous êtes…</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            {ROLES.map(({ cle, titre, detail, icone: Icone }) => {
-              const choisi = role === cle;
-              return (
-                <button
-                  key={cle}
-                  type="button"
-                  onClick={() => setRole(cle)}
-                  aria-pressed={choisi}
-                  className={`p-3 rounded-2xl border text-left flex items-start gap-3 transition-all ${
-                    choisi ? 'border-suguba-brand bg-suguba-brand/5 ring-2 ring-suguba-brand/30' : 'border-slate-200 hover:border-slate-300'
-                  }`}
-                >
-                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${choisi ? 'bg-suguba-profond text-white' : 'bg-slate-100 text-slate-600'}`}>
-                    {choisi ? <Check className="w-4 h-4" /> : <Icone className="w-4 h-4" />}
-                  </div>
-                  <div className="min-w-0">
-                    <p className="font-bold text-sm text-slate-900">{titre}</p>
-                    <p className="text-xs text-slate-500 leading-snug">{detail}</p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+        <section id="choix-inscription" className="bg-white rounded-3xl p-5 border border-slate-200 space-y-3 scroll-mt-24">
+          <h2 className="font-bold text-base text-slate-900">Vérifiez votre choix de profil</h2>
+          <ChoixProfil valeur={role} disabled={isSubmitting} onChange={r=>{setRole(r);setFormError('');requestAnimationFrame(()=>document.getElementById('informations-profil')?.focus());}} />
           <Link href="/" className="flex items-center gap-2 p-3 rounded-2xl bg-slate-50 text-xs text-slate-600 hover:bg-slate-100">
             <ShoppingCart className="w-4 h-4 shrink-0" />
             <span><strong>Un compte n’est pas obligatoire pour acheter :</strong> vous pouvez aussi commander directement depuis le catalogue.</span>
@@ -228,8 +198,9 @@ function FinaliserInscription() {
 
         {/* 2. Coordonnées */}
         {role && (
-          <section className="bg-white rounded-3xl p-5 border border-slate-200 space-y-4">
-            <h2 className="font-bold text-sm text-slate-900">2. Vos coordonnées</h2>
+          <section id="informations-profil" tabIndex={-1} className="scroll-mt-24 focus:outline-none bg-white rounded-3xl p-5 border border-slate-200 space-y-4">
+            <ResumeProfil profil={role} />
+            <h2 className="font-bold text-base text-slate-900">Vos informations — {PROFILS_INSCRIPTION.find(p=>p.cle===role)?.titre}</h2>
             <Champ label="Nom complet">
               <input type="text" required placeholder="Ex : Moussa Coulibaly" value={fullName}
                 onChange={(e) => setFullName(e.target.value)} className={INPUT} />
@@ -361,7 +332,7 @@ function FinaliserInscription() {
         )}
 
         <Button type="submit" disabled={isSubmitting || !role} size="lg" fullWidth>
-          <span>{isSubmitting ? 'Création de votre espace…' : 'Accéder à mon espace'}</span>
+          <span>{isSubmitting ? 'Création de votre espace…' : `Enregistrer mon profil ${PROFILS_INSCRIPTION.find(p=>p.cle===role)?.titre.toLowerCase() || ''}`}</span>
           <ArrowRight className="w-4 h-4" />
         </Button>
       </form>
@@ -370,17 +341,19 @@ function FinaliserInscription() {
 }
 
 const INPUT =
-  'w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 ' +
+  'w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-base sm:text-sm text-slate-900 ' +
   'focus:outline-none focus:ring-2 focus:ring-suguba-brand/30 focus:border-suguba-brand';
 
 function Champ({ label, aide, children }: { label: string; aide?: string; children: React.ReactNode }) {
-  return (
-    <div className="space-y-1">
-      <label className="block text-xs font-bold text-slate-700">{label}</label>
-      {children}
-      {aide && <p className="text-xs text-slate-500">{aide}</p>}
-    </div>
-  );
+  const id = React.useId();
+  const associer = (nodes: React.ReactNode): React.ReactNode => React.Children.map(nodes, node => {
+    if (!React.isValidElement<Record<string, any>>(node)) return node;
+    if (node.type === 'input') return React.cloneElement(node, { id, 'aria-label': label, 'aria-describedby': aide ? `${id}-aide` : undefined });
+    if (node.type === DialCodePicker) return node;
+    if (typeof node.type !== 'string') return React.cloneElement(node, { id });
+    return node.props.children ? React.cloneElement(node, {}, associer(node.props.children)) : node;
+  });
+  return <div className="space-y-1"><label htmlFor={id} className="block text-xs font-bold text-slate-700">{label}</label>{associer(children)}{aide && <p id={`${id}-aide`} className="text-xs text-slate-500">{aide}</p>}</div>;
 }
 
 export default function CompleteProfilePage() {

@@ -27,29 +27,16 @@ function GoogleIcon({ className }: { className?: string }) {
 
 type RoleKey = 'reseller' | 'supplier' | 'driver' | 'diaspora';
 
-/**
- * Refondue le 2026-09-09. La version précédente parlait d'argent sans jamais
- * donner un chiffre : quatre paragraphes de prose abstraite, une grille 2×2
- * qui mangeait un écran entier avant la moindre information, et le bouton
- * d'inscription à deux écrans de défilement.
- *
- * Trois principes maintenant : le mécanisme montré plutôt qu'affirmé (comment
- * l'argent circule, en trois temps), la hiérarchie visuelle portée par un
- * bandeau coloré, et le bouton atteignable sans défiler. Le détail passe
- * après, pour ceux qui veulent lire.
- *
- * Sans montants, délibérément — voir le commentaire sur `argument()`.
- */
-
+/** REQ-PROFIL-001 / TASK-PROFIL-001 : choisir une activité avant de créer ou ajouter un profil. */
 const ROLES: Record<RoleKey, {
-  label: string; tagline: string; icon: typeof Store;
+  label: string; intention: string; repere: string; tagline: string; icon: typeof Store;
   accent: string; bord: string; puce: string; fond: string;
   quoiFaire: string;
   etapes: string[];
   cta: string;
 }> = {
   reseller: {
-    label: 'Revendeur', tagline: 'Sans acheter de stock', icon: Store,
+    label: 'Revendeur', intention: 'Vendre sans stock', repere: 'Je partage des produits et je gagne une commission.', tagline: 'Sans acheter de stock', icon: Store,
     accent: 'text-emerald-700', bord: 'ring-emerald-500 border-emerald-500 bg-emerald-50',
     puce: 'bg-emerald-100 text-emerald-800', fond: 'from-emerald-600 to-green-700',
     quoiFaire: "Vous partagez un produit à votre réseau WhatsApp. Vous n'achetez rien, vous n'avancez rien : Suguba livre et encaisse, vous touchez votre commission.",
@@ -61,7 +48,7 @@ const ROLES: Record<RoleKey, {
     cta: 'Devenir revendeur',
   },
   supplier: {
-    label: 'Fournisseur', tagline: 'Faites distribuer votre stock', icon: ShoppingBag,
+    label: 'Fournisseur', intention: 'Vendre mes produits', repere: 'J’ai des produits en stock à proposer sur Suguba.', tagline: 'Faites distribuer votre stock', icon: ShoppingBag,
     accent: 'text-slate-700', bord: 'ring-slate-500 border-slate-500 bg-slate-50',
     puce: 'bg-slate-100 text-slate-800', fond: 'from-slate-600 to-slate-700',
     quoiFaire: "Vous déposez vos produits. Le réseau de revendeurs les diffuse, nos livreurs les remettent au client. Vous ne gérez ni la vente ni la livraison.",
@@ -73,7 +60,7 @@ const ROLES: Record<RoleKey, {
     cta: 'Devenir fournisseur',
   },
   driver: {
-    label: 'Livreur', tagline: 'Courses rémunérées', icon: Truck,
+    label: 'Livreur', intention: 'Livrer des colis', repere: 'J’ai une moto ou un véhicule pour faire des courses.', tagline: 'Courses rémunérées', icon: Truck,
     accent: 'text-amber-700', bord: 'ring-amber-500 border-amber-500 bg-amber-50',
     puce: 'bg-amber-100 text-amber-800', fond: 'from-amber-600 to-orange-700',
     quoiFaire: "Vous récupérez les colis et vous les livrez à Bamako, avec votre moto ou votre véhicule. Vous encaissez le paiement à la remise.",
@@ -85,7 +72,7 @@ const ROLES: Record<RoleKey, {
     cta: 'Devenir livreur',
   },
   diaspora: {
-    label: 'Diaspora', tagline: 'Depuis l\'étranger', icon: Globe,
+    label: 'Diaspora', intention: 'Acheter pour un proche', repere: 'Je vis à l’étranger et je commande pour le Mali.', tagline: 'Depuis l\'étranger', icon: Globe,
     accent: 'text-slate-700', bord: 'ring-slate-500 border-slate-500 bg-slate-50',
     puce: 'bg-slate-100 text-slate-800', fond: 'from-slate-600 to-violet-700',
     quoiFaire: "Vous vivez hors du Mali et vous voulez équiper un proche à Bamako. Vous choisissez, vous payez, nous livrons — personne à déranger sur place.",
@@ -105,7 +92,10 @@ export default function RejoindrePage() {
   // relu à la fin de l'inscription, quel que soit le mode de connexion.
   useEffect(() => { memoriserParrain(new URLSearchParams(window.location.search).get('ref')); }, []);
 
-  const [role, setRole] = useState<RoleKey>('reseller');
+  const [role, setRole] = useState<RoleKey | null>(null);
+  const choixTitre = React.useRef<HTMLHeadingElement>(null);
+  const detailTitre = React.useRef<HTMLHeadingElement>(null);
+  useEffect(() => { if (role) detailTitre.current?.focus(); }, [role]);
   const [erreur, setErreur] = useState<string | null>(null);
   // Déjà connecté (2026-09-26) : pas de nouvelle inscription, on ajoute le
   // profil au compte existant (/compte/profils). null = pas encore lu.
@@ -119,10 +109,11 @@ export default function RejoindrePage() {
       .catch(() => setCompte({ connecte: false, roles: {} }));
   }, []);
 
-  const actif = ROLES[role];
+  const actif = ROLES[role || 'reseller'];
   const Icon = actif.icon;
 
   const handleGoogleJoin = async () => {
+    if (!role) return;
     setErreur(null);
     if (!supabase) {
       setErreur('Inscription Google indisponible sur cet environnement.');
@@ -169,7 +160,7 @@ export default function RejoindrePage() {
       },
     };
 
-    const { titre, sous, flux } = contenu[role];
+    const { titre, sous, flux } = contenu[role || 'reseller'];
 
     return (
       <>
@@ -194,40 +185,42 @@ export default function RejoindrePage() {
     <div className="min-h-screen flex flex-col bg-[#f5f8f5]">
       <Header />
 
-      <main className="flex-1 max-w-2xl mx-auto px-4 sm:px-6 py-5 w-full space-y-4">
+      <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 py-5 pb-28 w-full space-y-5">
 
         <Link href="/" className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-500 hover:text-slate-900">
           <ArrowLeft className="w-4 h-4" />
           Retour au catalogue
         </Link>
 
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-          Gagner de l&apos;argent avec Suguba
-        </h1>
+        <section aria-labelledby="choix-profil" className="space-y-4">
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-emerald-700 mb-2">Un compte, plusieurs profils possibles</p>
+            <h1 id="choix-profil" ref={choixTitre} tabIndex={-1} className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight scroll-mt-24 focus:outline-none">
+              Que voulez-vous faire sur Suguba ?
+            </h1>
+            <p className="text-sm text-slate-600 mt-2">Choisissez votre activité pour découvrir le bon profil. Vous pourrez en ajouter d’autres au même compte.</p>
+          </div>
+          <div role="group" aria-label="Les quatre profils Suguba" className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            {ORDRE.map((cle) => {
+              const r = ROLES[cle]; const RIcon = r.icon; const estActif = cle === role;
+              return <button key={cle} type="button" aria-pressed={estActif} aria-controls="detail-profil"
+                onClick={() => { setErreur(null); setRole(cle); }}
+                className={`text-left rounded-2xl border-2 p-3 sm:p-4 flex flex-col gap-2 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300 ${estActif ? r.bord : 'bg-white border-slate-200 hover:border-emerald-600'}`}>
+                <span className="flex items-center justify-between gap-2"><RIcon aria-hidden="true" className={`w-5 h-5 ${r.accent}`} />{estActif && <Check aria-hidden="true" className="w-5 h-5 text-emerald-700" />}</span>
+                <span className="font-bold text-sm sm:text-base text-slate-900 leading-snug">{r.intention}</span>
+                <span className="text-xs sm:text-sm text-slate-600 leading-relaxed">{r.repere}</span>
+                <span className={`text-xs font-bold mt-auto pt-1 ${r.accent}`}>{r.label} · {estActif ? 'Sélectionné' : 'Voir le profil'}</span>
+              </button>;
+            })}
+          </div>
+          <p className="text-sm text-slate-600">Vous souhaitez simplement acheter au Mali ? <Link href="/" className="font-bold text-emerald-800 underline">Voir le catalogue</Link>.</p>
+        </section>
 
-        {/* Sélecteur compact : une ligne défilante au lieu d'une grille 2×2 qui
-            occupait un écran entier avant la moindre information. */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-none">
-          {ORDRE.map((cle) => {
-            const r = ROLES[cle];
-            const RIcon = r.icon;
-            const estActif = cle === role;
-            return (
-              <button
-                key={cle}
-                type="button"
-                onClick={() => setRole(cle)}
-                className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-full border text-xs font-bold transition-all ${
-                  estActif ? `ring-2 ${r.bord}` : 'bg-white border-gray-200 text-gray-500 hover:border-gray-300'
-                }`}
-              >
-                <RIcon className={`w-4 h-4 ${estActif ? r.accent : 'text-gray-400'}`} />
-                {r.label}
-              </button>
-            );
-          })}
-        </div>
-
+        {role ? <section id="detail-profil" aria-labelledby="profil-selectionne" className="space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 pt-5">
+            <h2 id="profil-selectionne" ref={detailTitre} tabIndex={-1} className="text-lg font-bold text-slate-900 scroll-mt-28 focus:outline-none">Votre choix : {actif.label}</h2>
+            <button type="button" onClick={() => { setRole(null); setErreur(null); choixTitre.current?.focus(); }} className="min-h-11 text-sm font-semibold text-emerald-800 underline">Changer de profil</button>
+          </div>
         {/* L'argument chiffré + le bouton, tous deux au-dessus de la ligne de
             flottaison : c'est ce que la version précédente enterrait sous
             deux écrans de prose. */}
@@ -252,7 +245,7 @@ export default function RejoindrePage() {
             {/* `ghost` sans bordure : le bouton est posé sur un aplat coloré,
                 où un liseré slate jurerait. Le reste (rayon, hauteur, états)
                 vient du composant. */}
-            {role === 'diaspora' ? (
+            {compte === null ? <p role="status" className="text-sm">Vérification de votre compte…</p> : role === 'diaspora' ? (
               <Button href="/diaspora" variant="ghost" size="lg" fullWidth className="border-transparent">
                 <Heart className="w-4 h-4" />
                 {actif.cta}
@@ -282,10 +275,10 @@ export default function RejoindrePage() {
                   className="border-transparent"
                 >
                   <GoogleIcon className="w-5 h-5" />
-                  Continuer avec Google
+                  Continuer comme {actif.label.toLowerCase()} avec Google
                 </Button>
                 <Link href={`/register?role=${role}`} className="mt-2 w-full min-h-[48px] inline-flex items-center justify-center rounded-2xl border border-white/40 text-sm font-bold text-white hover:bg-white/10 transition-colors">
-                  Créer mon compte avec mon e-mail
+                  Créer mon profil {actif.label.toLowerCase()} par e-mail
                 </Link>
                 <p className="text-xs text-white/70 text-center mt-2">
                   Dossier en 2 minutes
@@ -314,19 +307,7 @@ export default function RejoindrePage() {
           </div>
         </div>
 
-        {/* Réassurance, en une ligne chacune */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-          {[
-            'Aucun stock à acheter',
-            'Gains versés par Orange Money ou Moov Money',
-            'Livraison assurée par Suguba',
-          ].map((texte) => (
-            <div key={texte} className="bg-white rounded-2xl border border-gray-100 px-3 py-2.5 flex items-center gap-2">
-              <Check className="w-3.5 h-3.5 text-suguba-brand-dark shrink-0 stroke-[3]" />
-              <span className="text-xs font-semibold text-gray-700">{texte}</span>
-            </div>
-          ))}
-        </div>
+        </section> : <p id="detail-profil" className="rounded-2xl bg-emerald-50 border border-emerald-100 p-4 text-sm text-emerald-900">Choisissez l’un des quatre profils ci-dessus pour voir les étapes. Consulter un profil ne crée pas de compte et ne modifie pas vos profils existants.</p>}
 
         {!compte?.connecte && (
           <p className="text-center text-xs text-gray-500 pb-2">

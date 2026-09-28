@@ -326,7 +326,7 @@ function LoginPageContent() {
               <p className="text-xs text-gray-500">
                 Pas encore de compte ?{' '}
                 <Link href="/register" className="font-bold text-suguba-brand-dark hover:underline">
-                  Créer un compte &rarr;
+                  Choisir mon profil et créer un compte &rarr;
                 </Link>
               </p>
             </div>

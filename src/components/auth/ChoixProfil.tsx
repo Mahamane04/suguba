@@ -1,0 +1,17 @@
+'use client';
+import React from 'react';
+import { Store, ShoppingBag, Truck, Globe, ShoppingCart, Check } from 'lucide-react';
+export type ProfilInscription = 'customer' | 'reseller' | 'supplier' | 'driver' | 'diaspora';
+export const PROFILS_INSCRIPTION = [
+  { cle: 'customer', titre: 'Client', intention: 'Acheter pour moi', detail: 'Je retrouve mes commandes et mes reçus.', icone: ShoppingCart, suite: 'Vos commandes seront accessibles depuis votre compte.' },
+  { cle: 'reseller', titre: 'Revendeur', intention: 'Vendre sans stock', detail: 'Je partage des produits et je gagne une commission.', icone: Store, suite: 'Vous pourrez partager des produits ; vos gains dépendent des ventes réalisées.' },
+  { cle: 'supplier', titre: 'Fournisseur', intention: 'Vendre mes produits', detail: 'J’ai un stock à proposer sur Suguba.', icone: ShoppingBag, suite: 'Vous renseignerez votre boutique. Les produits seront examinés avant leur publication.' },
+  { cle: 'driver', titre: 'Livreur', intention: 'Livrer des colis', detail: 'J’ai un véhicule pour effectuer des courses.', icone: Truck, suite: 'Vous renseignerez votre véhicule et votre zone. Un contrôle au guichet est nécessaire avant vos premières courses.' },
+  { cle: 'diaspora', titre: 'Diaspora', intention: 'Acheter depuis l’étranger', detail: 'Je commande pour mes proches au Mali.', icone: Globe, suite: 'Vous renseignerez votre pays et les coordonnées du bénéficiaire au Mali.' },
+] as const;
+export function estProfil(v: unknown): v is ProfilInscription { return PROFILS_INSCRIPTION.some(p=>p.cle===v); }
+export default function ChoixProfil({valeur,onChange,disabled=false}:{valeur:ProfilInscription|null;onChange:(p:ProfilInscription)=>void;disabled?:boolean}) {
+ return <div className="space-y-3"><p className="text-sm text-slate-600">Un compte peut avoir plusieurs profils. Choisissez votre première activité ; vous pourrez en ajouter d’autres depuis « Mes profils ».</p>
+ <div role="group" aria-label="Choisir mon profil" className="grid grid-cols-2 gap-3">{PROFILS_INSCRIPTION.map(p=><button type="button" key={p.cle} disabled={disabled} aria-pressed={valeur===p.cle} onClick={()=>onChange(p.cle)} className={`text-left rounded-2xl border-2 p-3 sm:p-4 space-y-2 disabled:opacity-60 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300 ${valeur===p.cle?'border-emerald-700 bg-emerald-50':'border-slate-200 bg-white hover:border-emerald-600'}`}><span className="flex items-center justify-between"><p.icone aria-hidden="true" className="w-5 h-5 text-emerald-800"/>{valeur===p.cle&&<Check aria-hidden="true" className="w-4 h-4 text-emerald-800"/>}</span><span className="block text-sm font-bold text-slate-900">{p.intention}</span><span className="block text-xs text-slate-600">{p.detail}</span><span className="block text-xs font-bold text-emerald-800">{p.titre}{valeur===p.cle?' · Sélectionné':''}</span></button>)}</div></div>;
+}
+export function ResumeProfil({profil}:{profil:ProfilInscription}){const p=PROFILS_INSCRIPTION.find(p=>p.cle===profil)!;return <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 space-y-1"><p className="font-bold text-sm text-emerald-900">Profil choisi : {p.titre}</p><p className="text-sm text-slate-700">{p.suite}</p><a href="#choix-inscription" className="inline-flex min-h-11 items-center text-sm underline font-semibold text-emerald-800">Modifier mon choix</a></div>}
