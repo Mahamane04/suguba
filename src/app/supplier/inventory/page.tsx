@@ -1,5 +1,7 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Header from '@/components/common/Header';
@@ -7,7 +9,7 @@ import BottomNav from '@/components/common/BottomNav';
 import ProductImage from '@/components/common/ProductImage';
 import Button from '@/components/ui/Button';
 import FormulaireVariante from '@/components/product/FormulaireVariante';
-import { Package, Minus, Plus, Loader2, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { Package, Minus, Plus, AlertTriangle, ArrowLeft } from 'lucide-react';
 
 interface ProduitStock {
   id: string;
@@ -116,7 +118,7 @@ export default function SupplierInventoryPage() {
 
         {produits === null ? (
           <div className="bg-white rounded-3xl border border-slate-200 p-8 flex justify-center">
-            <Loader2 className="w-6 h-6 text-slate-400 animate-spin" />
+            <SugubaLoader className="w-6 h-6 text-slate-400" />
           </div>
         ) : liste.length === 0 ? (
           <div className="bg-white rounded-3xl border border-slate-200 p-8 text-center space-y-3">

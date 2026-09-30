@@ -1,5 +1,7 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useCallback, useEffect, useState } from 'react';
 import CreateSavTicketModal from '@/components/admin/CreateSavTicketModal';
 import ChoicePicker from '@/components/ui/ChoicePicker';
@@ -15,7 +17,7 @@ import { useCibleUrl, usePermission, usePosteAdmin } from '@/components/admin/co
 import { lireQrRemise } from '@/lib/qr-remise';
 import { useSugubaStore } from '@/lib/store';
 import { SavTicket } from '@/types';
-import { LifeBuoy, Truck, Phone, MessageCircle, Plus, CheckCircle2, Bike, QrCode, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { LifeBuoy, Truck, Phone, MessageCircle, Plus, CheckCircle2, Bike, QrCode, Image as ImageIcon } from 'lucide-react';
 
 /**
  * Service après-vente (refait en U4, 2026-09-27 : tableau, panneau latéral).
@@ -222,7 +224,7 @@ export default function AdminSavPage() {
               photos[ticket.id] === undefined ? (
                 <Button variant="ghost" size="sm" onClick={() => chargerPhotos(ticket.id)}><ImageIcon className="w-4 h-4" />Voir les photos du client</Button>
               ) : photos[ticket.id] === 'chargement' ? (
-                <p className="text-sm text-slate-500">Chargement des photos…</p>
+                <p className="text-sm text-slate-500"><SugubaLoader className="mr-2 inline-flex h-5 w-5 align-middle" />Chargement des photos…</p>
               ) : (photos[ticket.id] as string[]).length === 0 ? (
                 <p className="text-sm text-slate-500">Photos introuvables.</p>
               ) : (
@@ -255,7 +257,7 @@ export default function AdminSavPage() {
                   <>
                     <ChoicePicker ariaLabel="Coursier" valeur={choix} onChange={setLivreurChoisi} choix={livreurs.map((d) => ({ valeur: d.id, libelle: d.fullName }))} />
                     <Button fullWidth disabled={enCours || !choix} onClick={() => agir({ ticketId: ticket.id, action: 'dispatch', driverId: choix }, 'Coursier envoyé.')}>
-                      {enCours ? <Loader2 className="w-4 h-4 animate-spin" /> : <Truck className="w-4 h-4" />}Envoyer ce coursier
+                      {enCours ? <SugubaLoader className="w-4 h-4" /> : <Truck className="w-4 h-4" />}Envoyer ce coursier
                     </Button>
                   </>
                 )}
@@ -266,7 +268,7 @@ export default function AdminSavPage() {
                 ticketId: ticket.id, action: 'resolve',
                 notes: 'Échange neuf remis au client et pièce défectueuse retournée au fournisseur.',
               }, 'Dossier clos.')}>
-                {enCours ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}Échange réussi : clore le dossier
+                {enCours ? <SugubaLoader className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}Échange réussi : clore le dossier
               </Button>
             )}
             {ticket.status === 'courier_dispatched' && (

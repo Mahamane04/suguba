@@ -1,8 +1,10 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { PhoneCall, MessageCircle, CheckCircle2, Truck, Loader2, HelpCircle } from 'lucide-react';
+import { PhoneCall, MessageCircle, CheckCircle2, Truck, HelpCircle } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import ChoicePicker from '@/components/ui/ChoicePicker';
 import { Card, Skeleton } from '@/components/ui/Surface';
@@ -149,7 +151,7 @@ export default function DossierCommande({ commande, onFait }: { commande: Comman
           </div>
           {peutModifier && (
             <Button fullWidth disabled={enCours} onClick={() => agir({ action: 'confirmer', orderId: c.id })}>
-              {enCours ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}Client joint : confirmer la commande
+              {enCours ? <SugubaLoader className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}Client joint : confirmer la commande
             </Button>
           )}
         </div>
@@ -160,7 +162,7 @@ export default function DossierCommande({ commande, onFait }: { commande: Comman
           <label htmlFor={`livreur-${c.id}`} className="block text-sm font-semibold text-slate-800">{c.statut === 'confirmed' ? 'Attribuer un livreur' : 'Changer de livreur'}</label>
           <ChoixLivreur id={`livreur-${c.id}`} livreurs={livreurs} erreur={erreurLivreurs} valeur={livreurChoisi} onChange={setLivreur} />
           <Button fullWidth disabled={enCours || !livreurChoisi} onClick={() => agir({ action: 'attribuer', orderIds: [c.id], driverId: livreurChoisi })}>
-            {enCours ? <Loader2 className="w-4 h-4 animate-spin" /> : <Truck className="w-4 h-4" />}{c.statut === 'confirmed' ? 'Attribuer ce livreur' : 'Changer de livreur'}
+            {enCours ? <SugubaLoader className="w-4 h-4" /> : <Truck className="w-4 h-4" />}{c.statut === 'confirmed' ? 'Attribuer ce livreur' : 'Changer de livreur'}
           </Button>
         </Card>
       )}

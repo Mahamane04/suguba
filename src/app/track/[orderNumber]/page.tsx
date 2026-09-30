@@ -1,5 +1,7 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import { orderAccessKey } from '@/lib/order-access-client';
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -236,8 +238,8 @@ export default function OrderTrackingPage() {
                 disabled={actualisation || !order.customerPhone}
                 className="inline-flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-900 disabled:opacity-60"
               >
-                <RefreshCw className={`w-3.5 h-3.5 ${actualisation ? 'animate-spin' : ''}`} />
-                {actualisation ? 'Mise à jour…' : 'Actualiser'}
+                {actualisation ? <SugubaLoader className="w-3.5 h-3.5" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                {actualisation ? <><SugubaLoader className="mr-2 h-4 w-4" />Mise à jour…</> : 'Actualiser'}
               </button>
               <h1 className="text-xl font-bold text-slate-900">
                 Commande #{order.orderNumber}

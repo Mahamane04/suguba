@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useState } from 'react';
-import { Package, Phone, Navigation, CheckCircle2, Loader2, KeyRound } from 'lucide-react';
+import { Package, Phone, Navigation, CheckCircle2, KeyRound } from 'lucide-react';
 import type { Order } from '@/types';
 import { cloudSyncService } from '@/lib/cloud-sync';
 import { sugubaStore } from '@/lib/store';
@@ -87,7 +89,7 @@ export default function RamassageColis({ order, nomRepli }: { order: Order; nomR
               />
               <button type="button" onClick={valider} disabled={envoi || code.length !== 4}
                 className="flex-1 min-h-[44px] rounded-full bg-suguba-profond text-white text-sm font-semibold inline-flex items-center justify-center gap-2 disabled:opacity-40">
-                {envoi ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                {envoi ? <SugubaLoader className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
                 Colis récupéré
               </button>
             </div>

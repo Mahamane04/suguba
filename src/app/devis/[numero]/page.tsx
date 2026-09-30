@@ -1,5 +1,7 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -169,7 +171,7 @@ export default function DevisClientPage() {
             <div className="grid grid-cols-2 gap-2">
               <Button variant="ghost" onClick={() => setConfirmer(null)} disabled={envoi}>Retour</Button>
               <Button variant={confirmer === 'refuser' ? 'danger' : 'primary'} onClick={() => decider(confirmer)} disabled={envoi}>
-                {envoi ? 'Un instant…' : confirmer === 'accepter' ? 'Oui, j’accepte' : 'Oui, refuser'}
+                {envoi ? <><SugubaLoader className="mr-2 h-4 w-4" />Un instant…</> : confirmer === 'accepter' ? 'Oui, j’accepte' : 'Oui, refuser'}
               </Button>
             </div>
           </div>

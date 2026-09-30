@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useState } from 'react';
-import { Layers, Loader2 } from 'lucide-react';
+import { Layers } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { Field, Input } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
@@ -71,7 +73,7 @@ export default function FormulaireVariante({
       <div className="flex gap-2">
         <Button variant="ghost" size="sm" onClick={() => setOuvert(false)}>Annuler</Button>
         <Button size="sm" fullWidth disabled={envoi || !libelle.trim() || !(Number(prix) > 0)} onClick={envoyer}>
-          {envoi ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Layers className="w-3.5 h-3.5" />}Créer la variante
+          {envoi ? <SugubaLoader className="w-3.5 h-3.5" /> : <Layers className="w-3.5 h-3.5" />}Créer la variante
         </Button>
       </div>
     </div>

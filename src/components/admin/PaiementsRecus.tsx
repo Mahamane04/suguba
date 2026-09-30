@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useCallback, useState } from 'react';
-import { Loader2, Plus, X } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { Field, Input } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
@@ -62,7 +64,7 @@ export default function PaiementsRecus({ cible, cibleId, du, recu, titre, onMaj 
         <Button size="sm" variant="ghost" onClick={() => { setOuvert(true); charger(); }}>Paiements reçus</Button>
       ) : (
         <div className="space-y-2">
-          {!liste ? <p>Chargement…</p> : liste.length === 0 ? <p>Aucun paiement enregistré.</p> : (
+          {!liste ? <p><SugubaLoader className="mr-2 inline-flex h-5 w-5 align-middle" />Chargement…</p> : liste.length === 0 ? <p>Aucun paiement enregistré.</p> : (
             <ul className="space-y-1.5">
               {liste.map((p) => (
                 <li key={p.id} className={`rounded-xl bg-white/70 px-2.5 py-2 ${p.annuleLe ? 'opacity-60' : ''}`}>
@@ -79,7 +81,7 @@ export default function PaiementsRecus({ cible, cibleId, du, recu, titre, onMaj 
                         <Button size="sm" variant="ghost" onClick={() => setAnnulation(null)}>Retour</Button>
                         <Button size="sm" disabled={envoi || motif.trim().length < 3}
                           onClick={async () => { if (await envoyer({ action: 'annuler', id: p.id, motif }, 'Paiement annulé.')) { setAnnulation(null); setMotif(''); } }}>
-                          {envoi ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}Annuler ce paiement
+                          {envoi ? <SugubaLoader className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}Annuler ce paiement
                         </Button>
                       </div>
                     </div>
@@ -111,7 +113,7 @@ export default function PaiementsRecus({ cible, cibleId, du, recu, titre, onMaj 
                       setAjout(false); setReference(''); setNote('');
                     }
                   }}>
-                  {envoi ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}Enregistrer
+                  {envoi ? <SugubaLoader className="w-3.5 h-3.5" /> : null}Enregistrer
                 </Button>
               </div>
             </div>

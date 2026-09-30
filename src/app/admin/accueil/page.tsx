@@ -1,5 +1,7 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { LayoutTemplate, Eye, EyeOff } from 'lucide-react';
@@ -62,7 +64,7 @@ export default function AccueilAdminPage() {
               ))}
               <p className="text-xs text-slate-500">Toujours affichés : la recherche, les catégories et le catalogue.</p>
               <div className="flex gap-2">
-                <Button type="button" onClick={publier} disabled={!modifie || envoi}>{envoi ? 'Publication…' : 'Publier'}</Button>
+                <Button type="button" onClick={publier} disabled={!modifie || envoi}>{envoi ? <><SugubaLoader className="mr-2 h-4 w-4" />Publication…</> : 'Publier'}</Button>
                 {modifie && <Button type="button" variant="ghost" onClick={() => setBrouillon(publies)}>Annuler les changements</Button>}
                 <Link href="/" target="_blank" className="h-10 px-3 rounded-xl text-sm font-semibold text-slate-700 inline-flex items-center hover:bg-slate-100">Voir le site</Link>
               </div>

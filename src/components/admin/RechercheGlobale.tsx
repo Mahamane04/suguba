@@ -1,8 +1,10 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, Loader2, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 
 interface Groupe { cle: string; titre: string; resultats: { titre: string; detail: string; lien: string }[]; erreur?: string }
 
@@ -51,7 +53,7 @@ export default function RechercheGlobale({ onFermer }: { onFermer: () => void })
       <button type="button" aria-label="Fermer la recherche" className="absolute inset-0 bg-slate-900/50" onClick={onFermer} />
       <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden">
         <div className="flex items-center gap-2 px-4 border-b border-slate-200">
-          {etat === 'chargement' ? <Loader2 className="w-4 h-4 text-slate-400 animate-spin" /> : <Search className="w-4 h-4 text-slate-400" />}
+          {etat === 'chargement' ? <SugubaLoader className="w-4 h-4 text-slate-400" /> : <Search className="w-4 h-4 text-slate-400" />}
           <input ref={champ} value={q} onChange={(e) => setQ(e.target.value)} aria-label="Rechercher"
             placeholder="Commande, produit, personne, boutique, référence de paiement…"
             className="flex-1 h-14 text-base outline-none placeholder:text-slate-400" />

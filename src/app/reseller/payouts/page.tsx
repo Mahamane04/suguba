@@ -1,5 +1,7 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import { PayoutCheckout, payoutSessionStorage } from '@/lib/payout-submit';
 
 import React, { useCallback, useEffect, useState, useMemo } from 'react';
@@ -8,7 +10,7 @@ import BottomNav from '@/components/common/BottomNav';
 import FormulaireRetrait from '@/components/retraits/FormulaireRetrait';
 import HistoriqueRetraits from '@/components/retraits/HistoriqueRetraits';
 import { useSugubaStore } from '@/lib/store';
-import { Clock, CheckCircle2, Loader2 } from 'lucide-react';
+import { Clock, CheckCircle2 } from 'lucide-react';
 import type { TauxRetrait } from '@/lib/pricing';
 import { tauxRetraitPublics, type RetraitAffiche } from '@/lib/retraits-affichage';
 
@@ -73,7 +75,7 @@ export default function ResellerPayoutsPage() {
         {/* Soldes */}
         {chargement ? (
           <div className="bg-white rounded-3xl border border-slate-200 p-8 flex justify-center">
-            <Loader2 className="w-6 h-6 text-slate-400 animate-spin" />
+            <SugubaLoader className="w-6 h-6 text-slate-400" />
           </div>
         ) : (
           <div className="bg-white rounded-3xl border border-slate-200 p-5 space-y-4">

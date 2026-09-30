@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+@keyframes suguba-loading {
+  0%, 100% { opacity: .7; transform: scale(.92); }
+  50% { opacity: 1; transform: scale(1); }
+}
+.suguba-loader img { animation: suguba-loading 1.5s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .suguba-loader img { animation: none; }
+}
+
 /* ═══════════════════════════════════════════════════════════════
    SUGUBA Design System V1.3 — Inter + Vert Mali + Fintech Modern
    Inspiré de : Wave, Jumia, PalmPay + sugubaml.com

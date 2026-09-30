@@ -1,9 +1,11 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useMemo, useState } from 'react';
 import { Product } from '@/types';
 import { sugubaStore, useSugubaStore } from '@/lib/store';
-import { X, ShieldCheck, AlertCircle, Loader2, Sparkles } from 'lucide-react';
+import { X, ShieldCheck, AlertCircle, Sparkles } from 'lucide-react';
 import ProductImage from '@/components/common/ProductImage';
 import { useToast } from '@/components/ui/Toast';
 import { calculerTarif, type ReglagesPlateforme } from '@/lib/pricing';
@@ -147,7 +149,7 @@ export default function ProductPricingModal({ product, isOpen, onClose }: Produc
 
           {chargement || !tarif ? (
             <div className="flex items-center space-x-2 text-xs text-slate-500 py-6">
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <SugubaLoader className="w-4 h-4" />
               <span>Chargement des réglages…</span>
             </div>
           ) : (
@@ -213,7 +215,7 @@ export default function ProductPricingModal({ product, isOpen, onClose }: Produc
                 disabled={envoi || tarif.statut === 'sous_plancher'}
                 className="w-full h-[52px] bg-slate-700 hover:bg-slate-800 disabled:opacity-50 text-white font-bold rounded-2xl text-xs flex items-center justify-center space-x-2 transition-transform active:scale-[0.98]"
               >
-                {envoi ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                {envoi ? <SugubaLoader className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
                 <span>{tarif.statut === 'sous_plancher' ? 'Prix sous le plancher' : 'Approuver et publier à ce prix'}</span>
               </button>
             </>

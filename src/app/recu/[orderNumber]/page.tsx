@@ -1,5 +1,7 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
@@ -425,7 +427,7 @@ function SignalerProbleme({ numero, articles, onFermer }: {
     <Sheet ouvert onFermer={onFermer} titre="Signaler un problème" sousTitre="Votre demande arrive au service après-vente de Suguba."
       pied={ticket
         ? <Button fullWidth onClick={onFermer}>Fermer</Button>
-        : <Button fullWidth onClick={envoyer} disabled={envoi}>{envoi ? 'Envoi…' : 'Envoyer ma demande'}</Button>}>
+        : <Button fullWidth onClick={envoyer} disabled={envoi}>{envoi ? <><SugubaLoader className="mr-2 h-4 w-4" />Envoi…</> : 'Envoyer ma demande'}</Button>}>
       {ticket ? (
         <div className="text-center space-y-2 py-4">
           <CheckCircle2 className="w-12 h-12 text-suguba-brand-dark mx-auto" />
@@ -579,7 +581,7 @@ function EtapesPrestation({ numero, article, plusieurs, onMaj }: { numero: strin
                     <p className="text-xs text-slate-800">Vous confirmez que <strong>« {e.libelle} »</strong> est bien fait ? Vous ne pourrez plus revenir en arrière.</p>
                     <div className="grid grid-cols-2 gap-2">
                       <Button variant="ghost" onClick={() => setOuverte(null)} disabled={envoi}>Annuler</Button>
-                      <Button onClick={() => repondre(e.position, 'valider')} disabled={envoi}>{envoi ? 'Envoi…' : 'Oui, je valide'}</Button>
+                      <Button onClick={() => repondre(e.position, 'valider')} disabled={envoi}>{envoi ? <><SugubaLoader className="mr-2 h-4 w-4" />Envoi…</> : 'Oui, je valide'}</Button>
                     </div>
                   </div>
                 ) : (
@@ -590,7 +592,7 @@ function EtapesPrestation({ numero, article, plusieurs, onMaj }: { numero: strin
                     </Field>
                     <div className="grid grid-cols-2 gap-2">
                       <Button variant="ghost" onClick={() => setOuverte(null)} disabled={envoi}>Annuler</Button>
-                      <Button onClick={() => repondre(e.position, 'contester')} disabled={envoi || motif.trim().length < 5}>{envoi ? 'Envoi…' : 'Envoyer'}</Button>
+                      <Button onClick={() => repondre(e.position, 'contester')} disabled={envoi || motif.trim().length < 5}>{envoi ? <><SugubaLoader className="mr-2 h-4 w-4" />Envoi…</> : 'Envoyer'}</Button>
                     </div>
                   </div>
                 )

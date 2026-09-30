@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useState } from 'react';
-import { ShieldCheck, Loader2, Check, Clock, X, Upload, Phone, MapPin } from 'lucide-react';
+import { ShieldCheck, Check, Clock, X, Upload, Phone, MapPin } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
 import { Card, Skeleton, StatusPill } from '@/components/ui/Surface';
@@ -155,7 +157,7 @@ export default function VerificationPage() {
 
                   {modifiable && parAppel && (
                     <Button variant="ghost" fullWidth disabled={envoi === etape.valeur} onClick={() => demander('phone')}>
-                      {envoi === etape.valeur ? <Loader2 className="w-4 h-4 animate-spin" /> : <Phone className="w-4 h-4" />}
+                      {envoi === etape.valeur ? <SugubaLoader className="w-4 h-4" /> : <Phone className="w-4 h-4" />}
                       Demander un appel de vérification
                     </Button>
                   )}
@@ -163,7 +165,7 @@ export default function VerificationPage() {
                   {modifiable && parQuartier && (
                     quartier ? (
                       <Button variant="ghost" fullWidth disabled={envoi === etape.valeur} onClick={() => demander('location', { quartier })}>
-                        {envoi === etape.valeur ? <Loader2 className="w-4 h-4 animate-spin" /> : <MapPin className="w-4 h-4" />}
+                        {envoi === etape.valeur ? <SugubaLoader className="w-4 h-4" /> : <MapPin className="w-4 h-4" />}
                         Faire vérifier mon quartier ({quartier})
                       </Button>
                     ) : (
@@ -192,7 +194,7 @@ export default function VerificationPage() {
                         }}
                       />
                       <span className="inline-flex items-center justify-center gap-2 w-full h-11 rounded-2xl border border-slate-200 bg-white text-xs font-bold text-slate-800 cursor-pointer active:scale-[0.98]">
-                        {envoi === etape.valeur ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                        {envoi === etape.valeur ? <SugubaLoader className="w-4 h-4" /> : <Upload className="w-4 h-4" />}
                         {envoi === etape.valeur ? 'Envoi…' : 'Envoyer une photo'}
                       </span>
                     </label>

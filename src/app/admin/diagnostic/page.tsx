@@ -1,5 +1,7 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { Suspense, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -45,7 +47,7 @@ function Contenu() {
           <label className="flex-1 min-w-[12rem] text-xs font-bold text-slate-700">Référence
             <input value={ref} onChange={(e) => setRef(e.target.value)} placeholder={def?.aide} className="block w-full mt-1 min-h-12 px-4 rounded-2xl border border-slate-200 text-base sm:text-sm font-normal focus:outline-none focus:ring-2 focus:ring-suguba-profond" />
           </label>
-          <Button type="submit" disabled={envoi || !ref.trim()}>{envoi ? 'Analyse…' : 'Expliquer'}</Button>
+          <Button type="submit" disabled={envoi || !ref.trim()}>{envoi ? <><SugubaLoader className="mr-2 h-4 w-4" />Analyse…</> : 'Expliquer'}</Button>
         </form>
       </Card>
       {erreur && <p role="alert" className="p-3 rounded-2xl bg-rose-50 border border-rose-100 text-sm font-semibold text-rose-700">{erreur}</p>}

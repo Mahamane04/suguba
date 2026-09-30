@@ -1,11 +1,13 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import { rememberOrderAccess } from '@/lib/order-access-client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ShoppingBag, Minus, Plus, Trash2, Loader2, Truck, Store, Check, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { ShoppingBag, Minus, Plus, Trash2, Truck, Store, Check, AlertTriangle, ArrowLeft } from 'lucide-react';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import { MARGE_BAS_FLOTTANT } from '@/lib/mise-en-page';
@@ -363,7 +365,7 @@ export default function PanierPage() {
           <Card className="space-y-3 sticky top-24">
             <Recapitulatif devis={devis} enCours={devisEnCours} />
             <Button type="submit" size="lg" fullWidth disabled={envoi || !devis || indisponibles.length > 0}>
-              {envoi ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+              {envoi ? <SugubaLoader className="w-4 h-4" /> : <Check className="w-4 h-4" />}
               Confirmer la commande
             </Button>
             <p className="text-xs text-slate-500 text-center">Rien à payer maintenant · Payez à la livraison</p>
@@ -393,11 +395,11 @@ export default function PanierPage() {
               Total{devis && devis.livraisons > 1 ? ` · ${devis.livraisons} livraisons` : ''}
             </p>
             <p className="text-lg font-bold text-slate-900 tabular-nums">
-              {devis ? fcfa(devis.total) : '…'}{devisEnCours && <Loader2 className="inline w-3.5 h-3.5 ml-1 animate-spin text-slate-400" />}
+              {devis ? fcfa(devis.total) : '…'}{devisEnCours && <SugubaLoader className="inline w-3.5 h-3.5 ml-1 text-slate-400" />}
             </p>
           </div>
           <Button type="submit" form="formulaire-panier" size="lg" disabled={envoi || !devis || indisponibles.length > 0}>
-            {envoi ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+            {envoi ? <SugubaLoader className="w-4 h-4" /> : <Check className="w-4 h-4" />}
             Confirmer
           </Button>
         </div>

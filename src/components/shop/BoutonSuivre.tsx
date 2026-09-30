@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useState } from 'react';
-import { Bell, BellRing, Loader2 } from 'lucide-react';
+import { Bell, BellRing } from 'lucide-react';
 
 /**
  * Suivre une boutique (§ 10 du cahier des charges).
@@ -75,7 +77,7 @@ export default function BoutonSuivre({ slug, abonnesInitial }: { slug: string; a
             suit ? 'bg-suguba-menthe text-suguba-profond border border-suguba-profond/20' : 'bg-suguba-profond hover:bg-suguba-profond-2 text-white'
           }`}
         >
-          {enCours ? <Loader2 className="w-4 h-4 animate-spin" /> : suit ? <BellRing className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+          {enCours ? <SugubaLoader className="w-4 h-4" /> : suit ? <BellRing className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
           {suit ? 'Abonné' : 'Suivre'}
         </button>
         {abonnes > 0 && (

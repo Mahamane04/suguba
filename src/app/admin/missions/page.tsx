@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useState } from 'react';
-import { Target, Loader2, Plus, Play, Pause, Square, Check, X, ExternalLink } from 'lucide-react';
+import { Target, Plus, Play, Pause, Square, Check, X, ExternalLink } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
 import { Field, Input, Textarea } from '@/components/ui/Field';
@@ -162,7 +164,7 @@ export default function MissionsAdminPage() {
                 : 'Budget ouvert : chaque participant qui atteint l’objectif peut être payé. Fixez un nombre de gagnants pour le plafonner.'}
             </p>
             <Button type="submit" disabled={envoi} fullWidth>
-              {envoi ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              {envoi ? <SugubaLoader className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
               Créer en brouillon
             </Button>
           </form>

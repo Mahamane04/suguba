@@ -1,8 +1,10 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import ChoicePicker from '@/components/ui/ChoicePicker';
 import React, { useState } from 'react';
-import { ChevronDown, LocateFixed, Loader2, MapPin } from 'lucide-react';
+import { ChevronDown, LocateFixed, MapPin } from 'lucide-react';
 import { BAMAKO_NEIGHBORHOODS } from '@/lib/bamako-neighborhoods';
 import { quartierLePlusProche } from '@/lib/bamako-quartiers';
 import { useToast } from '@/components/ui/Toast';
@@ -90,7 +92,7 @@ export default function NeighborhoodPicker({
       onChange={q=>{onChange(q);onPosition?.(null);}} />
     <button type="button" onClick={utiliserPositionActuelle} disabled={localisationEnCours}
       aria-label="Utiliser ma position actuelle" className={`min-h-11 min-w-11 flex items-center justify-center gap-2 rounded-xl px-2 text-xs font-semibold focus-visible:outline-2 ${variante === 'puce' ? 'bg-suguba-profond text-white' : 'text-suguba-profond hover:bg-slate-100'}`}>
-      {localisationEnCours ? <Loader2 aria-hidden="true" className="w-4 h-4 animate-spin" /> : <LocateFixed aria-hidden="true" className="w-4 h-4" />}
+      {localisationEnCours ? <SugubaLoader aria-hidden="true" className="w-4 h-4" /> : <LocateFixed aria-hidden="true" className="w-4 h-4" />}
       {variante !== 'puce' && (localisationEnCours ? 'Localisation…' : 'Utiliser ma position actuelle')}
     </button>
   </div>;

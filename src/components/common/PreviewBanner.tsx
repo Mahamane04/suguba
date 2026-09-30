@@ -1,8 +1,10 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Eye, X, Loader2 } from 'lucide-react';
+import { Eye, X } from 'lucide-react';
 import { sugubaStore, useSugubaStore, useApercuAdmin, definirApercuAdmin } from '@/lib/store';
 import { useToast } from '@/components/ui/Toast';
 
@@ -67,7 +69,7 @@ export default function PreviewBanner() {
           disabled={sortie}
           className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-slate-900 text-white hover:bg-black disabled:opacity-60"
         >
-          {sortie ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
+          {sortie ? <SugubaLoader className="w-3 h-3" /> : <X className="w-3 h-3" />}
           <span>Quitter l&apos;aperçu</span>
         </button>
       </div>

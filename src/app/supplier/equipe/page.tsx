@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useState } from 'react';
-import { UsersRound, Loader2, UserPlus, X, LogOut } from 'lucide-react';
+import { UsersRound, UserPlus, X, LogOut } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
 import { Field, Input } from '@/components/ui/Field';
@@ -99,7 +101,7 @@ export default function EquipeFournisseurPage() {
             </div>
             <Button fullWidth disabled={envoi || telephone.replace(/\D/g, '').length < 8 || membres.length >= max}
               onClick={async () => { if (await envoyer({ telephone, role }, 'Invitation envoyée.')) setTelephone(''); }}>
-              {envoi ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+              {envoi ? <SugubaLoader className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
               Inviter
             </Button>
           </Card>

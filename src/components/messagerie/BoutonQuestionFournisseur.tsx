@@ -1,8 +1,10 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, MessageCircleQuestion } from 'lucide-react';
+import { MessageCircleQuestion } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 
 /**
@@ -27,7 +29,7 @@ export default function BoutonQuestionFournisseur({ produitId }: { produitId: st
   return (
     <button type="button" onClick={ouvrir} disabled={envoi}
       className="w-full min-h-11 rounded-2xl border border-slate-200 bg-white text-slate-800 text-xs font-bold inline-flex items-center justify-center gap-2 hover:bg-slate-50 disabled:opacity-60">
-      {envoi ? <Loader2 className="w-4 h-4 animate-spin" /> : <MessageCircleQuestion className="w-4 h-4" />}
+      {envoi ? <SugubaLoader className="w-4 h-4" /> : <MessageCircleQuestion className="w-4 h-4" />}
       Poser une question au fournisseur
     </button>
   );

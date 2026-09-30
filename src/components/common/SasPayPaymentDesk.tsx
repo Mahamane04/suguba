@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ShieldCheck, Loader2, CheckCircle2, AlertCircle, Check } from 'lucide-react';
+import { ShieldCheck, CheckCircle2, AlertCircle, Check } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { Field, Input } from '@/components/ui/Field';
 import PaymentLogo, { type MoyenPaiement } from '@/components/ui/PaymentLogo';
@@ -232,7 +234,7 @@ export default function SasPayPaymentDesk({ amount, orderNumber, defaultPhone = 
             <PaymentLogo moyen={choisi.moyen} taille="md" />
             <div className="min-w-0">
               <p className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                <Loader2 className="w-4 h-4 text-suguba-brand-dark animate-spin shrink-0" />
+                <SugubaLoader className="w-4 h-4 text-suguba-brand-dark shrink-0" />
                 Validez sur votre téléphone
               </p>
               <p className="text-xs text-slate-500">
@@ -336,7 +338,7 @@ export default function SasPayPaymentDesk({ amount, orderNumber, defaultPhone = 
           <Button type="button" onClick={payer} disabled={etape === 'envoi'} size="lg" fullWidth>
             {etape === 'envoi' ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <SugubaLoader className="w-4 h-4" />
                 <span>Envoi en cours…</span>
               </>
             ) : (

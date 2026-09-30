@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useRef, useState } from 'react';
-import { ImagePlus, Loader2, X, Star } from 'lucide-react';
+import { ImagePlus, X, Star } from 'lucide-react';
 import { compresserImage } from '@/lib/compression-image';
 
 interface Photo {
@@ -108,7 +110,7 @@ export default function PhotosUploader({
             <img src={p.apercu} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
             {!p.url && !p.erreur && (
               <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
-                <Loader2 className="w-5 h-5 text-slate-500 animate-spin" />
+                <SugubaLoader className="w-5 h-5 text-slate-500" />
               </div>
             )}
             {p.erreur && (

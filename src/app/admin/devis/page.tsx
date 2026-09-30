@@ -1,5 +1,7 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { AlertTriangle, FileText, Phone, RefreshCw, Search, Users } from 'lucide-react';
@@ -139,7 +141,7 @@ export default function DevisAdminPage() {
     <PageReseau titre="Devis" large sousTitre="Les demandes de devis des clients, et où elles en sont."
       action={
         <Button variant="ghost" size="sm" onClick={() => charger()} disabled={chargement}>
-          <RefreshCw className={`w-4 h-4 ${chargement ? 'animate-spin' : ''}`} /> Actualiser
+          {chargement ? <SugubaLoader className="w-4 h-4" /> : <RefreshCw className="w-4 h-4" />} Actualiser
         </Button>
       }>
       {migration && (

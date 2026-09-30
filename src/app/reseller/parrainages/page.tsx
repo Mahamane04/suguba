@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useState } from 'react';
-import { UserPlus, Loader2, Gift, Users } from 'lucide-react';
+import { UserPlus, Gift, Users } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import CarteLien from '@/components/reseau/CarteLien';
 import Button from '@/components/ui/Button';
@@ -127,7 +129,7 @@ export default function ParrainagesPage() {
               choix={[{ valeur: 'customer', libelle: 'Client' }, { valeur: 'reseller', libelle: 'Revendeur' }]} />
           </Field>
           <Button type="submit" disabled={envoi} fullWidth>
-            {envoi ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+            {envoi ? <SugubaLoader className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
             Enregistrer le filleul
           </Button>
         </form>

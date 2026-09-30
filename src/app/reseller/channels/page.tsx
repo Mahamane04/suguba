@@ -1,11 +1,13 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
-import { ArrowLeft, Store, ExternalLink, Copy, Check, Loader2 } from 'lucide-react';
+import { ArrowLeft, Store, ExternalLink, Copy, Check } from 'lucide-react';
 
 interface BoutiqueFournisseur {
   nom: string;
@@ -81,7 +83,7 @@ export default function BoutiquesFournisseursPage() {
 
         {chargement ? (
           <div className="flex items-center space-x-2 text-xs text-slate-500 py-8">
-            <Loader2 className="w-4 h-4 animate-spin" /><span>Chargement…</span>
+            <SugubaLoader className="w-4 h-4" /><span>Chargement…</span>
           </div>
         ) : boutiques.length === 0 ? (
           <div className="bg-white rounded-3xl border border-slate-200 p-8 text-center space-y-2">

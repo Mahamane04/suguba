@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Loader2, Send, ShieldAlert } from 'lucide-react';
+import { Send, ShieldAlert } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
@@ -50,7 +52,7 @@ export default function FilMessages({ charger, envoyer, placeholder }: {
   return (
     <div className="space-y-3">
       <div className="space-y-2 max-h-[55vh] overflow-y-auto">
-        {!messages ? <p className="text-xs text-slate-500">Chargement…</p>
+        {!messages ? <p className="text-xs text-slate-500"><SugubaLoader className="mr-2 inline-flex h-5 w-5 align-middle" />Chargement…</p>
           : messages.length === 0 ? <p className="text-xs text-slate-500">Aucun message pour l’instant.</p>
           : messages.map((m) => (
             <div key={m.id} className={`flex ${m.deMoi ? 'justify-end' : 'justify-start'}`}>
@@ -73,7 +75,7 @@ export default function FilMessages({ charger, envoyer, placeholder }: {
       </p>
       <Textarea rows={3} maxLength={1000} value={texte} onChange={(e) => setTexte(e.target.value)} placeholder={placeholder || 'Votre message'} aria-label="Votre message" />
       <Button fullWidth onClick={soumettre} disabled={envoi || !texte.trim()}>
-        {envoi ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}Envoyer
+        {envoi ? <SugubaLoader className="w-4 h-4" /> : <Send className="w-4 h-4" />}Envoyer
       </Button>
     </div>
   );

@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useState } from 'react';
-import { Tag, Loader2, RotateCcw } from 'lucide-react';
+import { Tag, RotateCcw } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import { Card, EmptyState, Skeleton } from '@/components/ui/Surface';
 import ProductImage from '@/components/common/ProductImage';
@@ -95,7 +97,7 @@ function LigneArticle({ a, onChange }: { a: Article; onChange: (maj: Partial<Art
         </label>
         <button type="button" disabled={envoi || !change || tropBas || !valeur} onClick={() => enregistrer(valeur)}
           className="min-h-[44px] px-4 rounded-full bg-suguba-profond text-white text-sm font-semibold inline-flex items-center gap-1.5 disabled:opacity-40">
-          {envoi && <Loader2 className="w-4 h-4 animate-spin" />}Enregistrer
+          {envoi && <SugubaLoader className="w-4 h-4" />}Enregistrer
         </button>
         {a.monPrix !== null && (
           <button type="button" disabled={envoi} onClick={() => enregistrer(null)} aria-label="Revenir au prix conseillé"

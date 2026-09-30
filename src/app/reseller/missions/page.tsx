@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useMemo, useState } from 'react';
-import { Target, Loader2, Clock, Gift, CheckCircle2, Camera, Send } from 'lucide-react';
+import { Target, Clock, Gift, CheckCircle2, Camera, Send } from 'lucide-react';
 import { Field, Input } from '@/components/ui/Field';
 import ChoicePicker from '@/components/ui/ChoicePicker';
 import { compresserImage } from '@/lib/compression-image';
@@ -238,7 +240,7 @@ export default function MissionsRevendeurPage() {
                   </div>
                 ) : (
                   <Button onClick={() => rejoindre(m.id)} disabled={enCours === m.id} fullWidth>
-                    {enCours === m.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                    {enCours === m.id ? <SugubaLoader className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
                     Je participe
                   </Button>
                 )}
@@ -326,7 +328,7 @@ function PreuvesMission({ mission, participation, preuves, onEnvoyee }: {
           </label>
           <div className="grid grid-cols-2 gap-2">
             <Button variant="ghost" onClick={() => setOuvert(false)} disabled={envoi}>Annuler</Button>
-            <Button onClick={envoyer} disabled={envoi || !capture}>{envoi ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}Envoyer</Button>
+            <Button onClick={envoyer} disabled={envoi || !capture}>{envoi ? <SugubaLoader className="w-4 h-4" /> : <Send className="w-4 h-4" />}Envoyer</Button>
           </div>
         </div>
       ) : (

@@ -1,8 +1,10 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { UserCog, UserPlus, Loader2, ShieldCheck, Search, UserMinus, AlertTriangle, Check } from 'lucide-react';
+import { UserCog, UserPlus, ShieldCheck, Search, UserMinus, AlertTriangle, Check } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
 import Sheet from '@/components/ui/Sheet';
@@ -151,7 +153,7 @@ export default function EquipeAdminPage() {
                                 <div className="flex flex-wrap items-center gap-2">
                                   <Button size="sm" disabled={enCours === m.id}
                                     onClick={() => envoyer({ action: 'role', profileId: m.id, teamRole: choix[m.id] }, m.id)}>
-                                    {enCours === m.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}Enregistrer
+                                    {enCours === m.id ? <SugubaLoader className="w-4 h-4" /> : <Check className="w-4 h-4" />}Enregistrer
                                   </Button>
                                   <button type="button" onClick={() => setChoix((s) => ({ ...s, [m.id]: m.teamRole || '' }))} className="text-xs font-semibold text-slate-600 hover:underline min-h-[40px]">Annuler</button>
                                   {role && <p className="w-full text-xs text-slate-500">{role.description}</p>}
@@ -238,7 +240,7 @@ function AjoutMembre({ ouvert, onFermer, roles, onAjouter, enCours }: {
         <div className="flex flex-col sm:flex-row gap-2 sm:justify-end">
           <Button variant="ghost" onClick={() => setChoisi(null)}>Choisir un autre compte</Button>
           <Button disabled={enCours === choisi.id} onClick={() => onAjouter(choisi.id, role)}>
-            {enCours === choisi.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
+            {enCours === choisi.id ? <SugubaLoader className="w-4 h-4" /> : <UserPlus className="w-4 h-4" />}
             Ajouter comme {roleChoisi?.libelle || 'membre'}
           </Button>
         </div>
@@ -250,7 +252,7 @@ function AjoutMembre({ ouvert, onFermer, roles, onAjouter, enCours }: {
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input id="recherche-membre" value={q} onChange={(e) => setQ(e.target.value)} autoComplete="off"
               placeholder="ex. : awa@exemple.com" className="w-full h-12 pl-10 pr-10 rounded-2xl border border-slate-300 text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-suguba-profond" />
-            {recherche && <Loader2 className="w-4 h-4 text-slate-400 animate-spin absolute right-3.5 top-1/2 -translate-y-1/2" />}
+            {recherche && <SugubaLoader className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2" />}
           </div>
           {message && <p className="text-sm text-slate-600">{message}</p>}
           {resultats && resultats.length === 0 && !message && (

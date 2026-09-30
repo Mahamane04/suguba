@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useMemo, useState } from 'react';
-import { Loader2, Network, Save, Search } from 'lucide-react';
+import { Network, Save, Search } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import { Card, EmptyState, Skeleton } from '@/components/ui/Surface';
 import Button from '@/components/ui/Button';
@@ -114,7 +116,7 @@ export default function PrioriteReseauPage() {
           )}
 
           <Button fullWidth onClick={enregistrer} disabled={envoi || !modifie}>
-            {envoi ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Enregistrer
+            {envoi ? <SugubaLoader className="w-4 h-4" /> : <Save className="w-4 h-4" />} Enregistrer
           </Button>
           <p className="text-xs text-slate-500 text-center">Un changement ne modifie jamais une commande déjà passée ni ses commissions.</p>
         </>

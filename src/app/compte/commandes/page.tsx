@@ -1,8 +1,10 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { FileText, Loader2, PackageCheck, Plus, ShoppingBag } from 'lucide-react';
+import { FileText, PackageCheck, Plus, ShoppingBag } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
 import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
@@ -106,7 +108,7 @@ export default function MesCommandesPage() {
                 <p className="text-sm font-bold text-slate-900">{nbAAjouter} achat{nbAAjouter > 1 ? 's' : ''} sur ce téléphone, pas encore dans votre compte</p>
                 <p className="text-xs text-slate-600">Ajoutez-les pour les retrouver sur tous vos téléphones.</p>
                 <Button fullWidth onClick={ajouter} disabled={ajout}>
-                  {ajout ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}Ajouter à mon compte
+                  {ajout ? <SugubaLoader className="w-4 h-4" /> : <Plus className="w-4 h-4" />}Ajouter à mon compte
                 </Button>
               </Card>
             )}

@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useRef, useState } from 'react';
-import { Camera, Loader2, X } from 'lucide-react';
+import { Camera, X } from 'lucide-react';
 import { compresserImage } from '@/lib/compression-image';
 
 /**
@@ -87,7 +89,7 @@ export default function LogoUploader({
           )}
           {envoiEnCours && (
             <div className="absolute inset-0 bg-white/70 flex items-center justify-center">
-              <Loader2 className="w-5 h-5 text-slate-600 animate-spin" />
+              <SugubaLoader className="w-5 h-5 text-slate-600" />
             </div>
           )}
         </button>

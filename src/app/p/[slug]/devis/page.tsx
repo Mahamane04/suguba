@@ -1,5 +1,7 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { use, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -126,7 +128,7 @@ export default function DemandeDevisPage({ params }: { params: Promise<{ slug: s
           </Field>
           <Field label="Repère (facultatif)"><Input value={repere} maxLength={500} onChange={(e) => setRepere(e.target.value)} /></Field>
           {erreur && <p role="alert" className="text-sm font-semibold text-rose-700">{erreur}</p>}
-          <Button type="submit" fullWidth disabled={envoi}>{envoi ? 'Envoi…' : 'Envoyer ma demande'}</Button>
+          <Button type="submit" fullWidth disabled={envoi}>{envoi ? <><SugubaLoader className="mr-2 h-4 w-4" />Envoi…</> : 'Envoyer ma demande'}</Button>
           <p className="text-xs text-slate-500 text-center">Gratuit et sans engagement. Votre demande reste sur ce téléphone.</p>
         </form>
       </main>

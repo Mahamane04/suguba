@@ -1,5 +1,7 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Header from '@/components/common/Header';
@@ -75,7 +77,7 @@ export default function CaisseLivreursPage() {
             <p className="text-xs text-slate-500">Les espèces encaissées à la livraison, et ce que chaque livreur a remis à Suguba.</p>
           </div>
           <Button variant="ghost" size="sm" onClick={() => charger()} disabled={chargement}>
-            <RefreshCw className={`w-4 h-4 ${chargement ? 'animate-spin' : ''}`} /> Actualiser
+            {chargement ? <SugubaLoader className="w-4 h-4" /> : <RefreshCw className="w-4 h-4" />} Actualiser
           </Button>
         </div>
 
@@ -290,7 +292,7 @@ function SaisieVersement({ caisse, parCourse, onFermer, onEnregistre }: {
           </p>
           <div className="grid grid-cols-2 gap-2">
             <Button variant="ghost" onClick={() => setAConfirmer(false)} disabled={envoi}>Modifier</Button>
-            <Button onClick={enregistrer} disabled={envoi}>{envoi ? 'Enregistrement…' : 'Confirmer'}</Button>
+            <Button onClick={enregistrer} disabled={envoi}>{envoi ? <><SugubaLoader className="mr-2 h-4 w-4" />Enregistrement…</> : 'Confirmer'}</Button>
           </div>
         </div>
       ) : (

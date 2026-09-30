@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useMemo, useState } from 'react';
-import { CalendarDays, Plus, Loader2, Check, Share2, Target, X } from 'lucide-react';
+import { CalendarDays, Plus, Check, Share2, Target, X } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
 import { Field, Input, Textarea } from '@/components/ui/Field';
@@ -169,7 +171,7 @@ export default function CalendrierPage() {
               <Textarea id="note" rows={2} value={note} onChange={(e) => setNote(e.target.value)} maxLength={400} />
             </Field>
             <Button type="submit" disabled={envoi} fullWidth>
-              {envoi ? <Loader2 className="w-4 h-4 animate-spin" /> : <CalendarDays className="w-4 h-4" />}
+              {envoi ? <SugubaLoader className="w-4 h-4" /> : <CalendarDays className="w-4 h-4" />}
               Planifier
             </Button>
           </form>

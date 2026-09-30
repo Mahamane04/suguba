@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useMemo, useState } from 'react';
-import { ShoppingBag, Search, Truck, Loader2 } from 'lucide-react';
+import { ShoppingBag, Search, Truck } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Field';
@@ -186,7 +188,7 @@ export default function CommandesAdminPage() {
                 <span className="text-sm font-semibold text-slate-800">{selection.size} commande{selection.size > 1 ? 's' : ''} sélectionnée{selection.size > 1 ? 's' : ''}</span>
                 <span className="w-56"><ChoixLivreur id="livreur-groupe" livreurs={livreurs} erreur={erreurLivreurs} valeur={livreurGroupe} onChange={setLivreurGroupe} /></span>
                 <Button size="sm" disabled={enCours || !livreurs?.length} onClick={attribuerSelection}>
-                  {enCours ? <Loader2 className="w-4 h-4 animate-spin" /> : <Truck className="w-4 h-4" />}Attribuer à ce livreur
+                  {enCours ? <SugubaLoader className="w-4 h-4" /> : <Truck className="w-4 h-4" />}Attribuer à ce livreur
                 </Button>
                 <button type="button" onClick={() => setSelection(new Set())} className="text-sm font-semibold text-slate-600 hover:underline min-h-[40px]">Annuler</button>
               </>

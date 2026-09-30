@@ -1,7 +1,10 @@
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 export default function ChargementPage({ libelle = 'Ouverture…' }: { libelle?: string }) {
   return (
     <main className="min-h-[70vh] w-full max-w-4xl mx-auto px-4 sm:px-6 py-6" aria-busy="true" aria-label={libelle}>
       <span role="status" className="sr-only">{libelle}</span>
+      <div className="mb-6 flex items-center gap-3 text-sm font-semibold text-suguba-profond"><SugubaLoader className="h-9 w-9" />{libelle}</div>
       <div className="animate-pulse space-y-5" aria-hidden="true">
         <div className="space-y-2">
           <div className="h-4 w-24 rounded-full bg-slate-200" />

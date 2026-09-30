@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useState } from 'react';
-import { Gift, Check, X, Loader2, Save, Target, UserPlus } from 'lucide-react';
+import { Gift, Check, X, Save, Target, UserPlus } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
 import { Field, Input } from '@/components/ui/Field';
@@ -116,7 +118,7 @@ export default function RecompensesAdminPage() {
               </Field>
             </div>
             <Button variant="ghost" onClick={enregistrerPrimes} disabled={sauvegarde} fullWidth>
-              {sauvegarde ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {sauvegarde ? <SugubaLoader className="w-4 h-4" /> : <Save className="w-4 h-4" />}
               Enregistrer les primes
             </Button>
           </Card>
@@ -137,7 +139,7 @@ export default function RecompensesAdminPage() {
                 <div className="flex gap-2">
                   <Button size="sm" variant="ghost" fullWidth disabled={enCours === m.id} onClick={() => decider('mission', m.id, 'rejected')}><X className="w-3.5 h-3.5" />Refuser</Button>
                   <Button size="sm" fullWidth disabled={enCours === m.id} onClick={() => decider('mission', m.id, 'validated')}>
-                    {enCours === m.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}Valider et verser
+                    {enCours === m.id ? <SugubaLoader className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />}Valider et verser
                   </Button>
                 </div>
               </Card>
@@ -165,7 +167,7 @@ export default function RecompensesAdminPage() {
                 <div className="flex gap-2">
                   <Button size="sm" variant="ghost" fullWidth disabled={enCours === p.id} onClick={() => decider('parrainage', p.id, 'rejected')}><X className="w-3.5 h-3.5" />Refuser</Button>
                   <Button size="sm" fullWidth disabled={enCours === p.id} onClick={() => decider('parrainage', p.id, 'rewarded')}>
-                    {enCours === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}Valider et verser
+                    {enCours === p.id ? <SugubaLoader className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />}Valider et verser
                   </Button>
                 </div>
               </Card>

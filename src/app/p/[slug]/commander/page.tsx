@@ -1,5 +1,7 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 
 import React, { use, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -645,7 +647,7 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
               À payer au livreur, en espèces ou Mobile Money, après vérification du colis.
             </p>
             <Button type="submit" size="lg" fullWidth disabled={isSubmitting || product.stockQuantity <= 0} className="hidden md:inline-flex">
-              {isSubmitting ? 'Envoi…' : 'Confirmer la commande'}
+              {isSubmitting ? <><SugubaLoader className="mr-2 h-4 w-4" />Envoi…</> : 'Confirmer la commande'}
             </Button>
           </Card>
 
@@ -679,7 +681,7 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
               </p>
             </div>
             <Button type="submit" form="formulaire-commande" size="lg" disabled={isSubmitting || product.stockQuantity <= 0} className="flex-1">
-              {isSubmitting ? 'Envoi…' : 'Confirmer'}
+              {isSubmitting ? <><SugubaLoader className="mr-2 h-4 w-4" />Envoi…</> : 'Confirmer'}
             </Button>
           </div>
         </div>

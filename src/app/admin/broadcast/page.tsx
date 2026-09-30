@@ -1,5 +1,7 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useState } from 'react';
 import { Bell, Copy, Check, Send } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
@@ -168,7 +170,7 @@ export default function DiffusionPage() {
 
         <div className="flex flex-col sm:flex-row gap-2">
           <Button onClick={envoyer} disabled={envoi || !titre.trim() || !nb} fullWidth>
-            <Send className="w-4 h-4" />{envoi ? 'Envoi…' : `Envoyer la notification${nb ? ` (${nb})` : ''}`}
+            <Send className="w-4 h-4" />{envoi ? <><SugubaLoader className="mr-2 h-4 w-4" />Envoi…</> : `Envoyer la notification${nb ? ` (${nb})` : ''}`}
           </Button>
           <Button variant="ghost" onClick={copier} disabled={!texteWhatsApp} fullWidth>
             {copie ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}{copie ? 'Copié' : 'Copier pour WhatsApp'}

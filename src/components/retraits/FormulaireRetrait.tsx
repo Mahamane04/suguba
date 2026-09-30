@@ -1,5 +1,7 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useState } from 'react';
 import { AlertCircle, Building2, Check, CheckCircle2, Wallet } from 'lucide-react';
 import Button from '@/components/ui/Button';
@@ -244,7 +246,7 @@ export default function FormulaireRetrait({
           )}
 
           <Button type="submit" size="lg" fullWidth disabled={envoi || chargement || !assez}>
-            {envoi ? 'Envoi…' : moyen === 'Agence Suguba' ? 'Obtenir mon numéro de retrait' : 'Demander le virement'}
+            {envoi ? <><SugubaLoader className="mr-2 h-4 w-4" />Envoi…</> : moyen === 'Agence Suguba' ? 'Obtenir mon numéro de retrait' : 'Demander le virement'}
           </Button>
           {!chargement && !assez && (
             <p className="text-xs text-slate-500 text-center">

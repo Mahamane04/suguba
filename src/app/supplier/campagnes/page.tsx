@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useState } from 'react';
-import { Rocket, Loader2, Plus, Users, Target, Flag } from 'lucide-react';
+import { Rocket, Plus, Users, Target, Flag } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
 import { Field, Input, Textarea } from '@/components/ui/Field';
@@ -162,7 +164,7 @@ export default function CampagnesPage() {
               <span className="text-lg font-bold text-slate-900 tabular-nums">{fcfa(budget)}</span>
             </div>
             <Button type="submit" fullWidth disabled={envoi || !produitId}>
-              {envoi ? <Loader2 className="w-4 h-4 animate-spin" /> : <Rocket className="w-4 h-4" />}Envoyer la campagne
+              {envoi ? <SugubaLoader className="w-4 h-4" /> : <Rocket className="w-4 h-4" />}Envoyer la campagne
             </Button>
             <p className="text-xs text-slate-500">
               Suguba vous contacte pour le règlement du budget ; la campagne n’ouvre qu’une fois le budget reçu en entier.
@@ -300,7 +302,7 @@ function ResultatsCampagne({ campagneId, onMaj }: { campagneId: string; onMaj: (
                     <div className="grid grid-cols-2 gap-2">
                       <Button size="sm" variant="ghost" onClick={() => setContestation(null)}>Retour</Button>
                       <Button size="sm" onClick={() => contester(r.id)} disabled={envoi || motif.trim().length < 5}>
-                        {envoi ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Flag className="w-3.5 h-3.5" />}Contester
+                        {envoi ? <SugubaLoader className="w-3.5 h-3.5" /> : <Flag className="w-3.5 h-3.5" />}Contester
                       </Button>
                     </div>
                   </div>

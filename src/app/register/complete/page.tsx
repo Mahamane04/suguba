@@ -1,5 +1,7 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import ChoixProfil, { ResumeProfil, estProfil, PROFILS_INSCRIPTION, type ProfilInscription as Role } from '@/components/auth/ChoixProfil';
@@ -173,7 +175,7 @@ function FinaliserInscription() {
   };
 
   if (mode === 'chargement') {
-    return <div className="p-10 text-center text-sm text-slate-500">Chargement…</div>;
+    return <div className="p-10 text-center text-sm text-slate-500"><SugubaLoader className="mr-2 inline-flex h-5 w-5 align-middle" />Chargement…</div>;
   }
 
   return (
@@ -332,7 +334,7 @@ function FinaliserInscription() {
         )}
 
         <Button type="submit" disabled={isSubmitting || !role} size="lg" fullWidth>
-          <span>{isSubmitting ? 'Création de votre espace…' : `Enregistrer mon profil ${PROFILS_INSCRIPTION.find(p=>p.cle===role)?.titre.toLowerCase() || ''}`}</span>
+          <span>{isSubmitting ? <><SugubaLoader className="mr-2 h-4 w-4" />Création de votre espace…</> : `Enregistrer mon profil ${PROFILS_INSCRIPTION.find(p=>p.cle===role)?.titre.toLowerCase() || ''}`}</span>
           <ArrowRight className="w-4 h-4" />
         </Button>
       </form>
@@ -361,7 +363,7 @@ export default function CompleteProfilePage() {
     <div className="min-h-screen flex flex-col bg-slate-50">
       <Header />
       <main className="flex-1">
-        <Suspense fallback={<div className="p-10 text-center text-sm text-slate-500">Chargement…</div>}>
+        <Suspense fallback={<div className="p-10 text-center text-sm text-slate-500"><SugubaLoader className="mr-2 inline-flex h-5 w-5 align-middle" />Chargement…</div>}>
           <FinaliserInscription />
         </Suspense>
       </main>

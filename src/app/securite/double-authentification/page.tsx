@@ -1,5 +1,7 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
@@ -69,7 +71,7 @@ function Contenu() {
             <p className="text-xs text-slate-600">Protection des comptes de l’équipe Suguba.</p>
           </div>
 
-          {etat === 'chargement' && <p className="text-sm text-slate-500 text-center">Chargement…</p>}
+          {etat === 'chargement' && <p className="text-sm text-slate-500 text-center"><SugubaLoader className="mr-2 inline-flex h-5 w-5 align-middle" />Chargement…</p>}
           {etat === 'sans_session' && (
             <div className="text-center space-y-3">
               <p className="text-sm text-slate-700">Votre connexion a expiré.</p>
@@ -98,7 +100,7 @@ function Contenu() {
                 aria-invalid={Boolean(erreur)} aria-describedby={erreur ? 'erreur-mfa' : undefined}
                 className="w-full py-3 bg-gray-50 border border-gray-200 rounded-2xl text-center text-2xl font-bold tracking-[0.5em] tabular-nums" />
               {erreur && <p id="erreur-mfa" role="alert" className="p-3 bg-red-50 border border-red-100 rounded-xl text-xs font-semibold text-red-600">{erreur}</p>}
-              <Button type="submit" size="lg" fullWidth disabled={envoi || code.length !== 6}>{envoi ? 'Vérification…' : 'Valider'}</Button>
+              <Button type="submit" size="lg" fullWidth disabled={envoi || code.length !== 6}>{envoi ? <><SugubaLoader className="mr-2 h-4 w-4" />Vérification…</> : 'Valider'}</Button>
             </form>
           )}
         </div>

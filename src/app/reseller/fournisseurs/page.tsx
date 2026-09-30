@@ -1,8 +1,10 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { Factory, ShieldCheck, Bell, BellRing, Loader2, Search, Megaphone } from 'lucide-react';
+import { Factory, ShieldCheck, Bell, BellRing, Search, Megaphone } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Field';
@@ -106,7 +108,7 @@ export default function FournisseursPage() {
               <div className="flex gap-2">
                 {f.lien && <Button href={f.lien} variant="ghost" size="sm" fullWidth>Voir le catalogue</Button>}
                 <Button size="sm" variant={f.suit ? 'ghost' : 'secondary'} fullWidth disabled={enCours === f.id} onClick={() => suivre(f)} aria-pressed={f.suit}>
-                  {enCours === f.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : f.suit ? <BellRing className="w-3.5 h-3.5" /> : <Bell className="w-3.5 h-3.5" />}
+                  {enCours === f.id ? <SugubaLoader className="w-3.5 h-3.5" /> : f.suit ? <BellRing className="w-3.5 h-3.5" /> : <Bell className="w-3.5 h-3.5" />}
                   {f.suit ? 'Suivi' : 'Suivre'}
                 </Button>
               </div>

@@ -1,5 +1,7 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { memoriserApresConnexion, prendreApresConnexion } from '@/lib/apres-connexion';
@@ -269,7 +271,7 @@ function LoginPageContent() {
                 )}
 
                 <Button type="submit" disabled={isLoading} size="lg" fullWidth>
-                  {isLoading ? 'Envoi du code…' : <>Recevoir un code par e-mail<ArrowRight className="w-4 h-4" /></>}
+                  {isLoading ? <><SugubaLoader className="mr-2 h-4 w-4" />Envoi du code…</> : <>Recevoir un code par e-mail<ArrowRight className="w-4 h-4" /></>}
                 </Button>
                 <button type="button" onClick={() => { setModeCode(false); setErrorMessage(''); }} className="w-full text-xs font-semibold text-suguba-brand-dark hover:underline min-h-[44px]">
                   Se connecter avec mon mot de passe
@@ -307,7 +309,7 @@ function LoginPageContent() {
                 )}
 
                 <Button type="submit" disabled={isLoading} size="lg" fullWidth>
-                  {isLoading ? 'Connexion…' : <>Se connecter<ArrowRight className="w-4 h-4" /></>}
+                  {isLoading ? <><SugubaLoader className="mr-2 h-4 w-4" />Connexion…</> : <>Se connecter<ArrowRight className="w-4 h-4" /></>}
                 </Button>
                 <div className="flex items-center justify-between gap-2 text-xs">
                   {/* L'adresse passe par sessionStorage, jamais par l'URL (historique, journaux). */}

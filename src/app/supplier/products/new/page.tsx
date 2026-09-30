@@ -1,5 +1,7 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import ChoixUniteVente, { SAISIE_UNITE_VIDE, type SaisieUnite } from '@/components/produit/ChoixUniteVente';
 import { normaliserUniteVente } from '@/lib/unite-vente';
 import React, { useEffect, useState } from 'react';
@@ -556,7 +558,7 @@ export default function NewSupplierProductPage() {
                 automatique (2026-09-11). Le bouton dit ce qui se passe. */}
             <Button type="submit" disabled={isSubmitting} size="lg" fullWidth>
               <PackagePlus className="w-4 h-4" />
-              <span>{isSubmitting ? 'Envoi…' : images.length > 0 ? 'Mettre en vente' : 'Enregistrer (photo à ajouter)'}</span>
+              <span>{isSubmitting ? <><SugubaLoader className="mr-2 h-4 w-4" />Envoi…</> : images.length > 0 ? 'Mettre en vente' : 'Enregistrer (photo à ajouter)'}</span>
             </Button>
 
           </form>

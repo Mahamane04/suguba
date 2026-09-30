@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useState } from 'react';
-import { Store, Loader2, Users, Save, Megaphone } from 'lucide-react';
+import { Store, Users, Save, Megaphone } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import CarteLien from '@/components/reseau/CarteLien';
 import LogoUploader from '@/components/common/LogoUploader';
@@ -186,8 +188,8 @@ export default function BoutiqueFournisseurPage() {
             </Field>
 
             <Button onClick={() => enregistrer()} disabled={enregistrement} fullWidth>
-              {enregistrement ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              {enregistrement ? 'Enregistrement…' : 'Enregistrer'}
+              {enregistrement ? <SugubaLoader className="w-4 h-4" /> : <Save className="w-4 h-4" />}
+              {enregistrement ? <><SugubaLoader className="mr-2 h-4 w-4" />Enregistrement…</> : 'Enregistrer'}
             </Button>
           </Card>
         </>

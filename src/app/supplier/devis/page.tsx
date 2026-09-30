@@ -1,5 +1,7 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { FileText, Phone, Users } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
@@ -205,7 +207,7 @@ function FormProposition({ demande, onFini }: { demande: DemandeDevis; onFini: (
       {erreur && <p role="alert" className="text-sm font-semibold text-rose-700">{erreur}</p>}
       <div className="grid grid-cols-2 gap-2">
         <Button variant="ghost" onClick={() => onFini(null)} disabled={envoi}>Annuler</Button>
-        <Button onClick={envoyer} disabled={envoi || !prix}>{envoi ? 'Envoi…' : 'Envoyer le devis'}</Button>
+        <Button onClick={envoyer} disabled={envoi || !prix}>{envoi ? <><SugubaLoader className="mr-2 h-4 w-4" />Envoi…</> : 'Envoyer le devis'}</Button>
       </div>
     </div>
   );
@@ -240,7 +242,7 @@ function FormRefus({ demande, onFini }: { demande: DemandeDevis; onFini: (ok: bo
       {erreur && <p role="alert" className="text-sm font-semibold text-rose-700">{erreur}</p>}
       <div className="grid grid-cols-2 gap-2">
         <Button variant="ghost" onClick={() => onFini(false)} disabled={envoi}>Annuler</Button>
-        <Button variant="danger" onClick={envoyer} disabled={envoi || !motif.trim()}>{envoi ? 'Envoi…' : 'Refuser la demande'}</Button>
+        <Button variant="danger" onClick={envoyer} disabled={envoi || !motif.trim()}>{envoi ? <><SugubaLoader className="mr-2 h-4 w-4" />Envoi…</> : 'Refuser la demande'}</Button>
       </div>
     </div>
   );

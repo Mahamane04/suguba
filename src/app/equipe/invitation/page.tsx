@@ -1,8 +1,10 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { UsersRound, Loader2, Check, X, LogIn } from 'lucide-react';
+import { UsersRound, Check, X, LogIn } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
 import { Card, EmptyState, Skeleton } from '@/components/ui/Surface';
@@ -93,7 +95,7 @@ export default function InvitationEquipePage() {
               <div className="flex gap-2">
                 <Button variant="ghost" fullWidth disabled={enCours === i.id} onClick={() => repondre(i.id, false)}><X className="w-4 h-4" />Refuser</Button>
                 <Button fullWidth disabled={enCours === i.id} onClick={() => repondre(i.id, true)}>
-                  {enCours === i.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}Accepter
+                  {enCours === i.id ? <SugubaLoader className="w-4 h-4" /> : <Check className="w-4 h-4" />}Accepter
                 </Button>
               </div>
             </Card>

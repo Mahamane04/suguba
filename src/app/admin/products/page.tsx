@@ -1,5 +1,7 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import ChoixUniteVente, { type SaisieUnite } from '@/components/produit/ChoixUniteVente';
 import { normaliserUniteVente, suffixeUnite, type MesureContenu, type UniteVente } from '@/lib/unite-vente';
 import React, { useCallback, useEffect, useState } from 'react';
@@ -12,7 +14,7 @@ import ProductPricingModal from '@/components/admin/ProductPricingModal';
 import Button from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import type { Product } from '@/types';
-import { Camera, ImageOff, Loader2, Plus, Tag, Ban, Package } from 'lucide-react';
+import { Camera, ImageOff, Plus, Tag, Ban, Package } from 'lucide-react';
 
 interface ProduitAdmin {
   id: string;
@@ -211,7 +213,7 @@ export default function AdminProductsPage() {
         {erreur && <p className="p-3 rounded-2xl bg-rose-50 border border-rose-100 text-xs font-bold text-rose-700">{erreur}</p>}
 
         {produits === null ? (
-          <div className="py-10 flex justify-center"><Loader2 className="w-6 h-6 text-slate-400 animate-spin" /></div>
+          <div className="py-10 flex justify-center"><SugubaLoader className="w-6 h-6 text-slate-400" /></div>
         ) : affiches.length === 0 ? (
           <div className="bg-white rounded-3xl border border-slate-200 p-8 text-center text-sm text-slate-500">
             {filtre === 'nouveautes'

@@ -1,12 +1,14 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 
 import { createPortal } from 'react-dom';
 import { useModalFocus } from '@/hooks/useModalFocus';
 import DeliveryCodeNotice from '@/components/common/DeliveryCodeNotice';
 import React, { useEffect, useState } from 'react';
 import { Product } from '@/types';
-import { ArrowLeft, CheckCircle, Minus, Plus, Loader2, Check, X } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Minus, Plus, Check, X } from 'lucide-react';
 import OrderRecovery from '@/components/common/OrderRecovery';
 import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
 import { Field, Input } from '@/components/ui/Field';
@@ -302,11 +304,11 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
                 <p className="text-xs text-slate-500">Le client paie</p>
                 <p className="text-lg font-bold text-slate-900 tabular-nums">
                   {totalAmount !== undefined ? fcfa(totalAmount) : '…'}
-                  {devisEnCours && <Loader2 className="inline w-3.5 h-3.5 ml-1 animate-spin text-slate-400" />}
+                  {devisEnCours && <SugubaLoader className="inline w-3.5 h-3.5 ml-1 text-slate-400" />}
                 </p>
               </div>
               <Button type="submit" size="lg" disabled={isSubmitting || !devis}>
-                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                {isSubmitting ? <SugubaLoader className="w-4 h-4" /> : <Check className="w-4 h-4" />}
                 Valider la vente
               </Button>
             </div>

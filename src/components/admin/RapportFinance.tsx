@@ -1,4 +1,6 @@
 'use client';
+
+import SugubaLoader from '@/components/ui/SugubaLoader';
 import React, { useState } from 'react';
 import Link from 'next/link';
 import PageReseau from '@/components/reseau/PageReseau';
@@ -16,7 +18,7 @@ export default function RapportFinance({quotidien=false}:{quotidien?:boolean}){
     const url=URL.createObjectURL(new Blob(['\ufeff'+rows.map(r=>r.map(cellule).join(';')).join('\r\n')],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=`suguba-livraisons-${debut||'debut'}-${fin||aujourdHui}.csv`;a.click();URL.revokeObjectURL(url);};
   return <PageReseau titre={quotidien?'Rapport du soir':'Analyses financières'} sousTitre="Montants historiques et grand-livre serveur. Périodes en heure de Bamako (UTC)." large>
     <div className="flex flex-wrap gap-4 items-end"><label>Du<input aria-label="Début de période" type="date" value={debut} onChange={e=>setDebut(e.target.value)} className="block border rounded-xl p-3"/></label><label>Au<input aria-label="Fin de période" type="date" value={fin} onChange={e=>setFin(e.target.value)} className="block border rounded-xl p-3"/></label><Button variant="ghost" onClick={refresh}>Actualiser</Button>{peutExporter && <Button disabled={!data} onClick={exporter}>Exporter les livraisons (CSV)</Button>}<Link className="underline p-3" href={quotidien?'/admin/analytics':'/admin/reports/daily'}>{quotidien?'Toutes les analyses':'Rapport du jour'}</Link></div>
-    {error?<p role="alert" className="rounded-xl bg-rose-50 p-4 text-rose-800">{error}</p>:!data?<p role="status">Chargement des chiffres…</p>:<>
+    {error?<p role="alert" className="rounded-xl bg-rose-50 p-4 text-rose-800">{error}</p>:!data?<p role="status"><SugubaLoader className="mr-2 inline-flex h-5 w-5 align-middle" />Chargement des chiffres…</p>:<>
       <p className="text-sm text-slate-600">Actualisé le {new Date(data.misAJourLe).toLocaleString('fr-FR',{timeZone:'Africa/Bamako'})}. {debut||fin?'Période sélectionnée':'Toutes les dates'}.</p>
       <div className="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">{[
         ['Commandes créées',String(data.creees)],['Commandes livrées',String(data.livrees)],['Volume livré',f(data.volumeLivre)],['Encaissement confirmé sur ces livraisons',f(data.encaisseSurLivrees)],['Frais de livraison',f(data.livraison)],['Commissions de ces commandes',f(data.commissionsCommandes)],['Marge commerciale documentée',f(data.margeCommerciale)]

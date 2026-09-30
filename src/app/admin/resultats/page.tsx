@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useCallback, useEffect, useState } from 'react';
-import { Check, Gauge, Loader2, X } from 'lucide-react';
+import { Check, Gauge, X } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
 import Button from '@/components/ui/Button';
@@ -198,7 +200,7 @@ function LigneResultat({ r, onMaj, verification = false }: { r: Resultat; onMaj:
           <div className="grid grid-cols-2 gap-2">
             <Button size="sm" variant="ghost" onClick={() => setAnnulation(false)}>Retour</Button>
             <Button size="sm" onClick={() => decider('annuler')} disabled={envoi || motif.trim().length < 3}>
-              {envoi ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}Annuler le résultat
+              {envoi ? <SugubaLoader className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}Annuler le résultat
             </Button>
           </div>
         </div>
@@ -206,7 +208,7 @@ function LigneResultat({ r, onMaj, verification = false }: { r: Resultat; onMaj:
         <div className="grid grid-cols-2 gap-2">
           {verification && (
             <Button size="sm" onClick={() => decider('valider')} disabled={envoi}>
-              {envoi ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}Valider
+              {envoi ? <SugubaLoader className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />}Valider
             </Button>
           )}
           <Button size="sm" variant="ghost" onClick={() => setAnnulation(true)} className={verification ? '' : 'col-span-2'}>

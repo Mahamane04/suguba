@@ -1,4 +1,5 @@
 'use client';
+import SugubaLoader from '@/components/ui/SugubaLoader';
 import { useSugubaStore } from '@/lib/store';
 import { cloudSyncService } from '@/lib/cloud-sync';
 import Button from '@/components/ui/Button';
@@ -8,7 +9,7 @@ export default function OrdersSyncNotice() {
   if(!['admin','driver','reseller'].includes(state.currentUser.role) || state.ordersSync==='ready') return null;
   const loading=state.ordersSync==='loading' || state.ordersSync==='idle';
   return <aside role={loading?'status':'alert'} className="mx-auto w-full max-w-5xl rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950 space-y-2">
-    <p>{loading ? 'Chargement des commandes… Les totaux ne sont pas encore confirmés.' : state.ordersSync==='forbidden' ? 'Votre accès aux commandes a expiré ou a été retiré. Reconnectez-vous pour vérifier vos droits.' : 'Commandes indisponibles. Les listes et totaux affichés ne sont pas à jour.'}</p>
+    <p>{loading ? <><SugubaLoader className="mr-2 h-5 w-5 align-middle" />Chargement des commandes… Les totaux ne sont pas encore confirmés.</> : state.ordersSync==='forbidden' ? 'Votre accès aux commandes a expiré ou a été retiré. Reconnectez-vous pour vérifier vos droits.' : 'Commandes indisponibles. Les listes et totaux affichés ne sont pas à jour.'}</p>
     {!loading && <Button variant="ghost" onClick={()=>void cloudSyncService.fetchOrdersFromCloud()}>Réessayer le chargement</Button>}
   </aside>;
 }

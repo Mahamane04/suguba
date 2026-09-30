@@ -1,10 +1,12 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useMemo, useState } from 'react';
 import { useToast } from '@/components/ui/Toast';
 import Button from '@/components/ui/Button';
 import {
-  Calculator, ChevronDown, ChevronUp, Loader2, Plus, Trash2, AlertCircle, CheckCircle2, RotateCcw, ArrowRight, Info,
+  Calculator, ChevronDown, ChevronUp, Plus, Trash2, AlertCircle, CheckCircle2, RotateCcw, ArrowRight, Info,
 } from 'lucide-react';
 import {
   calculerFraisRetrait,
@@ -251,7 +253,7 @@ export default function EconomicSettingsPanel({ ouvertParDefaut = false }: { ouv
           <div className="min-w-0">
             <h3 className="font-semibold text-sm text-slate-900">Réglages économiques</h3>
             <p className="text-xs text-slate-600 truncate">
-              {chargement ? 'Chargement…' : !confirme
+              {chargement ? <><SugubaLoader className="mr-2 h-4 w-4" />Chargement…</> : !confirme
                 ? '⚠️ Coûts non confirmés — estimation provisoire en vigueur'
                 : r ? `${libelleMode(r)} · coûts, livraison, codes promo` : 'Coûts, commissions, livraison, codes promo'}
             </p>
@@ -818,7 +820,7 @@ export default function EconomicSettingsPanel({ ouvertParDefaut = false }: { ouv
               )}
               <button type="button" onClick={enregistrer} disabled={envoi || (!modifie && !recalculAReprendre) || erreursLocales.length > 0}
                 className="min-h-[44px] px-5 rounded-full bg-suguba-profond text-white text-sm font-semibold inline-flex items-center gap-2 disabled:opacity-40 active:scale-[0.98] transition-transform">
-                {envoi && <Loader2 className="w-4 h-4 animate-spin" />}
+                {envoi && <SugubaLoader className="w-4 h-4" />}
                 {recalculAReprendre && !modifie ? 'Reprendre l’actualisation du catalogue' : 'Enregistrer les modifications'}
               </button>
             </div>
@@ -1171,7 +1173,7 @@ function FraisPaiementReglages({ f, ancien, onChange, onRelu }: {
             </p>
           </div>
           <Button type="button" variant="secondary" size="sm" onClick={relire} disabled={lecture === 'encours'}>
-            {lecture === 'encours' ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />}
+            {lecture === 'encours' ? <SugubaLoader className="w-4 h-4" /> : <RotateCcw className="w-4 h-4" />}
             {lecture === 'encours' ? 'SasPay répond… (jusqu’à 30 s)' : 'Relire maintenant'}
           </Button>
         </div>

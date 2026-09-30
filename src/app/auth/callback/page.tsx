@@ -1,11 +1,13 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import { prendreApresConnexion } from '@/lib/apres-connexion';
 
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Session } from '@supabase/supabase-js';
-import { Loader2, ShieldAlert } from 'lucide-react';
+import { ShieldAlert } from 'lucide-react';
 
 const DEST_BY_ROLE: Record<string, string> = {
   admin: '/admin/a-traiter',
@@ -152,7 +154,7 @@ export default function AuthCallbackPage() {
           </>
         ) : (
           <>
-            <Loader2 className="w-8 h-8 text-suguba-brand animate-spin mx-auto" />
+            <SugubaLoader className="w-8 h-8 text-suguba-brand mx-auto" />
             <p className="text-sm text-gray-500">Connexion en cours…</p>
           </>
         )}

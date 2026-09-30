@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useState } from 'react';
-import { Store, Loader2, Save, PackagePlus } from 'lucide-react';
+import { Store, Save, PackagePlus } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import CarteLien from '@/components/reseau/CarteLien';
 import CouvertureEditeur from '@/components/reseau/CouvertureEditeur';
@@ -86,7 +88,7 @@ export default function BoutiqueSugubaPage() {
         : !slug ? (
           <div className="space-y-3">
             <EmptyState icone={Store} titre="La boutique Suguba n’existe pas encore" texte="Créez-la pour vendre les produits de Suguba sous sa propre vitrine." />
-            <div className="text-center"><Button type="button" onClick={creer} disabled={envoi}>{envoi ? 'Création…' : 'Créer la boutique Suguba'}</Button></div>
+            <div className="text-center"><Button type="button" onClick={creer} disabled={envoi}>{envoi ? <><SugubaLoader className="mr-2 h-4 w-4" />Création…</> : 'Créer la boutique Suguba'}</Button></div>
           </div>
         )
         : (
@@ -120,7 +122,7 @@ export default function BoutiqueSugubaPage() {
                 <GalerieEditeur images={galerie} max={maxGalerie} onChange={(g) => { setGalerie(g); enregistrer({ galerie: g }); }} />
               </div>
               <Button fullWidth onClick={() => enregistrer()} disabled={envoi}>
-                {envoi ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}Enregistrer
+                {envoi ? <SugubaLoader className="w-4 h-4" /> : <Save className="w-4 h-4" />}Enregistrer
               </Button>
             </Card>
           </>

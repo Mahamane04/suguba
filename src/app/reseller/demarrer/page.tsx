@@ -1,8 +1,10 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, Loader2, ArrowLeft, ArrowRight, MapPin, PartyPopper, Phone } from 'lucide-react';
+import { Check, ArrowLeft, ArrowRight, MapPin, PartyPopper, Phone } from 'lucide-react';
 import Header from '@/components/common/Header';
 import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
 import CarteLien from '@/components/reseau/CarteLien';
@@ -245,7 +247,7 @@ export default function DemarrerPage() {
             </Button>
           )}
           <Button fullWidth size="lg" onClick={continuer} disabled={envoi || !peutContinuer}>
-            {envoi ? <Loader2 className="w-4 h-4 animate-spin" /> : etape === 7 ? <Check className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
+            {envoi ? <SugubaLoader className="w-4 h-4" /> : etape === 7 ? <Check className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
             {etape === 7 ? 'Aller à mon espace' : 'Continuer'}
           </Button>
         </div>

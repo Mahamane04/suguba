@@ -1,5 +1,7 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useModalFocus } from '@/hooks/useModalFocus';
@@ -89,7 +91,7 @@ export default function PhotosProduitModal({
         <div className="flex gap-2">
           <Button variant="ghost" onClick={onClose} className="flex-1">Annuler</Button>
           <Button onClick={enregistrer} disabled={envoiEnCours || enregistrement} className="flex-1">
-            {enregistrement ? 'Enregistrement…' : envoiEnCours ? 'Envoi des photos…' : 'Enregistrer'}
+            {enregistrement ? <><SugubaLoader className="mr-2 h-4 w-4" />Enregistrement…</> : envoiEnCours ? 'Envoi des photos…' : 'Enregistrer'}
           </Button>
         </div>
       </div>

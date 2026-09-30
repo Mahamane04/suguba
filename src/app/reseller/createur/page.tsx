@@ -1,11 +1,13 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 /* Les URL de boutique et l'aperçu Blob du canvas sont dynamiques et locaux. */
 /* eslint-disable @next/next/no-img-element */
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { Check, Download, ImageIcon, Loader2, Package, Palette, Search, Share2, Store } from 'lucide-react';
+import { Check, Download, ImageIcon, Package, Palette, Search, Share2, Store } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
 import { Field, Input } from '@/components/ui/Field';
@@ -46,6 +48,17 @@ export default function CreateurContenusPage() {
   const [apercu, setApercu] = useState<string | null>(null);
   const [lienUtilise, setLienUtilise] = useState<string | null>(null);
   const [generation, setGeneration] = useState(false);
+  const resultat = useRef<HTMLElement>(null);
+  const verrouGeneration = useRef(false);
+
+  useEffect(() => {
+    if (!apercu || generation) return;
+    const frame = requestAnimationFrame(() => {
+      resultat.current?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth', block: 'start' });
+      resultat.current?.focus({ preventScroll: true });
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [apercu, generation]);
 
   const produits = useMemo(() => state.products.filter((p) => p.status === 'approved' && p.resellerCommission > 0 && p.publicPrice > 0), [state.products]);
   const visibles = useMemo(() => {
@@ -70,7 +83,9 @@ export default function CreateurContenusPage() {
   }, [typeVisuel, produitId, format, theme, promo, avecQr, boutique?.id]);
 
   const generer = async () => {
+    if (verrouGeneration.current) return;
     if ((typeVisuel === 'produit' && !produit) || (typeVisuel === 'boutique' && !boutique)) return;
+    verrouGeneration.current = true;
     setGeneration(true);
     try {
       let image: File;
@@ -87,7 +102,7 @@ export default function CreateurContenusPage() {
       setFichier(image); setLienUtilise(lien); setApercu(URL.createObjectURL(image));
     } catch (erreur) {
       toast((erreur as Error).message || 'Création impossible.', { ton: 'erreur' });
-    } finally { setGeneration(false); }
+    } finally { verrouGeneration.current = false; setGeneration(false); }
   };
 
   const partager = async () => {
@@ -101,6 +116,7 @@ export default function CreateurContenusPage() {
   const peutGenerer = typeVisuel === 'boutique' ? Boolean(boutique) : Boolean(produit);
 
   return <PageReseau titre="Studio marketing" sousTitre="Choisissez ce que vous voulez promouvoir. Suguba prépare le visuel avec votre boutique." retour={{ href: '/reseller', libelle: 'Espace revendeur' }}>
+    <fieldset disabled={generation} className="min-w-0 space-y-5">
     <Card className="space-y-3">
       <div><p className="text-sm font-bold text-slate-900">1. Que voulez-vous partager ?</p><p className="text-xs text-slate-500 mt-1">Chaque choix crée un visuel différent.</p></div>
       <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Type de visuel">
@@ -139,7 +155,9 @@ export default function CreateurContenusPage() {
       <label className="flex items-center gap-3 min-h-[44px]"><input type="checkbox" checked={avecQr} onChange={(e) => setAvecQr(e.target.checked)} className="w-5 h-5 accent-[#09b500]" /><span className="text-sm text-slate-800">Ajouter un QR code qui ouvre directement {typeVisuel === 'boutique' ? 'la boutique' : 'le produit'}</span></label>
     </Card>
 
-    <Button onClick={generer} disabled={!peutGenerer || generation} fullWidth size="lg">{generation ? <Loader2 className="w-4 h-4 animate-spin" /> : <Palette className="w-4 h-4" />}{generation ? 'Création…' : peutGenerer ? `Créer ${typeVisuel === 'boutique' ? 'la carte de ma boutique' : "l’affiche du produit"}` : typeVisuel === 'boutique' ? 'Configurez d’abord votre boutique' : 'Choisissez d’abord un produit'}</Button>
-    {apercu && fichier && <Card className="space-y-3">{/* eslint-disable-next-line @next/next/no-img-element */}<img src={apercu} alt="Aperçu du visuel" className={`mx-auto rounded-2xl border border-slate-200 ${format === 'story' ? 'max-h-[520px]' : 'max-h-[360px]'}`} /><div className="grid grid-cols-2 gap-2"><Button variant="ghost" onClick={() => telechargerAffiche(fichier)}><Download className="w-4 h-4" />Télécharger</Button><Button onClick={partager}><Share2 className="w-4 h-4" />Partager</Button></div></Card>}
+    <Button onClick={generer} disabled={!peutGenerer || generation} fullWidth size="lg">{generation ? <SugubaLoader className="w-4 h-4" /> : <Palette className="w-4 h-4" />}{generation ? 'Création…' : peutGenerer ? `Créer ${typeVisuel === 'boutique' ? 'la carte de ma boutique' : "l’affiche du produit"}` : typeVisuel === 'boutique' ? 'Configurez d’abord votre boutique' : 'Choisissez d’abord un produit'}</Button>
+    </fieldset>
+    {generation && <div role="status" className="flex items-center gap-4 rounded-2xl border border-emerald-100 bg-white p-5"><SugubaLoader className="h-12 w-12" /><div><p className="font-bold text-suguba-profond">Suguba prépare votre visuel…</p><p className="mt-1 text-sm text-slate-500">Assemblage des photos, du logo et du QR code.</p></div></div>}
+    {apercu && fichier && <section ref={resultat} tabIndex={-1} aria-label="Votre visuel est prêt" className="scroll-mt-24 rounded-3xl focus:outline-none focus-visible:ring-2 focus-visible:ring-suguba-profond"><Card className="space-y-4"><div role="status" className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50 text-emerald-700"><Check className="h-5 w-5" /></span><div><h2 className="text-base font-bold text-slate-900">Votre visuel est prêt</h2><p className="text-xs text-slate-500">Téléchargez-le ou partagez-le avec vos clients.</p></div></div><div className="grid grid-cols-2 gap-2"><Button variant="ghost" onClick={() => telechargerAffiche(fichier)}><Download className="w-4 h-4" />Télécharger</Button><Button onClick={partager}><Share2 className="w-4 h-4" />Partager</Button></div><img src={apercu} alt="Aperçu du visuel créé" className={`mx-auto w-full rounded-2xl border border-slate-200 ${format === 'story' ? 'max-w-[360px]' : 'max-w-[520px]'}`} /></Card></section>}
   </PageReseau>;
 }

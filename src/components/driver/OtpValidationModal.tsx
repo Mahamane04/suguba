@@ -1,5 +1,7 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useState } from 'react';
 import { Order } from '@/types';
 import ScannerQr from '@/components/driver/ScannerQr';
@@ -226,7 +228,7 @@ export default function OtpValidationModal({ order, isOpen, onClose, onSuccess, 
           ) : etape === 'scan' ? (
             <div className="space-y-3">
               {isSubmitting ? (
-                <p role="status" className="text-center text-sm text-slate-600 py-10">Vérification du QR…</p>
+                <p role="status" className="text-center text-sm text-slate-600 py-10"><SugubaLoader className="mx-auto mb-3 h-9 w-9" />Vérification du QR…</p>
               ) : (
                 <ScannerQr onLecture={apresScan} />
               )}
@@ -290,7 +292,7 @@ export default function OtpValidationModal({ order, isOpen, onClose, onSuccess, 
                 disabled={isSubmitting || selection.length === 0 || (aEncaisser > 0 && !especesRecues)}
                 className="w-full min-h-12 bg-suguba-profond disabled:opacity-50 text-white font-bold rounded-2xl text-sm flex items-center justify-center gap-2">
                 <ShieldCheck className="w-4 h-4" />
-                {isSubmitting ? 'Enregistrement…' : `Confirmer la remise${selection.length > 1 ? ` (${selection.length})` : ''}`}
+                {isSubmitting ? <><SugubaLoader className="mr-2 h-4 w-4" />Enregistrement…</> : `Confirmer la remise${selection.length > 1 ? ` (${selection.length})` : ''}`}
               </button>
               <button type="button" onClick={() => { setEtape('choix'); setArticles([]); setCodeLu(''); }}
                 className="w-full min-h-11 text-sm font-bold text-slate-600">
@@ -380,7 +382,7 @@ export default function OtpValidationModal({ order, isOpen, onClose, onSuccess, 
                   className="w-full min-h-12 disabled:opacity-50 bg-white border-2 border-suguba-profond text-suguba-profond font-bold rounded-2xl text-sm flex items-center justify-center gap-2"
                 >
                   <ShieldCheck className="w-4 h-4" />
-                  {isSubmitting ? 'Vérification…' : order.paymentCollected ? 'Valider le code et remettre' : 'Valider le code et encaisser'}
+                  {isSubmitting ? <><SugubaLoader className="mr-2 h-4 w-4" />Vérification…</> : order.paymentCollected ? 'Valider le code et remettre' : 'Valider le code et encaisser'}
                 </button>
               )}
             </form>

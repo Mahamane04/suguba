@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useCallback, useEffect, useState } from 'react';
-import { ShieldCheck, ShieldOff, Loader2, Bike, MapPin } from 'lucide-react';
+import { ShieldCheck, ShieldOff, Bike, MapPin } from 'lucide-react';
 
 interface Livreur {
   id: string;
@@ -119,7 +121,7 @@ export default function DriverVerificationPanel({onFait}: {onFait?: () => void} 
 
       {chargement ? (
         <div className="flex items-center space-x-2 text-xs text-slate-500 py-4">
-          <Loader2 className="w-4 h-4 animate-spin" />
+          <SugubaLoader className="w-4 h-4" />
           <span>Chargement…</span>
         </div>
       ) : livreurs.length === 0 ? (
@@ -187,7 +189,7 @@ export default function DriverVerificationPanel({onFait}: {onFait?: () => void} 
                       disabled={enCours === l.id || !l.dossierComplet}
                       className="flex-1 h-11 bg-suguba-profond hover:bg-suguba-profond-2 disabled:bg-slate-300 text-white font-bold rounded-xl text-xs flex items-center justify-center space-x-1.5 transition-transform active:scale-[0.98]"
                     >
-                      {enCours === l.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                      {enCours === l.id ? <SugubaLoader className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
                       <span>Vérifié — autoriser les courses</span>
                     </button>
                     <button
@@ -214,7 +216,7 @@ export default function DriverVerificationPanel({onFait}: {onFait?: () => void} 
                       disabled={enCours === l.id}
                       className="flex-1 h-11 bg-white hover:bg-red-50 border border-red-200 text-red-700 font-bold rounded-xl text-xs flex items-center justify-center space-x-1.5"
                     >
-                      {enCours === l.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldOff className="w-4 h-4" />}
+                      {enCours === l.id ? <SugubaLoader className="w-4 h-4" /> : <ShieldOff className="w-4 h-4" />}
                       <span>Retirer l&apos;autorisation</span>
                     </button>
                   )}

@@ -1,5 +1,7 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { KeyRound, Mail, ArrowRight } from 'lucide-react';
@@ -102,7 +104,7 @@ export default function MotDePassePage() {
               </div>
               {erreur && <p id="mdp-erreur" role="alert" className="p-3 bg-red-50 border border-red-100 rounded-xl text-xs font-semibold text-red-600">{erreur}</p>}
               <Button type="submit" size="lg" fullWidth disabled={envoi}>
-                {envoi ? 'Envoi…' : <>Recevoir un code<ArrowRight className="w-4 h-4" /></>}
+                {envoi ? <><SugubaLoader className="mr-2 h-4 w-4" />Envoi…</> : <>Recevoir un code<ArrowRight className="w-4 h-4" /></>}
               </Button>
               <p className="text-xs text-slate-500 text-center">Si un compte existe avec cette adresse, un code à 6 chiffres arrive par e-mail.</p>
             </form>
@@ -120,7 +122,7 @@ export default function MotDePassePage() {
               <ChampMotDePasse id="mdp-confirmation" label="Confirmer le mot de passe" nouveau value={confirmation} onChange={setConfirmation} />
               {erreur && <p role="alert" className="p-3 bg-red-50 border border-red-100 rounded-xl text-xs font-semibold text-red-600">{erreur}</p>}
               <Button type="submit" size="lg" fullWidth disabled={envoi}>
-                {envoi ? 'Enregistrement…' : 'Enregistrer et me connecter'}
+                {envoi ? <><SugubaLoader className="mr-2 h-4 w-4" />Enregistrement…</> : 'Enregistrer et me connecter'}
               </Button>
             </form>
           )}

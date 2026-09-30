@@ -47,9 +47,11 @@ const POLICE = '-apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans
 function chargerImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
     const img = new Image();
+    const fin = (image: HTMLImageElement | null) => { clearTimeout(delai); resolve(image); };
+    const delai = setTimeout(() => fin(null), 15_000);
     img.crossOrigin = 'anonymous';
-    img.onload = () => resolve(img);
-    img.onerror = () => resolve(null);
+    img.onload = () => fin(img);
+    img.onerror = () => fin(null);
     img.src = src;
   });
 }
@@ -66,6 +68,18 @@ function rectangleArrondi(ctx: CanvasRenderingContext2D, x: number, y: number, l
 
 function dessinerImageCouverte(ctx: CanvasRenderingContext2D, image: HTMLImageElement, x: number, y: number, l: number, h: number) {
   const echelle = Math.max(l / image.width, h / image.height);
+  const lp = image.width * echelle;
+  const hp = image.height * echelle;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(x, y, l, h);
+  ctx.clip();
+  ctx.drawImage(image, x + (l - lp) / 2, y + (h - hp) / 2, lp, hp);
+  ctx.restore();
+}
+
+function dessinerImageEntiere(ctx: CanvasRenderingContext2D, image: HTMLImageElement, x: number, y: number, l: number, h: number) {
+  const echelle = Math.min(l / image.width, h / image.height);
   const lp = image.width * echelle;
   const hp = image.height * echelle;
   ctx.drawImage(image, x + (l - lp) / 2, y + (h - hp) / 2, lp, hp);
@@ -318,7 +332,7 @@ export async function genererCarteBoutique(
   ctx.fillStyle = '#f8fafc';
   ctx.fillRect(0, 0, L, H);
 
-  const couvertureH = format === 'story' ? 540 : 340;
+  const couvertureH = format === 'story' ? 470 : 280;
   const couverture = boutique.couverture ? await chargerImage(boutique.couverture) : null;
   if (couverture) dessinerImageCouverte(ctx, couverture, 0, 0, L, couvertureH);
   else {
@@ -334,7 +348,7 @@ export async function genererCarteBoutique(
   }
   const voile = ctx.createLinearGradient(0, 0, 0, couvertureH);
   voile.addColorStop(0, 'rgba(15,23,42,0.05)');
-  voile.addColorStop(1, 'rgba(15,23,42,0.72)');
+  voile.addColorStop(1, 'rgba(15,23,42,0.15)');
   ctx.fillStyle = voile;
   ctx.fillRect(0, 0, L, couvertureH);
 
@@ -345,14 +359,16 @@ export async function genererCarteBoutique(
   ctx.fillText('Boutique partenaire', marge, 108);
 
   const logoTaille = format === 'story' ? 190 : 150;
-  const logoY = couvertureH - logoTaille / 2;
+  const logoY = couvertureH + 28;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, couvertureH, L, format === 'story' ? 252 : 200);
   ctx.save();
   rectangleArrondi(ctx, marge, logoY, logoTaille, logoTaille, 42);
   ctx.clip();
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(marge, logoY, logoTaille, logoTaille);
   const logo = boutique.logo ? await chargerImage(boutique.logo) : null;
-  if (logo) dessinerImageCouverte(ctx, logo, marge, logoY, logoTaille, logoTaille);
+  if (logo) dessinerImageEntiere(ctx, logo, marge + 8, logoY + 8, logoTaille - 16, logoTaille - 16);
   else {
     ctx.fillStyle = '#d9fbd6';
     ctx.fillRect(marge, logoY, logoTaille, logoTaille);
@@ -367,16 +383,16 @@ export async function genererCarteBoutique(
   const identiteX = marge + logoTaille + 34;
   ctx.fillStyle = '#0f172a';
   ajuster(ctx, boutique.nom, L - identiteX - marge, format === 'story' ? 58 : 48, '900', 30);
-  ctx.fillText(boutique.nom, identiteX, couvertureH + 42);
+  ctx.fillText(boutique.nom, identiteX, couvertureH + (format === 'story' ? 98 : 82));
   ctx.fillStyle = '#475569';
   ctx.font = `600 ${format === 'story' ? 30 : 26}px ${POLICE}`;
   const accroche = (boutique.accroche || 'Découvrez notre sélection et commandez sur Suguba.').slice(0, 100);
   for (const [index, ligne] of lignes(ctx, accroche, L - identiteX - marge, 2).entries()) {
-    ctx.fillText(ligne, identiteX, couvertureH + 87 + index * 38);
+    ctx.fillText(ligne, identiteX, couvertureH + (format === 'story' ? 148 : 126) + index * 38);
   }
 
   const selection = produits.filter((p) => p.prix > 0).slice(0, 3);
-  const yProduits = couvertureH + (format === 'story' ? 230 : 180);
+  const yProduits = couvertureH + (format === 'story' ? 340 : 270);
   ctx.fillStyle = '#143e30';
   ctx.font = `900 ${format === 'story' ? 38 : 32}px ${POLICE}`;
   ctx.fillText(selection.length ? 'Nos offres du moment' : 'Notre boutique vous attend', marge, yProduits - 34);
@@ -390,7 +406,7 @@ export async function genererCarteBoutique(
       const image = produit.image ? await chargerImage(produit.image) : null;
       ctx.save(); rectangleArrondi(ctx, marge + 18, y + 18, 184, 184, 28); ctx.clip();
       ctx.fillStyle = '#eef2f7'; ctx.fillRect(marge + 18, y + 18, 184, 184);
-      if (image) dessinerImageCouverte(ctx, image, marge + 18, y + 18, 184, 184);
+      if (image) dessinerImageEntiere(ctx, image, marge + 28, y + 28, 164, 164);
       ctx.restore();
       ctx.fillStyle = '#0f172a';
       ctx.font = `800 34px ${POLICE}`;
@@ -407,7 +423,7 @@ export async function genererCarteBoutique(
       const image = produit.image ? await chargerImage(produit.image) : null;
       ctx.save(); rectangleArrondi(ctx, x + 14, yProduits + 14, largeur - 28, 165, 20); ctx.clip();
       ctx.fillStyle = '#eef2f7'; ctx.fillRect(x + 14, yProduits + 14, largeur - 28, 165);
-      if (image) dessinerImageCouverte(ctx, image, x + 14, yProduits + 14, largeur - 28, 165);
+      if (image) dessinerImageEntiere(ctx, image, x + 24, yProduits + 24, largeur - 48, 145);
       ctx.restore();
       ctx.fillStyle = '#0f172a'; ctx.font = `800 24px ${POLICE}`;
       lignes(ctx, produit.nom, largeur - 28, 2).forEach((ligne, i) => ctx.fillText(ligne, x + 14, yProduits + 215 + i * 29));

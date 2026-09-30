@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useState } from 'react';
-import { ImagePlus, Loader2, X, ArrowLeft } from 'lucide-react';
+import { ImagePlus, X, ArrowLeft } from 'lucide-react';
 import { compresserImage } from '@/lib/compression-image';
 
 /**
@@ -75,8 +77,8 @@ export default function GalerieEditeur({
         ))}
         {images.length < max && (
           <label className="aspect-square rounded-2xl border-2 border-dashed border-slate-300 bg-white flex flex-col items-center justify-center gap-1 text-slate-500 cursor-pointer active:scale-[0.98]">
-            {envoi ? <Loader2 className="w-5 h-5 animate-spin" /> : <ImagePlus className="w-5 h-5" />}
-            <span className="text-xs font-bold">{envoi ? 'Envoi…' : 'Ajouter'}</span>
+            {envoi ? <SugubaLoader className="w-5 h-5" /> : <ImagePlus className="w-5 h-5" />}
+            <span className="text-xs font-bold">{envoi ? <><SugubaLoader className="mr-2 h-4 w-4" />Envoi…</> : 'Ajouter'}</span>
             <input type="file" accept="image/*" multiple className="hidden" disabled={envoi}
               onChange={(e) => { ajouter(e.target.files); e.target.value = ''; }} />
           </label>

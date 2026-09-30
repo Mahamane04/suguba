@@ -1,4 +1,5 @@
 import React from 'react';
+import SugubaLoader from '@/components/ui/SugubaLoader';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
@@ -127,5 +128,5 @@ export function StatusPill({ ton = 'neutre', children }: { ton?: TonPastille; ch
 
 /** Bloc de chargement : garde la forme du contenu à venir. */
 export function Skeleton({ className = 'h-24' }: { className?: string }) {
-  return <div className={`animate-pulse rounded-2xl bg-slate-200/70 ${className}`} aria-hidden="true" />;
+  return <div className={`relative overflow-hidden rounded-2xl bg-slate-200/70 ${className}`} aria-hidden="true"><SugubaLoader className="absolute left-1/2 top-1/2 h-7 w-7 -translate-x-1/2 -translate-y-1/2" /></div>;
 }

@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useCallback, useEffect, useState } from 'react';
-import { Loader2, Plus, Trash2, Users } from 'lucide-react';
+import { Plus, Trash2, Users } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
 import { Field, Input } from '@/components/ui/Field';
@@ -80,7 +82,7 @@ export default function DestinatairesPage() {
                   <Button disabled={envoi} onClick={async () => {
                     if (await envoyer({ action: 'ajouter', destinataire: f }, 'Destinataire enregistré.')) { setAjout(false); setF({ nom: '', telephone: '', quartier: '', repere: '', relation: '' }); }
                   }}>
-                    {envoi ? <Loader2 className="w-4 h-4 animate-spin" /> : null}Enregistrer
+                    {envoi ? <SugubaLoader className="w-4 h-4" /> : null}Enregistrer
                   </Button>
                 </div>
               </Card>

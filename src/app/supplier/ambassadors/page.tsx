@@ -1,5 +1,7 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Header from '@/components/common/Header';
@@ -11,8 +13,7 @@ import QrCode from '@/components/common/QrCode';
 import { useToast } from '@/components/ui/Toast';
 import Button from '@/components/ui/Button';
 import {
-  Users, Store, Copy, Check, ArrowLeft, MessageCircle, ExternalLink, Loader2,
-  Settings, Mail, User as UserIcon, Phone, Save, MapPin,
+  Users, Store, Copy, Check, ArrowLeft, MessageCircle, ExternalLink, Settings, Mail, User as UserIcon, Phone, Save, MapPin,
 } from 'lucide-react';
 
 /**
@@ -149,7 +150,7 @@ export default function SupplierBoutiquePage() {
 
         {chargement ? (
           <div className="flex items-center space-x-2 text-xs text-slate-500 py-8">
-            <Loader2 className="w-4 h-4 animate-spin" /><span>Chargement…</span>
+            <SugubaLoader className="w-4 h-4" /><span>Chargement…</span>
           </div>
         ) : (
           <>

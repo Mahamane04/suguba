@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useState } from 'react';
-import { ImagePlus, Loader2, X } from 'lucide-react';
+import { ImagePlus, X } from 'lucide-react';
 import { compresserImage } from '@/lib/compression-image';
 
 /**
@@ -39,8 +41,8 @@ export default function CouvertureEditeur({ valeur, onChange }: { valeur: string
         )}
         <div className="absolute inset-0 flex items-center justify-center gap-2">
           <label className="inline-flex items-center gap-2 h-10 px-4 rounded-2xl bg-white/95 border border-slate-200 text-xs font-bold text-slate-800 cursor-pointer shadow-sm">
-            {envoi ? <Loader2 className="w-4 h-4 animate-spin" /> : <ImagePlus className="w-4 h-4" />}
-            {envoi ? 'Envoi…' : valeur ? 'Changer la bannière' : 'Ajouter une bannière'}
+            {envoi ? <SugubaLoader className="w-4 h-4" /> : <ImagePlus className="w-4 h-4" />}
+            {envoi ? <><SugubaLoader className="mr-2 h-4 w-4" />Envoi…</> : valeur ? 'Changer la bannière' : 'Ajouter une bannière'}
             <input type="file" accept="image/*" className="hidden" disabled={envoi} onChange={(e) => { envoyer(e.target.files?.[0]); e.target.value = ''; }} />
           </label>
           {valeur && (

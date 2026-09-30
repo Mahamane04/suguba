@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useCallback, useEffect, useState } from 'react';
-import { Ban, Loader2, Send } from 'lucide-react';
+import { Ban, Send } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Field';
@@ -76,7 +78,7 @@ export default function SuspensionPage() {
                     <Textarea rows={4} maxLength={1500} value={texte[s.id] || ''} onChange={(e) => setTexte((t) => ({ ...t, [s.id]: e.target.value }))}
                       placeholder="Expliquez pourquoi vous contestez cette décision." aria-label="Votre contestation" />
                     <Button fullWidth onClick={() => contester(s.id)} disabled={envoi === s.id || (texte[s.id] || '').trim().length < 10}>
-                      {envoi === s.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}Contester la décision
+                      {envoi === s.id ? <SugubaLoader className="w-4 h-4" /> : <Send className="w-4 h-4" />}Contester la décision
                     </Button>
                   </div>
                 )}

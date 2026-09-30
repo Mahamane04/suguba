@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useState } from 'react';
-import { Megaphone, Loader2, Eye, MousePointerClick } from 'lucide-react';
+import { Megaphone, Eye, MousePointerClick } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
 import { Field } from '@/components/ui/Field';
@@ -158,7 +160,7 @@ export default function SponsorisationPage() {
                   choix={emplacements.map((e) => ({ valeur: e.valeur, libelle: e.libelle }))} />
               </Field>
               <Button type="submit" disabled={envoi} fullWidth>
-                {envoi ? <Loader2 className="w-4 h-4 animate-spin" /> : <Megaphone className="w-4 h-4" />}
+                {envoi ? <SugubaLoader className="w-4 h-4" /> : <Megaphone className="w-4 h-4" />}
                 Envoyer la demande
               </Button>
               <p className="text-xs text-slate-500">

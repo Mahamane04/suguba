@@ -1,9 +1,11 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Search, Store, Factory, Tag, Loader2, WifiOff } from 'lucide-react';
+import { Search, Store, Factory, Tag, WifiOff } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import { Input } from '@/components/ui/Field';
 import { EmptyState } from '@/components/ui/Surface';
@@ -62,7 +64,7 @@ function Contenu() {
       <div className="relative">
         <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
         <Input autoFocus type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ventilateur, électroménager, une boutique…" className="pl-10" aria-label="Rechercher" />
-        {enCours && <Loader2 className="w-4 h-4 text-slate-400 animate-spin absolute right-3.5 top-1/2 -translate-y-1/2" />}
+        {enCours && <SugubaLoader className="w-4 h-4 text-slate-400 absolute right-3.5 top-1/2 -translate-y-1/2" />}
       </div>
 
       {q.trim().length < 2 ? null : erreur && !enCours ? (

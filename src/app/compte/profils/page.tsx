@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useState } from 'react';
-import { Store, ShoppingBag, Truck, Shield, Globe, ShoppingCart, ArrowRight, Plus, Loader2, Check } from 'lucide-react';
+import { Store, ShoppingBag, Truck, Shield, Globe, ShoppingCart, ArrowRight, Plus, Check } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import { Card } from '@/components/ui/Surface';
 import Button from '@/components/ui/Button';
@@ -197,7 +199,7 @@ export default function MesProfilsPage() {
                       </>
                     )}
                     <Button onClick={() => ajouter(r)} disabled={envoi} fullWidth>
-                      {envoi ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                      {envoi ? <SugubaLoader className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
                       Ajouter le profil {P.libelle}
                     </Button>
                   </div>

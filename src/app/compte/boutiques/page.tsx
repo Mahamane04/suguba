@@ -1,8 +1,10 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Store, Plus, ExternalLink, Check, Loader2, Crown, Clock, ListChecks, Settings2 } from 'lucide-react';
+import { Store, Plus, ExternalLink, Check, Crown, Clock, ListChecks, Settings2 } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import { Card, Skeleton, StatusPill } from '@/components/ui/Surface';
 import Button from '@/components/ui/Button';
@@ -158,7 +160,7 @@ export default function MesBoutiquesPage() {
             </Field>
             <div className="flex gap-2">
               <Button onClick={creer} disabled={creation.envoi || creation.nom.trim().length < 2} fullWidth>
-                {creation.envoi ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}Créer la boutique
+                {creation.envoi ? <SugubaLoader className="w-4 h-4" /> : <Check className="w-4 h-4" />}Créer la boutique
               </Button>
               <Button variant="ghost" onClick={() => setCreation({ ouvert: false, nom: '', quartier: '', envoi: false })}>Annuler</Button>
             </div>
@@ -224,7 +226,7 @@ function SelecteurArticles({ catalogue, choisis, onEnregistrer }: { catalogue: A
         })}
       </ul>
       <Button onClick={async () => { setEnvoi(true); await onEnregistrer(ids); setEnvoi(false); }} disabled={envoi} fullWidth>
-        {envoi ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}Enregistrer {ids.length} article(s)
+        {envoi ? <SugubaLoader className="w-4 h-4" /> : <Check className="w-4 h-4" />}Enregistrer {ids.length} article(s)
       </Button>
     </div>
   );

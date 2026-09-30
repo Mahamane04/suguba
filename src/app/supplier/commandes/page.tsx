@@ -1,5 +1,7 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useMemo, useState } from 'react';
 import { PackageCheck, KeyRound, Truck, CheckCircle2, Clock, Package, Handshake, Phone, QrCode, Circle, AlertTriangle, Camera, X } from 'lucide-react';
 import { Field, Input, Textarea } from '@/components/ui/Field';
@@ -406,7 +408,7 @@ function FormEtape({ commande, etape, onFini }: { commande: Commande; etape: Eta
       )}
       <div className="grid grid-cols-2 gap-2">
         <Button variant="ghost" onClick={() => onFini(false)} disabled={envoi}>Annuler</Button>
-        <Button onClick={envoyer} disabled={envoi || !pret}>{envoi ? 'Envoi…' : 'Déclarer terminée'}</Button>
+        <Button onClick={envoyer} disabled={envoi || !pret}>{envoi ? <><SugubaLoader className="mr-2 h-4 w-4" />Envoi…</> : 'Déclarer terminée'}</Button>
       </div>
     </div>
   );

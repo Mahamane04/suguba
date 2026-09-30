@@ -1,8 +1,10 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Store, ExternalLink, Plus, Crown, Search, Loader2, UserPlus } from 'lucide-react';
+import { Store, ExternalLink, Plus, Crown, Search, UserPlus } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
 import Button from '@/components/ui/Button';
@@ -229,7 +231,7 @@ function CreerBoutique({ onFait }: { onFait: () => Promise<void> }) {
             </Field>
           </div>
           <Button onClick={envoyer} disabled={envoi || (mode === 'existant' ? f.nomBoutique.trim().length < 2 : !f.nom || !f.email || !f.telephone)} fullWidth>
-            {envoi ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+            {envoi ? <SugubaLoader className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
             {mode === 'nouveau' ? 'Créer le compte et la boutique' : 'Créer la boutique'}
           </Button>
           <p className="text-xs text-slate-500">

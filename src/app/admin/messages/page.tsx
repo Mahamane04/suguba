@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useCallback, useEffect, useState } from 'react';
-import { Check, Loader2, MessageSquareWarning, X } from 'lucide-react';
+import { Check, MessageSquareWarning, X } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Field';
@@ -70,14 +72,14 @@ export default function MessagesAdminPage() {
                     <div className="grid grid-cols-2 gap-2">
                       <Button size="sm" variant="ghost" onClick={() => setRefus(null)}>Retour</Button>
                       <Button size="sm" onClick={() => decider(m.id, 'refuser')} disabled={envoi === m.id || motif.trim().length < 3}>
-                        {envoi === m.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}Refuser
+                        {envoi === m.id ? <SugubaLoader className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}Refuser
                       </Button>
                     </div>
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-2">
                     <Button size="sm" onClick={() => decider(m.id, 'publier')} disabled={envoi === m.id}>
-                      {envoi === m.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}Remettre
+                      {envoi === m.id ? <SugubaLoader className="w-3.5 h-3.5" /> : <Check className="w-3.5 h-3.5" />}Remettre
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => { setRefus(m.id); setMotif(''); }}><X className="w-3.5 h-3.5" />Refuser</Button>
                   </div>

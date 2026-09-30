@@ -1,5 +1,7 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Carrousel from '@/components/product/Carrousel';
@@ -10,7 +12,7 @@ import { compterClic } from '@/lib/sponsorises';
 import { partagerProduit, prechargerImage, prechargerLienPartage, useCodeRevendeur } from '@/lib/partage';
 import type { Product } from '@/types';
 import { libelleTypeOffre, normaliserTypeOffre } from '@/lib/offre';
-import { Loader2, Image as ImageIcon, ShoppingBag, Check } from 'lucide-react';
+import { Image as ImageIcon, ShoppingBag, Check } from 'lucide-react';
 import { ajoutDirectPossible, suffixeUnite, texteMinimum } from '@/lib/unite-vente';
 import { ajouterAuPanier } from '@/lib/panier';
 import { useToast } from '@/components/ui/Toast';
@@ -164,7 +166,7 @@ export default function ProductCard({
           : 'w-9 shrink-0 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
       }`}
     >
-      {preparation ? <Loader2 className="w-4 h-4 animate-spin" /> : <WhatsAppIcon className="w-4 h-4" />}
+      {preparation ? <SugubaLoader className="w-4 h-4" /> : <WhatsAppIcon className="w-4 h-4" />}
       {pleineLargeur ? (
         <>
           <span className="sm:hidden">Partager</span>

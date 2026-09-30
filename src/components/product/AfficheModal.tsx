@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useState } from 'react';
-import { X, Download, Loader2 } from 'lucide-react';
+import { X, Download } from 'lucide-react';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 import { genererAffiche, partagerAffiche, telechargerAffiche, type FormatAffiche, type ThemeAffiche } from '@/lib/affiche';
 import { lienProduit, texteProduit, useCodeRevendeur, type ProduitAPartager } from '@/lib/partage';
@@ -92,7 +94,7 @@ export default function AfficheModal({ produit, onClose }: { produit: ProduitAPa
             // eslint-disable-next-line @next/next/no-img-element
             <img src={apercu} alt="Aperçu de l'affiche" className="w-full h-full object-contain" />
           ) : (
-            <Loader2 className="w-6 h-6 text-slate-400 animate-spin" />
+            <SugubaLoader className="w-6 h-6 text-slate-400" />
           )}
         </div>
 

@@ -1,5 +1,7 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useCallback, useEffect, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Circle, Clock, Hammer, Phone, RefreshCw } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
@@ -81,7 +83,7 @@ export default function PrestationsAdminPage() {
       sousTitre="Installations et services en plusieurs étapes, validées par le client."
       action={
         <Button variant="ghost" size="sm" onClick={() => charger()} disabled={chargement}>
-          <RefreshCw className={`w-4 h-4 ${chargement ? 'animate-spin' : ''}`} /> Actualiser
+          {chargement ? <SugubaLoader className="w-4 h-4" /> : <RefreshCw className="w-4 h-4" />} Actualiser
         </Button>
       }
     >
@@ -200,7 +202,7 @@ function LigneEtape({ orderId, etape, onMaj }: { orderId: string; etape: Etape; 
           </Field>
           <div className="grid grid-cols-2 gap-2">
             <Button variant="ghost" onClick={() => setAction(null)} disabled={envoi}>Annuler</Button>
-            <Button onClick={trancher} disabled={envoi || note.trim().length < 5}>{envoi ? 'Envoi…' : action === 'valider' ? 'Valider l’étape' : 'Faire refaire'}</Button>
+            <Button onClick={trancher} disabled={envoi || note.trim().length < 5}>{envoi ? <><SugubaLoader className="mr-2 h-4 w-4" />Envoi…</> : action === 'valider' ? 'Valider l’étape' : 'Faire refaire'}</Button>
           </div>
         </div>
       ) : (

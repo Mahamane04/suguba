@@ -1,7 +1,9 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Clock, Loader2, Lock, Package, Send } from 'lucide-react';
+import { CheckCircle2, Clock, Lock, Package, Send } from 'lucide-react';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import FormulaireRetrait from '@/components/retraits/FormulaireRetrait';
@@ -103,7 +105,7 @@ export default function SupplierPaiementsPage() {
 
         {chargement ? (
           <div className="bg-white rounded-3xl border border-slate-200 p-8 flex justify-center" aria-busy="true">
-            <Loader2 className="w-6 h-6 text-slate-400 animate-spin" />
+            <SugubaLoader className="w-6 h-6 text-slate-400" />
           </div>
         ) : refus ? (
           <div className="bg-white rounded-3xl border border-slate-200 p-5 flex items-start gap-3">

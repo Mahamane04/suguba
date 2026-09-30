@@ -1,5 +1,7 @@
 'use client';
 
+import SugubaLoader from '@/components/ui/SugubaLoader';
+
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import ChoixProfil, { ResumeProfil, estProfil, PROFILS_INSCRIPTION, type ProfilInscription as Role } from '@/components/auth/ChoixProfil';
@@ -169,7 +171,7 @@ export default function RegisterPage() {
               <p id="register-password-aide" className="text-xs text-slate-500">8 caractères au moins, avec une lettre et un chiffre.</p>
               <ChampMotDePasse id="register-password-2" label="Confirmer le mot de passe" nouveau value={confirmation} onChange={setConfirmation} />
               <Button type="submit" disabled={envoi} fullWidth>
-                {envoi ? 'Création…' : `Créer mon compte ${profil?.titre.toLowerCase()}`}
+                {envoi ? <><SugubaLoader className="mr-2 h-4 w-4" />Création…</> : `Créer mon compte ${profil?.titre.toLowerCase()}`}
               </Button>
               <p className="text-xs text-slate-500 text-center">Un code arrive par e-mail pour confirmer votre adresse, une seule fois.</p>
             </form>
