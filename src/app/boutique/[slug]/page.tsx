@@ -70,7 +70,7 @@ async function charger(slug: string): Promise<Charge | null> {
     const admin = getSupabaseAdmin();
     const { data } = (await admin?.from('suppliers').select('slug, warehouse_neighborhood').eq('profile_id', boutique.proprietaireId).maybeSingle()) || { data: null };
     if (!data?.slug) return null;
-    const vitrine = await chargerBoutiqueFournisseur(data.slug);
+    const vitrine = await chargerBoutiqueFournisseur(data.slug, { name: boutique.nom, logo_url: boutique.logo, description: boutique.description, cover_url: boutique.couverture, status: boutique.statut });
     if (!vitrine) return null;
     if (!boutique.principale) {
       vitrine.produits = await chargerProduitsDeLaBoutique(boutique.id);
@@ -80,7 +80,7 @@ async function charger(slug: string): Promise<Charge | null> {
     // tant que la vente directe n'est pas ouverte pour ce fournisseur.
     const presentee = admin ? await appliquerPrioriteReseau(admin, vitrine, boutique.proprietaireId, await lireReglagesReseau()) : vitrine;
     return {
-      vitrine: { ...presentee, ...enPlus, nom: boutique.nom || vitrine.nom, logo: boutique.logo || vitrine.logo, description: boutique.description || vitrine.description },
+      vitrine: { ...presentee, ...enPlus, nom: boutique.nom || vitrine.nom, logo: boutique.logo, description: boutique.description },
       slugBoutique: boutique.slug,
       abonnes: boutique.abonnes,
       galerie: boutique.galerie,

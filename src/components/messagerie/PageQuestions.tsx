@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { MessageCircleQuestion } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import { Card, EmptyState, Skeleton } from '@/components/ui/Surface';
+import Button from '@/components/ui/Button';
 import FilMessages, { type MessageFil } from './FilMessages';
 
 interface Fil { id: string; produit: string; avec: string; dernierLe: string }
@@ -56,7 +57,7 @@ export default function PageQuestions({ espace }: { espace: 'reseller' | 'suppli
         ) : !fils ? <Skeleton className="h-40" />
         : fils.length === 0 ? (
           <EmptyState icone={MessageCircleQuestion} titre="Aucune question"
-            texte={espace === 'reseller' ? 'Sur la fiche d’un produit, « Poser une question au fournisseur ».' : 'Les questions des revendeurs sur vos offres arriveront ici.'} />
+            texte={espace === 'reseller' ? 'Sur la fiche d’un produit, « Poser une question au fournisseur ».' : 'Les questions des revendeurs sur vos offres arriveront ici.'} action={<Button href={espace === 'reseller' ? '/reseller/catalog' : '/supplier/inventory'}>Voir les produits</Button>} />
         ) : (
           <Card>
             <ul className="divide-y divide-slate-100">

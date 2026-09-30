@@ -28,7 +28,15 @@ export default function ResellerBadgePage() {
   // entre serveur et navigateur (erreur d'hydratation en console).
   const [origine, setOrigine] = useState('https://app.sugubaml.com');
   useEffect(() => { setOrigine(window.location.origin); }, []);
-  const personalCatalogUrl = `${origine}/reseller/join?ref=${reseller.referralCode}`;
+  const [boutique, setBoutique] = useState<{ slug: string; quartier?: string | null } | null>(null);
+  const [verifie, setVerifie] = useState(false);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch('/api/reseller/boutique', { signal: controller.signal }).then(r => r.ok ? r.json() : null).then(d => setBoutique(d?.boutique || null)).catch(() => undefined);
+    fetch('/api/reseau/verification', { signal: controller.signal }).then(r => r.ok ? r.json() : null).then(d => setVerifie(Boolean(d?.badges?.includes('revendeur_verifie')))).catch(() => undefined);
+    return () => controller.abort();
+  }, []);
+  const personalCatalogUrl = boutique ? `${origine}/boutique/${encodeURIComponent(boutique.slug)}` : null;
 
   const handlePrint = () => {
     if (typeof window !== 'undefined') {
@@ -69,9 +77,9 @@ export default function ResellerBadgePage() {
               <span>Imprimer mon Badge</span>
             </button>
 
-            <a
+            {personalCatalogUrl && <a
               href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-                `🪪 *CARTE OFFICIELLE REVENDEUR AGRÉÉ SUGUBA MALI*\n\nNom : ${currentUser.fullName}\nCode Partenaire : ${reseller.referralCode}\n\nScannez mon QR Code ou commandez via mon lien officiel :\n${personalCatalogUrl}`
+                `🪪 *CARTE REVENDEUR SUGUBA MALI*\n\nNom : ${currentUser.fullName}\nCode Partenaire : ${reseller.referralCode}\n\nScannez mon QR Code ou commandez via mon lien officiel :\n${personalCatalogUrl}`
               )}`}
               target="_blank"
               rel="noopener noreferrer"
@@ -79,7 +87,7 @@ export default function ResellerBadgePage() {
             >
               <Share2 className="w-3.5 h-3.5" />
               <span>Partager</span>
-            </a>
+            </a>}
           </div>
         </div>
 
@@ -90,7 +98,7 @@ export default function ResellerBadgePage() {
             Votre carte professionnelle Suguba
           </h1>
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            Présentez cette carte à vos clients et commerçants à Bamako pour prouver votre statut officiel.
+            Présentez cette carte à vos clients et commerçants à Bamako pour leur présenter votre boutique.
           </p>
         </div>
 
@@ -111,7 +119,7 @@ export default function ResellerBadgePage() {
             {/* Pastille sur une seule ligne : elle se coupait en deux blocs
                 décalés « REVENDEUR / AGRÉÉ » sur téléphone (capture). */}
             <span className="shrink-0 whitespace-nowrap px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold uppercase tracking-wide border border-emerald-500/30">
-              Agréé
+              {verifie ? 'Revendeur vérifié' : 'Revendeur'}
             </span>
           </div>
 
@@ -125,7 +133,7 @@ export default function ResellerBadgePage() {
                 <h2 className="text-xl font-bold text-white">{currentUser.fullName}</h2>
                 <p className="text-xs text-emerald-300 font-medium flex items-center justify-center sm:justify-start space-x-1">
                   <MapPin className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Secteur : Hamdallaye ACI 2000 (Bamako)</span>
+                  <span>{boutique?.quartier || 'Boutique en ligne'}</span>
                 </p>
               </div>
 
@@ -150,7 +158,7 @@ export default function ResellerBadgePage() {
                 remplace un appel à quickchart.io qui envoyait le lien du
                 revendeur à un service tiers pour chaque affichage. */}
             <div className="bg-white p-3 rounded-2xl shadow-lg text-center space-y-1.5 shrink-0">
-              <QrCode value={personalCatalogUrl} size={128} />
+              {personalCatalogUrl ? <QrCode value={personalCatalogUrl} size={128} /> : <p role="status" className="max-w-32 text-slate-700">Boutique indisponible. Réessayez depuis Ma boutique.</p>}
               <span className="text-xs font-bold text-slate-900 uppercase block tracking-wider">
                 Scanner pour Commander
               </span>
@@ -162,7 +170,7 @@ export default function ResellerBadgePage() {
           <div className="pt-4 border-t border-white/10 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 text-xs text-slate-400">
             <div className="flex items-center gap-1.5 min-w-0">
               <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>Certifié par Suguba Technologies Mali SAS</span>
+              <span>{verifie ? 'Statut vérifié par Suguba' : 'Carte de présentation — identité non certifiée'}</span>
             </div>
             <span className="font-mono text-emerald-300 font-bold whitespace-nowrap">ML-BKO-2026</span>
           </div>

@@ -19,6 +19,8 @@ export async function GET(req: NextRequest) {
       typeProprietaire: 'supplier',
       proprietaireId: fournisseurId,
       nom: fournisseur?.shop_display_name || fournisseur?.company_name || 'Ma boutique',
+      logo: fournisseur?.logo_url || null,
+      description: fournisseur?.shop_description || null,
     }));
 
   // Nombre de revendeurs qui ont au moins un produit de ce fournisseur en
@@ -33,7 +35,7 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ boutique, revendeurs, maxGalerie: MAX_GALERIE });
+  return NextResponse.json({ boutique, revendeurs, maxGalerie: MAX_GALERIE, identiteHistorique: fournisseur ? { nom: fournisseur.shop_display_name || fournisseur.company_name, logo: fournisseur.logo_url || null, description: fournisseur.shop_description || null } : null });
 }
 
 export async function PATCH(req: NextRequest) {

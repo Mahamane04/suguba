@@ -80,6 +80,10 @@ export async function GET(req: NextRequest) {
         .filter((c) => c.status === 'locked' && c.order_id && c.unlock_at && Date.parse(c.unlock_at) <= Date.now())
         .reduce((total, c) => total + Number(c.amount), 0),
       reservedBalance: somme('reserved'),
+      commissionsEnAttente: lignes.filter(c => ['pending', 'locked'].includes(c.status)).map(c => ({
+        commande: c.order_id || null, montant: Number(c.amount), statut: c.status,
+        debloquagePrevu: c.status === 'locked' ? c.unlock_at || null : null,
+      })),
       totalEarned: somme('paid'),
       momoNumber: metadata.momoNumber ? String(metadata.momoNumber) : null,
       momoProvider: metadata.momoProvider ? String(metadata.momoProvider) : null,

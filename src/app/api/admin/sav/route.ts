@@ -150,12 +150,13 @@ async function patchInterne(req: NextRequest) {
     }
 
     const { data: ticket } = await admin
-      .from('sav_tickets').select('id, status').eq('id', ticketId).maybeSingle();
+      .from('sav_tickets').select('id, status, issue_description').eq('id', ticketId).maybeSingle();
     if (!ticket) {
       return NextResponse.json({ error: 'Ticket introuvable.' }, { status: 404 });
     }
 
     if (action === 'dispatch') {
+      if (ticket.issue_description?.startsWith('[Incident de course')) return NextResponse.json({ error: 'Un incident de course nécessite une décision équipe, pas un échange automatique.' }, { status: 409 });
       if (!driverId) {
         return NextResponse.json({ error: 'Livreur requis.' }, { status: 400 });
       }

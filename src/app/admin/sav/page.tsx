@@ -34,7 +34,7 @@ const STATUT_SAV: Record<string, [string, 'danger' | 'attente' | 'succes' | 'neu
 };
 const RESOLUTION: Record<string, string> = { swap_new: 'Échange contre un neuf (72 h)', repair: 'Réparation', refund: 'Remboursement' };
 const jour = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
-const pastille = (t: SavTicket) => { const [l, ton] = STATUT_SAV[t.status] || [t.status, 'neutre']; return <StatusPill ton={ton}>{l}</StatusPill>; };
+const pastille = (t: SavTicket) => { if (t.status === 'open' && t.issueDescription?.startsWith('[Incident de course')) return <StatusPill ton="attente">Incident à étudier</StatusPill>; const [l, ton] = STATUT_SAV[t.status] || [t.status, 'neutre']; return <StatusPill ton={ton}>{l}</StatusPill>; };
 
 export default function AdminSavPage() {
   const state = useSugubaStore();
@@ -50,6 +50,7 @@ export default function AdminSavPage() {
   const [filtre, setFiltre] = useState<Filtre>('open');
   const [ouvert, setOuvert] = useState<string | null>(null);
   const [enCours, setEnCours] = useState(false);
+  const [decisionIncident, setDecisionIncident] = useState('');
 
   const deliveredOrders = state.orders.filter((o) => o.status === 'delivered');
 
@@ -140,7 +141,7 @@ export default function AdminSavPage() {
     { cle: 'client', titre: 'Client', tri: (t) => t.customerName, rendu: (t) => (
       <span className="block"><span className="block font-semibold text-slate-900">{t.customerName}</span><span className="block text-xs text-slate-500 tabular-nums">{t.customerPhone}</span></span>
     ) },
-    { cle: 'resolution', titre: 'Solution', cachee: true, rendu: (t) => RESOLUTION[t.resolutionType] || t.resolutionType },
+    { cle: 'resolution', titre: 'Solution', cachee: true, rendu: (t) => t.issueDescription?.startsWith('[Incident de course') ? 'Incident de course — décision équipe' : RESOLUTION[t.resolutionType] || t.resolutionType },
     { cle: 'fournisseur', titre: 'Fournisseur', cachee: true, tri: (t) => t.supplierName || '', rendu: (t) => t.supplierName || '—' },
     { cle: 'coursier', titre: 'Coursier', tri: (t) => t.driverName || '', rendu: (t) => t.driverName || '—' },
     { cle: 'statut', titre: 'Statut', tri: (t) => t.status, rendu: pastille },
@@ -167,7 +168,7 @@ export default function AdminSavPage() {
       )}
 
       <div className="grid grid-cols-3 gap-3">
-        <StatCard label="Coursier à envoyer" valeur={tickets ? nombre('open') : '—'} aide="À traiter en priorité" />
+        <StatCard label="Dossiers à traiter" valeur={tickets ? nombre('open') : '—'} aide="À traiter en priorité" />
         <StatCard label="Coursier en route" valeur={tickets ? nombre('courier_dispatched') : '—'} aide="Échange en cours" />
         <StatCard label="Résolus" valeur={tickets ? nombre('resolved') : '—'} aide="Dossiers clos" />
       </div>
@@ -210,7 +211,7 @@ export default function AdminSavPage() {
             <dl>
               <Info libelle="Client">{ticket.customerName}</Info>
               <Info libelle="Téléphone"><a href={`tel:${ticket.customerPhone}`} className="text-suguba-profond hover:underline tabular-nums">{ticket.customerPhone}</a></Info>
-              <Info libelle="Solution">{RESOLUTION[ticket.resolutionType] || ticket.resolutionType}</Info>
+              <Info libelle="Solution">{ticket.issueDescription?.startsWith('[Incident de course') ? 'Incident de course — décision équipe' : RESOLUTION[ticket.resolutionType] || ticket.resolutionType}</Info>
               {ticket.supplierName && <Info libelle="Fournisseur">{ticket.supplierName}</Info>}
               {ticket.driverName && <Info libelle="Coursier">{ticket.driverName}{ticket.driverPhone ? ` (${ticket.driverPhone})` : ''}</Info>}
               {ticket.status === 'courier_dispatched' && ticket.swapOtp && <Info libelle="Code secret d’échange"><span className="font-mono text-rose-700">{ticket.swapOtp}</span></Info>}
@@ -243,14 +244,14 @@ export default function AdminSavPage() {
             {ticket.status !== 'resolved' && ticket.status !== 'rejected' && (
               <div className="grid grid-cols-2 gap-2">
                 <Button href={`tel:${ticket.customerPhone}`} variant="secondary" size="sm"><Phone className="w-4 h-4" />Appeler le client</Button>
-                <Button variant="whatsapp" size="sm" target="_blank" rel="noopener noreferrer"
+                {!ticket.issueDescription?.startsWith('[Incident de course') && <Button variant="whatsapp" size="sm" target="_blank" rel="noopener noreferrer"
                   href={`https://api.whatsapp.com/send?phone=${ticket.customerPhone.replace(/\D/g, '')}&text=${encodeURIComponent(`Bonjour ${ticket.customerName}, votre dossier SAV ${ticket.ticketNumber} sur Suguba Mali a été pris en charge. Un livreur passe pour l’échange de votre ${ticket.productName}.`)}`}>
                   <MessageCircle className="w-4 h-4" />Suivi WhatsApp
-                </Button>
+                </Button>}
               </div>
             )}
 
-            {peutModifier && ticket.status === 'open' && (
+            {peutModifier && ticket.status === 'open' && !ticket.issueDescription?.startsWith('[Incident de course') && (
               <Card padding="p-4" className="space-y-2 !bg-slate-50">
                 <p className="text-sm font-semibold text-slate-800">Envoyer un coursier</p>
                 {livreurs.length === 0 ? <p className="text-sm text-slate-600">Aucun livreur actif : vérifiez-en un dans « Livreurs ».</p> : (
@@ -263,6 +264,7 @@ export default function AdminSavPage() {
                 )}
               </Card>
             )}
+            {peutModifier && ticket.status === 'open' && ticket.issueDescription?.startsWith('[Incident de course') && <Card className="space-y-3"><label htmlFor="incident-decision" className="font-semibold text-sm">Décision de l’équipe</label><textarea id="incident-decision" value={decisionIncident} onChange={e => setDecisionIncident(e.target.value)} maxLength={1000} className="w-full border rounded-xl p-3" placeholder="Instructions communiquées au livreur et suite donnée"/><p className="text-xs text-slate-600">La clôture du signalement ne change pas la commande ni son règlement.</p><Button disabled={enCours || !decisionIncident.trim()} onClick={() => agir({ ticketId: ticket.id, action: 'resolve', notes: decisionIncident.trim() }, 'Signalement clos.')}>Enregistrer la décision et clore</Button></Card>}
             {peutModifier && ticket.status === 'courier_dispatched' && (
               <Button fullWidth disabled={enCours} onClick={() => agir({
                 ticketId: ticket.id, action: 'resolve',

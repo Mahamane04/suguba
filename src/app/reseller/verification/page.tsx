@@ -1,5 +1,6 @@
 'use client';
 
+import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
 import SugubaLoader from '@/components/ui/SugubaLoader';
 
 import React, { useEffect, useState } from 'react';
@@ -163,16 +164,10 @@ export default function VerificationPage() {
                   )}
 
                   {modifiable && parQuartier && (
-                    quartier ? (
-                      <Button variant="ghost" fullWidth disabled={envoi === etape.valeur} onClick={() => demander('location', { quartier })}>
-                        {envoi === etape.valeur ? <SugubaLoader className="w-4 h-4" /> : <MapPin className="w-4 h-4" />}
-                        Faire vérifier mon quartier ({quartier})
-                      </Button>
-                    ) : (
-                      <Button variant="ghost" fullWidth href="/reseller/demarrer">
-                        <MapPin className="w-4 h-4" />Renseigner mon quartier
-                      </Button>
-                    )
+                    <div className="space-y-2"><label htmlFor="verification-quartier" className="text-xs font-semibold">Votre quartier</label><NeighborhoodPicker id="verification-quartier" value={quartier || ''} onChange={setQuartier}/><Button variant="ghost" fullWidth disabled={!quartier || envoi === etape.valeur} onClick={async () => {
+                      setEnvoi('location');
+                      try { const r = await fetch('/api/reseller/me', { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ neighborhood: quartier }) }); if (!r.ok) throw new Error(); await demander('location', { quartier }); } catch { toast('Quartier non enregistré. Réessayez.', { ton: 'erreur' }); } finally { setEnvoi(null); }
+                    }}>Enregistrer et faire vérifier mon quartier</Button></div>
                   )}
 
                   {automatique && etat !== 'approved' && (

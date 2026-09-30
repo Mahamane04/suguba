@@ -56,6 +56,7 @@ export default function CampagnesPage() {
   const { toast } = useToast();
   const [campagnes, setCampagnes] = useState<Campagne[]>([]);
   const [produits, setProduits] = useState<{ id: string; nom: string }[]>([]);
+  const [erreurChargement, setErreurChargement] = useState(false);
   const [chargement, setChargement] = useState(true);
   const [formulaire, setFormulaire] = useState(false);
   const [envoi, setEnvoi] = useState(false);
@@ -73,9 +74,9 @@ export default function CampagnesPage() {
   const auResultat = estTypeResultat(type);
 
   const charger = React.useCallback(() => fetch('/api/supplier/campagnes')
-    .then((r) => r.json())
-    .then((d) => { setCampagnes(d.campagnes || []); setProduits(d.produits || []); setResultatActif(Boolean(d.resultatActif)); })
-    .catch(() => undefined)
+    .then((r) => { if (!r.ok) throw new Error(); return r.json(); })
+    .then((d) => { setErreurChargement(false); setCampagnes(d.campagnes || []); setProduits(d.produits || []); setResultatActif(Boolean(d.resultatActif)); })
+    .catch(() => setErreurChargement(true))
     .finally(() => setChargement(false)), []);
   useEffect(() => { charger(); }, [charger]);
 
@@ -110,6 +111,7 @@ export default function CampagnesPage() {
       retour={{ href: '/supplier', libelle: 'Espace fournisseur' }}
       action={<Button size="sm" onClick={() => setFormulaire((v) => !v)} disabled={produits.length === 0}><Plus className="w-4 h-4" />Nouvelle</Button>}>
 
+      <Card className="space-y-2"><h2 className="font-bold">Campagne rémunérée ou visibilité sponsorisée ?</h2><p className="text-sm text-slate-600">Ici, vous financez des objectifs validés auprès des revendeurs. Le budget doit être reçu par Suguba avant l’ouverture. Les objectifs et les règles de preuve sont indiqués avant votre demande ; aucune vente n’est garantie.</p><Button variant="ghost" size="sm" href="/supplier/sponsorisation">Voir la visibilité sponsorisée</Button></Card>
       {formulaire && (
         <Card>
           <form onSubmit={creer} className="space-y-3">
@@ -178,10 +180,10 @@ export default function CampagnesPage() {
 
       {chargement ? (
         <div className="space-y-3"><Skeleton className="h-28" /><Skeleton className="h-28" /></div>
-      ) : campagnes.length === 0 ? (
+      ) : erreurChargement ? <EmptyState icone={Rocket} titre="Campagnes indisponibles" texte="Vos campagnes n’ont pas pu être chargées." action={<Button onClick={() => { setChargement(true); charger(); }}>Réessayer</Button>}/> : campagnes.length === 0 ? (
         <EmptyState icone={Rocket} titre="Aucune campagne"
           texte={produits.length === 0 ? 'Il faut au moins un produit en vente pour lancer une campagne.' : 'Lancez une campagne : les revendeurs partagent et vendent votre produit, vous ne payez que les objectifs atteints.'}
-          action={produits.length > 0 ? <Button onClick={() => setFormulaire(true)}>Créer une campagne</Button> : undefined} />
+          action={produits.length > 0 ? <Button onClick={() => setFormulaire(true)}>Créer une campagne</Button> : <Button href="/supplier/products/new">Ajouter une offre</Button>} />
       ) : (
         <div className="space-y-3">
           {campagnes.map((c) => {
@@ -202,12 +204,13 @@ export default function CampagnesPage() {
                 </div>
                 <div className="h-2 rounded-full bg-slate-100 overflow-hidden"><div className="h-full bg-suguba-brand" style={{ width: `${pct}%` }} /></div>
                 <p className="text-xs text-slate-500">{c.avancementTotal} / {vise} au total{c.canal && c.canal !== 'tous' ? ` · publié sur ${CANAUX.find((x) => x.valeur === c.canal)?.libelle}` : ''}</p>
-                <div className="grid grid-cols-3 gap-2 text-xs">
-                  <p className="rounded-2xl bg-slate-50 px-3 py-2">Réglé<br /><strong className="text-slate-900">{fcfa(c.budget?.recu || 0)}</strong><span className="text-slate-500"> / {fcfa(c.budgetMax)}</span></p>
-                  <p className="rounded-2xl bg-slate-50 px-3 py-2">Dépensé<br /><strong className="text-slate-900">{fcfa(c.budget?.verse || 0)}</strong></p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                  <p className="rounded-2xl bg-slate-50 px-3 py-2">Budget reçu<br /><strong className="text-slate-900">{fcfa(c.budget?.recu || 0)}</strong><span className="text-slate-500"> / {fcfa(c.budgetMax)}</span></p>
+                  <p className="rounded-2xl bg-slate-50 px-3 py-2">Récompenses versées<br /><strong className="text-slate-900">{fcfa(c.budget?.verse || 0)}</strong></p>
                   <p className="rounded-2xl bg-slate-50 px-3 py-2">{c.statut === 'ended' ? 'Solde non utilisé' : 'Restant'}<br /><strong className="text-slate-900">{fcfa(c.budget?.restant || 0)}</strong></p>
+                  <p className="rounded-2xl bg-slate-50 px-3 py-2">En validation<br /><strong className="text-slate-900">{fcfa(c.budget?.aValider || 0)}</strong></p>
                 </div>
-                {c.statut === 'draft' && (c.budget?.recu || 0) < c.budgetMax && (
+                {c.statut === 'draft'  && (c.budget?.recu || 0) < c.budgetMax && (
                   <p className="text-xs text-amber-800 bg-amber-50 rounded-2xl px-3 py-2">À régler avant l’ouverture : {fcfa(c.budgetMax - (c.budget?.recu || 0))}</p>
                 )}
                 {c.statut !== 'draft' && <LienPageCampagne id={c.id} />}

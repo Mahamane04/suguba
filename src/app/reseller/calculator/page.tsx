@@ -44,59 +44,6 @@ export default function ResellerCalculatorPage() {
         {/* The Interactive Calculator Component */}
         <EarningsCalculator showCta={true} />
 
-        {/* 3 Real Testimonial Case Studies from Bamako */}
-        <div className="space-y-4">
-          <h2 className="text-base font-bold text-slate-900 text-center">
-            Exemples Réels de Revendeurs à Bamako
-          </h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-            <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs">
-                  FD
-                </div>
-                <div>
-                  <strong className="block text-slate-900">Fatoumata D. (22 ans)</strong>
-                  <span className="text-xs text-slate-500">Étudiante à la FSEG (Badalabougou)</span>
-                </div>
-              </div>
-              <p className="text-slate-600 leading-relaxed">
-                « Je partage 2 articles de beauté et Bazin par jour sur mon statut WhatsApp entre deux cours. Je gagne environ <strong>75 000 FCFA / mois</strong> pour payer mes études ! »
-              </p>
-            </div>
-
-            <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-800 flex items-center justify-center font-bold text-xs">
-                  OT
-                </div>
-                <div>
-                  <strong className="block text-slate-900">Oumar T. (27 ans)</strong>
-                  <span className="text-xs text-slate-500">Créateur TikTok (Hamdallaye ACI)</span>
-                </div>
-              </div>
-              <p className="text-slate-600 leading-relaxed">
-                « Avec mes vidéos de démonstration d&apos;électroménager et mon équipe de 8 filleuls, je dépasse les <strong>240 000 FCFA / mois</strong> retirés directement sur Wave. »
-              </p>
-            </div>
-
-            <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-2">
-              <div className="flex items-center space-x-2">
-                <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-800 flex items-center justify-center font-bold text-xs">
-                  MC
-                </div>
-                <div>
-                  <strong className="block text-slate-900">Mariam C. (34 ans)</strong>
-                  <span className="text-xs text-slate-500">Mère au foyer (Kalaban-Coro)</span>
-                </div>
-              </div>
-              <p className="text-slate-600 leading-relaxed">
-                « Pas besoin de quitter la maison pour aller au marché. Suguba livre mes clientes à domicile et je reçois mes commissions le jour même. »
-              </p>
-            </div>
-          </div>
-        </div>
 
       </main>
 

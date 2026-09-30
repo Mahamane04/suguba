@@ -4,10 +4,12 @@ import SugubaLoader from '@/components/ui/SugubaLoader';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import ProductImage from '@/components/common/ProductImage';
 import Button from '@/components/ui/Button';
+import PhotosProduitModal from '@/components/product/PhotosProduitModal';
 import FormulaireVariante from '@/components/product/FormulaireVariante';
 import { Package, Minus, Plus, AlertTriangle, ArrowLeft } from 'lucide-react';
 
@@ -22,6 +24,7 @@ interface ProduitStock {
 
 const STATUT: Record<string, { libelle: string; classe: string }> = {
   approved: { libelle: 'En vente', classe: 'bg-suguba-brand/10 text-suguba-brand-dark' },
+  draft: { libelle: 'Copie à vérifier', classe: 'bg-slate-100 text-slate-700' },
   submitted: { libelle: 'En attente', classe: 'bg-amber-50 text-amber-800' },
   rejected: { libelle: 'Retiré', classe: 'bg-rose-50 text-rose-700' },
 };
@@ -33,25 +36,37 @@ const STATUT: Record<string, { libelle: string; classe: string }> = {
  * fournisseur de démonstration et ne changeait que la mémoire du téléphone.
  */
 export default function SupplierInventoryPage() {
+  const router = useRouter();
+  const [photosPour, setPhotosPour] = useState<ProduitStock | null>(null);
+  const [erreurChargement, setErreurChargement] = useState(false);
   const [produits, setProduits] = useState<ProduitStock[] | null>(null);
   const [enCours, setEnCours] = useState<string | null>(null);
   const [erreur, setErreur] = useState('');
+  const [recherche, setRecherche] = useState('');
+  const [filtre, setFiltre] = useState('tous');
+  const [quantites, setQuantites] = useState<Record<string, string>>({});
 
-  const recharger = React.useCallback(() => {
-    fetch('/api/supplier/me')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => setProduits(Array.isArray(j?.products) ? j.products : []))
-      .catch(() => undefined);
+  const recharger = React.useCallback(async () => {
+    setErreurChargement(false);
+    try {
+      const r = await fetch('/api/supplier/me'); const d = await r.json();
+      if (!r.ok || !Array.isArray(d.products)) throw new Error();
+      setProduits(d.products);
+    } catch { setErreurChargement(true); }
   }, []);
+  useEffect(() => { recharger(); }, [recharger]);
 
-  useEffect(() => {
-    fetch('/api/supplier/me')
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => setProduits(Array.isArray(j?.products) ? j.products : []))
-      .catch(() => setProduits([]));
-  }, []);
+  const dupliquer = async (p: ProduitStock) => {
+    if (enCours) return; setEnCours(p.id); setErreur('');
+    try {
+      const r = await fetch(`/api/supplier/products/${encodeURIComponent(p.id)}`, { method: 'POST' });
+      const d = await r.json(); if (!r.ok || !d.id) throw new Error(d.error || 'Copie non enregistrée.');
+      router.push(`/supplier/products/${encodeURIComponent(d.id)}`);
+    } catch(e) { setErreur((e as Error).message); } finally { setEnCours(null); }
+  };
 
   const changerStock = async (p: ProduitStock, nouveau: number) => {
+    if (enCours) return;
     const quantite = Math.max(0, nouveau);
     setErreur('');
     setEnCours(p.id);
@@ -91,11 +106,11 @@ export default function SupplierInventoryPage() {
         </Link>
 
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Mes stocks</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Mes produits</h1>
           <p className="text-xs text-slate-500">Tenez vos quantités à jour pour ne jamais vendre un article absent.</p>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
+        {produits !== null && <div className="grid grid-cols-3 gap-3">
           <div className="bg-white rounded-3xl border border-slate-200 p-3">
             <p className="text-xs font-bold text-slate-500 uppercase">Unités</p>
             <p className="text-lg font-bold text-slate-900">{unites}</p>
@@ -108,15 +123,16 @@ export default function SupplierInventoryPage() {
             <p className="text-xs font-bold text-slate-500 uppercase">Stock faible</p>
             <p className={`text-lg font-bold ${faibles > 0 ? 'text-amber-700' : 'text-slate-900'}`}>{faibles}</p>
           </div>
-        </div>
+        </div>}
 
+        <div className="bg-white rounded-2xl p-4 space-y-3 border"><Button href="/supplier/products/new">Ajouter une offre</Button><label htmlFor="stock-recherche" className="block text-sm font-semibold">Rechercher un produit</label><input id="stock-recherche" value={recherche} onChange={e => setRecherche(e.target.value)} className="w-full border rounded-xl p-3"/><label htmlFor="stock-filtre" className="block text-sm font-semibold">Afficher</label><select id="stock-filtre" value={filtre} onChange={e => setFiltre(e.target.value)} className="w-full border rounded-xl p-3"><option value="tous">Tous les produits</option><option value="faible">Stock faible ou rupture</option><option value="approved">En vente</option><option value="submitted">En attente</option></select></div>
         {erreur && (
           <p className="rounded-2xl bg-rose-50 border border-rose-100 p-3 text-xs font-bold text-rose-700 flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 shrink-0" />{erreur}
           </p>
         )}
 
-        {produits === null ? (
+        {erreurChargement ? <div role="alert" className="rounded-2xl border bg-white p-5 space-y-3"><p>Vos produits n’ont pas pu être chargés.</p><Button onClick={recharger}>Réessayer</Button></div> : produits === null ? (
           <div className="bg-white rounded-3xl border border-slate-200 p-8 flex justify-center">
             <SugubaLoader className="w-6 h-6 text-slate-400" />
           </div>
@@ -128,7 +144,7 @@ export default function SupplierInventoryPage() {
           </div>
         ) : (
           <div className="bg-white rounded-3xl border border-slate-200 divide-y divide-slate-100">
-            {liste.map((p) => {
+            {liste.filter(p => p.name.toLocaleLowerCase('fr').includes(recherche.toLocaleLowerCase('fr')) && (filtre === 'tous' || (filtre === 'faible' ? p.stockQuantity <= 5 : p.status === filtre))).map((p) => {
               const statut = STATUT[p.status] || { libelle: p.status, classe: 'bg-slate-100 text-slate-600' };
               return (
                 <div key={p.id} className="p-3 sm:p-4 space-y-2">
@@ -149,7 +165,7 @@ export default function SupplierInventoryPage() {
                     <button
                       type="button"
                       onClick={() => changerStock(p, p.stockQuantity - 1)}
-                      disabled={enCours === p.id || p.stockQuantity <= 0}
+                      disabled={enCours !== null || p.stockQuantity <= 0}
                       aria-label={`Retirer une unité de ${p.name}`}
                       className="w-10 h-10 rounded-xl border border-slate-200 hover:bg-slate-50 flex items-center justify-center disabled:opacity-40"
                     >
@@ -159,7 +175,7 @@ export default function SupplierInventoryPage() {
                     <button
                       type="button"
                       onClick={() => changerStock(p, p.stockQuantity + 1)}
-                      disabled={enCours === p.id}
+                      disabled={enCours !== null}
                       aria-label={`Ajouter une unité de ${p.name}`}
                       className="w-10 h-10 rounded-xl border border-slate-200 hover:bg-slate-50 flex items-center justify-center disabled:opacity-40"
                     >
@@ -167,6 +183,9 @@ export default function SupplierInventoryPage() {
                     </button>
                   </div>
                 </div>
+                <div className="flex flex-wrap items-end gap-2"><div><label htmlFor={`quantite-${p.id}`} className="block text-xs font-semibold mb-1">Nouvelle quantité</label><input id={`quantite-${p.id}`} type="number" min="0" step="1" value={quantites[p.id] ?? p.stockQuantity} onChange={e => setQuantites(v => ({ ...v, [p.id]: e.target.value }))} className="w-28 border rounded-xl p-2"/></div><Button size="sm" disabled={enCours !== null || quantites[p.id] === undefined || quantites[p.id] === '' || !Number.isInteger(Number(quantites[p.id])) || Number(quantites[p.id]) < 0} onClick={() => { changerStock(p, Number(quantites[p.id])); setQuantites(v => { const n = { ...v }; delete n[p.id]; return n; }); }}>Confirmer le stock</Button></div>
+                <div className="flex flex-wrap gap-2"><Button size="sm" variant="ghost" onClick={() => setPhotosPour(p)}>Photos ({p.images.length})</Button><Button href={`/supplier/products/${encodeURIComponent(p.id)}`} size="sm" variant="ghost">Modifier l’offre</Button><Button size="sm" variant="ghost" disabled={enCours !== null || ['rejected', 'archived'].includes(p.status)} onClick={() => dupliquer(p)}>{enCours === p.id ? <SugubaLoader className="w-4 h-4"/> : null}Dupliquer</Button></div>
+                <p className="text-xs text-slate-500">La copie reste à vérifier, avec un stock à zéro. Elle n’est pas mise en vente automatiquement.</p>
                 <FormulaireVariante produit={p} onCree={recharger} />
                 </div>
               );
@@ -175,6 +194,7 @@ export default function SupplierInventoryPage() {
         )}
       </main>
 
+      {photosPour && <PhotosProduitModal produit={{ id: photosPour.id, nom: photosPour.name, images: photosPour.images }} onClose={() => setPhotosPour(null)} onEnregistre={() => { setPhotosPour(null); recharger(); }}/>}
       <BottomNav />
     </div>
   );

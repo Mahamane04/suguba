@@ -1,5 +1,6 @@
 'use client';
 
+import ReglagesDepot from '@/components/supplier/ReglagesDepot';
 import SugubaLoader from '@/components/ui/SugubaLoader';
 
 import React, { useEffect, useState } from 'react';
@@ -51,6 +52,7 @@ export default function BoutiqueFournisseurPage() {
   const [recrute, setRecrute] = useState(false);
   const [galerie, setGalerie] = useState<string[]>([]);
   const [maxGalerie, setMaxGalerie] = useState(10);
+  const [historique, setHistorique] = useState<{ nom: string; logo: string | null; description: string | null } | null>(null);
 
   useEffect(() => { setOrigine(window.location.origin); }, []);
 
@@ -60,7 +62,11 @@ export default function BoutiqueFournisseurPage() {
       .then((r) => r.json())
       .then((data) => {
         if (annule || !data.boutique) return;
-        setBoutique(data.boutique);
+        if (!data.boutique) { toast('Changements enregistrés, mais la boutique n’a pas pu être rechargée. Actualisez la page.', { ton: 'info' }); return; }
+      setBoutique(data.boutique);
+      setRecrute(Boolean(data.boutique.recrute));
+      setGalerie(data.boutique.galerie || []);
+        setHistorique(data.identiteHistorique || null);
         setRevendeurs(data.revendeurs || 0);
         setNom(data.boutique.nom || '');
         setAccroche(data.boutique.accroche || '');
@@ -78,16 +84,20 @@ export default function BoutiqueFournisseurPage() {
   }, []);
 
   const enregistrer = async (champsSupplementaires: Record<string, unknown> = {}) => {
+    if (enregistrement) return;
     setEnregistrement(true);
     try {
       const reponse = await fetch('/api/supplier/boutique', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nom, accroche, description, logo, couverture, recrute, galerie, quartier: quartier || null, ...champsSupplementaires }),
+        body: JSON.stringify(Object.keys(champsSupplementaires).length ? champsSupplementaires : { nom, accroche, description, logo, couverture, recrute, galerie, quartier: quartier || null }),
       });
       const data = await reponse.json();
       if (!reponse.ok) { toast(data.error || 'Enregistrement impossible.', { ton: 'erreur' }); return; }
+      if (!data.boutique) { toast('Changements enregistrés, mais la boutique n’a pas pu être rechargée. Actualisez la page.', { ton: 'info' }); return; }
       setBoutique(data.boutique);
+      setRecrute(Boolean(data.boutique.recrute));
+      setGalerie(data.boutique.galerie || []);
       toast('Boutique mise à jour.', { ton: 'succes' });
     } catch {
       toast('Enregistrement impossible. Vérifiez votre connexion.', { ton: 'erreur' });
@@ -102,6 +112,7 @@ export default function BoutiqueFournisseurPage() {
       sousTitre="Votre page commerciale publique."
       retour={{ href: '/supplier', libelle: 'Espace fournisseur' }}
     >
+      <nav aria-label="Réglages de la boutique" className="flex flex-wrap gap-2 text-sm"><a href="#identite" className="rounded-xl border bg-white px-4 py-3">Identité publique</a><a href="#recrutement" className="rounded-xl border bg-white px-4 py-3">Recrutement</a><a href="#depot" className="rounded-xl border bg-white px-4 py-3">Dépôt privé</a></nav>
       {chargement ? (
         <div className="space-y-3"><Skeleton className="h-28" /><Skeleton className="h-48" /></div>
       ) : !boutique ? (
@@ -125,7 +136,7 @@ export default function BoutiqueFournisseurPage() {
             texteWhatsApp={`🏪 ${nom} sur Suguba\n\nNotre catalogue, livré à Bamako.\n👉 ${origine}/boutique/${boutique.slug}`}
           />
 
-          <Card className="space-y-3">
+          <Card id="recrutement" className="space-y-3 scroll-mt-24">
             <div className="flex items-start gap-3">
               <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0">
                 <Megaphone className="w-5 h-5" />
@@ -141,7 +152,7 @@ export default function BoutiqueFournisseurPage() {
               variant={recrute ? 'ghost' : 'primary'}
               fullWidth
               disabled={enregistrement}
-              onClick={() => { const nouveau = !recrute; setRecrute(nouveau); enregistrer({ recrute: nouveau }); }}
+              onClick={() => { const nouveau = !recrute; enregistrer({ recrute: nouveau }); }}
             >
               {recrute ? 'Je ne recrute plus' : 'Activer le recrutement'}
             </Button>
@@ -152,11 +163,13 @@ export default function BoutiqueFournisseurPage() {
               <p className="text-sm font-bold text-slate-900">Galerie</p>
               <p className="text-xs text-slate-500 mt-0.5">Votre magasin, votre équipe, vos produits phares. Affichée en diaporama sur votre boutique.</p>
             </div>
-            <GalerieEditeur images={galerie} max={maxGalerie} onChange={(nouvelles) => { setGalerie(nouvelles); enregistrer({ galerie: nouvelles }); }} />
+            <GalerieEditeur images={galerie} max={maxGalerie} onChange={(nouvelles) => { enregistrer({ galerie: nouvelles }); }} />
           </Card>
 
-          <Card className="space-y-4">
-            <p className="text-sm font-bold text-slate-900">Personnaliser</p>
+          <Card id="identite" className="space-y-4 scroll-mt-24">
+            <h2 className="text-lg font-bold text-slate-900">Mon identité publique</h2>
+            <p className="text-sm text-slate-600">Le même nom, logo et présentation apparaissent sur votre boutique et vos anciens liens. Vos adresses ne changent pas.</p>
+            {historique && (historique.nom !== nom || (historique.logo || null) !== logo || (historique.description || '') !== description) && <details className="rounded-xl bg-slate-50 p-3 text-sm"><summary className="cursor-pointer font-semibold">Reprendre mon ancienne présentation</summary><p className="mt-2">Ancien nom : {historique.nom}. Les coordonnées du dépôt restent privées.</p><Button variant="ghost" className="mt-2" onClick={() => { setNom(historique.nom); setLogo(historique.logo); setDescription(historique.description || ''); toast('Ancienne identité reprise dans le formulaire. Vérifiez-la puis enregistrez.', { ton: 'info' }); }}>Reprendre dans le formulaire</Button></details>}
 
             <CouvertureEditeur valeur={couverture} onChange={setCouverture} />
 
@@ -169,7 +182,7 @@ export default function BoutiqueFournisseurPage() {
               <Input id="nom-boutique" value={nom} onChange={(e) => setNom(e.target.value)} maxLength={60} />
             </Field>
 
-            <Field label="Quartier de la boutique" htmlFor="quartier-boutique" aide="Là où les clients peuvent vous trouver. Sans choix, le quartier de votre entrepôt est utilisé.">
+            <Field label="Quartier de la boutique" htmlFor="quartier-boutique" aide="Quartier utilisé pour la découverte des boutiques. Les coordonnées exactes de votre dépôt restent privées ; Suguba organise les transactions et livraisons.">
               <NeighborhoodPicker id="quartier-boutique" value={quartier} onChange={(q) => setQuartier(q === 'Autre quartier' ? '' : q)} placeholder="Choisir le quartier" />
               {quartier && (
                 <button type="button" onClick={() => setQuartier('')} className="mt-1 text-xs font-semibold text-slate-500 underline underline-offset-2 min-h-[32px]">
@@ -194,6 +207,7 @@ export default function BoutiqueFournisseurPage() {
           </Card>
         </>
       )}
+      <ReglagesDepot />
     </PageReseau>
   );
 }

@@ -9,6 +9,7 @@
  * Ne jamais importer ce fichier depuis un composant 'use client'.
  */
 import { getSupabaseAdmin } from './supabase-admin';
+import { identiteFournisseur } from './identite-fournisseur';
 import { prixEnregistres } from './prix-revendeur';
 
 type ClientAdmin = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
@@ -133,7 +134,7 @@ async function compterLivraisons(admin: ClientAdmin, productIds: string[]): Prom
   return count ?? 0;
 }
 
-export async function chargerBoutiqueFournisseur(slug: string): Promise<Boutique | null> {
+export async function chargerBoutiqueFournisseur(slug: string, identiteChoisie?: { name: string; logo_url: string | null; description: string | null; cover_url: string | null; status: string }): Promise<Boutique | null> {
   const admin = getSupabaseAdmin();
   if (!admin) return null;
 
@@ -156,13 +157,18 @@ export async function chargerBoutiqueFournisseur(slug: string): Promise<Boutique
     .eq('status', 'approved')
     .order('created_at', { ascending: false });
 
+  const { data: boutiques } = await admin.from('stores').select('*').eq('owner_type', 'supplier').eq('owner_id', fournisseur.profile_id).order('created_at', { ascending: true }).limit(10);
+  const principale = identiteChoisie || boutiques?.find(b => b.principale !== false) || boutiques?.[0] || null;
+  if (principale && principale.status !== 'active') return null;
+  const identite = identiteFournisseur(fournisseur, principale);
   const liste = (produits || []).map(versVitrine);
   return {
     type: 'fournisseur',
-    nom: fournisseur.shop_display_name || fournisseur.company_name,
+    nom: identite.nom,
     categorie: fournisseur.category || null,
-    logo: fournisseur.logo_url || null,
-    description: fournisseur.shop_description || null,
+    logo: identite.logo,
+    description: identite.description,
+    couverture: identite.couverture,
     produits: liste,
     livraisons: await compterLivraisons(admin, liste.map((p) => p.id)),
     selectionVide: false,

@@ -26,10 +26,11 @@ export async function GET(req: NextRequest) {
     email: profil?.email || (session.phone.includes('@') ? session.phone : null),
   });
 
+  const etapes = session.role === 'supplier' ? VERIFICATIONS : VERIFICATIONS.filter(v => v.valeur !== 'business');
   return NextResponse.json({
     etats,
-    pourcentage: pourcentageVerifie(etats),
-    etapes: VERIFICATIONS,
+    pourcentage: pourcentageVerifie(etats, etapes),
+    etapes,
     badges: await badgesDuCompte(session.uid),
   });
 }

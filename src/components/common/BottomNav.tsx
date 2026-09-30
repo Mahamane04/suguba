@@ -33,20 +33,17 @@ function getNavItems(role: string | null): NavItem[] {
         { label: 'Produits',   href: '/reseller/catalog',   icon: Grid3X3     },
         { label: 'Ventes',      href: '/reseller/orders',    icon: ShoppingCart},
         { label: 'Gains',       href: '/reseller/payouts',   icon: Wallet      },
-        { label: 'Créer',      href: '/reseller/createur',  icon: TrendingUp  },
+        { label: 'Outils',      href: '/reseller/outils',  icon: TrendingUp  },
       ];
     case 'supplier':
       return [
         { label: 'Accueil',   href: '/supplier',              icon: Home       },
         // Anciennement /supplier/products (inexistant) — la gestion du stock
         // et du catalogue du fournisseur vit sur /supplier/inventory.
-        { label: 'Stocks',      href: '/supplier/inventory',    icon: Boxes      },
-        { label: 'Ajouter',     href: '/supplier/products/new', icon: PackagePlus},
-        // Commandes à préparer et code de ramassage (2026-09-24). Le réseau
-        // reste accessible depuis le tableau de bord.
-        { label: 'Commandes',   href: '/supplier/commandes',    icon: ClipboardList },
-        // Solde et retraits du fournisseur (lot C, 2026-09-27).
-        { label: 'Paiements',   href: '/supplier/paiements',    icon: Wallet },
+        { label: 'Produits', href: '/supplier/inventory', icon: Boxes },
+        { label: 'Commandes', href: '/supplier/commandes', icon: ClipboardList },
+        { label: 'Paiements', href: '/supplier/paiements', icon: Wallet },
+        { label: 'Plus', href: '/supplier/outils', icon: Grid3X3 },
       ];
     case 'driver':
       return [
@@ -136,6 +133,7 @@ export default function BottomNav() {
   const clavierOuvert = mesure ? clavier : champActif;
 
   const navItems = getNavItems(role);
+  const navigationMetier = ['supplier', 'reseller', 'driver'].includes(role || '');
   const articlesPanier = usePanier().reduce((s, a) => s + a.quantity, 0);
 
   // Racines d'espace : elles ne doivent s'allumer qu'en correspondance exacte.
@@ -160,18 +158,19 @@ export default function BottomNav() {
           désynchroniser. h-16 (64px) + mb-2 (8px) + la zone sûre iOS. */}
       <div
         aria-hidden="true"
-        className="md:hidden shrink-0"
+        className={navigationMetier ? 'shrink-0' : 'md:hidden shrink-0'}
         style={{ height: 'calc(5rem + env(safe-area-inset-bottom, 0px))' }}
       />
     <nav
       ref={barre}
       hidden={clavierOuvert}
-      className="fixed bottom-0 left-0 right-0 z-40 md:hidden"
+      aria-label="Navigation principale"
+      className={`fixed bottom-0 left-0 right-0 z-40 ${navigationMetier ? '' : 'md:hidden'}`}
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       {/* Glass background */}
       <div className="mx-2 mb-2 bg-white/90 backdrop-blur-xl rounded-2xl border border-gray-100 shadow-float">
-        <div className={`flex items-center justify-around px-1 h-16`}>
+        <div className={`flex items-center justify-around px-0 h-16 md:max-w-5xl md:mx-auto`}>
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive =
@@ -182,8 +181,9 @@ export default function BottomNav() {
               <Link
                 key={item.href}
                 href={item.href}
+                aria-label={item.label}
                 aria-current={isActive ? 'page' : undefined}
-                className={`flex flex-col items-center justify-center flex-1 min-w-0 py-2 px-1 rounded-xl transition-colors duration-150 active:scale-95 ${
+                className={`flex flex-col items-center justify-center flex-1 min-w-0 py-2 px-0 rounded-xl transition-colors duration-150 active:scale-95 ${
                   isActive
                     ? 'text-suguba-brand-dark'
                     : 'text-slate-600 hover:text-slate-900'
@@ -212,11 +212,11 @@ export default function BottomNav() {
                   )}
                 </div>
                 <span
-                  className={`text-xs mt-0.5 tracking-tight font-medium w-full text-center leading-tight transition-all duration-150 ${
+                  className={`text-[11px] md:text-xs mt-0.5 tracking-tight font-medium w-full text-center leading-tight transition-all duration-150 ${
                     isActive ? 'font-bold' : ''
                   }`}
                 >
-                  {item.label}
+                  {role === 'supplier' && item.label === 'Commandes' ? <><span className="md:hidden">Colis</span><span className="hidden md:inline">Commandes</span></> : item.label}
                 </span>
               </Link>
             );

@@ -47,6 +47,7 @@ export default function RamassageColis({ order, nomRepli }: { order: Order; nomR
     }
   };
 
+  if (recupere) return <details className="p-3 rounded-2xl bg-suguba-sauge text-sm"><summary className="cursor-pointer font-semibold">Ramassage confirmé — voir le dépôt</summary><p className="mt-2">{lieu?.nom || nomRepli || 'Fournisseur'} · {[lieu?.adresse, lieu?.quartier].filter(Boolean).join(' · ')}</p></details>;
   return (
     <div className={`p-3 rounded-2xl border text-xs space-y-2 ${recupere ? 'bg-suguba-sauge border-transparent' : 'bg-white border-amber-300'}`}>
       <div className="flex items-center gap-1.5 text-slate-900 font-semibold">

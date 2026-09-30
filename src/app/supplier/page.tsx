@@ -118,33 +118,7 @@ export default function SupplierDashboardPage() {
               <ClipboardList className="w-4 h-4" />
               <span>Commandes à préparer</span>
             </Button>
-            {/* Solde et retraits (lot C, 2026-09-27). */}
-            <Button href="/supplier/paiements" variant="ghost">
-              <Wallet className="w-4 h-4" />
-              <span>Mes paiements</span>
-            </Button>
-            <Button href="/supplier/devis" variant="ghost">
-              <FileText className="w-4 h-4" />
-              <span>Demandes de devis</span>
-            </Button>
-            <Button href="/supplier/questions" variant="ghost">
-              <QuestionIcone className="w-4 h-4" />
-              <span>Questions des revendeurs</span>
-            </Button>
-            <Button href="/supplier/inventory" variant="ghost">
-              <Package className="w-4 h-4" />
-              <span>Gérer les stocks</span>
-            </Button>
-            <Button href="/supplier/ambassadors" variant="ghost">
-              <Users className="w-4 h-4" />
-              <span>Ma boutique &amp; mes revendeurs</span>
-            </Button>
-            {supplier?.slug && (
-              <Button href={`/s/${supplier.slug}`} target="_blank" variant="ghost">
-                <Store className="w-4 h-4" />
-                <span>Voir ma boutique</span>
-              </Button>
-            )}
+
           </div>
         </div>
 

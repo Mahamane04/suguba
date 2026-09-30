@@ -58,7 +58,7 @@ function versBoutique(r: any): BoutiqueReseau {
     couverture: r.cover_url || null,
     galerie: Array.isArray(r.gallery) ? r.gallery.filter(Boolean).map(String) : [],
     categories: Array.isArray(r.categories) ? r.categories.filter(Boolean).map(String) : [],
-    whatsapp: r.whatsapp || null,
+    whatsapp: r.owner_type === 'supplier' ? null : r.whatsapp || null,
     recrute: Boolean(r.is_recruiting),
     abonnes: Number(r.followers_count) || 0,
     statut: r.status || 'active',
@@ -110,6 +110,8 @@ export async function obtenirOuCreerBoutique(params: {
   typeProprietaire: TypeProprietaire;
   proprietaireId: string;
   nom: string;
+  logo?: string | null;
+  description?: string | null;
 }): Promise<BoutiqueReseau | null> {
   const existante = await boutiqueDuProprietaire(params.typeProprietaire, params.proprietaireId);
   if (existante) return existante;
@@ -127,6 +129,8 @@ export async function obtenirOuCreerBoutique(params: {
         owner_id: params.proprietaireId,
         slug: candidat,
         name: params.nom,
+        ...(params.logo !== undefined ? { logo_url: params.logo } : {}),
+        ...(params.description !== undefined ? { description: params.description } : {}),
       })
       .select('*')
       .maybeSingle();

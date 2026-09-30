@@ -15,13 +15,14 @@ import {
 export default function ResellerOrdersPage() {
   const state = useSugubaStore();
   const [filter, setFilter] = useState<string>('all');
+  const [recherche, setRecherche] = useState('');
 
   // Ventes du revendeur CONNECTÉ (2026-09-11). La page cherchait le revendeur
   // dans les données de démonstration puis ne gardait que les commandes de ce
   // faux revendeur : un vrai revendeur ne voyait jamais ses propres ventes,
   // pourtant renvoyées par /api/orders/feed.
   const uid = state.currentUser.id;
-  const myOrders = uid ? state.orders.filter(o => o.resellerId === uid) : [];
+  const myOrders = uid ? state.orders.filter(o => o.resellerId === uid && `${o.orderNumber} ${o.customerName} ${o.productName}`.toLocaleLowerCase('fr').includes(recherche.toLocaleLowerCase('fr'))).sort((a,b) => Date.parse(b.createdAt) - Date.parse(a.createdAt)) : [];
 
   const filteredOrders = filter === 'all'
     ? myOrders
@@ -39,6 +40,7 @@ export default function ResellerOrdersPage() {
 
       <main className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 py-6 w-full space-y-5">
         
+        <div><label htmlFor="ventes-recherche" className="block text-sm font-semibold mb-2">Rechercher une vente</label><input id="ventes-recherche" value={recherche} onChange={e => setRecherche(e.target.value)} placeholder="Numéro, client ou produit" className="w-full border rounded-xl p-3"/></div>
         {/* Page Title */}
         <div className="space-y-1">
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900">

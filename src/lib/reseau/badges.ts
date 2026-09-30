@@ -26,9 +26,9 @@ export type EtatVerification = 'absent' | 'pending' | 'approved' | 'rejected';
  * Seules les vérifications APPROUVÉES comptent — sinon déposer un document
  * flou suffirait à afficher « profil vérifié ».
  */
-export function pourcentageVerifie(etats: Partial<Record<TypeVerification, EtatVerification>>): number {
-  const total = VERIFICATIONS.reduce((s, v) => s + v.poids, 0);
-  const acquis = VERIFICATIONS.reduce((s, v) => s + (etats[v.valeur] === 'approved' ? v.poids : 0), 0);
+export function pourcentageVerifie(etats: Partial<Record<TypeVerification, EtatVerification>>, etapes = VERIFICATIONS): number {
+  const total = etapes.reduce((s, v) => s + v.poids, 0);
+  const acquis = etapes.reduce((s, v) => s + (etats[v.valeur] === 'approved' ? v.poids : 0), 0);
   return Math.round((acquis / total) * 100);
 }
 

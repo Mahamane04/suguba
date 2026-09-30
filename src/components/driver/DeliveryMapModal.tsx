@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Order } from '@/types';
 import { 
   X, MapPin, Navigation, Phone, MessageCircle, 
@@ -14,6 +14,24 @@ interface DeliveryMapModalProps {
 }
 
 export default function DeliveryMapModal({ order, isOpen, onClose }: DeliveryMapModalProps) {
+  const dialog = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!isOpen) return;
+    const previous = document.activeElement as HTMLElement | null;
+    dialog.current?.focus();
+    const keydown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') { e.preventDefault(); onClose(); }
+      if (e.key === 'Tab') {
+        const elements = dialog.current?.querySelectorAll<HTMLElement>('a[href], button, input, [tabindex="0"]');
+        if (!elements?.length) return;
+        const first = elements[0], last = elements[elements.length - 1];
+        if (e.shiftKey && (document.activeElement === first || document.activeElement === dialog.current)) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    };
+    document.addEventListener('keydown', keydown);
+    return () => { document.removeEventListener('keydown', keydown); previous?.focus(); };
+  }, [isOpen, onClose]);
   if (!isOpen || !order) return null;
 
   // Calcul rive de Bamako
@@ -42,7 +60,7 @@ export default function DeliveryMapModal({ order, isOpen, onClose }: DeliveryMap
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden max-h-[92vh] flex flex-col">
+      <div ref={dialog} role="dialog" aria-modal="true" aria-label="Itinéraire et repère" tabIndex={-1} className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden max-h-[92vh] flex flex-col">
         
         {/* Header */}
         <div className="p-4 sm:p-5 bg-gradient-to-r from-slate-900 to-slate-800 text-white flex items-center justify-between">
@@ -109,7 +127,7 @@ export default function DeliveryMapModal({ order, isOpen, onClose }: DeliveryMap
 
             <div className={`p-3 rounded-2xl border text-xs ${order.paymentCollected ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
               <span className={`text-xs font-bold block ${order.paymentCollected ? 'text-emerald-800' : 'text-amber-800'}`}>
-                {order.paymentCollected ? 'Déjà payé :' : 'À recevoir maintenant :'}
+                {order.paymentCollected ? 'Déjà payé :' : 'À encaisser chez le client :'}
               </span>
               <strong className="text-base font-bold text-slate-900">
                 {order.paymentCollected ? '0 F' : montant}

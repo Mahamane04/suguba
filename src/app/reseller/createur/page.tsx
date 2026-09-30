@@ -40,6 +40,7 @@ export default function CreateurContenusPage() {
   const [boutiqueChargee, setBoutiqueChargee] = useState(false);
   const [recherche, setRecherche] = useState('');
   const [produitId, setProduitId] = useState<string | null>(null);
+  useEffect(() => { setProduitId(new URLSearchParams(window.location.search).get('produit')); }, []);
   const [format, setFormat] = useState<FormatAffiche>('story');
   const [theme, setTheme] = useState<ThemeAffiche>('vert');
   const [promo, setPromo] = useState('');
@@ -115,7 +116,7 @@ export default function CreateurContenusPage() {
 
   const peutGenerer = typeVisuel === 'boutique' ? Boolean(boutique) : Boolean(produit);
 
-  return <PageReseau titre="Studio marketing" sousTitre="Choisissez ce que vous voulez promouvoir. Suguba prépare le visuel avec votre boutique." retour={{ href: '/reseller', libelle: 'Espace revendeur' }}>
+  return <PageReseau titre="Créer un visuel" sousTitre="Choisissez ce que vous voulez promouvoir. Suguba prépare le visuel avec votre boutique." retour={{ href: '/reseller', libelle: 'Espace revendeur' }}>
     <fieldset disabled={generation} className="min-w-0 space-y-5">
     <Card className="space-y-3">
       <div><p className="text-sm font-bold text-slate-900">1. Que voulez-vous partager ?</p><p className="text-xs text-slate-500 mt-1">Chaque choix crée un visuel différent.</p></div>
@@ -158,6 +159,6 @@ export default function CreateurContenusPage() {
     <Button onClick={generer} disabled={!peutGenerer || generation} fullWidth size="lg">{generation ? <SugubaLoader className="w-4 h-4" /> : <Palette className="w-4 h-4" />}{generation ? 'Création…' : peutGenerer ? `Créer ${typeVisuel === 'boutique' ? 'la carte de ma boutique' : "l’affiche du produit"}` : typeVisuel === 'boutique' ? 'Configurez d’abord votre boutique' : 'Choisissez d’abord un produit'}</Button>
     </fieldset>
     {generation && <div role="status" className="flex items-center gap-4 rounded-2xl border border-emerald-100 bg-white p-5"><SugubaLoader className="h-12 w-12" /><div><p className="font-bold text-suguba-profond">Suguba prépare votre visuel…</p><p className="mt-1 text-sm text-slate-500">Assemblage des photos, du logo et du QR code.</p></div></div>}
-    {apercu && fichier && <section ref={resultat} tabIndex={-1} aria-label="Votre visuel est prêt" className="scroll-mt-24 rounded-3xl focus:outline-none focus-visible:ring-2 focus-visible:ring-suguba-profond"><Card className="space-y-4"><div role="status" className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50 text-emerald-700"><Check className="h-5 w-5" /></span><div><h2 className="text-base font-bold text-slate-900">Votre visuel est prêt</h2><p className="text-xs text-slate-500">Téléchargez-le ou partagez-le avec vos clients.</p></div></div><div className="grid grid-cols-2 gap-2"><Button variant="ghost" onClick={() => telechargerAffiche(fichier)}><Download className="w-4 h-4" />Télécharger</Button><Button onClick={partager}><Share2 className="w-4 h-4" />Partager</Button></div><img src={apercu} alt="Aperçu du visuel créé" className={`mx-auto w-full rounded-2xl border border-slate-200 ${format === 'story' ? 'max-w-[360px]' : 'max-w-[520px]'}`} /></Card></section>}
+    {apercu && fichier && <section ref={resultat} tabIndex={-1} aria-label="Votre visuel est prêt" className="scroll-mt-24 rounded-3xl focus:outline-none focus-visible:ring-2 focus-visible:ring-suguba-profond"><Card className="space-y-4"><div role="status" className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50 text-emerald-700"><Check className="h-5 w-5" /></span><div><h2 className="text-base font-bold text-slate-900">Votre visuel est prêt</h2><p className="text-xs text-slate-500">Téléchargez-le ou partagez-le avec vos clients.</p></div></div><div className="grid grid-cols-2 gap-2"><Button variant="ghost" onClick={() => telechargerAffiche(fichier)}><Download className="w-4 h-4" />Télécharger</Button><Button onClick={partager}><Share2 className="w-4 h-4" />Partager</Button></div><Button variant="ghost" href={typeVisuel === 'produit' && produit ? `/reseller/calendrier?produit=${encodeURIComponent(produit.slug)}` : '/reseller/calendrier'}>Planifier une publication</Button><img src={apercu} alt="Aperçu du visuel créé" className={`mx-auto w-full rounded-2xl border border-slate-200 ${format === 'story' ? 'max-w-[360px]' : 'max-w-[520px]'}`} /></Card></section>}
   </PageReseau>;
 }

@@ -1,5 +1,5 @@
 {
- "majLe": "2026-09-27",
+ "majLe": "2026-09-30",
  "roles": [
   {
    "cle": "visiteur",
@@ -14,7 +14,7 @@
    "titre": "Revendeur",
    "lettre": "R",
    "acces": "Connecté comme revendeur",
-   "intro": "Le revendeur partage des produits avec son lien personnel et touche une commission sur chaque vente livrée. Menu du bas : Accueil · Catalogue · Ventes · Gains · Marketing.",
+   "intro": "Le revendeur partage des produits avec son lien personnel et touche une commission sur chaque vente livrée. Menu du bas : Accueil · Produits · Ventes · Gains · Outils.",
    "sessionDemo": "reseller"
   },
   {
@@ -22,7 +22,7 @@
    "titre": "Fournisseur",
    "lettre": "F",
    "acces": "Connecté comme fournisseur validé",
-   "intro": "Le fournisseur dépose ses produits, gère son stock, s’appuie sur le réseau de revendeurs et retire ce que Suguba lui doit pour ses commandes livrées. Menu du bas : Accueil · Stocks · Ajouter · Commandes · Paiements.",
+   "intro": "Le fournisseur dépose ses produits, gère son stock, s’appuie sur le réseau de revendeurs et retire ce que Suguba lui doit pour ses commandes livrées. Menu du bas : Accueil · Produits · Commandes · Paiements · Plus.",
    "sessionDemo": "supplier"
   },
   {
@@ -3369,7 +3369,7 @@
    "role": "revendeur",
    "titre": "Mon calendrier",
    "chemin": "/reseller/calendrier",
-   "but": "Planifier ses publications (quel produit, quel jour) pour ne pas oublier de poster.",
+   "but": "Planifier des publications manuelles : préparer le partage, puis confirmer séparément J’ai publié.",
    "elements": [
     {
      "nom": "Planifier une publication",
@@ -3455,15 +3455,19 @@
    "role": "revendeur",
    "titre": "Carte revendeur",
    "chemin": "/reseller/badge",
-   "but": "Carte professionnelle avec QR code, à montrer ou à imprimer pour vendre sur le terrain.",
+   "but": "Présenter sa boutique avec son QR réel et le statut de vérification effectivement attribué.",
    "elements": [
     {
-     "nom": "Imprimer mon badge",
-     "role": "Version papier."
+     "nom": "Carte",
+     "role": "Nom du compte et quartier de boutique réel. Aucun agrément sans badge validé."
     },
     {
-     "nom": "Partager",
-     "role": "Envoie la carte sur WhatsApp."
+     "nom": "QR boutique",
+     "role": "Ouvre directement la boutique pour commander. Aucun lien d’inscription présenté comme une boutique."
+    },
+    {
+     "nom": "Imprimer et partager",
+     "role": "Diffuser la carte de présentation après chargement de la boutique."
     }
    ],
    "suite": [
@@ -3482,19 +3486,19 @@
    "role": "revendeur",
    "titre": "Simulateur de gains",
    "chemin": "/reseller/calculator",
-   "but": "Estimer ses revenus mensuels selon le nombre de ventes.",
+   "but": "Estimer les commissions de ventes livrées et validées, sans primes fictives ni promesse de revenu.",
    "elements": [
     {
-     "nom": "Curseurs",
-     "role": "Ventes par jour, commission moyenne…"
+     "nom": "Ventes livrées par mois",
+     "role": "Hypothèse de simulation, de 0 à 100 ventes."
     },
     {
-     "nom": "Partager sur WhatsApp",
-     "role": "Envoie la simulation (utile pour recruter)."
+     "nom": "Commission moyenne",
+     "role": "Montant à relever sur les produits. La simulation ne change ni les prix ni les commissions enregistrées."
     },
     {
-     "nom": "Commencer à gagner",
-     "role": "Vers l’inscription revendeur."
+     "nom": "Estimation",
+     "role": "Ventes multipliées par la commission, hors annulations, retours, primes et parrainage."
     }
    ],
    "suite": [
@@ -3930,7 +3934,7 @@
    "role": "fournisseur",
    "titre": "Ma boutique",
    "chemin": "/supplier/boutique",
-   "but": "Vitrine du fournisseur : logo, couverture, galerie, quartier, recrutement de revendeurs.",
+   "but": "Gérer l’identité publique, le recrutement et les coordonnées privées du dépôt sur une seule page.",
    "elements": [
     {
      "nom": "Quartier de la boutique",
@@ -3981,29 +3985,13 @@
   {
    "id": "fou-reseau",
    "role": "fournisseur",
-   "titre": "Ma boutique et mes revendeurs",
+   "titre": "Dépôt et coordonnées (ancienne adresse)",
    "chemin": "/supplier/ambassadors",
-   "but": "Réglages de la vitrine publique historique (/s/) et message de recrutement.",
+   "but": "Rediriger vers les réglages privés du dépôt dans Ma boutique.",
    "elements": [
     {
-     "nom": "Logo",
-     "role": "Ajouter ou changer."
-    },
-    {
-     "nom": "Nom affiché · Description · Contacts",
-     "role": "Ce que voient clients et revendeurs."
-    },
-    {
-     "nom": "Enregistrer",
-     "role": "Met la vitrine à jour."
-    },
-    {
-     "nom": "Message de recrutement",
-     "role": "« Copier le message » pour le poster dans des groupes."
-    },
-    {
-     "nom": "Quartier de mon entrepôt · position exacte",
-     "role": "Depuis votre dépôt, « Utiliser ma position actuelle » enregistre le point de départ exact des livraisons."
+     "nom": "Redirection conservée",
+     "role": "Ouvre /supplier/boutique#depot. Les anciens liens restent utilisables."
     }
    ],
    "suite": [
@@ -5537,6 +5525,74 @@
    ],
    "note": "Aucun lien ne mène à cette page dans l’application : ouvrez directement app.sugubaml.com/admin/guide (à garder en favori).",
    "capture": null
+  },
+  {
+   "id": "reseller-outils",
+   "role": "revendeur",
+   "titre": "Outils",
+   "chemin": "/reseller/outils",
+   "but": "Retrouver le studio, la boutique, les rappels et les résultats de partage.",
+   "elements": [
+    {
+     "nom": "Outils",
+     "role": "Retrouver le studio, la boutique, les rappels et les résultats de partage."
+    }
+   ],
+   "suite": [],
+   "capture": false,
+   "note": "Nouvelle page validée dans le rapport local du 30 septembre 2026."
+  },
+  {
+   "id": "supplier-outils",
+   "role": "fournisseur",
+   "titre": "Plus",
+   "chemin": "/supplier/outils",
+   "but": "Retrouver les outils secondaires du fournisseur.",
+   "elements": [
+    {
+     "nom": "Plus",
+     "role": "Retrouver les outils secondaires du fournisseur."
+    }
+   ],
+   "suite": [],
+   "capture": false,
+   "note": "Nouvelle page validée dans le rapport local du 30 septembre 2026."
+  },
+  {
+   "id": "driver-aide",
+   "role": "livreur",
+   "titre": "Signaler un incident",
+   "chemin": "/driver/aide",
+   "but": "Choisir une course active et transmettre un incident à Suguba sans valider la livraison ni modifier les montants.",
+   "elements": [
+    {
+     "nom": "Signaler un incident",
+     "role": "Choisir une course active et transmettre un incident à Suguba sans valider la livraison ni modifier les montants."
+    }
+   ],
+   "suite": [],
+   "capture": false,
+   "note": "Nouvelle page validée dans le rapport local du 30 septembre 2026."
+  },
+  {
+   "id": "four-modifier-offre",
+   "role": "fournisseur",
+   "titre": "Modifier une offre",
+   "chemin": "/supplier/products/<id>",
+   "but": "Modifier le descriptif, le stock et la part revendeur ; vérifier une copie avant sa mise en vente.",
+   "elements": [
+    {
+     "nom": "Prix et statut",
+     "role": "Prix serveur et adresse conservée. Aucune modification du prix fournisseur dans ce formulaire."
+    },
+    {
+     "nom": "Formulaire",
+     "role": "Nom, présentation, quantité et part revendeur. Recalcul du prix public par Suguba."
+    }
+   ],
+   "suite": [],
+   "capture": false,
+   "note": "Données fictives pour les tests ; duplications non publiées par défaut."
   }
  ]
 }

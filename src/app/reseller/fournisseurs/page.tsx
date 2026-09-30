@@ -1,5 +1,6 @@
 'use client';
 
+import { useCodeRevendeur } from '@/lib/partage';
 import SugubaLoader from '@/components/ui/SugubaLoader';
 
 import React, { useEffect, useMemo, useState } from 'react';
@@ -21,6 +22,7 @@ interface Fournisseur {
 
 export default function FournisseursPage() {
   const { toast } = useToast();
+  const code = useCodeRevendeur();
   const [liste, setListe] = useState<Fournisseur[]>([]);
   const [chargement, setChargement] = useState(true);
   const [onglet, setOnglet] = useState<'miens' | 'decouvrir'>('miens');
@@ -106,7 +108,7 @@ export default function FournisseursPage() {
                 </div>
               </div>
               <div className="flex gap-2">
-                {f.lien && <Button href={f.lien} variant="ghost" size="sm" fullWidth>Voir le catalogue</Button>}
+                {f.lien && <Button href={`${f.lien}${f.lien.includes('?') ? '&' : '?'}ref=${encodeURIComponent(code || '')}`} variant="ghost" size="sm" fullWidth>Voir le catalogue</Button>}
                 <Button size="sm" variant={f.suit ? 'ghost' : 'secondary'} fullWidth disabled={enCours === f.id} onClick={() => suivre(f)} aria-pressed={f.suit}>
                   {enCours === f.id ? <SugubaLoader className="w-3.5 h-3.5" /> : f.suit ? <BellRing className="w-3.5 h-3.5" /> : <Bell className="w-3.5 h-3.5" />}
                   {f.suit ? 'Suivi' : 'Suivre'}

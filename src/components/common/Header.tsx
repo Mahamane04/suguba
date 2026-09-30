@@ -10,7 +10,7 @@ import ClocheNotifications from '@/components/reseau/ClocheNotifications';
 import IconePanier from '@/components/panier/IconePanier';
 import {
   ShoppingBag, Shield, Truck, Store, UserCheck,
-  ChevronDown, LogOut, Menu, X, Globe, LogIn, Search, Users, PackageSearch } from 'lucide-react';
+  ChevronDown, LogOut, Menu, X, Globe, LogIn, Search, LifeBuoy, Users, PackageSearch } from 'lucide-react';
 import { deconnecter } from '@/lib/deconnexion';
 import LogoSuguba from '@/components/ui/LogoSuguba';
 
@@ -188,9 +188,9 @@ export default function Header() {
               </div>
             )}
 
-            <Link href="/recherche" aria-label="Rechercher"
+            <Link href={state.currentUser.role === 'driver' ? '/driver/aide' : '/recherche'} aria-label={state.currentUser.role === 'driver' ? 'Aide livreur' : 'Rechercher'}
               className="w-10 h-10 shrink-0 rounded-2xl bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-700 transition-colors">
-              <Search className="w-5 h-5" />
+              {state.currentUser.role === 'driver' ? <LifeBuoy className="w-5 h-5" /> : <Search className="w-5 h-5" />}
             </Link>
             <IconePanier />
             {connecte && <ClocheNotifications />}

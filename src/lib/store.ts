@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useSyncExternalStore } from 'react';
 import { 
   User, Product, Order, Commission, Withdrawal, AuditLog, 
   ResellerProfile, SupplierProfile, DriverProfile, DiasporaProfile, UserRole, SavTicket, OrderStatus, ResellerTier 
@@ -937,22 +937,9 @@ export function useQuartierClient(): string | null {
   return valeur;
 }
 
+const serverState = getDefaultState();
 export function useSugubaStore() {
-  const [state, setState] = useState<SugubaState>(sugubaStore.getState());
-
-  useEffect(() => {
-    const unsubscribe = sugubaStore.subscribe(() => {
-      setState(sugubaStore.getState());
-    });
-    // Lit localStorage seulement après le montage (post-hydratation) pour
-    // que le tout premier rendu client corresponde exactement au HTML
-    // rendu par le serveur — voir le commentaire sur getDefaultState.
-    sugubaStore.hydrateFromLocalStorage();
-    setState(sugubaStore.getState());
-    return () => {
-      unsubscribe();
-    };
-  }, []);
-
+  const state = useSyncExternalStore(sugubaStore.subscribe, sugubaStore.getState, () => serverState);
+  useEffect(() => { sugubaStore.hydrateFromLocalStorage(); }, []);
   return state;
 }

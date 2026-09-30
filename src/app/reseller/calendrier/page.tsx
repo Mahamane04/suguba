@@ -58,6 +58,7 @@ export default function CalendrierPage() {
   const [chargement, setChargement] = useState(true);
   const [formulaire, setFormulaire] = useState(false);
   const [envoi, setEnvoi] = useState(false);
+  const [actionEnCours, setActionEnCours] = useState<string | null>(null);
 
   const [date, setDate] = useState(aujourdhui());
   const [titre, setTitre] = useState('');
@@ -70,15 +71,21 @@ export default function CalendrierPage() {
     [state.products],
   );
 
+  useEffect(() => {
+    const slug = new URLSearchParams(window.location.search).get('produit');
+    const selection = produits.find(p => p.slug === slug);
+    if (selection) { setProduit(selection.slug); setTitre(selection.name); setFormulaire(true); }
+  }, [produits]);
+
   const charger = React.useCallback(() => {
     return fetch('/api/reseller/calendrier')
-      .then((r) => r.json())
+      .then((r) => { if (!r.ok) throw new Error(); return r.json(); })
       .then((data) => {
         setPublications(data.publications || []);
         setEcheances(data.missions || []);
         setDisponible(data.disponible !== false);
       })
-      .catch(() => { /* état vide */ })
+      .catch(() => setDisponible(false))
       .finally(() => setChargement(false));
   }, []);
 
@@ -119,31 +126,38 @@ export default function CalendrierPage() {
   };
 
   const changerStatut = async (id: string, statut: 'published' | 'skipped') => {
-    await fetch('/api/reseller/calendrier', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ id, statut }),
-    }).catch(() => undefined);
-    await charger();
+    if (actionEnCours) return;
+    setActionEnCours(id);
+    try {
+      const r = await fetch('/api/reseller/calendrier', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, statut }),
+      });
+      const data = await r.json();
+      if (!r.ok || !data.success) throw new Error(data.error || 'Modification non enregistrée.');
+      setPublications(liste => liste.map(p => p.id === id ? { ...p, statut } : p));
+      toast(statut === 'published' ? 'Publication marquée comme faite.' : 'Publication ignorée.', { ton: 'succes' });
+    } catch (e) { toast((e as Error).message || 'Vérifiez votre connexion.', { ton: 'erreur' }); }
+    finally { setActionEnCours(null); }
   };
 
-  const publier = async (p: Publication) => {
+  const preparerPartage = async (p: Publication) => {
     const article = produits.find((x) => x.slug === p.produit);
-    if (article) {
+    if (!article || actionEnCours) return;
+    setActionEnCours(p.id);
+    try {
       const resultat = await partagerProduit(
-        { nom: article.name, prix: article.publicPrice, slug: article.slug, images: article.images },
-        code,
+        { nom: article.name, prix: article.publicPrice, slug: article.slug, images: article.images }, code,
       );
-      if (resultat === 'annule') return;
-    }
-    await changerStatut(p.id, 'published');
-    toast('Publication marquée comme faite.', { ton: 'succes' });
+      if (resultat !== 'annule') toast('Après publication sur votre canal, appuyez sur « J’ai publié ».');
+    } catch { toast('Partage impossible. Réessayez.', { ton: 'erreur' }); }
+    finally { setActionEnCours(null); }
   };
 
   return (
     <PageReseau
       titre="Mon calendrier"
-      sousTitre="Planifiez vos publications, ne ratez aucune échéance."
+      sousTitre="Organisez vos publications. Vous publiez vous-même sur vos réseaux ; Suguba ne les envoie pas automatiquement."
       retour={{ href: '/reseller', libelle: 'Espace revendeur' }}
       action={<Button size="sm" onClick={() => setFormulaire((v) => !v)}><Plus className="w-4 h-4" />Planifier</Button>}
     >
@@ -181,7 +195,7 @@ export default function CalendrierPage() {
       {chargement ? (
         <div className="space-y-3"><Skeleton className="h-24" /><Skeleton className="h-24" /></div>
       ) : !disponible ? (
-        <EmptyState icone={CalendarDays} titre="Calendrier pas encore disponible" texte="La mise à jour du réseau n’est pas encore appliquée sur ce serveur." />
+        <EmptyState icone={CalendarDays} titre="Calendrier indisponible" texte="Vos publications n’ont pas pu être chargées. Réessayez." action={<Button onClick={() => { setChargement(true); charger(); }}>Réessayer</Button>} />
       ) : jours.length === 0 ? (
         <EmptyState
           icone={CalendarDays}
@@ -213,9 +227,10 @@ export default function CalendrierPage() {
                     {p.statut === 'skipped' && <StatusPill ton="neutre">Ignoré</StatusPill>}
                   </div>
                   {p.statut === 'planned' && jour <= aujourdhui() && (
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="ghost" onClick={() => changerStatut(p.id, 'skipped')}><X className="w-3.5 h-3.5" />Ignorer</Button>
-                      <Button size="sm" fullWidth onClick={() => publier(p)}><Share2 className="w-3.5 h-3.5" />Publier maintenant</Button>
+                    <div className="flex flex-wrap gap-2">
+                      <Button size="sm" disabled={actionEnCours !== null} variant="ghost" onClick={() => changerStatut(p.id, 'skipped')}><X className="w-3.5 h-3.5" />Ignorer</Button>
+                      {produits.some(article => article.slug === p.produit) && <Button size="sm" variant="secondary" disabled={actionEnCours !== null} onClick={() => preparerPartage(p)}><Share2 className="w-3.5 h-3.5" />Préparer le partage</Button>}
+                      <Button size="sm" disabled={actionEnCours !== null} onClick={() => changerStatut(p.id, 'published')}>{actionEnCours === p.id ? <SugubaLoader className="w-4 h-4" /> : <Check className="w-4 h-4" />}J’ai publié</Button>
                     </div>
                   )}
                 </Card>

@@ -125,7 +125,7 @@ export default function ResellerCatalogPage() {
           </div>
           <Button href="/reseller/createur" variant="ghost" size="sm" className="self-start sm:self-auto">
             <Sparkles className="w-4 h-4" />
-            <span>Studio affiches</span>
+            <span>Créer un visuel</span>
           </Button>
         </div>
 
@@ -228,6 +228,7 @@ export default function ResellerCatalogPage() {
                 produit={carteDepuisProduit(product)}
                 afficherCommission
                 partageEnAvant
+                hrefStudio={`/reseller/createur?produit=${encodeURIComponent(product.id)}`}
                 priority={i < 4}
                 sponsorisationId={classes[i]?.sponsorise ? sponsorises.get(product.id) : null}
               >

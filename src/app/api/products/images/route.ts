@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
 
   const { data: produit } = await admin
     .from('products')
-    .select('id, supplier_id')
+    .select('id, supplier_id, status')
     .eq('id', productId)
     .maybeSingle();
   if (!produit) return NextResponse.json({ error: 'Produit introuvable.' }, { status: 404 });
@@ -77,7 +77,9 @@ export async function POST(req: NextRequest) {
   // Un produit en attente faute de photo peut maintenant partir en vente
   // (publication automatique, voir src/lib/publication-auto.ts). Sans effet
   // sur un produit déjà en vente ou retiré par l'admin.
-  const publication = await publierAutomatiquement(admin, productId);
+  const publication = produit.status === 'draft'
+    ? { publie: false, raison: 'Copie enregistrée : vérifiez l’offre avant sa mise en vente.' }
+    : await publierAutomatiquement(admin, productId);
 
   return NextResponse.json({ success: true, images, publication });
 }

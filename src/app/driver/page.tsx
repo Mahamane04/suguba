@@ -150,7 +150,7 @@ export default function DriverDashboardPage() {
                       ) : (
                         <div className="px-3 py-1 bg-amber-100 border border-amber-300 rounded-full text-amber-900 font-bold text-xs flex items-center space-x-1">
                           <Banknote className="w-3.5 h-3.5 text-amber-700" />
-                          <span>À recevoir maintenant : {order.totalAmount.toLocaleString('fr-FR')} F</span>
+                          <span>À encaisser chez le client : {order.totalAmount.toLocaleString('fr-FR')} F</span>
                         </div>
                       )}
                     </div>
@@ -167,7 +167,7 @@ export default function DriverDashboardPage() {
                     </div>
 
                     {/* Étape 1 : ramassage prouvé par le code du fournisseur (2026-09-24). */}
-                    <RamassageColis order={order} nomRepli={product?.supplierName} />
+                    <RamassageColis order={order} nomRepli={product?.supplierName} /><a href="/driver/aide" className="block text-sm underline text-slate-700">Signaler un problème</a>
 
                     {/* Step 2: Dropoff Location & Landmark */}
                     <div className="p-3 bg-emerald-50/60 rounded-2xl border border-emerald-100 text-xs space-y-1">

@@ -145,3 +145,9 @@ test('TEST-AUD-CLOSE-13 : solde nul réel accepté, panne de lecture refusée et
  assert.equal((await route(await req('/api/reseller/me',undefined,'driver'))).status,401);
  for(const table of ['orders','commissions']){faults[table+':select']=true;response=await route(await req('/api/reseller/me',undefined,'reseller'));assert.equal(response.status,503);assert.equal((await response.json()).reseller,undefined);faults={};}
 });
+
+test('TEST-UX-PROFILS-GAINS : dates du grand-livre, réservations séparées et aucune disponibilité déduite',async()=>{
+ reset();state.commissions=[{reseller_id:'test-reseller',amount:3000,status:'pending',order_id:'commande-A'}, {reseller_id:'test-reseller',amount:4000,status:'locked',order_id:'commande-B',unlock_at:'2026-10-14T10:00:00Z'}, {reseller_id:'test-reseller',amount:2000,status:'reserved',order_id:'commande-C'}];
+ const response=await require('../src/app/api/reseller/me/route.ts').GET(await req('/api/reseller/me',undefined,'reseller'));
+ const r=(await response.json()).reseller;assert.equal(r.availableBalance,0);assert.equal(r.pendingBalance,7000);assert.equal(r.reservedBalance,2000);assert.equal(r.commissionsEnAttente.length,2);assert.equal(r.commissionsEnAttente[0].debloquagePrevu,null);assert.equal(r.commissionsEnAttente[1].debloquagePrevu,'2026-10-14T10:00:00Z');
+});

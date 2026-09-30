@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { exigerDroitFournisseur } from '@/lib/reseau/contexte-fournisseur';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { positionValide } from '@/lib/bamako-quartiers';
+import { boutiqueDuProprietaire, obtenirOuCreerBoutique, majBoutique } from '@/lib/reseau/boutiques';
 import { attribuerSlugFournisseur } from '@/lib/shop';
 
 /**
@@ -49,6 +50,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: productsErr.message }, { status: 500 });
   }
 
+  const boutique = await boutiqueDuProprietaire('supplier', fournisseurId);
   const products = (productRows || []).map((p) => ({
     id: p.id,
     name: p.name,
@@ -88,9 +90,9 @@ export async function GET(req: NextRequest) {
           // `undefined` tant que la migration n'est pas appliquée en base — le
           // `.select('*')` ci-dessus ne casse rien dans ce cas, il ignore
           // simplement les colonnes qui n'existent pas encore.
-          shopDisplayName: supplierRow.shop_display_name || null,
-          logoUrl: supplierRow.logo_url || null,
-          shopDescription: supplierRow.shop_description || null,
+          shopDisplayName: boutique ? boutique.nom : supplierRow.shop_display_name || null,
+          logoUrl: boutique ? boutique.logo : supplierRow.logo_url || null,
+          shopDescription: boutique ? boutique.description : supplierRow.shop_description || null,
           contactEmail: supplierRow.contact_email || null,
         }
       : null,
@@ -129,9 +131,6 @@ export async function PATCH(req: NextRequest) {
   }
 
   const champsAutorises: Record<string, string> = {
-    shopDisplayName: 'shop_display_name',
-    logoUrl: 'logo_url',
-    shopDescription: 'shop_description',
     contactEmail: 'contact_email',
     managerName: 'manager_name',
     contactPhone: 'contact_phone',
@@ -141,6 +140,7 @@ export async function PATCH(req: NextRequest) {
     warehouseNeighborhood: 'warehouse_neighborhood',
   };
 
+  const avecIdentite = ['shopDisplayName', 'logoUrl', 'shopDescription'].some(cle => cle in body);
   const misAJour: Record<string, string | null> = {};
   for (const [cle, colonne] of Object.entries(champsAutorises)) {
     if (cle in body) {
@@ -164,8 +164,23 @@ export async function PATCH(req: NextRequest) {
     }
   }
 
-  if (Object.keys(misAJour).length === 0 && position === undefined) {
+  if (Object.keys(misAJour).length === 0 && position === undefined && !avecIdentite) {
     return NextResponse.json({ error: 'Aucun champ à mettre à jour.' }, { status: 400 });
+  }
+  // Compatibilité des anciens clients : l’identité publique s’écrit uniquement
+  // dans stores, jamais dans les anciennes colonnes de suppliers.
+  if (avecIdentite) {
+    const droit = await exigerDroitFournisseur(req, 'boutique');
+    if (!droit.ok) return NextResponse.json({ error: droit.erreur }, { status: droit.statut });
+    const { data: f } = await admin.from('suppliers').select('*').eq('profile_id', fournisseurId).maybeSingle();
+    const b = await obtenirOuCreerBoutique({ typeProprietaire: 'supplier', proprietaireId: fournisseurId, nom: f?.shop_display_name || f?.company_name || 'Ma boutique', logo: f?.logo_url || null, description: f?.shop_description || null });
+    if (!b) return NextResponse.json({ error: 'Boutique indisponible. Aucun changement enregistré.' }, { status: 503 });
+    const champs: Record<string, unknown> = {};
+    if ('shopDisplayName' in body) champs.nom = typeof body.shopDisplayName === 'string' && body.shopDisplayName.trim() ? body.shopDisplayName : f?.company_name || 'Ma boutique';
+    if ('logoUrl' in body) champs.logo = body.logoUrl;
+    if ('shopDescription' in body) champs.description = body.shopDescription;
+    const resultat = await majBoutique(b.id, fournisseurId, champs);
+    if (!resultat.ok) return NextResponse.json({ error: resultat.erreur }, { status: 400 });
   }
   if (position !== undefined) {
     const { error: posErr } = await admin.from('suppliers')
@@ -173,17 +188,18 @@ export async function PATCH(req: NextRequest) {
       .eq('profile_id', fournisseurId);
     if (posErr) {
       return NextResponse.json({
-        error: posErr.code === '42703' ? 'La position du dépôt sera disponible après la mise à jour de la base par Suguba.' : posErr.message,
+        error: `${avecIdentite ? 'Identité publique enregistrée. Le dépôt n’a pas été mis à jour : ' : ''}${posErr.code === '42703' ? 'La position du dépôt sera disponible après la mise à jour de la base par Suguba.' : posErr.message}`,
       }, { status: posErr.code === '42703' ? 503 : 500 });
     }
     if (Object.keys(misAJour).length === 0) return NextResponse.json({ success: true });
   }
 
+  if (Object.keys(misAJour).length === 0) return NextResponse.json({ success: true });
   const { error } = await admin.from('suppliers').update(misAJour).eq('profile_id', fournisseurId);
   if (error) {
     // Cas attendu tant que migration-shop-profile.sql n'a pas été exécutée :
     // la colonne n'existe pas encore côté base.
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: `${avecIdentite ? 'Identité publique enregistrée. Le dépôt n’a pas été mis à jour : ' : ''}${error.message}` }, { status: 500 });
   }
 
   return NextResponse.json({ success: true });

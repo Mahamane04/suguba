@@ -103,7 +103,7 @@ export default function DevisFournisseurPage() {
         <EmptyState icone={FileText} titre="Devis indisponibles" texte={erreur} />
       ) : groupes[filtre].length === 0 ? (
         <EmptyState icone={FileText} titre={filtre === 'a_repondre' ? 'Aucune demande en attente' : 'Rien ici'}
-          texte={filtre === 'a_repondre' ? 'Pour recevoir des demandes, choisissez « Sur devis » dans une de vos offres.' : undefined} />
+          texte={filtre === 'a_repondre' ? 'Pour recevoir des demandes, choisissez « Sur devis » dans une de vos offres.' : undefined} action={<Button href="/supplier/products/new?mode=devis">Créer une offre sur devis</Button>} />
       ) : (
         <div className="space-y-3">
           {groupes[filtre].map((d) => (

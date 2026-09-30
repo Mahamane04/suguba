@@ -4,7 +4,7 @@ import SugubaLoader from '@/components/ui/SugubaLoader';
 
 import ChoixUniteVente, { SAISIE_UNITE_VIDE, type SaisieUnite } from '@/components/produit/ChoixUniteVente';
 import { normaliserUniteVente } from '@/lib/unite-vente';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
@@ -38,8 +38,8 @@ export default function NewSupplierProductPage() {
   const [name, setName] = useState('');
   const [category, setCategory] = useState('Électroménager');
   const [description, setDescription] = useState('');
-  const [supplierPrice, setSupplierPrice] = useState<number>(30000);
-  const [stockQuantity, setStockQuantity] = useState<number>(20);
+  const [supplierPrice, setSupplierPrice] = useState<number | ''>('');
+  const [stockQuantity, setStockQuantity] = useState<number | ''>('');
   // Photos envoyées au stockage Suguba (jamais une URL collée à la main, voir
   // BUG-011) — plusieurs désormais, la première étant la photo principale.
   const [images, setImages] = useState<string[]>([]);
@@ -54,7 +54,7 @@ export default function NewSupplierProductPage() {
   // Part laissée au revendeur, choisie par le fournisseur (2026-09-11). Le prix
   // client en découle, calculé par le SERVEUR (/api/products/apercu-prix) : la
   // structure de coûts de Suguba ne part pas dans le navigateur.
-  const [partRevendeur, setPartRevendeur] = useState<number>(3000);
+  const [partRevendeur, setPartRevendeur] = useState<number | ''>('');
   // Vente au prix de gros (2026-09-24) : le revendeur fixe son propre prix
   // (jamais sous le minimal) et peut négocier avec son client.
   const [modePrix, setModePrix] = useState<'fixe' | 'gros'>('fixe');
@@ -78,7 +78,7 @@ export default function NewSupplierProductPage() {
     commissionBrute?: number; prelevementSuguba?: number; tauxPrelevement?: number; partSuguba?: number;
   } | null>(null);
   useEffect(() => {
-    if (!(supplierPrice > 0)) { setApercu(null); setApercuGros(null); return; }
+    if (!(Number(supplierPrice) > 0)) { setApercu(null); setApercuGros(null); return; }
     const controle = new AbortController();
     const minuteur = setTimeout(() => {
       const url = modePrix === 'gros'
@@ -96,8 +96,36 @@ export default function NewSupplierProductPage() {
   }, [supplierPrice, partRevendeur, modePrix, prixConseille]);
   const fmt = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
 
+  const [step, setStep] = useState(0);
+  const formTop = useRef<HTMLOListElement>(null);
+  useEffect(() => {
+    if (!step) return;
+    formTop.current?.scrollIntoView({ block: 'start', behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
+    formTop.current?.focus({ preventScroll: true });
+  }, [step]);
+  const [draftReady, setDraftReady] = useState(false);
+  const draftKey = 'suguba-offre-brouillon-v1';
+  useEffect(() => {
+    try {
+      const d = JSON.parse(sessionStorage.getItem(draftKey) || 'null');
+      if (d) { setName(d.name || ''); setCategory(d.category || 'Électroménager'); setDescription(d.description || ''); setImages(d.images || []); setSupplierPrice(d.supplierPrice ?? ''); setStockQuantity(d.stockQuantity ?? ''); setPartRevendeur(d.partRevendeur ?? ''); setTypeOffre(d.typeOffre || 'produit'); setModeRemise(d.modeRemise || 'livreur'); setModePrix(d.modePrix || 'fixe'); setFraisRemise(d.fraisRemise || 0); setOffreInclus(d.offreInclus || ''); setModeCommande(d.modeCommande || 'achat'); setEtapes(d.etapes || []); setPrixConseille(d.prixConseille || 0); setSaisieUnite(d.saisieUnite || SAISIE_UNITE_VIDE); }
+    } catch { /* brouillon illisible, conserver le formulaire vide */ }
+    if (new URLSearchParams(window.location.search).get('mode') === 'devis') setModeCommande('devis');
+    setDraftReady(true);
+  }, []);
+  useEffect(() => {
+    if (!draftReady || isSuccess) return;
+    try { sessionStorage.setItem(draftKey, JSON.stringify({ name, category, description, images, supplierPrice, stockQuantity, partRevendeur, typeOffre, modeRemise, modePrix, fraisRemise, offreInclus, modeCommande, etapes, prixConseille, saisieUnite })); } catch { /* stockage désactivé */ }
+  }, [draftReady, isSuccess, name, category, description, images, supplierPrice, stockQuantity, partRevendeur, typeOffre, modeRemise, modePrix, fraisRemise, offreInclus, modeCommande, etapes, prixConseille, saisieUnite]);
+  const avancer = () => {
+    if (step === 0 && (!name.trim() || !description.trim())) { toast('Ajoutez le nom et la description.', { ton: 'erreur' }); return; }
+    if (step === 1 && isUploadingImage) { toast('Attendez la fin de l’envoi des photos.', { ton: 'info' }); return; }
+    if (step === 2 && (Number(supplierPrice) < 1000 || Number(stockQuantity) < 1 || (modePrix === 'fixe' && partRevendeur === ''))) { toast('Renseignez votre prix, votre stock et la part revendeur (0 si aucune).', { ton: 'erreur' }); return; }
+    setStep(v => Math.min(3, v + 1));
+  };
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (step !== 3) { avancer(); return; }
     if (!name || !description || !supplierPrice || !stockQuantity) {
       toast('Remplissez le nom, la description, le prix et le stock.', { ton: 'erreur' });
       return;
@@ -154,6 +182,7 @@ export default function NewSupplierProductPage() {
     }
 
     setPublication(resultat ?? null);
+    try { sessionStorage.removeItem(draftKey); } catch {}
     setIsSuccess(true);
   };
 
@@ -226,14 +255,17 @@ export default function NewSupplierProductPage() {
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
+          <form noValidate onSubmit={handleSubmit} className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
             
+            <ol ref={formTop} tabIndex={-1} className="flex gap-2 text-xs scroll-mt-24" aria-label="Étapes de création">{['Offre', 'Photos', 'Prix et stock', 'Vérification'].map((label, index) => <li key={label} aria-current={step === index ? 'step' : undefined} className={`flex-1 p-2 rounded-lg ${step === index ? 'bg-suguba-profond text-white' : 'bg-slate-100 text-slate-700'}`}>{index + 1}. {label}</li>)}</ol>
+            <p className="text-xs text-slate-600">Brouillon conservé dans cet onglet. Rien n’est publié avant votre confirmation.</p>
+            <fieldset hidden={step !== 0} disabled={step !== 0} className="space-y-4">
             {/* Nom du produit */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label htmlFor="offre-nom" className="block text-xs font-bold text-slate-700 mb-1">
                 Nom du Produit *
               </label>
-              <input
+              <input id="offre-nom"
                 type="text"
                 required
                 placeholder="Ex: Smart TV Samsung 43 Pouces Full HD"
@@ -260,10 +292,10 @@ export default function NewSupplierProductPage() {
 
             {/* Description */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+              <label htmlFor="offre-description" className="block text-xs font-bold text-slate-700 mb-1">
                 Description Détaillée & Spécifications *
               </label>
-              <textarea
+              <textarea id="offre-description"
                 rows={3}
                 required
                 placeholder="Ex: Écran Full HD, 2 ports HDMI, garantie 1 an, livré avec support mural..."
@@ -271,14 +303,6 @@ export default function NewSupplierProductPage() {
                 onChange={(e) => setDescription(e.target.value)}
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white focus:outline-emerald-600"
               />
-            </div>
-
-            {/* Photos du produit — plusieurs, envoyées au stockage Suguba */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">
-                Photos du produit
-              </label>
-              <PhotosUploader value={images} onChange={setImages} onUploadingChange={setIsUploadingImage} />
             </div>
 
             {/* Votre offre (2026-09-26) : nature et qui la remet au client.
@@ -292,7 +316,7 @@ export default function NewSupplierProductPage() {
                   {TYPES_OFFRE.map((t) => {
                     const actif = typeOffre === t.valeur;
                     return (
-                      <button key={t.valeur} type="button" role="radio" aria-checked={actif} onClick={() => setTypeOffre(t.valeur)}
+                      <button key={t.valeur} type="button" role="radio" aria-checked={actif} onClick={() => { setTypeOffre(t.valeur); if (t.valeur === 'service' && modeRemise === 'livreur') setModeRemise('fournisseur'); }}
                         className={`text-left p-3 rounded-2xl border ${actif ? 'border-suguba-profond bg-suguba-menthe ring-1 ring-suguba-profond' : 'border-slate-200 bg-white'}`}>
                         <span className="block text-sm font-semibold text-slate-900">{t.libelle}</span>
                         <span className="block text-xs text-slate-600 mt-0.5">{t.detail}</span>
@@ -307,7 +331,7 @@ export default function NewSupplierProductPage() {
                   {MODES_REMISE.map((m) => {
                     const actif = modeRemise === m.valeur;
                     return (
-                      <button key={m.valeur} type="button" role="radio" aria-checked={actif} onClick={() => setModeRemise(m.valeur)}
+                      <button key={m.valeur} disabled={typeOffre === 'service' && m.valeur === 'livreur'} type="button" role="radio" aria-checked={actif} onClick={() => setModeRemise(m.valeur)}
                         className={`text-left p-3 rounded-2xl border ${actif ? 'border-suguba-profond bg-suguba-menthe ring-1 ring-suguba-profond' : 'border-slate-200 bg-white'}`}>
                         <span className="block text-sm font-semibold text-slate-900">{m.libelle}</span>
                         <span className="block text-xs text-slate-600 mt-0.5">{m.detail}</span>
@@ -392,6 +416,18 @@ export default function NewSupplierProductPage() {
               )}
             </fieldset>
 
+            </fieldset>
+            <fieldset hidden={step !== 1} disabled={step !== 1} className="space-y-4">
+            {/* Photos du produit — plusieurs, envoyées au stockage Suguba */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Photos du produit
+              </label>
+              <PhotosUploader value={images} onChange={setImages} onUploadingChange={setIsUploadingImage} />
+            </div>
+
+            </fieldset>
+            <fieldset hidden={step !== 2} disabled={step !== 2} className="space-y-4">
             {/* Comment le revendeur vend cet article (2026-09-24) */}
             <div className="space-y-2">
               <p className="text-xs font-bold text-slate-700">Comment les revendeurs vendent cet article ?</p>
@@ -415,17 +451,17 @@ export default function NewSupplierProductPage() {
             {/* Prix Fournisseur & Stock */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label htmlFor="offre-prix" className="block text-xs font-bold text-slate-700 mb-1">
                   {modePrix === 'gros' ? 'Prix de gros (FCFA) *' : 'Prix Fournisseur Plancher Garanti (FCFA) *'}
                 </label>
-                <input
+                <input id="offre-prix"
                   type="number"
                   required
                   min={1000}
                   step={500}
                   placeholder="Ex: 30000"
                   value={supplierPrice}
-                  onChange={(e) => setSupplierPrice(parseInt(e.target.value) || 0)}
+                  onChange={(e) => setSupplierPrice(e.target.value === '' ? '' : parseInt(e.target.value))}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:bg-white"
                 />
                 <span className="text-xs text-slate-500 mt-1 block">
@@ -434,16 +470,16 @@ export default function NewSupplierProductPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label htmlFor="offre-stock" className="block text-xs font-bold text-slate-700 mb-1">
                   {typeOffre === 'service' ? 'Nombre de prestations possibles *' : 'Quantité en Stock Réel *'}
                 </label>
-                <input
+                <input id="offre-stock"
                   type="number"
                   required
                   min={1}
                   placeholder="Ex: 25"
                   value={stockQuantity}
-                  onChange={(e) => setStockQuantity(parseInt(e.target.value) || 1)}
+                  onChange={(e) => setStockQuantity(e.target.value === '' ? '' : parseInt(e.target.value))}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:bg-white"
                 />
               </div>
@@ -457,10 +493,10 @@ export default function NewSupplierProductPage() {
             {modePrix === 'gros' && (
               <div className="rounded-2xl border border-slate-200 p-4 space-y-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                  <label htmlFor="offre-conseil" className="block text-xs font-bold text-slate-700 mb-1">
                     Prix conseillé au client (facultatif)
                   </label>
-                  <input
+                  <input id="offre-conseil"
                     type="number" min={0} step={500} placeholder="Ex : 35000"
                     value={prixConseille || ''}
                     onChange={(e) => setPrixConseille(parseInt(e.target.value) || 0)}
@@ -473,7 +509,7 @@ export default function NewSupplierProductPage() {
                 {apercuGros && (
                   <div className="bg-slate-50 rounded-xl p-3 text-xs space-y-1.5">
                     <p className="text-xs font-bold uppercase tracking-wider text-slate-500 pb-0.5">Sur chaque vente</p>
-                    <div className="flex justify-between"><span className="text-slate-600">Vous touchez toujours</span><strong className="text-slate-900">{fmt(supplierPrice)}</strong></div>
+                    <div className="flex justify-between"><span className="text-slate-600">Vous touchez toujours</span><strong className="text-slate-900">{fmt(Number(supplierPrice))}</strong></div>
                     <div className="flex justify-between"><span className="text-slate-600">Prix minimal de revente</span><strong className="text-slate-900">{fmt(apercuGros.prixMinimal)}</strong></div>
                     <div className="flex justify-between"><span className="text-slate-600">Prix conseillé</span><strong className="text-slate-900 text-sm">{fmt(apercuGros.prixConseille)}</strong></div>
                     <div className="flex justify-between"><span className="text-slate-600">Le revendeur gagne (au prix conseillé)</span><strong className="text-suguba-brand-dark">{fmt(apercuGros.gainRevendeurAuConseil)}</strong></div>
@@ -491,15 +527,15 @@ export default function NewSupplierProductPage() {
             {/* Part revendeur fixée par le fournisseur + aperçu du prix client */}
             <div className={`rounded-2xl border border-slate-200 p-4 space-y-3 ${modePrix === 'gros' ? 'hidden' : ''}`}>
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
+                <label htmlFor="offre-part" className="block text-xs font-bold text-slate-700 mb-1">
                   Part du revendeur par vente (FCFA)
                 </label>
-                <input
+                <input id="offre-part"
                   type="number"
                   min={0}
                   step={250}
                   value={partRevendeur}
-                  onChange={(e) => setPartRevendeur(parseInt(e.target.value) || 0)}
+                  onChange={(e) => setPartRevendeur(e.target.value === '' ? '' : parseInt(e.target.value))}
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:bg-white"
                 />
                 <span className="text-xs text-slate-500 mt-1 block">
@@ -513,7 +549,7 @@ export default function NewSupplierProductPage() {
                 <div className="bg-slate-50 rounded-xl p-3 text-xs space-y-1.5">
                   <p className="text-xs font-bold uppercase tracking-wider text-slate-500 pb-0.5">Sur chaque vente</p>
                   <div className="flex justify-between"><span className="text-slate-600">Le client paie</span><strong className="text-slate-900 text-sm">{fmt(apercu.prixVente)}</strong></div>
-                  <div className="flex justify-between"><span className="text-slate-600">Vous touchez</span><strong className="text-slate-900">{fmt(supplierPrice)}</strong></div>
+                  <div className="flex justify-between"><span className="text-slate-600">Vous touchez</span><strong className="text-slate-900">{fmt(Number(supplierPrice))}</strong></div>
                   <div className="flex justify-between">
                     <span className="text-slate-600">Le revendeur reçoit</span>
                     <strong className="text-suguba-brand-dark">{fmt(apercu.commission)}</strong>
@@ -546,6 +582,9 @@ export default function NewSupplierProductPage() {
               )}
             </div>
 
+            </fieldset>
+            {step === 3 && <section className="space-y-3 rounded-2xl bg-slate-50 p-4" aria-label="Récapitulatif avant publication"><h2 className="font-bold">Vérifiez votre offre</h2><p>{name} · {category}</p><p className="text-sm whitespace-pre-wrap">{description}</p><dl className="text-sm space-y-2"><div>Photos : {images.length || 'aucune — offre enregistrée en attente de photo'}</div><div>Votre prix : {fmt(Number(supplierPrice))}</div><div>Stock : {stockQuantity}</div><div>Part revendeur proposée : {fmt(Number(partRevendeur))}</div><div>Remise : {MODES_REMISE.find(m => m.valeur === modeRemise)?.libelle}</div><div>Prix client : {apercu ? fmt(apercu.prixVente) : apercuGros ? fmt(apercuGros.prixConseille) : 'calculé par Suguba à l’enregistrement'}</div></dl><p className="text-xs text-slate-600">Suguba calcule et vérifie les montants sur le serveur avant la mise en vente.</p></section>}
+            <div className="flex gap-3">{step > 0 && <Button type="button" variant="ghost" onClick={() => setStep(v => v - 1)}>Précédent</Button>}{step < 3 && <Button type="button" onClick={avancer}>Continuer</Button>}</div>
             {/* Garantie, délai de préparation et adresse de stock retirés le
                 2026-09-11 : le fournisseur les remplissait, mais aucune
                 colonne ne les enregistrait nulle part (voir
@@ -556,7 +595,7 @@ export default function NewSupplierProductPage() {
             {/* Submit button */}
             {/* « Soumettre pour modération » : faux depuis la publication
                 automatique (2026-09-11). Le bouton dit ce qui se passe. */}
-            <Button type="submit" disabled={isSubmitting} size="lg" fullWidth>
+            <Button type="submit" className={step === 3 ? '' : 'hidden'} disabled={isSubmitting} size="lg" fullWidth>
               <PackagePlus className="w-4 h-4" />
               <span>{isSubmitting ? <><SugubaLoader className="mr-2 h-4 w-4" />Envoi…</> : images.length > 0 ? 'Mettre en vente' : 'Enregistrer (photo à ajouter)'}</span>
             </Button>

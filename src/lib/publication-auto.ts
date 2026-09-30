@@ -70,7 +70,7 @@ export async function publierAutomatiquement(admin: ClientAdmin, productId: stri
     return { publie: false, raison: 'Aucun prix de vente rentable trouvé : un administrateur doit fixer le prix.' };
   }
 
-  const { error } = await admin
+  const { data: publie, error } = await admin
     .from('products')
     .update({
       public_price: prix,
@@ -82,7 +82,9 @@ export async function publierAutomatiquement(admin: ClientAdmin, productId: stri
     .eq('id', productId)
     // Garde contre une course : ne publier que si le statut n'a pas bougé
     // entre-temps (retrait par l'admin au même moment, par exemple).
-    .eq('status', p.status);
+    .eq('status', p.status)
+    .select('id').maybeSingle();
+  if (!error && !publie) return { publie: false, raison: 'Le statut de l’offre a changé. Rechargez-la pour vérifier sa mise en vente.' };
   if (error) return { publie: false, raison: error.message };
 
   // Première mise en vente : les abonnés de la boutique du fournisseur sont

@@ -92,6 +92,7 @@ export default function ProductCard({
   sponsorisationId = null,
   presentation = false,
   children,
+  hrefStudio,
 }: {
   produit: ProduitCarte;
   /** Code de la visite en cours (boutique /r/ ou lien ?ref=) : porté par le lien d'achat. */
@@ -112,6 +113,7 @@ export default function ProductCard({
    */
   presentation?: boolean;
   children?: React.ReactNode;
+  hrefStudio?: string;
 }) {
   const monCode = useCodeRevendeur();
   const [preparation, setPreparation] = useState(false);
@@ -239,7 +241,7 @@ export default function ProductCard({
             // Catalogue revendeur : partage direct + affiche pour le statut.
             <div className="flex items-center gap-2">
               {boutonPartage(true)}
-              <button
+              {hrefStudio ? <Link href={hrefStudio} aria-label={`Créer un visuel de ${produit.nom}`} title="Personnaliser le visuel" className="h-9 w-9 shrink-0 rounded-2xl border border-slate-200 hover:bg-slate-50 text-slate-700 inline-flex items-center justify-center"><ImageIcon className="w-4 h-4"/></Link> : <button
                 type="button"
                 onClick={() => setAfficheOuverte(true)}
                 aria-label={`Créer une affiche de ${produit.nom} pour mon statut WhatsApp`}
@@ -247,7 +249,7 @@ export default function ProductCard({
                 className="h-9 w-9 shrink-0 rounded-2xl border border-slate-200 hover:bg-slate-50 text-slate-700 inline-flex items-center justify-center"
               >
                 <ImageIcon className="w-4 h-4" />
-              </button>
+              </button>}
             </div>
           ) : (
             <div className="flex items-center gap-2">

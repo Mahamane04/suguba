@@ -121,6 +121,7 @@ export default function ResellerDashboardPage() {
 
       <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 py-6 w-full space-y-5">
         <BandeauDemarrage />
+        <section className="rounded-3xl bg-suguba-profond text-white p-5 space-y-3"><h2 className="text-xl font-bold">Quel produit allez-vous partager aujourd’hui ?</h2><p className="text-sm">Choisissez une offre, voyez votre commission et partagez son lien à vos clients.</p><Link href="/reseller/catalog" className="inline-flex rounded-xl bg-white text-suguba-profond px-4 py-3 font-bold">Choisir un produit</Link></section>
         {charge && !moi && <div role="alert" className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950 space-y-2"><p>Votre solde et votre palier sont indisponibles. Aucun montant n’est confirmé.</p><Button variant="ghost" onClick={() => setRechargerProfil(v => v + 1)}>Réessayer le solde et le profil</Button></div>}
 
 
@@ -329,7 +330,7 @@ export default function ResellerDashboardPage() {
         <div className="space-y-2.5">
           <h2 className="font-bold text-sm text-slate-900">Outils de vente</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <Raccourci href="/reseller/createur" icone={<Sparkles className="w-5 h-5" />} titre="Studio marketing" sousTitre="Produit ou boutique" />
+            <Raccourci href="/reseller/createur" icone={<Sparkles className="w-5 h-5" />} titre="Créer un visuel" sousTitre="Produit ou boutique" />
             <Raccourci href="/reseller/badge" icone={<QrCode className="w-5 h-5" />} titre="Ma carte & QR" sousTitre="Votre carte revendeur" />
             <Raccourci href="/reseller/calculator" icone={<Calculator className="w-5 h-5" />} titre="Simulateur" sousTitre="Estimer vos gains" />
           </div>
