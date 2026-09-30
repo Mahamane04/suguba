@@ -2,15 +2,13 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import ProductImage from '@/components/common/ProductImage';
 import OrdersSyncNotice from '@/components/common/OrdersSyncNotice';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import CloudSyncBadge from '@/components/common/CloudSyncBadge';
-import OtpValidationModal from '@/components/driver/OtpValidationModal';
-import DeliveryMapModal from '@/components/driver/DeliveryMapModal';
 import RamassageColis from '@/components/driver/RamassageColis';
-import PrintableReceiptModal from '@/components/common/PrintableReceiptModal';
 import { useSugubaStore, sugubaStore } from '@/lib/store';
 import { cloudSyncService } from '@/lib/cloud-sync';
 import EmptyState from '@/components/ui/EmptyState';
@@ -20,6 +18,10 @@ import {
   Banknote, Package, Navigation, AlertCircle, ArrowRight,
   Compass, MessageCircle, Printer, Wallet, ShieldCheck
 } from 'lucide-react';
+
+const OtpValidationModal = dynamic(() => import('@/components/driver/OtpValidationModal'));
+const DeliveryMapModal = dynamic(() => import('@/components/driver/DeliveryMapModal'));
+const PrintableReceiptModal = dynamic(() => import('@/components/common/PrintableReceiptModal'));
 
 export default function DriverDashboardPage() {
   const state = useSugubaStore();
@@ -90,7 +92,7 @@ export default function DriverDashboardPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-2xl bg-slate-50 p-3">
-              <p className="text-xs font-bold text-slate-500 uppercase">Encaissé à la livraison</p>
+              <p className="text-xs font-bold text-slate-500 uppercase">Espèces dans ma sacoche</p>
               <p className="text-lg font-bold text-slate-900">{state.ordersSync === 'ready' ? totalCollectedCash.toLocaleString('fr-FR') : '—'} F</p>
             </div>
             <Link
@@ -148,7 +150,7 @@ export default function DriverDashboardPage() {
                       ) : (
                         <div className="px-3 py-1 bg-amber-100 border border-amber-300 rounded-full text-amber-900 font-bold text-xs flex items-center space-x-1">
                           <Banknote className="w-3.5 h-3.5 text-amber-700" />
-                          <span>À encaisser : {order.totalAmount.toLocaleString('fr-FR')} F</span>
+                          <span>À recevoir maintenant : {order.totalAmount.toLocaleString('fr-FR')} F</span>
                         </div>
                       )}
                     </div>
@@ -156,7 +158,7 @@ export default function DriverDashboardPage() {
                     {/* Product item */}
                     <div className="flex items-center space-x-3 bg-slate-50 p-3 rounded-2xl border border-slate-200">
                       <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-slate-200 shrink-0">
-                        <ProductImage src={order.productImage} alt={order.productName} fill className="object-cover" />
+                        <ProductImage src={order.productImage} alt={order.productName} fill sizes="48px" className="object-cover" />
                       </div>
                       <div className="min-w-0 flex-1">
                         <h4 className="font-bold text-xs text-slate-900 truncate">{order.productName}</h4>

@@ -22,6 +22,20 @@ import { lienProduit, type ProduitAPartager } from '@/lib/partage';
 export type ThemeAffiche = 'vert' | 'clair' | 'nuit';
 export type FormatAffiche = 'story' | 'carre';
 
+export interface IdentiteBoutique {
+  nom: string;
+  accroche?: string | null;
+  logo?: string | null;
+  couverture?: string | null;
+  slug: string;
+}
+
+export interface ProduitCarteBoutique {
+  nom: string;
+  prix: number;
+  image?: string | null;
+}
+
 const THEMES: Record<ThemeAffiche, { fond: [string, string]; texte: string; secondaire: string; prix: string; pastille: string; pastilleTexte: string }> = {
   vert: { fond: ['#0a8f00', '#054d00'], texte: '#ffffff', secondaire: '#d9fbd6', prix: '#ffffff', pastille: 'rgba(255,255,255,0.16)', pastilleTexte: '#ffffff' },
   clair: { fond: ['#ffffff', '#eef7ee'], texte: '#0f172a', secondaire: '#475569', prix: '#09b500', pastille: '#e6fee6', pastilleTexte: '#065f00' },
@@ -48,6 +62,13 @@ function rectangleArrondi(ctx: CanvasRenderingContext2D, x: number, y: number, l
   ctx.arcTo(x, y + h, x, y, r);
   ctx.arcTo(x, y, x + l, y, r);
   ctx.closePath();
+}
+
+function dessinerImageCouverte(ctx: CanvasRenderingContext2D, image: HTMLImageElement, x: number, y: number, l: number, h: number) {
+  const echelle = Math.max(l / image.width, h / image.height);
+  const lp = image.width * echelle;
+  const hp = image.height * echelle;
+  ctx.drawImage(image, x + (l - lp) / 2, y + (h - hp) / 2, lp, hp);
 }
 
 /** Découpe un texte en au plus `maxLignes` lignes, avec « … » si ça déborde. */
@@ -96,12 +117,14 @@ export interface OptionsAffiche {
   qr?: boolean;
   /** Bandeau promotionnel (« -10 % ce week-end »), 40 caractères max. */
   promo?: string | null;
+  /** Identité visuelle du revendeur, sans téléphone ni adresse. */
+  boutique?: IdentiteBoutique | null;
 }
 
 export async function genererAffiche(
   p: ProduitAPartager,
   code: string | null,
-  { theme = 'vert', format = 'story', lien = null, qr = false, promo = null }: OptionsAffiche = {},
+  { theme = 'vert', format = 'story', lien = null, qr = false, promo = null, boutique = null }: OptionsAffiche = {},
 ): Promise<File> {
   if (!(p.prix > 0)) {
     throw new Error("Ce produit n'est pas encore en vente (prix non fixé) : pas d'affiche possible.");
@@ -124,13 +147,41 @@ export async function genererAffiche(
   ctx.fillStyle = degrade;
   ctx.fillRect(0, 0, L, H);
 
-  // En-tête
+  // En-tête : identité de la boutique quand elle existe, signature Suguba
+  // toujours visible pour préserver la confiance et le parcours de commande.
   ctx.textBaseline = 'alphabetic';
   ctx.fillStyle = t.texte;
-  ctx.font = `900 52px ${POLICE}`;
-  ctx.fillText('SUGUBA', marge, 110);
-  ctx.font = `700 30px ${POLICE}`;
-  const etiquette = 'Livré à Bamako';
+  if (boutique) {
+    const logo = boutique.logo ? await chargerImage(boutique.logo) : null;
+    const tailleLogo = 78;
+    ctx.save();
+    rectangleArrondi(ctx, marge, 42, tailleLogo, tailleLogo, 22);
+    ctx.clip();
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(marge, 42, tailleLogo, tailleLogo);
+    if (logo) dessinerImageCouverte(ctx, logo, marge, 42, tailleLogo, tailleLogo);
+    else {
+      ctx.fillStyle = '#d9fbd6';
+      ctx.fillRect(marge, 42, tailleLogo, tailleLogo);
+      ctx.fillStyle = '#054d00';
+      ctx.font = `900 40px ${POLICE}`;
+      ctx.textAlign = 'center';
+      ctx.fillText(boutique.nom.charAt(0).toUpperCase(), marge + tailleLogo / 2, 95);
+      ctx.textAlign = 'left';
+    }
+    ctx.restore();
+    ctx.fillStyle = t.texte;
+    ajuster(ctx, boutique.nom, 510, 38, '900', 24);
+    ctx.fillText(boutique.nom, marge + tailleLogo + 22, 78);
+    ctx.font = `700 24px ${POLICE}`;
+    ctx.fillStyle = t.secondaire;
+    ctx.fillText('Boutique partenaire Suguba', marge + tailleLogo + 22, 111);
+  } else {
+    ctx.font = `900 52px ${POLICE}`;
+    ctx.fillText('SUGUBA', marge, 110);
+  }
+  ctx.font = `700 28px ${POLICE}`;
+  const etiquette = boutique ? 'Commandez sur Suguba' : 'Livré à Bamako';
   const lEtiquette = ctx.measureText(etiquette).width + 48;
   ctx.fillStyle = t.pastille;
   rectangleArrondi(ctx, L - marge - lEtiquette, 62, lEtiquette, 64, 32);
@@ -149,10 +200,7 @@ export async function genererAffiche(
   ctx.fillRect(cadre.x, cadre.y, cadre.l, cadre.h);
   const photo = p.images[0] ? await chargerImage(p.images[0]) : null;
   if (photo) {
-    const echelle = Math.max(cadre.l / photo.width, cadre.h / photo.height);
-    const lp = photo.width * echelle;
-    const hp = photo.height * echelle;
-    ctx.drawImage(photo, cadre.x + (cadre.l - lp) / 2, cadre.y + (cadre.h - hp) / 2, lp, hp);
+    dessinerImageCouverte(ctx, photo, cadre.x, cadre.y, cadre.l, cadre.h);
   } else {
     // Pas de photo : le logo au centre plutôt qu'un cadre vide.
     const logo = await chargerImage('/icon-512.png');
@@ -250,6 +298,148 @@ export async function genererAffiche(
   const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9));
   if (!blob) throw new Error("L'affiche n'a pas pu être créée.");
   return new File([blob], `suguba-${p.slug}-${format}.jpg`, { type: 'image/jpeg' });
+}
+
+/** Carte de boutique prête à partager : couverture, identité, trois offres et QR. */
+export async function genererCarteBoutique(
+  boutique: IdentiteBoutique,
+  produits: ProduitCarteBoutique[],
+  { format = 'story', lien, qr = true }: Pick<OptionsAffiche, 'format' | 'lien' | 'qr'> = {},
+): Promise<File> {
+  const L = 1080;
+  const H = format === 'story' ? 1920 : 1080;
+  const marge = 60;
+  const canvas = document.createElement('canvas');
+  canvas.width = L;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) throw new Error('Canvas indisponible sur cet appareil.');
+
+  ctx.fillStyle = '#f8fafc';
+  ctx.fillRect(0, 0, L, H);
+
+  const couvertureH = format === 'story' ? 540 : 340;
+  const couverture = boutique.couverture ? await chargerImage(boutique.couverture) : null;
+  if (couverture) dessinerImageCouverte(ctx, couverture, 0, 0, L, couvertureH);
+  else {
+    const degrade = ctx.createLinearGradient(0, 0, L, couvertureH);
+    degrade.addColorStop(0, '#143e30');
+    degrade.addColorStop(1, '#09b500');
+    ctx.fillStyle = degrade;
+    ctx.fillRect(0, 0, L, couvertureH);
+    ctx.fillStyle = 'rgba(255,255,255,0.10)';
+    for (let x = 40; x < L; x += 80) for (let y = 40; y < couvertureH; y += 80) {
+      ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+  const voile = ctx.createLinearGradient(0, 0, 0, couvertureH);
+  voile.addColorStop(0, 'rgba(15,23,42,0.05)');
+  voile.addColorStop(1, 'rgba(15,23,42,0.72)');
+  ctx.fillStyle = voile;
+  ctx.fillRect(0, 0, L, couvertureH);
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = `900 38px ${POLICE}`;
+  ctx.fillText('SUGUBA', marge, 72);
+  ctx.font = `700 24px ${POLICE}`;
+  ctx.fillText('Boutique partenaire', marge, 108);
+
+  const logoTaille = format === 'story' ? 190 : 150;
+  const logoY = couvertureH - logoTaille / 2;
+  ctx.save();
+  rectangleArrondi(ctx, marge, logoY, logoTaille, logoTaille, 42);
+  ctx.clip();
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(marge, logoY, logoTaille, logoTaille);
+  const logo = boutique.logo ? await chargerImage(boutique.logo) : null;
+  if (logo) dessinerImageCouverte(ctx, logo, marge, logoY, logoTaille, logoTaille);
+  else {
+    ctx.fillStyle = '#d9fbd6';
+    ctx.fillRect(marge, logoY, logoTaille, logoTaille);
+    ctx.fillStyle = '#143e30';
+    ctx.font = `900 ${format === 'story' ? 88 : 70}px ${POLICE}`;
+    ctx.textAlign = 'center';
+    ctx.fillText(boutique.nom.charAt(0).toUpperCase(), marge + logoTaille / 2, logoY + logoTaille * 0.68);
+    ctx.textAlign = 'left';
+  }
+  ctx.restore();
+
+  const identiteX = marge + logoTaille + 34;
+  ctx.fillStyle = '#0f172a';
+  ajuster(ctx, boutique.nom, L - identiteX - marge, format === 'story' ? 58 : 48, '900', 30);
+  ctx.fillText(boutique.nom, identiteX, couvertureH + 42);
+  ctx.fillStyle = '#475569';
+  ctx.font = `600 ${format === 'story' ? 30 : 26}px ${POLICE}`;
+  const accroche = (boutique.accroche || 'Découvrez notre sélection et commandez sur Suguba.').slice(0, 100);
+  for (const [index, ligne] of lignes(ctx, accroche, L - identiteX - marge, 2).entries()) {
+    ctx.fillText(ligne, identiteX, couvertureH + 87 + index * 38);
+  }
+
+  const selection = produits.filter((p) => p.prix > 0).slice(0, 3);
+  const yProduits = couvertureH + (format === 'story' ? 230 : 180);
+  ctx.fillStyle = '#143e30';
+  ctx.font = `900 ${format === 'story' ? 38 : 32}px ${POLICE}`;
+  ctx.fillText(selection.length ? 'Nos offres du moment' : 'Notre boutique vous attend', marge, yProduits - 34);
+
+  if (format === 'story') {
+    for (const [index, produit] of selection.entries()) {
+      const y = yProduits + index * 250;
+      ctx.fillStyle = '#ffffff';
+      rectangleArrondi(ctx, marge, y, L - 2 * marge, 220, 36);
+      ctx.fill();
+      const image = produit.image ? await chargerImage(produit.image) : null;
+      ctx.save(); rectangleArrondi(ctx, marge + 18, y + 18, 184, 184, 28); ctx.clip();
+      ctx.fillStyle = '#eef2f7'; ctx.fillRect(marge + 18, y + 18, 184, 184);
+      if (image) dessinerImageCouverte(ctx, image, marge + 18, y + 18, 184, 184);
+      ctx.restore();
+      ctx.fillStyle = '#0f172a';
+      ctx.font = `800 34px ${POLICE}`;
+      lignes(ctx, produit.nom, 650, 2).forEach((ligne, i) => ctx.fillText(ligne, marge + 235, y + 72 + i * 42));
+      ctx.fillStyle = '#087700';
+      ctx.font = `900 44px ${POLICE}`;
+      ctx.fillText(`${Math.round(produit.prix).toLocaleString('fr-FR')} F`, marge + 235, y + 174);
+    }
+  } else {
+    const largeur = (L - 2 * marge - 32) / 3;
+    for (const [index, produit] of selection.entries()) {
+      const x = marge + index * (largeur + 16);
+      ctx.fillStyle = '#ffffff'; rectangleArrondi(ctx, x, yProduits, largeur, 300, 28); ctx.fill();
+      const image = produit.image ? await chargerImage(produit.image) : null;
+      ctx.save(); rectangleArrondi(ctx, x + 14, yProduits + 14, largeur - 28, 165, 20); ctx.clip();
+      ctx.fillStyle = '#eef2f7'; ctx.fillRect(x + 14, yProduits + 14, largeur - 28, 165);
+      if (image) dessinerImageCouverte(ctx, image, x + 14, yProduits + 14, largeur - 28, 165);
+      ctx.restore();
+      ctx.fillStyle = '#0f172a'; ctx.font = `800 24px ${POLICE}`;
+      lignes(ctx, produit.nom, largeur - 28, 2).forEach((ligne, i) => ctx.fillText(ligne, x + 14, yProduits + 215 + i * 29));
+      ctx.fillStyle = '#087700'; ctx.font = `900 27px ${POLICE}`;
+      ctx.fillText(`${Math.round(produit.prix).toLocaleString('fr-FR')} F`, x + 14, yProduits + 282);
+    }
+  }
+
+  const urlComplete = lien || `${window.location.origin}/boutique/${boutique.slug}`;
+  const hauteurPied = format === 'story' ? 220 : 150;
+  const yPied = H - marge - hauteurPied;
+  ctx.fillStyle = '#143e30'; rectangleArrondi(ctx, marge, yPied, L - 2 * marge, hauteurPied, 38); ctx.fill();
+  ctx.fillStyle = '#d9fbd6'; ctx.font = `700 ${format === 'story' ? 30 : 25}px ${POLICE}`;
+  ctx.fillText(qr ? 'Scannez pour visiter la boutique' : 'Visitez la boutique', marge + 36, yPied + 58);
+  const adresse = urlComplete.replace(/^https?:\/\//, '');
+  ctx.fillStyle = '#ffffff';
+  ajuster(ctx, adresse, L - 2 * marge - (qr ? 260 : 72), format === 'story' ? 36 : 30, '800');
+  ctx.fillText(adresse, marge + 36, yPied + (format === 'story' ? 120 : 104));
+  if (qr) {
+    const tailleQr = hauteurPied - 34;
+    const donnees = await QRCode.toDataURL(urlComplete, { width: tailleQr * 2, margin: 1, color: { dark: '#0f172a', light: '#ffffff' } });
+    const imageQr = await chargerImage(donnees);
+    if (imageQr) {
+      const xQr = L - marge - tailleQr - 17;
+      ctx.fillStyle = '#ffffff'; rectangleArrondi(ctx, xQr - 6, yPied + 11, tailleQr + 12, tailleQr + 12, 20); ctx.fill();
+      ctx.drawImage(imageQr, xQr, yPied + 17, tailleQr, tailleQr);
+    }
+  }
+
+  const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+  if (!blob) throw new Error("La carte de boutique n'a pas pu être créée.");
+  return new File([blob], `suguba-boutique-${boutique.slug}-${format}.jpg`, { type: 'image/jpeg' });
 }
 
 export type ResultatAffiche = 'partage' | 'annule' | 'telecharge';

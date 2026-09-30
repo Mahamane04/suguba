@@ -123,7 +123,7 @@ export default function ResellerCatalogPage() {
               Un clic sur « Partager sur WhatsApp » envoie la photo, le prix et votre lien. Chaque vente livrée vous rapporte la commission affichée.
             </p>
           </div>
-          <Button href="/reseller/marketing" variant="ghost" size="sm" className="self-start sm:self-auto">
+          <Button href="/reseller/createur" variant="ghost" size="sm" className="self-start sm:self-auto">
             <Sparkles className="w-4 h-4" />
             <span>Studio affiches</span>
           </Button>

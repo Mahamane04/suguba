@@ -32,8 +32,12 @@ export default function DeliveryMapModal({ order, isOpen, onClose }: DeliveryMap
     ? `https://waze.com/ul?ll=${pos.lat},${pos.lng}&navigate=yes`
     : `https://waze.com/ul?q=${encodeURIComponent(`${order.landmark} ${order.neighborhood} Bamako`)}`;
 
+  const montant = `${Math.round(order.totalAmount).toLocaleString('fr-FR')} F`;
+  const instructionPaiement = order.paymentCollected
+    ? 'Votre commande est déjà payée : rien à remettre au livreur.'
+    : `Montant à préparer : ${montant}`;
   const customerWhatsappUrl = `https://api.whatsapp.com/send?phone=${order.customerPhone.replace(/\D/g, '')}&text=${encodeURIComponent(
-    `Bonjour ${order.customerName}, je suis votre livreur partenaire Suguba 🛵.\n\nJe suis en route pour vous livrer votre colis #${order.orderNumber} (${order.productName}) au repère : ${order.landmark} (${order.neighborhood}).\n\n💰 Montant à préparer : ${order.totalAmount.toLocaleString('fr-FR')} FCFA\n🔑 Merci de préparer votre Code Secret OTP.`
+    `Bonjour ${order.customerName}, je suis votre livreur partenaire Suguba 🛵.\n\nJe suis en route pour vous livrer votre colis #${order.orderNumber} (${order.productName}) au repère : ${order.landmark} (${order.neighborhood}).\n\n💰 ${instructionPaiement}\n🔑 Merci de préparer votre code de remise Suguba.`
   )}`;
 
   return (
@@ -49,8 +53,9 @@ export default function DeliveryMapModal({ order, isOpen, onClose }: DeliveryMap
               <p className="text-xs text-slate-300">Commande #{order.orderNumber}</p>
             </div>
           </div>
-          <button 
+          <button
             onClick={onClose}
+            aria-label="Fermer l’itinéraire"
             className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-white transition-colors"
           >
             <X className="w-4 h-4" />
@@ -102,10 +107,12 @@ export default function DeliveryMapModal({ order, isOpen, onClose }: DeliveryMap
               <span className="font-mono text-emerald-700 font-bold">{order.customerPhone}</span>
             </div>
 
-            <div className="bg-amber-50 p-3 rounded-2xl border border-amber-200 text-xs">
-              <span className="text-xs text-amber-800 font-bold block">À encaisser :</span>
+            <div className={`p-3 rounded-2xl border text-xs ${order.paymentCollected ? 'bg-emerald-50 border-emerald-200' : 'bg-amber-50 border-amber-200'}`}>
+              <span className={`text-xs font-bold block ${order.paymentCollected ? 'text-emerald-800' : 'text-amber-800'}`}>
+                {order.paymentCollected ? 'Déjà payé :' : 'À recevoir maintenant :'}
+              </span>
               <strong className="text-base font-bold text-slate-900">
-                {order.totalAmount.toLocaleString('fr-FR')} F
+                {order.paymentCollected ? '0 F' : montant}
               </strong>
             </div>
           </div>

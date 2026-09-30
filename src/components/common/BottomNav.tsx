@@ -33,7 +33,7 @@ function getNavItems(role: string | null): NavItem[] {
         { label: 'Produits',   href: '/reseller/catalog',   icon: Grid3X3     },
         { label: 'Ventes',      href: '/reseller/orders',    icon: ShoppingCart},
         { label: 'Gains',       href: '/reseller/payouts',   icon: Wallet      },
-        { label: 'Partager',   href: '/reseller/marketing', icon: TrendingUp  },
+        { label: 'Créer',      href: '/reseller/createur',  icon: TrendingUp  },
       ];
     case 'supplier':
       return [

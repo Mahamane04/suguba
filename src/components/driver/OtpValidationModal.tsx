@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Order } from '@/types';
 import ScannerQr from '@/components/driver/ScannerQr';
 import { lireQrRemise } from '@/lib/qr-remise';
+import { sugubaStore } from '@/lib/store';
 import { X, KeyRound, CheckCircle2, AlertTriangle, ShieldCheck, Banknote, QrCode, Package } from 'lucide-react';
 
 interface OtpValidationModalProps {
@@ -81,13 +82,14 @@ export default function OtpValidationModal({ order, isOpen, onClose, onSuccess, 
       const json = await res.json();
       if (res.ok && json.success) {
         setBilan({ remis: 1, encaisse: order.paymentCollected ? 0 : order.totalAmount });
+        sugubaStore.updateOrderStatusFromCloud(order.id, 'delivered', true);
         setEtape('fait');
         onSuccess?.();
         return;
       }
       echec(res.status, json.error || 'Code invalide.');
     } catch {
-      setErrorMsg('Erreur réseau, réessayez.');
+      setErrorMsg('Connexion interrompue : la livraison n’est pas validée. Réessayez avec le même code quand le réseau revient.');
     } finally {
       setIsSubmitting(false);
     }
@@ -138,8 +140,10 @@ export default function OtpValidationModal({ order, isOpen, onClose, onSuccess, 
       try {
         const res = await confirmer(a.id, codeLu);
         const json = await res.json();
-        if (res.ok && json.success) reussis.add(a.id);
-        else {
+        if (res.ok && json.success) {
+          reussis.add(a.id);
+          sugubaStore.updateOrderStatusFromCloud(a.id, 'delivered', true);
+        } else {
           erreurs.push(`${a.productName} : ${json.error || 'refusé'}`);
           if (res.status === 423) setLocked(true);
         }

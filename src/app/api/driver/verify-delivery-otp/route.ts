@@ -12,6 +12,6 @@ export async function POST(req: NextRequest) {
   const admin = getSupabaseAdmin();
   if (!admin) return NextResponse.json({ error: 'Base indisponible.' }, { status: 503 });
   const { data, error } = await admin.rpc('verify_delivery_atomic', { p_order_id: orderId, p_driver_id: session.uid, p_code: code });
-  if (error || !data) return NextResponse.json({ error: 'Livraison non confirmée. Réessayez avec le même code.' }, { status: 503 });
+  if (error || !data) return NextResponse.json({ error: 'Connexion à la base interrompue : la livraison n’est pas validée. Réessayez avec le même code.' }, { status: 503 });
   return NextResponse.json(data.error ? { error: data.error } : data, { status: data.http || 200 });
 }

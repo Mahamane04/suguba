@@ -6,9 +6,9 @@ import { redirect } from 'next/navigation';
  * démonstration, affichait une « garantie 12 mois » inventée et envoyait le
  * lien du revendeur à un service tiers (quickchart.io) pour son QR code.
  *
- * Le studio d'affiches vit désormais sur /reseller/marketing. Cette adresse
+ * Le studio d'affiches vit désormais sur /reseller/createur. Cette adresse
  * est conservée pour les liens déjà enregistrés.
  */
 export default function StoryGeneratorPage() {
-  redirect('/reseller/marketing');
+  redirect('/reseller/createur');
 }
