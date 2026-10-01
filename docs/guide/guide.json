@@ -203,8 +203,8 @@
     "Boucle complète offre → commande → livraison → caisse → commission → retrait vérifiée ; 2 332 appels d'autorisation sans accès hors rôle (relancés sur la compilation finale) ; 422 tests réussis ; compilation réussie."
    ],
    "ecarts": [
-    "À exécuter en production par le fondateur : A-EXECUTER-2026-10-01-securite-fonctions.sql (urgent), A-EXECUTER-equipe-v3-variantes.sql puis de nouveau le premier, A-EXECUTER-2026-10-01-integrite-argent.sql avant le déploiement du code.",
-    "Non déployé (aucune demande de mise en ligne).",
+    "SQL exécutés en production le 1er octobre par le fondateur (sécurité des fonctions, équipe v3 + variantes, intégrité de l'argent), vérifiés en lecture seule avant publication.",
+    "Publié le 1er octobre (commit 2720fc8), déploiement Vercel confirmé.",
     "Restent en recommandations : limite par adresse IP, coordonnées des clients au revendeur (décision), frais de livraison GPS (décision révisable), textes publics non analysés, missions comptées à la commande, remboursements."
    ],
    "pages": [
@@ -213,7 +213,7 @@
     "fou-paiements",
     "rev-gains"
    ],
-   "statut": "en local"
+   "statut": "en ligne"
   },
   {
    "date": "2026-09-27",

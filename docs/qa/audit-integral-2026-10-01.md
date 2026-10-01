@@ -12,7 +12,9 @@ Les preuves détaillées et expurgées sont dans `audit-local/2026-10-01-integra
 > - la nouvelle signature de `apply_verified_payment` (avec `p_montant`) est en place ;
 > - les colonnes `fonds_couverts`, `anomalie` et `variant_*` sont présentes.
 >
-> La faille critique est fermée. Le code de cet audit est publié à la suite.
+> La faille critique est fermée.
+>
+> Le code de cet audit est **publié** : commit `2720fc8`, déploiement Vercel confirmé. Les styles publics contiennent le nouveau gris, et les pages clés répondent HTTP 200.
 
 Verdict initial, avant l'exécution des SQL : **non prêt pour le déploiement tant que la faille critique n'est pas fermée en production.**
 
