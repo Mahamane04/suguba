@@ -141,6 +141,15 @@ export async function POST(req: NextRequest) {
     });
 
     if (!resultat.ok || !resultat.id) {
+      // Refus net de SasPay (4xx : numéro invalide, solde du compte vide…) : aucun
+      // virement n'existe, le retrait est refusé et le montant revient au solde du
+      // bénéficiaire — sinon il restait « en cours » pour toujours (FIN-05, 2026-10-01).
+      if (resultat.definitif) {
+        const { error: refusErr } = await admin.rpc('finalize_payout_atomic', { p_id: withdrawal.id, p_status: 'rejected', p_reference: `REFUS SASPAY ${resultat.code || ''}`.trim() });
+        if (!refusErr) {
+          return NextResponse.json({ success: false, error: `SasPay a refusé ce versement : ${resultat.erreur || 'refus'}. Le montant est revenu sur le solde du bénéficiaire.` }, { status: 422 });
+        }
+      }
       // Résultat incertain : garder la réserve et reprendre avec la même clé prestataire.
       return NextResponse.json({ success: false, error: resultat.erreur || 'Versement refusé.' }, { status: 502 });
     }

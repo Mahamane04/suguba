@@ -31,7 +31,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const formData = await req.formData();
+    const formData = await req.formData().catch(() => null);
+    if (!formData) return NextResponse.json({ error: 'Envoyez une photo (formulaire de fichier).' }, { status: 400 });
     const file = formData.get('file');
 
     if (!(file instanceof File)) {

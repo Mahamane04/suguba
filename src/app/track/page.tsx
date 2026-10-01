@@ -183,7 +183,7 @@ export default function TrackIndexPage() {
             href="https://wa.me/22389460000"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-[#25D366] hover:underline"
+            className="inline-flex min-h-6 items-center gap-1.5 text-xs font-bold text-suguba-brand-dark hover:underline"
           >
             <MessageCircle className="w-3.5 h-3.5 fill-current" />
             Contacter Suguba sur WhatsApp

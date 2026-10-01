@@ -120,6 +120,8 @@ async function postInterne(req: NextRequest) {
     p_expected_status: 'pending', p_id: retrait.id, p_status: action === 'payer_especes' ? 'completed' : 'rejected',
     p_reference: action === 'payer_especes' ? `GUICHET ${session.uid}` : null,
   });
+  // Deux « Argent remis » simultanés : le second voit le retrait déjà traité (2026-10-01).
+  if (error?.message === 'STATUS_CONFLICT') return NextResponse.json({ error: 'Ce retrait vient d’être traité par un autre membre.' }, { status: 409 });
   if (error || !data) return NextResponse.json({ error: 'Retrait non validé. Vérifiez le grand-livre avant de réessayer.' }, { status: 503 });
   await marquerExecutee(admin, validation.validationId);
   return NextResponse.json({ success: true });

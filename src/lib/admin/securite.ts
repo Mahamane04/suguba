@@ -8,12 +8,17 @@ import { jsonStable, validationRequise, type TypeValidation, LIBELLES_VALIDATION
  * validation) et double validation des opérations sensibles.
  */
 
-export interface ReglagesSecurite { mfaObligatoire: boolean; seuilValidation: number; disponible: boolean }
+export interface ReglagesSecurite { mfaObligatoire: boolean; seuilValidation: number; disponible: boolean; tableAbsente?: boolean }
 
-/** Table absente (SQL A3 non exécuté) : rien d'obligatoire, double validation désactivée. */
+/**
+ * Table absente (SQL A3 non exécuté) : rien d'obligatoire, double validation désactivée.
+ * Erreur de LECTURE (table présente) : `disponible: false` — l'appelant doit
+ * refuser l'opération plutôt que de la laisser passer sans contrôle (2026-10-01).
+ */
 export async function lireSecurite(admin: SupabaseClient): Promise<ReglagesSecurite> {
   const { data, error } = await admin.from('securite_equipe').select('mfa_obligatoire, seuil_validation').eq('id', 1).maybeSingle();
-  if (error || !data) return { mfaObligatoire: false, seuilValidation: 0, disponible: !error };
+  const tableAbsente = !!error && (['PGRST205', '42P01'].includes(String(error.code)) || /securite_equipe/.test(String(error.message)));
+  if (error || !data) return { mfaObligatoire: false, seuilValidation: 0, disponible: !error, tableAbsente };
   return { mfaObligatoire: data.mfa_obligatoire === true, seuilValidation: Math.max(0, Number(data.seuil_validation) || 0), disponible: true };
 }
 
@@ -36,7 +41,10 @@ export type ResultatValidation =
 export async function exigerValidation(admin: SupabaseClient, p: {
   type: TypeValidation; dossier: string; montant: number | null; resume: Record<string, unknown>; demandeurId: string;
 }): Promise<ResultatValidation> {
-  const { seuilValidation } = await lireSecurite(admin);
+  const securite = await lireSecurite(admin);
+  // Réglage illisible (table présente) : on refuse plutôt que de payer sans double validation (FIN-06, 2026-10-01).
+  if (!securite.disponible && !securite.tableAbsente) return { ok: false, status: 503, corps: { error: 'Contrôle de sécurité indisponible. Réessayez dans un instant.' } };
+  const { seuilValidation } = securite;
   if (!validationRequise(p.type, p.montant, seuilValidation)) return { ok: true, validationId: null };
   const empreinte = empreinteOperation(p);
 

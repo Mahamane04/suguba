@@ -198,7 +198,7 @@ export default async function GuidePage() {
                       <span className="font-mono text-xs text-suguba-brand-dark pt-0.5 w-4 shrink-0">{i + 1}</span>
                       {e.page ? (
                         <a href={`#${e.page}`} className="text-slate-800 underline decoration-slate-300 underline-offset-2 hover:decoration-[#09b500]">
-                          {e.texte} <span className="text-slate-400">({numeros[e.page]})</span>
+                          {e.texte} <span className="text-slate-500">({numeros[e.page]})</span>
                         </a>
                       ) : <span className="text-slate-800">{e.texte}</span>}
                     </li>

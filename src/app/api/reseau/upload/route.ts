@@ -56,7 +56,8 @@ export async function POST(req: NextRequest) {
   if (!admin) return NextResponse.json({ error: 'Stockage non configuré sur cet environnement.' }, { status: 503 });
 
   try {
-    const formulaire = await req.formData();
+    const formulaire = await req.formData().catch(() => null);
+    if (!formulaire) return NextResponse.json({ error: 'Envoyez une photo (formulaire de fichier).' }, { status: 400 });
     const fichier = formulaire.get('file');
     if (!(fichier instanceof File)) return NextResponse.json({ error: 'Fichier manquant.' }, { status: 400 });
     if (!TYPES.includes(fichier.type)) return NextResponse.json({ error: 'Format non supporté (JPEG, PNG ou WEBP).' }, { status: 400 });

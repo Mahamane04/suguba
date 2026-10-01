@@ -335,7 +335,7 @@ export default function HomePage() {
                     icon: Truck,
                     title: 'Livraison 24h à Bamako',
                     desc: 'Suivi de votre commande du dépôt jusqu\'à votre porte.',
-                    color: 'text-suguba-brand',
+                    color: 'text-suguba-brand-dark',
                     bg: 'bg-suguba-50',
                   },
                   {

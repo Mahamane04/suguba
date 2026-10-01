@@ -24,14 +24,19 @@ test('sans GPS : centre des quartiers, comme avant', () => {
   assert.equal(d.positionClientUtilisee, false);
 });
 
-test('avec GPS : la position exacte remplace le centre du quartier', () => {
+test('avec GPS : la position précise la distance, sans jamais faire payer moins que le quartier déclaré', () => {
+  // Audit du 2026-10-01 (REQ-SEC-GPS-001) : la position vient du navigateur. Un client
+  // qui choisit un quartier lointain mais envoie un point collé au dépôt payait le minimum.
   const depot = Q.positionValide({ lat: 12.6310, lng: -8.0290 });
-  // Client juste à côté du dépôt, alors qu'il a choisi un quartier lointain.
   const client = { lat: 12.6315, lng: -8.0295 };
+  const sansGps = P.calculerCommande(produit, { ...base, positionFournisseur: depot }, r);
   const d = P.calculerCommande(produit, { ...base, positionFournisseur: depot, positionClient: client }, r);
   assert.equal(d.positionClientUtilisee, true);
-  assert.ok(d.distanceLivraisonKm < 0.5, `distance ${d.distanceLivraisonKm}`);
-  assert.equal(d.fraisLivraison, r.livraisonDistanceBamako.fraisMinimum);
+  assert.equal(d.fraisLivraison, sansGps.fraisLivraison, 'pas moins cher que le quartier déclaré');
+  assert.ok(d.fraisLivraison > r.livraisonDistanceBamako.fraisMinimum);
+  // Plus loin que le centre du quartier : la position exacte s'applique.
+  const loin = P.calculerCommande(produit, { ...base, positionFournisseur: depot, positionClient: { lat: 12.75, lng: -7.90 } }, r);
+  assert.ok(loin.fraisLivraison >= sansGps.fraisLivraison);
 });
 
 test('les frais restent bornés entre le minimum et le maximum', () => {

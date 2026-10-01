@@ -897,9 +897,14 @@ function fraisLivraisonDistanceBamako(
 ): { frais: number; distanceKm: number } | null {
   // Position GPS réelle d'abord, sinon le centre du quartier (2026-09-24).
   const a = positionValide(positionFournisseur) || trouverQuartier(quartierFournisseur);
-  const b = positionValide(positionClient) || trouverQuartier(quartierClient);
+  const gps = positionValide(positionClient);
+  const centre = trouverQuartier(quartierClient);
+  const b = gps || centre;
   if (!a || !b) return null;
-  const km = Math.round(distanceKm(a, b) * 10) / 10;
+  // La position GPS vient du navigateur : elle précise la distance, mais ne peut
+  // jamais faire payer moins que le quartier déclaré (audit du 2026-10-01).
+  const brute = gps && centre ? Math.max(distanceKm(a, gps), distanceKm(a, centre)) : distanceKm(a, b);
+  const km = Math.round(brute * 10) / 10;
   const d = r.livraisonDistanceBamako;
   const brut = d.fraisBase + d.fraisParKm * km;
   const frais = Math.round(Math.min(d.fraisMaximum, Math.max(d.fraisMinimum, brut)) / 50) * 50;

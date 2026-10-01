@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { ipClient } from '@/lib/ip-client';
 import { normaliserCodeLien, destinationDuLien } from '@/lib/reseau/codes';
 import { lienParCode, enregistrerClic, empreinteVisiteur, journaliser } from '@/lib/reseau/db';
 import { avancerMissions, produitParSlug } from '@/lib/reseau/missions-db';
@@ -62,7 +63,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ code
   }
 
   const userAgent = req.headers.get('user-agent');
-  const ip = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null;
+  const ip = ipClient(req);
   const visiteur = empreinteVisiteur(ip, userAgent);
 
   // La mesure ne doit jamais retarder ni empêcher la redirection : une erreur

@@ -192,7 +192,7 @@ export default function FormulaireRetrait({
               <span className="flex items-center justify-between">
                 <span>Montant (F)</span>
                 {disponible > 0 && (
-                  <button type="button" onClick={() => setMontant(disponible)} className="text-xs font-bold text-suguba-brand">
+                  <button type="button" onClick={() => setMontant(disponible)} className="text-xs font-bold text-suguba-brand-dark">
                     Tout retirer
                   </button>
                 )}

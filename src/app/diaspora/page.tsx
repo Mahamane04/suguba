@@ -1,5 +1,6 @@
 'use client';
 
+import { orderAccessKey } from '@/lib/order-access-client';
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import ProductImage from '@/components/common/ProductImage';
@@ -148,6 +149,7 @@ export default function DiasporaPortalPage() {
           orderNumber: commande.orderNumber,
           network: 'card',
           phone: commande.customerPhone,
+          accessKey: orderAccessKey(commande.orderNumber),
         }),
       });
       const json = await res.json();

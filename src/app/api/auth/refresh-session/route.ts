@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { verifyActiveSession } from '@/lib/active-session';
 import {
-  verifySessionToken,
   createSessionToken,
   SESSION_COOKIE_NAME,
   SESSION_COOKIE_OPTIONS,
@@ -24,7 +24,8 @@ import { chargerRoles, choisirRoleActif } from '@/lib/profile-roles';
  * changement qui survient une fois dans la vie d'un compte.
  */
 export async function POST(req: NextRequest) {
-  const session = await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value);
+  // Session revérifiée en base (révocation, statut) et pas seulement signée (2026-10-01).
+  const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value, true);
   if (!session) {
     return NextResponse.json({ authenticated: false }, { status: 401 });
   }

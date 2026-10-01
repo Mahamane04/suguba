@@ -1,5 +1,6 @@
 'use client';
 
+import { orderAccessKey } from '@/lib/order-access-client';
 import SugubaLoader from '@/components/ui/SugubaLoader';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -162,7 +163,8 @@ export default function SasPayPaymentDesk({ amount, orderNumber, defaultPhone = 
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         // Le montant n'est pas transmis : il est relu en base côté serveur.
-        body: JSON.stringify({ orderNumber, network: reseau, phone: numero }),
+        // La clé du reçu (si cet appareil l'a) permet de payer avec un autre numéro (2026-10-01).
+        body: JSON.stringify({ orderNumber, network: reseau, phone: numero, accessKey: orderAccessKey(orderNumber) }),
       });
       const json = await res.json();
 

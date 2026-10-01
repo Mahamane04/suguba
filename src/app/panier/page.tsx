@@ -351,7 +351,7 @@ export default function PanierPage() {
               </div>
             </Field>
             {promoSoumis && devis && (
-              <p className={`text-xs font-bold ${devis.codePromoValide ? 'text-suguba-brand' : 'text-rose-600'}`}>
+              <p className={`text-xs font-bold ${devis.codePromoValide ? 'text-suguba-brand-dark' : 'text-rose-600'}`}>
                 {devis.codePromoValide ? `Code appliqué : -${fcfa(devis.remise)}` : 'Ce code n’est pas valable.'}
               </p>
             )}

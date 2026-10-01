@@ -45,6 +45,8 @@ test('TEST-AUD-WEBHOOK : paiement confirmé rapproché atomiquement, panne rées
   reset(); assert.equal((await POST(request())).status, 200);
   assert.deepEqual(calls[1], { name: 'apply_verified_payment', args: {
     p_order_number: 'SG-FICTIF', p_transaction: 'fictional-transaction', p_status: 'SUCCESS',
+    // Montant confirmé par SasPay (2026-10-01) : absent de la vérification simulée.
+    p_montant: null,
   } });
   fault = true; assert.equal((await POST(request())).status, 503);
 });

@@ -161,7 +161,7 @@ export default function B2BPartnerPitchPage() {
               </div>
 
               <div className="p-4 bg-slate-900 text-white rounded-2xl space-y-1">
-                <span className="font-bold text-slate-500 block">Étape 3 : Ventes & Reversements</span>
+                <span className="font-bold text-sky-400 block">Étape 3 : Ventes & Reversements</span>
                 <p className="text-slate-300">
                   Les commandes affluent, Suguba livre et vous encaissez votre chiffre d&apos;affaires sans vous déplacer.
                 </p>

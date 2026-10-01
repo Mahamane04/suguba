@@ -34,17 +34,23 @@ export async function ecrireReglagesReseau(valeurs: unknown): Promise<ReglagesRe
   return error ? null : propres;
 }
 
-async function verser(source: 'mission' | 'parrainage', ref: string, resellerId: string, montant: number, label: string) {
+/**
+ * 'verse' : commission créée ; 'deja' : déjà versée (rejeu, verser_recompense
+ * est idempotent) ; 'erreur' : rien n'a été versé (2026-10-01 : on ne dit plus
+ * au revendeur « ajouté à votre solde » dans ce cas).
+ */
+async function verser(source: 'mission' | 'parrainage', ref: string, resellerId: string, montant: number, label: string): Promise<'verse' | 'deja' | 'erreur'> {
   const a = getSupabaseAdmin();
-  if (!a || montant <= 0) return false;
+  if (!a) return 'erreur';
+  if (montant <= 0) return 'deja';
   const { data, error } = await a.rpc('verser_recompense', {
     p_source: source, p_source_ref: ref, p_reseller_id: resellerId, p_montant: montant, p_label: label,
   });
   if (error) {
     console.error('[RECOMPENSE] versement impossible:', error.code);
-    return false;
+    return 'erreur';
   }
-  return Boolean(data);
+  return data ? 'verse' : 'deja';
 }
 
 export async function participationsAValider() {
@@ -113,6 +119,11 @@ export async function deciderParticipation(
   }
 
   const verse = await verser('mission', part.id, part.reseller_id, montant, `Mission : ${mission?.title || ''}`.slice(0, 120));
+  if (verse === 'erreur') {
+    // Rien versé : la participation redevient « à valider » pour réessayer (FIN-08).
+    await a.from('mission_participants').update({ status: 'completed', validated_at: null }).eq('id', part.id).eq('status', 'validated');
+    return { ok: false, erreur: 'Récompense non versée. Rien n’a été crédité : réessayez.' };
+  }
   await notifier(part.reseller_id, {
     type: 'mission', titre: 'Mission validée 🎉',
     texte: montant > 0
@@ -120,7 +131,7 @@ export async function deciderParticipation(
       : `« ${mission?.title} » est validée.`,
     lien: montant > 0 ? '/reseller/payouts' : '/reseller/missions',
   });
-  return { ok: true, verse: verse ? montant : 0 };
+  return { ok: true, verse: verse === 'verse' ? montant : 0 };
 }
 
 export async function parrainagesAValider() {
@@ -179,6 +190,11 @@ export async function deciderParrainage(
   if (decision === 'rejected') return { ok: true, verse: 0 };
 
   const verse = await verser('parrainage', ref.id, ref.referrer_id, montant, 'Prime de parrainage');
+  if (verse === 'erreur') {
+    // Rien versé : le parrainage redevient « en attente » pour réessayer (FIN-08, 2026-10-01).
+    await a.from('referrals').update({ status: 'pending', reward_amount: null, converted_at: null }).eq('id', parrainageId).eq('status', decision);
+    return { ok: false, erreur: 'Prime non versée. Rien n’a été crédité : réessayez.' };
+  }
   if (montant > 0) {
     await notifier(ref.referrer_id, {
       type: 'parrainage', titre: 'Prime de parrainage versée',
@@ -186,5 +202,5 @@ export async function deciderParrainage(
       lien: '/reseller/payouts',
     });
   }
-  return { ok: true, verse: verse ? montant : 0 };
+  return { ok: true, verse: verse === 'verse' ? montant : 0 };
 }

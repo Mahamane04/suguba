@@ -5,7 +5,7 @@ import type { Order } from '@/types';
 import { completerReglages } from './pricing';
 import { calculerLignesPanier, normaliserPanier, type PanierInput } from './cart-input';
 import { genererNumeroCommande } from './order-number';
-import { OrderCreationError, recu } from './order-create';
+import { OrderCreationError, recu, plafondCommandesEnAttente } from './order-create';
 import { depotsFournisseurs } from './depot-fournisseur';
 import { prixEnregistres } from './prix-revendeur';
 import { remiseDuProduit } from './offre';
@@ -64,6 +64,7 @@ export async function creerPanier(admin: SupabaseClient | null, value: unknown, 
     const orders = (previous.receipts as any[]).map(recu);
     return { created: false, cartId: previous.cart_id, orders, total: orders.reduce((s, o) => s + o.totalAmount, 0) };
   }
+  await plafondCommandesEnAttente(admin, input.customerPhone);
 
   // Produits : un par un (20 au plus), avec le même filtre qu'une commande seule.
   const produits: any[] = [];

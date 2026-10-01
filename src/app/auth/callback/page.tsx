@@ -148,7 +148,7 @@ export default function AuthCallbackPage() {
               <ShieldAlert className="w-6 h-6" />
             </div>
             <p className="text-sm font-semibold text-red-600">{error}</p>
-            <a href="/login" className="inline-block text-xs font-bold text-suguba-brand hover:underline">
+            <a href="/login" className="inline-block text-xs font-bold text-suguba-brand-dark hover:underline">
               Retour à la connexion
             </a>
           </>

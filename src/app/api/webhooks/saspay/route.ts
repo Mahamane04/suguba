@@ -126,6 +126,8 @@ async function traiterCommande(
   if (!verif.statut || verif.statut === 'PENDING') return NextResponse.json({ status: 'OK', ignore: 'paiement en cours' });
   const { error } = await admin.rpc('apply_verified_payment', {
     p_order_number: commande.order_number, p_transaction: idTransaction, p_status: verif.statut,
+    // Montant confirmé par SasPay : un paiement inférieur à la demande ne marque pas la commande payée (2026-10-01).
+    p_montant: Number.isFinite(verif.montant) && Number(verif.montant) > 0 ? verif.montant : null,
   });
   if (error) return NextResponse.json({ error: 'Rapprochement non enregistré.' }, { status: 503 });
   return NextResponse.json({ status: 'OK', traite: 'commande' });

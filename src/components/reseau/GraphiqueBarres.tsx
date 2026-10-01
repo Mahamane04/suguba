@@ -101,8 +101,8 @@ export default function GraphiqueBarres({
                 {formater(points[iMax].valeur)}
               </text>
             )}
-            <text x={0} y={H + 13} fontSize={9} fill="#64748b">{jourCourt(points[0]?.jour || '')}</text>
-            <text x={L} y={H + 13} fontSize={9} fill="#64748b" textAnchor="end">{jourCourt(points[points.length - 1]?.jour || '')}</text>
+            <text x={0} y={H + 13} fontSize={9} fill="#5f6f86">{jourCourt(points[0]?.jour || '')}</text>
+            <text x={L} y={H + 13} fontSize={9} fill="#5f6f86" textAnchor="end">{jourCourt(points[points.length - 1]?.jour || '')}</text>
           </svg>
           {actif !== null && points[actif] && (
             <div

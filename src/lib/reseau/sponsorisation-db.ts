@@ -97,15 +97,13 @@ export async function demanderSponsorisation(params: {
   const a = getSupabaseAdmin();
   if (!a) return null;
 
-  let budget = 0;
-  let fin: string | null = null;
-  if (params.packId) {
-    const { data: pack } = await a.from('sponsorship_plans').select('*').eq('id', params.packId).maybeSingle();
-    if (pack) {
-      budget = Number(pack.price) || 0;
-      fin = finDuPack(new Date(), Number(pack.duration_days) || 7);
-    }
-  }
+  // Une formule est obligatoire (FIN-07, 2026-10-01) : sans elle, la demande
+  // valait 0 F et ne s'arrêtait jamais une fois activée.
+  if (!params.packId) return null;
+  const { data: pack } = await a.from('sponsorship_plans').select('*').eq('id', params.packId).maybeSingle();
+  if (!pack || !(Number(pack.price) > 0)) return null;
+  const budget = Number(pack.price);
+  const fin: string | null = finDuPack(new Date(), Number(pack.duration_days) || 7);
 
   const { data, error } = await a
     .from('sponsorships')

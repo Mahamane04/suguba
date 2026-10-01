@@ -58,6 +58,10 @@ module.exports = {
         sans:  ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
       },
       colors: {
+        /* Audit du 2026-10-01 (WCAG 1.4.3) : slate-500 d'origine (#64748b) n'atteint que
+           4,35:1 sur les fonds clairs Suguba (#f2f6f1, #f1f5f9). #5f6f86, visuellement très
+           proche, passe partout au-dessus de 4,5:1 (4,67 à 5,12). */
+        slate: { 500: '#5f6f86' },
         suguba: {
           /* Vert Mali — identique au landing sugubaml.com */
           50:      '#f0fdf4',

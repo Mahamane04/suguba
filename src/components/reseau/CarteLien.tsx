@@ -60,6 +60,7 @@ export default function CarteLien({
         <input
           readOnly
           value={url}
+          aria-label="Lien à partager"
           onFocus={(e) => e.currentTarget.select()}
           className="flex-1 min-w-0 h-11 rounded-2xl border border-slate-200 bg-slate-50 px-3 text-xs text-slate-700 font-mono"
         />

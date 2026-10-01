@@ -52,6 +52,9 @@ export async function POST(req: NextRequest) {
     if (!data) return NextResponse.json({ error: 'Ce produit ne fait pas partie de votre catalogue.' }, { status: 403 });
   }
 
+  if (typeof corps.packId !== 'string' || !corps.packId) {
+    return NextResponse.json({ error: 'Choisissez une formule de sponsorisation.' }, { status: 400 });
+  }
   const sponsorisation = await demanderSponsorisation({
     supplierId: fournisseurId,
     packId: typeof corps.packId === 'string' ? corps.packId : null,

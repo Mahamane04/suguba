@@ -323,7 +323,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               {typeOffreLibelle && <span className="inline-flex px-2.5 py-0.5 rounded-full bg-suguba-citron text-suguba-profond text-xs font-bold">{typeOffreLibelle}</span>}
               <h1 className="text-xl font-bold text-slate-900 leading-tight">{product.name}</h1>
               <div className="flex items-center justify-between gap-3">
-                <p className="text-2xl font-bold text-suguba-brand whitespace-nowrap">
+                <p className="text-2xl font-bold text-suguba-brand-dark whitespace-nowrap">
                   {aPartirDe && <span className="block text-xs font-bold text-slate-500">À partir de</span>}
                   {Math.round(prixAffiche).toLocaleString('fr-FR')} <span className="text-base">FCFA</span>
                   {unite && <span className="block text-sm font-semibold text-slate-600">{unite}</span>}

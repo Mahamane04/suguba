@@ -39,6 +39,22 @@ async function postInterne(req: NextRequest) {
       return NextResponse.json({ error: 'profileId et decision (approve|reject) requis.' }, { status: 400 });
     }
 
+    // Audit du 2026-10-01 : un responsable revendeurs pouvait verrouiller ou
+    // rouvrir n'importe quel compte, y compris un super admin, et réactiver
+    // un rôle admin retiré. Les comptes de l'équipe se gèrent dans Équipe.
+    const ROLES_EXAMINABLES = ['reseller', 'supplier', 'driver', 'diaspora', 'customer'];
+    if (role && !ROLES_EXAMINABLES.includes(role)) {
+      return NextResponse.json({ error: 'Ce rôle ne s’examine pas ici.' }, { status: 400 });
+    }
+    const [{ data: cible }, { data: membre }] = await Promise.all([
+      admin.from('profiles').select('role').eq('id', profileId).maybeSingle(),
+      admin.from('admin_team_members').select('profile_id').eq('profile_id', profileId).maybeSingle(),
+    ]);
+    if (!cible) return NextResponse.json({ error: 'Compte introuvable.' }, { status: 404 });
+    if (cible.role === 'admin' || membre) {
+      return NextResponse.json({ error: 'Les comptes de l’équipe se gèrent dans Équipe.' }, { status: 403 });
+    }
+
     const nextStatus = decision === 'approve' ? 'active' : 'rejected';
 
     // Validation PAR RÔLE : c'est tout l'intérêt du multi-rôle. Sans le

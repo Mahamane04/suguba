@@ -1,4 +1,7 @@
 import { randomUUID } from 'node:crypto';
+import { SESSION_COOKIE_NAME } from '@/lib/session';
+import { verifyActiveSession } from '@/lib/active-session';
+import { hasOrderReceiptAccess } from '@/lib/order-access';
 import { NextRequest, NextResponse } from 'next/server';
 import { initierPayin, estReseau, estReseauGlobal, RESEAUX_MALI, RESEAUX_GLOBAUX } from '@/lib/saspay';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
@@ -25,7 +28,7 @@ import { calculerFraisPaiement, completerFraisPaiement, type MoyenPaiementClient
  */
 export async function POST(req: NextRequest) {
   try {
-    const { orderNumber, network, phone } = await req.json().catch(() => ({}));
+    const { orderNumber, network, phone, accessKey } = await req.json().catch(() => ({}));
 
     if (!orderNumber || typeof orderNumber !== 'string') {
       return NextResponse.json({ error: 'Numéro de commande requis.' }, { status: 400 });
@@ -40,12 +43,16 @@ export async function POST(req: NextRequest) {
 
     // Tarifs SasPay enregistrés (tenus à jour en arrière-plan) : la même
     // source que l'écran du client, et jamais d'attente de SasPay ici.
-    const { reglages } = await chargerReglages();
+    // Réglages illisibles : on refuse plutôt que de facturer des frais par défaut (2026-10-01).
+    const etatReglages = await chargerReglages(true).catch(() => null);
 
-    // Carte bancaire (C3) : refusée tant que l'admin ne l'a pas ouverte après un vrai paiement test.
-    if (estReseauGlobal(network) && network === 'card' && reglages.paiementCarteVerifie !== true) {
+    // Carte bancaire (C3) : refusée tant que l'admin ne l'a pas ouverte après un vrai paiement test
+    // (y compris quand l'ouverture n'est pas vérifiable).
+    if (estReseauGlobal(network) && network === 'card' && etatReglages?.reglages.paiementCarteVerifie !== true) {
       return NextResponse.json({ error: 'Le paiement par carte n’est pas encore ouvert. Votre proche peut payer à la réception.' }, { status: 409 });
     }
+    if (!etatReglages) return NextResponse.json({ error: 'Paiement indisponible un instant. Réessayez.' }, { status: 503 });
+    const { reglages } = etatReglages;
 
     const admin = getSupabaseAdmin();
     if (!admin) {
@@ -54,7 +61,7 @@ export async function POST(req: NextRequest) {
 
     const { data: commande } = await admin
       .from('orders')
-      .select('order_number, product_name, quantity, total_amount, status, payment_collected, customer_name, customer_phone, payment_transaction_id')
+      .select('order_number, product_name, quantity, total_amount, status, payment_collected, customer_name, customer_phone, payment_transaction_id, reseller_id')
       .eq('order_number', orderNumber.trim())
       .maybeSingle();
 
@@ -83,6 +90,20 @@ export async function POST(req: NextRequest) {
     const telephone = (typeof phone === 'string' && phone.trim()) || commande.customer_phone;
     if (!telephone) {
       return NextResponse.json({ error: 'Numéro de téléphone du payeur requis.' }, { status: 400 });
+    }
+
+    // Qui peut lancer le paiement (audit du 2026-10-01) : vers le numéro de la
+    // commande, ou avec la clé secrète du reçu (payeur différent : un proche, la
+    // diaspora), ou le revendeur de la commande / l'équipe. Avant, un simple
+    // numéro de commande suffisait pour envoyer une demande de paiement vers
+    // n'importe quel téléphone.
+    const huitChiffres = (t: unknown) => String(t || '').replace(/\D/g, '').slice(-8);
+    if (huitChiffres(telephone) !== huitChiffres(commande.customer_phone) && !(await hasOrderReceiptAccess(admin, commande.order_number, accessKey))) {
+      const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value);
+      const autorise = session && (session.role === 'admin' || (session.role === 'reseller' && session.uid === commande.reseller_id));
+      if (!autorise) {
+        return NextResponse.json({ error: 'Pour payer avec un autre numéro, ouvrez cette commande depuis votre reçu.' }, { status: 403 });
+      }
     }
 
     const { data: tentative, error: reservationError } = await admin.rpc('begin_order_payment', {

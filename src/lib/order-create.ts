@@ -19,6 +19,21 @@ function indisponible(): never {
   throw new OrderCreationError('Enregistrement indisponible. Réessayez avec le même formulaire.', 503);
 }
 
+/**
+ * Au plus N commandes en attente d'appel par téléphone (audit du 2026-10-01) :
+ * sans compte ni limite, une boucle pouvait vider le stock d'un produit
+ * (réservé dès la commande) et noyer la file d'appel.
+ */
+export const MAX_COMMANDES_EN_ATTENTE = 5;
+export async function plafondCommandesEnAttente(admin: any, telephone: string) {
+  const { count, error } = await admin.from('orders').select('id', { count: 'exact', head: true })
+    .eq('customer_phone', telephone).eq('status', 'pending_call');
+  if (error) return; // lecture impossible : la création décidera (pas de blocage aveugle)
+  if ((count || 0) >= MAX_COMMANDES_EN_ATTENTE) {
+    throw new OrderCreationError(`Vous avez déjà ${MAX_COMMANDES_EN_ATTENTE} commandes en attente de confirmation. Suguba vous appelle : attendez cet appel avant d’en passer une nouvelle.`, 429);
+  }
+}
+
 /** Ne publie ni les coûts ni le snapshot économique renvoyés par PostgreSQL. */
 export function recu(row: Record<string, any>): Order {
   const devis = row.pricing_snapshot.devis as Devis;
@@ -71,6 +86,7 @@ export async function creerCommande(admin: SupabaseClient | null, value: unknown
     }
     return { created: false, order: recu(previous.receipt) };
   }
+  await plafondCommandesEnAttente(admin, input.customerPhone);
 
   // `*` : lit mode_prix / prix_conseille dès que la base les a, sans casser avant.
   const { data: product, error: productError } = await admin.from('products')

@@ -15,10 +15,9 @@
 const CLE = 'suguba_apres_connexion';
 const DUREE = 30 * 60 * 1000;
 
-export function cheminInterne(valeur: string | null | undefined): string | null {
-  if (!valeur || !valeur.startsWith('/') || valeur.startsWith('//') || valeur.includes('\\')) return null;
-  return valeur.slice(0, 200);
-}
+// Règle commune (2026-10-01) : refuse aussi `/\t/site.com`, que le navigateur lit `//site.com`.
+import { cheminInterne } from './chemin-interne';
+export { cheminInterne };
 
 export function memoriserApresConnexion(valeur: string | null) {
   const chemin = cheminInterne(valeur);

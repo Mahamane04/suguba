@@ -125,6 +125,8 @@ export interface ResultatInitiation {
   urlCheckout?: string;
   erreur?: string;
   code?: string;
+  /** Refus net de SasPay (réponse 4xx) : rien n'a été créé chez lui (2026-10-01). */
+  definitif?: boolean;
 }
 
 export interface ResultatVerification {
@@ -293,7 +295,7 @@ export async function initierPayout(d: DemandePayout): Promise<ResultatInitiatio
     if (!res.ok) {
       const { erreur, code } = messageErreur(json, 'Versement refusé par SasPay.');
       console.error('[SASPAY] Initiation payout refusée:', res.status, code, erreur);
-      return { ok: false, erreur, code };
+      return { ok: false, erreur, code, definitif: res.status >= 400 && res.status < 500 };
     }
 
     const id = json.id ?? json.data?.id;

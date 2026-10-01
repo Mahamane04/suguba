@@ -86,6 +86,8 @@ export async function appliquerMajCommande(
     }
   }
   const { data: updated, error } = await admin.from('orders').update(maj).eq('id', existing.id).eq('status', existing.status).select('id').maybeSingle();
+  // Garde en base (2026-10-01) : une commande livrée garde son livreur (l'argent qu'il détient en dépend).
+  if (error && /LIVREUR_FIGE/.test(String(error.message))) return { ok: false, status: 409, error: 'Le livreur d’une commande livrée ne peut plus être changé.' };
   if (error) return { ok: false, status: 500, error: 'Mise à jour non confirmée. Actualisez puis réessayez.' };
   if (!updated) return { ok: false, status: 409, error: 'Commande modifiée ailleurs. Actualisez.' };
   // Le trigger de la migration-audit-integrite effectue les effets métier atomiquement.

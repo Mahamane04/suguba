@@ -53,6 +53,7 @@ export async function GET(req: NextRequest) {
   if (verif.statut && verif.statut !== 'PENDING') {
     const { error } = await admin.rpc('apply_verified_payment', {
       p_order_number: commande.order_number, p_transaction: commande.payment_transaction_id, p_status: verif.statut,
+      p_montant: Number.isFinite(verif.montant) && Number(verif.montant) > 0 ? verif.montant : null,
     });
     if (error) return NextResponse.json({ error: 'Paiement en cours de rapprochement. Réessayez.', paye: false }, { status: 503 });
   }

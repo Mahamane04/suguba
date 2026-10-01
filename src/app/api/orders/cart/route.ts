@@ -33,6 +33,9 @@ export async function POST(req: NextRequest) {
       const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value).catch(() => null);
       await rattacherCommandes(getSupabaseAdmin(), session, resultat.orders.map((o) => ({ id: o.id, resellerId: o.resellerId })));
     }
+    // La commission est l'affaire du revendeur : jamais dans le reçu d'un acheteur (2026-10-01).
+    const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value);
+    for (const o of resultat.orders) if (session?.uid !== o.resellerId) o.resellerCommission = 0;
     return NextResponse.json({ success: true, ...resultat }, { status: resultat.created ? 201 : 200, headers });
   } catch (error) {
     return NextResponse.json({

@@ -42,6 +42,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Jeton Supabase invalide.' }, { status: 401 });
     }
 
+    // Adresse non confirmée : refusée (2026-10-01). Sans ce contrôle, un compte
+    // ouvert à l'avance avec l'adresse d'un autre (inscription sans
+    // confirmation) se rattachait à son profil Suguba existant.
+    if (!authUser.user.email_confirmed_at && !(authUser.user as { confirmed_at?: string }).confirmed_at) {
+      return NextResponse.json({ error: 'Confirmez d’abord votre adresse e-mail avec le code reçu.' }, { status: 403 });
+    }
     const email = authUser.user.email.toLowerCase();
     const authUserId = authUser.user.id;
 
@@ -58,6 +64,10 @@ export async function POST(req: NextRequest) {
     let { data: profile } = await admin.from('profiles').select('*').eq('auth_user_id', authUserId).maybeSingle();
     if (!profile) {
       const { data: byEmail } = await admin.from('profiles').select('*').eq('email', email).maybeSingle();
+      // Profil déjà relié à un AUTRE compte de connexion : jamais de prise de contrôle par l'adresse.
+      if (byEmail?.auth_user_id && byEmail.auth_user_id !== authUserId) {
+        return NextResponse.json({ error: 'Cette adresse est déjà reliée à un autre compte. Contactez Suguba.' }, { status: 409 });
+      }
       profile = byEmail || null;
     }
 

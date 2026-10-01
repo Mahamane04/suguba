@@ -32,6 +32,8 @@ import { CODE_MOYEN_RETRAIT, recuRetrait } from '@/lib/retraits-affichage';
  */
 export async function POST(req: NextRequest) {
   const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value);
+  // Aperçu admin (identité de test partagée) : jamais de retrait réel (2026-10-01).
+  if (session?.apercu) return NextResponse.json({ definitive: true, error: 'Retrait impossible en aperçu.' }, { status: 403 });
   if (!session || session.role !== 'reseller' || session.status !== 'active') {
     return NextResponse.json({ error: 'Session revendeur active requise.' }, { status: 401 });
   }

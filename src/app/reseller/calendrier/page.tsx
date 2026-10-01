@@ -207,7 +207,7 @@ export default function CalendrierPage() {
         <div className="space-y-4">
           {jours.map(([jour, contenu]) => (
             <section key={jour} className="space-y-2">
-              <h2 className={`text-xs font-bold uppercase tracking-wide px-1 ${jour === aujourdhui() ? 'text-suguba-brand' : jour < aujourdhui() ? 'text-slate-400' : 'text-slate-600'}`}>
+              <h2 className={`text-xs font-bold uppercase tracking-wide px-1 ${jour === aujourdhui() ? 'text-suguba-brand-dark' : jour < aujourdhui() ? 'text-slate-400' : 'text-slate-600'}`}>
                 {libelleJour(jour)}
               </h2>
               {contenu.echeances.map((e) => (

@@ -44,7 +44,9 @@ async function postInterne(req: NextRequest) {
   let avance = false;
   if (com?.order_id) {
     const { data: recus, error: e } = await admin.rpc('fonds_recus', { p_order_id: com.order_id });
-    avance = !e && recus === false;
+    // État des fonds illisible : on refuse plutôt que de débloquer sans motif (2026-10-01).
+    if (e) return NextResponse.json({ error: 'Impossible de vérifier si l’argent de la vente est reçu. Réessayez.' }, { status: 503 });
+    avance = recus === false;
   }
   if (avance && motif.length < 5) {
     return NextResponse.json({ error: 'Les espèces de cette vente ne sont pas encore reversées à Suguba : indiquez le motif de l’avance.', motifRequis: true }, { status: 409 });

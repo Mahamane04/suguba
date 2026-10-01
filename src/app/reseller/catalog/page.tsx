@@ -36,7 +36,9 @@ export default function ResellerCatalogPage() {
   const [selectedProductForOrder, setSelectedProductForOrder] = useState<Product | null>(null);
 
   // Code revendeur et sélection de la boutique /r/<code>.
-  const [codeRevendeur, setCodeRevendeur] = useState<string | null>(null);
+  // undefined = en cours de chargement : la carte « Ma boutique » garde sa place
+  // (sinon elle apparaît après coup et pousse tout le catalogue — CLS, audit 2026-10-01).
+  const [codeRevendeur, setCodeRevendeur] = useState<string | null | undefined>(undefined);
   const [maSelection, setMaSelection] = useState<Set<string>>(new Set());
   const [enCours, setEnCours] = useState<string | null>(null);
   const [erreurBoutique, setErreurBoutique] = useState('');
@@ -44,8 +46,8 @@ export default function ResellerCatalogPage() {
   useEffect(() => {
     fetch('/api/reseller/me')
       .then((r) => (r.ok ? r.json() : null))
-      .then((j) => j?.reseller?.referralCode && setCodeRevendeur(j.reseller.referralCode))
-      .catch(() => {});
+      .then((j) => setCodeRevendeur(j?.reseller?.referralCode || null))
+      .catch(() => setCodeRevendeur(null));
     fetch('/api/reseller/shop')
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => j?.articles && setMaSelection(new Set(j.articles)))
@@ -130,8 +132,8 @@ export default function ResellerCatalogPage() {
         </div>
 
         {/* Ma boutique : la vitrine publique composée depuis ce catalogue. */}
-        {codeRevendeur && (
-          <div className="bg-white border border-slate-200 rounded-3xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        {codeRevendeur !== null && (
+          <div className="bg-white border border-slate-200 rounded-3xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3" aria-busy={codeRevendeur === undefined}>
             <div className="flex items-center gap-3">
               <Store className="w-6 h-6 text-slate-700 shrink-0" />
               <div>
@@ -141,10 +143,14 @@ export default function ResellerCatalogPage() {
                 </p>
               </div>
             </div>
-            <Button href={`/r/${codeRevendeur}`} target="_blank" variant="secondary" size="sm">
-              <ExternalLink className="w-4 h-4" />
-              <span>Voir ma boutique</span>
-            </Button>
+            {codeRevendeur ? (
+              <Button href={`/r/${codeRevendeur}`} target="_blank" variant="secondary" size="sm">
+                <ExternalLink className="w-4 h-4" />
+                <span>Voir ma boutique</span>
+              </Button>
+            ) : (
+              <span className="inline-block h-10 w-40 rounded-full bg-slate-200 animate-pulse" role="status" aria-label="Chargement de votre boutique" />
+            )}
           </div>
         )}
         {erreurBoutique && (
@@ -166,6 +172,7 @@ export default function ResellerCatalogPage() {
           <div className="grid grid-cols-2 gap-2">
             <ChoicePicker
               id="tri-catalogue"
+              ariaLabel="Trier les produits"
               valeur={tri}
               onChange={(v) => setTri(v as typeof tri)}
               choix={[
@@ -178,6 +185,7 @@ export default function ResellerCatalogPage() {
             />
             <ChoicePicker
               id="fournisseur-catalogue"
+              ariaLabel="Filtrer par fournisseur"
               valeur={fournisseur}
               onChange={setFournisseur}
               choix={[{ valeur: 'all', libelle: 'Tous les fournisseurs' }, ...fournisseurs.map((f) => ({ valeur: f, libelle: f }))]}
@@ -246,7 +254,7 @@ export default function ResellerCatalogPage() {
                       disabled={enCours === product.id}
                       className={`h-8 rounded-xl border text-xs font-bold inline-flex items-center justify-center gap-1 transition-colors disabled:opacity-60 ${
                         maSelection.has(product.id)
-                          ? 'bg-suguba-brand/10 border-suguba-brand/30 text-suguba-brand'
+                          ? 'bg-suguba-brand/10 border-suguba-brand/30 text-suguba-brand-dark'
                           : 'border-slate-200 text-slate-700 hover:bg-slate-50'
                       }`}
                     >

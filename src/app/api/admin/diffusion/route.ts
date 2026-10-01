@@ -1,4 +1,5 @@
 import { avecJournal } from '@/lib/admin/journal-route';
+import { cheminInterne } from '@/lib/chemin-interne';
 import { NextRequest, NextResponse } from 'next/server';
 import { sessionAvecRole } from '@/lib/reseau/route-session';
 import { adminPeut } from '@/lib/reseau/db';
@@ -55,7 +56,7 @@ async function postInterne(req: NextRequest) {
   const cible: Cible | null = corps.cible === 'tous' || CIBLES.includes(corps.cible) ? corps.cible : null;
   const titre = typeof corps.titre === 'string' ? corps.titre.trim() : '';
   const texte = typeof corps.texte === 'string' ? corps.texte.trim() : '';
-  const lien = typeof corps.lien === 'string' && corps.lien.startsWith('/') && !corps.lien.startsWith('//') ? corps.lien : null;
+  const lien = cheminInterne(typeof corps.lien === 'string' ? corps.lien : null);
   if (!cible) return NextResponse.json({ error: 'Choisissez à qui envoyer le message.' }, { status: 400 });
   if (titre.length < 3) return NextResponse.json({ error: 'Écrivez un titre d’au moins 3 caractères.' }, { status: 400 });
 

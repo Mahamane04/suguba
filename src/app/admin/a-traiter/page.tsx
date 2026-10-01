@@ -140,7 +140,7 @@ export default function ATraiterPage() {
                         <span className={`text-xs ${COULEUR_URGENCE[niveau]}`}>{anciennete(t.depuis)}</span>
                         {t.montant ? <span className="text-xs font-semibold text-slate-700 tabular-nums">{fcfa(t.montant)}</span> : null}
                       </div>
-                      <button type="button" onClick={() => setOuverte(t.dossier)} className="block text-left text-sm font-bold text-slate-900 hover:underline truncate max-w-full">{t.titre}</button>
+                      <button type="button" onClick={() => setOuverte(t.dossier)} className="block min-h-6 text-left text-sm font-bold text-slate-900 hover:underline truncate max-w-full">{t.titre}</button>
                       {t.detail && <p className="text-xs text-slate-500 truncate">{t.detail}</p>}
                       <p className="text-xs text-slate-600">{t.action} · Responsable : <strong>{moi ? 'vous' : t.responsable?.nom || 'personne'}</strong></p>
                     </div>

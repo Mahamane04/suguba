@@ -210,7 +210,7 @@ export default function ProductCard({
 
       <div className="p-3 flex-1 flex flex-col gap-1.5">
         <Link href={lien} className="block">
-          <h3 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2 min-h-[2.5rem] hover:text-suguba-brand transition-colors">
+          <h3 className="text-sm font-bold text-slate-900 leading-snug line-clamp-2 min-h-[2.5rem] hover:text-suguba-brand-dark transition-colors">
             {produit.nom}
           </h3>
         </Link>

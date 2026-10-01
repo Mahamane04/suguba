@@ -1,4 +1,5 @@
 import { avecJournal } from '@/lib/admin/journal-route';
+import { randomInt } from 'node:crypto';
 import { verifyActiveSession } from '@/lib/active-session';
 import { NextRequest, NextResponse } from 'next/server';
 import { refusSansPermissionAdmin } from '@/lib/reseau/permission-admin';
@@ -168,7 +169,7 @@ async function patchInterne(req: NextRequest) {
         return NextResponse.json({ error: 'Livreur introuvable.' }, { status: 404 });
       }
 
-      const swapOtp = String(Math.floor(1000 + Math.random() * 9000));
+      const swapOtp = String(randomInt(1000, 10000));
       const { error } = await admin.from('sav_tickets').update({
         status: 'courier_dispatched',
         driver_id: profil.id,

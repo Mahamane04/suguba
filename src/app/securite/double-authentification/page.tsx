@@ -1,5 +1,6 @@
 'use client';
 
+import { cheminInterne } from '@/lib/chemin-interne';
 import SugubaLoader from '@/components/ui/SugubaLoader';
 
 import React, { Suspense, useEffect, useState } from 'react';
@@ -25,7 +26,8 @@ function Contenu() {
   const params = useSearchParams();
   const suiteBrute = params.get('suite') || '';
   // Seulement un chemin interne : jamais une redirection vers un autre site.
-  const suite = suiteBrute.startsWith('/') && !suiteBrute.startsWith('//') ? suiteBrute : '/auth/callback';
+  // Chemin interne uniquement (2026-10-01) : `/\site.com` passait le contrôle précédent.
+  const suite = cheminInterne(suiteBrute) || '/auth/callback';
   const [etat, setEtat] = useState<Etat>('chargement');
   const [facteur, setFacteur] = useState<string | null>(null);
   const [qr, setQr] = useState<string | null>(null);

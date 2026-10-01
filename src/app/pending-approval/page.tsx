@@ -145,7 +145,7 @@ export default function PendingApprovalPage() {
           </Link>
           <button
             onClick={handleLogout}
-            className="w-full py-3 rounded-2xl text-gray-400 hover:text-gray-600 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors"
+            className="w-full py-3 rounded-2xl text-gray-500 hover:text-gray-700 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors"
           >
             <LogOut className="w-3.5 h-3.5" />
             Se déconnecter

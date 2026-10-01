@@ -22,6 +22,8 @@ import { CODE_MOYEN_RETRAIT, recuRetrait } from '@/lib/retraits-affichage';
 export async function POST(req: NextRequest) {
   const acces = await exigerDroitFournisseur(req, 'retraits');
   if (!acces.ok) return NextResponse.json({ definitive: true, error: acces.erreur }, { status: acces.statut });
+  // Aperçu admin (identité de test partagée) : jamais de retrait réel (2026-10-01).
+  if (acces.session.apercu) return NextResponse.json({ definitive: true, error: 'Retrait impossible en aperçu.' }, { status: 403 });
   if (acces.session.status !== 'active') {
     return NextResponse.json({ definitive: true, error: 'Votre compte fournisseur doit être validé avant un retrait.' }, { status: 403 });
   }

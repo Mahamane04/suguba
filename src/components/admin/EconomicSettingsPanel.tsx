@@ -1374,9 +1374,12 @@ function InfoBulle({ texte }: { texte: string }) {
         aria-label="Explication de ce réglage"
         aria-expanded={ouvert}
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOuvert((o) => !o); }}
-        className="w-4 h-4 rounded-full bg-slate-200 text-slate-600 hover:bg-suguba-menthe hover:text-suguba-profond inline-flex items-center justify-center shrink-0"
+        className="group w-6 h-6 -m-1 rounded-full inline-flex items-center justify-center shrink-0"
       >
-        <Info className="w-3 h-3" strokeWidth={2.5} />
+        {/* Zone tactile de 24 px (WCAG 2.5.8), pastille visible inchangée. */}
+        <span className="w-4 h-4 rounded-full bg-slate-200 text-slate-600 group-hover:bg-suguba-menthe group-hover:text-suguba-profond inline-flex items-center justify-center">
+          <Info className="w-3 h-3" strokeWidth={2.5} />
+        </span>
       </button>
       {ouvert && (
         <span role="tooltip" className="absolute z-20 left-0 top-6 w-60 max-w-[80vw] rounded-xl bg-slate-900 text-white text-xs font-normal leading-snug p-2.5 shadow-lg">

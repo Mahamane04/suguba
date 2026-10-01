@@ -97,7 +97,7 @@ export default function BoutiqueProduits({
                 className="w-full flex items-center justify-between px-4 sm:px-5 py-3.5 text-left"
               >
                 <span className="font-bold text-sm text-slate-900">
-                  {categorie} <span className="text-slate-400 font-bold">({items.length})</span>
+                  {categorie} <span className="text-slate-500 font-bold">({items.length})</span>
                 </span>
                 <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${repliee ? '' : 'rotate-180'}`} />
               </button>

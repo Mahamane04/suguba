@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { ipClient } from '@/lib/ip-client';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { SESSION_COOKIE_NAME, verifySessionToken } from '@/lib/session';
 import { debutVisite, qualifierVisite } from '@/lib/reseau/resultats-db';
@@ -20,7 +21,7 @@ export async function POST(req: NextRequest) {
   if (!admin) return NextResponse.json({ jeton: null });
   const corps = await req.json().catch(() => ({}));
   const visiteur = {
-    ip: req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || null,
+    ip: ipClient(req),
     userAgent: req.headers.get('user-agent'),
     sessionUid: (await verifySessionToken(req.cookies.get(SESSION_COOKIE_NAME)?.value).catch(() => null))?.uid || null,
   };

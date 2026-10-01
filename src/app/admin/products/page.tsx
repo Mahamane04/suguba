@@ -248,7 +248,7 @@ export default function AdminProductsPage() {
                       {p.partProposee > 0 ? ' (part choisie par le fournisseur)' : ' (calculée par Suguba)'}
                     </p>
                     <p className="text-xs text-slate-500">
-                      <span className={p.statut === 'approved' ? 'text-suguba-brand font-bold' : p.statut === 'rejected' ? 'text-rose-600 font-bold' : 'text-amber-700 font-bold'}>
+                      <span className={p.statut === 'approved' ? 'text-suguba-brand-dark font-bold' : p.statut === 'rejected' ? 'text-rose-600 font-bold' : 'text-amber-700 font-bold'}>
                         {LIBELLE_STATUT[p.statut] || p.statut}
                       </span>
                       {' • '}{p.fournisseur}

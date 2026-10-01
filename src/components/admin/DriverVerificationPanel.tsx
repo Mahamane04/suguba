@@ -147,7 +147,7 @@ export default function DriverVerificationPanel({onFait}: {onFait?: () => void} 
                 </div>
                 <span
                   className={`shrink-0 px-2.5 py-1 rounded-full text-xs font-bold ${
-                    l.verifie ? 'bg-suguba-profond text-white' : 'bg-amber-500 text-white'
+                    l.verifie ? 'bg-suguba-profond text-white' : 'bg-amber-100 text-amber-800'
                   }`}
                 >
                   {l.verifie ? 'VÉRIFIÉ' : 'À RENCONTRER'}

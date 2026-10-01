@@ -1,5 +1,5 @@
 {
- "majLe": "2026-09-30",
+ "majLe": "2026-10-01",
  "roles": [
   {
    "cle": "visiteur",
@@ -190,6 +190,31 @@
   }
  ],
  "journal": [
+  {
+   "date": "2026-10-01",
+   "titre": "Audit intégral : sécurité, argent, parcours et interface",
+   "demande": "« Effectue un audit approfondi de bout en bout, corrige les problèmes détectés et vérifie chaque correction » — tests avec écritures en environnement isolé, production en lecture seule, pas de déploiement sans demande, rapport dans docs/qa et REPRISE.md à jour.",
+   "realise": [
+    "Environnement de test isolé : copie locale de Supabase, compilation de production locale, faux SasPay, aucun appel externe ; 15 comptes fictifs créés par le vrai parcours.",
+    "Faille critique trouvée en production (fonctions de la base exécutables avec la clé publique, création de commissions retirables) et corrigée par un SQL prêt, validé en local.",
+    "Argent : livraison forcée et versement incomplet ne libèrent plus de gains sans argent reçu ; paiement Mobile Money tardif ou incomplet signalé au lieu d'être compté ; refus SasPay rendu au solde ; double « Argent remis » refusé ; récompense non versée plus annoncée.",
+    "Sécurité : redirections ouvertes fermées, paiement Mobile Money seulement vers le numéro de la commande ou avec la clé du reçu, review-profile limité, plafond de 5 commandes en attente par téléphone, connexion refusée sans adresse confirmée, aucun retrait en aperçu admin.",
+    "Interface : contrastes corrigés partout (gris secondaire un ton plus foncé, texte vert foncé sur fond clair, badges lisibles), champs et listes nommés pour les lecteurs d'écran, petites zones tactiles agrandies, chargement des commandes en pastille flottante et carte « Ma boutique » réservée — la page ne saute plus (revendeur 0,27 → 0,11, livreur 0,19 → 0,03, catalogue 0,17 → 0,02). 623 défauts d'accessibilité détectés automatiquement avant, 0 après.",
+    "Boucle complète offre → commande → livraison → caisse → commission → retrait vérifiée ; 2 332 appels d'autorisation sans accès hors rôle (relancés sur la compilation finale) ; 422 tests réussis ; compilation réussie."
+   ],
+   "ecarts": [
+    "À exécuter en production par le fondateur : A-EXECUTER-2026-10-01-securite-fonctions.sql (urgent), A-EXECUTER-equipe-v3-variantes.sql puis de nouveau le premier, A-EXECUTER-2026-10-01-integrite-argent.sql avant le déploiement du code.",
+    "Non déployé (aucune demande de mise en ligne).",
+    "Restent en recommandations : limite par adresse IP, coordonnées des clients au revendeur (décision), frais de livraison GPS (décision révisable), textes publics non analysés, missions comptées à la commande, remboursements."
+   ],
+   "pages": [
+    "commander",
+    "adm-retraits",
+    "fou-paiements",
+    "rev-gains"
+   ],
+   "statut": "en local"
+  },
   {
    "date": "2026-09-27",
    "titre": "Lot C : solde et retraits des fournisseurs",

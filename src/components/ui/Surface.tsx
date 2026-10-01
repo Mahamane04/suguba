@@ -70,7 +70,7 @@ export function StatCard({
         {Icone && <Icone className="w-3.5 h-3.5" />}
         <span>{label}</span>
       </p>
-      <p className={`text-xl sm:text-2xl font-bold ${accent ? 'text-suguba-brand' : 'text-slate-900'}`}>{valeur}</p>
+      <p className={`text-xl sm:text-2xl font-bold ${accent ? 'text-suguba-brand-dark' : 'text-slate-900'}`}>{valeur}</p>
       {aide && <p className="text-xs text-slate-500">{aide}</p>}
     </div>
   );

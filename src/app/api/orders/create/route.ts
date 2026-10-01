@@ -43,6 +43,8 @@ export async function POST(req: NextRequest) {
     // Compte client (C1) : la commande rejoint le compte de l'acheteur connecté.
     if (result.created) await rattacherCommandes(getSupabaseAdmin(), session, [{ id: result.order.id, resellerId: result.order.resellerId }]);
 
+    // La commission est l'affaire du revendeur : jamais dans le reçu d'un acheteur (2026-10-01).
+    if (session?.uid !== result.order.resellerId) result.order.resellerCommission = 0;
     return NextResponse.json({ success: true, ...result }, { status: result.created ? 201 : 200, headers });
   } catch (error) {
     return NextResponse.json({
