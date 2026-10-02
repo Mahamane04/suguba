@@ -15,24 +15,11 @@ import Footer from '@/components/common/Footer';
 import SasPayPaymentDesk from '@/components/common/SasPayPaymentDesk';
 import { useSugubaStore } from '@/lib/store';
 import { whatsappHelper } from '@/lib/whatsapp-helper';
-import { 
-  CheckCircle2, Clock, Phone, MapPin, Truck, 
-  KeyRound, ShieldCheck, MessageCircle, AlertCircle, ArrowLeft, RefreshCw, XCircle
-} from 'lucide-react';
-import { formatF, FORMAT_DATE } from '@/lib/montant';
-
-// Tous les statuts de OrderStatus : « annulée » et « retournée » affichaient
-// une pastille vide, et les libellés étaient en capitales criardes.
-const STATUT: Record<string, { libelle: string; classe: string }> = {
-  new: { libelle: 'Reçue', classe: 'bg-slate-100 text-slate-700' },
-  pending_call: { libelle: "En attente d'appel", classe: 'bg-amber-100 text-amber-800' },
-  confirmed: { libelle: 'Confirmée', classe: 'bg-emerald-50 text-emerald-800' },
-  dispatched: { libelle: 'Livreur assigné', classe: 'bg-emerald-50 text-emerald-800' },
-  in_transit: { libelle: 'En route vers vous', classe: 'bg-emerald-100 text-emerald-800' },
-  delivered: { libelle: 'Livrée', classe: 'bg-suguba-profond text-white' },
-  cancelled: { libelle: 'Annulée', classe: 'bg-rose-100 text-rose-800' },
-  returned: { libelle: 'Retournée', classe: 'bg-rose-100 text-rose-800' },
-};
+import { CheckCircle2, Clock, ArrowLeft, RefreshCw, XCircle, Smartphone, ShieldCheck, AlertCircle } from 'lucide-react';
+import { formatF } from '@/lib/montant';
+import { etapesSuivi, maintenantSuivi, commandeArretee } from '@/lib/suivi-commande';
+import Button from '@/components/ui/Button';
+import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 
 export default function OrderTrackingPage() {
   const params = useParams();
@@ -114,7 +101,7 @@ export default function OrderTrackingPage() {
         <Header />
         <main className="flex-1 max-w-lg mx-auto p-6 w-full flex flex-col justify-center space-y-5">
           <div className="text-center space-y-2">
-            <div className="w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center mx-auto">
+            <div className="w-12 h-12 rounded-2xl bg-suguba-profond text-white flex items-center justify-center mx-auto">
               <ShieldCheck className="w-6 h-6" />
             </div>
             <h1 className="text-xl font-bold text-slate-900">Confirmez que c&apos;est bien vous</h1>
@@ -147,13 +134,10 @@ export default function OrderTrackingPage() {
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={recherche || telephone.replace(/\D/g, '').length < 8}
-              className="w-full h-[52px] bg-suguba-profond hover:bg-suguba-profond-2 active:scale-[0.98] disabled:bg-slate-300 disabled:active:scale-100 text-white font-bold px-4 rounded-2xl text-sm transition-all"
-            >
-              {recherche ? 'Recherche…' : 'Voir ma commande'}
-            </button>
+            <Button type="submit" size="lg" fullWidth loading={recherche}
+              disabled={telephone.replace(/\D/g, '').length < 8}>
+              Voir ma commande
+            </Button>
 
             <p className="text-xs text-slate-500 text-center">
               Ce numéro nous sert uniquement à vérifier que la commande est la vôtre.
@@ -169,47 +153,10 @@ export default function OrderTrackingPage() {
     );
   }
 
-  // Étapes de la commande
-  const steps = [
-    {
-      id: 'step-1',
-      title: 'Commande Reçue',
-      desc: 'Enregistrée sur la plateforme',
-      done: true,
-      current: order.status === 'pending_call',
-    },
-    {
-      id: 'step-2',
-      title: 'Confirmation Téléphonique',
-      desc: order.callVerifiedBy ? `Confirmé par ${order.callVerifiedBy}` : "En attente d'appel Suguba",
-      done: ['confirmed', 'dispatched', 'in_transit', 'delivered'].includes(order.status),
-      current: order.status === 'confirmed',
-    },
-    {
-      id: 'step-3',
-      title: 'Livreur assigné',
-      desc: order.driverName ? `${order.driverName}${order.driverPhone ? ` (${order.driverPhone})` : ''}` : 'Assignation en cours',
-      done: ['dispatched', 'in_transit', 'delivered'].includes(order.status),
-      current: order.status === 'dispatched',
-    },
-    // Ramassage prouvé par le code du vendeur (2026-09-24).
-    {
-      id: 'step-ramassage',
-      title: 'Colis récupéré chez le vendeur',
-      desc: order.pickedUpAt
-        ? `Le ${new Date(order.pickedUpAt).toLocaleString('fr-FR', FORMAT_DATE.jourHeure)} · en route vers vous`
-        : 'Le livreur récupère votre article',
-      done: ['in_transit', 'delivered'].includes(order.status),
-      current: order.status === 'in_transit',
-    },
-    {
-      id: 'step-4',
-      title: 'Livré & Encaissé',
-      desc: order.deliveredAt ? 'Remis contre votre code secret' : 'Remise physique du colis',
-      done: order.status === 'delivered',
-      current: order.status === 'delivered',
-    },
-  ];
+  // Étapes et « maintenant » calculés par lib/suivi-commande (PUB-03).
+  const etapes = etapesSuivi(order);
+  const maintenant = maintenantSuivi(order);
+  const arretee = commandeArretee(order.status);
 
   const appUrl = typeof window !== 'undefined' ? window.location.origin : 'https://sugubaml.com';
   const whatsappReceiptLink = whatsappHelper.getCustomerReceiptLink(order, appUrl);
@@ -229,40 +176,33 @@ export default function OrderTrackingPage() {
           <span>Retour au catalogue</span>
         </Link>
 
-        {/* Status Card Header */}
         <div className="bg-white rounded-3xl p-6 border border-slate-200 shadow-xs space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-            <div>
-              <button
-                type="button"
-                onClick={() => order.customerPhone && actualiser(order.customerPhone)}
-                disabled={actualisation || !order.customerPhone}
-                className="inline-flex items-center gap-1 text-xs font-bold text-slate-500 hover:text-slate-900 disabled:opacity-60"
-              >
-                {actualisation ? <SugubaLoader className="w-3.5 h-3.5" /> : <RefreshCw className="w-3.5 h-3.5" />}
-                {actualisation ? <><SugubaLoader className="mr-2 h-4 w-4" />Mise à jour…</> : 'Actualiser'}
-              </button>
-              <h1 className="text-xl font-bold text-slate-900">
-                Commande #{order.orderNumber}
-              </h1>
-            </div>
-            <span className={`px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap ${
-              (STATUT[order.status] || STATUT.new).classe
-            }`}>
-              {(STATUT[order.status] || { libelle: order.status }).libelle}
-            </span>
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="text-base font-bold text-slate-900">Commande {order.orderNumber}</h1>
+            <button
+              type="button"
+              onClick={() => order.customerPhone && actualiser(order.customerPhone)}
+              disabled={actualisation || !order.customerPhone}
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-full px-3 text-xs font-bold text-slate-600 hover:bg-slate-100 hover:text-slate-900 disabled:opacity-60"
+            >
+              {actualisation ? <SugubaLoader className="w-3.5 h-3.5" /> : <RefreshCw className="w-3.5 h-3.5" />}
+              {actualisation ? 'Mise à jour…' : 'Actualiser'}
+            </button>
           </div>
 
-          {(order.status === 'cancelled' || order.status === 'returned') && (
-            <div className="flex items-start gap-2.5 bg-rose-50 border border-rose-200 rounded-2xl p-3.5">
-              <XCircle className="w-5 h-5 text-rose-600 shrink-0" />
-              <p className="text-sm text-rose-900">
-                {order.status === 'cancelled'
-                  ? "Cette commande a été annulée. Rien ne vous sera demandé."
-                  : "Ce colis a été retourné. Écrivez-nous si c'est une erreur."}
-              </p>
+          {/* PUB-03 : ce qui se passe maintenant, en premier et en grand. */}
+          <div
+            aria-live="polite"
+            className={`flex items-start gap-3 rounded-2xl p-4 ${arretee ? 'bg-rose-50 border border-rose-200' : 'bg-suguba-menthe'}`}
+          >
+            {arretee
+              ? <XCircle className="mt-0.5 h-6 w-6 shrink-0 text-rose-600" />
+              : <CheckCircle2 className="mt-0.5 h-6 w-6 shrink-0 text-suguba-profond" />}
+            <div className="space-y-0.5">
+              <p className={`text-lg font-bold ${arretee ? 'text-rose-900' : 'text-suguba-profond'}`}>{maintenant.titre}</p>
+              <p className={`text-sm ${arretee ? 'text-rose-900' : 'text-slate-800'}`}>{maintenant.texte}</p>
             </div>
-          )}
+          </div>
 
           {/* Product Summary */}
           <div className="flex items-center space-x-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
@@ -270,9 +210,9 @@ export default function OrderTrackingPage() {
               <ProductImage src={order.productImage} alt={order.productName} fill className="object-cover" />
             </div>
             <div className="min-w-0 flex-1">
-              <h3 className="font-bold text-xs text-slate-900 truncate">{order.productName}</h3>
-              <p className="text-xs text-slate-500">Quantité : <strong>{order.quantity}</strong></p>
-              <p className="text-xs font-bold text-emerald-700">Total : {formatF(order.totalAmount)}</p>
+              <p className="font-bold text-sm text-slate-900 truncate">{order.productName}</p>
+              <p className="text-xs text-slate-500">Quantité : {order.quantity}</p>
+              <p className="text-sm font-bold text-slate-900 tabular-nums">{formatF(order.totalAmount)}{order.paymentCollected ? ' · payé' : ''}</p>
             </div>
           </div>
 
@@ -289,62 +229,59 @@ export default function OrderTrackingPage() {
             </Link>
           )}
 
-          {/* Timeline */}
-          <div className="space-y-4 pt-2">
-            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-              Étapes d&apos;Acheminement
-            </h3>
-
-            <div className="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
-              {steps.map((step, idx) => (
-                <div key={step.id} className="relative">
-                  <div className={`absolute -left-6 top-0.5 w-5 h-5 rounded-full flex items-center justify-center text-white ${
-                    step.done ? 'bg-emerald-600' : 'bg-slate-300'
-                  }`}>
-                    {step.done ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
-                  </div>
-                  <div>
-                    <h4 className={`text-xs font-bold ${step.done ? 'text-slate-900' : 'text-slate-500'}`}>
-                      {step.title}
-                    </h4>
-                    <p className="text-xs text-slate-500">{step.desc}</p>
-                  </div>
-                </div>
-              ))}
+          {/* Frise : faite (coche), en cours (anneau + « En cours »), à venir (gris). */}
+          {!arretee && (
+            <div className="space-y-4 pt-2">
+              <h2 className="text-sm font-bold text-slate-900">Les étapes</h2>
+              <ol className="relative pl-7 space-y-5 before:absolute before:left-[9px] before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+                {etapes.map((etape) => (
+                  <li key={etape.id} className="relative" aria-current={etape.enCours ? 'step' : undefined}>
+                    <span className={`absolute -left-7 top-0 flex h-5 w-5 items-center justify-center rounded-full ${
+                      etape.faite ? 'bg-suguba-brand text-white'
+                        : etape.enCours ? 'bg-white ring-4 ring-suguba-citron border-2 border-suguba-profond'
+                          : 'bg-slate-200 text-slate-500'
+                    }`}>
+                      {etape.faite ? <CheckCircle2 className="h-3.5 w-3.5" /> : !etape.enCours && <Clock className="h-3 w-3" />}
+                    </span>
+                    <p className={`text-sm font-bold ${etape.faite || etape.enCours ? 'text-slate-900' : 'text-slate-500'}`}>
+                      {etape.titre}
+                      {etape.enCours && <span className="ml-2 rounded-full bg-suguba-citron px-2 py-0.5 text-[11px] font-bold text-suguba-profond">En cours</span>}
+                    </p>
+                    <p className="text-xs text-slate-600">{etape.detail}</p>
+                  </li>
+                ))}
+              </ol>
             </div>
-          </div>
-
-          {/* Encaissement mobile money via SasPay. Le composant vérifie
-              lui-même à l'ouverture si la commande est déjà réglée. */}
-          {!['delivered', 'cancelled', 'returned'].includes(order.status) && !order.paymentCollected && (
-            <SasPayPaymentDesk
-              amount={order.totalAmount}
-              orderNumber={order.orderNumber}
-              defaultPhone={order.customerPhone}
-            />
           )}
 
-          {/* WhatsApp Support & Share Actions */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-3 border-t border-slate-100">
-            <a
-              href={whatsappReceiptLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="py-3 px-3 bg-suguba-wa hover:bg-[#20bd5a] text-suguba-profond font-bold rounded-2xl text-xs flex items-center justify-center space-x-1.5 shadow-xs"
-            >
-              <MessageCircle className="w-4 h-4 fill-current" />
-              <span>Recevoir Reçu WhatsApp</span>
-            </a>
+          {/* Mobile Money replié et facultatif, comme sur « Commande reçue ». Le
+              composant vérifie lui-même à l'ouverture si la commande est déjà réglée. */}
+          {!['delivered', 'cancelled', 'returned'].includes(order.status) && !order.paymentCollected && (
+            <details className="group rounded-2xl border border-slate-200">
+              <summary className="flex min-h-12 cursor-pointer list-none items-center gap-2 px-4 text-sm font-semibold text-slate-800 [&::-webkit-details-marker]:hidden">
+                <Smartphone className="h-4 w-4 text-suguba-profond" />
+                Payer maintenant par Mobile Money
+                <span className="ml-auto text-xs font-normal text-slate-500 group-open:hidden">facultatif</span>
+              </summary>
+              <div className="px-2 pb-3">
+                <SasPayPaymentDesk
+                  amount={order.totalAmount}
+                  orderNumber={order.orderNumber}
+                  defaultPhone={order.customerPhone}
+                />
+              </div>
+            </details>
+          )}
 
-            <a
-              href={supportChatLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="py-3 px-3 bg-slate-900 hover:bg-black text-white font-bold rounded-2xl text-xs flex items-center justify-center space-x-1.5"
-            >
-              <Phone className="w-4 h-4" />
-              <span>Assistance Suguba (+223)</span>
-            </a>
+          {/* Deux liens WhatsApp : l'icône dit WhatsApp (l'ancien bouton « Assistance »
+              montrait un téléphone et ouvrait WhatsApp). */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-3 border-t border-slate-100">
+            <Button href={supportChatLink} variant="whatsapp" fullWidth target="_blank" rel="noopener noreferrer">
+              <WhatsAppIcon className="w-5 h-5" />Écrire à Suguba
+            </Button>
+            <Button href={whatsappReceiptLink} variant="ghost" fullWidth target="_blank" rel="noopener noreferrer">
+              Garder mon reçu sur WhatsApp
+            </Button>
           </div>
 
         </div>

@@ -114,7 +114,7 @@ export default function HomePage() {
             BANDEAU DE RECHERCHE — compact, le produit d'abord
         ══════════════════════════════════════════════ */}
         <section className="bg-suguba-profond px-4 sm:px-6 py-6 sm:py-8">
-          <div className="max-w-4xl mx-auto space-y-4">
+          <div className="max-w-6xl mx-auto space-y-4">
             {/* Mon quartier (2026-09-18) : sert d'abord à trouver les
                 boutiques voisines (section plus bas, page /boutiques). Il
                 pré-remplit aussi la fenêtre de commande, mais la livraison
@@ -144,13 +144,13 @@ export default function HomePage() {
               <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
                 Achetez à Bamako, payez à la livraison
               </h1>
-              <p className="text-xs sm:text-sm text-emerald-100/70 mt-1">
+              <p className="text-xs sm:text-sm text-white/75 mt-1">
                 Commande en 1 minute, sans créer de compte. Livraison 24h.
               </p>
             </div>
 
             {/* Recherche */}
-            <div className="relative">
+            <div className="relative max-w-3xl mx-auto">
               <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
               <input
                 type="search"
@@ -204,6 +204,25 @@ export default function HomePage() {
             )}
           </div>
         </section>
+
+        {/* PUB-13 (lot 5 de l'audit UI/UX du 2026-10-02) : les trois garanties étaient
+            en bas de page, après tout le catalogue. Elles passent juste sous la
+            recherche, en une bande compacte : c'est ce qui décide un premier achat. */}
+        {blocs.garanties && (
+          <div className="bg-white border-b border-slate-100">
+            <ul className="max-w-6xl mx-auto px-4 sm:px-6 py-3 grid grid-cols-3 gap-2 sm:flex sm:gap-x-6 text-xs font-semibold text-slate-700">
+              {[
+                { icon: Banknote, texte: 'Payez à la livraison' },
+                { icon: Truck, texte: 'Livré en 24 h à Bamako' },
+                { icon: ShieldCheck, texte: 'Code secret à la remise' },
+              ].map(({ icon: Icon, texte }) => (
+                <li key={texte} className="flex flex-col items-center gap-1 text-center leading-tight sm:flex-row sm:gap-1.5 sm:text-left">
+                  <Icon className="w-4 h-4 shrink-0 text-suguba-brand-dark" />{texte}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Visiteur invité par un revendeur : sa sélection passe en premier (§ 9). */}
         <div className="max-w-6xl mx-auto px-4 sm:px-6 pt-5 empty:hidden">
@@ -291,7 +310,7 @@ export default function HomePage() {
         ══════════════════════════════════════════════ */}
         {blocs.gagner && (
         <section className="py-6 px-4 sm:px-6">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-6xl mx-auto">
             <Link
               href="/rejoindre"
               className="block bg-white rounded-3xl border border-slate-100 shadow-card p-5 sm:p-6 hover:shadow-card-hover transition-all group"
@@ -311,53 +330,6 @@ export default function HomePage() {
                 <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-suguba-brand group-hover:translate-x-0.5 transition-all shrink-0" />
               </div>
             </Link>
-          </div>
-        </section>
-        )}
-
-        {/* ══════════════════════════════════════════════
-            RÉASSURANCE CLIENT
-        ══════════════════════════════════════════════ */}
-        {blocs.garanties && (
-        <section className="pb-8 px-4 sm:px-6">
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-100 shadow-card">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {[
-                  {
-                    icon: Banknote,
-                    title: 'Payez à la livraison',
-                    desc: 'Espèces ou Mobile Money, seulement quand le livreur arrive chez vous.',
-                    color: 'text-suguba-brand-dark',
-                    bg: 'bg-suguba-50',
-                  },
-                  {
-                    icon: Truck,
-                    title: 'Livraison 24h à Bamako',
-                    desc: 'Suivi de votre commande du dépôt jusqu\'à votre porte.',
-                    color: 'text-suguba-brand-dark',
-                    bg: 'bg-suguba-50',
-                  },
-                  {
-                    icon: ShieldCheck,
-                    title: 'Code secret à la remise',
-                    desc: 'Vous ne donnez votre code qu\'après avoir vérifié le colis.',
-                    color: 'text-suguba-brand-dark',
-                    bg: 'bg-suguba-50',
-                  },
-                ].map(({ icon: Icon, title, desc, color, bg }) => (
-                  <div key={title} className="flex gap-3 items-start">
-                    <div className={`w-9 h-9 rounded-xl ${bg} flex items-center justify-center shrink-0`}>
-                      <Icon className={`w-4 h-4 ${color}`} />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-sm text-slate-900">{title}</h3>
-                      <p className="text-xs text-slate-500 mt-0.5 leading-relaxed">{desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
           </div>
         </section>
         )}

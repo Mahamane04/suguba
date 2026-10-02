@@ -14,8 +14,8 @@ export default function OngletsCompte({ actif }: { actif: string }) {
     <nav className="flex gap-2" aria-label="Mon compte">
       {ONGLETS.map((o) => (
         <Link key={o.href} href={o.href} aria-current={actif === o.href ? 'page' : undefined}
-          className={`flex-1 h-10 rounded-2xl text-xs font-bold inline-flex items-center justify-center transition-colors ${
-            actif === o.href ? 'bg-slate-900 text-white' : 'bg-white text-slate-600 border border-slate-200'}`}>
+          className={`flex-1 min-h-11 rounded-full text-xs font-bold inline-flex items-center justify-center transition-colors ${
+            actif === o.href ? 'bg-suguba-profond text-white' : 'bg-white text-slate-600 border border-slate-200 hover:bg-suguba-sauge'}`}>
           {o.libelle}
         </Link>
       ))}

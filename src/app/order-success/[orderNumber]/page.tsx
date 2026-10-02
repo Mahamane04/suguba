@@ -8,11 +8,10 @@ import Header from '@/components/common/Header';
 import SasPayPaymentDesk from '@/components/common/SasPayPaymentDesk';
 import { useSugubaStore } from '@/lib/store';
 import { useToast } from '@/components/ui/Toast';
-import {
-  CheckCircle2, KeyRound, ShieldCheck, MapPin,
-  Phone, ArrowRight, Home, ShoppingBag, Truck, Copy
-} from 'lucide-react';
+import { CheckCircle2, Truck, Copy, Smartphone } from 'lucide-react';
 import { formatF } from '@/lib/montant';
+import Button from '@/components/ui/Button';
+import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 
 export default function OrderSuccessPage({ params }: { params: Promise<{ orderNumber: string }> }) {
   const resolvedParams = use(params);
@@ -41,10 +40,9 @@ export default function OrderSuccessPage({ params }: { params: Promise<{ orderNu
             Le reçu de cette commande n’est pas disponible sur cet appareil.
             Vérifiez son enregistrement avec votre numéro de commande et votre téléphone.
           </p>
-          <Link href={`/track/${encodeURIComponent(resolvedParams.orderNumber)}`}
-            className="inline-flex min-h-12 items-center rounded-2xl bg-slate-900 px-5 py-3 font-bold text-white">
+          <Button href={`/track/${encodeURIComponent(resolvedParams.orderNumber)}`} size="lg">
             Vérifier ma commande
-          </Link>
+          </Button>
         </main>
       </div>
     );
@@ -58,28 +56,26 @@ export default function OrderSuccessPage({ params }: { params: Promise<{ orderNu
         
         <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200/80 shadow-xl text-center space-y-6">
           
-          {/* Success Icon */}
-          <div className="w-20 h-20 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-emerald-600/15">
-            <CheckCircle2 className="w-12 h-12" />
+          {/* PUB-02 (audit UI/UX du 2026-10-02) : la vraie prochaine étape était écrite en
+              petit, sous trois boutons pleins de trois couleurs. Elle passe en premier. */}
+          <div className="w-16 h-16 bg-suguba-brand text-white rounded-full flex items-center justify-center mx-auto">
+            <CheckCircle2 className="w-9 h-9" />
           </div>
 
-          {/* Title */}
-          <div className="space-y-1">
+          <div className="space-y-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Commande reçue</h1>
+            <p className="text-base text-slate-800 max-w-sm mx-auto">
+              Suguba appelle le <strong className="whitespace-nowrap">{order.customerPhone}</strong> pour confirmer la commande. Gardez ce téléphone allumé.
+            </p>
             <button
               type="button"
               onClick={copierNumero}
               aria-label={`Copier le numéro de commande ${order.orderNumber}`}
-              className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 hover:bg-emerald-100 px-3 py-1 rounded-full border border-emerald-200"
+              className="inline-flex items-center gap-1.5 min-h-10 text-sm font-semibold text-suguba-profond bg-suguba-menthe hover:bg-suguba-sauge px-4 rounded-full"
             >
-              Commande #{order.orderNumber}
-              <Copy className="w-3.5 h-3.5" />
+              Commande {order.orderNumber}
+              <Copy className="w-4 h-4" />
             </button>
-            <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 pt-2">
-              Merci pour votre commande !
-            </h1>
-            <p className="text-xs text-slate-600 max-w-sm mx-auto">
-              Notre service client va vous appeler sur le <strong>{order.customerPhone}</strong> pour confirmer avant l&apos;envoi du livreur.
-            </p>
           </div>
 
           <DeliveryCodeNotice orderNumber={order.orderNumber} autoSend />
@@ -96,80 +92,52 @@ export default function OrderSuccessPage({ params }: { params: Promise<{ orderNu
               </div>
             </div>
 
-            <div className="flex justify-between text-slate-600">
-              <span>Destinataire :</span>
-              <span className="font-bold text-slate-900">{order.customerName} ({order.customerPhone})</span>
-            </div>
-
-            <div className="flex justify-between text-slate-600">
-              <span>Lieu de livraison :</span>
-              <span className="font-bold text-slate-900">{order.neighborhood} — {order.landmark}</span>
-            </div>
-
-            {/* Annoncer « à payer au livreur » puis proposer juste en dessous
-                de payer maintenant disait deux choses contradictoires au
-                client. Les deux lignes suivent désormais l'état réel du
-                paiement. */}
-            <div className="flex justify-between text-slate-600">
-              <span>Mode de règlement :</span>
-              <span className="font-bold text-slate-900">
-                {order.paymentCollected ? 'Payé en ligne (Mobile Money)' : 'À la livraison, ou en ligne dès maintenant'}
-              </span>
-            </div>
+            <p className="text-sm text-slate-700">Livraison : <strong className="text-slate-900">{order.neighborhood}</strong>{order.landmark ? ` — ${order.landmark}` : ''}</p>
 
             <div className="flex justify-between text-sm font-bold text-slate-900 pt-2 border-t border-slate-200">
-              <span>{order.paymentCollected ? 'Total réglé :' : 'Total à payer :'}</span>
-              <span className="text-emerald-700">{formatF(order.totalAmount)}</span>
+              <span>{order.paymentCollected ? 'Payé par Mobile Money' : 'À payer à la livraison'}</span>
+              <span className="text-suguba-profond tabular-nums">{formatF(order.totalAmount)}</span>
             </div>
           </div>
 
-          {/* Encaissement mobile money via SasPay. Masqué une fois la commande
-              réglée : le desk affiche alors son propre écran de confirmation,
-              et le rappeler ici ferait doublon. */}
+          {/* Encaissement mobile money via SasPay, replié : le client a choisi de payer
+              à la livraison, le paiement en ligne reste une option, pas une deuxième
+              consigne. Masqué une fois la commande réglée (le desk affiche alors son
+              propre écran de confirmation). */}
           {!order.paymentCollected && (
-            <SasPayPaymentDesk
-              amount={order.totalAmount}
-              orderNumber={order.orderNumber}
-              defaultPhone={order.customerPhone}
-            />
+            <details className="group rounded-2xl border border-slate-200 text-left">
+              <summary className="flex min-h-12 cursor-pointer list-none items-center gap-2 px-4 text-sm font-semibold text-slate-800 [&::-webkit-details-marker]:hidden">
+                <Smartphone className="h-4 w-4 text-suguba-profond" />
+                Payer maintenant par Mobile Money
+                <span className="ml-auto text-xs font-normal text-slate-500 group-open:hidden">facultatif</span>
+              </summary>
+              <div className="px-2 pb-3">
+                <SasPayPaymentDesk
+                  amount={order.totalAmount}
+                  orderNumber={order.orderNumber}
+                  defaultPhone={order.customerPhone}
+                />
+              </div>
+            </details>
           )}
 
-          {/* Action Links */}
+          {/* Un seul bouton plein : suivre la commande. */}
           <div className="space-y-2 pt-2">
-            <a
+            <Button href={`/track/${order.orderNumber}`} size="lg" fullWidth>
+              <Truck className="w-4 h-4" />Suivre ma commande
+            </Button>
+            <Button variant="ghost" fullWidth target="_blank" rel="noopener noreferrer"
               href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
                 `🎉 *SUGUBA.ML — Reçu Commande #${order.orderNumber}*\n\nProduit : ${order.productName}\nTotal : ${formatF(order.totalAmount)}\nLe code de remise s’affiche sur le reçu Suguba de la commande.\n📍 Repère : ${order.landmark} (${order.neighborhood})`
-              )}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full bg-suguba-wa hover:bg-[#20bd5a] text-suguba-profond font-bold py-3.5 px-4 rounded-2xl text-xs flex items-center justify-center space-x-2 shadow-xs"
-            >
-              <span>📲 Sauvegarder mon reçu sur WhatsApp</span>
-            </a>
-
-            <div className="grid grid-cols-2 gap-2">
-              <Link
-                href={`/track/${order.orderNumber}`}
-                className="py-3 px-3 bg-white hover:bg-slate-50 text-slate-900 font-bold border border-slate-200 rounded-2xl text-xs flex items-center justify-center space-x-1.5"
-              >
-                <Truck className="w-4 h-4 text-suguba-brand-dark" />
-                <span>Suivre ma commande</span>
-              </Link>
-
-              <Link
-                href="/"
-                className="py-3 px-3 bg-slate-900 hover:bg-black text-white font-bold rounded-2xl text-xs flex items-center justify-center space-x-1.5"
-              >
-                <Home className="w-4 h-4" />
-                <span>Accueil</span>
-              </Link>
-            </div>
+              )}`}>
+              <WhatsAppIcon className="w-5 h-5" />Garder mon reçu sur WhatsApp
+            </Button>
+            <Button href="/" variant="ghost" fullWidth>Continuer mes achats</Button>
             {/* Compte client (C1) : facultatif, pour retrouver ses commandes sur tous ses téléphones. */}
-            <Link href="/compte/commandes"
-              className="block rounded-2xl border border-slate-200 bg-white px-4 py-3 text-xs text-slate-700 hover:bg-slate-50">
-              <span className="font-bold text-slate-900">Retrouvez vos commandes et reçus sur tous vos téléphones</span>
-              <span className="block">Avec un compte client, facultatif et gratuit.</span>
-            </Link>
+            <p className="pt-2 text-xs text-slate-600">
+              Retrouvez vos commandes sur tous vos téléphones :{' '}
+              <Link href="/compte/commandes" className="font-semibold text-suguba-profond underline underline-offset-2">créer un compte gratuit</Link>
+            </p>
           </div>
 
         </div>

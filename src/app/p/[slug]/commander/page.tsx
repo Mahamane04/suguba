@@ -659,7 +659,9 @@ export default function CommanderPage({ params }: { params: Promise<{ slug: stri
             </li>
             <li className="flex items-center gap-2">
               <Lock className="w-3.5 h-3.5 text-suguba-brand-dark shrink-0" />
-              Aucun compte à créer, aucun paiement en ligne
+              {/* PUB-02 : « aucun paiement en ligne » contredisait le Mobile Money facultatif
+                  proposé juste après la commande. */}
+              Aucun compte à créer, rien à payer maintenant
             </li>
           </ul>
         </aside>

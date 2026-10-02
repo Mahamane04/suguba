@@ -187,6 +187,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   const unite = suffixeUnite(product.uniteVente, product.contenuValeur, product.contenuMesure);
   const minimum = texteMinimum(product.uniteVente, product.quantiteMin);
   const prixAffiche = viaRevendeurs ? Math.min(...offresGros!.offres.map((o) => o.prix)) : unitPrice;
+  // PUB-01 (audit UI/UX du 2026-10-02) : le client découvrait les frais de livraison
+  // au formulaire (215 000 F sur la fiche, 216 500 F à payer). Le devis du serveur
+  // les calcule déjà pour Bamako : on les dit avant la décision.
+  const remiseParLivreur = !product.modeRemise || product.modeRemise === 'livreur';
+  const fraisLivraison = devis && !surDevis && !viaRevendeurs && remiseParLivreur && Number.isFinite(devis.fraisLivraison) ? devis.fraisLivraison : null;
+  const ligneLivraison = fraisLivraison === null ? null : (
+    <>Livraison à Bamako : <strong className="text-slate-800 tabular-nums">{formatF(fraisLivraison)}</strong> · ou à retirer en point relais · payez à la livraison</>
+  );
   const aPartirDe = surDevis || viaRevendeurs;
 
   const allerCommander = () => {
@@ -307,11 +315,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                   if (monCode) prechargerLienPartage(product.slug);
                 }}
                 aria-label="Partager ce produit sur WhatsApp"
-                className="absolute top-3 right-3 h-9 px-3 rounded-full bg-suguba-wa hover:bg-[#1fbf5b] text-suguba-profond text-xs font-bold inline-flex items-center gap-1.5 shadow-md active:scale-[0.97] transition-all"
+                // PUB-08 (audit UI/UX du 2026-10-02) : « Recommander » se lisait « commander
+                // à nouveau » et, en vert vif, attirait plus que « Commander ». Pour le client :
+                // « Partager », en blanc. Pour le revendeur, le partage reste son action principale.
+                className={`absolute top-3 right-3 h-10 px-3.5 rounded-full text-sm font-semibold inline-flex items-center gap-1.5 shadow-md active:scale-[0.97] transition-all ${monCode ? 'bg-suguba-wa hover:bg-[#1fbf5b] text-suguba-profond' : 'bg-white/95 hover:bg-white text-suguba-profond border border-slate-200'}`}
               >
                 <WhatsAppIcon className="w-4 h-4" />
-                {/* Client (C2) : recommander à un proche, sans commission ; le revendeur d'origine garde la vente. */}
-                <span>{monCode ? 'Partager' : 'Recommander'}</span>
+                {/* Client (C2) : partager à un proche, sans commission ; le revendeur d'origine garde la vente. */}
+                <span>Partager</span>
               </button>
               <BoutonFavori produitId={product.id} className="absolute top-14 right-3" />
             </div>
@@ -338,8 +349,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               <SelecteurVariantes slug={product.slug} />
               {viaRevendeurs && <OffresRevendeurs id="offres-revendeurs" slug={product.slug} offres={offresGros!.offres} />}
               {!surDevis && !viaRevendeurs && <BoutonAjoutPanier disabled={outOfStock} productId={product.id} quantite={quantiteMini} />}
-              <p className="text-xs text-slate-500">
-                Sans créer de compte · Payez à la livraison
+              <p className="text-sm text-slate-600">
+                {ligneLivraison || 'Sans créer de compte · Payez à la livraison'}
               </p>
             </div>
 
@@ -477,7 +488,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             <p className="text-xs text-slate-500 text-center">
               {product.modeRemise && product.modeRemise !== 'livreur'
                 ? 'Le vendeur vous contacte après la confirmation · Payez à la remise'
-                : <>Livraison calculée à l&apos;étape suivante · Payez à la livraison</>}
+                : ligneLivraison || <>Livraison calculée à l&apos;étape suivante · Payez à la livraison</>}
             </p>
           </div>
         </div>

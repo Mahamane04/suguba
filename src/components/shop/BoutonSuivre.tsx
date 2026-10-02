@@ -73,8 +73,10 @@ export default function BoutonSuivre({ slug, abonnesInitial }: { slug: string; a
           onClick={() => (telephone || suit ? basculer(telephone) : setSaisieOuverte(true))}
           disabled={enCours}
           aria-pressed={suit}
-          className={`flex-1 sm:flex-none inline-flex items-center justify-center gap-2 h-11 px-5 rounded-2xl text-xs font-bold transition-all active:scale-[0.98] ${
-            suit ? 'bg-suguba-menthe text-suguba-profond border border-suguba-profond/20' : 'bg-suguba-profond hover:bg-suguba-profond-2 text-white'
+          // PUB-12 (lot 5 de l'audit UI/UX du 2026-10-02) : « Suivre » était le bouton
+          // plein de la vitrine, au-dessus des produits. Il reste un geste secondaire.
+          className={`flex-none inline-flex items-center justify-center gap-2 h-11 px-4 rounded-2xl text-xs font-bold transition-all active:scale-[0.98] ${
+            suit ? 'bg-suguba-menthe text-suguba-profond border border-suguba-profond/20' : 'bg-white border border-slate-200 hover:bg-suguba-sauge text-suguba-profond'
           }`}
         >
           {enCours ? <SugubaLoader className="w-4 h-4" /> : suit ? <BellRing className="w-4 h-4" /> : <Bell className="w-4 h-4" />}

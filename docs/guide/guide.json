@@ -51,7 +51,8 @@
     "**Loupe** : recherche de produits et de boutiques.",
     "**Sac + pastille verte** : le panier et son nombre d’articles.",
     "**Cloche** : les notifications (nouveautés des boutiques suivies, ventes…).",
-    "**☰ Menu** : connexion ou « Mon espace », « Gagner avec Suguba », pages légales, téléphone du support, « Se déconnecter »."
+    "**☰ Menu** : connexion ou « Mon espace », « Gagner avec Suguba », pages légales, téléphone du support, « Se déconnecter ».",
+    "**Suivre ma commande** (ordinateur, visiteur et client) : lien dans l’en-tête vers le suivi ; sur téléphone, c’est l’onglet « Commandes » du menu du bas."
    ]
   },
   {
@@ -190,6 +191,38 @@
   }
  ],
  "journal": [
+  {
+   "date": "2026-10-02",
+   "titre": "Audit UI/UX, lot 5 : la commande",
+   "demande": "« oui commit puis passe au lot 5 » — cinquième lot de l’audit UI/UX du 2 octobre : de la fiche produit au suivi, le client sait ce que coûte la livraison, ce qui se passe maintenant et ce qu’on attend de lui.",
+   "realise": [
+    "Fiche produit : les frais de livraison s’affichent sous le prix (« Livraison à Bamako : 1 500 F · ou à retirer en point relais · payez à la livraison ») ; la puce « Recommander », verte à côté de « Commander », devient « Partager » en contour pour le client.",
+    "Commande reçue : la prochaine étape passe en premier et en grand (« Suguba appelle le … pour confirmer ») ; le paiement Mobile Money est replié et marqué facultatif ; un seul bouton plein, « Suivre ma commande » (avant : trois boutons pleins de trois couleurs). « Aucun paiement en ligne » devient « rien à payer maintenant » sur le formulaire.",
+    "Suivi : une carte « maintenant » en tête (ce qui se passe, ce qu’il faut préparer) ; l’étape en cours est marquée « En cours » ; libellés sans jargon (« Livré & Encaissé », « Étapes d’Acheminement » disparaissent) ; le bouton à icône de téléphone qui ouvrait WhatsApp devient « Écrire à Suguba » avec le logo WhatsApp ; un seul indicateur de chargement.",
+    "Diaspora : « Offrez » seulement quand l’acheteur paie vraiment (carte) ; e-mail facultatif sans carte ; libellés reliés à leurs champs ; bouton commun ; plus aucune couleur hors charte ; le bouton annonce le montant en francs payé par le proche ; un écran « Paiement validé » jamais atteint est supprimé.",
+    "Vitrines (/s, /r, boutiques supplémentaires) : la carte produit garde l’unité, le minimum, « Sur devis » et le même bouton que le catalogue (« Ajouter » au lieu d’« Acheter »). Lecture à part : une colonne absente en production ne casse pas la vitrine.",
+    "Vitrine du réseau : « Suivre » devient un bouton en contour ; couverture moins haute sur téléphone, présentation sur 2 lignes : les produits remontent.",
+    "Accueil : les trois garanties passent juste sous la recherche ; une seule largeur de colonne.",
+    "Ordinateur : « Suivre ma commande » dans l’en-tête (le menu du bas y est masqué). Compte client : la commande en cours en tête avec « Suivre ma commande » ; « Se déconnecter » en contour ; « Suivre ma commande » sous chaque commande en cours."
+   ],
+   "ecarts": [
+    "PUB-10 (deux tunnels de commande qui divergent, Mobile Money absent après /panier/confirmation) n’est pas traité : chantier L, à part.",
+    "Vitrines : aucun produit local n’a d’unité, de minimum ni de devis ; l’affichage est prouvé par les tests et par le bouton « Ajouter » sur la vitrine locale.",
+    "Suivi après rechargement de la page : le téléphone est redemandé même sur l’appareil de la commande (comportement existant, non modifié).",
+    "Écrans vérifiés sur la copie locale (commande fictive [QA]) ; captures du guide à refaire. Aucune migration."
+   ],
+   "pages": [
+    "accueil",
+    "fiche-produit",
+    "commander",
+    "suivi",
+    "compte",
+    "compte-commandes",
+    "vitrine-fournisseur",
+    "diaspora"
+   ],
+   "statut": "en local"
+  },
   {
    "date": "2026-10-02",
    "titre": "Audit UI/UX, lot 4 : les accueils",
@@ -1678,7 +1711,7 @@
     },
     {
      "nom": "Garanties",
-     "role": "Payez à la livraison · Livraison 24 h à Bamako · Code secret à la remise."
+     "role": "Bande juste sous la recherche, avant les produits : Payez à la livraison · Livré en 24 h à Bamako · Code secret à la remise (sur téléphone, trois colonnes)."
     },
     {
      "nom": "Prix des articles au prix de gros",
@@ -1721,7 +1754,7 @@
    "elements": [
     {
      "nom": "Connecté",
-     "role": "Mes commandes · Favoris · Destinataires · Boutiques suivies ; puis Mes profils, Gagner de l’argent avec Suguba, Aide (WhatsApp) et « Se déconnecter »."
+     "role": "En tête, la commande en cours (produit, état, numéro) avec « Suivre ma commande ». Puis Mes commandes · Favoris · Destinataires · Boutiques suivies ; Mes profils, Gagner de l’argent avec Suguba, Aide (WhatsApp) ; « Se déconnecter » tout en bas, en contour."
     },
     {
      "nom": "Visiteur",
@@ -1829,6 +1862,10 @@
      "role": "À côté du prix : ce qu’il couvre (« / m », « / pagne de 6 yards », « / sac de 50 kg », « / m² »…) et, s’il y en a un, le minimum (« Minimum : 2 m »). Le sélecteur de quantité démarre au minimum ; la commande en dessous est refusée."
     },
     {
+     "nom": "Livraison",
+     "role": "Sous le prix : « Livraison à Bamako : 1 500 F · ou à retirer en point relais · payez à la livraison » (frais calculés par le serveur). Affiché quand l’article est livré par un livreur Suguba."
+    },
+    {
      "nom": "Demander un devis",
      "role": "Pour une offre sur devis : remplace « Commander » et le panier ; le prix est « à partir de »."
     },
@@ -1897,8 +1934,8 @@
      "role": "Ajoute le produit à « Mes favoris » ; sans compte, invite à se connecter."
     },
     {
-     "nom": "Recommander",
-     "role": "Pour un client : partage le produit à un proche sur WhatsApp, sans commission ; le lien garde le revendeur d’origine. Pour un revendeur connecté, le bouton reste « Partager » (avec son code)."
+     "nom": "Partager",
+     "role": "Pour un client : bouton en contour (« Partager »), pour envoyer le produit à un proche sur WhatsApp, sans commission ; le lien garde le revendeur d’origine. Pour un revendeur connecté, le bouton reste vert WhatsApp avec son code."
     }
    ],
    "suite": [
@@ -2053,6 +2090,10 @@
     {
      "nom": "Après la commande : comment payer",
      "role": "À la livraison en espèces : sans aucun frais. Orange Money, Moov Money ou Wave : chaque moyen affiche son coût (sur 10 000 F : Orange et Moov + 504 F, Wave + 605 F), puis le détail avant de valider : frais de transaction Suguba (1 %) et frais SasPay (Orange et Moov 4 %, Wave 5 %, ajoutés par SasPay). Seulement les frais du paiement : les frais de retrait ne sont jamais facturés au client. Le bouton annonce le total débité."
+    },
+    {
+     "nom": "Commande reçue (écran suivant)",
+     "role": "En premier : « Suguba appelle le … pour confirmer la commande. Gardez ce téléphone allumé. » Puis le numéro de commande (à copier), le code de remise, le récapitulatif « À payer à la livraison », et « Payer maintenant par Mobile Money » replié (facultatif). Un seul bouton plein : « Suivre ma commande » ; ensuite « Garder mon reçu sur WhatsApp », « Continuer mes achats » et un lien pour créer un compte gratuit."
     }
    ],
    "suite": [
@@ -2186,7 +2227,7 @@
     },
     {
      "nom": "Numéro de commande",
-     "role": "À saisir, puis « Voir ma commande » : ouvre /track/ avec les étapes (à confirmer, confirmée, livreur assigné, en livraison, livrée)."
+     "role": "À saisir, puis « Voir ma commande » : ouvre /track/<numéro>. En tête, une carte « maintenant » dit ce qui se passe et ce qu’on attend du client (« Suguba va vous appeler », « Votre colis est en route : préparez votre code secret et 25 250 F »…). Puis les étapes (reçue, appel de confirmation, livreur choisi, colis récupéré, livrée) : l’étape en cours est marquée « En cours ». « Payer maintenant par Mobile Money » est replié et facultatif. En bas : « Écrire à Suguba » (WhatsApp) et « Garder mon reçu sur WhatsApp »."
     },
     {
      "nom": "Contacter Suguba sur WhatsApp",
@@ -2221,6 +2262,10 @@
     {
      "nom": "Liste des commandes",
      "role": "Numéro, date, montant, état ; ouvre le reçu avec son QR, même sur un autre téléphone (une nouvelle clé est délivrée au propriétaire du compte)."
+    },
+    {
+     "nom": "Suivre ma commande",
+     "role": "Sous une commande pas encore livrée : ouvre son suivi."
     },
     {
      "nom": "Mes devis",
@@ -2406,7 +2451,7 @@
     },
     {
      "nom": "Produits",
-     "role": "Chaque carte ouvre la fiche produit."
+     "role": "Même carte que le catalogue : unité (« / kg »), minimum, « Sur devis », « Remis par le vendeur », et le même bouton (« Ajouter », « Choisir » ou « Acheter »). Chaque carte ouvre la fiche produit."
     },
     {
      "nom": "Devenir revendeur",
@@ -2484,6 +2529,10 @@
    "but": "Un proche à l’étranger commande pour sa famille à Bamako, avec les prix affichés dans sa devise.",
    "elements": [
     {
+     "nom": "Titre",
+     "role": "« Faites livrer votre famille à Bamako, depuis l’étranger » tant que le proche paie à la réception ; « Offrez un article à votre famille à Bamako » seulement quand le paiement par carte est ouvert."
+    },
+    {
      "nom": "€ EUR · $ USD · FCFA",
      "role": "Change la devise d’affichage."
     },
@@ -2493,7 +2542,7 @@
     },
     {
      "nom": "Formulaire",
-     "role": "E-mail de l’acheteur, nom et téléphone du destinataire à Bamako, adresse et repère."
+     "role": "Votre pays, votre e-mail (facultatif ; obligatoire seulement pour le reçu d’un paiement par carte), nom et téléphone de votre proche au Mali, quartier et repère à Bamako."
     },
     {
      "nom": "Régler … par carte",
@@ -2501,7 +2550,7 @@
     },
     {
      "nom": "Paiement",
-     "role": "Tant que la carte bancaire n’est pas ouverte par l’admin (après un vrai paiement test SasPay), la commande est payée à la réception par le proche (espèces ou Mobile Money) : aucune promesse de carte sur la page, et le serveur refuse la carte."
+     "role": "Tant que la carte bancaire n’est pas ouverte par l’admin (après un vrai paiement test SasPay), la commande est payée à la réception par le proche (espèces ou Mobile Money) : aucune promesse de carte sur la page, et le serveur refuse la carte. Le bouton annonce le montant en francs : « Commander · 25 500 F à la réception » ; l’équivalent dans la devise choisie est écrit dessous (« environ 38,87 € »)."
     },
     {
      "nom": "Pour qui commandez-vous ?",

@@ -70,7 +70,7 @@ export default function ShopView({
       <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
         <section className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
           {/* Couverture */}
-          <div className="relative h-36 sm:h-56">
+          <div className="relative h-28 sm:h-56">
             {boutique.couverture ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={boutique.couverture} alt="" className="absolute inset-0 w-full h-full object-cover" />
@@ -144,13 +144,13 @@ export default function ShopView({
                 )}
               </div>
               {boutique.description && (
-                <p className="text-sm text-slate-600 leading-relaxed max-w-2xl">{boutique.description}</p>
+                <p className="text-sm text-slate-600 leading-relaxed max-w-2xl line-clamp-2 sm:line-clamp-none">{boutique.description}</p>
               )}
             </div>
 
             {/* Actions */}
-            <div className="mt-4 flex flex-col sm:flex-row sm:items-start gap-2">
-              {suivre && <div className="sm:flex-none">{suivre}</div>}
+            <div className="mt-4 flex flex-wrap items-start gap-2">
+              {suivre && <div className="flex-none">{suivre}</div>}
               <ShopShareBar url={urlPartage} texte={texteWhatsApp} />
             </div>
 
@@ -245,7 +245,7 @@ export default function ShopView({
               <p className="text-xs text-slate-500">Sans stock : Suguba livre, vous touchez une commission sur chaque vente.</p>
             </div>
           </div>
-          <Link href="/rejoindre" className="h-11 px-5 rounded-2xl bg-suguba-profond hover:bg-suguba-profond-2 text-white text-xs font-bold flex items-center justify-center">
+          <Link href="/rejoindre" className="h-11 px-5 rounded-full border border-slate-200 bg-white hover:bg-suguba-sauge text-suguba-profond text-sm font-semibold flex items-center justify-center">
             Devenir revendeur
           </Link>
         </div>

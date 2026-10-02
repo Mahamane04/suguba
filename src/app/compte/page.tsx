@@ -12,6 +12,7 @@ import { Card, Skeleton } from '@/components/ui/Surface';
 import { sugubaStore } from '@/lib/store';
 import { invaliderIdentite } from '@/lib/identite';
 import { supabase } from '@/lib/supabase';
+import { statutVente } from '@/lib/libelles-vente';
 
 /**
  * Compte (V1 vue client, 2026-09-27) — dernier onglet de la barre du bas
@@ -60,6 +61,9 @@ export default function ComptePage() {
   const router = useRouter();
   const [moi, setMoi] = useState<{ connecte: boolean; nom?: string } | null>(null);
   const [sortie, setSortie] = useState(false);
+  // PUB-14 (lot 5 de l'audit UI/UX du 2026-10-02) : la commande en cours, en tête
+  // du compte. Avant, il fallait ouvrir « Mes commandes » puis le reçu pour la suivre.
+  const [enCours, setEnCours] = useState<{ numero: string; produit: string; statut: string } | null>(null);
 
   useEffect(() => {
     fetch('/api/auth/me', { cache: 'no-store', credentials: 'same-origin' })
@@ -67,6 +71,14 @@ export default function ComptePage() {
       .then((m) => setMoi(m?.authenticated ? { connecte: true, nom: m.fullName } : { connecte: false }))
       .catch(() => setMoi({ connecte: false }));
   }, []);
+  useEffect(() => {
+    if (!moi?.connecte) return;
+    fetch('/api/compte/commandes', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => setEnCours(((j?.commandes || []) as { numero: string; produit: string; statut: string }[])
+        .find((c) => !['delivered', 'cancelled', 'returned'].includes(c.statut)) || null))
+      .catch(() => undefined);
+  }, [moi?.connecte]);
 
   const aide: Ligne = {
     href: `https://api.whatsapp.com/send?phone=${NUMERO_AIDE}&text=${encodeURIComponent('Bonjour Suguba, j’ai une question.')}`,
@@ -88,6 +100,18 @@ export default function ComptePage() {
     <PageReseau titre="Compte" sousTitre={moi?.connecte && moi.nom ? `Bonjour ${moi.nom.split(' ')[0]}` : 'Vos achats et vos réglages.'}>
       {!moi ? <Skeleton className="h-64" /> : moi.connecte ? (
         <>
+          {enCours && (
+            <Card className="space-y-3 bg-suguba-menthe border-transparent">
+              <div>
+                <p className="text-xs font-bold text-suguba-profond">Commande en cours</p>
+                <p className="text-base font-bold text-slate-900 truncate">{enCours.produit}</p>
+                <p className="text-sm text-slate-700">{statutVente(enCours.statut).libelle} · {enCours.numero}</p>
+              </div>
+              <Button href={`/track/${encodeURIComponent(enCours.numero)}`} fullWidth>
+                <PackageSearch className="w-4 h-4" />Suivre ma commande
+              </Button>
+            </Card>
+          )}
           <Liste lignes={[
             { href: '/compte/commandes', libelle: 'Mes commandes', aide: 'Suivi, reçus, sur tous vos téléphones', icone: PackageSearch },
             { href: '/compte/favoris', libelle: 'Favoris', aide: 'Les produits que vous gardez sous la main', icone: Heart },
@@ -99,8 +123,9 @@ export default function ComptePage() {
             gagner,
             aide,
           ]} />
-          <Button type="button" variant="secondary" size="lg" fullWidth onClick={seDeconnecter} disabled={sortie}>
-            <LogOut className="w-4 h-4" />{sortie ? 'Déconnexion…' : 'Se déconnecter'}
+          {/* Se déconnecter : geste rare, plus le bouton le plus visible de l'écran. */}
+          <Button type="button" variant="ghost" fullWidth onClick={seDeconnecter} loading={sortie}>
+            <LogOut className="w-4 h-4" />Se déconnecter
           </Button>
         </>
       ) : (

@@ -133,6 +133,19 @@ export default function Header() {
                 Gagner avec Suguba
               </Link>
             )}
+            {/* PUB-11 (lot 5 de l'audit UI/UX du 2026-10-02) : sur ordinateur, la barre
+                du bas est masquée et le suivi n'était plus accessible nulle part. */}
+            {(!connecte || state.currentUser.role === 'customer' || state.currentUser.role === 'diaspora') && (
+              <Link
+                href="/track"
+                className={`px-3 py-2 rounded-xl font-semibold flex items-center gap-1.5 transition-colors ${
+                  pathname.startsWith('/track') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+                }`}
+              >
+                <PackageSearch className="w-4 h-4" />
+                Suivre ma commande
+              </Link>
+            )}
           </nav>
 
           <div className="flex items-center gap-2 ml-auto shrink-0">
