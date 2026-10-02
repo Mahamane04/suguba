@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/Field';
 import { EmptyState } from '@/components/ui/Surface';
 import Button from '@/components/ui/Button';
 import { formatF } from '@/lib/montant';
+import { initiale } from '@/lib/initiale';
 
 /**
  * Recherche globale (§ Z) : produits, boutiques, fournisseurs et catégories
@@ -28,7 +29,7 @@ interface Resultats {
 function Vignette({ image, nom }: { image: string | null; nom: string }) {
   // eslint-disable-next-line @next/next/no-img-element
   return image ? <img src={image} alt="" className="w-12 h-12 rounded-2xl object-cover shrink-0" />
-    : <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-500 font-bold flex items-center justify-center shrink-0">{nom.charAt(0).toUpperCase()}</div>;
+    : <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-500 font-bold flex items-center justify-center shrink-0">{initiale(nom)}</div>;
 }
 
 function Contenu() {

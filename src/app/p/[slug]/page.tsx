@@ -23,6 +23,7 @@ import VisiteQualifiee from '@/components/product/VisiteQualifiee';
 import BoutonQuestionFournisseur from '@/components/messagerie/BoutonQuestionFournisseur';
 import BoutonFavori from '@/components/compte/BoutonFavori';
 import { formatF, formatNombre } from '@/lib/montant';
+import { initiale } from '@/lib/initiale';
 
 const fcfa = formatF;
 
@@ -271,7 +272,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
           <div className="bg-emerald-50 border border-emerald-300 rounded-2xl p-3.5 flex items-center justify-between">
             <div className="flex items-center space-x-2.5">
               <div className="w-8 h-8 rounded-full bg-suguba-profond text-white flex items-center justify-center font-bold text-xs">
-                {nomRecommandeur.charAt(0)}
+                {initiale(nomRecommandeur)}
               </div>
               <div>
                 <p className="text-xs font-bold text-emerald-950">

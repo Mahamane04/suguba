@@ -84,7 +84,7 @@ export default function OrderSuccessPage({ params }: { params: Promise<{ orderNu
           <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200 text-left space-y-2.5 text-xs">
             <div className="flex items-center space-x-3 pb-2 border-b border-slate-200">
               <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-slate-200 shrink-0">
-                <ProductImage src={order.productImage} alt={order.productName} fill className="object-cover" />
+                <ProductImage src={order.productImage} alt={order.productName} fill sizes="48px" className="object-cover" compact />
               </div>
               <div className="min-w-0">
                 <p className="font-bold text-slate-900 truncate">{order.productName}</p>

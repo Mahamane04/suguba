@@ -6,6 +6,7 @@ import { Heart, ChevronRight } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
 import { EmptyState, Skeleton } from '@/components/ui/Surface';
+import { initiale } from '@/lib/initiale';
 
 /**
  * Boutiques suivies (§ 32 des écrans).
@@ -64,7 +65,7 @@ export default function BoutiquesSuiviesPage() {
                 <img src={b.logo} alt="" className="w-12 h-12 rounded-2xl object-cover shrink-0" />
               ) : (
                 <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-500 font-bold flex items-center justify-center shrink-0">
-                  {b.nom.charAt(0).toUpperCase()}
+                  {initiale(b.nom)}
                 </div>
               )}
               <div className="min-w-0 flex-1">

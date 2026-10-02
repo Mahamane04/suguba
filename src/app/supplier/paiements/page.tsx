@@ -150,7 +150,17 @@ export default function SupplierPaiementsPage() {
               </p>
             </div>
 
-            <FormulaireRetrait
+            {/* FOU-09 (lot 7 de l'audit UI/UX du 2026-10-02) : le formulaire s'affichait à
+                0 F, bouton grisé ; comme chez le revendeur, il n'apparaît qu'avec un solde
+                suffisant (ou une demande interrompue à reprendre). */}
+            {!chargement && disponible < retraitMinimum && !checkout.restore() ? (
+              <div className="rounded-3xl border border-slate-200 bg-white p-5 space-y-1">
+                <h2 className="text-base font-bold text-slate-900">Prochain retrait</h2>
+                <p className="text-sm text-slate-600">
+                  Le retrait est possible à partir de {formatF(retraitMinimum)} disponibles. Il manque {formatF(Math.max(0, retraitMinimum - disponible))}.
+                </p>
+              </div>
+            ) : <FormulaireRetrait
               role="fournisseur"
               titre="Retirer mon argent"
               checkout={checkout}
@@ -160,7 +170,7 @@ export default function SupplierPaiementsPage() {
               chargement={chargement}
               telephoneParDefaut={telephone || state.currentUser.phone}
               onEnregistre={charger}
-            />
+            />}
 
             {/* Détail par commande */}
             <div className="bg-white rounded-3xl border border-slate-200 p-5 space-y-3">

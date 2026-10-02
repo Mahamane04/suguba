@@ -65,8 +65,9 @@ export default function ModulesPage() {
                   <StatusPill ton={m.actif ? 'succes' : 'neutre'}>{m.actif ? 'Ouvert' : 'Fermé'}</StatusPill>
                 </div>
                 {m.detail && <p className="text-xs font-semibold text-slate-700">{m.detail}</p>}
-                <p className="text-xs text-slate-600"><strong>Ouvre :</strong> {m.ouvre}</p>
-                <p className="text-xs text-slate-600"><strong>Fermé :</strong> {m.continue}</p>
+                {/* ADM-15 : « Fermé : Fermé : … » — le préfixe était aussi dans le texte. */}
+                <p className="text-sm text-slate-600"><strong>Ouvert :</strong> {m.ouvre}</p>
+                <p className="text-sm text-slate-600"><strong>Fermé :</strong> {m.continue}</p>
                 <div className="flex gap-2 pt-1">
                   {m.interrupteur && m.peutChanger && (
                     <Button type="button" size="sm" variant={m.actif ? 'secondary' : 'primary'} disabled={enCours === m.cle} onClick={() => basculer(m)}>

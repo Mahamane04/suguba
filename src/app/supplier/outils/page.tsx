@@ -1,4 +1,32 @@
-import Link from 'next/link';
-import Header from '@/components/common/Header';
-import BottomNav from '@/components/common/BottomNav';
-export default function Outils() { return <div className="min-h-screen bg-slate-50"><Header/><main className="max-w-5xl mx-auto px-4 py-6 space-y-5"><h1 className="text-2xl font-bold">Mon espace fournisseur</h1><div className="grid sm:grid-cols-2 gap-3"><Link href="/supplier/boutique" className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-emerald-600"><h2 className="font-bold">Ma boutique</h2><p className="text-sm text-slate-600 mt-1">Personnaliser ma vitrine publique</p></Link><Link href="/supplier/boutique#recrutement" className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-emerald-600"><h2 className="font-bold">Réseau de revendeurs</h2><p className="text-sm text-slate-600 mt-1">Inviter des revendeurs dans ma boutique</p></Link><Link href="/supplier/devis" className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-emerald-600"><h2 className="font-bold">Demandes de devis</h2><p className="text-sm text-slate-600 mt-1">Répondre aux demandes</p></Link><Link href="/supplier/questions" className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-emerald-600"><h2 className="font-bold">Questions des revendeurs</h2><p className="text-sm text-slate-600 mt-1">Répondre sur mes offres</p></Link><Link href="/supplier/analyses" className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-emerald-600"><h2 className="font-bold">Analyses</h2><p className="text-sm text-slate-600 mt-1">Suivre les résultats</p></Link><Link href="/supplier/equipe" className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-emerald-600"><h2 className="font-bold">Équipe</h2><p className="text-sm text-slate-600 mt-1">Gérer les accès</p></Link><Link href="/supplier/campagnes" className="p-5 rounded-2xl bg-white border border-slate-200 hover:border-emerald-600"><h2 className="font-bold">Campagnes</h2><p className="text-sm text-slate-600 mt-1">Budget et promotion</p></Link></div></main><BottomNav/></div>; }
+import { BarChart3, FileText, Megaphone, MessageCircleQuestion, Package, Store, UsersRound, Users, Wallet } from 'lucide-react';
+import PageReseau from '@/components/reseau/PageReseau';
+import GrilleOutils from '@/components/reseau/GrilleOutils';
+
+/**
+ * « Plus » du fournisseur (REV-12 / FOU-08) : la page s'intitulait « Mon espace
+ * fournisseur », comme l'accueil ; intitulés désormais identiques aux titres des pages.
+ */
+export default function Outils() {
+  return (
+    <PageReseau titre="Tous mes outils" sousTitre="Boutique, réseau, demandes et suivi de votre activité."
+      retour={{ href: '/supplier', libelle: 'Espace fournisseur' }}>
+      <GrilleOutils groupes={[
+        { titre: 'Vendre', outils: [
+          { href: '/supplier/inventory', titre: 'Mes produits', aide: 'Stocks, prix et nouvelles offres', icone: Package },
+          { href: '/supplier/devis', titre: 'Demandes de devis', aide: 'Répondre avec un prix adapté', icone: FileText },
+          { href: '/supplier/boutique', titre: 'Ma boutique', aide: 'Personnaliser ma vitrine publique', icone: Store },
+        ] },
+        { titre: 'Mon réseau', outils: [
+          { href: '/supplier/revendeurs', titre: 'Mes revendeurs', aide: 'Ceux qui vendent mes produits', icone: Users },
+          { href: '/supplier/questions', titre: 'Questions sur les offres', aide: 'Répondre aux revendeurs', icone: MessageCircleQuestion },
+          { href: '/supplier/campagnes', titre: 'Campagnes', aide: 'Budget et promotion', icone: Megaphone },
+        ] },
+        { titre: 'Suivi', outils: [
+          { href: '/supplier/paiements', titre: 'Mes paiements', aide: 'Ce que Suguba me doit et mes retraits', icone: Wallet },
+          { href: '/supplier/analyses', titre: 'Analyses', aide: 'Les résultats de mes ventes', icone: BarChart3 },
+          { href: '/supplier/equipe', titre: 'Mon équipe', aide: 'Gérer les accès de mes collaborateurs', icone: UsersRound },
+        ] },
+      ]} />
+    </PageReseau>
+  );
+}

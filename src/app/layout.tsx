@@ -53,7 +53,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="fr" className={`h-full ${inter.variable}`}>
-      <body className="h-full flex flex-col antialiased font-sans selection:bg-suguba-brand selection:text-white">
+      {/* PUB-15 (lot 7 de l'audit UI/UX du 2026-10-02) : « h-full » figeait le corps à la
+          hauteur de l'écran ; sur une page longue, son fond s'arrêtait au premier écran. */}
+      <body className="min-h-full flex flex-col antialiased font-sans selection:bg-suguba-brand selection:text-white">
         <AuthHashCatcher />
         <CloudSyncInitializer />
         <AncrageRevendeur />

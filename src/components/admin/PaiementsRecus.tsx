@@ -71,23 +71,23 @@ export default function PaiementsRecus({ cible, cibleId, du, recu, titre, onMaj 
                 <li key={p.id} className={`rounded-xl bg-white/70 px-2.5 py-2 ${p.annuleLe ? 'opacity-60' : ''}`}>
                   <div className="flex items-center justify-between gap-2">
                     <span className={p.annuleLe ? 'line-through' : 'font-semibold'}>{fcfa(p.montant)} · réf. {p.reference}</span>
-                    <span className="text-[11px]">{date(p.recuLe)}</span>
+                    <span className="text-xs">{date(p.recuLe)}</span>
                   </div>
-                  {p.note && <p className="text-[11px]">{p.note}</p>}
-                  {p.annuleLe && <p className="text-[11px]">Annulé le {date(p.annuleLe)} : {p.motifAnnulation}</p>}
+                  {p.note && <p className="text-xs">{p.note}</p>}
+                  {p.annuleLe && <p className="text-xs">Annulé le {date(p.annuleLe)} : {p.motifAnnulation}</p>}
                   {!p.annuleLe && (annulation === p.id ? (
                     <div className="mt-1.5 space-y-1.5">
                       <Input value={motif} onChange={(e) => setMotif(e.target.value)} maxLength={300} placeholder="Motif de l’annulation" aria-label="Motif de l’annulation" />
                       <div className="grid grid-cols-2 gap-2">
                         <Button size="sm" variant="ghost" onClick={() => setAnnulation(null)}>Retour</Button>
-                        <Button size="sm" disabled={envoi || motif.trim().length < 3}
+                        <Button size="sm" variant="danger" loading={envoi} disabled={motif.trim().length < 3}
                           onClick={async () => { if (await envoyer({ action: 'annuler', id: p.id, motif }, 'Paiement annulé.')) { setAnnulation(null); setMotif(''); } }}>
-                          {envoi ? <SugubaLoader className="w-3.5 h-3.5" /> : <X className="w-3.5 h-3.5" />}Annuler ce paiement
+                          <X className="w-3.5 h-3.5" />Annuler ce paiement
                         </Button>
                       </div>
                     </div>
                   ) : (
-                    <button type="button" onClick={() => { setAnnulation(p.id); setMotif(''); }} className="mt-1 min-h-9 text-[11px] font-semibold underline">
+                    <button type="button" onClick={() => { setAnnulation(p.id); setMotif(''); }} className="mt-1 min-h-9 text-xs font-semibold underline">
                       Erreur de saisie ? Annuler ce paiement
                     </button>
                   ))}

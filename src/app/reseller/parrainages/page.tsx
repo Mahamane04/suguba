@@ -92,12 +92,13 @@ export default function ParrainagesPage() {
       sousTitre="Invitez des clients et d’autres revendeurs."
       retour={{ href: '/reseller', libelle: 'Espace revendeur' }}
     >
-      <div className="grid grid-cols-2 gap-3">
+      {/* Lot 7 : les tuiles à 0 apparaissent avec la première invitation. */}
+      {(totaux.invitations > 0 || totaux.gains > 0) && <div className="grid grid-cols-2 gap-3">
         <StatCard label="Invitations" valeur={totaux.invitations} icone={UserPlus} />
         <StatCard label="Revendeurs" valeur={totaux.revendeurs} icone={Users} />
         <StatCard label="Clients" valeur={totaux.clients} />
         <StatCard label="Gains" valeur={`${formatF(totaux.gains)}`} icone={Gift} accent />
-      </div>
+      </div>}
 
       <CarteLien
         titre="Mon lien de parrainage"

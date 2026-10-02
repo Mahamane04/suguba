@@ -53,7 +53,9 @@
     "**Cloche** : les notifications (nouveautés des boutiques suivies, ventes…).",
     "**☰ Menu** : connexion ou « Mon espace », « Gagner avec Suguba », pages légales, téléphone du support, « Se déconnecter ».",
     "**Suivre ma commande** (ordinateur, visiteur et client) : lien dans l’en-tête vers le suivi ; sur téléphone, c’est l’onglet « Commandes » du menu du bas.",
-    "**Retour et titre de page** : chaque écran des espaces revendeur, fournisseur et livreur a le même lien de retour (« Espace revendeur », « Espace fournisseur », « Mes courses »), le même titre et la même phrase d’explication en 14 px."
+    "**Retour et titre de page** : chaque écran des espaces revendeur, fournisseur et livreur a le même lien de retour (« Espace revendeur », « Espace fournisseur », « Mes courses »), le même titre et la même phrase d’explication en 14 px.",
+    "**Menu du compte** : un revendeur, un fournisseur ou un livreur y voit « Mes achats » (ses propres commandes de client) ; un client ou la diaspora, « Mes commandes ».",
+    "**Avatars** : la lettre affichée est la première lettre ou le premier chiffre du nom (plus de « [ » ni de guillemet)."
    ]
   },
   {
@@ -192,6 +194,44 @@
   }
  ],
  "journal": [
+  {
+   "date": "2026-10-02",
+   "titre": "Audit UI/UX, lot 7 : les finitions",
+   "demande": "« … commence directement avec les lots restante » — les constats de l’audit UI/UX du 2 octobre qui n’étaient rangés dans aucun des six lots.",
+   "realise": [
+    "Livreur, carte de course : une seule action principale, « Saisir le code du client » ; Appeler, Itinéraire, Reçu et Problème en boutons identiques (avant : quatre boutons de quatre styles et un lien perdu) ; couleurs de la charte.",
+    "Retraits : le formulaire n’apparaît plus à 0 F chez le fournisseur (« Il manque … » à la place), comme chez le revendeur ; une demande interrompue reste reprenable ; un seul indicateur de chargement.",
+    "Menu du compte : « Mes achats » pour un pro (au lieu de « Mes commandes », qui laissait croire aux commandes de ses clients). Le corps de page n’est plus figé à la hauteur de l’écran (fond coupé sur les pages longues).",
+    "Fournisseur, Ma boutique : sommaire en pastilles, recrutement en bouton secondaire, « Enregistrer mon identité » seul bouton plein.",
+    "Outils revendeur et fournisseur : coquille commune, outils rangés par usage, intitulés identiques aux titres des pages ; outils manquants ajoutés (Mes prix, Mes clients, Missions, Mes parrainages, Mon profil vérifié ; Mes revendeurs, Mes paiements).",
+    "Catalogue revendeur : bandeau « Ma boutique » sur une ligne, sous-titre raccourci : le premier produit remonte. Petites vignettes : image à la bonne taille et repli compact.",
+    "Finitions revendeur : plus de tuiles à 0 sur Mes partages et Mes parrainages avant la première activité ; un seul bouton plein sur Mon calendrier ; carte professionnelle (« Imprimer ma carte », retour normalisé) ; inscription sans « 5 choix possibles ».",
+    "Équipe : centre des modules sans « Fermé : Fermé : » ; paiements reçus sans texte à 11 px, annulation en bouton « danger ».",
+    "Après un panier : « Payer par Mobile Money » replié et facultatif pour chaque commande, et « Suivre ma commande » comme action principale.",
+    "Avatars : première lettre ou chiffre du nom (« [QA] Boutique » affichait « [ »)."
+   ],
+   "ecarts": [
+    "PUB-10 n’est traité qu’en partie : les deux tunnels de commande (achat direct et panier) restent deux écrans différents ; les unifier est un chantier à part.",
+    "REV-10 (numéro du client masqué dans « Mes clients », visible dans « Mes ventes ») attend votre arbitrage : afficher partout ou masquer partout.",
+    "La nouvelle carte de course n’a pas pu être vue à l’écran : le livreur fictif n’a pas de course en cours dans la copie locale (vérifiée par le code et les tests).",
+    "Captures 390 et 1 440 px avec les comptes [QA] : 0 défaut d’accessibilité détecté, 0 débordement. Captures du guide à refaire. Aucune migration."
+   ],
+   "pages": [
+    "liv-courses",
+    "fou-paiements",
+    "fou-boutique",
+    "reseller-outils",
+    "supplier-outils",
+    "rev-catalogue",
+    "rev-partages",
+    "rev-parrainages",
+    "rev-badge",
+    "rev-calendrier",
+    "adm-modules",
+    "panier-confirmation"
+   ],
+   "statut": "en local"
+  },
   {
    "date": "2026-10-02",
    "titre": "Audit UI/UX, lot 6 : le fond",
@@ -2232,7 +2272,7 @@
    "elements": [
     {
      "nom": "Suivre une commande",
-     "role": "Ouvre la page de suivi."
+     "role": "Bouton plein « Suivre ma commande » (ou « Suivre mes commandes ») ; sous chaque livraison, « Payer … par Mobile Money » replié et facultatif, une commande à la fois ; « Continuer mes achats » en contour."
     }
    ],
    "suite": [
@@ -3143,6 +3183,10 @@
    "but": "Tous les produits qu’on peut vendre, avec la commission de chacun.",
    "elements": [
     {
+     "nom": "Ma boutique · N articles",
+     "role": "Une ligne au-dessus de la recherche, avec « Voir » : le premier produit remonte dans l’écran."
+    },
+    {
      "nom": "Recommandés · Tous les fournisseurs",
      "role": "Ses fournisseurs suivis d’abord, ou tout le catalogue."
     },
@@ -3567,7 +3611,7 @@
    "elements": [
     {
      "nom": "Partager un produit",
-     "role": "Vers le catalogue quand la liste est vide."
+     "role": "Vers le catalogue quand la liste est vide. Les quatre chiffres (visites, commandes, chiffre d’affaires, liens) n’apparaissent qu’après le premier lien."
     }
    ],
    "suite": [
@@ -3620,6 +3664,10 @@
     {
      "nom": "Liste des filleuls",
      "role": "Avec l’état de la prime (en attente, versée)."
+    },
+    {
+     "nom": "Chiffres",
+     "role": "Invitations, revendeurs, clients et gains : affichés dès la première invitation (plus de tuiles à 0)."
     }
    ],
    "suite": [
@@ -3641,7 +3689,7 @@
    "elements": [
     {
      "nom": "Planifier une publication",
-     "role": "Choisir le produit, la date et le message ; un rappel arrive le jour venu."
+     "role": "Choisir le produit, la date et le message ; un rappel arrive le jour venu. Le bouton « Planifier » de l’en-tête est en contour : le bouton plein est celui de l’écran vide."
     }
    ],
    "suite": [
@@ -3735,7 +3783,7 @@
     },
     {
      "nom": "Imprimer et partager",
-     "role": "Diffuser la carte de présentation après chargement de la boutique."
+     "role": "« Imprimer ma carte » (bouton en contour) et « Partager » sur WhatsApp ; retour « Espace revendeur »."
     }
    ],
    "suite": [
@@ -4050,6 +4098,10 @@
      "role": "En attente : délai de sécurité en cours (réglé dans Paramètres, 7 jours par défaut), avec la date du prochain montant disponible ; la ligne « Dont … en attente de l’argent de la livraison » signale une vente payée en espèces pas encore reversée à la caisse. En cours de retrait : demandé, pas encore versé. Déjà versé : le total reçu."
     },
     {
+     "nom": "Prochain retrait",
+     "role": "Sous le minimum de retrait : « Il manque … » à la place du formulaire (qui s’affichait à 0 F). Une demande interrompue reste reprenable."
+    },
+    {
      "nom": "Retirer mon argent",
      "role": "Même formulaire que le revendeur : Orange Money · Moov Money · Wave (virement) ou Espèces au guichet, numéro, montant (5 000 F minimum). Avant de confirmer : débité du solde, moyen, frais Suguba au taux FOURNISSEUR (caisse ou Mobile Money), virement SasPay au vrai tarif, « Vous recevrez ». Les frais sont figés avec la demande ; un échec ou un refus rend tout le montant."
     },
@@ -4246,7 +4298,7 @@
     },
     {
      "nom": "Recrute des revendeurs",
-     "role": "Fait apparaître la boutique dans « Ces boutiques recherchent des revendeurs »."
+     "role": "Fait apparaître la boutique dans « Ces boutiques recherchent des revendeurs ». « Activer le recrutement » est un bouton secondaire ; le seul bouton plein de la page est « Enregistrer mon identité »."
     },
     {
      "nom": "Galerie",
@@ -4488,7 +4540,7 @@
     },
     {
      "nom": "Code client",
-     "role": "Accepté seulement après le ramassage : le client donne son code, la commande passe « livrée »."
+     "role": "Une seule action principale par course : « Saisir le code du client » (grisé tant que le colis n’est pas récupéré, avec la raison dessous). En dessous, quatre boutons identiques : Appeler · Itinéraire · Reçu · Problème."
     },
     {
      "nom": "Dernières livraisons",
@@ -4844,7 +4896,7 @@
    "elements": [
     {
      "nom": "Carte de module",
-     "role": "Ouvert / Fermé, ce qu’il ouvre, ce qui continue une fois fermé (les dossiers engagés suivent leur cours)."
+     "role": "Titre, état (Ouvert / Fermé), puis « Ouvert : … » et « Fermé : … » (le préfixe n’est plus répété)."
     },
     {
      "nom": "Ouvrir / Fermer",
@@ -5859,7 +5911,7 @@
    "elements": [
     {
      "nom": "Outils",
-     "role": "Retrouver le studio, la boutique, les rappels et les résultats de partage."
+     "role": "Rangés par usage — Partager (Catalogue à partager, Créer un visuel, Ma boutique, Mon calendrier, Mes prix), Suivre (Mes partages, Mes clients, Missions, Mes parrainages), Mon activité (Fournisseurs, Mon profil vérifié, Votre carte professionnelle, Combien pouvez-vous gagner ?). Chaque entrée porte le titre exact de la page qu’elle ouvre."
     }
    ],
    "suite": [],
@@ -5875,7 +5927,7 @@
    "elements": [
     {
      "nom": "Plus",
-     "role": "Retrouver les outils secondaires du fournisseur."
+     "role": "Page « Tous mes outils » : Vendre (Mes produits, Demandes de devis, Ma boutique), Mon réseau (Mes revendeurs, Questions sur les offres, Campagnes), Suivi (Mes paiements, Analyses, Mon équipe)."
     }
    ],
    "suite": [],

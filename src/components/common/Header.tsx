@@ -86,6 +86,9 @@ export default function Header() {
   // id vide = personne connue pour l'instant (visiteur, ou identité pas
   // encore résolue lors du tout premier chargement de l'app).
   const connecte = Boolean(state.currentUser.id);
+  // FOU-08 (lot 7 de l'audit UI/UX du 2026-10-02) : pour un fournisseur ou un revendeur,
+  // « Mes commandes » laissait croire aux commandes de ses clients ; ce sont ses achats.
+  const libelleAchats = ['customer', 'diaspora'].includes(state.currentUser.role) ? 'Mes commandes' : 'Mes achats';
   const conf = connecte ? roleConfig[state.currentUser.role as UserRole] : null;
   const IconeRole = conf?.icon;
   const prenom = state.currentUser.fullName?.trim().split(/\s+/)[0] || '';
@@ -165,7 +168,7 @@ export default function Header() {
                   aria-expanded={menuCompte}
                   aria-haspopup="menu"
                 >
-                  <span className="w-8 h-8 rounded-xl bg-slate-900 text-white flex items-center justify-center shrink-0">
+                  <span className="w-8 h-8 rounded-xl bg-suguba-profond text-white flex items-center justify-center shrink-0">
                     {IconeRole && <IconeRole className="w-4 h-4" />}
                   </span>
                   <span className="leading-tight text-left">
@@ -184,7 +187,7 @@ export default function Header() {
                     <Link href="/compte/commandes" onClick={() => setMenuCompte(false)} role="menuitem"
                       className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-slate-700 hover:bg-slate-50">
                       <PackageSearch className="w-4 h-4 text-slate-400" />
-                      Mes commandes
+                      {libelleAchats}
                     </Link>
                     <Link href="/compte/profils" onClick={() => setMenuCompte(false)} role="menuitem"
                       className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-slate-700 hover:bg-slate-50">
@@ -236,7 +239,7 @@ export default function Header() {
               <Link href="/compte/commandes" onClick={() => setMenuMobile(false)}
                 className="flex items-center gap-3 px-3 py-3 rounded-xl text-slate-700 hover:bg-slate-50">
                 <PackageSearch className="w-4 h-4" />
-                Mes commandes
+                {libelleAchats}
               </Link>
               <Link href="/compte/profils" onClick={() => setMenuMobile(false)}
                 className="flex items-center gap-3 px-3 py-3 rounded-xl text-slate-700 hover:bg-slate-50">

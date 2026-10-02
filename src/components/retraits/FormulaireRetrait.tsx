@@ -1,6 +1,5 @@
 'use client';
 
-import SugubaLoader from '@/components/ui/SugubaLoader';
 
 import React, { useEffect, useState } from 'react';
 import { AlertCircle, Building2, Check, CheckCircle2, Wallet } from 'lucide-react';
@@ -241,13 +240,13 @@ export default function FormulaireRetrait({
           )}
 
           {erreur && (
-            <p className="rounded-2xl bg-rose-50 border border-rose-100 p-3 text-xs font-bold text-rose-700 flex items-center gap-2">
+            <p role="alert" className="rounded-2xl bg-rose-50 border border-rose-100 p-3 text-sm text-rose-800 flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />{erreur}
             </p>
           )}
 
-          <Button type="submit" size="lg" fullWidth disabled={envoi || chargement || !assez}>
-            {envoi ? <><SugubaLoader className="mr-2 h-4 w-4" />Envoi…</> : moyen === 'Agence Suguba' ? 'Obtenir mon numéro de retrait' : montant > 0 ? `Demander le virement de ${enF(montant)}` : 'Demander le virement'}
+          <Button type="submit" size="lg" fullWidth loading={envoi} disabled={chargement || !assez}>
+            {moyen === 'Agence Suguba' ? 'Obtenir mon numéro de retrait' : montant > 0 ? `Demander le virement de ${enF(montant)}` : 'Demander le virement'}
           </Button>
           {!chargement && !assez && (
             <p className="text-xs text-slate-500 text-center">

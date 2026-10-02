@@ -207,7 +207,7 @@ export default function OrderTrackingPage() {
           {/* Product Summary */}
           <div className="flex items-center space-x-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
             <div className="relative w-14 h-14 rounded-xl overflow-hidden bg-slate-200 shrink-0">
-              <ProductImage src={order.productImage} alt={order.productName} fill className="object-cover" />
+              <ProductImage src={order.productImage} alt={order.productName} fill sizes="56px" className="object-cover" compact />
             </div>
             <div className="min-w-0 flex-1">
               <p className="font-bold text-sm text-slate-900 truncate">{order.productName}</p>

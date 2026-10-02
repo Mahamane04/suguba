@@ -2,8 +2,9 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { CheckCircle2, KeyRound, Package, Phone } from 'lucide-react';
+import { CheckCircle2, Package, Phone, Smartphone, Truck } from 'lucide-react';
 import DeliveryCodeNotice from '@/components/common/DeliveryCodeNotice';
+import SasPayPaymentDesk from '@/components/common/SasPayPaymentDesk';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Button from '@/components/ui/Button';
@@ -87,10 +88,29 @@ export default function ConfirmationPanierPage() {
                   <span className="text-sm font-bold text-slate-900 tabular-nums shrink-0">{fcfa(c.totalAmount)}</span>
                 </div>
               ))}
+              {/* PUB-10 (lot 7 de l'audit UI/UX du 2026-10-02) : le paiement Mobile Money,
+                  proposé après une commande directe, manquait après le panier. Replié et
+                  facultatif, comme sur « Commande reçue » ; une commande à la fois. */}
+              {commandes.filter((c) => !c.paymentCollected).map((c) => (
+                <details key={`paiement-${c.id}`} className="group rounded-2xl border border-slate-200">
+                  <summary className="flex min-h-12 cursor-pointer list-none items-center gap-2 px-4 text-sm font-semibold text-slate-800 [&::-webkit-details-marker]:hidden">
+                    <Smartphone className="h-4 w-4 shrink-0 text-suguba-profond" />
+                    <span className="min-w-0 flex-1 truncate">Payer {commandes.length > 1 ? c.productName : 'maintenant'} par Mobile Money</span>
+                    <span className="text-xs font-normal text-slate-500 group-open:hidden">facultatif</span>
+                  </summary>
+                  <div className="px-2 pb-3">
+                    <SasPayPaymentDesk amount={c.totalAmount} orderNumber={c.orderNumber} defaultPhone={c.customerPhone} />
+                  </div>
+                </details>
+              ))}
             </div>
           </Card>
         ))}
 
+        {/* Une seule action pleine : suivre la commande. */}
+        <Button href={donnees?.commandes.length === 1 ? `/track/${donnees.commandes[0].orderNumber}` : '/track'} size="lg" fullWidth>
+          <Truck className="w-4 h-4" />{(donnees?.commandes.length || 0) > 1 ? 'Suivre mes commandes' : 'Suivre ma commande'}
+        </Button>
         <Button href="/" variant="ghost" fullWidth>Continuer mes achats</Button>
       </main>
       <BottomNav />

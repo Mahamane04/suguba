@@ -268,7 +268,7 @@ export default function ResellerDashboardPage() {
                 <div key={product.id} className="bg-white rounded-3xl p-3.5 border border-slate-200 flex flex-col justify-between gap-3">
                   <div className="flex gap-3">
                     <div className="relative w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 shrink-0">
-                      <ProductImage src={product.images[0]} alt={product.name} fill className="object-cover" />
+                      <ProductImage src={product.images[0]} alt={product.name} fill sizes="64px" className="object-cover" compact />
                     </div>
                     <div className="flex-1 min-w-0 space-y-0.5">
                       <h3 className="font-bold text-sm text-slate-900 truncate">{product.name}</h3>
@@ -319,7 +319,7 @@ export default function ResellerDashboardPage() {
               {myOrders.slice(0, 4).map((order) => (
                 <div key={order.id} className="py-3 flex items-center gap-3">
                   <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-slate-100 shrink-0">
-                    <ProductImage src={order.productImage} alt={order.productName} fill className="object-cover" />
+                    <ProductImage src={order.productImage} alt={order.productName} fill sizes="40px" className="object-cover" compact />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-sm text-slate-900 truncate">{order.productName}</p>

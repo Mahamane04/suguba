@@ -10,6 +10,7 @@ import BadgeConfiance from '@/components/ui/BadgeConfiance';
 import { quartierReconnu } from '@/lib/reseau/proximite';
 import AncrageRevendeur from '@/components/common/AncrageRevendeur';
 import { ShieldCheck, Truck, KeyRound, Store, Users, MapPin, Pencil, ImagePlus, ArrowDown } from 'lucide-react';
+import { initiale } from '@/lib/initiale';
 
 /**
  * Vitrine commune aux boutiques fournisseur (/s/), revendeur (/r/) et réseau
@@ -107,7 +108,7 @@ export default function ShopView({
                 />
               ) : (
                 <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-3xl bg-suguba-menthe text-suguba-profond ring-4 ring-white shadow-md flex items-center justify-center font-bold text-3xl sm:text-4xl">
-                  {boutique.nom.charAt(0).toUpperCase()}
+                  {initiale(boutique.nom)}
                 </div>
               )}
             </div>
@@ -217,7 +218,7 @@ export default function ShopView({
                     <li key={r.lien}>
                       <Link href={r.lien} className="flex items-center justify-between gap-3 min-h-11 rounded-2xl border border-slate-200 px-4 py-2.5 hover:border-suguba-profond">
                         <span className="flex items-center gap-2.5 min-w-0">
-                          <span className="w-8 h-8 shrink-0 rounded-full bg-suguba-menthe text-suguba-profond text-xs font-bold flex items-center justify-center">{r.nom.charAt(0)}</span>
+                          <span className="w-8 h-8 shrink-0 rounded-full bg-suguba-menthe text-suguba-profond text-xs font-bold flex items-center justify-center">{initiale(r.nom)}</span>
                           <span className="min-w-0">
                             <span className="block text-sm font-semibold text-slate-900 truncate">{r.nom}</span>
                             <span className="block text-xs text-slate-500">Revendeur partenaire</span>

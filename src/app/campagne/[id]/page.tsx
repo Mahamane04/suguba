@@ -11,6 +11,7 @@ import { URL_APP } from '@/lib/shop';
 import { normaliserCodeRevendeur } from '@/lib/ancrage-revendeur';
 import { ArrowRight, KeyRound, ShieldCheck, Truck } from 'lucide-react';
 import { formatF } from '@/lib/montant';
+import { initiale } from '@/lib/initiale';
 
 /**
  * Page de marque d'une campagne (2026-09-26, lot 2b) — /campagne/<id>.
@@ -59,7 +60,7 @@ export default async function PageCampagneMarque({ params, searchParams }: Param
               {c.marque.logo
                 // eslint-disable-next-line @next/next/no-img-element
                 ? <img src={c.marque.logo} alt={c.marque.nom} className="w-full h-full object-cover" />
-                : <span className="text-2xl font-bold text-suguba-profond">{c.marque.nom.charAt(0)}</span>}
+                : <span className="text-2xl font-bold text-suguba-profond">{initiale(c.marque.nom)}</span>}
             </div>
             <p className="text-xs font-semibold text-suguba-brand-dark">{c.marque.nom} · sur Suguba</p>
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight">{c.titre}</h1>

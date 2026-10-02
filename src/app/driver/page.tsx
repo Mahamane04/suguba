@@ -18,8 +18,9 @@ import { LIBELLE_ENCAISSEMENT, statutEncaissement } from '@/lib/caisse-livreur';
 import { 
   Truck, Phone, MapPin, KeyRound, CheckCircle2, 
   Banknote, Package, Navigation, AlertCircle, ArrowRight,
-  Compass, MessageCircle, Printer, Wallet, ShieldCheck
+  Compass, MessageCircle, Printer, Wallet, ShieldCheck, LifeBuoy
 } from 'lucide-react';
+import Button from '@/components/ui/Button';
 import { formatDate, formatF, FORMAT_DATE } from '@/lib/montant';
 import LigneListe from '@/components/ui/LigneListe';
 
@@ -177,8 +178,8 @@ export default function DriverDashboardPage() {
                       {/* Un badge « à encaisser » inconditionnel ferait réclamer
                           au client une somme qu'il a déjà réglée en ligne. */}
                       {order.paymentCollected ? (
-                        <div className="px-3 py-1 bg-emerald-100 border border-emerald-300 rounded-full text-emerald-900 font-bold text-xs flex items-center space-x-1">
-                          <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
+                        <div className="px-3 py-1 bg-suguba-menthe border border-suguba-brand/30 rounded-full text-suguba-profond font-bold text-xs flex items-center space-x-1">
+                          <ShieldCheck className="w-3.5 h-3.5 text-suguba-brand-dark" />
                           <span>Déjà payé — ne rien encaisser</span>
                         </div>
                       ) : (
@@ -192,7 +193,7 @@ export default function DriverDashboardPage() {
                     {/* Product item */}
                     <div className="flex items-center space-x-3 bg-slate-50 p-3 rounded-2xl border border-slate-200">
                       <div className="relative w-12 h-12 rounded-xl overflow-hidden bg-slate-200 shrink-0">
-                        <ProductImage src={order.productImage} alt={order.productName} fill sizes="48px" className="object-cover" />
+                        <ProductImage src={order.productImage} alt={order.productName} fill sizes="48px" className="object-cover" compact />
                       </div>
                       <div className="min-w-0 flex-1">
                         <h4 className="font-bold text-xs text-slate-900 truncate">{order.productName}</h4>
@@ -201,21 +202,21 @@ export default function DriverDashboardPage() {
                     </div>
 
                     {/* Étape 1 : ramassage prouvé par le code du fournisseur (2026-09-24). */}
-                    <RamassageColis order={order} nomRepli={product?.supplierName} /><a href="/driver/aide" className="block text-sm underline text-slate-700">Signaler un problème</a>
+                    <RamassageColis order={order} nomRepli={product?.supplierName} />
 
                     {/* Step 2: Dropoff Location & Landmark */}
-                    <div className="p-3 bg-emerald-50/60 rounded-2xl border border-emerald-100 text-xs space-y-1">
-                      <div className="flex items-center space-x-1.5 text-emerald-900 font-bold">
-                        <MapPin className="w-4 h-4 text-emerald-700" />
+                    <div className="p-3 bg-suguba-menthe/60 rounded-2xl border border-suguba-brand/20 text-sm space-y-1">
+                      <div className="flex items-center space-x-1.5 text-suguba-profond font-bold">
+                        <MapPin className="w-4 h-4 text-suguba-brand-dark" />
                         <span>2. Livrer au client</span>
                       </div>
                       <p className="font-bold text-slate-900 pl-5">
-                        {order.customerName} — <span className="font-mono text-emerald-800">{order.customerPhone}</span>
+                        {order.customerName} — <span className="font-mono text-suguba-profond whitespace-nowrap">{order.customerPhone}</span>
                       </p>
                       <p className="text-slate-700 pl-5">
                         Quartier : <strong>{order.neighborhood}</strong>
                       </p>
-                      <p className="text-slate-700 pl-5 bg-white p-2 rounded-xl border border-emerald-200 font-medium">
+                      <p className="text-slate-700 pl-5 bg-white p-2 rounded-xl border border-suguba-brand/20 font-medium">
                         📍 Repère : {order.landmark}
                       </p>
                       {order.deliveryNotes && (
@@ -225,42 +226,24 @@ export default function DriverDashboardPage() {
                       )}
                     </div>
 
-                    {/* Actions */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
-                      <button
-                        onClick={() => setSelectedOrderForMap(order)}
-                        className="py-3 px-2 bg-white hover:bg-slate-50 text-slate-800 font-bold border border-slate-200 rounded-2xl text-xs flex items-center justify-center space-x-1 transition-colors"
-                      >
-                        <Compass className="w-4 h-4 text-slate-600" />
-                        <span>Itinéraire</span>
-                      </button>
-
-                      <button
-                        onClick={() => setSelectedOrderForReceipt(order)}
-                        className="py-3 px-2 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold border border-slate-200 rounded-2xl text-xs flex items-center justify-center space-x-1 transition-colors"
-                      >
-                        <Printer className="w-3.5 h-3.5 text-slate-600" />
-                        <span>Reçu</span>
-                      </button>
-
-                      <a
-                        href={`tel:${order.customerPhone}`}
-                        className="py-3 px-2 bg-slate-900 hover:bg-black text-white font-bold rounded-2xl text-xs flex items-center justify-center space-x-1 transition-colors"
-                      >
-                        <Phone className="w-3.5 h-3.5" />
-                        <span>Appel</span>
-                      </a>
-
-                      <button
-                        onClick={() => setSelectedOrderForOtp(order)}
-                        disabled={order.status === 'dispatched' && !order.pickedUpAt}
-                        title={order.status === 'dispatched' && !order.pickedUpAt ? 'Récupérez d’abord le colis' : undefined}
-                        className="py-3 px-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-2xl text-xs shadow-md shadow-amber-600/20 flex items-center justify-center space-x-1 transition-transform active:scale-95 disabled:opacity-40 disabled:pointer-events-none"
-                      >
-                        <KeyRound className="w-4 h-4 stroke-[2.5]" />
-                        {/* « OTP » : jargon. Le client parle de son « code secret ». */}
-                        <span>Code client</span>
-                      </button>
+                    {/* LIV-05 (lot 7 de l'audit UI/UX du 2026-10-02) : quatre boutons de quatre
+                        styles (blanc, gris, noir, ambre) et « Signaler un problème » en lien
+                        perdu. Une seule action principale, celle de la porte du client ;
+                        les autres sont des boutons secondaires identiques. */}
+                    <div className="space-y-2 pt-2">
+                      <Button type="button" size="lg" fullWidth onClick={() => setSelectedOrderForOtp(order)}
+                        disabled={order.status === 'dispatched' && !order.pickedUpAt}>
+                        <KeyRound className="w-4 h-4" />Saisir le code du client
+                      </Button>
+                      {order.status === 'dispatched' && !order.pickedUpAt && (
+                        <p className="text-xs text-slate-600 text-center">Récupérez d’abord le colis chez le vendeur.</p>
+                      )}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        <Button href={`tel:${order.customerPhone}`} variant="ghost"><Phone className="w-4 h-4" />Appeler</Button>
+                        <Button type="button" variant="ghost" onClick={() => setSelectedOrderForMap(order)}><Compass className="w-4 h-4" />Itinéraire</Button>
+                        <Button type="button" variant="ghost" onClick={() => setSelectedOrderForReceipt(order)}><Printer className="w-4 h-4" />Reçu</Button>
+                        <Button href="/driver/aide" variant="ghost"><LifeBuoy className="w-4 h-4" />Problème</Button>
+                      </div>
                     </div>
 
                   </div>

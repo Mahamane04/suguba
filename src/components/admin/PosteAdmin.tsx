@@ -18,6 +18,7 @@ import LogoSuguba from '@/components/ui/LogoSuguba';
 import { compteurEntree, entreeActive } from '@/lib/admin/poste';
 import { deconnecter } from '@/lib/deconnexion';
 import { useToast } from '@/components/ui/Toast';
+import { initiale as lettreInitiale } from '@/lib/initiale';
 
 /** Icône de chaque page du menu : on repère une entrée d'un coup d'œil. */
 const ICONES: Record<string, React.ElementType> = {
@@ -221,7 +222,7 @@ export default function PosteAdmin({ children }: { children: React.ReactNode }) 
       </button>
     </div>
   );
-  const initiale = (poste?.nom || '').trim().charAt(0).toUpperCase();
+  const initiale = lettreInitiale(poste?.nom || '');
   const pied = (
     <div className="px-3 py-3 border-t border-white/10 space-y-1">
       {poste?.nom ? (

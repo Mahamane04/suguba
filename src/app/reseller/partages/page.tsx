@@ -73,12 +73,14 @@ export default function PartagesPage() {
       sousTitre="Ce que chaque lien partagé a réellement rapporté."
       retour={{ href: '/reseller', libelle: 'Espace revendeur' }}
     >
-      <div className="grid grid-cols-2 gap-3">
+      {/* Finitions du lot 7 (audit UI/UX du 2026-10-02) : quatre tuiles à 0 avant le
+          premier partage n'apprenaient rien ; elles apparaissent avec le premier lien. */}
+      {totaux.liens > 0 && <div className="grid grid-cols-2 gap-3">
         <StatCard label="Visites" valeur={totaux.clics} aide={`${totaux.visiteurs} personnes différentes`} icone={MousePointerClick} />
         <StatCard label="Commandes" valeur={totaux.commandes} aide={`${totaux.tauxConversion}% de conversion`} icone={ShoppingBag} accent />
         <StatCard label="Chiffre d’affaires" valeur={`${formatF(totaux.chiffreAffaires)}`} icone={Coins} />
         <StatCard label="Liens créés" valeur={totaux.liens} icone={Link2} />
-      </div>
+      </div>}
 
       {totaux.clics > 0 && visites.length > 0 && <GraphiqueBarres titre="Visites des 14 derniers jours" points={visites} />}
 

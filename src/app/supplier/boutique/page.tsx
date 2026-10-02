@@ -1,7 +1,6 @@
 'use client';
 
 import ReglagesDepot from '@/components/supplier/ReglagesDepot';
-import SugubaLoader from '@/components/ui/SugubaLoader';
 
 import React, { useEffect, useState } from 'react';
 import { Store, Users, Save, Megaphone } from 'lucide-react';
@@ -112,7 +111,13 @@ export default function BoutiqueFournisseurPage() {
       sousTitre="Votre page commerciale publique."
       retour={{ href: '/supplier', libelle: 'Espace fournisseur' }}
     >
-      <nav aria-label="Réglages de la boutique" className="flex flex-wrap gap-2 text-sm"><a href="#identite" className="rounded-xl border bg-white px-4 py-3">Identité publique</a><a href="#recrutement" className="rounded-xl border bg-white px-4 py-3">Recrutement</a><a href="#depot" className="rounded-xl border bg-white px-4 py-3">Dépôt privé</a></nav>
+      {/* FOU-10 (lot 7 de l'audit UI/UX du 2026-10-02) : sommaire en pastilles, une seule
+          action pleine par carte (« Enregistrer ») ; le recrutement est un réglage. */}
+      <nav aria-label="Réglages de la boutique" className="flex flex-wrap gap-2 text-sm">
+        {[['#identite', 'Identité publique'], ['#recrutement', 'Recrutement'], ['#depot', 'Dépôt privé']].map(([href, libelle]) => (
+          <a key={href} href={href} className="inline-flex min-h-10 items-center rounded-full border border-slate-200 bg-white px-4 font-semibold text-suguba-profond hover:bg-suguba-sauge">{libelle}</a>
+        ))}
+      </nav>
       {chargement ? (
         <div className="space-y-3"><Skeleton className="h-28" /><Skeleton className="h-48" /></div>
       ) : !boutique ? (
@@ -149,7 +154,7 @@ export default function BoutiqueFournisseurPage() {
               </div>
             </div>
             <Button
-              variant={recrute ? 'ghost' : 'primary'}
+              variant={recrute ? 'ghost' : 'secondary'}
               fullWidth
               disabled={enregistrement}
               onClick={() => { const nouveau = !recrute; enregistrer({ recrute: nouveau }); }}
@@ -200,9 +205,8 @@ export default function BoutiqueFournisseurPage() {
               <Textarea id="presentation" rows={4} value={description} onChange={(e) => setDescription(e.target.value)} maxLength={1200} />
             </Field>
 
-            <Button onClick={() => enregistrer()} disabled={enregistrement} fullWidth>
-              {enregistrement ? <SugubaLoader className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-              {enregistrement ? <><SugubaLoader className="mr-2 h-4 w-4" />Enregistrement…</> : 'Enregistrer'}
+            <Button onClick={() => enregistrer()} loading={enregistrement} fullWidth>
+              <Save className="w-4 h-4" />Enregistrer mon identité
             </Button>
           </Card>
         </>

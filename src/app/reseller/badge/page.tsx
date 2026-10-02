@@ -11,6 +11,7 @@ import { useCodeRevendeur } from '@/lib/partage';
 import { ShieldCheck, ArrowLeft, Printer, Sparkles, Award, CheckCircle2, MapPin, Copy, Check } from 'lucide-react';
 import LogoSuguba from '@/components/ui/LogoSuguba';
 import BoutonPartageWhatsApp from '@/components/ui/BoutonPartageWhatsApp';
+import Button from '@/components/ui/Button';
 
 export default function ResellerBadgePage() {
   const state = useSugubaStore();
@@ -58,22 +59,18 @@ export default function ResellerBadgePage() {
         
         {/* Top Control Bar (Hidden on Print) */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 print:hidden">
-          <Link 
-            href="/reseller" 
-            className="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 bg-white px-3.5 py-1.5 rounded-full border border-slate-200 shadow-xs self-start"
+          <Link
+            href="/reseller"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-slate-900 min-h-10 self-start"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Retour à l&apos;Espace Revendeur</span>
+            <span>Espace revendeur</span>
           </Link>
 
           <div className="flex items-center space-x-2">
-            <button
-              onClick={handlePrint}
-              className="px-3.5 py-2 bg-slate-900 hover:bg-black text-white font-bold rounded-2xl text-xs flex items-center space-x-1.5 transition-all shadow-xs active:scale-95"
-            >
-              <Printer className="w-3.5 h-3.5" />
-              <span>Imprimer mon Badge</span>
-            </button>
+            <Button type="button" variant="ghost" size="sm" onClick={handlePrint}>
+              <Printer className="w-4 h-4" />Imprimer ma carte
+            </Button>
 
             {personalCatalogUrl && <BoutonPartageWhatsApp size="sm" libelle="Partager"
               href={`https://api.whatsapp.com/send?text=${encodeURIComponent(

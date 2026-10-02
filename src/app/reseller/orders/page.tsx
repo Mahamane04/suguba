@@ -127,7 +127,7 @@ export default function ResellerOrdersPage() {
                     {/* Product info */}
                     <div className="flex items-center space-x-3 min-w-0">
                       <div className="relative w-16 h-16 rounded-2xl overflow-hidden bg-slate-100 shrink-0">
-                        <ProductImage src={order.productImage} alt={order.productName} fill className="object-cover" />
+                        <ProductImage src={order.productImage} alt={order.productName} fill sizes="64px" className="object-cover" compact />
                       </div>
                       <div className="min-w-0 space-y-0.5">
                         <h4 className="font-semibold text-sm text-slate-900 line-clamp-2">{order.productName}</h4>
