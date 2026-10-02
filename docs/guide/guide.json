@@ -207,6 +207,7 @@
     "Bandeau de démarrage revendeur, inutilisé depuis le lot 4 : supprimé."
    ],
    "ecarts": [
+    "Publié le 2 octobre (demande de fusion #1, commit 24e4656), déploiement Vercel confirmé : pages publiques vérifiées en lecture seule.",
     "Les deux tunnels gardent chacun leur appel serveur (prix négocié et devis détaillé n’existent que pour l’achat direct) : l’unification porte sur ce que voit le client.",
     "Accès du revendeur au numéro de son client pendant la commande : non inscrit au journal des accès (la table n’accepte que livreur et fournisseur ; il faudrait une migration).",
     "Vérifié sur la copie locale : commandes fictives [QA] par l’achat direct, par un panier d’un article et par un panier à deux livraisons ; réglage de caisse essayé dans la base locale puis retiré. Captures du guide à refaire."
@@ -221,7 +222,7 @@
     "adm-vue",
     "adm-parametres"
    ],
-   "statut": "en local"
+   "statut": "en ligne"
   },
   {
    "date": "2026-10-02",
@@ -240,6 +241,7 @@
     "Avatars : première lettre ou chiffre du nom (« [QA] Boutique » affichait « [ »)."
    ],
    "ecarts": [
+    "Publié le 2 octobre (demande de fusion #1, commit 24e4656), déploiement Vercel confirmé : pages publiques vérifiées en lecture seule.",
     "PUB-10 n’est traité qu’en partie : les deux tunnels de commande (achat direct et panier) restent deux écrans différents ; les unifier est un chantier à part.",
     "REV-10 (numéro du client masqué dans « Mes clients », visible dans « Mes ventes ») attend votre arbitrage : afficher partout ou masquer partout.",
     "La nouvelle carte de course n’a pas pu être vue à l’écran : le livreur fictif n’a pas de course en cours dans la copie locale (vérifiée par le code et les tests).",
@@ -259,7 +261,7 @@
     "adm-modules",
     "panier-confirmation"
    ],
-   "statut": "en local"
+   "statut": "en ligne"
   },
   {
    "date": "2026-10-02",
@@ -276,6 +278,7 @@
     "Aide livreur : champs étiquetés, course choisie d’office, et sans course un recours (« Écrire à Suguba »)."
    ],
    "ecarts": [
+    "Publié le 2 octobre (demande de fusion #1, commit 24e4656), déploiement Vercel confirmé : pages publiques vérifiées en lecture seule.",
     "Badge revendeur (page d’impression) et démarrage revendeur gardent leur coquille propre, voulue ; les accueils revendeur, fournisseur et livreur gardent leur en-tête d’accueil.",
     "Le passage à 14 px des textes d’explication est fait sur les écrans du lot ; le reste de l’application garde encore beaucoup de 13 px.",
     "Le menu passe de six à sept rubriques (test du menu adapté).",
@@ -293,7 +296,7 @@
     "adm-caisse",
     "driver-aide"
    ],
-   "statut": "en local"
+   "statut": "en ligne"
   },
   {
    "date": "2026-10-02",
@@ -310,6 +313,7 @@
     "Ordinateur : « Suivre ma commande » dans l’en-tête (le menu du bas y est masqué). Compte client : la commande en cours en tête avec « Suivre ma commande » ; « Se déconnecter » en contour ; « Suivre ma commande » sous chaque commande en cours."
    ],
    "ecarts": [
+    "Publié le 2 octobre (demande de fusion #1, commit 24e4656), déploiement Vercel confirmé : pages publiques vérifiées en lecture seule.",
     "PUB-10 (deux tunnels de commande qui divergent, Mobile Money absent après /panier/confirmation) n’est pas traité : chantier L, à part.",
     "Vitrines : aucun produit local n’a d’unité, de minimum ni de devis ; l’affichage est prouvé par les tests et par le bouton « Ajouter » sur la vitrine locale.",
     "Suivi après rechargement de la page : le téléphone est redemandé même sur l’appareil de la commande (comportement existant, non modifié).",
@@ -325,7 +329,7 @@
     "vitrine-fournisseur",
     "diaspora"
    ],
-   "statut": "en local"
+   "statut": "en ligne"
   },
   {
    "date": "2026-10-02",
@@ -340,6 +344,7 @@
     "7 tests ajoutés ; 459 tests réussis ; TypeScript, linter et compilation isolée réussis."
    ],
    "ecarts": [
+    "Publié le 2 octobre (demande de fusion #1, commit 24e4656), déploiement Vercel confirmé : pages publiques vérifiées en lecture seule.",
     "Lieu et horaires de la caisse livreurs : aucun réglage n’existe (l’ancienne adresse était inventée) ; le livreur les demande sur WhatsApp. Ajouter un vrai réglage « caisse livreurs » est à décider.",
     "Vue d’ensemble de l’équipe : pas encore de « commandes du jour » ni d’« appels en retard » (il faudrait de nouvelles lectures côté serveur).",
     "Le bandeau « Terminez votre démarrage » (composant BandeauDemarrage) n’est plus affiché nulle part ; le fichier est gardé, à supprimer si la liste de démarrage convient.",
@@ -352,7 +357,7 @@
     "liv-portefeuille",
     "adm-vue"
    ],
-   "statut": "en local"
+   "statut": "en ligne"
   },
   {
    "date": "2026-10-02",
@@ -368,6 +373,7 @@
     "9 tests ajoutés (ils échouent tous sur l’ancien code) ; 452 tests réussis ; TypeScript, linter et compilation isolée réussis ; boutons de la carte produit mesurés à 40 px."
    ],
    "ecarts": [
+    "Publié le 2 octobre (demande de fusion #1, commit 24e4656), déploiement Vercel confirmé : pages publiques vérifiées en lecture seule.",
     "« Vente » et « Boutique » gardent des libellés courts sur la carte du catalogue (place comptée) mais ont désormais un nom accessible explicite ; leur regroupement dans un menu « ⋯ » reste au lot 6.",
     "La ligne de liste commune n’est appliquée qu’aux listes du livreur ; son adoption ailleurs est au lot 6 (migration des pages anciennes).",
     "Écrans connectés vérifiés par le code et les tests ; captures du guide à refaire.",
@@ -387,7 +393,7 @@
     "adm-produit-nouveau",
     "adm-produits"
    ],
-   "statut": "en local"
+   "statut": "en ligne"
   },
   {
    "date": "2026-10-02",
@@ -403,6 +409,7 @@
     "9 tests ajoutés ; 443 tests réussis ; TypeScript, linter et compilation isolée réussis. Vérifié à l’écran : fiche produit, commande, diaspora."
    ],
    "ecarts": [
+    "Publié le 2 octobre (demande de fusion #1, commit 24e4656), déploiement Vercel confirmé : pages publiques vérifiées en lecture seule.",
     "Les textes légaux et le choix de devise de la diaspora gardent « FCFA » (nom de la monnaie).",
     "Le graphique des analyses fournisseur garde l’abréviation « 172k » sur ses étiquettes (place comptée) ; les montants affichés sont complets.",
     "Formats de date gardés volontairement longs : documents (« 1 octobre 2026 ») et calendrier (jour de la semaine).",
@@ -420,7 +427,7 @@
     "fou-ajouter",
     "fou-devis"
    ],
-   "statut": "en local"
+   "statut": "en ligne"
   },
   {
    "date": "2026-10-02",
@@ -437,6 +444,7 @@
     "10 tests ajoutés (ils échouent tous sur l’ancien code) ; 434 tests réussis ; TypeScript et compilation isolée réussis."
    ],
    "ecarts": [
+    "Publié le 2 octobre (demande de fusion #1, commit 24e4656), déploiement Vercel confirmé : pages publiques vérifiées en lecture seule.",
     "Texte de la page Garantie modifié : à valider par le fondateur (la durée n’est pas en base ; ajouter le champ reste à faire).",
     "Captures du guide non refaites (port 3000 occupé par un autre outil, sessions de démonstration) : npm run guide:captures -- liv-courses,liv-portefeuille,rev-accueil,adm-produits,garantie.",
     "Vérifié dans le navigateur : page introuvable (adresse inconnue et vitrine /s/ inexistante) et barre du bas. Les écrans connectés (livreur, équipe, revendeur) sont vérifiés par le code et les tests, pas à l’écran.",
@@ -455,7 +463,7 @@
     "rev-accueil",
     "garantie"
    ],
-   "statut": "en local"
+   "statut": "en ligne"
   },
   {
    "date": "2026-10-02",
@@ -467,12 +475,13 @@
     "Vérifié sur la base locale : 12 droits avant, 0 après ; écriture refusée, lecture des produits approuvés toujours possible, prix fournisseur toujours caché. Test automatique ajouté (il échoue sans le correctif) ; 424 tests réussis."
    ],
    "ecarts": [
-    "SQL à exécuter par le fondateur dans Supabase › SQL Editor : supabase/A-EXECUTER-2026-10-02-droits-products.sql (aucune donnée modifiée, sans ordre à respecter avec le code, sans risque à relancer).",
+    "Publié le 2 octobre (demande de fusion #1, commit 24e4656), déploiement Vercel confirmé : pages publiques vérifiées en lecture seule.",
+    "SQL exécuté en production le 2 octobre par le fondateur : supabase/A-EXECUTER-2026-10-02-droits-products.sql (aucune donnée modifiée).",
     "Aucun changement visible dans l’application ; pas de capture.",
     "Restent en recommandation : un test qui bloque toute nouvelle table sans RLS, et la diffusion en temps réel de la table des commandes (à vérifier ou retirer)."
    ],
    "pages": [],
-   "statut": "en local"
+   "statut": "en ligne"
   },
   {
    "date": "2026-10-01",
