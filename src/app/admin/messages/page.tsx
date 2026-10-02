@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/Field';
 import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
 import { classeCible, useCibleUrl, useDefilerVersCible } from '@/components/admin/contexte';
+import { FORMAT_DATE } from '@/lib/montant';
 
 interface Message { id: string; texte: string; motifs: string[]; auteur: string; nom: string; envoyeLe: string; dejaRefuses: number }
 const AUTEUR: Record<string, string> = { revendeur: 'Revendeur', fournisseur: 'Fournisseur', client: 'Client' };
@@ -61,7 +62,7 @@ export default function MessagesAdminPage() {
             {liste.map((m) => (
               <Card key={m.id} data-dossier={m.id} className={`space-y-2 ${classeCible(cible, m.id)}`}>
                 <div className="flex items-start justify-between gap-3">
-                  <p className="text-xs text-slate-600">{AUTEUR[m.auteur] || m.auteur}{m.nom ? ` · ${m.nom}` : ''} · {new Date(m.envoyeLe).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
+                  <p className="text-xs text-slate-600">{AUTEUR[m.auteur] || m.auteur}{m.nom ? ` · ${m.nom}` : ''} · {new Date(m.envoyeLe).toLocaleString('fr-FR', FORMAT_DATE.jourHeure)}</p>
                   {m.dejaRefuses > 0 && <StatusPill ton="danger">{m.dejaRefuses} déjà refusé{m.dejaRefuses > 1 ? 's' : ''}</StatusPill>}
                 </div>
                 <p className="text-sm text-slate-900 whitespace-pre-line break-words rounded-2xl bg-slate-50 px-3 py-2">{m.texte}</p>

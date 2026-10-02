@@ -11,6 +11,7 @@ import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Field';
 import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
+import { initiale } from '@/lib/initiale';
 
 /** Fournisseurs (§ page 10) : onglets « Mes fournisseurs » et « Découvrir ». */
 
@@ -90,7 +91,7 @@ export default function FournisseursPage() {
               <div className="flex items-start gap-3">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 {f.logo ? <img src={f.logo} alt="" className="w-12 h-12 rounded-2xl object-cover shrink-0" />
-                  : <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-500 font-bold flex items-center justify-center shrink-0">{f.nom.charAt(0).toUpperCase()}</div>}
+                  : <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-500 font-bold flex items-center justify-center shrink-0">{initiale(f.nom)}</div>}
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-bold text-slate-900 truncate flex items-center gap-1">
                     {f.nom}

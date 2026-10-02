@@ -7,6 +7,7 @@ import PageReseau from '@/components/reseau/PageReseau';
 import { Card, EmptyState, Skeleton } from '@/components/ui/Surface';
 import Button from '@/components/ui/Button';
 import FilMessages, { type MessageFil } from './FilMessages';
+import { FORMAT_DATE } from '@/lib/montant';
 
 interface Fil { id: string; produit: string; avec: string; dernierLe: string }
 
@@ -66,7 +67,7 @@ export default function PageQuestions({ espace }: { espace: 'reseller' | 'suppli
                   <button type="button" onClick={() => router.push(`${base}?c=${f.id}`)} className="w-full text-left py-3 min-h-11">
                     <span className="block text-sm font-semibold text-slate-900 truncate">{f.produit}</span>
                     <span className="block text-xs text-slate-500">
-                      {espace === 'supplier' ? `${f.avec} · ` : ''}{new Date(f.dernierLe).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                      {espace === 'supplier' ? `${f.avec} · ` : ''}{new Date(f.dernierLe).toLocaleString('fr-FR', FORMAT_DATE.jourHeure)}
                     </span>
                   </button>
                 </li>

@@ -11,6 +11,7 @@ import Button from '@/components/ui/Button';
 import TableauAdmin, { type Colonne } from '@/components/admin/TableauAdmin';
 import Panneau from '@/components/admin/Panneau';
 import { useCibleUrl } from '@/components/admin/contexte';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 interface DevisAdmin {
   id: string;
@@ -35,8 +36,8 @@ interface DevisAdmin {
   commande: string | null;
 }
 
-const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
-const jour = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+const fcfa = formatF;
+const jour = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', FORMAT_DATE.jour);
 const attente = (h: number) => (h < 1 ? 'moins d’une heure' : h < 48 ? `${h} h` : `${Math.floor(h / 24)} jours`);
 
 type Filtre = 'a_repondre' | 'proposes' | 'acceptes' | 'clos';

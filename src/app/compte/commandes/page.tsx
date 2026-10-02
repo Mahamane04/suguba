@@ -1,7 +1,5 @@
 'use client';
 
-import SugubaLoader from '@/components/ui/SugubaLoader';
-
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { FileText, PackageCheck, Plus, ShoppingBag } from 'lucide-react';
@@ -11,6 +9,7 @@ import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface'
 import { useToast } from '@/components/ui/Toast';
 import { devisAccessKey, devisSurCetAppareil, orderAccessKey, recusSurCetAppareil } from '@/lib/order-access-client';
 import OngletsCompte from '@/components/compte/OngletsCompte';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 interface Commande { numero: string; produit: string; image: string | null; quantite: number; total: number; statut: string; creeLe: string; livreeLe: string | null; racheter: string | null }
 interface Devis { numero: string; produit: string; statut: string; creeLe: string; commande: string | null }
@@ -22,8 +21,8 @@ const STATUT: Record<string, [string, 'succes' | 'attente' | 'neutre' | 'danger'
 const STATUT_DEVIS: Record<string, string> = {
   demande: 'En attente de réponse', proposee: 'Prix proposé', acceptee: 'Accepté', refusee_client: 'Refusé', refusee_fournisseur: 'Sans suite',
 };
-const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
-const jour = (d: string) => new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+const fcfa = formatF;
+const jour = (d: string) => new Date(d).toLocaleDateString('fr-FR', FORMAT_DATE.complet);
 
 /**
  * Mes commandes (2026-09-26, compte client — C1) : commandes et devis du
@@ -107,8 +106,8 @@ export default function MesCommandesPage() {
               <Card className="space-y-2">
                 <p className="text-sm font-bold text-slate-900">{nbAAjouter} achat{nbAAjouter > 1 ? 's' : ''} sur ce téléphone, pas encore dans votre compte</p>
                 <p className="text-xs text-slate-600">Ajoutez-les pour les retrouver sur tous vos téléphones.</p>
-                <Button fullWidth onClick={ajouter} disabled={ajout}>
-                  {ajout ? <SugubaLoader className="w-4 h-4" /> : <Plus className="w-4 h-4" />}Ajouter à mon compte
+                <Button fullWidth onClick={ajouter} loading={ajout}>
+                  <Plus className="w-4 h-4" />Ajouter à mon compte
                 </Button>
               </Card>
             )}
@@ -137,6 +136,11 @@ export default function MesCommandesPage() {
                               </span>
                               <StatusPill ton={ton}>{libelle}</StatusPill>
                             </Link>
+                            {!['delivered', 'cancelled', 'returned'].includes(c.statut) && (
+                              <Link href={`/track/${encodeURIComponent(c.numero)}`} className="inline-flex items-center min-h-10 -mt-1 mb-2 ml-[3.75rem] text-xs font-bold text-suguba-profond underline">
+                                Suivre ma commande
+                              </Link>
+                            )}
                             {/* C2 : au prix et au stock du jour, sur la fiche du produit. */}
                             {c.racheter && ['delivered', 'cancelled', 'returned'].includes(c.statut) && (
                               <Link href={`/p/${encodeURIComponent(c.racheter)}`} className="inline-flex items-center min-h-10 -mt-1 mb-2 ml-[3.75rem] text-xs font-bold text-suguba-profond underline">

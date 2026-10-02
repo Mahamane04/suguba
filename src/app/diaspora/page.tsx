@@ -2,7 +2,6 @@
 
 import { orderAccessKey } from '@/lib/order-access-client';
 import React, { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
 import ProductImage from '@/components/common/ProductImage';
 import Header from '@/components/common/Header';
 import type { Product } from '@/types';
@@ -17,10 +16,9 @@ import { useOrderQuote } from '@/lib/useOrderQuote';
 import type { OrderInput } from '@/lib/order-input';
 import { useOrderCheckout } from '@/lib/useOrderCheckout';
 import { calculerFraisPaiement, completerFraisPaiement, type ReglagesFraisPaiement } from '@/lib/frais-paiement';
-import { 
-  Globe2, CreditCard, HeartHandshake, ShieldCheck, 
-  Truck, ArrowRight, CheckCircle2, Phone, MapPin, Sparkles, Star, Camera, Lock
-} from 'lucide-react';
+import { Globe2, CreditCard, HeartHandshake, ShieldCheck, Truck, CheckCircle2, Lock } from 'lucide-react';
+import { formatF, formatDevise } from '@/lib/montant';
+import Button from '@/components/ui/Button';
 
 export default function DiasporaPortalPage() {
   const state = useSugubaStore();
@@ -54,7 +52,6 @@ export default function DiasporaPortalPage() {
   const { devis, error: erreurDevis } = useOrderQuote(selectedProduct ? {
     productId: selectedProduct.id, quantity: 1, city: 'Bamako',
   } : null);
-  const [orderComplete, setOrderComplete] = useState(false);
   const [erreurPaiement, setErreurPaiement] = useState('');
 
   // Les produits arrivent de Supabase APRÈS le montage : selectedProduct,
@@ -75,12 +72,12 @@ export default function DiasporaPortalPage() {
 
   const formatPrice = (xofPrice: number) => {
     if (currency === 'EUR') {
-      return `${(xofPrice / eurRate).toFixed(2)} €`;
+      return formatDevise(xofPrice / eurRate, 'EUR');
     }
     if (currency === 'USD') {
-      return `$${(xofPrice / usdRate).toFixed(2)}`;
+      return formatDevise(xofPrice / usdRate, 'USD');
     }
-    return `${xofPrice.toLocaleString('fr-FR')} FCFA`;
+    return `${formatF(xofPrice)}`;
   };
 
   /**
@@ -178,20 +175,22 @@ export default function DiasporaPortalPage() {
       <main className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 py-8 w-full space-y-10">
         
         {/* Diaspora Hero Banner */}
-        <div className="relative bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950 text-white rounded-3xl p-6 sm:p-10 shadow-2xl overflow-hidden space-y-6">
+        <div className="relative bg-suguba-profond text-white rounded-3xl p-6 sm:p-10 overflow-hidden space-y-6">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             
             <div className="space-y-3 max-w-xl">
-              <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/10 text-emerald-200 text-xs font-bold border border-white/15">
-                <Globe2 className="w-4 h-4 text-emerald-300" />
+              <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/10 text-suguba-citron text-xs font-bold border border-white/15">
+                <Globe2 className="w-4 h-4" />
                 <span>Espace Diaspora Malienne (France, USA, Europe & Afrique)</span>
               </div>
 
               <h1 className="text-2xl sm:text-4xl font-bold tracking-tight text-white leading-tight">
-                Offrez et Équipez votre Famille à Bamako depuis l&apos;Étranger 🌍🇲🇱
+                {/* PUB-04 : « Offrez » seulement quand l'acheteur paie vraiment (carte) ;
+                    sinon c'est le proche qui paie à la réception. */}
+                {carteOuverte ? 'Offrez un article à votre famille à Bamako' : 'Faites livrer votre famille à Bamako, depuis l’étranger'}
               </h1>
 
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
+              <p className="text-sm text-white/80 leading-relaxed">
                 {carteOuverte
                   ? <>Payez en <strong>Euros (€), Dollars ($)</strong> par carte bancaire (Visa, Mastercard). </>
                   : <>Vous commandez d’ici, <strong>votre proche paie à la réception</strong> (espèces ou Mobile Money). </>}
@@ -201,17 +200,19 @@ export default function DiasporaPortalPage() {
 
             {/* Currency Switcher */}
             <div className="bg-white/10 backdrop-blur-xs p-4 rounded-3xl border border-white/20 space-y-3 shrink-0 text-center">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-300 block">
-                Devise d&apos;affichage :
+              <span className="text-xs font-bold text-white/80 block">
+                Afficher les prix en
               </span>
               <div className="grid grid-cols-3 gap-1.5">
                 {(['EUR', 'USD', 'XOF'] as const).map((curr) => (
                   <button
                     key={curr}
                     onClick={() => setCurrency(curr)}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold transition-all ${
+                    type="button"
+                    aria-pressed={currency === curr}
+                    className={`min-h-10 py-2 px-3 rounded-xl text-xs font-bold transition-all ${
                       currency === curr
-                        ? 'bg-emerald-500 text-slate-950 shadow-md'
+                        ? 'bg-suguba-citron text-suguba-profond'
                         : 'bg-white/10 text-white hover:bg-white/20'
                     }`}
                   >
@@ -220,7 +221,7 @@ export default function DiasporaPortalPage() {
                 ))}
               </div>
               {/* Seule la parité euro est fixe (655,957 F) ; le dollar varie. */}
-              <p className="text-xs text-slate-500">Prix indicatifs convertis du franc CFA (1 € = 655,957 F)</p>
+              <p className="text-xs text-white/70">Prix indicatifs convertis du franc CFA (1 € = 655,957 F)</p>
             </div>
 
           </div>
@@ -228,19 +229,19 @@ export default function DiasporaPortalPage() {
           {/* 4 Diaspora Guarantees */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-6 border-t border-white/10 text-xs">
             <div className="flex items-center space-x-2">
-              <CreditCard className="w-4 h-4 text-emerald-400 shrink-0" />
+              <CreditCard className="w-4 h-4 text-suguba-citron shrink-0" />
               <span>{carteOuverte ? 'Paiement sécurisé par carte (Visa/Mastercard)' : 'Payé à la réception par votre proche'}</span>
             </div>
             <div className="flex items-center space-x-2">
-              <Truck className="w-4 h-4 text-emerald-400 shrink-0" />
+              <Truck className="w-4 h-4 text-suguba-citron shrink-0" />
               <span>Livraison à Bamako et en régions</span>
             </div>
             <div className="flex items-center space-x-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-suguba-citron shrink-0" />
               <span>Suivi de la commande en ligne</span>
             </div>
             <div className="flex items-center space-x-2">
-              <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+              <ShieldCheck className="w-4 h-4 text-suguba-citron shrink-0" />
               <span>Service client Suguba sur WhatsApp</span>
             </div>
           </div>
@@ -291,7 +292,7 @@ export default function DiasporaPortalPage() {
                       <p className="font-bold text-sm text-slate-900 line-clamp-2 leading-snug">{p.name}</p>
                       <p className="text-base font-bold text-slate-900">{formatPrice(p.publicPrice)}</p>
                       {currency !== 'XOF' && (
-                        <p className="text-xs text-slate-500">{p.publicPrice.toLocaleString('fr-FR')} FCFA</p>
+                        <p className="text-xs text-slate-500">{formatF(p.publicPrice)}</p>
                       )}
                     </div>
                   </button>
@@ -306,32 +307,16 @@ export default function DiasporaPortalPage() {
           <OrderRecovery attempt={recovery} disabled={isProcessing} onResume={() => { void finishOrder(); }} />
           
           <div className="border-b border-slate-100 pb-4">
-            <span className="px-3 py-1 bg-slate-100 text-slate-700 text-xs font-bold rounded-full uppercase tracking-wider">
-              Commande Sécurisée Internationale
-            </span>
-            <h2 className="text-xl font-bold text-slate-900 pt-2">
-              Commander et Faire Livrer à Bamako
+            <h2 className="text-xl font-bold text-slate-900">
+              Commander pour un proche à Bamako
             </h2>
-            <p className="text-xs text-slate-500">
+            <p className="text-sm text-slate-600">
               Remplissez les coordonnées de votre parent à Bamako.
               {carteOuverte ? ' Le paiement se fait par carte bancaire en toute sécurité.' : ' Il paie à la réception, après avoir vérifié le colis.'}
             </p>
           </div>
 
-          {orderComplete ? (
-            <div className="p-8 bg-emerald-50 border border-emerald-200 rounded-3xl text-center space-y-4">
-              <CheckCircle2 className="w-16 h-16 text-emerald-600 mx-auto" />
-              <div className="space-y-1">
-                <h3 className="text-2xl font-bold text-emerald-950">Paiement Validé & Commande Confirmée !</h3>
-                <p className="text-xs text-emerald-800 max-w-md mx-auto">
-                  Votre commande a été transmise à notre équipe logistique à Bamako. Suguba contactera <strong>{beneficiaryName}</strong> ({beneficiaryPhone}) pour organiser la livraison.
-                </p>
-              </div>
-              <div className="p-4 bg-white rounded-2xl border border-emerald-200 text-xs text-slate-700 max-w-sm mx-auto">
-                Suivez l&apos;avancement à tout moment depuis la page « Suivi », avec le numéro de commande.
-              </div>
-            </div>
-          ) : !selectedProduct ? (
+          {!selectedProduct ? (
             /* Catalogue vide : depuis le retrait des produits de démo
                (mock-data.ts), state.products peut légitimement être vide tant
                qu'aucun fournisseur n'a référencé d'article. Sans ce garde-fou,
@@ -363,10 +348,10 @@ export default function DiasporaPortalPage() {
                   </div>
                 </div>
                 <div className="text-right">
-                  <span className="text-base font-bold text-emerald-700 font-mono">
+                  <span className="text-base font-bold text-slate-900 tabular-nums">
                     {formatPrice(selectedProduct.publicPrice)}
                   </span>
-                  <span className="text-xs text-slate-500 block">TTC</span>
+                  {devis && <span className="text-xs text-slate-600 block">Total livré : <strong className="text-slate-900">{formatPrice(devis.total)}</strong></span>}
                 </div>
               </div>
 
@@ -374,7 +359,7 @@ export default function DiasporaPortalPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                 
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-700">Votre Pays de Résidence :</label>
+                  <span className="font-bold text-slate-700">Votre pays</span>
                   <ChoicePicker
                     valeur={buyerCountry}
                     onChange={setBuyerCountry}
@@ -390,50 +375,57 @@ export default function DiasporaPortalPage() {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-700">Votre Email (pour le reçu de paiement) :</label>
+                  <label htmlFor="diaspora-email" className="font-bold text-slate-700">
+                    {carteOuverte ? 'Votre e-mail (pour le reçu de paiement)' : 'Votre e-mail (facultatif)'}
+                  </label>
                   <input
+                    id="diaspora-email"
                     type="email"
-                    required
+                    autoComplete="email"
+                    required={carteOuverte}
                     placeholder="votre.email@gmail.com"
                     value={buyerEmail}
                     onChange={(e) => setBuyerEmail(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-base sm:text-sm font-medium text-slate-900 focus:ring-2 focus:ring-emerald-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-base sm:text-sm font-medium text-slate-900 focus:ring-2 focus:ring-suguba-profond"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-700">Nom du Bénéficiaire à Bamako :</label>
+                  <label htmlFor="diaspora-nom" className="font-bold text-slate-700">Nom de votre proche</label>
                   <input
+                    id="diaspora-nom"
                     type="text"
                     required
                     placeholder="Ex: Maman Aïssata Diarra"
                     value={beneficiaryName}
                     onChange={(e) => setBeneficiaryName(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-base sm:text-sm font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-base sm:text-sm font-bold text-slate-900 focus:ring-2 focus:ring-suguba-profond"
                   />
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-slate-700">Numéro Téléphone du Bénéficiaire (Mali) :</label>
+                  <label htmlFor="diaspora-tel" className="font-bold text-slate-700">Son téléphone au Mali</label>
                   <input
+                    id="diaspora-tel"
                     type="tel"
                     required
                     placeholder="+223 76 00 00 00"
                     value={beneficiaryPhone}
                     onChange={(e) => setBeneficiaryPhone(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-base sm:text-sm font-mono font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-base sm:text-sm font-bold text-slate-900 tabular-nums focus:ring-2 focus:ring-suguba-profond"
                   />
                 </div>
 
                 <div className="sm:col-span-2 space-y-1">
-                  <label className="font-bold text-slate-700">Quartier & Repère de Livraison à Bamako :</label>
+                  <label htmlFor="diaspora-quartier" className="font-bold text-slate-700">Quartier et repère à Bamako</label>
                   <input
+                    id="diaspora-quartier"
                     type="text"
                     required
                     placeholder="Ex: Kalaban-Coro, non loin du Marché / Station Shell"
                     value={beneficiaryNeighborhood}
                     onChange={(e) => setBeneficiaryNeighborhood(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-base sm:text-sm font-medium text-slate-900 focus:ring-2 focus:ring-emerald-500"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-4 py-3 text-base sm:text-sm font-medium text-slate-900 focus:ring-2 focus:ring-suguba-profond"
                   />
                 </div>
 
@@ -442,20 +434,15 @@ export default function DiasporaPortalPage() {
               {erreurDevis && <p role="alert" className="text-sm text-red-700">{erreurDevis}</p>}
               {/* Paiement du total calculé par le serveur. */}
               <div className="space-y-2 pt-2">
-                <button
-                  type="submit"
-                  disabled={isProcessing}
-                  className="w-full py-4 bg-suguba-profond hover:bg-suguba-profond-2 text-white font-bold rounded-2xl text-sm flex items-center justify-center space-x-2 shadow-xl shadow-emerald-600/30 transition-transform active:scale-98"
-                >
+                <Button type="submit" size="lg" fullWidth loading={isProcessing} disabled={!devis}>
                   <Lock className="w-4 h-4" />
                   <span>
-                    {isProcessing
-                      ? (carteOuverte ? 'Redirection vers le paiement sécurisé...' : 'Enregistrement de la commande...')
-                      : !devis ? 'Calcul du total…'
+                    {!devis ? 'Calcul du total…'
                       : carteOuverte ? `Régler ${formatPrice(calculerFraisPaiement(devis.total, 'card', bareme).totalClient)} par carte, frais de paiement compris`
-                      : `Commander pour ${formatPrice(devis.total)}, payé à la réception`}
+                      // Le proche paie en francs CFA : le montant en devise n'est qu'un repère.
+                      : `Commander · ${formatF(devis.total)} à la réception`}
                   </span>
-                </button>
+                </Button>
 
                 {erreurPaiement && (
                   <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-700 text-center">
@@ -466,7 +453,7 @@ export default function DiasporaPortalPage() {
                 <p className="text-xs text-slate-500 text-center">
                   {carteOuverte
                     ? '🔒 Paiement par carte sur la page sécurisée SasPay : Suguba ne voit ni ne conserve vos données bancaires.'
-                    : 'Votre proche paie à la livraison, en espèces ou par Mobile Money. Suivez la commande dans « Mes commandes » si vous êtes connecté.'}
+                    : `Votre proche paie à la livraison${devis && currency !== 'XOF' ? ` (environ ${formatPrice(devis.total)})` : ''}, en espèces ou par Mobile Money. Suivez la commande dans « Mes commandes » si vous êtes connecté.`}
                 </p>
               </div>
 

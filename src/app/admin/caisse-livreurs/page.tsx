@@ -3,27 +3,29 @@
 import SugubaLoader from '@/components/ui/SugubaLoader';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Sheet from '@/components/ui/Sheet';
 import Button from '@/components/ui/Button';
 import EmptyState from '@/components/ui/EmptyState';
+import { StatCard } from '@/components/ui/Surface';
 import { Field, Input } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
 import { classeCible, useCibleUrl, useDefilerVersCible } from '@/components/admin/contexte';
 import RecuVersementModal from '@/components/common/RecuVersementModal';
 import { calculerAVerser, niveauRetard, type CaisseLivreur, type Versement } from '@/lib/caisse-livreur';
 import { AlertTriangle, Banknote, ChevronDown, Phone, Receipt, RefreshCw, Settings } from 'lucide-react';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
-const fmt = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
-const jour = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—');
+const fmt = formatF;
+const jour = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString('fr-FR', FORMAT_DATE.jour) : '—');
 
 interface Donnees {
   caisses: CaisseLivreur[];
   migrationRequise: boolean;
   remunerationParCourse: number;
   livreurGardeRemuneration: boolean;
+  lieuCaisse?: string | null;
   delaiHeures: number;
 }
 
@@ -92,24 +94,14 @@ export default function CaisseLivreursPage() {
 
         {d && !d.migrationRequise && (
           <>
+            {/* ADM-14 (lot 6 de l'audit UI/UX du 2026-10-02) : une tuile noire, une ambre et
+                une blanche, chacune à sa façon. Une seule tuile commune. */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="p-4 rounded-3xl bg-slate-900 text-white space-y-1">
-                <p className="text-xs font-bold uppercase text-slate-300">Attendu à la caisse</p>
-                <p className="text-2xl font-bold">{fmt(totalAttendu)}</p>
-                <p className="text-xs text-slate-300">Tous livreurs confondus</p>
-              </div>
-              <div className={`p-4 rounded-3xl border space-y-1 ${enRetard ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-200'}`}>
-                <p className="text-xs font-bold uppercase text-slate-500">En retard</p>
-                <p className="text-2xl font-bold text-slate-900">{enRetard}</p>
-                <p className="text-xs text-slate-500">Espèces gardées plus de {d.delaiHeures} h</p>
-              </div>
-              <Link href="/admin/parametres" className="p-4 rounded-3xl bg-white border border-slate-200 hover:border-slate-300 space-y-1 block">
-                <p className="text-xs font-bold uppercase text-slate-500 inline-flex items-center gap-1"><Settings className="w-3.5 h-3.5" /> Règle en vigueur</p>
-                <p className="text-sm font-bold text-slate-900">
-                  {d.livreurGardeRemuneration ? `Le livreur garde ${fmt(d.remunerationParCourse)} par course` : 'Le livreur verse tout'}
-                </p>
-                <p className="text-xs text-slate-500">Modifier dans Paramètres › Livraison</p>
-              </Link>
+              <StatCard label="Attendu à la caisse" valeur={fmt(totalAttendu)} aide="Tous livreurs confondus" />
+              <StatCard label="En retard" valeur={enRetard} alerte={enRetard > 0} aide={`Espèces gardées plus de ${d.delaiHeures} h`} />
+              <StatCard label="Règle en vigueur" icone={Settings} href="/admin/parametres"
+                valeur={<span className="block text-sm">{d.livreurGardeRemuneration ? `Le livreur garde ${fmt(d.remunerationParCourse)} par course` : 'Le livreur verse tout'}</span>}
+                aide={d.lieuCaisse ? `Caisse : ${d.lieuCaisse} · modifier dans Paramètres › Livraison` : 'Lieu de la caisse à indiquer dans Paramètres › Livraison'} />
             </div>
 
             {d.caisses.length === 0 ? (

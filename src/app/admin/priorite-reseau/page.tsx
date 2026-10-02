@@ -1,12 +1,11 @@
 'use client';
 
-import SugubaLoader from '@/components/ui/SugubaLoader';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Network, Save, Search } from 'lucide-react';
+import { Network, Search } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
+import BarreEnregistrement from '@/components/ui/BarreEnregistrement';
 import { Card, EmptyState, Skeleton } from '@/components/ui/Surface';
-import Button from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 
 interface Reglages {
@@ -32,12 +31,13 @@ export default function PrioriteReseauPage() {
   const [modifie, setModifie] = useState(false);
   const [filtre, setFiltre] = useState('');
 
-  useEffect(() => {
+  const charger = React.useCallback(() => {
     fetch('/api/admin/priorite-reseau', { cache: 'no-store' })
       .then(async (res) => { const j = await res.json(); if (!res.ok) throw new Error(j.error || 'Lecture impossible.'); return j; })
-      .then((j) => { setR(j.reglages); setFournisseurs(j.fournisseurs || []); })
+      .then((j) => { setR(j.reglages); setFournisseurs(j.fournisseurs || []); setModifie(false); })
       .catch((e) => setErreur((e as Error).message));
   }, []);
+  useEffect(() => { charger(); }, [charger]);
 
   const maj = (partiel: Partial<Reglages>) => { setR((x) => (x ? { ...x, ...partiel } : x)); setModifie(true); };
   const basculerFournisseur = (id: string) => maj({
@@ -115,10 +115,9 @@ export default function PrioriteReseauPage() {
             </Card>
           )}
 
-          <Button fullWidth onClick={enregistrer} disabled={envoi || !modifie}>
-            {envoi ? <SugubaLoader className="w-4 h-4" /> : <Save className="w-4 h-4" />} Enregistrer
-          </Button>
-          <p className="text-xs text-slate-500 text-center">Un changement ne modifie jamais une commande déjà passée ni ses commissions.</p>
+          {/* ADM-13 : même barre d'enregistrement que les autres réglages. */}
+          <BarreEnregistrement modifie={modifie} envoi={envoi} onEnregistrer={enregistrer}
+            onAnnuler={charger} note="Un changement ne modifie jamais une commande déjà passée ni ses commissions." />
         </>
       )}
     </PageReseau>

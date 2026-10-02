@@ -8,6 +8,7 @@ import PageReseau from '@/components/reseau/PageReseau';
 import { Card, EmptyState, Skeleton } from '@/components/ui/Surface';
 import ProductImage from '@/components/common/ProductImage';
 import { useToast } from '@/components/ui/Toast';
+import { formatF } from '@/lib/montant';
 
 /**
  * Mes prix — articles au prix de gros (2026-09-24).
@@ -24,7 +25,7 @@ interface Article {
   monPrix: number | null; gain: number;
 }
 
-const enF = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+const enF = formatF;
 
 export default function MesPrixPage() {
   const { toast } = useToast();

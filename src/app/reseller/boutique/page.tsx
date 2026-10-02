@@ -1,6 +1,5 @@
 'use client';
 
-import SugubaLoader from '@/components/ui/SugubaLoader';
 
 import React, { useEffect, useState } from 'react';
 import { Store, Users, Save } from 'lucide-react';
@@ -153,9 +152,8 @@ export default function MaBoutiqueRevendeurPage() {
               <Textarea id="presentation" rows={4} value={description} onChange={(e) => setDescription(e.target.value)} maxLength={1200} />
             </Field>
 
-            <Button onClick={enregistrer} disabled={enregistrement} fullWidth>
-              {enregistrement ? <SugubaLoader className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-              {enregistrement ? <><SugubaLoader className="mr-2 h-4 w-4" />Enregistrement…</> : 'Enregistrer'}
+            <Button onClick={enregistrer} loading={enregistrement} fullWidth>
+              <Save className="w-4 h-4" />Enregistrer ma boutique
             </Button>
           </Card>
 

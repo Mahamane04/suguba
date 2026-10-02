@@ -12,6 +12,7 @@ import { Field, Input } from '@/components/ui/Field';
 import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
 import { useToast } from '@/components/ui/Toast';
 import TableauAdmin from '@/components/admin/TableauAdmin';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 /**
  * Toutes les boutiques (§ page 44). Une boutique masquée ou suspendue n'est plus publique.
@@ -23,7 +24,7 @@ import TableauAdmin from '@/components/admin/TableauAdmin';
 
 const TYPE: Record<string, string> = { supplier: 'Fournisseur', reseller: 'Revendeur', suguba: 'Suguba' };
 const STATUT: Record<string, [string, 'succes' | 'attente' | 'danger']> = { active: ['Publique', 'succes'], hidden: ['Masquée', 'attente'], suspended: ['Suspendue', 'danger'] };
-const enF = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+const enF = formatF;
 
 interface Plan { id: string; formuleNom: string; boutiquesMax: number; prixMensuel: number; statut: string; reference: string; expireLe: string | null; type: string; nomCompte: string | null }
 interface Compte { id: string; nom: string; email: string | null; telephone: string | null; roles: string[] }
@@ -82,7 +83,7 @@ export default function BoutiquesAdminPage() {
                   <p className="text-sm font-semibold text-slate-900">{p.nomCompte || 'Compte'} · {p.formuleNom}</p>
                   <p className="text-xs text-slate-500">
                     {TYPE[p.type] || p.type} · {enF(p.prixMensuel)}/mois · {p.boutiquesMax} boutiques · réf. <strong className="tracking-wider">{p.reference}</strong>
-                    {p.expireLe && p.statut === 'active' ? ` · jusqu’au ${new Date(p.expireLe).toLocaleDateString('fr-FR')}` : ''}
+                    {p.expireLe && p.statut === 'active' ? ` · jusqu’au ${new Date(p.expireLe).toLocaleDateString('fr-FR', FORMAT_DATE.complet)}` : ''}
                   </p>
                 </div>
                 {p.statut === 'demande' ? (

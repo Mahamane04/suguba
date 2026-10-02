@@ -6,6 +6,9 @@ import PageReseau from '@/components/reseau/PageReseau';
 import GraphiqueBarres from '@/components/reseau/GraphiqueBarres';
 import { Card, Skeleton, StatCard, StatusPill } from '@/components/ui/Surface';
 import type { PointJour } from '@/lib/reseau/stats';
+import { formatF } from '@/lib/montant';
+// Étiquettes du graphique seulement (place comptée). Les montants affichés passent par formatF.
+const k = (v: number) => (v >= 1000 ? `${Math.round(v / 1000).toLocaleString('fr-FR')}k` : v.toLocaleString('fr-FR'));
 
 /** Analyses fournisseur, 30 derniers jours (§ 26 des écrans). */
 
@@ -21,7 +24,6 @@ interface Donnees {
   sponsorisations: { libelle: string; statut: string; budget: number; clics: number; chiffreAffaires: number; roi: number | null }[];
 }
 
-const k = (v: number) => (v >= 1000 ? `${Math.round(v / 1000).toLocaleString('fr-FR')}k` : v.toLocaleString('fr-FR'));
 
 export default function AnalysesFournisseurPage() {
   const [d, setD] = useState<Donnees | null>(null);
@@ -48,7 +50,7 @@ export default function AnalysesFournisseurPage() {
               label="Commandes" valeur={t?.commandes ?? 0} icone={ShoppingBag}
               aide={t?.evolutionCommandes == null ? 'Pas de période précédente' : `${t.evolutionCommandes >= 0 ? '+' : ''}${t.evolutionCommandes} % vs 30 j avant`}
             />
-            <StatCard label="CA livré" valeur={`${k(t?.chiffreAffaires ?? 0)} F`} icone={Coins} accent />
+            <StatCard label="CA livré" valeur={formatF(t?.chiffreAffaires ?? 0)} icone={Coins} accent />
             <StatCard label="Visites" valeur={t?.visites ?? 0} icone={MousePointerClick} aide="Liens partagés vers vos produits" />
             <StatCard label="Conversion" valeur={`${t?.conversion ?? 0} %`} icone={Percent} aide="Commandes / visites" />
             <StatCard label="Revendeurs actifs" valeur={t?.revendeursActifs ?? 0} icone={Users} aide="Ont vendu ce mois" />
@@ -65,7 +67,7 @@ export default function AnalysesFournisseurPage() {
             ) : d.topProduits.map((p, i) => (
               <div key={p.nom + i} className="flex items-center justify-between gap-3 text-xs">
                 <span className="truncate text-slate-700"><strong className="text-slate-900">{i + 1}.</strong> {p.nom}</span>
-                <span className="shrink-0 font-bold text-slate-900 tabular-nums">{p.commandes} cmd · {k(p.ca)} F</span>
+                <span className="shrink-0 font-bold text-slate-900 tabular-nums">{p.commandes} cmd · {formatF(p.ca)}</span>
               </div>
             ))}
           </Card>

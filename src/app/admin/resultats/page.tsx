@@ -10,6 +10,7 @@ import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
 import { DELAI_GARANTIE_JOURS, DUREE_MIN_VISITE_S, PART_SUGUBA } from '@/lib/reseau/resultats-constantes';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 interface Resultat {
   id: string; campagne: string; genre: 'visite' | 'demande'; revendeur: { nom: string; code: string | null };
@@ -25,8 +26,8 @@ interface Donnees {
   revendeurs: LigneRevendeur[]; aVerifier: Resultat[]; recents: Resultat[];
 }
 
-const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
-const date = (d: string) => new Date(d).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+const fcfa = formatF;
+const date = (d: string) => new Date(d).toLocaleString('fr-FR', FORMAT_DATE.jourHeure);
 const STATUT: Record<Resultat['statut'], [string, 'succes' | 'attente' | 'neutre']> = {
   retenu: ['Retenu', 'succes'], a_verifier: ['Suspect', 'attente'], conteste: ['Contesté', 'attente'], annule: ['Annulé', 'neutre'],
 };

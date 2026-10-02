@@ -16,6 +16,7 @@ import { useToast } from '@/components/ui/Toast';
 import { useCatalogueCharge, useSugubaStore } from '@/lib/store';
 import { lienProduit, prechargerLienPartage, texteProduit, useCodeRevendeur } from '@/lib/partage';
 import { genererAffiche, genererCarteBoutique, partagerAffiche, telechargerAffiche, type FormatAffiche, type IdentiteBoutique, type ThemeAffiche } from '@/lib/affiche';
+import { formatF } from '@/lib/montant';
 
 type TypeVisuel = 'produit' | 'boutique';
 interface Boutique extends IdentiteBoutique { id: string; description?: string | null }
@@ -135,7 +136,7 @@ export default function CreateurContenusPage() {
       <div className="relative"><Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" /><Input value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder="Rechercher un produit" className="pl-10" aria-label="Rechercher un produit" /></div>
       {!catalogueCharge ? <Skeleton className="h-40" /> : visibles.length === 0 ? <EmptyState icone={Palette} titre="Aucun produit" texte="Aucun produit du catalogue ne correspond." /> : <div className="grid grid-cols-3 gap-2 max-h-80 overflow-y-auto overscroll-contain">
         {visibles.map((p) => <button key={p.id} type="button" onClick={() => setProduitId(p.id)} aria-pressed={produitId === p.id} className={`relative rounded-2xl border overflow-hidden text-left bg-white ${produitId === p.id ? 'border-suguba-brand ring-2 ring-suguba-brand' : 'border-slate-200'}`}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}{p.images[0] ? <img src={p.images[0]} alt="" className="w-full aspect-square object-cover" /> : <div className="w-full aspect-square bg-slate-100" />}<p className="text-xs font-bold text-slate-800 px-2 pt-1 line-clamp-2 leading-tight">{p.name}</p><p className="text-xs font-bold text-suguba-brand-dark px-2 pb-1.5 tabular-nums">{p.publicPrice.toLocaleString('fr-FR')} F</p>{produitId === p.id && <span className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-suguba-profond text-white flex items-center justify-center"><Check className="w-3.5 h-3.5" /></span>}
+          {/* eslint-disable-next-line @next/next/no-img-element */}{p.images[0] ? <img src={p.images[0]} alt="" className="w-full aspect-square object-cover" /> : <div className="w-full aspect-square bg-slate-100" />}<p className="text-xs font-bold text-slate-800 px-2 pt-1 line-clamp-2 leading-tight">{p.name}</p><p className="text-xs font-bold text-suguba-brand-dark px-2 pb-1.5 tabular-nums">{formatF(p.publicPrice)}</p>{produitId === p.id && <span className="absolute top-1.5 right-1.5 w-6 h-6 rounded-full bg-suguba-profond text-white flex items-center justify-center"><Check className="w-3.5 h-3.5" /></span>}
         </button>)}
       </div>}
     </Card> : <Card className="space-y-3">

@@ -5,6 +5,7 @@ import { Users, ShoppingBag, Coins } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
 import { Card, EmptyState, Skeleton, StatCard } from '@/components/ui/Surface';
+import { formatF } from '@/lib/montant';
 
 /**
  * Mes clients (§ 15 des écrans).
@@ -74,7 +75,7 @@ export default function ClientsRevendeurPage() {
                 </p>
               </div>
               <div className="text-right shrink-0">
-                <p className="text-sm font-bold text-slate-900 tabular-nums">{c.chiffreAffaires.toLocaleString('fr-FR')} F</p>
+                <p className="text-sm font-bold text-slate-900 tabular-nums">{formatF(c.chiffreAffaires)}</p>
                 <p className="text-xs text-slate-500">{c.commandes} commande{c.commandes > 1 ? 's' : ''}</p>
               </div>
             </div>
@@ -83,7 +84,8 @@ export default function ClientsRevendeurPage() {
       )}
 
       <p className="text-xs text-slate-500 px-1">
-        Les numéros sont masqués : c’est Suguba qui appelle et livre. Vous touchez votre commission
+        Les numéros sont masqués : c’est Suguba qui appelle et livre. Pendant une livraison en cours,
+        le numéro de votre client est visible dans « Mes ventes ». Vous touchez votre commission
         sur chaque commande de ces clients, même quand ils commandent sans repasser par votre lien.
       </p>
     </PageReseau>

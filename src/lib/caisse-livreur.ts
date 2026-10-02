@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ReglagesPlateforme } from './pricing';
 import { modeRemiseCommande } from './offre';
+import { formatF } from '@/lib/montant';
 
 /**
  * Caisse livreurs (2026-09-25) — ce que chaque livreur doit remettre à
@@ -101,7 +102,7 @@ export function blocageEspeces(
   r: Pick<ReglagesPlateforme, 'plafondEspecesCollecteur' | 'delaiVersementEspecesHeures'>, maintenant = Date.now(),
 ): { bloque: boolean; raison: string | null } {
   const plafond = Math.max(0, Number(r.plafondEspecesCollecteur ?? 150000) || 0);
-  const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+  const fcfa = formatF;
   if (plafond > 0 && du >= plafond) {
     return { bloque: true, raison: `Plafond d’encaissement atteint (${fcfa(du)} à verser, plafond ${fcfa(plafond)}).` };
   }
@@ -113,6 +114,44 @@ export function blocageEspeces(
 
 /** Montant réellement dû par un collecteur : à verser + manques des versements passés. */
 export const duParCollecteur = (c: Pick<CaisseLivreur, 'aVerser' | 'ecartCumule'>) => Math.max(0, c.aVerser - c.ecartCumule);
+
+/**
+ * Caisse recalculée à partir des livraisons, tant que le SQL de la caisse
+ * n'est pas exécuté (aucun versement n'existe alors) : même règle que le serveur.
+ */
+export function caisseDepuisLivraisons(livrees: { totalAmount: number; paymentMethod?: string | null }[], parCourse: number): CaisseLivreur {
+  const montants = livrees.filter((o) => estPayeEnEspeces(o.paymentMethod)).map((o) => o.totalAmount);
+  return {
+    driverId: '', nom: 'Livreur', telephone: null, commandes: [], versements: [], ecartCumule: 0, plusAncienne: null,
+    ...calculerAVerser(montants, parCourse),
+  };
+}
+
+/**
+ * Comment une livraison a été payée, vu du livreur (LIV-01, audit UI/UX du
+ * 2026-10-02). L'accueil affichait « Payé en ligne » sur TOUTES les lignes :
+ * il lisait `paymentCollected`, que le code de remise passe à vrai pour toutes
+ * les commandes. Seul `payment_method` distingue espèces et Mobile Money, et
+ * seule la caisse du serveur sait si les espèces ont déjà été versées.
+ * `caisseServeur` absente (illisible ou SQL non exécuté) : on n'affirme rien.
+ */
+export type StatutEncaissement = 'en_ligne' | 'a_remettre' | 'verse' | 'especes';
+
+export function statutEncaissement(
+  commande: { id: string; paymentMethod?: string | null },
+  caisseServeur: Pick<CaisseLivreur, 'commandes'> | null,
+): StatutEncaissement {
+  if (!estPayeEnEspeces(commande.paymentMethod)) return 'en_ligne';
+  if (!caisseServeur) return 'especes';
+  return caisseServeur.commandes.some((c) => c.id === commande.id) ? 'a_remettre' : 'verse';
+}
+
+export const LIBELLE_ENCAISSEMENT: Record<StatutEncaissement, string> = {
+  en_ligne: 'Payé en ligne',
+  a_remettre: 'Espèces · à remettre',
+  verse: 'Espèces · versé',
+  especes: 'Espèces',
+};
 
 /** Le collecteur peut-il recevoir une nouvelle commande payée en espèces ? */
 export async function etatEspecesCollecteur(admin: SupabaseClient, r: ReglagesPlateforme, collecteurId: string) {

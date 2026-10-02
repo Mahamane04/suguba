@@ -1,6 +1,5 @@
 'use client';
 
-import SugubaLoader from '@/components/ui/SugubaLoader';
 import React, { useEffect, useState } from 'react';
 import Button from '@/components/ui/Button';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
@@ -87,10 +86,12 @@ export default function DeliveryCodeNotice({
       {canSee
         ? (
           <>
-            {!result?.code && <Button type="button" variant="secondary" disabled={busy} onClick={afficher} fullWidth>{busy ? <><SugubaLoader className="mr-2 h-4 w-4" />Chargement…</> : 'Afficher le code'}</Button>}
+            {!result?.code && <Button type="button" variant="secondary" loading={busy} onClick={afficher} fullWidth>Afficher le code</Button>}
             {/* Reçu complet avec QR (2026-09-25) : à enregistrer pour ne pas
                 dépendre de cette page ni du SAV le jour de la livraison. */}
-            <Button href={`/recu/${encodeURIComponent(orderNumber)}`} fullWidth>
+            {/* Contour (lot 5 de l'audit UI/UX du 2026-10-02) : sur « Commande reçue » et le
+                suivi, le bouton plein de l'écran est « Suivre ma commande ». */}
+            <Button href={`/recu/${encodeURIComponent(orderNumber)}`} variant="ghost" fullWidth>
               <QrCode className="w-4 h-4" /> {destinataire ? 'Reçu avec QR pour le client' : 'Mon reçu avec QR code'}
             </Button>
           </>

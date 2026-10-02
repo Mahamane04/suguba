@@ -6,6 +6,7 @@ import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
 import { Field, Input } from '@/components/ui/Field';
 import { Card, EmptyState, Skeleton } from '@/components/ui/Surface';
+import { formatF } from '@/lib/montant';
 
 interface Synonyme { id: string; terme: string; equivalent: string }
 interface Trouve { slug: string; nom: string; prix: number; mention: 'partenaire' | 'des' | null }
@@ -70,7 +71,7 @@ export default function RechercheAdminPage() {
   }
 
   return (
-    <PageReseau titre="Recherche" sousTitre="Les mots des clients et un essai de la recherche.">
+    <PageReseau titre="Recherche et synonymes" sousTitre="Les mots des clients et un essai de la recherche.">
       <Card className="text-xs text-slate-600 space-y-1">
         <p>La recherche ignore les accents et les majuscules, tolère les fautes de frappe et cherche dans le nom, la catégorie et la description.</p>
         <p className="font-semibold text-slate-800">Un synonyme relie un mot des clients à un mot du catalogue : « frigo » trouve alors les réfrigérateurs, et inversement.</p>
@@ -90,7 +91,7 @@ export default function RechercheAdminPage() {
               {resultats.map((p) => (
                 <li key={p.slug} className="py-2 flex items-center justify-between gap-3">
                   <span className="truncate text-slate-900">{p.nom}</span>
-                  <span className="tabular-nums text-slate-600 shrink-0">{p.mention === 'des' ? 'dès ' : ''}{p.prix.toLocaleString('fr-FR')} F</span>
+                  <span className="tabular-nums text-slate-600 shrink-0">{p.mention === 'des' ? 'dès ' : ''}{formatF(p.prix)}</span>
                 </li>
               ))}
             </ol>

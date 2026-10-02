@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import SugubaLoader from '@/components/ui/SugubaLoader';
 
 /**
  * Bouton unique de l'application — point d'entrée du design system.
@@ -45,7 +46,7 @@ const TAILLES: Record<Taille, string> = {
 };
 
 const BASE =
-  'inline-flex items-center justify-center font-semibold rounded-full transition-all ' +
+  'relative inline-flex items-center justify-center font-semibold rounded-full transition-all ' +
   'active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-suguba-profond focus-visible:ring-offset-2';
 
@@ -54,6 +55,13 @@ interface ProprietesCommunes {
   size?: Taille;
   fullWidth?: boolean;
   className?: string;
+  /**
+   * Action en cours (lot 3 de l'audit UI/UX du 2026-10-02) : le bouton garde sa
+   * largeur (le libellé reste là, invisible, sous l'indicateur), refuse le
+   * double appui et l'annonce aux lecteurs d'écran. Chaque écran ajoutait son
+   * propre indicateur à la main, parfois deux à la fois.
+   */
+  loading?: boolean;
   children: React.ReactNode;
 }
 
@@ -64,7 +72,7 @@ type ProprietesLien = ProprietesCommunes &
   Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, 'className' | 'children' | 'href'> & { href: string };
 
 export default function Button(props: ProprietesBouton | ProprietesLien) {
-  const { variant = 'primary', size = 'md', fullWidth, className = '', children, ...reste } = props;
+  const { variant = 'primary', size = 'md', fullWidth, className = '', loading = false, children, ...reste } = props;
 
   const classes = [
     BASE,
@@ -86,9 +94,15 @@ export default function Button(props: ProprietesBouton | ProprietesLien) {
     );
   }
 
+  const bouton = reste as ProprietesBouton;
   return (
-    <button className={classes} {...(reste as ProprietesBouton)}>
-      {children}
+    <button className={classes} {...bouton} disabled={bouton.disabled || loading} aria-busy={loading || undefined}>
+      {loading ? (
+        <>
+          <span className="invisible inline-flex items-center justify-center gap-[inherit]">{children}</span>
+          <span className="absolute inset-0 flex items-center justify-center"><SugubaLoader className="h-5 w-5" /></span>
+        </>
+      ) : children}
     </button>
   );
 }

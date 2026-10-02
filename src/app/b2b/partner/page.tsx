@@ -1,14 +1,10 @@
 'use client';
 
 import React from 'react';
-import Link from 'next/link';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
-import { 
-  Building2, Users, Truck, ShieldCheck, Printer, 
-  Share2, ArrowRight, CheckCircle2, Phone, Mail, MapPin, Sparkles, DollarSign
-} from 'lucide-react';
+import { Building2, Users, Truck, ShieldCheck, Printer, Share2, DollarSign } from 'lucide-react';
 import LogoSuguba from '@/components/ui/LogoSuguba';
 
 export default function B2BPartnerPitchPage() {
@@ -68,7 +64,7 @@ export default function B2BPartnerPitchPage() {
           <div className="flex flex-col sm:flex-row justify-between items-start border-b-2 border-slate-900 pb-6 gap-4">
             <div className="space-y-1">
               <LogoSuguba className="h-10" />
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+              <p className="text-xs font-semibold text-slate-600">
                 Plateforme B2B2C de Distribution & Social Commerce au Mali
               </p>
             </div>
@@ -83,7 +79,7 @@ export default function B2BPartnerPitchPage() {
 
           {/* Headline Proposition */}
           <div className="bg-emerald-50 rounded-2xl p-6 border border-emerald-200 space-y-2">
-            <span className="px-3 py-1 bg-suguba-profond text-white text-xs font-bold rounded-full uppercase tracking-wider">
+            <span className="px-3 py-1 bg-suguba-profond text-white text-xs font-semibold rounded-full">
               Offre Partenaire Distribution Exclusive
             </span>
             <h2 className="text-xl sm:text-2xl font-bold text-emerald-950">
@@ -179,7 +175,7 @@ export default function B2BPartnerPitchPage() {
             </div>
 
             <div className="text-center border border-slate-300 rounded-2xl p-4 w-48 space-y-4">
-              <p className="text-xs text-slate-500 uppercase font-bold">Cachet & Signature Suguba</p>
+              <p className="text-xs text-slate-600 font-semibold">Cachet & Signature Suguba</p>
               <div className="text-emerald-800 font-serif italic text-sm font-bold py-2">
                 Direction Générale<br />Suguba Mali SAS
               </div>

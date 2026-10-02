@@ -15,9 +15,10 @@ import {
 import { PosteAdminContexte, type Poste, type ValeurPoste } from './contexte';
 import RechercheGlobale from './RechercheGlobale';
 import LogoSuguba from '@/components/ui/LogoSuguba';
-import { compteurEntree } from '@/lib/admin/poste';
+import { compteurEntree, entreeActive } from '@/lib/admin/poste';
 import { deconnecter } from '@/lib/deconnexion';
 import { useToast } from '@/components/ui/Toast';
+import { initiale as lettreInitiale } from '@/lib/initiale';
 
 /** Icône de chaque page du menu : on repère une entrée d'un coup d'œil. */
 const ICONES: Record<string, React.ElementType> = {
@@ -60,12 +61,8 @@ function environnement(): { libelle: string; classe: string } {
   return { libelle: h === 'localhost' || h === '127.0.0.1' ? 'Local' : 'Prévisualisation', classe: 'bg-[#F1EFE6] text-[#5C5236]' };
 }
 
-/** Page active : correspondance exacte, ou sous-page (sauf vue d'ensemble et produits, qui ont des sous-pages au menu). */
-function estActive(href: string, pathname: string): boolean {
-  if (href === pathname) return true;
-  if (href === '/admin' || href === '/admin/products') return false;
-  return pathname.startsWith(`${href}/`);
-}
+/** Page active : voir entreeActive (lib/admin/poste.ts), qui rattache aussi les pages sans entrée. */
+const estActive = entreeActive;
 
 function Pastille({ n, actif }: { n: number; actif: boolean }) {
   if (!n) return null;
@@ -98,7 +95,7 @@ function Navigation({ poste, compteurs, pathname, repliees, basculer, onNaviguer
         return (
           <div key={r.cle}>
             <button type="button" onClick={() => basculer(r.cle)} aria-expanded={ouverte} disabled={contientActive}
-              className="w-full flex items-center gap-2 px-3 min-h-[36px] rounded-full text-xs font-bold uppercase tracking-wider text-white/60 hover:text-white disabled:hover:text-white/60 disabled:cursor-default focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-suguba-citron">
+              className="w-full flex items-center gap-2 px-3 min-h-[36px] rounded-full text-xs font-semibold text-white/60 hover:text-white disabled:hover:text-white/60 disabled:cursor-default focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-suguba-citron">
               <ChevronDown className={`w-4 h-4 transition-transform ${ouverte ? '' : '-rotate-90'}`} aria-hidden="true" />
               <span className="flex-1 text-left">{r.titre}</span>
               {!ouverte && totalRubrique > 0 && <Pastille n={totalRubrique} actif={false} />}
@@ -225,7 +222,7 @@ export default function PosteAdmin({ children }: { children: React.ReactNode }) 
       </button>
     </div>
   );
-  const initiale = (poste?.nom || '').trim().charAt(0).toUpperCase();
+  const initiale = lettreInitiale(poste?.nom || '');
   const pied = (
     <div className="px-3 py-3 border-t border-white/10 space-y-1">
       {poste?.nom ? (

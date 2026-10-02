@@ -1,12 +1,14 @@
 'use client';
 
+import BarreEnregistrement from '@/components/ui/BarreEnregistrement';
+
 import SugubaLoader from '@/components/ui/SugubaLoader';
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useToast } from '@/components/ui/Toast';
 import Button from '@/components/ui/Button';
 import {
-  Calculator, ChevronDown, ChevronUp, Plus, Trash2, AlertCircle, CheckCircle2, RotateCcw, ArrowRight, Info,
+  Calculator, ChevronDown, ChevronUp, Plus, Trash2, AlertCircle, RotateCcw, ArrowRight, Info,
 } from 'lucide-react';
 import {
   calculerFraisRetrait,
@@ -44,9 +46,10 @@ import {
   type TrancheRetrait,
 } from '@/lib/frais-paiement';
 import { commissionExpliquee, simulerCycle, type EntreeCycle } from '@/lib/cycle-vente';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 // Espace insécable avant « F » : « 20 000 » et « F » ne se séparent jamais en fin de ligne.
-const enF = (n: number) => `${Math.round(n).toLocaleString('fr-FR')}\u00a0F`;
+const enF = formatF;
 
 interface ProduitEnLigne {
   id: string;
@@ -638,6 +641,27 @@ export default function EconomicSettingsPanel({ ouvertParDefaut = false }: { ouv
                   })}
                 </div>
               </div>
+              {/* Lot 4 de l'audit UI/UX (arbitrage) : le portefeuille du livreur dit où verser. */}
+              <div className="sm:col-span-2 space-y-2 rounded-2xl bg-suguba-sauge p-3">
+                <p className="text-xs font-semibold text-slate-700 inline-flex items-center gap-1">
+                  Où les livreurs versent les espèces
+                  <InfoBulle texte="Affiché dans le portefeuille des livreurs connectés (jamais sur le site public). Laissé vide, le livreur demande le lieu et l'heure à Suguba sur WhatsApp." />
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <label className="space-y-1">
+                    <span className="block text-xs font-semibold text-slate-700">Lieu de la caisse</span>
+                    <input value={r.caisseLivreurs?.lieu ?? ''} maxLength={160} placeholder="Ex. : bureau Suguba, Hamdallaye, en face de …"
+                      onChange={(e) => maj('caisseLivreurs', { lieu: e.target.value, horaires: r.caisseLivreurs?.horaires ?? '' })}
+                      className={`${CHAMP} w-full`} />
+                  </label>
+                  <label className="space-y-1">
+                    <span className="block text-xs font-semibold text-slate-700">Horaires</span>
+                    <input value={r.caisseLivreurs?.horaires ?? ''} maxLength={120} placeholder="Ex. : lundi au samedi, 17 h – 20 h"
+                      onChange={(e) => maj('caisseLivreurs', { lieu: r.caisseLivreurs?.lieu ?? '', horaires: e.target.value })}
+                      className={`${CHAMP} w-full`} />
+                  </label>
+                </div>
+              </div>
               <Num l="Alerte espèces non versées après" suffixe="h" v={r.delaiVersementEspecesHeures ?? 24} on={(v) => maj('delaiVersementEspecesHeures', v)}
                 info="Au-delà de ce délai après la livraison, la Caisse livreurs signale le livreur en orange ; au double, en rouge." />
               <Num l="Plafond d’espèces non versées" suffixe="F" v={r.plafondEspecesCollecteur ?? 150000} on={(v) => maj('plafondEspecesCollecteur', v)}
@@ -794,38 +818,19 @@ export default function EconomicSettingsPanel({ ouvertParDefaut = false }: { ouv
             </div>
           )}
 
-          {/* Barre d'enregistrement : reste visible pendant le défilement, au-dessus
-              de la barre de navigation du bas sur téléphone (80 px + zone sûre). */}
-          {(modifie || erreur || erreursLocales.length > 0 || message) && (
-          <div className="sticky bottom-[calc(5.75rem+env(safe-area-inset-bottom,0px))] md:bottom-3 z-30 -mx-2 rounded-3xl bg-white/95 backdrop-blur border border-slate-200 shadow-float p-3 space-y-2">
-            {(erreursLocales.length > 0 || erreur) && (
-              <div role="alert" className="bg-rose-50 border border-rose-200 rounded-2xl p-2.5 text-xs text-rose-800 space-y-0.5">
-                {[...erreursLocales, ...(erreur ? [erreur] : [])].map((e) => <p key={e}>• {e}</p>)}
-              </div>
-            )}
-            {message && !modifie && (
-              <div role="status" className="flex items-start gap-2 bg-suguba-menthe rounded-2xl p-2.5 text-xs text-suguba-profond">
-                <CheckCircle2 className="w-4 h-4 shrink-0" /><span>{message}</span>
-              </div>
-            )}
-            <div className="flex items-center gap-2">
-              <p className="flex-1 min-w-0 text-xs text-slate-600">
-                {modifie ? <strong className="text-slate-900">Non enregistré<span className="hidden sm:inline"> : vos modifications attendent</span></strong> : 'Tout est enregistré'}
-              </p>
-              {modifie && (
-                <button type="button" onClick={annuler}
-                  className="min-h-[44px] px-3.5 rounded-full border border-slate-200 text-xs font-semibold text-slate-700 inline-flex items-center gap-1.5">
-                  <RotateCcw className="w-3.5 h-3.5" /> Annuler
-                </button>
-              )}
-              <button type="button" onClick={enregistrer} disabled={envoi || (!modifie && !recalculAReprendre) || erreursLocales.length > 0}
-                className="min-h-[44px] px-5 rounded-full bg-suguba-profond text-white text-sm font-semibold inline-flex items-center gap-2 disabled:opacity-40 active:scale-[0.98] transition-transform">
-                {envoi && <SugubaLoader className="w-4 h-4" />}
-                {recalculAReprendre && !modifie ? 'Reprendre l’actualisation du catalogue' : 'Enregistrer les modifications'}
-              </button>
-            </div>
-          </div>
-          )}
+          {/* Barre d'enregistrement commune (ADM-13) : reste visible pendant le défilement,
+              au-dessus de la barre de navigation du bas sur téléphone. */}
+          <BarreEnregistrement
+            modifie={modifie}
+            envoi={envoi}
+            onEnregistrer={enregistrer}
+            onAnnuler={annuler}
+            erreurs={[...erreursLocales, ...(erreur ? [erreur] : [])]}
+            bloque={erreursLocales.length > 0}
+            message={message}
+            actionDisponible={recalculAReprendre}
+            libelle={recalculAReprendre && !modifie ? 'Reprendre l’actualisation du catalogue' : 'Enregistrer les modifications'}
+          />
         </div></SectionActive.Provider>
       )}
     </div>
@@ -1167,7 +1172,7 @@ function FraisPaiementReglages({ f, ancien, onChange, onRelu }: {
           <div>
             <p className="text-xs font-semibold text-slate-700">Tarifs SasPay du compte Suguba</p>
             <p className="text-xs text-slate-600">
-              {f.saspay.releveLe ? `Relevés chez SasPay le ${new Date(f.saspay.releveLe).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}` : 'Jamais relevés'}
+              {f.saspay.releveLe ? `Relevés chez SasPay le ${new Date(f.saspay.releveLe).toLocaleString('fr-FR', FORMAT_DATE.completHeure)}` : 'Jamais relevés'}
               {' · relus seuls dès que le relevé a plus de 6 heures, sans jamais ralentir un paiement.'}
               {ancien && ' Relecture en cours en arrière-plan.'}
             </p>
@@ -1275,7 +1280,7 @@ function GrilleRetrait({ libelle, g, onChange }: { libelle: string; g: GrilleRet
           className={`${CHAMP} w-full mt-1`} />
       </label>
       <div className="flex items-center justify-between gap-2 text-xs text-slate-600">
-        <span>{g.verifieLe ? `Vérifiée le ${new Date(g.verifieLe).toLocaleDateString('fr-FR')}` : 'Jamais vérifiée'}</span>
+        <span>{g.verifieLe ? `Vérifiée le ${new Date(g.verifieLe).toLocaleDateString('fr-FR', FORMAT_DATE.complet)}` : 'Jamais vérifiée'}</span>
         <button type="button" className="underline font-semibold text-suguba-profond"
           onClick={() => onChange({ ...g, verifieLe: new Date().toISOString().slice(0, 10) })}>
           Vérifiée aujourd&apos;hui

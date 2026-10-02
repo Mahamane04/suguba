@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Header from '@/components/common/Header';
-import BottomNav from '@/components/common/BottomNav';
+import PageReseau from '@/components/reseau/PageReseau';
 import CreateOrderModal from '@/components/reseller/CreateOrderModal';
 import ProductCard, { carteDepuisProduit } from '@/components/product/ProductCard';
 import ChoicePicker from '@/components/ui/ChoicePicker';
@@ -113,32 +112,21 @@ export default function ResellerCatalogPage() {
   useEffect(() => { if (idsAffiches) compterVues(idsAffiches.split(',')); }, [idsAffiches]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
-      <Header />
-
-      <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 py-6 w-full space-y-5">
-
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-          <div className="space-y-1">
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Catalogue à partager</h1>
-            <p className="text-xs text-slate-500">
-              Un clic sur « Partager sur WhatsApp » envoie la photo, le prix et votre lien. Chaque vente livrée vous rapporte la commission affichée.
-            </p>
-          </div>
-          <Button href="/reseller/createur" variant="ghost" size="sm" className="self-start sm:self-auto">
-            <Sparkles className="w-4 h-4" />
-            <span>Créer un visuel</span>
-          </Button>
-        </div>
-
+    // REV-14 (lot 6 de l'audit UI/UX du 2026-10-02) : coquille commune des espaces.
+    <PageReseau titre="Catalogue à partager" large
+      sousTitre="Partagez sur WhatsApp : chaque vente livrée vous rapporte la commission affichée."
+      retour={{ href: '/reseller', libelle: 'Espace revendeur' }}
+      action={<Button href="/reseller/createur" variant="ghost" size="sm"><Sparkles className="w-4 h-4" /><span>Créer un visuel</span></Button>}>
         {/* Ma boutique : la vitrine publique composée depuis ce catalogue. */}
         {codeRevendeur !== null && (
-          <div className="bg-white border border-slate-200 rounded-3xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3" aria-busy={codeRevendeur === undefined}>
-            <div className="flex items-center gap-3">
-              <Store className="w-6 h-6 text-slate-700 shrink-0" />
-              <div>
-                <p className="text-sm font-bold text-slate-900">Ma boutique — {maSelection.size} article{maSelection.size > 1 ? 's' : ''}</p>
-                <p className="text-xs text-slate-500">
+          // REV-11 (lot 7 de l'audit UI/UX du 2026-10-02) : sur une ligne, pour que le
+          // premier produit remonte (il apparaissait vers 605 px sur téléphone).
+          <div className="bg-white border border-slate-200 rounded-2xl px-3 py-2 flex items-center justify-between gap-3" aria-busy={codeRevendeur === undefined}>
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Store className="w-5 h-5 text-suguba-profond shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-slate-900 truncate">Ma boutique · {maSelection.size} article{maSelection.size > 1 ? 's' : ''}</p>
+                <p className="hidden sm:block text-xs text-slate-600">
                   Ajoutez des articles ci-dessous, puis partagez votre boutique : chaque vente vous est attribuée.
                 </p>
               </div>
@@ -146,7 +134,7 @@ export default function ResellerCatalogPage() {
             {codeRevendeur ? (
               <Button href={`/r/${codeRevendeur}`} target="_blank" variant="secondary" size="sm">
                 <ExternalLink className="w-4 h-4" />
-                <span>Voir ma boutique</span>
+                <span>Voir<span className="hidden sm:inline"> ma boutique</span></span>
               </Button>
             ) : (
               <span className="inline-block h-10 w-40 rounded-full bg-slate-200 animate-pulse" role="status" aria-label="Chargement de votre boutique" />
@@ -154,11 +142,11 @@ export default function ResellerCatalogPage() {
           </div>
         )}
         {erreurBoutique && (
-          <p className="text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-2xl p-3">{erreurBoutique}</p>
+          <p role="alert" className="text-sm text-rose-800 bg-rose-50 border border-rose-200 rounded-2xl p-3">{erreurBoutique}</p>
         )}
 
         {/* Recherche et catégories */}
-        <div className="space-y-3">
+        <div className="space-y-2">
           <div className="relative">
             <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
@@ -166,7 +154,7 @@ export default function ResellerCatalogPage() {
               placeholder="Rechercher un produit…"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-2xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-suguba-brand/30 focus:border-suguba-brand"
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-2xl text-base sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-suguba-brand/30 focus:border-suguba-brand"
             />
           </div>
           <div className="grid grid-cols-2 gap-2">
@@ -197,9 +185,10 @@ export default function ResellerCatalogPage() {
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
-                  className={`px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-colors ${
+                  aria-pressed={selectedCategory === cat}
+                  className={`min-h-10 px-3.5 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
                     selectedCategory === cat
-                      ? 'bg-slate-900 text-white'
+                      ? 'bg-suguba-profond text-white'
                       : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
                   }`}
                 >
@@ -241,18 +230,24 @@ export default function ResellerCatalogPage() {
                 sponsorisationId={classes[i]?.sponsorise ? sponsorises.get(product.id) : null}
               >
                 <div className="grid grid-cols-2 gap-1.5">
+                  {/* REV-07 (audit UI/UX du 2026-10-02) : 32 px, sous la cible tactile ; 40 px et nom explicite. */}
                   <button
+                    type="button"
                     onClick={() => setSelectedProductForOrder(product)}
-                    className="h-8 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-700 inline-flex items-center justify-center gap-1"
+                    aria-label={`Enregistrer une vente de ${product.name} pour un client`}
+                    className="h-10 rounded-full border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-700 inline-flex items-center justify-center gap-1"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Vente</span>
                   </button>
                   {codeRevendeur ? (
                     <button
+                      type="button"
                       onClick={() => basculerBoutique(product.id)}
                       disabled={enCours === product.id}
-                      className={`h-8 rounded-xl border text-xs font-bold inline-flex items-center justify-center gap-1 transition-colors disabled:opacity-60 ${
+                      aria-pressed={maSelection.has(product.id)}
+                      aria-label={maSelection.has(product.id) ? `Retirer ${product.name} de ma boutique` : `Ajouter ${product.name} à ma boutique`}
+                      className={`h-10 rounded-full border text-xs font-semibold inline-flex items-center justify-center gap-1 transition-colors disabled:opacity-60 ${
                         maSelection.has(product.id)
                           ? 'bg-suguba-brand/10 border-suguba-brand/30 text-suguba-brand-dark'
                           : 'border-slate-200 text-slate-700 hover:bg-slate-50'
@@ -264,7 +259,7 @@ export default function ResellerCatalogPage() {
                   ) : (
                     <Link
                       href={`/p/${product.slug}`}
-                      className="h-8 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-700 inline-flex items-center justify-center"
+                      className="h-10 rounded-full border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-700 inline-flex items-center justify-center"
                     >
                       Voir
                     </Link>
@@ -275,8 +270,6 @@ export default function ResellerCatalogPage() {
           </div>
         )}
 
-      </main>
-
       {selectedProductForOrder && (
         <CreateOrderModal
           product={selectedProductForOrder}
@@ -284,8 +277,6 @@ export default function ResellerCatalogPage() {
           onClose={() => setSelectedProductForOrder(null)}
         />
       )}
-
-      <BottomNav />
-    </div>
+    </PageReseau>
   );
 }

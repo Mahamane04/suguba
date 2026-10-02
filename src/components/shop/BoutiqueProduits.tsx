@@ -106,7 +106,11 @@ export default function BoutiqueProduits({
                   {items.map((p, i) => (
                     <ProductCard
                       key={p.id}
-                      produit={{ id: p.id, slug: p.slug, nom: p.nom, prix: p.prix, categorie: p.categorie, images: p.images, enStock: p.enStock }}
+                      produit={{
+                        id: p.id, slug: p.slug, nom: p.nom, prix: p.prix, categorie: p.categorie, images: p.images, enStock: p.enStock,
+                        suffixeUnite: p.suffixeUnite, minimum: p.minimum, etiquetteOffre: p.etiquetteOffre,
+                        quantiteAjout: p.quantiteAjout, ajoutDirect: p.ajoutDirect, aChoisir: p.aChoisir,
+                      }}
                       refCode={refCode}
                       priority={i < 4}
                       presentation={presentation}

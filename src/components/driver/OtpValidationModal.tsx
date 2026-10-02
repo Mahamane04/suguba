@@ -8,6 +8,7 @@ import ScannerQr from '@/components/driver/ScannerQr';
 import { lireQrRemise } from '@/lib/qr-remise';
 import { sugubaStore } from '@/lib/store';
 import { X, KeyRound, CheckCircle2, AlertTriangle, ShieldCheck, Banknote, QrCode, Package } from 'lucide-react';
+import { formatF } from '@/lib/montant';
 
 interface OtpValidationModalProps {
   order: Order | null;
@@ -33,7 +34,7 @@ interface ArticleARemettre {
   payeEnLigne: boolean;
 }
 
-const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+const fcfa = formatF;
 
 /**
  * Preuve de remise (refaite le 2026-09-25) : le livreur SCANNE le QR du reçu
@@ -307,7 +308,7 @@ export default function OtpValidationModal({ order, isOpen, onClose, onSuccess, 
                 <div className="bg-emerald-50 border border-emerald-300/80 rounded-2xl p-4 flex items-start gap-3">
                   <ShieldCheck className="w-6 h-6 text-emerald-700 shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-emerald-800">Déjà payé en ligne</p>
+                    <p className="text-xs font-semibold text-emerald-800">Déjà payé en ligne</p>
                     <p className="text-xl font-bold text-emerald-900 mt-0.5">Ne rien encaisser</p>
                     <p className="text-xs text-slate-600 mt-0.5">Client : {order.customerName} ({order.customerPhone})</p>
                   </div>
@@ -316,7 +317,7 @@ export default function OtpValidationModal({ order, isOpen, onClose, onSuccess, 
                 <div className="bg-amber-50 border border-amber-300/80 rounded-2xl p-4 flex items-start gap-3">
                   <Banknote className="w-6 h-6 text-amber-700 shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-wider text-amber-800">À encaisser au client</p>
+                    <p className="text-xs font-semibold text-amber-800">À encaisser au client</p>
                     <p className="text-xl font-bold text-slate-900 mt-0.5">{fcfa(order.totalAmount)}</p>
                     <p className="text-xs text-slate-600 mt-0.5">Client : {order.customerName} ({order.customerPhone})</p>
                   </div>

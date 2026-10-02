@@ -1,25 +1,19 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
-import Header from '@/components/common/Header';
-import BottomNav from '@/components/common/BottomNav';
+import PageReseau from '@/components/reseau/PageReseau';
 import PrintableReceiptModal from '@/components/common/PrintableReceiptModal';
 import RecuVersementModal from '@/components/common/RecuVersementModal';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 import { useSugubaStore } from '@/lib/store';
 import EmptyState from '@/components/ui/EmptyState';
 import { Order } from '@/types';
-import { calculerAVerser, type CaisseLivreur, type Versement } from '@/lib/caisse-livreur';
-
-function caisseLocale(livrees: Order[], parCourse: number): CaisseLivreur {
-  const enEspeces = livrees.filter((o) => o.paymentMethod !== 'mobile_money');
-  return {
-    driverId: '', nom: 'Livreur', telephone: null, commandes: [], versements: [], ecartCumule: 0, plusAncienne: null,
-    ...calculerAVerser(enEspeces.map((o) => o.totalAmount), parCourse),
-  };
-}
-import { ArrowLeft, Banknote, Package, Printer, Receipt, Truck, Wallet } from 'lucide-react';
+import { LIBELLE_ENCAISSEMENT, statutEncaissement, type Versement } from '@/lib/caisse-livreur';
+import { useCaisseLivreur } from '@/lib/useCaisseLivreur';
+import { Banknote, Package, Printer, Receipt, Truck, Wallet } from 'lucide-react';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
+import LigneListe from '@/components/ui/LigneListe';
+import Button from '@/components/ui/Button';
 
 /**
  * Portefeuille livreur — refait le 2026-09-11 sur des données réelles.
@@ -39,7 +33,6 @@ export default function DriverEarningsPage() {
   const state = useSugubaStore();
   const [recuPour, setRecuPour] = useState<Order | null>(null);
   const [remuneration, setRemuneration] = useState<number | null>(null);
-  const [caisse, setCaisse] = useState<{ caisse: CaisseLivreur | null; livreurGardeRemuneration: boolean; migrationRequise: boolean } | null>(null);
   const [recuVersement, setRecuVersement] = useState<Versement | null>(null);
 
   useEffect(() => {
@@ -47,10 +40,6 @@ export default function DriverEarningsPage() {
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => setRemuneration(j && typeof j.remunerationParLivraison === 'number' ? j.remunerationParLivraison : null))
       .catch(() => setRemuneration(null));
-    fetch('/api/driver/caisse', { cache: 'no-store' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => setCaisse(j))
-      .catch(() => setCaisse(null));
   }, []);
 
   // /api/orders/feed ne renvoie que les courses de CE livreur (voir /driver).
@@ -58,37 +47,24 @@ export default function DriverEarningsPage() {
     .filter((o) => o.status === 'delivered')
     .sort((a, b) => Date.parse(b.deliveredAt || b.createdAt || '') - Date.parse(a.deliveredAt || a.createdAt || ''));
   // Le montant à remettre vient de /api/driver/caisse (commandes non payées en
-  // Mobile Money et pas encore versées). L'ancien calcul reposait sur
+  // Mobile Money et pas encore versées), par le même hook que l'accueil /driver
+  // (LIV-01, audit UI/UX du 2026-10-02). L'ancien calcul reposait sur
   // `paymentCollected`, que le code de remise passe à vrai pour TOUTES les
   // commandes : le total restait à 0 F (corrigé le 2026-09-25).
-  // Tant que le SQL de la caisse n'est pas exécuté, aucun versement n'existe :
-  // on recalcule sur place à partir des livraisons, avec la même règle.
-  const c = caisse?.caisse
-    || (caisse?.migrationRequise && remuneration !== null ? caisseLocale(livrees, caisse.livreurGardeRemuneration ? remuneration : 0) : null);
-  const aRemettre = c ? Math.max(0, c.aVerser - c.ecartCumule) : caisse ? 0 : null;
+  const { caisse: c, caisseServeur, aRemettre, etat: etatCaisse, livreurGardeRemuneration, lieuCaisse, horairesCaisse } = useCaisseLivreur(livrees, remuneration);
   const gains = remuneration !== null ? livrees.length * remuneration : null;
-  const fmt = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+  const fmt = formatF;
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
-      <Header />
-
-      <main className="flex-1 max-w-3xl mx-auto px-4 sm:px-6 py-6 w-full space-y-5">
-        <div className="space-y-1">
-          <Link href="/driver" className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900">
-            <ArrowLeft className="w-4 h-4" />
-            <span>Mes courses</span>
-          </Link>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Mon portefeuille</h1>
-        </div>
-
+    // REV-14 (lot 6 de l'audit UI/UX du 2026-10-02) : coquille commune des espaces.
+    <PageReseau titre="Mon portefeuille" retour={{ href: '/driver', libelle: 'Mes courses' }}>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Carte icone={<Truck className="w-4 h-4" />} titre="Livraisons effectuées" note="Remises confirmées par le code du client">
             {livrees.length}
           </Carte>
           <Carte icone={<Banknote className="w-4 h-4" />} titre="À remettre à Suguba"
             note={c && c.garde > 0 ? `${fmt(c.especes)} encaissés, ${fmt(c.garde)} gardés pour vous` : 'Espèces encaissées pas encore versées'} accent>
-            {aRemettre !== null ? fmt(aRemettre) : <span className="inline-block h-7 w-24 rounded-lg bg-slate-700 animate-pulse align-middle" />}
+            {aRemettre !== null ? fmt(aRemettre) : etatCaisse === 'erreur' ? '—' : <span className="inline-block h-7 w-24 rounded-lg bg-white/20 animate-pulse align-middle" role="status" aria-label="Chargement du montant" />}
           </Carte>
           <Carte
             icone={<Wallet className="w-4 h-4" />}
@@ -105,11 +81,26 @@ export default function DriverEarningsPage() {
             {c?.bloque && (
               <span className="block mb-1 font-bold text-rose-700">{c.raison} Versez vos espèces à Suguba pour recevoir de nouvelles courses payées en espèces.</span>
             )}
-            {caisse?.livreurGardeRemuneration === false
+            {!livreurGardeRemuneration
               ? 'Remettez toutes les espèces encaissées à la caisse Suguba. Votre rémunération vous est payée à part.'
               : 'Remettez les espèces encaissées à la caisse Suguba, moins votre rémunération par course, que vous gardez.'}
             {' '}À chaque versement, vous recevez un reçu.
           </p>
+          {/* LIV-03 (audit UI/UX du 2026-10-02) : l'étape finale du métier ne disait
+              pas comment la réussir. Pas de lieu écrit en dur (l'ancienne adresse était
+              inventée) : Suguba indique le lieu et l'heure du jour sur WhatsApp. */}
+          {aRemettre !== null && aRemettre > 0 && (
+            <ol className="space-y-2 text-sm text-slate-800">
+              <li className="flex gap-3"><span className="w-6 h-6 shrink-0 rounded-full bg-suguba-menthe text-suguba-profond font-bold text-xs flex items-center justify-center">1</span><span>Comptez <strong className="tabular-nums">{fmt(aRemettre)}</strong>.</span></li>
+              <li className="flex gap-3"><span className="w-6 h-6 shrink-0 rounded-full bg-suguba-menthe text-suguba-profond font-bold text-xs flex items-center justify-center">2</span>
+                {/* Arbitrage du lot 4 : le lieu vient de Paramètres › Livraison ; sans lui, on le demande. */}
+                {lieuCaisse
+                  ? <span>Versez à la caisse : <strong>{lieuCaisse}</strong>{horairesCaisse ? <> · {horairesCaisse}</> : null}.</span>
+                  : <span>Demandez à Suguba sur WhatsApp où et quand verser aujourd’hui.</span>}
+              </li>
+              <li className="flex gap-3"><span className="w-6 h-6 shrink-0 rounded-full bg-suguba-menthe text-suguba-profond font-bold text-xs flex items-center justify-center">3</span><span>Le caissier vous remet un reçu de versement : il apparaît ici, dans « Mes versements ».</span></li>
+            </ol>
+          )}
           {c && (c.commandes.length > 0 || c.ecartCumule !== 0) && (
             <div className="rounded-2xl bg-slate-50 p-3 text-sm space-y-1">
               <div className="flex justify-between"><span>{c.commandes.length} commande{c.commandes.length > 1 ? 's' : ''} payée{c.commandes.length > 1 ? 's' : ''} en espèces</span><span>{fmt(c.especes)}</span></div>
@@ -127,22 +118,22 @@ export default function DriverEarningsPage() {
                   className="w-full min-h-11 flex justify-between items-center gap-2 text-sm rounded-xl hover:bg-slate-50 px-2 text-left">
                   <span className="min-w-0 truncate text-slate-700 inline-flex items-center gap-1.5">
                     <Receipt className="w-4 h-4 shrink-0 text-slate-500" />
-                    {new Date(v.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} · {v.remittanceNumber}
+                    {new Date(v.createdAt).toLocaleDateString('fr-FR', FORMAT_DATE.jour)} · {v.remittanceNumber}
                   </span>
                   <span className="font-semibold text-slate-900 shrink-0">{fmt(v.amountReceived)}</span>
                 </button>
               ))}
             </div>
           )}
-          <a
-            href="https://wa.me/22389460000?text=Bonjour%20Suguba%2C%20je%20suis%20livreur%20et%20j%27ai%20une%20question%20sur%20mon%20portefeuille."
+          <Button
+            variant={lieuCaisse ? 'ghost' : 'whatsapp'}
+            href={`https://wa.me/22389460000?text=${encodeURIComponent(aRemettre && !lieuCaisse ? `Bonjour Suguba, je suis livreur : où et quand puis-je verser ${fmt(aRemettre)} aujourd’hui ?` : 'Bonjour Suguba, je suis livreur et j’ai une question sur mon portefeuille.')}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl border border-slate-200 hover:bg-slate-50 text-sm font-bold text-slate-800"
           >
-            <WhatsAppIcon className="w-5 h-5 text-[#25D366]" />
-            <span>Contacter Suguba</span>
-          </a>
+            <WhatsAppIcon className="w-5 h-5" />
+            {aRemettre && !lieuCaisse ? 'Demander où verser' : 'Contacter Suguba'}
+          </Button>
         </div>
 
         <div className="bg-white rounded-3xl p-5 border border-slate-200 space-y-3">
@@ -151,44 +142,35 @@ export default function DriverEarningsPage() {
             <EmptyState icon={Package} title="Aucune livraison effectuée pour le moment." />
           ) : (
             <div className="divide-y divide-slate-100">
-              {livrees.map((o) => (
-                <div key={o.id} className="py-3 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-bold text-sm text-slate-900 truncate">{o.productName}</p>
-                    <p className="text-xs text-slate-500">
-                      #{o.orderNumber} · {o.neighborhood}
-                      {o.deliveredAt ? ` · ${new Date(o.deliveredAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}` : ''}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-slate-900">{fmt(o.totalAmount)}</p>
-                      <p className={`text-xs font-bold ${o.paymentMethod === 'mobile_money' ? 'text-slate-500' : 'text-emerald-700'}`}>
-                        {o.paymentMethod === 'mobile_money' ? 'Payé en ligne' : 'Encaissé'}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setRecuPour(o)}
-                      aria-label={`Reçu de la commande ${o.orderNumber}`}
-                      className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center"
-                    >
-                      <Printer className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+              {livrees.map((o) => {
+                const statut = statutEncaissement(o, caisseServeur);
+                return (
+                  <LigneListe key={o.id}
+                    titre={o.productName}
+                    meta={<>#{o.orderNumber} · {o.neighborhood}{o.deliveredAt ? ` · ${new Date(o.deliveredAt).toLocaleDateString('fr-FR', FORMAT_DATE.jour)}` : ''}</>}
+                    valeur={fmt(o.totalAmount)}
+                    statut={<span className={statut === 'a_remettre' ? 'text-amber-800' : 'text-slate-600'}>{LIBELLE_ENCAISSEMENT[statut]}</span>}
+                    action={
+                      <button
+                        type="button"
+                        onClick={() => setRecuPour(o)}
+                        aria-label={`Reçu de la commande ${o.orderNumber}`}
+                        className="w-11 h-11 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center"
+                      >
+                        <Printer className="w-4 h-4" />
+                      </button>
+                    }
+                  />
+                );
+              })}
             </div>
           )}
         </div>
-      </main>
-
       {recuPour && (
         <PrintableReceiptModal order={recuPour} isOpen={!!recuPour} onClose={() => setRecuPour(null)} />
       )}
       <RecuVersementModal versement={recuVersement} nomLivreur={c?.nom || 'Livreur'} onClose={() => setRecuVersement(null)} />
-
-      <BottomNav />
-    </div>
+    </PageReseau>
   );
 }
 
@@ -196,13 +178,13 @@ function Carte({ icone, titre, note, accent, children }: {
   icone: React.ReactNode; titre: string; note: string; accent?: boolean; children: React.ReactNode;
 }) {
   return (
-    <div className={`p-4 rounded-3xl border space-y-1 ${accent ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-slate-200'}`}>
-      <div className={`flex items-center gap-1.5 ${accent ? 'text-slate-300' : 'text-slate-500'}`}>
+    <div className={`p-4 rounded-3xl border space-y-1 ${accent ? 'bg-suguba-profond border-suguba-profond text-white' : 'bg-white border-slate-200'}`}>
+      <div className={`flex items-center gap-1.5 ${accent ? 'text-white/80' : 'text-slate-600'}`}>
         {icone}
-        <span className="text-xs font-bold uppercase">{titre}</span>
+        <span className="text-xs font-semibold">{titre}</span>
       </div>
       <p className={`text-2xl font-bold ${accent ? 'text-white' : 'text-slate-900'}`}>{children}</p>
-      <p className={`text-xs ${accent ? 'text-slate-300' : 'text-slate-500'}`}>{note}</p>
+      <p className={`text-xs ${accent ? 'text-white/80' : 'text-slate-600'}`}>{note}</p>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import SugubaLoader from '@/components/ui/SugubaLoader';
 import React, { useRef, useState } from 'react';
 import { Camera, X } from 'lucide-react';
 import { compresserImage } from '@/lib/compression-image';
+import { initiale as lettreInitiale } from '@/lib/initiale';
 
 /**
  * Logo de boutique — avatar circulaire, un seul fichier (2026-09-11).
@@ -70,7 +71,7 @@ export default function LogoUploader({
     onChange(null);
   };
 
-  const initiale = (nomPourInitiale || '?').trim().charAt(0).toUpperCase();
+  const initiale = lettreInitiale(nomPourInitiale || '?');
 
   return (
     <div className="flex items-center gap-4">

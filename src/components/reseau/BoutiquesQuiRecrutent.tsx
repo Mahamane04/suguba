@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Megaphone, ChevronRight } from 'lucide-react';
+import { initiale } from '@/lib/initiale';
 
 /**
  * « Ces boutiques recherchent actuellement des revendeurs » (§ 18).
@@ -58,7 +59,7 @@ export default function BoutiquesQuiRecrutent() {
               <img src={b.logo} alt="" className="w-11 h-11 rounded-2xl object-cover shrink-0" />
             ) : (
               <div className="w-11 h-11 rounded-2xl bg-slate-100 text-slate-500 font-bold flex items-center justify-center shrink-0">
-                {b.nom.charAt(0).toUpperCase()}
+                {initiale(b.nom)}
               </div>
             )}
             <div className="min-w-0 flex-1">

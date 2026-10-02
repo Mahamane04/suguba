@@ -12,6 +12,7 @@ import { Field, Input } from '@/components/ui/Field';
 import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
 import ProductImage from '@/components/common/ProductImage';
 import { useToast } from '@/components/ui/Toast';
+import { formatF } from '@/lib/montant';
 
 /**
  * Mes boutiques (2026-09-24) — revendeur ou fournisseur.
@@ -32,7 +33,7 @@ interface Donnees {
   formules: Formule[]; numeroPaiement: string;
 }
 
-const enF = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+const enF = formatF;
 const date = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
 
 export default function MesBoutiquesPage() {

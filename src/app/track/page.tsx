@@ -10,6 +10,7 @@ import { PackageSearch, ArrowRight, MessageCircle, QrCode } from 'lucide-react';
 import { devisSurCetAppareil, recusSurCetAppareil } from '@/lib/order-access-client';
 import { normaliserNumeroCommande } from '@/lib/order-number';
 import { useSugubaStore } from '@/lib/store';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 /**
  * Point d'entrée du suivi de commande, créé le 2026-09-09 avec la barre de
@@ -96,7 +97,7 @@ export default function TrackIndexPage() {
                   <QrCode className="w-5 h-5 text-suguba-profond shrink-0" />
                   <span className="min-w-0">
                     <span className="block text-sm font-bold text-slate-900 font-mono">#{r.orderNumber}</span>
-                    <span className="block text-xs text-slate-500">Reçu et code de remise · {new Date(r.enregistreLe).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
+                    <span className="block text-xs text-slate-500">Reçu et code de remise · {new Date(r.enregistreLe).toLocaleDateString('fr-FR', FORMAT_DATE.jour)}</span>
                   </span>
                 </span>
                 <ArrowRight className="w-4 h-4 text-slate-400 shrink-0" />
@@ -113,7 +114,7 @@ export default function TrackIndexPage() {
                 className="flex items-center justify-between gap-3 px-3 py-3 rounded-2xl hover:bg-slate-50">
                 <span className="min-w-0">
                   <span className="block text-sm font-bold text-slate-900 font-mono">{d.numero}</span>
-                  <span className="block text-xs text-slate-500">Demandé le {new Date(d.enregistreLe).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
+                  <span className="block text-xs text-slate-500">Demandé le {new Date(d.enregistreLe).toLocaleDateString('fr-FR', FORMAT_DATE.jour)}</span>
                 </span>
                 <ArrowRight className="w-4 h-4 text-slate-400 shrink-0" />
               </Link>
@@ -132,7 +133,7 @@ export default function TrackIndexPage() {
               >
                 <span className="min-w-0">
                   <span className="block text-sm font-bold text-slate-900 truncate">{o.productName}</span>
-                  <span className="block text-xs text-slate-500">#{o.orderNumber} · {o.totalAmount.toLocaleString('fr-FR')} F</span>
+                  <span className="block text-xs text-slate-500">#{o.orderNumber} · {formatF(o.totalAmount)}</span>
                 </span>
                 <ArrowRight className="w-4 h-4 text-slate-400 shrink-0" />
               </Link>

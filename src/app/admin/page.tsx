@@ -10,6 +10,7 @@ import { Card, StatCard } from '@/components/ui/Surface';
 import { useSugubaStore } from '@/lib/store';
 import { usePosteAdmin } from '@/components/admin/contexte';
 import { TACHES, type TypeTache } from '@/lib/admin/poste';
+import { formatF } from '@/lib/montant';
 
 /**
  * Vue d'ensemble (refaite en U2, 2026-09-27).
@@ -38,7 +39,7 @@ const DESTINATION: Record<TypeTache, string> = {
   sponsorisation_a_examiner: '/admin/sponsorisations',
 };
 
-const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+const fcfa = formatF;
 
 export default function VueEnsemblePage() {
   const state = useSugubaStore();
@@ -46,6 +47,9 @@ export default function VueEnsemblePage() {
   const pret = state.ordersSync === 'ready';
 
   const {data:finance,error:erreurFinance} = useFinance();
+  // Arbitrage du lot 4 (audit UI/UX du 2026-10-02) : « aujourd'hui » à l'heure de Bamako (UTC).
+  const aujourdhui = new Date().toISOString().slice(0, 10);
+  const { data: jour } = useFinance(aujourdhui, aujourdhui);
   const volume = finance?.volumeCree ?? 0;
   const commissions = finance ? finance.grandLivre.available + finance.grandLivre.locked : 0;
   const types = (Object.keys(DESTINATION) as TypeTache[]).filter((t) => poste?.permissions.includes(TACHES[t].permission));
@@ -54,18 +58,12 @@ export default function VueEnsemblePage() {
   const aJour = types.filter((t) => nombre(t) === 0);
 
   return (
-    <PageReseau titre="Vue d’ensemble" large sousTitre="Les chiffres du moment et les files qui attendent une action.">
+    <PageReseau titre="Vue d’ensemble" large sousTitre="Ce qui attend une action, puis les chiffres du moment.">
       {erreurFinance && <p role="alert" className="text-rose-800">{erreurFinance}</p>}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <StatCard label="Volume des commandes" valeur={finance ? fcfa(volume) : '—'} aide={pret ? `${finance?.creees ?? 0} commandes au total` : 'Total pas encore chargé'} />
-        <StatCard label="Commissions disponibles et verrouillées" valeur={finance ? fcfa(commissions) : '—'} aide="Grand-livre serveur, hors réservées et payées" />
-        <StatCard label="Appels à passer" valeur={compteurs ? nombre('commande_a_confirmer') : '—'} aide="Commandes à confirmer par téléphone" />
-        <StatCard label="Retraits à payer" valeur={compteurs ? nombre('retrait_a_payer') : '—'} aide="Mobile Money ou espèces" />
-      </div>
 
       <section className="space-y-2" aria-labelledby="titre-files">
         <div className="flex items-end justify-between gap-3">
-          <h2 id="titre-files" className="text-sm font-bold text-slate-900">Files qui attendent une action</h2>
+          <h2 id="titre-files" className="text-base font-bold text-slate-900">À faire maintenant</h2>
           <Link href="/admin/a-traiter" className="text-sm font-semibold text-suguba-profond hover:underline inline-flex items-center gap-1">Tout voir dans « À traiter »<ArrowRight className="w-4 h-4" /></Link>
         </div>
         {!compteurs ? (
@@ -87,8 +85,38 @@ export default function VueEnsemblePage() {
           </div>
         )}
         {compteurs && aJour.length > 0 && (
-          <p className="text-xs text-slate-500">À jour : {aJour.map((t) => TACHES[t].libelle.toLowerCase()).join(', ')}.</p>
+          <ul className="flex flex-wrap gap-2" aria-label="Files à jour">
+            {aJour.map((t) => (
+              <li key={t} className="inline-flex items-center gap-1.5 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                <CheckCircle2 className="w-3.5 h-3.5 text-suguba-brand-dark" />{TACHES[t].libelle}
+              </li>
+            ))}
+          </ul>
         )}
+      </section>
+
+      {/* ADM-10 (audit UI/UX du 2026-10-02) : les chiffres viennent APRÈS ce qu'il faut
+          faire ; chacun dit sa période et mène à son détail. « Appels à passer »
+          répétait la file « Commande à confirmer » juste au-dessus : retiré. */}
+      <section className="space-y-2" aria-labelledby="titre-jour">
+        <h2 id="titre-jour" className="text-sm font-bold text-slate-900">Aujourd’hui</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <StatCard href="/admin/commandes" label="Commandes du jour" valeur={jour ? jour.creees : '—'}
+            aide={jour ? `${fcfa(jour.volumeCree)} commandés depuis minuit` : 'Chargement…'} />
+          <StatCard href="/admin/commandes?statut=delivered" label="Livrées aujourd’hui" valeur={jour ? jour.livrees : '—'}
+            aide={jour ? `${fcfa(jour.volumeLivre)} livrés` : 'Chargement…'} />
+          <StatCard href="/admin/commandes?statut=pending_call" label="Appels en retard" valeur={jour ? jour.appelsEnRetard : '—'}
+            alerte={Boolean(jour && jour.appelsEnRetard > 0)} aide="Clients pas encore appelés après 4 h" />
+        </div>
+      </section>
+
+      <section className="space-y-2" aria-labelledby="titre-chiffres">
+        <h2 id="titre-chiffres" className="text-sm font-bold text-slate-900">Les chiffres</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <StatCard href="/admin/analytics" label="Commandes depuis l’ouverture" valeur={finance ? fcfa(volume) : '—'} aide={pret ? `${finance?.creees ?? 0} commandes passées en tout` : 'Total pas encore chargé'} />
+          <StatCard href="/admin/retraits" label="Commissions dues aux revendeurs" valeur={finance ? fcfa(commissions) : '—'} aide="Retirables ou en délai de sécurité (hors retraits en cours et déjà versés)" />
+          <StatCard href="/admin/retraits" label="Retraits à payer" valeur={compteurs ? nombre('retrait_a_payer') : '—'} aide="Mobile Money ou espèces, en ce moment" />
+        </div>
       </section>
     </PageReseau>
   );

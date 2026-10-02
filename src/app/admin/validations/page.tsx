@@ -9,6 +9,8 @@ import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface'
 import { useToast } from '@/components/ui/Toast';
 import { useCibleUrl, useDefilerVersCible } from '@/components/admin/contexte';
 import { anciennete } from '@/lib/admin/poste';
+import { libelleDossier } from '@/lib/admin/libelles-journal';
+import { formatF } from '@/lib/montant';
 
 interface Validation {
   id: string; type: string; libelle: string; dossier: string; montant: number | null; resume: Record<string, unknown>;
@@ -18,7 +20,7 @@ const STATUT: Record<string, { libelle: string; ton: 'attente' | 'succes' | 'dan
   en_attente: { libelle: 'En attente', ton: 'attente' }, approuvee: { libelle: 'Approuvée — à exécuter', ton: 'succes' },
   refusee: { libelle: 'Refusée', ton: 'danger' }, executee: { libelle: 'Exécutée', ton: 'neutre' }, caduque: { libelle: 'Caduque (dossier modifié)', ton: 'neutre' },
 };
-const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+const fcfa = formatF;
 
 /**
  * Validations (A3, 2026-09-27) : opérations sensibles préparées par un membre,
@@ -35,6 +37,10 @@ export default function ValidationsPage() {
   const [erreur, setErreur] = useState('');
   const [migration, setMigration] = useState(false);
   const [refus, setRefus] = useState<{ id: string; motif: string } | null>(null);
+  // ADM-05 (audit UI/UX du 2026-10-02) : « Approuver » partait en un clic, sans
+  // récapitulatif, et un double clic envoyait deux décisions.
+  const [approbation, setApprobation] = useState<string | null>(null);
+  const [envoi, setEnvoi] = useState<string | null>(null);
 
   const charger = useCallback(() => {
     fetch('/api/admin/validations', { cache: 'no-store' })
@@ -45,12 +51,21 @@ export default function ValidationsPage() {
   useEffect(() => { charger(); }, [charger]);
 
   async function decider(v: Validation, decision: 'approuver' | 'refuser', motif?: string) {
-    const r = await fetch('/api/admin/validations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: v.id, decision, motif }) });
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok) { toast(j.error || 'Décision impossible.', { ton: 'erreur' }); return; }
-    setRefus(null);
-    toast(decision === 'approuver' ? 'Approuvée : l’opération peut maintenant être exécutée.' : 'Refusée.', { ton: 'succes' });
-    charger();
+    if (envoi) return;
+    setEnvoi(v.id);
+    try {
+      const r = await fetch('/api/admin/validations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: v.id, decision, motif }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) { toast(j.error || 'Décision impossible.', { ton: 'erreur' }); return; }
+      setRefus(null);
+      setApprobation(null);
+      toast(decision === 'approuver' ? 'Approuvée : l’opération peut maintenant être exécutée.' : 'Refusée.', { ton: 'succes' });
+      charger();
+    } catch {
+      toast('Décision non envoyée. Vérifiez votre connexion et réessayez.', { ton: 'erreur' });
+    } finally {
+      setEnvoi(null);
+    }
   }
 
   const enAttente = (liste || []).filter((v) => v.statut === 'en_attente');
@@ -63,7 +78,8 @@ export default function ValidationsPage() {
         {v.montant != null && <span className="text-sm font-bold tabular-nums text-slate-900">{fcfa(v.montant)}</span>}
         <StatusPill ton={STATUT[v.statut]?.ton || 'neutre'}>{STATUT[v.statut]?.libelle || v.statut}</StatusPill>
       </div>
-      <p className="text-xs text-slate-600">Demandé par <strong>{v.demandeur}</strong> {anciennete(v.creeLe)} · dossier <code>{v.dossier}</code></p>
+      {/* ADM-07 : la nature du dossier en clair, plus son code brut. */}
+      <p className="text-sm text-slate-600">Demandé par <strong>{v.demandeur}</strong> {anciennete(v.creeLe)} · {libelleDossier(v.dossier)}</p>
       <dl className="grid sm:grid-cols-2 gap-2 rounded-xl bg-slate-50 p-3 text-sm">{Object.entries(v.resume).map(([k,val])=><div key={k}><dt className="text-slate-500">{({beneficiaire:'Bénéficiaire',telephone:'Téléphone',methode:'Moyen de paiement',motif:'Motif',baisses:'Changements',commande:'Commande'} as Record<string,string>)[k] || k.replace(/_/g,' ')}</dt><dd className="break-words">{Array.isArray(val)?val.map((x:any,i)=><p key={i}>{x.libelle || 'Changement'} : {String(x.avant ?? '')} → {String(x.apres ?? '')}</p>):val && typeof val==='object'?Object.entries(val).map(([cle,valeur])=><p key={cle}>{cle.replace(/_/g,' ')} : {String(valeur)}</p>):String(val ?? '—')}</dd></div>)}</dl>
       {v.statut === 'approuvee' && <Link className="inline-flex min-h-11 items-center underline font-semibold" href={v.type === 'part_suguba' ? '/admin/parametres' : `/admin/retraits?id=${encodeURIComponent(v.dossier.split(':').slice(1).join(':'))}`}>Reprendre l’opération dans son dossier</Link>}
       {v.decideur && <p className="text-xs text-slate-600">Décidé par <strong>{v.decideur}</strong>{v.motif ? ` — ${v.motif}` : ''}</p>}
@@ -72,14 +88,25 @@ export default function ValidationsPage() {
         : refus?.id === v.id ? (
           <div className="flex flex-wrap gap-2 items-center">
             <input value={refus.motif} onChange={(e) => setRefus({ id: v.id, motif: e.target.value })} placeholder="Motif du refus" aria-label="Motif du refus"
-              className="flex-1 min-w-[12rem] h-9 px-3 rounded-xl border border-slate-300 text-sm" />
-            <Button type="button" size="sm" variant="danger" disabled={refus.motif.trim().length < 3} onClick={() => decider(v, 'refuser', refus.motif)}>Confirmer le refus</Button>
+              className="flex-1 min-w-[12rem] h-11 px-3 rounded-xl border border-slate-300 text-base sm:text-sm" />
+            <Button type="button" size="sm" variant="danger" disabled={refus.motif.trim().length < 3 || envoi === v.id} onClick={() => decider(v, 'refuser', refus.motif)}>Confirmer le refus</Button>
             <Button type="button" size="sm" variant="ghost" onClick={() => setRefus(null)}>Annuler</Button>
+          </div>
+        ) : approbation === v.id ? (
+          <div role="group" aria-label="Confirmer l’approbation" className="rounded-xl border border-slate-200 bg-white p-3 space-y-2">
+            <p className="text-sm text-slate-900">
+              Approuver <strong>{v.libelle}</strong>{v.montant != null && <> de <strong className="tabular-nums">{fcfa(v.montant)}</strong></>}, demandé par <strong>{v.demandeur}</strong> ?
+            </p>
+            <p className="text-xs text-slate-600">L’opération pourra ensuite être exécutée une fois, depuis son dossier.</p>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" size="sm" disabled={envoi === v.id} onClick={() => decider(v, 'approuver')}><CheckCircle2 className="w-4 h-4" />Confirmer l’approbation</Button>
+              <Button type="button" size="sm" variant="ghost" disabled={envoi === v.id} onClick={() => setApprobation(null)}>Annuler</Button>
+            </div>
           </div>
         ) : (
           <div className="flex gap-2">
-            <Button type="button" size="sm" onClick={() => decider(v, 'approuver')}><CheckCircle2 className="w-4 h-4" />Approuver</Button>
-            <Button type="button" size="sm" variant="ghost" onClick={() => setRefus({ id: v.id, motif: '' })}><XCircle className="w-4 h-4" />Refuser</Button>
+            <Button type="button" size="sm" onClick={() => { setRefus(null); setApprobation(v.id); }}><CheckCircle2 className="w-4 h-4" />Approuver</Button>
+            <Button type="button" size="sm" variant="ghost" onClick={() => { setApprobation(null); setRefus({ id: v.id, motif: '' }); }}><XCircle className="w-4 h-4" />Refuser</Button>
           </div>
         ))}
     </li>

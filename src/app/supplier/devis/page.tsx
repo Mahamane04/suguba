@@ -7,9 +7,10 @@ import { FileText, Phone, Users } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
 import Button from '@/components/ui/Button';
-import { Field, Input, Textarea } from '@/components/ui/Field';
+import { Field, Input, Textarea, MontantInput } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
 import FilMessages from '@/components/messagerie/FilMessages';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 interface DemandeDevis {
   id: string;
@@ -27,8 +28,8 @@ interface DemandeDevis {
   commande: string | null;
 }
 
-const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
-const jour = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+const fcfa = formatF;
+const jour = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', FORMAT_DATE.jour);
 
 type Filtre = 'a_repondre' | 'proposes' | 'termines';
 const filtreDe = (d: DemandeDevis): Filtre => (d.statut === 'demande' ? 'a_repondre' : d.statut === 'proposee' ? 'proposes' : 'termines');
@@ -191,11 +192,11 @@ function FormProposition({ demande, onFini }: { demande: DemandeDevis; onFini: (
 
   return (
     <div className="rounded-2xl bg-suguba-sauge p-3 space-y-3">
-      <Field label={`Votre prix pour ${demande.quantite > 1 ? `les ${demande.quantite}` : 'cette demande'} (FCFA)`} requis aide="Ce que vous touchez, tout compris (matériel, pose…).">
-        <Input type="number" inputMode="numeric" min={500} step={500} value={prix} onChange={(e) => setPrix(e.target.value)} />
+      <Field label={`Votre prix pour ${demande.quantite > 1 ? `les ${demande.quantite}` : 'cette demande'}`} requis aide="Ce que vous touchez, tout compris (matériel, pose…).">
+        <MontantInput min={500} step={500} value={prix} onChange={(e) => setPrix(e.target.value)} />
       </Field>
-      <Field label="Part du revendeur (FCFA)" aide={demande.viaRevendeur ? 'Ce client vient d’un revendeur : sa part l’encourage à vous en apporter d’autres.' : 'Utilisée si un revendeur a apporté le client.'}>
-        <Input type="number" inputMode="numeric" min={0} step={250} value={part} onChange={(e) => setPart(e.target.value)} />
+      <Field label="Part du revendeur" aide={demande.viaRevendeur ? 'Ce client vient d’un revendeur : sa part l’encourage à vous en apporter d’autres.' : 'Utilisée si un revendeur a apporté le client.'}>
+        <MontantInput min={0} step={250} value={part} onChange={(e) => setPart(e.target.value)} />
       </Field>
       <Field label="Ce qui est compris" aide="Matériel, installation, garantie, délais. Aucun supplément ne pourra être ajouté ensuite.">
         <Textarea rows={3} maxLength={2000} value={conditions} onChange={(e) => setConditions(e.target.value)} />

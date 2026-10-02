@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
 import { useSugubaStore } from '@/lib/store';
 import { compterClic, compterVues, useSponsorises } from '@/lib/sponsorises';
+import { formatF } from '@/lib/montant';
 
 /**
  * Bandeau « À la une » de l'accueil — emplacement sponsorisé « home_hero ».
@@ -28,9 +29,9 @@ export default function ALaUne() {
       {/* eslint-disable-next-line @next/next/no-img-element */}
       {produit.images[0] ? <img src={produit.images[0]} alt="" className="w-20 h-20 rounded-2xl object-cover shrink-0" /> : <div className="w-20 h-20 rounded-2xl bg-slate-100 shrink-0" />}
       <div className="min-w-0 flex-1 space-y-0.5">
-        <p className="text-xs font-bold text-slate-500 uppercase">À la une · Sponsorisé</p>
+        <p className="text-xs font-semibold text-slate-600">À la une · Sponsorisé</p>
         <p className="text-sm font-bold text-slate-900 line-clamp-2">{produit.name}</p>
-        <p className="text-base font-bold text-suguba-brand-dark tabular-nums">{produit.publicPrice.toLocaleString('fr-FR')} F</p>
+        <p className="text-base font-bold text-suguba-brand-dark tabular-nums">{formatF(produit.publicPrice)}</p>
       </div>
       <ChevronRight className="w-5 h-5 text-slate-300 shrink-0" />
     </Link>

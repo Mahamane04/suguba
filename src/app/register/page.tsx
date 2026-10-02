@@ -14,7 +14,7 @@ import { supabase } from '@/lib/supabase';
 import CodeEmail from '@/components/auth/CodeEmail';
 import { messageErreurMotDePasse, problemeMotDePasse } from '@/lib/code-email';
 import ChampMotDePasse from '@/components/auth/ChampMotDePasse';
-import { Store, ShoppingBag, Truck, Globe, ShoppingCart, ShieldAlert, Mail, Check, ArrowRight } from 'lucide-react';
+import { ShoppingCart, ShieldAlert, ArrowRight } from 'lucide-react';
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -114,7 +114,7 @@ export default function RegisterPage() {
 
         {compte === 'chargement' ? <p role="status">Vérification de votre compte…</p> : compte === 'erreur' ? <p role="alert">Impossible de vérifier votre connexion. <button type="button" className="underline" onClick={()=>window.location.reload()}>Réessayer</button></p> : compte === 'existant' ? <section className="bg-white rounded-2xl border p-5 space-y-3"><h2 className="font-bold">Vous avez déjà un compte</h2><p className="text-sm">Ajoutez une activité à votre compte existant ; vos commandes et vos gains restent conservés.</p><Button href={role && ['supplier','reseller','driver'].includes(role) ? `/compte/profils?ajouter=${role}` : '/compte/profils'}>Gérer mes profils</Button></section> : <>
         <section id="choix-inscription" className="space-y-3 scroll-mt-24">
-          <h2 className="font-bold text-base text-slate-900">Quel profil voulez-vous créer ? 5 choix possibles</h2>
+          <h2 className="font-bold text-base text-slate-900">Quel profil voulez-vous créer ?</h2>
           <ChoixProfil valeur={role} disabled={envoi || lienEnvoye} onChange={r=>{setRole(r);setErreur(null);requestAnimationFrame(()=>document.getElementById('connexion-inscription')?.focus());}} />
           {lienEnvoye && <p className="text-sm text-slate-600">Le code reçu correspond au profil {profil?.titre}. Pour changer de profil, revenez à la saisie de l’adresse e-mail.</p>}
           <Link href="/" className="flex items-center gap-3 p-3.5 rounded-2xl border border-dashed border-slate-300 bg-white hover:border-slate-400">
@@ -146,7 +146,7 @@ export default function RegisterPage() {
 
           <div className="flex items-center gap-3">
             <div className="h-px flex-1 bg-slate-100" />
-            <span className="text-xs font-bold text-slate-500 uppercase">ou</span>
+            <span className="text-xs font-semibold text-slate-600">ou</span>
             <div className="h-px flex-1 bg-slate-100" />
           </div>
 
@@ -188,7 +188,7 @@ export default function RegisterPage() {
             En créant un compte, vous acceptez les{' '}
             <Link href="/legal/terms" className="text-suguba-brand-dark underline">conditions générales</Link>.
           </p>
-        </section> : <p className="rounded-2xl bg-emerald-50 p-4 text-sm text-emerald-900">Choisissez un profil ci-dessus pour accéder à l’inscription.</p>}
+        </section> : <p className="rounded-2xl bg-suguba-menthe p-4 text-sm text-suguba-profond">Choisissez un profil ci-dessus pour accéder à l’inscription.</p>}
         </>}
 
         <p className="text-center text-xs text-slate-600">

@@ -56,7 +56,10 @@ export default function WarrantyPage() {
                 2. Durée de Garantie Fournisseur
               </h2>
               <p>
-                Chaque fiche produit précise la durée de garantie contractuelle (ex: 6 mois ou 12 mois pour l&apos;électronique et l&apos;énergie solaire).
+                {/* PUB-07 (audit UI/UX du 2026-10-02) : le texte promettait une durée
+                    « sur chaque fiche produit », qu'aucune fiche n'affiche (pas de
+                    colonne garantie en base). Texte à valider par le fondateur. */}
+                La durée de garantie dépend du produit et du fournisseur (par exemple 6 ou 12 mois pour l&apos;électronique et l&apos;énergie solaire). Elle n&apos;est pas encore affichée sur les fiches produit : demandez-la à Suguba avant de commander.
               </p>
               <p>
                 La garantie couvre les vices de fabrication et pannes matérielles survenues dans des conditions normales d&apos;utilisation. Elle ne couvre pas la casse physique, l&apos;immersion dans l&apos;eau ou les dommages causés par des surtensions électriques externes.

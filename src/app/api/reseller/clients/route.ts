@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sessionAvecRole } from '@/lib/reseau/route-session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
+import { telephoneMasque } from '@/lib/acces-contacts';
 
 /**
  * Clients acquis par le revendeur (§ 15 des écrans).
@@ -11,11 +12,6 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
  * pour les clients et une invitation à vendre à côté.
  */
 
-function masquer(telephone: string | null): string {
-  const chiffres = String(telephone || '').replace(/\D/g, '');
-  if (chiffres.length < 4) return '••';
-  return `•• ${chiffres.slice(-4, -2)} ${chiffres.slice(-2)}`;
-}
 
 export async function GET(req: NextRequest) {
   const session = await sessionAvecRole(req, 'reseller');
@@ -35,7 +31,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     clients: (data || []).map((c) => ({
       prenom: (c.customer_name || '').trim().split(/\s+/)[0] || 'Client',
-      telephoneMasque: masquer(c.customer_phone),
+      telephoneMasque: telephoneMasque(c.customer_phone),
       source: c.source,
       depuis: c.first_seen_at,
       dernierPassage: c.last_seen_at,

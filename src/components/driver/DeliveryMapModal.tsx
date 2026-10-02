@@ -2,10 +2,8 @@
 
 import React, { useEffect, useRef } from 'react';
 import { Order } from '@/types';
-import { 
-  X, MapPin, Navigation, Phone, MessageCircle, 
-  ExternalLink, Compass, ShieldCheck, Banknote 
-} from 'lucide-react';
+import { X, MapPin, Navigation, Phone, MessageCircle, ExternalLink, Compass } from 'lucide-react';
+import { formatF } from '@/lib/montant';
 
 interface DeliveryMapModalProps {
   order: Order | null;
@@ -50,7 +48,7 @@ export default function DeliveryMapModal({ order, isOpen, onClose }: DeliveryMap
     ? `https://waze.com/ul?ll=${pos.lat},${pos.lng}&navigate=yes`
     : `https://waze.com/ul?q=${encodeURIComponent(`${order.landmark} ${order.neighborhood} Bamako`)}`;
 
-  const montant = `${Math.round(order.totalAmount).toLocaleString('fr-FR')} F`;
+  const montant = `${formatF(order.totalAmount)}`;
   const instructionPaiement = order.paymentCollected
     ? 'Votre commande est déjà payée : rien à remettre au livreur.'
     : `Montant à préparer : ${montant}`;
@@ -96,7 +94,7 @@ export default function DeliveryMapModal({ order, isOpen, onClose }: DeliveryMap
             <div className="flex items-start space-x-3">
               <MapPin className="w-6 h-6 text-emerald-700 shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-emerald-800">
+                <p className="text-xs font-semibold text-emerald-800">
                   Quartier de Destination :
                 </p>
                 <p className="text-base font-bold text-slate-900">

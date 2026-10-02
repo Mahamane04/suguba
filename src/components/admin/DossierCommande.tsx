@@ -14,6 +14,7 @@ import NotesInternes from '@/components/admin/NotesInternes';
 import { usePermission } from '@/components/admin/contexte';
 import { whatsappHelper } from '@/lib/whatsapp-helper';
 import type { Order } from '@/types';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 /**
  * Une commande et ce qu'on peut y faire (lots U2/U4, 2026-09-27) : appeler
@@ -37,8 +38,8 @@ export const STATUTS_COMMANDE: [string, string, Ton][] = [
   ['in_transit', 'En livraison', 'info'], ['delivered', 'Livrée', 'succes'], ['cancelled', 'Annulée', 'danger'], ['returned', 'Retournée', 'neutre'],
 ];
 const LIBELLE_PAIEMENT: Record<string, string> = { cash_on_delivery: 'Espèces à la livraison', cash: 'Espèces à la livraison', orange_money: 'Orange Money', moov: 'Moov Money', card: 'Carte', carte: 'Carte' };
-export const fcfa = (v: number) => `${Math.round(v).toLocaleString('fr-FR')} F`;
-export const quand = (iso: string) => new Date(iso).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+export const fcfa = formatF;
+export const quand = (iso: string) => new Date(iso).toLocaleString('fr-FR', FORMAT_DATE.jourHeure);
 export const statutCommande = (s: string) => STATUTS_COMMANDE.find(([v]) => v === s);
 export const libellePaiement = (p: string | null) => LIBELLE_PAIEMENT[p || ''] || p || '—';
 /** Un livreur Suguba peut lui être attribué (ou remplacé). */

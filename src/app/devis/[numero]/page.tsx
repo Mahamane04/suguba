@@ -12,6 +12,7 @@ import { cleDuCompte, devisAccessKey, rememberOrderAccess } from '@/lib/order-ac
 import { whatsappHelper } from '@/lib/whatsapp-helper';
 import { CheckCircle2, Clock, FileText, QrCode, XCircle } from 'lucide-react';
 import FilMessages from '@/components/messagerie/FilMessages';
+import { formatF } from '@/lib/montant';
 
 interface DevisClient {
   numero: string;
@@ -27,7 +28,7 @@ interface DevisClient {
   orderNumber: string | null;
 }
 
-const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+const fcfa = formatF;
 const jour = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' });
 
 /**

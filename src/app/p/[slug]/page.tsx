@@ -22,8 +22,10 @@ import OffresRevendeurs, { type OffreRevendeurVue } from '@/components/product/O
 import VisiteQualifiee from '@/components/product/VisiteQualifiee';
 import BoutonQuestionFournisseur from '@/components/messagerie/BoutonQuestionFournisseur';
 import BoutonFavori from '@/components/compte/BoutonFavori';
+import { formatF, formatNombre } from '@/lib/montant';
+import { initiale } from '@/lib/initiale';
 
-const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} FCFA`;
+const fcfa = formatF;
 
 export default function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = use(params);
@@ -186,6 +188,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   const unite = suffixeUnite(product.uniteVente, product.contenuValeur, product.contenuMesure);
   const minimum = texteMinimum(product.uniteVente, product.quantiteMin);
   const prixAffiche = viaRevendeurs ? Math.min(...offresGros!.offres.map((o) => o.prix)) : unitPrice;
+  // PUB-01 (audit UI/UX du 2026-10-02) : le client découvrait les frais de livraison
+  // au formulaire (215 000 F sur la fiche, 216 500 F à payer). Le devis du serveur
+  // les calcule déjà pour Bamako : on les dit avant la décision.
+  const remiseParLivreur = !product.modeRemise || product.modeRemise === 'livreur';
+  const fraisLivraison = devis && !surDevis && !viaRevendeurs && remiseParLivreur && Number.isFinite(devis.fraisLivraison) ? devis.fraisLivraison : null;
+  const ligneLivraison = fraisLivraison === null ? null : (
+    <>Livraison à Bamako : <strong className="text-slate-800 tabular-nums">{formatF(fraisLivraison)}</strong> · ou à retirer en point relais · payez à la livraison</>
+  );
   const aPartirDe = surDevis || viaRevendeurs;
 
   const allerCommander = () => {
@@ -243,7 +253,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             }`}
           >
             <span className="text-sm font-bold text-slate-900 whitespace-nowrap">
-              {aPartirDe ? 'dès ' : ''}{Math.round(prixAffiche).toLocaleString('fr-FR')} F{unite && <span className="text-xs font-semibold text-slate-600"> {unite}</span>}
+              {aPartirDe ? 'dès ' : ''}{formatF(prixAffiche)}{unite && <span className="text-xs font-semibold text-slate-600"> {unite}</span>}
             </span>
             <button
               type="button"
@@ -262,7 +272,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
           <div className="bg-emerald-50 border border-emerald-300 rounded-2xl p-3.5 flex items-center justify-between">
             <div className="flex items-center space-x-2.5">
               <div className="w-8 h-8 rounded-full bg-suguba-profond text-white flex items-center justify-center font-bold text-xs">
-                {nomRecommandeur.charAt(0)}
+                {initiale(nomRecommandeur)}
               </div>
               <div>
                 <p className="text-xs font-bold text-emerald-950">
@@ -306,11 +316,14 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                   if (monCode) prechargerLienPartage(product.slug);
                 }}
                 aria-label="Partager ce produit sur WhatsApp"
-                className="absolute top-3 right-3 h-9 px-3 rounded-full bg-suguba-wa hover:bg-[#1fbf5b] text-suguba-profond text-xs font-bold inline-flex items-center gap-1.5 shadow-md active:scale-[0.97] transition-all"
+                // PUB-08 (audit UI/UX du 2026-10-02) : « Recommander » se lisait « commander
+                // à nouveau » et, en vert vif, attirait plus que « Commander ». Pour le client :
+                // « Partager », en blanc. Pour le revendeur, le partage reste son action principale.
+                className={`absolute top-3 right-3 h-10 px-3.5 rounded-full text-sm font-semibold inline-flex items-center gap-1.5 shadow-md active:scale-[0.97] transition-all ${monCode ? 'bg-suguba-wa hover:bg-[#1fbf5b] text-suguba-profond' : 'bg-white/95 hover:bg-white text-suguba-profond border border-slate-200'}`}
               >
                 <WhatsAppIcon className="w-4 h-4" />
-                {/* Client (C2) : recommander à un proche, sans commission ; le revendeur d'origine garde la vente. */}
-                <span>{monCode ? 'Partager' : 'Recommander'}</span>
+                {/* Client (C2) : partager à un proche, sans commission ; le revendeur d'origine garde la vente. */}
+                <span>Partager</span>
               </button>
               <BoutonFavori produitId={product.id} className="absolute top-14 right-3" />
             </div>
@@ -325,7 +338,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               <div className="flex items-center justify-between gap-3">
                 <p className="text-2xl font-bold text-suguba-brand-dark whitespace-nowrap">
                   {aPartirDe && <span className="block text-xs font-bold text-slate-500">À partir de</span>}
-                  {Math.round(prixAffiche).toLocaleString('fr-FR')} <span className="text-base">FCFA</span>
+                  {formatNombre(prixAffiche)} <span className="text-base">F</span>
                   {unite && <span className="block text-sm font-semibold text-slate-600">{unite}</span>}
                   {minimum && <span className="block text-xs font-semibold text-slate-500">{minimum}</span>}
                 </p>
@@ -337,8 +350,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               <SelecteurVariantes slug={product.slug} />
               {viaRevendeurs && <OffresRevendeurs id="offres-revendeurs" slug={product.slug} offres={offresGros!.offres} />}
               {!surDevis && !viaRevendeurs && <BoutonAjoutPanier disabled={outOfStock} productId={product.id} quantite={quantiteMini} />}
-              <p className="text-xs text-slate-500">
-                Sans créer de compte · Payez à la livraison
+              <p className="text-sm text-slate-600">
+                {ligneLivraison || 'Sans créer de compte · Payez à la livraison'}
               </p>
             </div>
 
@@ -384,7 +397,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             </a>
 
             <div className="bg-white p-5 rounded-3xl border border-slate-200 space-y-2">
-              <h2 className="font-bold text-xs text-slate-900 uppercase tracking-wider">
+              <h2 className="font-semibold text-xs text-slate-900">
                 Description du produit
               </h2>
               <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
@@ -394,7 +407,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
 
             {product.offreInclus && (
               <div className="bg-white p-5 rounded-3xl border border-slate-200 space-y-2">
-                <h2 className="font-bold text-xs text-slate-900 uppercase tracking-wider">Ce qui est inclus</h2>
+                <h2 className="font-semibold text-xs text-slate-900">Ce qui est inclus</h2>
                 <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{product.offreInclus}</p>
               </div>
             )}
@@ -402,7 +415,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             {/* Prestation à étapes (lot 1c) : le client sait d'avance comment ça se passe. */}
             {product.modeRemise && product.modeRemise !== 'livreur' && (product.etapes?.length || 0) > 0 && (
               <div className="bg-white p-5 rounded-3xl border border-slate-200 space-y-3">
-                <h2 className="font-bold text-xs text-slate-900 uppercase tracking-wider">Comment ça se passe</h2>
+                <h2 className="font-semibold text-xs text-slate-900">Comment ça se passe</h2>
                 <ol className="space-y-2">
                   {[...ETAPES.filter((e) => product.etapes!.includes(e.cle)).map((e) => ({ titre: e.libelle, detail: e.detail })),
                     { titre: 'Réception finale', detail: 'Vous présentez le QR de votre reçu une fois tout vérifié' }].map((e, i) => (
@@ -476,7 +489,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             <p className="text-xs text-slate-500 text-center">
               {product.modeRemise && product.modeRemise !== 'livreur'
                 ? 'Le vendeur vous contacte après la confirmation · Payez à la remise'
-                : <>Livraison calculée à l&apos;étape suivante · Payez à la livraison</>}
+                : ligneLivraison || <>Livraison calculée à l&apos;étape suivante · Payez à la livraison</>}
             </p>
           </div>
         </div>

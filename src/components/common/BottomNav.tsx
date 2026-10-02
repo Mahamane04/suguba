@@ -169,7 +169,7 @@ export default function BottomNav() {
       style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
     >
       {/* Glass background */}
-      <div className="mx-2 mb-2 bg-white/90 backdrop-blur-xl rounded-2xl border border-gray-100 shadow-float">
+      <div className="mx-2 mb-2 bg-white/90 backdrop-blur-xl rounded-2xl border border-slate-200 shadow-float">
         <div className={`flex items-center justify-around px-0 h-16 md:max-w-5xl md:mx-auto`}>
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -212,7 +212,7 @@ export default function BottomNav() {
                   )}
                 </div>
                 <span
-                  className={`text-[11px] md:text-xs mt-0.5 tracking-tight font-medium w-full text-center leading-tight transition-all duration-150 ${
+                  className={`text-xs mt-0.5 tracking-tight font-medium w-full text-center leading-tight transition-all duration-150 ${
                     isActive ? 'font-bold' : ''
                   }`}
                 >

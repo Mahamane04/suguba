@@ -10,15 +10,12 @@ import CodeEmail from '@/components/auth/CodeEmail';
 import { messageErreurEmail, messageErreurMotDePasse } from '@/lib/code-email';
 import ChampMotDePasse from '@/components/auth/ChampMotDePasse';
 import Link from 'next/link';
-import { sugubaStore, useSugubaStore } from '@/lib/store';
+import { sugubaStore } from '@/lib/store';
 import { supabase } from '@/lib/supabase';
 import Button from '@/components/ui/Button';
 import LogoSuguba from '@/components/ui/LogoSuguba';
 import { UserRole } from '@/types';
-import {
-  ArrowRight,
-  ShieldCheck, Zap, Store, ShoppingBag, Truck, Shield, Mail
-} from 'lucide-react';
+import { ArrowRight, ShieldCheck, Zap, Store, ShoppingBag, Truck, Shield, Mail } from 'lucide-react';
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -353,7 +350,7 @@ function LoginPageContent() {
               positionné explicitement sur le serveur. */}
           {DEMO_MODE && (
             <div className="bg-white rounded-2xl p-4 border border-amber-200 shadow-card">
-              <p className="text-xs font-bold uppercase tracking-widest text-amber-600 text-center mb-1">
+              <p className="text-xs font-semibold text-amber-600 text-center mb-1">
                 ⚠️ Accès démo — désactivé en production
               </p>
               <p className="text-xs text-slate-600 text-center mb-3">

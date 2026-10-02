@@ -6,8 +6,9 @@ import { useModalFocus } from '@/hooks/useModalFocus';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 import type { Versement } from '@/lib/caisse-livreur';
 import { Printer, X } from 'lucide-react';
+import { formatF } from '@/lib/montant';
 
-const fmt = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+const fmt = formatF;
 const date = (iso: string) => new Date(iso).toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' });
 
 /** Texte du reçu, repris tel quel dans le message WhatsApp. */

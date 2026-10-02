@@ -10,6 +10,7 @@ import BadgeConfiance from '@/components/ui/BadgeConfiance';
 import { quartierReconnu } from '@/lib/reseau/proximite';
 import AncrageRevendeur from '@/components/common/AncrageRevendeur';
 import { ShieldCheck, Truck, KeyRound, Store, Users, MapPin, Pencil, ImagePlus, ArrowDown } from 'lucide-react';
+import { initiale } from '@/lib/initiale';
 
 /**
  * Vitrine commune aux boutiques fournisseur (/s/), revendeur (/r/) et réseau
@@ -70,7 +71,7 @@ export default function ShopView({
       <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
         <section className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
           {/* Couverture */}
-          <div className="relative h-36 sm:h-56">
+          <div className="relative h-28 sm:h-56">
             {boutique.couverture ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={boutique.couverture} alt="" className="absolute inset-0 w-full h-full object-cover" />
@@ -107,14 +108,14 @@ export default function ShopView({
                 />
               ) : (
                 <div className="w-20 h-20 sm:w-28 sm:h-28 rounded-3xl bg-suguba-menthe text-suguba-profond ring-4 ring-white shadow-md flex items-center justify-center font-bold text-3xl sm:text-4xl">
-                  {boutique.nom.charAt(0).toUpperCase()}
+                  {initiale(boutique.nom)}
                 </div>
               )}
             </div>
 
             {/* Identité */}
             <div className="mt-3 space-y-2">
-              <p className="text-xs font-bold uppercase tracking-wider text-suguba-brand-dark">
+              <p className="text-xs font-semibold text-suguba-brand-dark">
                 {estRevendeur ? 'Revendeur partenaire Suguba' : boutique.presentation ? 'Fournisseur partenaire Suguba' : 'Boutique sur Suguba'}
               </p>
               <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight">{titre}</h1>
@@ -144,13 +145,13 @@ export default function ShopView({
                 )}
               </div>
               {boutique.description && (
-                <p className="text-sm text-slate-600 leading-relaxed max-w-2xl">{boutique.description}</p>
+                <p className="text-sm text-slate-600 leading-relaxed max-w-2xl line-clamp-2 sm:line-clamp-none">{boutique.description}</p>
               )}
             </div>
 
             {/* Actions */}
-            <div className="mt-4 flex flex-col sm:flex-row sm:items-start gap-2">
-              {suivre && <div className="sm:flex-none">{suivre}</div>}
+            <div className="mt-4 flex flex-wrap items-start gap-2">
+              {suivre && <div className="flex-none">{suivre}</div>}
               <ShopShareBar url={urlPartage} texte={texteWhatsApp} />
             </div>
 
@@ -217,7 +218,7 @@ export default function ShopView({
                     <li key={r.lien}>
                       <Link href={r.lien} className="flex items-center justify-between gap-3 min-h-11 rounded-2xl border border-slate-200 px-4 py-2.5 hover:border-suguba-profond">
                         <span className="flex items-center gap-2.5 min-w-0">
-                          <span className="w-8 h-8 shrink-0 rounded-full bg-suguba-menthe text-suguba-profond text-xs font-bold flex items-center justify-center">{r.nom.charAt(0)}</span>
+                          <span className="w-8 h-8 shrink-0 rounded-full bg-suguba-menthe text-suguba-profond text-xs font-bold flex items-center justify-center">{initiale(r.nom)}</span>
                           <span className="min-w-0">
                             <span className="block text-sm font-semibold text-slate-900 truncate">{r.nom}</span>
                             <span className="block text-xs text-slate-500">Revendeur partenaire</span>
@@ -245,7 +246,7 @@ export default function ShopView({
               <p className="text-xs text-slate-500">Sans stock : Suguba livre, vous touchez une commission sur chaque vente.</p>
             </div>
           </div>
-          <Link href="/rejoindre" className="h-11 px-5 rounded-2xl bg-suguba-profond hover:bg-suguba-profond-2 text-white text-xs font-bold flex items-center justify-center">
+          <Link href="/rejoindre" className="h-11 px-5 rounded-full border border-slate-200 bg-white hover:bg-suguba-sauge text-suguba-profond text-sm font-semibold flex items-center justify-center">
             Devenir revendeur
           </Link>
         </div>

@@ -1,7 +1,8 @@
 import React from 'react';
 import SugubaLoader from '@/components/ui/SugubaLoader';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { AlertTriangle, ArrowLeft, RefreshCw } from 'lucide-react';
+import Button from '@/components/ui/Button';
 
 /**
  * Briques de mise en page communes (2026-09-11) : chaque écran les réécrivait
@@ -34,7 +35,8 @@ export function PageHeader({
   return (
     <div className="space-y-2">
       {retour && (
-        <Link href={retour.href} className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 min-h-[32px]">
+        // Lot 6 de l'audit UI/UX du 2026-10-02 (REV-15) : 13 px gras, cible de 32 px.
+        <Link href={retour.href} className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-slate-900 min-h-10">
           <ArrowLeft className="w-4 h-4" />
           <span>{retour.libelle}</span>
         </Link>
@@ -42,7 +44,7 @@ export function PageHeader({
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900">{titre}</h1>
-          {sousTitre && <p className="text-xs sm:text-sm text-slate-600 mt-0.5">{sousTitre}</p>}
+          {sousTitre && <p className="text-sm text-slate-600 mt-0.5">{sousTitre}</p>}
         </div>
         {action && <div className="shrink-0">{action}</div>}
       </div>
@@ -57,49 +59,75 @@ export function StatCard({
   aide,
   icone: Icone,
   accent = false,
+  alerte = false,
+  href,
 }: {
   label: string;
   valeur: React.ReactNode;
   aide?: string;
   icone?: React.ElementType;
   accent?: boolean;
+  /** Une tuile mène au détail de son chiffre (ADM-10, audit UI/UX du 2026-10-02). */
+  href?: string;
+  /** Chiffre qui demande d'agir (en retard, en rupture) : fond ambre (ADM-14). */
+  alerte?: boolean;
 }) {
-  return (
-    <div className="bg-white rounded-3xl border border-slate-200 p-4 space-y-1">
-      <p className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1.5">
-        {Icone && <Icone className="w-3.5 h-3.5" />}
-        <span>{label}</span>
-      </p>
-      <p className={`text-xl sm:text-2xl font-bold ${accent ? 'text-suguba-brand-dark' : 'text-slate-900'}`}>{valeur}</p>
-      {aide && <p className="text-xs text-slate-500">{aide}</p>}
-    </div>
+  const classes = `rounded-3xl border p-4 space-y-1 ${alerte ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-200'}`;
+  const contenu = (
+    <>
+        {/* ADM-14 / REV-15 : libellé en casse normale, demi-gras ; le chiffre reste en gras. */}
+        <p className="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
+          {Icone && <Icone className="w-3.5 h-3.5" />}
+          <span>{label}</span>
+        </p>
+        <p className={`text-xl sm:text-2xl font-bold tabular-nums ${accent ? 'text-suguba-brand-dark' : 'text-slate-900'}`}>{valeur}</p>
+        {aide && <p className="text-xs text-slate-500">{aide}</p>}
+    </>
   );
+  return href
+    ? <Link href={href} className={`block hover:border-suguba-profond transition-colors ${classes}`}>{contenu}</Link>
+    : <div className={classes}>{contenu}</div>;
 }
 
-/** État vide : toujours une explication, et une action quand il y en a une. */
+/**
+ * État vide : toujours une explication, et une action quand il y en a une.
+ * `erreur` (lot 3 de l'audit UI/UX du 2026-10-02, FOU-07 / ADM-09) : une lecture
+ * impossible ne doit jamais ressembler à « rien ici » — un fournisseur croyait
+ * avoir perdu son catalogue sur un réseau faible. `onReessayer` ajoute le bouton.
+ */
 export function EmptyState({
   icone: Icone,
   titre,
   texte,
   action,
+  erreur = false,
+  onReessayer,
 }: {
   icone?: React.ElementType;
   titre: string;
   texte?: string;
   action?: React.ReactNode;
+  erreur?: boolean;
+  onReessayer?: () => void;
 }) {
+  const Symbole = erreur ? AlertTriangle : Icone;
   return (
-    <div className="bg-white rounded-3xl border border-slate-200 p-8 text-center space-y-3">
-      {Icone && (
-        <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-500 flex items-center justify-center mx-auto">
-          <Icone className="w-6 h-6" />
+    <div role={erreur ? 'alert' : undefined} className={`bg-white rounded-3xl border p-8 text-center space-y-3 ${erreur ? 'border-rose-200' : 'border-slate-200'}`}>
+      {Symbole && (
+        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mx-auto ${erreur ? 'bg-rose-50 text-rose-700' : 'bg-slate-100 text-slate-500'}`}>
+          <Symbole className="w-6 h-6" />
         </div>
       )}
       <div className="space-y-1">
         <p className="text-sm font-bold text-slate-900">{titre}</p>
-        {texte && <p className="text-sm text-slate-500 max-w-sm mx-auto">{texte}</p>}
+        {texte && <p className="text-sm text-slate-600 max-w-sm mx-auto">{texte}</p>}
       </div>
-      {action && <div className="pt-1 flex justify-center">{action}</div>}
+      {(action || onReessayer) && (
+        <div className="pt-1 flex flex-wrap justify-center gap-2">
+          {onReessayer && <Button type="button" variant="ghost" onClick={onReessayer}><RefreshCw className="w-4 h-4" />Réessayer</Button>}
+          {action}
+        </div>
+      )}
     </div>
   );
 }
@@ -109,18 +137,22 @@ type TonPastille = 'succes' | 'attente' | 'danger' | 'neutre' | 'info';
 // Charte verte du 2026-09-23 : tout en vert, le rouge pour les seules
 // erreurs. L'ancien « succès » (vert de marque sur vert pâle) plafonnait à
 // 2,47:1 : illisible. Un point de couleur précède chaque état.
-const TONS: Record<TonPastille, string> = {
-  succes: 'bg-suguba-brand text-suguba-profond',
-  attente: 'bg-[#F1EFE6] text-[#5C5236]',
-  danger: 'bg-rose-50 text-rose-700',
-  neutre: 'bg-slate-100 text-slate-700',
-  info: 'bg-suguba-menthe text-suguba-profond-2',
+// Lot 3 de l'audit UI/UX du 2026-10-02 (ADM-04) : le « succès » en vert vif
+// plein était l'élément le plus voyant des listes alors qu'il veut dire « rien à
+// faire », et « à agir » était le plus pâle. Désormais : succès en fond menthe
+// (le vert de marque reste sur le point), attente en ambre, info en contour.
+const TONS: Record<TonPastille, { fond: string; point: string }> = {
+  succes: { fond: 'bg-suguba-menthe text-suguba-profond', point: 'before:bg-suguba-brand' },
+  attente: { fond: 'bg-amber-50 text-amber-900', point: 'before:bg-amber-500' },
+  danger: { fond: 'bg-rose-50 text-rose-700', point: 'before:bg-rose-600' },
+  neutre: { fond: 'bg-slate-100 text-slate-700', point: 'before:bg-slate-500' },
+  info: { fond: 'bg-white text-suguba-profond ring-1 ring-inset ring-slate-200', point: 'before:bg-suguba-profond' },
 };
 
 /** Pastille de statut (commande, produit, retrait…). */
 export function StatusPill({ ton = 'neutre', children }: { ton?: TonPastille; children: React.ReactNode }) {
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap before:content-[''] before:w-1.5 before:h-1.5 before:rounded-full before:bg-current ${TONS[ton]}`}>
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap before:content-[''] before:w-1.5 before:h-1.5 before:rounded-full ${TONS[ton].fond} ${TONS[ton].point}`}>
       {children}
     </span>
   );

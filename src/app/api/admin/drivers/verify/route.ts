@@ -51,6 +51,14 @@ async function postInterne(req: NextRequest) {
         { status: 400 },
       );
     }
+    // ADM-05 (audit UI/UX du 2026-10-02) : retirer l'autorisation coupe les
+    // courses d'un livreur ; la raison est consignée, comme pour la vérification.
+    if (!verifie && constat.length < 5) {
+      return NextResponse.json(
+        { error: 'Indiquez pourquoi vous retirez l’autorisation (papiers, plainte, véhicule…).' },
+        { status: 400 },
+      );
+    }
 
     const { data: fiche } = await admin
       .from('drivers')

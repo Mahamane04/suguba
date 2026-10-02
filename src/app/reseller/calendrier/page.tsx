@@ -159,7 +159,7 @@ export default function CalendrierPage() {
       titre="Mon calendrier"
       sousTitre="Organisez vos publications. Vous publiez vous-même sur vos réseaux ; Suguba ne les envoie pas automatiquement."
       retour={{ href: '/reseller', libelle: 'Espace revendeur' }}
-      action={<Button size="sm" onClick={() => setFormulaire((v) => !v)}><Plus className="w-4 h-4" />Planifier</Button>}
+      action={<Button size="sm" variant="ghost" onClick={() => setFormulaire((v) => !v)}><Plus className="w-4 h-4" />Planifier</Button>}
     >
       {formulaire && (
         <Card>

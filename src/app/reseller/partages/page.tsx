@@ -8,6 +8,7 @@ import type { PointJour } from '@/lib/reseau/stats';
 import Button from '@/components/ui/Button';
 import { Card, EmptyState, Skeleton, StatCard, StatusPill } from '@/components/ui/Surface';
 import { CANAUX } from '@/lib/reseau/codes';
+import { formatF, formatNombre, FORMAT_DATE } from '@/lib/montant';
 
 /**
  * Historique de partage (§ 12 des écrans) — la page qui répond à « est-ce que
@@ -72,12 +73,14 @@ export default function PartagesPage() {
       sousTitre="Ce que chaque lien partagé a réellement rapporté."
       retour={{ href: '/reseller', libelle: 'Espace revendeur' }}
     >
-      <div className="grid grid-cols-2 gap-3">
+      {/* Finitions du lot 7 (audit UI/UX du 2026-10-02) : quatre tuiles à 0 avant le
+          premier partage n'apprenaient rien ; elles apparaissent avec le premier lien. */}
+      {totaux.liens > 0 && <div className="grid grid-cols-2 gap-3">
         <StatCard label="Visites" valeur={totaux.clics} aide={`${totaux.visiteurs} personnes différentes`} icone={MousePointerClick} />
         <StatCard label="Commandes" valeur={totaux.commandes} aide={`${totaux.tauxConversion}% de conversion`} icone={ShoppingBag} accent />
-        <StatCard label="Chiffre d’affaires" valeur={`${totaux.chiffreAffaires.toLocaleString('fr-FR')} F`} icone={Coins} />
+        <StatCard label="Chiffre d’affaires" valeur={`${formatF(totaux.chiffreAffaires)}`} icone={Coins} />
         <StatCard label="Liens créés" valeur={totaux.liens} icone={Link2} />
-      </div>
+      </div>}
 
       {totaux.clics > 0 && visites.length > 0 && <GraphiqueBarres titre="Visites des 14 derniers jours" points={visites} />}
 
@@ -101,7 +104,7 @@ export default function PartagesPage() {
                   </p>
                   <p className="text-xs text-slate-500 mt-0.5">
                     {LIBELLE_CIBLE[l.cible] || l.cible} · {nomCanal(l.canal)} ·{' '}
-                    {new Date(l.creeLe).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                    {new Date(l.creeLe).toLocaleDateString('fr-FR', FORMAT_DATE.jour)}
                   </p>
                 </div>
                 <StatusPill ton={l.commandes > 0 ? 'succes' : 'neutre'}>{l.tauxConversion}%</StatusPill>
@@ -110,17 +113,17 @@ export default function PartagesPage() {
               <div className="grid grid-cols-3 gap-2 text-center">
                 <div className="rounded-2xl bg-slate-50 py-2">
                   <p className="text-base font-bold text-slate-900 tabular-nums">{l.clics}</p>
-                  <p className="text-xs font-bold text-slate-500 uppercase">Visites</p>
+                  <p className="text-xs font-semibold text-slate-600">Visites</p>
                 </div>
                 <div className="rounded-2xl bg-slate-50 py-2">
                   <p className="text-base font-bold text-slate-900 tabular-nums">{l.commandes}</p>
-                  <p className="text-xs font-bold text-slate-500 uppercase">Commandes</p>
+                  <p className="text-xs font-semibold text-slate-600">Commandes</p>
                 </div>
                 <div className="rounded-2xl bg-slate-50 py-2">
                   <p className="text-base font-bold text-suguba-brand-dark tabular-nums">
-                    {l.chiffreAffaires.toLocaleString('fr-FR')}
+                    {formatNombre(l.chiffreAffaires)}
                   </p>
-                  <p className="text-xs font-bold text-slate-500 uppercase">FCFA</p>
+                  <p className="text-xs font-bold text-slate-500">F</p>
                 </div>
               </div>
             </Card>

@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Copy, Check, Share2, QrCode as QrIcon } from 'lucide-react';
+import { Copy, Check, QrCode as QrIcon } from 'lucide-react';
 import QrCode from '@/components/common/QrCode';
 import Button from '@/components/ui/Button';
 import { Card } from '@/components/ui/Surface';
+import BoutonPartageWhatsApp from '@/components/ui/BoutonPartageWhatsApp';
 
 /**
  * Un lien de partage prêt à l'emploi : copier, partager, montrer en QR code.
@@ -77,15 +78,9 @@ export default function CarteLien({
         </div>
       )}
 
-      <Button
-        href={`https://api.whatsapp.com/send?text=${encodeURIComponent(texteWhatsApp || url)}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        fullWidth
-      >
-        <Share2 className="w-4 h-4" />
-        Partager sur WhatsApp
-      </Button>
+      {/* FOU-10 / REV-03 (audit UI/UX du 2026-10-02) : le partage était un bouton
+          vert profond avec une icône générique, identique à « Enregistrer ». */}
+      <BoutonPartageWhatsApp href={`https://api.whatsapp.com/send?text=${encodeURIComponent(texteWhatsApp || url)}`} fullWidth />
     </Card>
   );
 }

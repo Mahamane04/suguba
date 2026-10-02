@@ -15,6 +15,7 @@ import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface'
 import { useToast } from '@/components/ui/Toast';
 import { joursRestants, libelleType, progression, verbeType, type TypeMission } from '@/lib/reseau/missions';
 import { estTypeResultat, partRevendeur, DELAI_GARANTIE_JOURS, DUREE_MIN_VISITE_S } from '@/lib/reseau/resultats-constantes';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 /**
  * Missions du revendeur (§ 11 des écrans).
@@ -196,8 +197,8 @@ export default function MissionsRevendeurPage() {
                   <StatusPill ton="succes">
                     <Gift className="w-3 h-3" />
                     {auResultat
-                      ? `${partRevendeur(m.recompense).toLocaleString('fr-FR')} F par ${unite}`
-                      : m.recompense > 0 ? `${m.recompense.toLocaleString('fr-FR')} F` : m.recompenseLibelle || 'Récompense'}
+                      ? `${formatF(partRevendeur(m.recompense))} par ${unite}`
+                      : m.recompense > 0 ? `${formatF(m.recompense)}` : m.recompenseLibelle || 'Récompense'}
                   </StatusPill>
                   {jours != null && (
                     <StatusPill ton={jours <= 2 ? 'danger' : 'neutre'}>
@@ -212,7 +213,7 @@ export default function MissionsRevendeurPage() {
                   <div className="space-y-1.5">
                     <p className="text-xs font-bold text-slate-700">
                       {gains[m.id]?.resultats || 0} {unite}{(gains[m.id]?.resultats || 0) > 1 ? 's' : ''} comptée{(gains[m.id]?.resultats || 0) > 1 ? 's' : ''} ·{' '}
-                      {(gains[m.id]?.gagne || 0).toLocaleString('fr-FR')} F gagnés
+                      {formatF((gains[m.id]?.gagne || 0))} gagnés
                     </p>
                     <p className="text-xs text-slate-500">
                       {m.type === 'visite_qualifiee'
@@ -300,7 +301,7 @@ function PreuvesMission({ mission, participation, preuves, onEnvoyee }: {
         <ul className="space-y-1">
           {preuves.slice(0, 5).map((x) => (
             <li key={x.id} className="text-xs flex items-center justify-between gap-2">
-              <span className="text-slate-600">{x.canal} · {new Date(x.envoyeeLe).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
+              <span className="text-slate-600">{x.canal} · {new Date(x.envoyeeLe).toLocaleDateString('fr-FR', FORMAT_DATE.jour)}</span>
               <StatusPill ton={x.statut === 'validated' ? 'succes' : x.statut === 'rejected' ? 'danger' : 'attente'}>
                 {x.statut === 'validated' ? 'Validée' : x.statut === 'rejected' ? `Refusée${x.motifRejet ? ` : ${x.motifRejet}` : ''}` : 'En vérification'}
               </StatusPill>

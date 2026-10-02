@@ -6,6 +6,7 @@
  */
 import type { CleBlocAccueil } from '@/lib/reseau/reglages';
 import type { Permission } from '@/lib/reseau/permissions';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 // ── Centre des modules ──────────────────────────────────────────────────────
 
@@ -25,19 +26,19 @@ export interface Module {
 
 export const MODULES: Module[] = [
   { cle: 'annuaireFournisseurs', titre: 'Annuaire des fournisseurs', ouvre: 'Les boutiques des fournisseurs apparaissent dans « près de chez moi » et dans la recherche des clients.',
-    continue: 'Fermé : les revendeurs restent la porte d’entrée ; les boutiques fournisseurs existent toujours.', permission: 'plateforme.parametres', interrupteur: 'priorite-reseau', lien: '/admin/priorite-reseau' },
+    continue: 'Les revendeurs restent la porte d’entrée ; les boutiques fournisseurs existent toujours.', permission: 'plateforme.parametres', interrupteur: 'priorite-reseau', lien: '/admin/priorite-reseau' },
   { cle: 'venteDirecteFournisseurs', titre: 'Vente directe des fournisseurs', ouvre: 'Tous les fournisseurs peuvent vendre directement depuis leur boutique.',
-    continue: 'Fermé : les fournisseurs autorisés un par un gardent la vente directe ; les commandes passées ne changent pas.', permission: 'plateforme.parametres', interrupteur: 'priorite-reseau', lien: '/admin/priorite-reseau' },
+    continue: 'Les fournisseurs autorisés un par un gardent la vente directe ; les commandes passées ne changent pas.', permission: 'plateforme.parametres', interrupteur: 'priorite-reseau', lien: '/admin/priorite-reseau' },
   { cle: 'protectionPrixDeGros', titre: 'Protection des prix de gros', ouvre: 'Un article au prix de gros proposé par un revendeur ne s’achète pas directement au prix conseillé : le client choisit l’offre d’un revendeur.',
-    continue: 'Désactivée : l’achat direct au prix conseillé redevient possible ; les prix des revendeurs restent enregistrés.', permission: 'plateforme.parametres', interrupteur: 'priorite-reseau', lien: '/admin/priorite-reseau' },
+    continue: 'L’achat direct au prix conseillé redevient possible ; les prix des revendeurs restent enregistrés.', permission: 'plateforme.parametres', interrupteur: 'priorite-reseau', lien: '/admin/priorite-reseau' },
   { cle: 'remunerationResultat', titre: 'Payer les résultats des campagnes', ouvre: 'Les visites et demandes qualifiées sont payées aux revendeurs ; les fournisseurs peuvent créer ces campagnes.',
-    continue: 'Fermé : les visites restent mesurées, rien n’est payé ; les gains déjà acquis restent dus.', permission: 'plateforme.parametres', interrupteur: 'resultats', lien: '/admin/resultats' },
+    continue: 'Les visites restent mesurées, rien n’est payé ; les gains déjà acquis restent dus.', permission: 'plateforme.parametres', interrupteur: 'resultats', lien: '/admin/resultats' },
   { cle: 'paiementCarte', titre: 'Paiement par carte (diaspora)', ouvre: 'La carte bancaire est proposée sur la page diaspora.',
-    continue: 'Fermé : le serveur refuse la carte ; paiement à la livraison et Mobile Money continuent.', permission: 'plateforme.parametres', interrupteur: null, lien: '/admin/parametres' },
+    continue: 'Le serveur refuse la carte ; paiement à la livraison et Mobile Money continuent.', permission: 'plateforme.parametres', interrupteur: null, lien: '/admin/parametres' },
   { cle: 'mfaObligatoire', titre: 'Double authentification obligatoire', ouvre: 'Chaque membre de l’équipe doit utiliser un code d’application à la connexion.',
-    continue: 'Désactivée : qui l’a activée continue de saisir son code.', permission: 'plateforme.equipe', interrupteur: null, lien: '/admin/securite' },
+    continue: 'Qui l’a activée continue de saisir son code.', permission: 'plateforme.equipe', interrupteur: null, lien: '/admin/securite' },
   { cle: 'doubleValidation', titre: 'Double validation', ouvre: 'Retraits et avances au-dessus du seuil, baisses de la part Suguba : approbation d’un collègue.',
-    continue: 'Désactivée (seuil 0) : les demandes déjà approuvées restent utilisables une fois.', permission: 'plateforme.equipe', interrupteur: null, lien: '/admin/securite' },
+    continue: 'Avec un seuil à 0 : les demandes déjà approuvées restent utilisables une fois.', permission: 'plateforme.equipe', interrupteur: null, lien: '/admin/securite' },
 ];
 
 // ── Accueil ─────────────────────────────────────────────────────────────────
@@ -54,8 +55,8 @@ export const BLOCS_ACCUEIL: { cle: CleBlocAccueil; titre: string; description: s
 export interface Raison { bloquant: boolean; texte: string; lien?: string; libelleLien?: string }
 export interface Diagnostic { titre: string; etat: string; raisons: Raison[] }
 
-const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
-const dateFr = (iso: string) => new Date(iso).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+const fcfa = formatF;
+const dateFr = (iso: string) => new Date(iso).toLocaleString('fr-FR', FORMAT_DATE.jourHeure);
 
 export function diagnostiquerRetrait(r: { id: string; status: string; payment_method: string; amount: number },
   ctx: { seuil: number; validation: string | null; reseauxMobile: string[] }): Diagnostic {

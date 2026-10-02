@@ -36,8 +36,13 @@ test('livreur : coordonnées pendant la course seulement, jamais de chiffres int
 });
 
 test('revendeur : son client, sans la marge Suguba ni le prix fournisseur', () => {
+  // REV-10 (arbitrage du 2026-10-02) : numéro complet pendant la commande, masqué ensuite.
+  assert.equal(c.commandePourRevendeur(commande('in_transit')).customer_phone, '+22370000001');
+  assert.equal(c.commandePourRevendeur(commande('pending_call')).telephoneVisible, true);
   const o = c.commandePourRevendeur(commande('delivered'));
-  assert.equal(o.customer_phone, '+22370000001');
+  assert.equal(o.customer_phone, '•• 00 01');
+  assert.equal(o.telephoneVisible, false);
+  assert.equal(c.commandePourRevendeur(commande('cancelled')).customer_phone, '•• 00 01');
   assert.equal(o.reseller_commission, 800, 'son gain reste visible');
   for (const interne of ['platform_margin', 'pricing_snapshot', 'delivery_otp', 'pickup_code']) assert.equal(interne in o, false, interne);
 });

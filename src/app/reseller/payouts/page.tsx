@@ -6,16 +6,17 @@ import { PayoutCheckout, payoutSessionStorage } from '@/lib/payout-submit';
 
 import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import Button from '@/components/ui/Button';
-import Header from '@/components/common/Header';
-import BottomNav from '@/components/common/BottomNav';
+import PageReseau from '@/components/reseau/PageReseau';
 import FormulaireRetrait from '@/components/retraits/FormulaireRetrait';
 import HistoriqueRetraits from '@/components/retraits/HistoriqueRetraits';
 import { useSugubaStore } from '@/lib/store';
 import { Clock, CheckCircle2 } from 'lucide-react';
 import type { TauxRetrait } from '@/lib/pricing';
 import { tauxRetraitPublics, type RetraitAffiche } from '@/lib/retraits-affichage';
+import { formatF } from '@/lib/montant';
+import { etatCommissionVente } from '@/lib/libelles-vente';
 
-const enF = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+const enF = formatF;
 
 /**
  * Gains du revendeur — refaits le 2026-09-11 sur les VRAIES données.
@@ -32,6 +33,7 @@ const enF = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
  */
 export default function ResellerPayoutsPage() {
   const state = useSugubaStore();
+  const venteDe = (id: string | null) => (id ? state.orders.find((o) => o.id === id) : undefined);
   const checkout = useMemo(() => new PayoutCheckout(`suguba_payout_attempt:${state.currentUser.id}`, payoutSessionStorage), [state.currentUser.id]);
   const [soldes, setSoldes] = useState<{ disponible: number; attente: number; attenteFonds: number; verse: number; reserve: number } | null>(null);
   const [commissions, setCommissions] = useState<{ commande: string | null; montant: number; statut: string; debloquagePrevu: string | null }[]>([]);
@@ -74,15 +76,10 @@ export default function ResellerPayoutsPage() {
   const disponible = soldes?.disponible ?? 0;
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
-      <Header />
-
-      <main className="flex-1 max-w-3xl mx-auto px-4 sm:px-6 py-6 w-full space-y-5">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Mes gains</h1>
-          <p className="text-xs text-slate-500">Vos commissions, et leur retrait par Mobile Money ou en espèces au guichet.</p>
-        </div>
-
+    // REV-14 (lot 6 de l'audit UI/UX du 2026-10-02) : coquille commune des espaces.
+    <PageReseau titre="Mes gains"
+      sousTitre="Vos commissions, et leur retrait par Mobile Money ou en espèces au guichet."
+      retour={{ href: '/reseller', libelle: 'Espace revendeur' }}>
         {/* Soldes */}
         {chargement ? (
           <div className="bg-white rounded-3xl border border-slate-200 p-8 flex justify-center">
@@ -93,12 +90,12 @@ export default function ResellerPayoutsPage() {
         ) : (
           <div className="bg-white rounded-3xl border border-slate-200 p-5 space-y-4">
             <div>
-              <p className="text-xs font-bold text-slate-500 uppercase">Disponible au retrait</p>
+              <p className="text-xs font-semibold text-slate-600">Disponible au retrait</p>
               <p className="text-3xl font-bold text-slate-900">{enF(disponible)}</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-2xl bg-slate-50 p-3">
-                <p className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1"><Clock className="w-3.5 h-3.5" />En attente</p>
+                <p className="text-xs font-semibold text-slate-600 flex items-center gap-1"><Clock className="w-3.5 h-3.5" />En attente</p>
                 <p className="text-lg font-bold text-slate-900">{enF(soldes?.attente ?? 0)}</p>
                 <p className="text-xs text-slate-500">Après livraison, délai de sécurité et réception des fonds par Suguba</p>
                 {(soldes?.attenteFonds ?? 0) > 0 && (
@@ -108,7 +105,7 @@ export default function ResellerPayoutsPage() {
                 )}
               </div>
               <div className="rounded-2xl bg-slate-50 p-3">
-                <p className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" />Déjà versé</p>
+                <p className="text-xs font-semibold text-slate-600 flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" />Déjà versé</p>
                 <p className="text-lg font-bold text-slate-900">{enF(soldes?.verse ?? 0)}</p>
                 <p className="text-xs text-slate-500">Depuis votre inscription</p>
               </div>
@@ -117,9 +114,9 @@ export default function ResellerPayoutsPage() {
         )}
 
         {!chargement && !erreur && (soldes?.reserve ?? 0) > 0 && <div className="rounded-2xl border bg-white p-4"><p className="text-sm font-semibold">{enF(soldes?.reserve ?? 0)} réservés pour vos retraits en cours</p><p className="text-xs text-slate-500">Cette somme est déjà déduite du solde disponible.</p></div>}
-        {!chargement && !erreur && commissions.length > 0 && <section className="rounded-3xl border bg-white p-5 space-y-3"><h2 className="font-bold">Commissions en attente</h2><p className="text-xs text-slate-500">Les dates viennent du grand-livre. La somme devient retirable uniquement après validation des conditions par Suguba.</p><ul className="divide-y">{commissions.map((c, i) => <li key={`${c.commande}-${i}`} className="py-3 flex justify-between gap-3 text-sm"><div><p className="font-semibold">{c.statut === 'pending' ? 'En attente de livraison' : 'Délai de sécurité / vérification des fonds'}</p>{c.debloquagePrevu && Number.isFinite(Date.parse(c.debloquagePrevu)) && <p className="text-xs text-slate-500">Fin du délai prévue le {new Date(c.debloquagePrevu).toLocaleDateString('fr-FR', { timeZone: 'Africa/Bamako' })}</p>}</div><span className="font-bold whitespace-nowrap">{enF(c.montant)}</span></li>)}</ul></section>}
-        {!chargement && !erreur && disponible < retraitMinimum && <div className="rounded-2xl border bg-white p-5 space-y-3"><h2 className="font-bold">Préparer mon prochain retrait</h2><p className="text-sm text-slate-600">Le retrait est possible à partir de {enF(retraitMinimum)} disponibles. Il manque {enF(Math.max(0, retraitMinimum - disponible))} à votre solde disponible.</p><Button variant="ghost" href="/reseller/catalog">Choisir un produit à partager</Button></div>}
-        {!erreur && (chargement || disponible >= retraitMinimum) && <FormulaireRetrait
+        {!chargement && !erreur && commissions.length > 0 && <section className="rounded-3xl border bg-white p-5 space-y-3"><h2 className="font-bold">Commissions en attente</h2><p className="text-xs text-slate-600">Pour vous protéger des retours, une commission devient retirable après un délai qui suit la livraison (14, 7 ou 3 jours selon votre palier).</p><ul className="divide-y">{commissions.map((c, i) => <li key={`${c.commande}-${i}`} className="py-3 flex justify-between gap-3 text-sm"><div className="min-w-0">{/* REV-05 : chaque somme est rattachée à sa vente, et dit quand elle devient retirable. */}<p className="font-semibold truncate">{venteDe(c.commande)?.productName || 'Vente'}</p><p className="text-xs text-slate-600">{etatCommissionVente([c], venteDe(c.commande)?.status || '', c.montant).libelle}</p></div><span className="font-bold whitespace-nowrap">{enF(c.montant)}</span></li>)}</ul></section>}
+        {!chargement && !erreur && disponible < retraitMinimum && !checkout.restore() && <div className="rounded-2xl border bg-white p-5 space-y-3"><h2 className="font-bold">Préparer mon prochain retrait</h2><p className="text-sm text-slate-600">Le retrait est possible à partir de {enF(retraitMinimum)} disponibles. Il manque {enF(Math.max(0, retraitMinimum - disponible))} à votre solde disponible.</p><Button variant="ghost" href="/reseller/catalog">Choisir un produit à partager</Button></div>}
+        {!erreur && (chargement || disponible >= retraitMinimum || Boolean(checkout.restore())) && <FormulaireRetrait
           role="revendeur"
           titre="Retirer mes gains"
           checkout={checkout}
@@ -132,9 +129,6 @@ export default function ResellerPayoutsPage() {
         />}
 
         {erreurHistorique ? <div role="alert" className="rounded-2xl border bg-white p-4 text-sm"><p>L’historique des retraits n’a pas pu être chargé.</p><Button variant="ghost" onClick={charger}>Réessayer</Button></div> : <HistoriqueRetraits retraits={retraits} />}
-      </main>
-
-      <BottomNav />
-    </div>
+    </PageReseau>
   );
 }

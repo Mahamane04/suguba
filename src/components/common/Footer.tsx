@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { ShieldCheck, Globe, Handshake, FileText, Phone } from 'lucide-react';
+import { ShieldCheck, Phone } from 'lucide-react';
 import LogoSuguba from '@/components/ui/LogoSuguba';
 
 const legalLinks = [
@@ -87,7 +87,7 @@ export default function Footer() {
 
           {/* Platform links */}
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
+            <p className="text-xs font-semibold text-slate-600 mb-3">
               Plateformes
             </p>
             <ul className="space-y-2">
@@ -106,7 +106,7 @@ export default function Footer() {
 
           {/* Legal links */}
           <div>
-            <p className="text-xs font-bold uppercase tracking-widest text-gray-400 mb-3">
+            <p className="text-xs font-semibold text-slate-600 mb-3">
               Légal & Confiance
             </p>
             <ul className="space-y-2">

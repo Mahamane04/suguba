@@ -4,7 +4,8 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import { useModalFocus } from '@/hooks/useModalFocus';
 import { Order } from '@/types';
-import { X, Printer, CheckCircle2, ShieldCheck, Phone } from 'lucide-react';
+import { X, Printer } from 'lucide-react';
+import { formatF } from '@/lib/montant';
 
 interface PrintableReceiptModalProps {
   order: Order | null;
@@ -82,30 +83,30 @@ export default function PrintableReceiptModal({ order, isOpen, onClose }: Printa
 
           {/* Items Table */}
           <div className="space-y-2 border-b-2 border-dashed border-slate-300 pb-4">
-            <div className="flex justify-between font-bold text-xs uppercase text-slate-600 border-b border-slate-200 pb-1">
+            <div className="flex justify-between font-semibold text-xs text-slate-600 border-b border-slate-200 pb-1">
               <span>Désignation</span>
-              <span className="text-right">Total FCFA</span>
+              <span className="text-right">Total</span>
             </div>
             
             <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 py-1 text-xs">
               <div>
                 <span className="font-bold">{order.productName}</span>
-                <span className="text-slate-600 block text-xs">Qté : {order.quantity} x {((order.totalProductAmount) / order.quantity).toLocaleString('fr-FR')} F</span>
+                <span className="text-slate-600 block text-xs">Qté : {order.quantity} x {formatF(order.totalProductAmount / order.quantity)}</span>
               </div>
-              <span className="font-bold">{order.totalProductAmount.toLocaleString('fr-FR')} F</span>
+              <span className="font-bold">{formatF(order.totalProductAmount)}</span>
             </div>
 
             <div className="grid grid-cols-[minmax(0,1fr)_auto] gap-3 py-1 text-xs">
               <span>Frais de Livraison Bamako</span>
-              <span className="font-bold">{(order.deliveryFee ?? 0).toLocaleString('fr-FR')} F</span>
+              <span className="font-bold">{formatF((order.deliveryFee ?? 0))}</span>
             </div>
           </div>
 
           {/* Total Amount Due */}
           <div className="flex flex-wrap gap-2 justify-between items-center text-sm font-bold pt-1">
-            <span className="uppercase text-xs font-bold">TOTAL À PAYER :</span>
+            <span className="text-xs font-semibold">TOTAL À PAYER :</span>
             <span className="text-base font-bold px-3 py-1 bg-slate-100 rounded-lg">
-              {order.totalAmount.toLocaleString('fr-FR')} FCFA
+              {formatF(order.totalAmount)}
             </span>
           </div>
 

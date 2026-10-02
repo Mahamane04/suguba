@@ -11,6 +11,9 @@ import ChoicePicker from '@/components/ui/ChoicePicker';
 import {
   PackagePlus, ShieldCheck, CheckCircle2, ArrowLeft, AlertTriangle
 } from 'lucide-react';
+import { formatF } from '@/lib/montant';
+import { MontantInput } from '@/components/ui/Field';
+import Button from '@/components/ui/Button';
 
 /**
  * Création de produit par l'admin — l'équivalent côté Suguba de
@@ -186,23 +189,13 @@ export default function AdminNewProductPage() {
               </h2>
               <p className="text-xs text-slate-600 mt-1">
                 {publieOk
-                  ? `Il est visible dans le catalogue et partageable. Commission revendeur calculée : ${(commissionCalculee ?? 0).toLocaleString('fr-FR')} F.`
+                  ? `Il est visible dans le catalogue et partageable. Commission revendeur calculée : ${formatF((commissionCalculee ?? 0))}.`
                   : submitError}
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 justify-center">
-              <button
-                onClick={resetForm}
-                className="bg-slate-700 hover:bg-slate-800 text-white font-bold py-3 px-6 rounded-2xl text-xs transition-colors"
-              >
-                Ajouter un autre produit
-              </button>
-              <button
-                onClick={() => router.push('/admin/products')}
-                className="bg-slate-900 hover:bg-black text-white font-bold py-3 px-6 rounded-2xl text-xs transition-colors"
-              >
-                Voir les produits
-              </button>
+              <Button type="button" onClick={() => router.push('/admin/products')}>Voir les produits</Button>
+              <Button type="button" variant="ghost" onClick={resetForm}>Ajouter un autre produit</Button>
             </div>
           </div>
         ) : (
@@ -265,27 +258,23 @@ export default function AdminNewProductPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="champ-Prix-fournisseur-FCFA-" className="block text-xs font-bold text-slate-700 mb-1">Prix fournisseur (FCFA) *</label>
-              <input id="champ-Prix-fournisseur-FCFA-"
-                    type="number"
+                  <label htmlFor="champ-Prix-fournisseur-FCFA-" className="block text-xs font-bold text-slate-700 mb-1">Prix fournisseur *</label>
+              <MontantInput id="champ-Prix-fournisseur-FCFA-"
                     min={0}
                     step={500}
                     value={supplierPrice}
                     onChange={(e) => setSupplierPrice(parseInt(e.target.value) || 0)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:bg-white"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="champ-Prix-public-FCFA-" className="block text-xs font-bold text-slate-700 mb-1">Prix public (FCFA) *</label>
-              <input id="champ-Prix-public-FCFA-"
-                    type="number"
+                  <label htmlFor="champ-Prix-public-FCFA-" className="block text-xs font-bold text-slate-700 mb-1">Prix public *</label>
+              <MontantInput id="champ-Prix-public-FCFA-"
                     required
                     min={0}
                     step={500}
                     value={publicPrice}
                     onChange={(e) => setPublicPrice(parseInt(e.target.value) || 0)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-700 focus:bg-white"
                   />
                 </div>
 
@@ -318,14 +307,12 @@ export default function AdminNewProductPage() {
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-slate-700 hover:bg-slate-800 disabled:opacity-50 text-white font-bold py-3.5 px-4 rounded-2xl text-xs shadow-lg shadow-slate-800/20 flex items-center justify-center space-x-2 transition-transform active:scale-[0.98]"
-            >
+            {/* ADM-08 (audit UI/UX du 2026-10-02) : bouton commun, au lieu d'un gris
+                ardoise hors charte sur le geste qui publie un produit. */}
+            <Button type="submit" size="lg" fullWidth loading={isSubmitting}>
               <PackagePlus className="w-4 h-4" />
-              <span>{isSubmitting ? 'Publication...' : 'Publier le produit'}</span>
-            </button>
+              Publier le produit
+            </Button>
 
           </form>
         )}

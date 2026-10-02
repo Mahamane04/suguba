@@ -1,5 +1,5 @@
 {
- "majLe": "2026-10-01",
+ "majLe": "2026-10-02",
  "roles": [
   {
    "cle": "visiteur",
@@ -51,7 +51,11 @@
     "**Loupe** : recherche de produits et de boutiques.",
     "**Sac + pastille verte** : le panier et son nombre d’articles.",
     "**Cloche** : les notifications (nouveautés des boutiques suivies, ventes…).",
-    "**☰ Menu** : connexion ou « Mon espace », « Gagner avec Suguba », pages légales, téléphone du support, « Se déconnecter »."
+    "**☰ Menu** : connexion ou « Mon espace », « Gagner avec Suguba », pages légales, téléphone du support, « Se déconnecter ».",
+    "**Suivre ma commande** (ordinateur, visiteur et client) : lien dans l’en-tête vers le suivi ; sur téléphone, c’est l’onglet « Commandes » du menu du bas.",
+    "**Retour et titre de page** : chaque écran des espaces revendeur, fournisseur et livreur a le même lien de retour (« Espace revendeur », « Espace fournisseur », « Mes courses »), le même titre et la même phrase d’explication en 14 px.",
+    "**Menu du compte** : un revendeur, un fournisseur ou un livreur y voit « Mes achats » (ses propres commandes de client) ; un client ou la diaspora, « Mes commandes ».",
+    "**Avatars** : la lettre affichée est la première lettre ou le premier chiffre du nom (plus de « [ » ni de guillemet)."
    ]
   },
   {
@@ -190,6 +194,286 @@
   }
  ],
  "journal": [
+  {
+   "date": "2026-10-02",
+   "titre": "Audit UI/UX, lot 8 : arbitrages et parcours de commande unique",
+   "demande": "« faire ce qui te semble le mieu pour le numéro client / Parcours commande si les unifiers optimise l'UI/UX fait le / fait tous ce qui a faire pour le lot 4 / traite les arbitrages ensuite pousse la branche »",
+   "realise": [
+    "Numéro du client (REV-10) : la règle déjà appliquée aux livreurs et fournisseurs vaut aussi pour le revendeur — numéro complet et cliquable tant que la commande est en cours (il peut aider la livraison à aboutir), puis « •• 34 56 » comme dans « Mes clients ». Le masquage est fait par le serveur : le numéro ne quitte plus le serveur après la livraison.",
+    "Parcours de commande unique (PUB-10) : l’achat direct et le panier partagent le même formulaire (en-tête, étapes numérotées, coordonnées, livraison, code promo, garanties, barre du bas) et les mêmes règles. Le tunnel direct perd la moitié de son code (694 → 348 lignes) sans changer de comportement.",
+    "Le panier gagne ce qui lui manquait : erreur qui mène au champ fautif, code promo replié avec les trois messages, barre masquée pendant la saisie, minimum de vente respecté, point relais retiré si un article est remis par son vendeur, bandeau « Reprendre ma commande » après une coupure, total en erreur affiché au lieu de casser la page. Un panier d’une seule commande mène au même écran « Commande reçue » que l’achat direct ; à plusieurs livraisons, l’écran de fin a la même tête.",
+    "Caisse des livreurs (lot 4) : nouveau réglage « Où les livreurs versent les espèces » (lieu, horaires) dans Paramètres › Livraison, sans migration. Le portefeuille du livreur l’affiche (« Versez à la caisse : … ») ; vide, il garde « Demander où verser ». Jamais publié sur le site public ; rappelé sur la tuile de la Caisse livreurs.",
+    "Vue d’ensemble (lot 4) : rangée « Aujourd’hui » — commandes du jour, livrées aujourd’hui, appels en retard (plus de 4 h).",
+    "Bandeau de démarrage revendeur, inutilisé depuis le lot 4 : supprimé."
+   ],
+   "ecarts": [
+    "Les deux tunnels gardent chacun leur appel serveur (prix négocié et devis détaillé n’existent que pour l’achat direct) : l’unification porte sur ce que voit le client.",
+    "Accès du revendeur au numéro de son client pendant la commande : non inscrit au journal des accès (la table n’accepte que livreur et fournisseur ; il faudrait une migration).",
+    "Vérifié sur la copie locale : commandes fictives [QA] par l’achat direct, par un panier d’un article et par un panier à deux livraisons ; réglage de caisse essayé dans la base locale puis retiré. Captures du guide à refaire."
+   ],
+   "pages": [
+    "panier",
+    "panier-confirmation",
+    "commander",
+    "rev-ventes",
+    "rev-clients",
+    "liv-portefeuille",
+    "adm-vue",
+    "adm-parametres"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-10-02",
+   "titre": "Audit UI/UX, lot 7 : les finitions",
+   "demande": "« … commence directement avec les lots restante » — les constats de l’audit UI/UX du 2 octobre qui n’étaient rangés dans aucun des six lots.",
+   "realise": [
+    "Livreur, carte de course : une seule action principale, « Saisir le code du client » ; Appeler, Itinéraire, Reçu et Problème en boutons identiques (avant : quatre boutons de quatre styles et un lien perdu) ; couleurs de la charte.",
+    "Retraits : le formulaire n’apparaît plus à 0 F chez le fournisseur (« Il manque … » à la place), comme chez le revendeur ; une demande interrompue reste reprenable ; un seul indicateur de chargement.",
+    "Menu du compte : « Mes achats » pour un pro (au lieu de « Mes commandes », qui laissait croire aux commandes de ses clients). Le corps de page n’est plus figé à la hauteur de l’écran (fond coupé sur les pages longues).",
+    "Fournisseur, Ma boutique : sommaire en pastilles, recrutement en bouton secondaire, « Enregistrer mon identité » seul bouton plein.",
+    "Outils revendeur et fournisseur : coquille commune, outils rangés par usage, intitulés identiques aux titres des pages ; outils manquants ajoutés (Mes prix, Mes clients, Missions, Mes parrainages, Mon profil vérifié ; Mes revendeurs, Mes paiements).",
+    "Catalogue revendeur : bandeau « Ma boutique » sur une ligne, sous-titre raccourci : le premier produit remonte. Petites vignettes : image à la bonne taille et repli compact.",
+    "Finitions revendeur : plus de tuiles à 0 sur Mes partages et Mes parrainages avant la première activité ; un seul bouton plein sur Mon calendrier ; carte professionnelle (« Imprimer ma carte », retour normalisé) ; inscription sans « 5 choix possibles ».",
+    "Équipe : centre des modules sans « Fermé : Fermé : » ; paiements reçus sans texte à 11 px, annulation en bouton « danger ».",
+    "Après un panier : « Payer par Mobile Money » replié et facultatif pour chaque commande, et « Suivre ma commande » comme action principale.",
+    "Avatars : première lettre ou chiffre du nom (« [QA] Boutique » affichait « [ »)."
+   ],
+   "ecarts": [
+    "PUB-10 n’est traité qu’en partie : les deux tunnels de commande (achat direct et panier) restent deux écrans différents ; les unifier est un chantier à part.",
+    "REV-10 (numéro du client masqué dans « Mes clients », visible dans « Mes ventes ») attend votre arbitrage : afficher partout ou masquer partout.",
+    "La nouvelle carte de course n’a pas pu être vue à l’écran : le livreur fictif n’a pas de course en cours dans la copie locale (vérifiée par le code et les tests).",
+    "Captures 390 et 1 440 px avec les comptes [QA] : 0 défaut d’accessibilité détecté, 0 débordement. Captures du guide à refaire. Aucune migration."
+   ],
+   "pages": [
+    "liv-courses",
+    "fou-paiements",
+    "fou-boutique",
+    "reseller-outils",
+    "supplier-outils",
+    "rev-catalogue",
+    "rev-partages",
+    "rev-parrainages",
+    "rev-badge",
+    "rev-calendrier",
+    "adm-modules",
+    "panier-confirmation"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-10-02",
+   "titre": "Audit UI/UX, lot 6 : le fond",
+   "demande": "« oui commit puis passe au lot 6 commence directement avec les lots restante » — sixième lot de l’audit UI/UX du 2 octobre : création d’offre, inventaire, journal, menu de l’équipe, réglages, coquille commune et typographie.",
+   "realise": [
+    "Fournisseur, ajouter une offre : l’étape 1 ne montre plus que le nom, la catégorie, la description et la nature de l’offre ; la remise, la commande, les étapes et les frais sont repliés derrière un résumé, ouvert d’office si on s’écarte du cas courant. Barre d’étapes lisible, libellés en casse de phrase, récapitulatif en lignes (sans « Part du revendeur : 0 F » en prix de gros). Après l’envoi : une seule action principale, et un formulaire entièrement vidé.",
+    "Fournisseur, Mes produits : prix affiché (« Vous touchez … · client … ») ; − et + ne partent plus au serveur à chaque appui, un seul « Enregistrer » ; Photos, Dupliquer et Variante rangés dans « Plus » ; tuiles communes.",
+    "Équipe, journal : une phrase française par action, la nature du dossier en clair, les détails en libellés (plus de code de route ni de JSON) ; validations : dossier nommé.",
+    "Équipe, menu : « Plus » (17 entrées) devient « Campagnes » et « Réglages et équipe » ; Boutique Suguba retrouve son entrée ; la vue cartes et l’ajout de produit allument « Catalogue » ; libellés alignés sur les titres ; raccourci « Simulateur » (une simple redirection) retiré.",
+    "Équipe, réglages : une seule barre d’enregistrement (Paramètres, Accueil client, Priorité au réseau, Sécurité), qui n’apparaît que s’il y a un changement, avec « Annuler » ; Sécurité n’enregistre plus sans changement et le seuil se saisit en F.",
+    "Coquille commune pour Mes ventes, Mes gains, Calculateur, Catalogue à partager, Mes paiements fournisseur, Mes produits, Ajouter une offre, Portefeuille et Aide livreur : même retour, même titre ; plus de tuile noire chez le livreur ni à la caisse.",
+    "Typographie : 62 petits libellés en capitales grasses passent en casse normale demi-grasse ; en-tête de page et lien de retour à 14 px ; accueil revendeur : les explications passent à 14 px ; onglets de Mes ventes aux couleurs de la charte.",
+    "Aide livreur : champs étiquetés, course choisie d’office, et sans course un recours (« Écrire à Suguba »)."
+   ],
+   "ecarts": [
+    "Badge revendeur (page d’impression) et démarrage revendeur gardent leur coquille propre, voulue ; les accueils revendeur, fournisseur et livreur gardent leur en-tête d’accueil.",
+    "Le passage à 14 px des textes d’explication est fait sur les écrans du lot ; le reste de l’application garde encore beaucoup de 13 px.",
+    "Le menu passe de six à sept rubriques (test du menu adapté).",
+    "Vérifié sur la copie locale avec les comptes fictifs [QA] (captures 390 et 1 440 px, 0 défaut d’accessibilité détecté) ; captures du guide à refaire. Aucune migration."
+   ],
+   "pages": [
+    "fou-ajouter",
+    "fou-stocks",
+    "adm-journal",
+    "adm-a-traiter",
+    "adm-accueil",
+    "adm-priorite-reseau",
+    "adm-securite",
+    "adm-parametres",
+    "adm-caisse",
+    "driver-aide"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-10-02",
+   "titre": "Audit UI/UX, lot 5 : la commande",
+   "demande": "« oui commit puis passe au lot 5 » — cinquième lot de l’audit UI/UX du 2 octobre : de la fiche produit au suivi, le client sait ce que coûte la livraison, ce qui se passe maintenant et ce qu’on attend de lui.",
+   "realise": [
+    "Fiche produit : les frais de livraison s’affichent sous le prix (« Livraison à Bamako : 1 500 F · ou à retirer en point relais · payez à la livraison ») ; la puce « Recommander », verte à côté de « Commander », devient « Partager » en contour pour le client.",
+    "Commande reçue : la prochaine étape passe en premier et en grand (« Suguba appelle le … pour confirmer ») ; le paiement Mobile Money est replié et marqué facultatif ; un seul bouton plein, « Suivre ma commande » (avant : trois boutons pleins de trois couleurs). « Aucun paiement en ligne » devient « rien à payer maintenant » sur le formulaire.",
+    "Suivi : une carte « maintenant » en tête (ce qui se passe, ce qu’il faut préparer) ; l’étape en cours est marquée « En cours » ; libellés sans jargon (« Livré & Encaissé », « Étapes d’Acheminement » disparaissent) ; le bouton à icône de téléphone qui ouvrait WhatsApp devient « Écrire à Suguba » avec le logo WhatsApp ; un seul indicateur de chargement.",
+    "Diaspora : « Offrez » seulement quand l’acheteur paie vraiment (carte) ; e-mail facultatif sans carte ; libellés reliés à leurs champs ; bouton commun ; plus aucune couleur hors charte ; le bouton annonce le montant en francs payé par le proche ; un écran « Paiement validé » jamais atteint est supprimé.",
+    "Vitrines (/s, /r, boutiques supplémentaires) : la carte produit garde l’unité, le minimum, « Sur devis » et le même bouton que le catalogue (« Ajouter » au lieu d’« Acheter »). Lecture à part : une colonne absente en production ne casse pas la vitrine.",
+    "Vitrine du réseau : « Suivre » devient un bouton en contour ; couverture moins haute sur téléphone, présentation sur 2 lignes : les produits remontent.",
+    "Accueil : les trois garanties passent juste sous la recherche ; une seule largeur de colonne.",
+    "Ordinateur : « Suivre ma commande » dans l’en-tête (le menu du bas y est masqué). Compte client : la commande en cours en tête avec « Suivre ma commande » ; « Se déconnecter » en contour ; « Suivre ma commande » sous chaque commande en cours."
+   ],
+   "ecarts": [
+    "PUB-10 (deux tunnels de commande qui divergent, Mobile Money absent après /panier/confirmation) n’est pas traité : chantier L, à part.",
+    "Vitrines : aucun produit local n’a d’unité, de minimum ni de devis ; l’affichage est prouvé par les tests et par le bouton « Ajouter » sur la vitrine locale.",
+    "Suivi après rechargement de la page : le téléphone est redemandé même sur l’appareil de la commande (comportement existant, non modifié).",
+    "Écrans vérifiés sur la copie locale (commande fictive [QA]) ; captures du guide à refaire. Aucune migration."
+   ],
+   "pages": [
+    "accueil",
+    "fiche-produit",
+    "commander",
+    "suivi",
+    "compte",
+    "compte-commandes",
+    "vitrine-fournisseur",
+    "diaspora"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-10-02",
+   "titre": "Audit UI/UX, lot 4 : les accueils",
+   "demande": "« oui commit puis passe au lot 4 » — quatrième lot de l’audit UI/UX du 2 octobre : chaque accueil dit d’abord quoi faire maintenant (fournisseur, revendeur, livreur, équipe).",
+   "realise": [
+    "Fournisseur : l’accueil commence par « À faire maintenant » — livreur en route avec le code de ramassage à lui donner, colis à préparer, devis à répondre, argent disponible ou à venir avec sa date. Le bouton principal devient « Préparer mes colis (n) » quand des colis attendent ; le catalogue se limite à 3 produits (« Voir mes n produits »).",
+    "Fournisseur, Commandes : « À préparer » ne compte plus les commandes que le client n’a pas confirmées ; le livreur en route passe en tête ; les attentes client sont regroupées et repliées (« rien à faire pour l’instant »).",
+    "Revendeur : l’accueil commence par « Vers votre première vente » (liste cochée : profil, première commande, première vente livrée) tant qu’aucune vente n’est livrée ; l’argent tient en une carte (retirable, en attente, déjà versé, prochain déblocage daté) ; le grand bloc sombre en double et le bouton « Retirer mes gains » à 0 F disparaissent ; 3 raccourcis au lieu de 4.",
+    "Livreur : « Remettre les espèces » donne 3 étapes (compter, demander où verser, recevoir le reçu) et un bouton WhatsApp « Demander où verser » avec le montant déjà écrit.",
+    "Équipe : la vue d’ensemble commence par « À faire maintenant » ; les chiffres viennent ensuite, cliquables, avec leur période et sans jargon ; « Appels à passer » (doublon de la file) est retiré ; les files à jour deviennent des pastilles cochées.",
+    "7 tests ajoutés ; 459 tests réussis ; TypeScript, linter et compilation isolée réussis."
+   ],
+   "ecarts": [
+    "Lieu et horaires de la caisse livreurs : aucun réglage n’existe (l’ancienne adresse était inventée) ; le livreur les demande sur WhatsApp. Ajouter un vrai réglage « caisse livreurs » est à décider.",
+    "Vue d’ensemble de l’équipe : pas encore de « commandes du jour » ni d’« appels en retard » (il faudrait de nouvelles lectures côté serveur).",
+    "Le bandeau « Terminez votre démarrage » (composant BandeauDemarrage) n’est plus affiché nulle part ; le fichier est gardé, à supprimer si la liste de démarrage convient.",
+    "Écrans connectés vérifiés par le code et les tests ; captures du guide à refaire. Aucune migration."
+   ],
+   "pages": [
+    "fou-accueil",
+    "fou-commandes",
+    "rev-accueil",
+    "liv-portefeuille",
+    "adm-vue"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-10-02",
+   "titre": "Audit UI/UX, lot 3 : les composants",
+   "demande": "« oui commit puis passe au lot 3 » — troisième lot de l’audit UI/UX du 2 octobre : bouton commun avec chargement, un seul bouton de partage WhatsApp, une ligne de liste commune, un seul écran vide avec « Réessayer », des pastilles plus calmes, la colonne d’action du tableau de l’équipe toujours visible.",
+   "realise": [
+    "Partage WhatsApp : un seul bouton, vert WhatsApp avec son logo, sur la carte produit du catalogue revendeur, l’accueil revendeur, Ma boutique / Parrainages / Démarrer et la carte revendeur (il existait en 4 versions, dont une vert profond avec une icône générique).",
+    "Boutons : le bouton commun sait afficher « en cours » sans changer de largeur et refuse le double appui ; les boutons des cartes produit passent de 32–36 px à 40 px ; « Publier le produit », « Approuver et publier à ce prix » et la vérification des livreurs utilisent le bouton commun (fini les gris ardoise et le dégradé sombre).",
+    "Pastilles de statut : « succès » n’est plus un vert vif plein (l’élément le plus voyant alors qu’il veut dire « rien à faire ») mais un fond menthe avec un point vert ; « à confirmer / en attente » passe en ambre, bien visible ; « info » en contour.",
+    "Écran vide : un seul rendu partout ; une variante « erreur » avec « Réessayer ». L’accueil fournisseur n’affiche plus « Dossier incomplet / Aucun produit » quand la connexion échoue, mais « Connexion impossible : vos produits sont toujours en ligne » ; ses Commandes ont aussi « Réessayer ».",
+    "Tableau de l’équipe : la colonne d’action reste collée au bord droit quand le tableau défile ; montants et numéros ne se coupent plus ; plus de bande vide sur mobile.",
+    "Ligne de liste commune (montant jamais coupé) pour les livraisons du livreur ; carte commande du fournisseur : le statut a sa propre ligne et ne coupe plus le produit ni le montant.",
+    "9 tests ajoutés (ils échouent tous sur l’ancien code) ; 452 tests réussis ; TypeScript, linter et compilation isolée réussis ; boutons de la carte produit mesurés à 40 px."
+   ],
+   "ecarts": [
+    "« Vente » et « Boutique » gardent des libellés courts sur la carte du catalogue (place comptée) mais ont désormais un nom accessible explicite ; leur regroupement dans un menu « ⋯ » reste au lot 6.",
+    "La ligne de liste commune n’est appliquée qu’aux listes du livreur ; son adoption ailleurs est au lot 6 (migration des pages anciennes).",
+    "Écrans connectés vérifiés par le code et les tests ; captures du guide à refaire.",
+    "Aucune migration."
+   ],
+   "pages": [
+    "rev-catalogue",
+    "rev-accueil",
+    "rev-boutique",
+    "fou-accueil",
+    "fou-commandes",
+    "liv-courses",
+    "liv-portefeuille",
+    "adm-commandes",
+    "adm-retraits",
+    "adm-livreurs",
+    "adm-produit-nouveau",
+    "adm-produits"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-10-02",
+   "titre": "Audit UI/UX, lot 2 : le langage de l’argent",
+   "demande": "« oui commit puis passe au lot 2 » — deuxième lot de l’audit UI/UX du 2 octobre : un seul format de montant et de date, les mêmes mots pour la même somme, l’état réel des commissions, une saisie de montant qui évite les zéros en trop.",
+   "realise": [
+    "Un seul format de montant partout : « 24 000 F ». Fini « 215 000 FCFA » sur la fiche produit, le suivi, le reçu et les ventes, et « 172k F » dans les analyses fournisseur. Les 39 petites fonctions de formatage du code passent par une seule (lib/montant.ts) ; 79 montants écrits à la main aussi.",
+    "Diaspora : montants en euros avec la virgule française (« 36,59 € » au lieu de « 36.59 € »).",
+    "Dates : deux familles seulement — « 1 oct. » / « 1 oct., 05:53 » dans les listes, « 1 oct. 2026 » dans les détails (49 formats remplacés).",
+    "Revendeur, « Mes ventes » : un statut clair pour chacune des 8 étapes (4 n’en avaient pas), et sur chaque vente « Votre commission » dit quand l’argent devient retirable, ou s’il est déjà versé — lu dans les commissions réelles (l’ancienne bande ne lisait qu’une liste vide). « Livré & Encaissé » et « Ta Commission » disparaissent ; écran vide avec « Choisir un produit à partager ».",
+    "Revendeur : « Déjà versé » sur l’accueil comme dans Mes gains (au lieu de « Total gagné ») ; mêmes statuts sur l’accueil et dans Mes ventes ; dans Mes gains, chaque somme en attente est rattachée à son produit, sans jargon ; le bouton dit le montant (« Demander le virement de 6 000 F »).",
+    "Champs d’argent (12, équipe et fournisseur) : « F » dans le champ et rappel du montant dessous (« = 25 000 F »), pour qu’un zéro de trop se voie.",
+    "9 tests ajoutés ; 443 tests réussis ; TypeScript, linter et compilation isolée réussis. Vérifié à l’écran : fiche produit, commande, diaspora."
+   ],
+   "ecarts": [
+    "Les textes légaux et le choix de devise de la diaspora gardent « FCFA » (nom de la monnaie).",
+    "Le graphique des analyses fournisseur garde l’abréviation « 172k » sur ses étiquettes (place comptée) ; les montants affichés sont complets.",
+    "Formats de date gardés volontairement longs : documents (« 1 octobre 2026 ») et calendrier (jour de la semaine).",
+    "Les champs d’argent bruts de la création d’offre et de produit prennent le style commun des champs (fond blanc).",
+    "Écrans connectés (revendeur, équipe) vérifiés par le code et les tests, pas à l’écran. Captures du guide à refaire.",
+    "Aucune migration ; /api/reseller/me renvoie en plus le détail des commissions du revendeur."
+   ],
+   "pages": [
+    "rev-ventes",
+    "rev-gains",
+    "rev-accueil",
+    "fiche-produit",
+    "commander",
+    "adm-sponsorisations",
+    "fou-ajouter",
+    "fou-devis"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-10-02",
+   "titre": "Audit UI/UX, lot 1 : les urgences",
+   "demande": "« oui commence par le lot 1 » — premier lot de l’audit UI/UX du 2 octobre (docs/qa/audit-ui-ux-2026-10-02.md) : chiffre d’argent faux du livreur, confirmations sans appel, impasses et petites mises en page cassées.",
+   "realise": [
+    "Livreur : l’accueil affiche « À remettre à Suguba », le même montant que le portefeuille (il montrait 196 750 F « dans la sacoche », versements compris, contre 46 850 F réellement à remettre). Chaque livraison dit vraiment comment elle a été payée : « Payé en ligne », « Espèces · à remettre » ou « Espèces · versé » (tout était marqué « Payé en ligne »).",
+    "Livreur : un bandeau prévient quand les courses en espèces sont suspendues (plafond ou retard) ; l’écran vide explique qu’il sera prévenu ; la liste des dernières livraisons ne se casse plus à 390 px.",
+    "Équipe : dans le tableau des commandes, « Confirmer » devient « Appeler » et ouvre le dossier ; la confirmation reste dans le panneau, après l’appel. « Approuver » une opération financière demande une confirmation et ne part qu’une fois. Retirer l’autorisation d’un livreur exige un motif écrit (aussi contrôlé par le serveur) et affiche un message.",
+    "Équipe : « À traiter » affiche « Tous les métiers » pour la Direction (au lieu de « Choisir… ») ; au guichet, le champ « Code du retrait » n’est plus écrasé sur mobile ; les boutons des produits passent en 2 × 2 sur mobile.",
+    "Revendeur : le raccourci « Boutiques », qui menait aux Fournisseurs, devient « Ma boutique » ; les raccourcis ne sont plus tronqués (« Catalo… ») et la 3ᵉ tuile ne reste plus seule sur sa ligne.",
+    "Tous : page « Cette page n’existe plus » en français (recherche, catalogue, suivi, WhatsApp) au lieu de la page anglaise par défaut ; page « Cette page n’a pas pu s’afficher » avec « Réessayer » ; libellés de la barre du bas à 13 px ; l’ombre légère des cartes (shadow-xs, 27 usages) existe enfin.",
+    "Garantie : le texte ne promet plus une durée « sur chaque fiche produit » qui n’existe pas.",
+    "10 tests ajoutés (ils échouent tous sur l’ancien code) ; 434 tests réussis ; TypeScript et compilation isolée réussis."
+   ],
+   "ecarts": [
+    "Texte de la page Garantie modifié : à valider par le fondateur (la durée n’est pas en base ; ajouter le champ reste à faire).",
+    "Captures du guide non refaites (port 3000 occupé par un autre outil, sessions de démonstration) : npm run guide:captures -- liv-courses,liv-portefeuille,rev-accueil,adm-produits,garantie.",
+    "Vérifié dans le navigateur : page introuvable (adresse inconnue et vitrine /s/ inexistante) et barre du bas. Les écrans connectés (livreur, équipe, revendeur) sont vérifiés par le code et les tests, pas à l’écran.",
+    "Barre du bas fournisseur à 320 px : « Paiements » (62 px) dépasse d’environ 1 px son onglet (60 px), sans toucher ses voisins ; tout tient dès 360 px.",
+    "Aucune migration ; aucune donnée modifiée."
+   ],
+   "pages": [
+    "liv-courses",
+    "liv-portefeuille",
+    "adm-commandes",
+    "adm-validations",
+    "adm-livreurs",
+    "adm-a-traiter",
+    "adm-retraits",
+    "adm-produits",
+    "rev-accueil",
+    "garantie"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-10-02",
+   "titre": "Sécurité : écriture sur les produits fermée à la clé publique",
+   "demande": "Revue des règles d’accès (RLS) de la base, puis « Fait le nécessaire donc le 1 » : retirer les droits d’écriture inutiles sur les produits.",
+   "realise": [
+    "Revue de la base locale isolée : les 63 tables ont leur protection RLS active ; aucune fonction sensible n’est appelable avec la clé publique (le correctif du 1er octobre tient).",
+    "La clé publique du site et les comptes connectés gardaient, sur la table des produits, des droits d’écriture (ajout, modification, suppression) hérités des réglages par défaut de Supabase. Rien n’était exploitable (aucune règle ne les autorisait), mais une seule erreur future aurait suffi pour qu’un visiteur change un prix ou un stock. Ces droits sont retirés ; la lecture du catalogue public est inchangée.",
+    "Vérifié sur la base locale : 12 droits avant, 0 après ; écriture refusée, lecture des produits approuvés toujours possible, prix fournisseur toujours caché. Test automatique ajouté (il échoue sans le correctif) ; 424 tests réussis."
+   ],
+   "ecarts": [
+    "SQL à exécuter par le fondateur dans Supabase › SQL Editor : supabase/A-EXECUTER-2026-10-02-droits-products.sql (aucune donnée modifiée, sans ordre à respecter avec le code, sans risque à relancer).",
+    "Aucun changement visible dans l’application ; pas de capture.",
+    "Restent en recommandation : un test qui bloque toute nouvelle table sans RLS, et la diffusion en temps réel de la table des commandes (à vérifier ou retirer)."
+   ],
+   "pages": [],
+   "statut": "en local"
+  },
   {
    "date": "2026-10-01",
    "titre": "Audit intégral : sécurité, argent, parcours et interface",
@@ -1531,7 +1815,7 @@
     },
     {
      "nom": "Garanties",
-     "role": "Payez à la livraison · Livraison 24 h à Bamako · Code secret à la remise."
+     "role": "Bande juste sous la recherche, avant les produits : Payez à la livraison · Livré en 24 h à Bamako · Code secret à la remise (sur téléphone, trois colonnes)."
     },
     {
      "nom": "Prix des articles au prix de gros",
@@ -1574,7 +1858,7 @@
    "elements": [
     {
      "nom": "Connecté",
-     "role": "Mes commandes · Favoris · Destinataires · Boutiques suivies ; puis Mes profils, Gagner de l’argent avec Suguba, Aide (WhatsApp) et « Se déconnecter »."
+     "role": "En tête, la commande en cours (produit, état, numéro) avec « Suivre ma commande ». Puis Mes commandes · Favoris · Destinataires · Boutiques suivies ; Mes profils, Gagner de l’argent avec Suguba, Aide (WhatsApp) ; « Se déconnecter » tout en bas, en contour."
     },
     {
      "nom": "Visiteur",
@@ -1682,6 +1966,10 @@
      "role": "À côté du prix : ce qu’il couvre (« / m », « / pagne de 6 yards », « / sac de 50 kg », « / m² »…) et, s’il y en a un, le minimum (« Minimum : 2 m »). Le sélecteur de quantité démarre au minimum ; la commande en dessous est refusée."
     },
     {
+     "nom": "Livraison",
+     "role": "Sous le prix : « Livraison à Bamako : 1 500 F · ou à retirer en point relais · payez à la livraison » (frais calculés par le serveur). Affiché quand l’article est livré par un livreur Suguba."
+    },
+    {
      "nom": "Demander un devis",
      "role": "Pour une offre sur devis : remplace « Commander » et le panier ; le prix est « à partir de »."
     },
@@ -1750,8 +2038,8 @@
      "role": "Ajoute le produit à « Mes favoris » ; sans compte, invite à se connecter."
     },
     {
-     "nom": "Recommander",
-     "role": "Pour un client : partage le produit à un proche sur WhatsApp, sans commission ; le lien garde le revendeur d’origine. Pour un revendeur connecté, le bouton reste « Partager » (avec son code)."
+     "nom": "Partager",
+     "role": "Pour un client : bouton en contour (« Partager »), pour envoyer le produit à un proche sur WhatsApp, sans commission ; le lien garde le revendeur d’origine. Pour un revendeur connecté, le bouton reste vert WhatsApp avec son code."
     }
    ],
    "suite": [
@@ -1906,6 +2194,10 @@
     {
      "nom": "Après la commande : comment payer",
      "role": "À la livraison en espèces : sans aucun frais. Orange Money, Moov Money ou Wave : chaque moyen affiche son coût (sur 10 000 F : Orange et Moov + 504 F, Wave + 605 F), puis le détail avant de valider : frais de transaction Suguba (1 %) et frais SasPay (Orange et Moov 4 %, Wave 5 %, ajoutés par SasPay). Seulement les frais du paiement : les frais de retrait ne sont jamais facturés au client. Le bouton annonce le total débité."
+    },
+    {
+     "nom": "Commande reçue (écran suivant)",
+     "role": "En premier : « Suguba appelle le … pour confirmer la commande. Gardez ce téléphone allumé. » Puis le numéro de commande (à copier), le code de remise, le récapitulatif « À payer à la livraison », et « Payer maintenant par Mobile Money » replié (facultatif). Un seul bouton plein : « Suivre ma commande » ; ensuite « Garder mon reçu sur WhatsApp », « Continuer mes achats » et un lien pour créer un compte gratuit. Le panier utilise désormais exactement le même formulaire (composants communs)."
     }
    ],
    "suite": [
@@ -1949,40 +2241,40 @@
    "but": "Commander plusieurs articles en une fois, avec une seule saisie des coordonnées.",
    "elements": [
     {
-     "nom": "← Continuer mes achats",
-     "role": "Revient à la page précédente sans perdre le panier."
+     "nom": "En-tête",
+     "role": "« Mon panier », « Rien à payer maintenant » et le revendeur d’origine ; la flèche ramène aux achats. Même formulaire que l’achat direct, étape par étape."
     },
     {
-     "nom": "Articles",
-     "role": "Quantité − / + et corbeille pour retirer."
+     "nom": "1 · Vos articles",
+     "role": "Chaque article avec − / + (jamais sous le minimum du vendeur, jamais au-delà du stock), son montant et la corbeille."
     },
     {
-     "nom": "Coordonnées",
-     "role": "Nom, téléphone (WhatsApp)."
+     "nom": "2 · Vos coordonnées",
+     "role": "« Pour qui commandez-vous ? », nom et téléphone : mêmes libellés, mêmes aides et mêmes erreurs que l’achat direct ; une erreur mène directement au champ à corriger."
     },
     {
-     "nom": "Livraison",
-     "role": "À domicile ou point relais, ville, quartier, repère, instructions."
+     "nom": "3 · Livraison",
+     "role": "À domicile ou point relais (avec frais et horaires), ville, quartier, « Utiliser ma position actuelle », repère pour le livreur, instructions. Si un article est remis par son vendeur, le point relais n’est pas proposé."
     },
     {
-     "nom": "Code promo",
-     "role": "« Appliquer » vérifie le code."
+     "nom": "Ajouter un code promo",
+     "role": "Replié ; « appliqué », « reconnu mais sans remise » ou « invalide »."
     },
     {
      "nom": "Récapitulatif",
-     "role": "Si les articles viennent de plusieurs fournisseurs, le nombre de livraisons est indiqué."
+     "role": "Articles, livraison (« 2 fournisseurs » s’il y a plusieurs livraisons), remise, total. Si le total ne peut pas être calculé, le message s’affiche et la confirmation attend."
     },
     {
      "nom": "Barre flottante",
-     "role": "← Retour · Total · Confirmer."
+     "role": "« Total à la livraison » (et « · 2 livraisons ») et « Confirmer » ; masquée pendant la saisie."
     },
     {
-     "nom": "Votre partenaire : …",
-     "role": "Rappel du revendeur d’origine du client. Simple indication : l’attribution est décidée par le serveur à la commande."
+     "nom": "Reprendre ma commande",
+     "role": "Si la connexion a coupé pendant l’envoi, un bandeau propose de reprendre la même demande, sans doublon."
     },
     {
-     "nom": "Pour qui commandez-vous ?",
-     "role": "Comme sur la commande d’un article : « Pour moi » ou un proche enregistré."
+     "nom": "Après la commande",
+     "role": "Une seule commande : écran « Commande reçue », le même qu’après un achat direct. Plusieurs livraisons : « Commande reçue » avec une carte par livraison."
     }
    ],
    "suite": [
@@ -2009,7 +2301,7 @@
    "elements": [
     {
      "nom": "Suivre une commande",
-     "role": "Ouvre la page de suivi."
+     "role": "« Commande reçue » : Suguba appelle le numéro donné pour confirmer ; une carte par livraison avec son code, « Payer … par Mobile Money » replié et facultatif ; « Suivre mes commandes », « Continuer mes achats », lien pour créer un compte."
     }
    ],
    "suite": [
@@ -2039,7 +2331,7 @@
     },
     {
      "nom": "Numéro de commande",
-     "role": "À saisir, puis « Voir ma commande » : ouvre /track/ avec les étapes (à confirmer, confirmée, livreur assigné, en livraison, livrée)."
+     "role": "À saisir, puis « Voir ma commande » : ouvre /track/<numéro>. En tête, une carte « maintenant » dit ce qui se passe et ce qu’on attend du client (« Suguba va vous appeler », « Votre colis est en route : préparez votre code secret et 25 250 F »…). Puis les étapes (reçue, appel de confirmation, livreur choisi, colis récupéré, livrée) : l’étape en cours est marquée « En cours ». « Payer maintenant par Mobile Money » est replié et facultatif. En bas : « Écrire à Suguba » (WhatsApp) et « Garder mon reçu sur WhatsApp »."
     },
     {
      "nom": "Contacter Suguba sur WhatsApp",
@@ -2074,6 +2366,10 @@
     {
      "nom": "Liste des commandes",
      "role": "Numéro, date, montant, état ; ouvre le reçu avec son QR, même sur un autre téléphone (une nouvelle clé est délivrée au propriétaire du compte)."
+    },
+    {
+     "nom": "Suivre ma commande",
+     "role": "Sous une commande pas encore livrée : ouvre son suivi."
     },
     {
      "nom": "Mes devis",
@@ -2259,7 +2555,7 @@
     },
     {
      "nom": "Produits",
-     "role": "Chaque carte ouvre la fiche produit."
+     "role": "Même carte que le catalogue : unité (« / kg »), minimum, « Sur devis », « Remis par le vendeur », et le même bouton (« Ajouter », « Choisir » ou « Acheter »). Chaque carte ouvre la fiche produit."
     },
     {
      "nom": "Devenir revendeur",
@@ -2337,6 +2633,10 @@
    "but": "Un proche à l’étranger commande pour sa famille à Bamako, avec les prix affichés dans sa devise.",
    "elements": [
     {
+     "nom": "Titre",
+     "role": "« Faites livrer votre famille à Bamako, depuis l’étranger » tant que le proche paie à la réception ; « Offrez un article à votre famille à Bamako » seulement quand le paiement par carte est ouvert."
+    },
+    {
      "nom": "€ EUR · $ USD · FCFA",
      "role": "Change la devise d’affichage."
     },
@@ -2346,7 +2646,7 @@
     },
     {
      "nom": "Formulaire",
-     "role": "E-mail de l’acheteur, nom et téléphone du destinataire à Bamako, adresse et repère."
+     "role": "Votre pays, votre e-mail (facultatif ; obligatoire seulement pour le reçu d’un paiement par carte), nom et téléphone de votre proche au Mali, quartier et repère à Bamako."
     },
     {
      "nom": "Régler … par carte",
@@ -2354,7 +2654,7 @@
     },
     {
      "nom": "Paiement",
-     "role": "Tant que la carte bancaire n’est pas ouverte par l’admin (après un vrai paiement test SasPay), la commande est payée à la réception par le proche (espèces ou Mobile Money) : aucune promesse de carte sur la page, et le serveur refuse la carte."
+     "role": "Tant que la carte bancaire n’est pas ouverte par l’admin (après un vrai paiement test SasPay), la commande est payée à la réception par le proche (espèces ou Mobile Money) : aucune promesse de carte sur la page, et le serveur refuse la carte. Le bouton annonce le montant en francs : « Commander · 25 500 F à la réception » ; l’équivalent dans la devise choisie est écrit dessous (« environ 38,87 € »)."
     },
     {
      "nom": "Pour qui commandez-vous ?",
@@ -2811,20 +3111,20 @@
    "but": "Le tableau de bord : ce qu’il faut partager aujourd’hui, les dernières ventes, et tous les outils.",
    "elements": [
     {
+     "nom": "Vers votre première vente",
+     "role": "Liste cochée tant qu’aucune vente n’est livrée : compléter mon profil · partager un produit et recevoir une commande · première vente livrée."
+    },
+    {
+     "nom": "Carte argent",
+     "role": "Retirable maintenant, En attente, Déjà versé, prochain déblocage avec sa date ; « Voir mes gains »."
+    },
+    {
      "nom": "Bandeau commissions",
      "role": "Rappel : une commission est débloquée 14 jours après la livraison."
     },
     {
-     "nom": "Terminez votre démarrage",
-     "role": "Reprend le guide en 8 étapes."
-    },
-    {
-     "nom": "Retirer mes gains",
-     "role": "Vers « Mes gains »."
-    },
-    {
      "nom": "Raccourcis",
-     "role": "Catalogue · Créer une commande · Mes ventes · Boutiques."
+     "role": "Catalogue · Mes ventes · Ma boutique (« Créer une commande » menait au même endroit que Catalogue)."
     },
     {
      "nom": "À partager aujourd’hui",
@@ -2832,7 +3132,7 @@
     },
     {
      "nom": "Dernières ventes",
-     "role": "Les ventes récentes ; « Voir tout » ouvre Mes ventes."
+     "role": "Les ventes récentes, avec les mêmes statuts que « Mes ventes » ; « Voir tout » ouvre Mes ventes."
     },
     {
      "nom": "Outils de vente",
@@ -2841,6 +3141,10 @@
     {
      "nom": "Mes prix · Mes boutiques",
      "role": "Prix des articles au prix de gros ; boutiques supplémentaires avec la formule Pro."
+    },
+    {
+     "nom": "Disponible au retrait · En attente · Déjà versé",
+     "role": "Les mêmes mots que dans « Mes gains » pour les mêmes sommes (« Déjà versé » remplace « Total gagné »)."
     }
    ],
    "suite": [
@@ -2907,6 +3211,10 @@
    "chemin": "/reseller/catalog",
    "but": "Tous les produits qu’on peut vendre, avec la commission de chacun.",
    "elements": [
+    {
+     "nom": "Ma boutique · N articles",
+     "role": "Une ligne au-dessus de la recherche, avec « Voir » : le premier produit remonte dans l’écran."
+    },
     {
      "nom": "Recommandés · Tous les fournisseurs",
      "role": "Ses fournisseurs suivis d’abord, ou tout le catalogue."
@@ -3014,11 +3322,15 @@
    "elements": [
     {
      "nom": "Filtres",
-     "role": "Toutes · Livrées & payées · En cours de livraison · À confirmer."
+     "role": "Toutes · À confirmer · En livraison · Livrées."
     },
     {
-     "nom": "Carte commande",
-     "role": "Client, produit, statut, commission."
+     "nom": "Carte de vente",
+     "role": "Statut de la vente (un libellé pour chacun des 8 statuts), produit, total client, client. En bas, « Votre commission » : « Arrive après la livraison », « Retirable le 15 oct. », « Retirable maintenant », « Retrait en cours », « Versée » ou « Vente annulée : pas de commission », lu dans les commissions du serveur. Le numéro du client est complet (et cliquable) tant que la commande est en cours ; ensuite il devient « •• 34 56 », comme dans « Mes clients »."
+    },
+    {
+     "nom": "Aucune vente",
+     "role": "Explique ce qui apparaîtra ici et propose « Choisir un produit à partager » ; sur un filtre vide, « Voir toutes mes ventes »."
     }
    ],
    "suite": [
@@ -3056,11 +3368,15 @@
     },
     {
      "nom": "Demander le virement",
-     "role": "Crée la demande ; Suguba la paie depuis l’admin."
+     "role": "Le bouton dit le montant (« Demander le virement de 6 000 F ») ; crée la demande, que Suguba paie depuis l’admin."
     },
     {
      "nom": "Historique des retraits",
      "role": "Toutes les demandes, leur état, et les frais déduits."
+    },
+    {
+     "nom": "Commissions en attente",
+     "role": "Chaque somme avec le produit vendu et quand elle devient retirable (« Retirable le 15 oct. », « Arrive après la livraison »)."
     }
    ],
    "suite": [
@@ -3324,7 +3640,7 @@
    "elements": [
     {
      "nom": "Partager un produit",
-     "role": "Vers le catalogue quand la liste est vide."
+     "role": "Vers le catalogue quand la liste est vide. Les quatre chiffres (visites, commandes, chiffre d’affaires, liens) n’apparaissent qu’après le premier lien."
     }
    ],
    "suite": [
@@ -3347,6 +3663,10 @@
     {
      "nom": "Partager ma boutique",
      "role": "Vers Ma boutique quand la liste est vide."
+    },
+    {
+     "nom": "Numéros masqués",
+     "role": "Toujours « •• 34 56 » : pendant une livraison en cours, le numéro complet se trouve dans « Mes ventes »."
     }
    ],
    "suite": [
@@ -3377,6 +3697,10 @@
     {
      "nom": "Liste des filleuls",
      "role": "Avec l’état de la prime (en attente, versée)."
+    },
+    {
+     "nom": "Chiffres",
+     "role": "Invitations, revendeurs, clients et gains : affichés dès la première invitation (plus de tuiles à 0)."
     }
    ],
    "suite": [
@@ -3398,7 +3722,7 @@
    "elements": [
     {
      "nom": "Planifier une publication",
-     "role": "Choisir le produit, la date et le message ; un rappel arrive le jour venu."
+     "role": "Choisir le produit, la date et le message ; un rappel arrive le jour venu. Le bouton « Planifier » de l’en-tête est en contour : le bouton plein est celui de l’écran vide."
     }
    ],
    "suite": [
@@ -3492,7 +3816,7 @@
     },
     {
      "nom": "Imprimer et partager",
-     "role": "Diffuser la carte de présentation après chargement de la boutique."
+     "role": "« Imprimer ma carte » (bouton en contour) et « Partager » sur WhatsApp ; retour « Espace revendeur »."
     }
    ],
    "suite": [
@@ -3636,6 +3960,10 @@
    "but": "Vue d’ensemble du fournisseur : dossier, catalogue, réseau.",
    "elements": [
     {
+     "nom": "À faire maintenant",
+     "role": "En tête : livreur en route avec le code de ramassage à lui donner, colis à préparer, devis à répondre, argent disponible ou à venir (avec la date). Le bouton principal devient « Préparer mes colis (n) » quand des colis attendent."
+    },
+    {
      "nom": "Dossier incomplet",
      "role": "Rappelle les infos manquantes (entrepôt…)."
     },
@@ -3658,6 +3986,10 @@
     {
      "nom": "Commandes à préparer · Mes paiements",
      "role": "Vers la page Commandes (codes de ramassage) et vers le solde et les retraits."
+    },
+    {
+     "nom": "Connexion impossible",
+     "role": "Si la lecture échoue : « vos produits sont toujours en ligne » et « Réessayer », au lieu d’un compte qui paraît vide."
     }
    ],
    "suite": [
@@ -3690,16 +4022,28 @@
    "but": "Gérer les quantités, les prix et les variantes de chaque produit.",
    "elements": [
     {
+     "nom": "Valeur · Unités · Stock faible",
+     "role": "Valeur du stock à votre prix (pleine largeur sur téléphone), nombre d’unités, et produits à 5 ou moins (en ambre s’il y en a)."
+    },
+    {
+     "nom": "Ligne produit",
+     "role": "Photo, nom, « Vous touchez … · client … », état (En vente, En attente, Copie à vérifier, Retiré) et Rupture ou Stock faible."
+    },
+    {
      "nom": "Quantité en stock",
-     "role": "Modifiable par produit."
+     "role": "− / champ / + ne changent que l’écran ; « Enregistrer N » apparaît quand la quantité a changé (un seul envoi au serveur), « Annuler » revient à la quantité enregistrée."
     },
     {
-     "nom": "Créer une variante",
-     "role": "Même produit en une autre couleur ou taille."
+     "nom": "Modifier",
+     "role": "Ouvre la fiche de l’offre."
     },
     {
-     "nom": "Ajouter un produit",
-     "role": "Vers le formulaire."
+     "nom": "Plus",
+     "role": "Photos, Dupliquer (copie à vérifier, stock à zéro, jamais mise en vente automatiquement) et Créer une variante."
+    },
+    {
+     "nom": "Ajouter une offre",
+     "role": "En haut de la page, vers le formulaire."
     }
    ],
    "suite": [
@@ -3719,6 +4063,10 @@
    "chemin": "/supplier/commandes",
    "but": "Voir les commandes de vos produits et remettre le colis au livreur avec le code de ramassage.",
    "elements": [
+    {
+     "nom": "À préparer",
+     "role": "Ne compte que ce qui demande une action ; le livreur en route passe en tête. Les commandes que le client n’a pas encore confirmées sont regroupées, repliées : « rien à faire pour l’instant »."
+    },
     {
      "nom": "Organiser la remise",
      "role": "Offre que vous remettez vous-même : après la confirmation de Suguba, la commande vous est assignée (aucun livreur). Vous voyez alors le nom, le téléphone et le repère du client pour le rendez-vous."
@@ -3746,6 +4094,10 @@
     {
      "nom": "Contact du client (remise par vous)",
      "role": "Visible une fois la remise organisée (« Organiser la remise »), jusqu’à la remise ; ensuite il disparaît."
+    },
+    {
+     "nom": "Réessayer",
+     "role": "Si les commandes ne se chargent pas, un bouton relance la lecture ; la relecture automatique (chaque minute) efface l’erreur dès qu’elle réussit."
     }
    ],
    "suite": [
@@ -3777,6 +4129,10 @@
     {
      "nom": "En attente · En cours de retrait · Déjà versé",
      "role": "En attente : délai de sécurité en cours (réglé dans Paramètres, 7 jours par défaut), avec la date du prochain montant disponible ; la ligne « Dont … en attente de l’argent de la livraison » signale une vente payée en espèces pas encore reversée à la caisse. En cours de retrait : demandé, pas encore versé. Déjà versé : le total reçu."
+    },
+    {
+     "nom": "Prochain retrait",
+     "role": "Sous le minimum de retrait : « Il manque … » à la place du formulaire (qui s’affichait à 0 F). Une demande interrompue reste reprenable."
     },
     {
      "nom": "Retirer mon argent",
@@ -3883,6 +4239,14 @@
    "but": "Déposer un nouvel article : le fournisseur fixe son prix ET la part du revendeur. Avec au moins une photo, le produit est mis en vente aussitôt, au prix calculé par Suguba.",
    "elements": [
     {
+     "nom": "Étape 1 sur 4",
+     "role": "Une barre en quatre segments et l’étape en clair (Votre offre · Photos · Prix et stock · Vérification). Brouillon gardé dans l’onglet."
+    },
+    {
+     "nom": "Remise et commande (replié)",
+     "role": "Résumé « Un livreur Suguba · achat direct » avec « Modifier ». Il s’ouvre seul dès qu’on choisit un service, une remise par le vendeur ou le devis : qui remet, étapes, commande, frais et « ce qui est inclus » s’y trouvent."
+    },
+    {
      "nom": "Comment le client commande ?",
      "role": "Il achète directement, ou il demande un devis (le prix affiché devient « à partir de »)."
     },
@@ -3924,7 +4288,7 @@
     },
     {
      "nom": "Prix fournisseur · Stock",
-     "role": "Ce que le fournisseur touche sur chaque vente, et la quantité disponible."
+     "role": "« Votre prix » (ce que vous touchez sur chaque vente) et « Quantité en stock » (ou « Nombre de prestations possibles » pour un service)."
     },
     {
      "nom": "Le prix correspond à",
@@ -3932,7 +4296,7 @@
     },
     {
      "nom": "Part du revendeur par vente",
-     "role": "**Le fournisseur décide** combien il laisse au revendeur (en FCFA), en plus de son prix."
+     "role": "**Le fournisseur décide** combien il laisse au revendeur, en plus de son prix. Les champs de prix affichent « F » et rappellent le montant sous le champ (« = 25 000 F »)."
     },
     {
      "nom": "Sur chaque vente (aperçu)",
@@ -3940,7 +4304,7 @@
     },
     {
      "nom": "Enregistrer",
-     "role": "Mise en vente immédiate si une photo est présente ; Suguba peut ajuster le prix ou retirer le produit après coup."
+     "role": "Écran de vérification en lignes (photos, votre prix, stock, part du revendeur seulement en prix fixe, ce que paie le client), puis « Mettre en vente ». Après : « Ajouter une autre offre » (formulaire entièrement vidé) ou « Voir mes produits » ; sans photo, « Compléter dans Mes produits » passe en premier."
     }
    ],
    "suite": [
@@ -3967,7 +4331,7 @@
     },
     {
      "nom": "Recrute des revendeurs",
-     "role": "Fait apparaître la boutique dans « Ces boutiques recherchent des revendeurs »."
+     "role": "Fait apparaître la boutique dans « Ces boutiques recherchent des revendeurs ». « Activer le recrutement » est un bouton secondaire ; le seul bouton plein de la page est « Enregistrer mon identité »."
     },
     {
      "nom": "Galerie",
@@ -4184,6 +4548,14 @@
    "but": "Les livraisons assignées par Suguba, et l’historique.",
    "elements": [
     {
+     "nom": "À remettre à Suguba",
+     "role": "Le même montant que le portefeuille : espèces encaissées pas encore versées, moins la rémunération gardée. Remplace « Espèces dans ma sacoche », qui comptait aussi les espèces déjà versées."
+    },
+    {
+     "nom": "Courses en espèces suspendues",
+     "role": "Bandeau quand le plafond ou le retard d’espèces bloque les nouvelles courses payées en espèces ; « Voir comment verser »."
+    },
+    {
      "nom": "Remise du colis",
      "role": "« Scanner le QR du client » (caméra), ou saisir le code écrit sous le QR. Le scan affiche les articles et le paiement ; « Confirmer la remise » enregistre la livraison. Pour des espèces, il faut cocher « J'ai encaissé X F »."
     },
@@ -4201,11 +4573,11 @@
     },
     {
      "nom": "Code client",
-     "role": "Accepté seulement après le ramassage : le client donne son code, la commande passe « livrée »."
+     "role": "Une seule action principale par course : « Saisir le code du client » (grisé tant que le colis n’est pas récupéré, avec la raison dessous). En dessous, quatre boutons identiques : Appeler · Itinéraire · Reçu · Problème."
     },
     {
-     "nom": "Livraisons effectuées",
-     "role": "Historique."
+     "nom": "Dernières livraisons",
+     "role": "Les 3 dernières : montant et paiement (« Payé en ligne », « Espèces · à remettre » ou « Espèces · versé »), reçu ; « Voir les … livraisons dans mon portefeuille » pour tout voir."
     }
    ],
    "suite": [
@@ -4239,7 +4611,7 @@
     },
     {
      "nom": "Mes livraisons",
-     "role": "Détail par course : « Encaissé » (espèces) ou « Payé en ligne » (Mobile Money)."
+     "role": "Détail par course : « Payé en ligne » (Mobile Money), « Espèces · à remettre » ou « Espèces · versé »."
     },
     {
      "nom": "Contacter Suguba",
@@ -4248,6 +4620,10 @@
     {
      "nom": "Coordonnées",
      "role": "Le téléphone du client, son repère et le point de retrait ne restent visibles que pendant la course. Dans l’historique, le nom devient « Awa D. »."
+    },
+    {
+     "nom": "Verser en 3 étapes",
+     "role": "Comptez le montant · versez à la caisse (lieu et horaires indiqués par l’équipe dans Paramètres › Livraison ; sinon « Demander où verser » sur WhatsApp) · le reçu de versement apparaît dans « Mes versements »."
     }
    ],
    "suite": [
@@ -4268,12 +4644,20 @@
    "but": "Les chiffres du moment et les files qui attendent une action. Plus aucune action ni réglage ici : chacun a sa page (U2, 2026-09-27).",
    "elements": [
     {
-     "nom": "Chiffres",
-     "role": "Volume des commandes · Commissions générées · Appels à passer · Retraits à payer."
+     "nom": "À faire maintenant",
+     "role": "Les files qui attendent une action, en premier ; les files à jour en pastilles cochées."
     },
     {
-     "nom": "Files qui attendent une action",
-     "role": "Une carte par file non vide (commandes à confirmer, livraisons à attribuer, retraits, produits, pièces, SAV…), avec le nombre et le geste attendu ; un clic mène à la page où on la traite. Seulement les files que le rôle permet de voir."
+     "nom": "Aujourd’hui",
+     "role": "Commandes du jour (et montant depuis minuit), livrées aujourd’hui, appels en retard (clients pas encore appelés après 4 h, tuile ambre s’il y en a). Heure de Bamako."
+    },
+    {
+     "nom": "Les chiffres",
+     "role": "Commandes depuis l’ouverture · Commissions dues aux revendeurs · Retraits à payer ; chaque tuile mène à son détail."
+    },
+    {
+     "nom": "Chiffres",
+     "role": "Volume des commandes · Commissions générées · Appels à passer · Retraits à payer."
     },
     {
      "nom": "Tout voir dans « À traiter »",
@@ -4305,7 +4689,7 @@
    "elements": [
     {
      "nom": "Livreurs — vérification au guichet",
-     "role": "Livreurs à rencontrer : l’agent a vu la personne, sa moto et ses papiers, et écrit ce qu’il a constaté. La vérification donne le droit de recevoir des courses."
+     "role": "Livreurs à rencontrer : l’agent a vu la personne, sa moto et ses papiers, et écrit ce qu’il a constaté. La vérification donne le droit de recevoir des courses. « Retirer l’autorisation » demande d’écrire pourquoi ; un message confirme le retrait."
     },
     {
      "nom": "Livreurs actifs",
@@ -4369,7 +4753,7 @@
    "elements": [
     {
      "nom": "Réglages économiques",
-     "role": "Rangés en quatre blocs, chacun avec le moment où il s’applique : Commission commerciale Suguba (à la vente : mode, taux, base et qui la paie, prix de gros, politique, codes promo) · Frais de paiement du client (à l’encaissement) · Frais de retrait des partenaires (au retrait) · Coûts et rentabilité (analyse : simulateur, produits en ligne, coûts variables et fixes). Puis Livraison et formules. Une baisse de la part Suguba (dont les frais de transaction et les taux de retrait) demande un motif, dans une vraie fenêtre."
+     "role": "Rangés en quatre blocs, chacun avec le moment où il s’applique : Commission commerciale Suguba (à la vente : mode, taux, base et qui la paie, prix de gros, politique, codes promo) · Frais de paiement du client (à l’encaissement) · Frais de retrait des partenaires (au retrait) · Coûts et rentabilité (analyse : simulateur, produits en ligne, coûts variables et fixes). Puis Livraison et formules. Une baisse de la part Suguba (dont les frais de transaction et les taux de retrait) demande un motif, dans une vraie fenêtre. La barre d’enregistrement (Non enregistré · Annuler · Enregistrer les modifications) est la même que sur les autres réglages. Livraison : « Où les livreurs versent les espèces » (lieu et horaires), affiché aux seuls livreurs connectés."
     },
     {
      "nom": "Frais de paiement (payés par le client)",
@@ -4405,7 +4789,7 @@
    "elements": [
     {
      "nom": "Menu latéral (ordinateur)",
-     "role": "Aux couleurs de la charte : fond vert profond, logo Suguba, page ouverte en citron. Huit rubriques repliables, une icône par page et, à côté, le nombre de dossiers en attente (mis à jour toutes les 2 minutes et au retour sur l’onglet). En bas : nom et métier, Notifications, Voir le site, Se déconnecter. Badge Production (discret) / Local / Prévisualisation (marqués). Sur téléphone : une seule barre (menu, logo, recherche) ouvre le même menu."
+     "role": "Aux couleurs de la charte : fond vert profond, logo Suguba, page ouverte en citron. Sept rubriques repliables : Aujourd’hui · Commandes · Catalogue · Réseau · Finance · Campagnes · Réglages et équipe (3 à 8 entrées chacune, libellés identiques aux titres des pages). La vue cartes du catalogue et l’ajout de produit allument « Catalogue »."
     },
     {
      "nom": "Rechercher (Ctrl K)",
@@ -4457,11 +4841,11 @@
    "elements": [
     {
      "nom": "Filtres",
-     "role": "Par dossier (commande, produit, identifiant…) et par action (payouts, products/price, note…)."
+     "role": "Par dossier (commande, produit, identifiant…) et par type d’action (Retraits, Prix des produits, Identité et documents, Réglages économiques, Notes de dossier)."
     },
     {
      "nom": "Ligne",
-     "role": "Date, membre, action, motif, dossier ; un clic montre les champs envoyés (secrets masqués)."
+     "role": "Une phrase par action (« Retrait traité », « Prix d’un produit fixé », « Connexion à l’espace équipe »…), le membre, la nature du dossier (« Retrait WTH-… », « Commande … ») et le motif. Un appui déplie les champs envoyés en libellés français (montants en F, secrets masqués) ; le code technique reste en petit dessous."
     },
     {
      "nom": "Voir plus",
@@ -4498,6 +4882,10 @@
     {
      "nom": "Tableau des membres",
      "role": "Rôle, double authentification (Activée / Pas encore), 5 dernières connexions (appareil, code vérifié), « Déconnecter partout » : ferme toutes ses sessions immédiatement."
+    },
+    {
+     "nom": "Enregistrer",
+     "role": "Barre d’enregistrement commune : seulement quand la double authentification ou le seuil a changé, avec « Annuler »."
     }
    ],
    "suite": [
@@ -4517,7 +4905,7 @@
    "elements": [
     {
      "nom": "En attente",
-     "role": "Type (retrait, avance de commission, baisse de part), montant, qui l’a demandé, détail (bénéficiaire, téléphone…). « Approuver », ou « Refuser » avec un motif."
+     "role": "Type (retrait, avance de commission, baisse de part), montant, qui l’a demandé, détail (bénéficiaire, téléphone…). « Approuver », ou « Refuser » avec un motif. « Approuver » demande une confirmation qui rappelle l’opération, le montant et le demandeur. Le dossier est nommé en clair (« Retrait … »), plus par son code."
     },
     {
      "nom": "Après approbation",
@@ -4545,7 +4933,7 @@
    "elements": [
     {
      "nom": "Carte de module",
-     "role": "Ouvert / Fermé, ce qu’il ouvre, ce qui continue une fois fermé (les dossiers engagés suivent leur cours)."
+     "role": "Titre, état (Ouvert / Fermé), puis « Ouvert : … » et « Fermé : … » (le préfixe n’est plus répété)."
     },
     {
      "nom": "Ouvrir / Fermer",
@@ -4581,7 +4969,7 @@
     },
     {
      "nom": "Publier / Annuler les changements",
-     "role": "Publier rend les changements visibles par les clients en une minute environ."
+     "role": "Barre d’enregistrement commune, en bas : « Non enregistré », « Annuler », « Publier » (visible par les clients en une minute environ). Elle n’apparaît que s’il y a un changement."
     }
    ],
    "suite": [
@@ -4740,8 +5128,8 @@
      "role": "Commande (panier signalé), date, client, produit, quartier, total, statut, livreur ; revendeur et paiement en colonnes à afficher. Tri en cliquant sur un en-tête ; « Colonnes » choisit ce qui s’affiche (retenu par ce navigateur). Sur téléphone : une carte par commande."
     },
     {
-     "nom": "Confirmer",
-     "role": "Sur une commande à confirmer (droit « modifier les commandes ») : elle passe « À attribuer ». Refusé si elle a changé entre-temps."
+     "nom": "Appeler",
+     "role": "Sur une commande à confirmer : ouvre le dossier sur l’appel au client. La confirmation se fait dans le panneau, une fois le client joint (« Client joint : confirmer la commande »)."
     },
     {
      "nom": "Attribuer · Changer de livreur",
@@ -5068,7 +5456,7 @@
    "but": "Tarifs des packs et demandes des fournisseurs.",
    "elements": [
     {
-     "nom": "Prix (FCFA)",
+     "nom": "Prix",
      "role": "Modifier le prix de chaque pack, puis « Enregistrer »."
     },
     {
@@ -5221,7 +5609,7 @@
     },
     {
      "nom": "En retard",
-     "role": "Livreurs qui gardent des espèces depuis plus que le délai réglé (orange), ou plus du double (rouge)."
+     "role": "Livreurs qui gardent des espèces depuis plus que le délai réglé ; la tuile passe en ambre s’il y en a. Même tuile que partout ailleurs."
     },
     {
      "nom": "Plus de nouvelle course en espèces",
@@ -5341,7 +5729,7 @@
     },
     {
      "nom": "Enregistrer",
-     "role": "Ne modifie jamais une commande déjà passée ni ses commissions."
+     "role": "Barre d’enregistrement commune : apparaît dès qu’un réglage change, avec « Annuler » ; ne modifie jamais une commande déjà passée ni ses commissions."
     }
    ],
    "suite": [
@@ -5560,7 +5948,7 @@
    "elements": [
     {
      "nom": "Outils",
-     "role": "Retrouver le studio, la boutique, les rappels et les résultats de partage."
+     "role": "Rangés par usage — Partager (Catalogue à partager, Créer un visuel, Ma boutique, Mon calendrier, Mes prix), Suivre (Mes partages, Mes clients, Missions, Mes parrainages), Mon activité (Fournisseurs, Mon profil vérifié, Votre carte professionnelle, Combien pouvez-vous gagner ?). Chaque entrée porte le titre exact de la page qu’elle ouvre."
     }
    ],
    "suite": [],
@@ -5576,7 +5964,7 @@
    "elements": [
     {
      "nom": "Plus",
-     "role": "Retrouver les outils secondaires du fournisseur."
+     "role": "Page « Tous mes outils » : Vendre (Mes produits, Demandes de devis, Ma boutique), Mon réseau (Mes revendeurs, Questions sur les offres, Campagnes), Suivi (Mes paiements, Analyses, Mon équipe)."
     }
    ],
    "suite": [],
@@ -5592,7 +5980,7 @@
    "elements": [
     {
      "nom": "Signaler un incident",
-     "role": "Choisir une course active et transmettre un incident à Suguba sans valider la livraison ni modifier les montants."
+     "role": "Course (choisie d’office s’il n’y en a qu’une), problème rencontré, précisions, puis « Envoyer à Suguba » : transmet l’incident sans valider la livraison ni modifier les montants. Sans course en cours : « Écrire à Suguba » (WhatsApp) et « Mes courses »."
     }
    ],
    "suite": [],

@@ -6,9 +6,10 @@ import React, { useEffect, useState } from 'react';
 import { Gift, Check, X, Save, Target, UserPlus } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
-import { Field, Input } from '@/components/ui/Field';
+import { Field, MontantInput } from '@/components/ui/Field';
 import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 /**
  * Récompenses à verser (Finance).
@@ -69,7 +70,7 @@ export default function RecompensesAdminPage() {
       });
       const data = await reponse.json();
       if (!reponse.ok) { toast(data.error || 'Action impossible.', { ton: 'erreur' }); return; }
-      toast(data.verse > 0 ? `${Number(data.verse).toLocaleString('fr-FR')} F versés au revendeur.` : 'Décision enregistrée.', { ton: 'succes' });
+      toast(data.verse > 0 ? `${formatF(Number(data.verse))} versés au revendeur.` : 'Décision enregistrée.', { ton: 'succes' });
       await charger();
     } catch {
       toast('Action impossible. Vérifiez votre connexion.', { ton: 'erreur' });
@@ -110,11 +111,11 @@ export default function RecompensesAdminPage() {
           <Card className="space-y-3">
             <p className="text-sm font-bold text-slate-900">Primes de parrainage</p>
             <div className="grid grid-cols-2 gap-3">
-              <Field label="Filleul client (FCFA)" htmlFor="prime-client">
-                <Input id="prime-client" type="number" inputMode="numeric" min={0} step={50} value={primeClient} onChange={(e) => setPrimeClient(e.target.value)} />
+              <Field label="Filleul client" htmlFor="prime-client">
+                <MontantInput id="prime-client" min={0} step={50} value={primeClient} onChange={(e) => setPrimeClient(e.target.value)} />
               </Field>
-              <Field label="Filleul revendeur (FCFA)" htmlFor="prime-revendeur">
-                <Input id="prime-revendeur" type="number" inputMode="numeric" min={0} step={50} value={primeRevendeur} onChange={(e) => setPrimeRevendeur(e.target.value)} />
+              <Field label="Filleul revendeur" htmlFor="prime-revendeur">
+                <MontantInput id="prime-revendeur" min={0} step={50} value={primeRevendeur} onChange={(e) => setPrimeRevendeur(e.target.value)} />
               </Field>
             </div>
             <Button variant="ghost" onClick={enregistrerPrimes} disabled={sauvegarde} fullWidth>
@@ -124,7 +125,7 @@ export default function RecompensesAdminPage() {
           </Card>
 
           <section className="space-y-2.5">
-            <h2 className="text-xs font-bold uppercase tracking-wide text-slate-600 px-1 flex items-center gap-1.5"><Target className="w-3.5 h-3.5" />Missions atteintes ({missions.length})</h2>
+            <h2 className="text-sm font-semibold text-slate-800 px-1 flex items-center gap-1.5"><Target className="w-3.5 h-3.5" />Missions atteintes ({missions.length})</h2>
             {missions.length === 0 ? (
               <EmptyState icone={Gift} titre="Aucune mission à valider" />
             ) : missions.map((m) => (
@@ -134,7 +135,7 @@ export default function RecompensesAdminPage() {
                     <p className="text-sm font-bold text-slate-900 truncate">{m.mission}</p>
                     <p className="text-xs text-slate-500">{m.revendeur}{m.code ? ` · ${m.code}` : ''} · {m.avancement}/{m.objectif}</p>
                   </div>
-                  <StatusPill ton="succes">{m.recompense.toLocaleString('fr-FR')} F</StatusPill>
+                  <StatusPill ton="succes">{formatF(m.recompense)}</StatusPill>
                 </div>
                 <div className="flex gap-2">
                   <Button size="sm" variant="ghost" fullWidth disabled={enCours === m.id} onClick={() => decider('mission', m.id, 'rejected')}><X className="w-3.5 h-3.5" />Refuser</Button>
@@ -147,7 +148,7 @@ export default function RecompensesAdminPage() {
           </section>
 
           <section className="space-y-2.5">
-            <h2 className="text-xs font-bold uppercase tracking-wide text-slate-600 px-1 flex items-center gap-1.5"><UserPlus className="w-3.5 h-3.5" />Parrainages en attente ({parrainages.length})</h2>
+            <h2 className="text-sm font-semibold text-slate-800 px-1 flex items-center gap-1.5"><UserPlus className="w-3.5 h-3.5" />Parrainages en attente ({parrainages.length})</h2>
             {parrainages.length === 0 ? (
               <EmptyState icone={UserPlus} titre="Aucun parrainage en attente" />
             ) : parrainages.map((p) => (
@@ -156,10 +157,10 @@ export default function RecompensesAdminPage() {
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-slate-900 truncate">{p.parrain}{p.code ? ` · ${p.code}` : ''}</p>
                     <p className="text-xs text-slate-500">
-                      Filleul {TYPE[p.type] || p.type} · {p.telephone || 'par lien'} · {new Date(p.creeLe).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                      Filleul {TYPE[p.type] || p.type} · {p.telephone || 'par lien'} · {new Date(p.creeLe).toLocaleDateString('fr-FR', FORMAT_DATE.jour)}
                     </p>
                   </div>
-                  <StatusPill ton="succes">{p.primePrevue.toLocaleString('fr-FR')} F</StatusPill>
+                  <StatusPill ton="succes">{formatF(p.primePrevue)}</StatusPill>
                 </div>
                 <p className="text-xs text-slate-500">
                   Vérifiez que le filleul est réel : compte validé pour un revendeur, première commande livrée pour un client.

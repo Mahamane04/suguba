@@ -14,6 +14,7 @@ import { cloudSyncService } from './cloud-sync';
 import { clearPrivateSessionStorage } from './order-access-client';
 import { soumettreCommande } from './order-submit';
 import type { OrderInput } from './order-input';
+import { FORMAT_DATE } from '@/lib/montant';
 
 // Passé de _v1 à _v2 le 2026-08-21, en même temps que le retrait du catalogue
 // de démo (mock-data.ts). hydrateFromLocalStorage écrase les valeurs par
@@ -688,7 +689,7 @@ export const sugubaStore = {
     }
 
     if (withdrawal.status === 'completed') {
-      return { success: false, message: `Ce code a déjà été utilisé et payé le ${new Date(withdrawal.processedAt || '').toLocaleDateString('fr-FR')}.` };
+      return { success: false, message: `Ce code a déjà été utilisé et payé le ${new Date(withdrawal.processedAt || '').toLocaleDateString('fr-FR', FORMAT_DATE.complet)}.` };
     }
 
     const ref = `GUICHET-CASH-${Math.floor(1000 + Math.random() * 9000)}`;

@@ -7,7 +7,8 @@ import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
 import { usePermission } from '@/components/admin/contexte';
 import { useFinance } from '@/lib/admin/useFinance';
-const f=(v:number)=>`${Math.round(v).toLocaleString('fr-FR')} F`;
+import { formatF } from '@/lib/montant';
+const f = formatF;
 export default function RapportFinance({quotidien=false}:{quotidien?:boolean}){
   const peutExporter = usePermission('donnees.exporter');
   const aujourdHui=new Date().toISOString().slice(0,10);

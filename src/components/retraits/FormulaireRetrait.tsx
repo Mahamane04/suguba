@@ -1,6 +1,5 @@
 'use client';
 
-import SugubaLoader from '@/components/ui/SugubaLoader';
 
 import React, { useEffect, useState } from 'react';
 import { AlertCircle, Building2, Check, CheckCircle2, Wallet } from 'lucide-react';
@@ -10,6 +9,7 @@ import type { PayoutCheckout } from '@/lib/payout-submit';
 import { calculerFraisRetrait, tauxRetraitSuguba, type DetailFraisRetrait, type RoleRetrait, type TauxRetrait } from '@/lib/pricing';
 import { estimerRetraitAgent, type OperateurRetrait } from '@/lib/frais-paiement';
 import { CODE_MOYEN_RETRAIT } from '@/lib/retraits-affichage';
+import { formatF } from '@/lib/montant';
 
 type Moyen = 'Orange Money' | 'Moov Money' | 'Wave' | 'Agence Suguba';
 
@@ -30,7 +30,7 @@ const MOYENS: { id: Moyen; libelle: string; detail: string }[] = [
 ];
 
 const enPct = (n: number) => `${String(n).replace('.', ',')} %`;
-const enF = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+const enF = formatF;
 
 /**
  * Demande de retrait — commune au revendeur et au fournisseur (lot C,
@@ -240,13 +240,13 @@ export default function FormulaireRetrait({
           )}
 
           {erreur && (
-            <p className="rounded-2xl bg-rose-50 border border-rose-100 p-3 text-xs font-bold text-rose-700 flex items-center gap-2">
+            <p role="alert" className="rounded-2xl bg-rose-50 border border-rose-100 p-3 text-sm text-rose-800 flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />{erreur}
             </p>
           )}
 
-          <Button type="submit" size="lg" fullWidth disabled={envoi || chargement || !assez}>
-            {envoi ? <><SugubaLoader className="mr-2 h-4 w-4" />Envoi…</> : moyen === 'Agence Suguba' ? 'Obtenir mon numéro de retrait' : 'Demander le virement'}
+          <Button type="submit" size="lg" fullWidth loading={envoi} disabled={chargement || !assez}>
+            {moyen === 'Agence Suguba' ? 'Obtenir mon numéro de retrait' : montant > 0 ? `Demander le virement de ${enF(montant)}` : 'Demander le virement'}
           </Button>
           {!chargement && !assez && (
             <p className="text-xs text-slate-500 text-center">

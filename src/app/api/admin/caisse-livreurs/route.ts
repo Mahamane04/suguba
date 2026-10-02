@@ -40,6 +40,7 @@ export async function GET(req: NextRequest) {
     migrationRequise,
     remunerationParCourse: remunerationRetenue(reglages),
     livreurGardeRemuneration: reglages.livreurGardeRemuneration !== false,
+    lieuCaisse: reglages.caisseLivreurs?.lieu || null,
     delaiHeures: reglages.delaiVersementEspecesHeures || 24,
   }, { headers: { 'Cache-Control': 'no-store' } });
 }

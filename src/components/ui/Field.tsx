@@ -1,6 +1,7 @@
 'use client';
 
 import React, { forwardRef, createContext, useContext, useId } from 'react';
+import { formatF } from '@/lib/montant';
 
 /**
  * Champs de formulaire communs (2026-09-11).
@@ -58,6 +59,29 @@ export const Input = forwardRef<HTMLInputElement, React.InputHTMLAttributes<HTML
   function Input({ className = '', ...props }, ref) {
     const field = useContext(FieldContext);
     return <input {...props} id={props.id || field?.id} aria-describedby={[field?.description, props['aria-describedby']].filter(Boolean).join(' ') || undefined} aria-invalid={field?.invalid || props['aria-invalid']} required={field?.required || props.required} ref={ref} className={`${BASE_CHAMP} h-12 ${className}`} />;
+  },
+);
+
+/**
+ * Saisie d'un montant en francs (ADM-06, lot 2 de l'audit UI/UX du 2026-10-02) :
+ * « F » dans le champ et écho lisible dessous (« = 25 000 F »). Dans un champ
+ * brut, « 25000 » et « 250000 » se ressemblent : un zéro de trop, c'est dix
+ * fois l'argent. Le libellé du champ n'a donc plus à répéter l'unité.
+ */
+export const MontantInput = forwardRef<HTMLInputElement, Omit<React.InputHTMLAttributes<HTMLInputElement>, 'type'>>(
+  function MontantInput({ className = '', value, ...props }, ref) {
+    const nombre = value === '' || value == null ? NaN : Number(value);
+    return (
+      <div className="space-y-1">
+        <div className="relative">
+          <Input {...props} ref={ref} value={value} type="number" inputMode={props.inputMode || 'numeric'} className={`pr-10 tabular-nums ${className}`} />
+          <span aria-hidden="true" className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-sm font-semibold text-slate-600">F</span>
+        </div>
+        {Number.isFinite(nombre) && nombre >= 1000 && (
+          <p className="text-xs text-slate-600 tabular-nums" aria-live="polite">= {formatF(nombre)}</p>
+        )}
+      </div>
+    );
   },
 );
 

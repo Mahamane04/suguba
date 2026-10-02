@@ -1,3 +1,4 @@
+import { formatF } from '@/lib/montant';
 /**
  * Frais d'un paiement client — 2026-09-27, décision du fondateur.
  *
@@ -179,7 +180,7 @@ const pct = (x: number) => x / 100;
 /** Arrondi au franc supérieur, sans l'erreur des nombres à virgule (0,9 % de 10 000 = 90,000…01, pas 91). */
 const francSup = (v: number) => Math.ceil(Math.round(v * 100) / 100);
 const nombre = (v: unknown, defaut = 0) => (v !== null && v !== '' && Number.isFinite(Number(v)) ? Number(v) : defaut);
-const montantFrancs = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+const montantFrancs = formatF;
 const enPct = (n: number) => `${String(n).replace('.', ',')} %`;
 
 /** Opérateur Mobile Money d'un moyen de paiement (carte et crypto : aucun). */

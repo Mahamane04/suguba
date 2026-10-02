@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { formatF } from '@/lib/montant';
 
 /**
  * Sélecteur de variantes de la fiche produit (taille, capacité…). Chaque
@@ -39,7 +40,7 @@ export default function SelecteurVariantes({ slug }: { slug: string }) {
               } ${v.enStock ? '' : 'opacity-50'}`}
             >
               <span className="text-xs font-bold text-slate-900">{v.libelle}</span>
-              <span className="text-xs text-slate-500 tabular-nums">{v.enStock ? `${v.prix.toLocaleString('fr-FR')} F` : 'Épuisé'}</span>
+              <span className="text-xs text-slate-500 tabular-nums">{v.enStock ? `${formatF(v.prix)}` : 'Épuisé'}</span>
             </Link>
           );
         })}

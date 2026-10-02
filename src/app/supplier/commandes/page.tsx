@@ -3,7 +3,7 @@
 import SugubaLoader from '@/components/ui/SugubaLoader';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { PackageCheck, KeyRound, Truck, CheckCircle2, Clock, Package, Handshake, Phone, QrCode, Circle, AlertTriangle, Camera, X } from 'lucide-react';
+import { PackageCheck, KeyRound, Truck, CheckCircle2, Clock, Package, Handshake, Phone, QrCode, Circle, AlertTriangle, Camera, X, MapPin } from 'lucide-react';
 import { Field, Input, Textarea } from '@/components/ui/Field';
 import { compresserImage } from '@/lib/compression-image';
 import { ETAPES, libelleEtape, type CleEtape } from '@/lib/offre';
@@ -14,6 +14,9 @@ import Button from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import OtpValidationModal from '@/components/driver/OtpValidationModal';
 import type { Order } from '@/types';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
+import { prioriteCommande, trierParUrgence } from '@/lib/a-faire-fournisseur';
+import LigneListe from '@/components/ui/LigneListe';
 
 /**
  * Commandes à préparer — espace fournisseur (2026-09-24).
@@ -64,8 +67,8 @@ interface EtapeFournisseur {
   noteAdmin: string | null;
 }
 
-const enF = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
-const heure = (iso: string) => new Date(iso).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+const enF = formatF;
+const heure = (iso: string) => new Date(iso).toLocaleString('fr-FR', FORMAT_DATE.jourHeure);
 
 type Filtre = 'a_preparer' | 'en_route' | 'terminees';
 
@@ -118,7 +121,8 @@ export default function CommandesFournisseurPage() {
       .then((r) => r.json())
       .then((d) => {
         if (annule) return;
-        if (d.error) setErreur(d.error);
+        // Une relecture réussie efface l'erreur précédente.
+        setErreur(d.error || '');
         setCommandes(d.commandes || []);
         setRamassageActif(d.ramassageActif !== false);
       })
@@ -136,12 +140,17 @@ export default function CommandesFournisseurPage() {
     return groupes;
   }, [commandes]);
 
+  // FOU-02 (audit UI/UX du 2026-10-02) : « À préparer » ne compte que ce qui
+  // demande une action ; le livreur en route passe en tête ; les commandes que
+  // le client n'a pas encore confirmées sont regroupées à part, repliées.
+  const enAttenteClient = parFiltre.a_preparer.filter((c) => prioriteCommande(c) === 3);
+  const aFaire = trierParUrgence(parFiltre.a_preparer.filter((c) => prioriteCommande(c) !== 3));
   const FILTRES: [Filtre, string][] = [
-    ['a_preparer', `À préparer (${parFiltre.a_preparer.length})`],
+    ['a_preparer', `À préparer (${aFaire.length})`],
     ['en_route', `En livraison (${parFiltre.en_route.length})`],
     ['terminees', `Terminées (${parFiltre.terminees.length})`],
   ];
-  const visibles = parFiltre[filtre];
+  const visibles = filtre === 'a_preparer' ? aFaire : parFiltre[filtre];
 
   return (
     <PageReseau titre="Commandes" sousTitre="Ce que vous devez préparer et remettre au livreur." retour={{ href: '/supplier', libelle: 'Tableau de bord' }}>
@@ -168,10 +177,12 @@ export default function CommandesFournisseurPage() {
       </div>
 
       {chargement ? <Skeleton className="h-40" /> : erreur ? (
-        <EmptyState icone={Package} titre="Commandes indisponibles" texte={erreur} />
+        <EmptyState erreur titre="Commandes indisponibles" texte={erreur} onReessayer={() => { setErreur(''); setChargement(true); setRecharge((n) => n + 1); }} />
       ) : visibles.length === 0 ? (
         <EmptyState icone={PackageCheck} titre={filtre === 'a_preparer' ? 'Rien à préparer pour le moment' : 'Aucune commande ici'}
-          texte={filtre === 'a_preparer' ? 'Les nouvelles commandes de vos produits apparaîtront ici dès qu’un client aura commandé.' : undefined} />
+          texte={filtre !== 'a_preparer' ? undefined : enAttenteClient.length
+            ? `${enAttenteClient.length} commande${enAttenteClient.length > 1 ? 's attendent' : ' attend'} encore la confirmation du client : rien à faire pour l’instant.`
+            : 'Les nouvelles commandes de vos produits apparaîtront ici dès qu’un client aura commandé.'} />
       ) : (
         <div className="space-y-3">
           {visibles.map((c) => {
@@ -182,14 +193,16 @@ export default function CommandesFournisseurPage() {
                   <div className="relative w-14 h-14 rounded-2xl overflow-hidden bg-slate-100 shrink-0">
                     <ProductImage src={c.image || ''} alt={c.produit} fill className="object-cover" />
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-slate-900 truncate">{c.produit}</p>
-                    <p className="text-xs text-slate-500">#{c.numero} · {heure(c.creeLe)}</p>
-                    <p className="text-xs text-slate-700 mt-0.5">
-                      Quantité <strong>{c.quantite}</strong> · vous recevez <strong>{enF(c.montantFournisseur)}</strong>
+                  {/* FOU-03 (audit UI/UX du 2026-10-02) : la pastille, insécable, partageait
+                      la ligne du titre et écrasait produit et montant à 390 px. */}
+                  <div className="min-w-0 flex-1 space-y-0.5">
+                    <StatusPill ton={e.ton}>{e.libelle}</StatusPill>
+                    <p className="text-sm font-semibold text-slate-900 line-clamp-2">{c.produit}</p>
+                    <p className="text-xs text-slate-500"><span className="whitespace-nowrap">#{c.numero}</span> · {heure(c.creeLe)}</p>
+                    <p className="text-xs text-slate-700">
+                      Quantité <strong>{c.quantite}</strong> · vous recevez <strong className="whitespace-nowrap tabular-nums">{enF(c.montantFournisseur)}</strong>
                     </p>
                   </div>
-                  <StatusPill ton={e.ton}>{e.libelle}</StatusPill>
                 </div>
 
                 {c.codeRamassage && (
@@ -252,7 +265,7 @@ export default function CommandesFournisseurPage() {
 
                 <ul className="text-xs text-slate-600 space-y-1">
                   {(!c.modeRemise || c.modeRemise === 'livreur') && (
-                    <li className="flex items-center gap-2"><Clock className="w-3.5 h-3.5 text-slate-400" />Livraison vers {c.quartierClient || c.ville || 'le client'}</li>
+                    <li className="flex items-center gap-2"><MapPin className="w-3.5 h-3.5 text-slate-500" />Livraison vers {c.quartierClient || c.ville || 'le client'}</li>
                   )}
                   {c.livreur && <li className="flex items-center gap-2"><Truck className="w-3.5 h-3.5 text-slate-400" />Livreur : {c.livreur}</li>}
                   {c.recupereeLe && <li className="flex items-center gap-2"><PackageCheck className="w-3.5 h-3.5 text-suguba-profond" />Récupérée le {heure(c.recupereeLe)}</li>}
@@ -262,6 +275,21 @@ export default function CommandesFournisseurPage() {
             );
           })}
         </div>
+      )}
+
+      {!chargement && !erreur && filtre === 'a_preparer' && enAttenteClient.length > 0 && (
+        <details className="rounded-3xl border border-slate-200 bg-white p-4">
+          <summary className="cursor-pointer min-h-11 flex items-center text-sm font-semibold text-slate-700">
+            En attente du client ({enAttenteClient.length}) · rien à faire pour l’instant
+          </summary>
+          <div className="divide-y divide-slate-100">
+            {enAttenteClient.map((c) => (
+              <LigneListe key={c.id} titre={`${c.quantite} × ${c.produit}`}
+                meta={<span className="whitespace-nowrap">#{c.numero}</span>}
+                statut={<span className="text-slate-600">Client à confirmer</span>} />
+            ))}
+          </div>
+        </details>
       )}
 
       <OtpValidationModal

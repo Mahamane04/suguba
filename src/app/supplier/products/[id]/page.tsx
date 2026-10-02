@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Surface';
 import { Field, Input, Textarea } from '@/components/ui/Field';
 import SugubaLoader from '@/components/ui/SugubaLoader';
 import { useToast } from '@/components/ui/Toast';
+import { formatF } from '@/lib/montant';
 interface Offre { name: string; description: string | null; stock: number; supplier_price: number; public_price: number; reseller_commission: number; commission_proposee: number | null; status: string; mode_prix?: string }
 export default function ModifierOffre({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params); const { toast } = useToast();
@@ -31,7 +32,7 @@ export default function ModifierOffre({ params }: { params: Promise<{ id: string
   }
   return <PageReseau titre="Modifier mon offre" sousTitre="Vérifiez les informations avant l’enregistrement." retour={{href:'/supplier/inventory',libelle:'Mes produits'}}>
     {chargement ? <SugubaLoader/> : erreur ? <Card role="alert"><p>{erreur}</p><Button onClick={charger}>Réessayer</Button></Card> : offre && <>
-      <Card className="space-y-2"><h2 className="font-bold">Prix et statut</h2><p className="text-sm">Mon prix fournisseur : {Number(offre.supplier_price).toLocaleString('fr-FR')} F.</p><p className="text-sm">{offre.status === 'approved' ? `En vente à ${Number(offre.public_price).toLocaleString('fr-FR')} F · gain revendeur ${Number(offre.reseller_commission).toLocaleString('fr-FR')} F` : retiree ? 'Offre retirée : seul Suguba peut la remettre en vente.' : 'Offre à vérifier avant sa mise en vente.'}</p><p className="text-xs text-slate-600">Suguba recalcule le prix public quand vous changez la part revendeur. Les anciennes commandes et l’adresse du produit sont conservées. Pour corriger le prix fournisseur, contactez Suguba depuis l’aide.</p></Card>
+      <Card className="space-y-2"><h2 className="font-bold">Prix et statut</h2><p className="text-sm">Mon prix fournisseur : {formatF(Number(offre.supplier_price))}.</p><p className="text-sm">{offre.status === 'approved' ? `En vente à ${formatF(Number(offre.public_price))} · gain revendeur ${formatF(Number(offre.reseller_commission))}` : retiree ? 'Offre retirée : seul Suguba peut la remettre en vente.' : 'Offre à vérifier avant sa mise en vente.'}</p><p className="text-xs text-slate-600">Suguba recalcule le prix public quand vous changez la part revendeur. Les anciennes commandes et l’adresse du produit sont conservées. Pour corriger le prix fournisseur, contactez Suguba depuis l’aide.</p></Card>
       <Card><form onSubmit={enregistrer} className="space-y-4">
         <Field label="Nom de l’offre" htmlFor="offre-nom" requis><Input id="offre-nom" value={nom} minLength={2} maxLength={120} onChange={e=>setNom(e.target.value)} required/></Field>
         <Field label="Présentation" htmlFor="offre-description"><Textarea id="offre-description" value={description} maxLength={4000} rows={4} onChange={e=>setDescription(e.target.value)}/></Field>

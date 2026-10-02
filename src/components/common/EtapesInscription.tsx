@@ -61,7 +61,7 @@ export default function EtapesInscription({ etapeActuelle }: { etapeActuelle: 1 
             </span>
 
             {active && (
-              <span className="text-xs font-bold text-suguba-profond uppercase tracking-wider mt-0.5">
+              <span className="text-xs font-semibold text-suguba-profond mt-0.5">
                 Vous êtes ici
               </span>
             )}

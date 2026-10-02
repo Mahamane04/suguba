@@ -11,6 +11,8 @@
 import { getSupabaseAdmin } from './supabase-admin';
 import { identiteFournisseur } from './identite-fournisseur';
 import { prixEnregistres } from './prix-revendeur';
+import { ajoutDirectPossible, lireMesure, lireUniteVente, suffixeUnite, texteMinimum } from './unite-vente';
+import { libelleTypeOffre, normaliserTypeOffre } from './offre';
 
 type ClientAdmin = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
 
@@ -27,6 +29,17 @@ export interface ProduitVitrine {
   prix: number;
   enStock: boolean;
   garantieMois: number;
+  /**
+   * Nature de l'offre (PUB-06, lot 5 de l'audit UI/UX du 2026-10-02) : la carte
+   * du catalogue affichait « le kg », « dès 3 », « Sur devis » et le bouton
+   * « Ajouter » ; la même carte en vitrine perdait tout et proposait « Acheter ».
+   */
+  suffixeUnite?: string;
+  minimum?: string;
+  etiquetteOffre?: string | null;
+  quantiteAjout?: number;
+  ajoutDirect?: boolean;
+  aChoisir?: boolean;
 }
 
 export interface Boutique {
@@ -117,6 +130,40 @@ function versVitrine(p: any): ProduitVitrine {
 const CHAMPS_PRODUIT = 'id, slug, name, category, images, public_price, stock, reseller_commission, pricing_status';
 
 /**
+ * Colonnes de l'offre, lues À PART (même règle que /api/admin/products) : une
+ * colonne pas encore créée en production fait échouer cette seule lecture, et
+ * la vitrine s'affiche quand même, comme avant.
+ */
+const CHAMPS_OFFRE = 'id, unite_vente, contenu_valeur, contenu_mesure, quantite_min, mode_commande, mode_prix, mode_remise, type_offre, variant_group';
+
+export function offreVitrine(o: any, enStock: boolean) {
+  const unite = lireUniteVente(o.unite_vente);
+  const min = Number(o.quantite_min) > 1 ? Number(o.quantite_min) : null;
+  const modeRemise = o.mode_remise || 'livreur';
+  return {
+    suffixeUnite: suffixeUnite(unite, Number(o.contenu_valeur) > 0 ? Number(o.contenu_valeur) : null, lireMesure(o.contenu_mesure)),
+    minimum: texteMinimum(unite, min),
+    etiquetteOffre: o.mode_commande === 'devis' ? 'Sur devis'
+      : libelleTypeOffre(normaliserTypeOffre(o.type_offre))
+        || (modeRemise === 'fournisseur' ? 'Remis par le vendeur' : modeRemise === 'retrait' ? 'Chez le vendeur' : null),
+    quantiteAjout: min ?? 1,
+    ajoutDirect: ajoutDirectPossible({
+      enStock, modeCommande: o.mode_commande === 'devis' ? 'devis' : 'achat', modePrix: o.mode_prix === 'gros' ? 'gros' : 'fixe',
+      variantes: Boolean(o.variant_group), modeRemise,
+    }),
+    aChoisir: Boolean(o.variant_group) && enStock,
+  };
+}
+
+async function avecOffre(admin: ClientAdmin, liste: ProduitVitrine[]): Promise<ProduitVitrine[]> {
+  if (liste.length === 0) return liste;
+  const { data, error } = await admin.from('products').select(CHAMPS_OFFRE).in('id', liste.map((p) => p.id));
+  if (error || !data) return liste;
+  const parId = new Map(data.map((o: any) => [o.id, o]));
+  return liste.map((p) => (parId.has(p.id) ? { ...p, ...offreVitrine(parId.get(p.id), p.enStock) } : p));
+}
+
+/**
  * Un produit est proposable aux revendeurs s'il leur rapporte quelque chose :
  * ni sous le plancher, ni à commission trop faible.
  */
@@ -161,7 +208,7 @@ export async function chargerBoutiqueFournisseur(slug: string, identiteChoisie?:
   const principale = identiteChoisie || boutiques?.find(b => b.principale !== false) || boutiques?.[0] || null;
   if (principale && principale.status !== 'active') return null;
   const identite = identiteFournisseur(fournisseur, principale);
-  const liste = (produits || []).map(versVitrine);
+  const liste = await avecOffre(admin, (produits || []).map(versVitrine));
   return {
     type: 'fournisseur',
     nom: identite.nom,
@@ -270,10 +317,10 @@ export async function chargerBoutiqueRevendeur(codeBrut: string): Promise<Boutiq
   // prix conseillé. Seuls les articles au prix de gros peuvent en avoir un
   // (voir /api/reseller/prix), les autres gardent leur prix fixe.
   const sesPrix = await prixEnregistres(admin, profil.id, produits.map((p) => p.id));
-  const liste = produits.map((p) => {
+  const liste = await avecOffre(admin, produits.map((p) => {
     const v = versVitrine(p);
     return sesPrix.has(p.id) ? { ...v, prix: sesPrix.get(p.id) as number } : v;
-  });
+  }));
   // Logo, couverture et nom choisis dans « Ma boutique » (table stores). Sans
   // cette lecture, l'ancienne adresse /r/<code> — celle que les revendeurs
   // partagent le plus — affichait l'initiale et le fond par défaut même après
@@ -343,7 +390,7 @@ export async function chargerProduitsSuguba(): Promise<ProduitVitrine[]> {
     .gt('public_price', 0)
     .order('created_at', { ascending: false })
     .limit(96);
-  return (data || []).map(versVitrine);
+  return avecOffre(admin, (data || []).map(versVitrine));
 }
 
 /**
@@ -362,8 +409,8 @@ export async function chargerProduitsDeLaBoutique(storeId: string, revendeurId?:
   const ordre = new Map(ids.map((id: string, i: number) => [id, i]));
   const produits = (data || []).sort((a: any, b: any) => (ordre.get(a.id) ?? 0) - (ordre.get(b.id) ?? 0));
   const sesPrix = revendeurId ? await prixEnregistres(admin, revendeurId, produits.map((p: any) => p.id)) : new Map<string, number>();
-  return produits.map((p: any) => {
+  return avecOffre(admin, produits.map((p: any) => {
     const v = versVitrine(p);
     return sesPrix.has(p.id) ? { ...v, prix: sesPrix.get(p.id) as number } : v;
-  });
+  }));
 }

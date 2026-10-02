@@ -16,6 +16,8 @@ import { ArrowDown, ArrowUp, Columns3 } from 'lucide-react';
  * - Sous 768 px : une carte par ligne, comme avant.
  */
 
+const OMBRE_COLLANTE = 'shadow-[-8px_0_8px_-8px_rgb(15_23_42/0.18)]';
+
 export interface Colonne<T> {
   cle: string;
   titre: string;
@@ -120,10 +122,16 @@ export default function TableauAdmin<T>({ lignes, colonnes, cleLigne, memoire, t
   };
 
   const masquables = colonnes.filter((c) => !c.fixe);
+  // ADM-01 (audit UI/UX du 2026-10-02) : sur un écran étroit, le tableau défile et
+  // perdait d'abord sa DERNIÈRE colonne, celle des actions (« Actio… », boutons
+  // coupés). La dernière colonne fixe et à droite reste collée au bord.
+  const collante = (c: Colonne<T>, i: number) => Boolean(c.fixe && c.droite && i === affichees.length - 1);
 
   return (
     <div className="space-y-2">
-      <div className="flex flex-wrap items-center justify-between gap-2 min-h-[40px]">
+      {/* ADM-12 (audit UI/UX du 2026-10-02) : sans outil à afficher (mobile, où
+          « Colonnes » est masqué), la barre laissait une bande vide de 40 px. */}
+      <div className={`flex flex-wrap items-center justify-between gap-2 ${barre ? 'min-h-[40px]' : masquables.length > 0 ? 'hidden md:flex md:min-h-[40px]' : 'hidden'}`}>
         <div className="flex flex-wrap items-center gap-2">{barre}</div>
         {masquables.length > 0 && (
           <div className="relative hidden md:block" ref={choixRef}>
@@ -157,11 +165,11 @@ export default function TableauAdmin<T>({ lignes, colonnes, cleLigne, memoire, t
                     className="accent-suguba-profond w-4 h-4" />
                 </th>
               )}
-              {affichees.map((c) => {
+              {affichees.map((c, i) => {
                 const actif = tri?.cle === c.cle;
                 return (
                   <th key={c.cle} scope="col" aria-sort={actif ? (tri!.sens === 1 ? 'ascending' : 'descending') : undefined}
-                    className={`px-3 py-3 bg-slate-50 lg:sticky lg:top-0 z-10 whitespace-nowrap first:rounded-tl-3xl last:rounded-tr-3xl ${c.droite ? 'text-right' : ''} ${c.classe || ''}`}>
+                    className={`px-3 py-3 bg-slate-50 lg:sticky lg:top-0 z-10 whitespace-nowrap first:rounded-tl-3xl last:rounded-tr-3xl ${c.droite ? 'text-right' : ''} ${collante(c, i) ? `sticky right-0 z-20 ${OMBRE_COLLANTE}` : ''} ${c.classe || ''}`}>
                     {c.tri ? (
                       <button type="button" onClick={() => setTri(actif ? { cle: c.cle, sens: tri!.sens === 1 ? -1 : 1 } : { cle: c.cle, sens: 1 })}
                         className={`inline-flex items-center gap-1 hover:text-slate-900 ${actif ? 'text-slate-900' : ''}`}>
@@ -182,7 +190,7 @@ export default function TableauAdmin<T>({ lignes, colonnes, cleLigne, memoire, t
               return (
                 <tr key={id} data-dossier={id} tabIndex={onOuvrir ? 0 : undefined}
                   onClick={(e) => ouvrirSiLigne(e, l)} onKeyDown={(e) => ouvrirSiLigne(e, l)}
-                  className={`align-top ${onOuvrir ? 'cursor-pointer hover:bg-slate-50 focus-visible:outline-none focus-visible:bg-suguba-sauge' : ''} ${choisie ? 'bg-suguba-menthe/60' : ''} ${ciblee ? 'bg-suguba-menthe outline outline-2 -outline-offset-2 outline-suguba-profond' : ''}`}>
+                  className={`group align-top ${onOuvrir ? 'cursor-pointer hover:bg-slate-50 focus-visible:outline-none focus-visible:bg-suguba-sauge' : ''} ${choisie ? 'bg-suguba-menthe/60' : ''} ${ciblee ? 'bg-suguba-menthe outline outline-2 -outline-offset-2 outline-suguba-profond' : ''}`}>
                   {selection && (
                     <td className="px-3 py-3">
                       {(selection.possible?.(l) ?? true) && (
@@ -190,8 +198,8 @@ export default function TableauAdmin<T>({ lignes, colonnes, cleLigne, memoire, t
                       )}
                     </td>
                   )}
-                  {affichees.map((c) => (
-                    <td key={c.cle} className={`px-3 py-3 text-slate-800 ${c.droite ? 'text-right tabular-nums' : ''} ${c.classe || ''}`}>{c.rendu(l)}</td>
+                  {affichees.map((c, i) => (
+                    <td key={c.cle} className={`px-3 py-3 text-slate-800 ${c.droite ? 'text-right tabular-nums whitespace-nowrap' : ''} ${collante(c, i) ? `sticky right-0 ${OMBRE_COLLANTE} ${ciblee || choisie ? 'bg-suguba-menthe' : onOuvrir ? 'bg-white group-hover:bg-slate-50' : 'bg-white'}` : ''} ${c.classe || ''}`}>{c.rendu(l)}</td>
                   ))}
                 </tr>
               );

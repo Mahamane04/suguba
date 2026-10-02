@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { MapPin, ArrowRight, Users } from 'lucide-react';
 import { quartierReconnu, quartiersVoisins, type NiveauProximite } from '@/lib/reseau/proximite';
+import { initiale } from '@/lib/initiale';
 
 /**
  * Boutiques du quartier choisi et des environs (2026-09-18).
@@ -88,7 +89,7 @@ export function CarteBoutiqueProche({ b, carrousel = false }: { b: BoutiqueProch
             <img src={b.logo} alt="" className="w-12 h-12 rounded-2xl object-cover bg-white ring-4 ring-white" />
           ) : (
             <div className="w-12 h-12 rounded-2xl bg-white ring-4 ring-white text-suguba-profond text-lg font-bold flex items-center justify-center">
-              {b.nom.charAt(0).toUpperCase()}
+              {initiale(b.nom)}
             </div>
           )}
         </div>
