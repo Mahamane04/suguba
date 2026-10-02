@@ -10,6 +10,7 @@ import { Card, StatCard } from '@/components/ui/Surface';
 import { useSugubaStore } from '@/lib/store';
 import { usePosteAdmin } from '@/components/admin/contexte';
 import { TACHES, type TypeTache } from '@/lib/admin/poste';
+import { formatF } from '@/lib/montant';
 
 /**
  * Vue d'ensemble (refaite en U2, 2026-09-27).
@@ -38,7 +39,7 @@ const DESTINATION: Record<TypeTache, string> = {
   sponsorisation_a_examiner: '/admin/sponsorisations',
 };
 
-const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+const fcfa = formatF;
 
 export default function VueEnsemblePage() {
   const state = useSugubaStore();

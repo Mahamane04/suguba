@@ -21,6 +21,7 @@ import {
   Globe2, CreditCard, HeartHandshake, ShieldCheck, 
   Truck, ArrowRight, CheckCircle2, Phone, MapPin, Sparkles, Star, Camera, Lock
 } from 'lucide-react';
+import { formatF, formatDevise } from '@/lib/montant';
 
 export default function DiasporaPortalPage() {
   const state = useSugubaStore();
@@ -75,12 +76,12 @@ export default function DiasporaPortalPage() {
 
   const formatPrice = (xofPrice: number) => {
     if (currency === 'EUR') {
-      return `${(xofPrice / eurRate).toFixed(2)} €`;
+      return formatDevise(xofPrice / eurRate, 'EUR');
     }
     if (currency === 'USD') {
-      return `$${(xofPrice / usdRate).toFixed(2)}`;
+      return formatDevise(xofPrice / usdRate, 'USD');
     }
-    return `${xofPrice.toLocaleString('fr-FR')} FCFA`;
+    return `${formatF(xofPrice)}`;
   };
 
   /**
@@ -291,7 +292,7 @@ export default function DiasporaPortalPage() {
                       <p className="font-bold text-sm text-slate-900 line-clamp-2 leading-snug">{p.name}</p>
                       <p className="text-base font-bold text-slate-900">{formatPrice(p.publicPrice)}</p>
                       {currency !== 'XOF' && (
-                        <p className="text-xs text-slate-500">{p.publicPrice.toLocaleString('fr-FR')} FCFA</p>
+                        <p className="text-xs text-slate-500">{formatF(p.publicPrice)}</p>
                       )}
                     </div>
                   </button>

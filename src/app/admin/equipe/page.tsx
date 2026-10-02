@@ -12,6 +12,7 @@ import ChoicePicker from '@/components/ui/ChoicePicker';
 import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
 import { MIN_MOTIF_RETRAIT } from '@/lib/admin/equipe';
+import { FORMAT_DATE } from '@/lib/montant';
 
 /**
  * Équipe et permissions (§ 50 des écrans ; refonte U1 du 2026-09-27).
@@ -32,7 +33,7 @@ interface Membre {
 }
 interface Candidat { id: string; nom: string; contact: string | null; profils: string; dejaMembre: boolean; suspendu: boolean }
 
-const date = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
+const date = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString('fr-FR', FORMAT_DATE.complet) : '—');
 
 function EtatMfa({ mfa }: { mfa: boolean | null }) {
   if (mfa === true) return <StatusPill ton="succes">Activée</StatusPill>;

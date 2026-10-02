@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ReglagesPlateforme } from './pricing';
 import { modeRemiseCommande } from './offre';
+import { formatF } from '@/lib/montant';
 
 /**
  * Caisse livreurs (2026-09-25) — ce que chaque livreur doit remettre à
@@ -101,7 +102,7 @@ export function blocageEspeces(
   r: Pick<ReglagesPlateforme, 'plafondEspecesCollecteur' | 'delaiVersementEspecesHeures'>, maintenant = Date.now(),
 ): { bloque: boolean; raison: string | null } {
   const plafond = Math.max(0, Number(r.plafondEspecesCollecteur ?? 150000) || 0);
-  const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+  const fcfa = formatF;
   if (plafond > 0 && du >= plafond) {
     return { bloque: true, raison: `Plafond d’encaissement atteint (${fcfa(du)} à verser, plafond ${fcfa(plafond)}).` };
   }

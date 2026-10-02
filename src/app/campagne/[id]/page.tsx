@@ -10,6 +10,7 @@ import { chargerPageCampagne } from '@/lib/page-campagne';
 import { URL_APP } from '@/lib/shop';
 import { normaliserCodeRevendeur } from '@/lib/ancrage-revendeur';
 import { ArrowRight, KeyRound, ShieldCheck, Truck } from 'lucide-react';
+import { formatF } from '@/lib/montant';
 
 /**
  * Page de marque d'une campagne (2026-09-26, lot 2b) — /campagne/<id>.
@@ -74,7 +75,7 @@ export default async function PageCampagneMarque({ params, searchParams }: Param
           <div className="space-y-3">
             <h2 className="text-lg font-bold text-slate-900">{c.produit.nom}</h2>
             <p className="text-2xl font-bold text-suguba-brand-dark">
-              {c.produit.prix ? `${Math.round(c.produit.prix).toLocaleString('fr-FR')} FCFA` : <span className="text-base">Prix fixé par nos revendeurs partenaires</span>}
+              {c.produit.prix ? `${formatF(c.produit.prix)}` : <span className="text-base">Prix fixé par nos revendeurs partenaires</span>}
             </p>
             {c.active ? (
               <Link href={lienProduit} className="h-12 w-full rounded-2xl bg-suguba-profond hover:bg-suguba-profond-2 text-white text-sm font-bold inline-flex items-center justify-center gap-2">

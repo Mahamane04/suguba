@@ -7,14 +7,15 @@ import { Plus, X } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { Field, Input } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 interface Paiement {
   id: string; montant: number; reference: string; note: string | null;
   recuLe: string; annuleLe: string | null; motifAnnulation: string | null;
 }
 
-const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
-const date = (d: string) => new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+const fcfa = formatF;
+const date = (d: string) => new Date(d).toLocaleDateString('fr-FR', FORMAT_DATE.complet);
 
 /**
  * Paiements reçus d'une campagne ou d'une sponsorisation (2026-09-26,

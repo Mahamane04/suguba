@@ -20,6 +20,9 @@ import {
   Wallet, TrendingUp, ShoppingBag, Clock, Copy, Check, Plus, ChevronRight,
   Store, Calculator, Sparkles, QrCode, ShieldCheck, ClipboardList
 } from 'lucide-react';
+import { formatF, formatNombre, FORMAT_DATE } from '@/lib/montant';
+import { statutVente } from '@/lib/libelles-vente';
+import { StatusPill } from '@/components/ui/Surface';
 
 /**
  * Tableau de bord revendeur — converti au design system (2026-09-10).
@@ -98,7 +101,7 @@ export default function ResellerDashboardPage() {
   const approvedProducts = state.products.filter(p => p.status === 'approved' && p.publicPrice > 0 && p.resellerCommission > 0);
 
   const montant = (n: number) => charge && !moi ? '—' : charge
-    ? <>{n.toLocaleString('fr-FR')} <span className="text-xs font-bold text-slate-600">F</span></>
+    ? <>{formatNombre(n)} <span className="text-xs font-bold text-slate-600">F</span></>
     : <span className="inline-block h-6 w-20 rounded-lg bg-slate-200 animate-pulse align-middle" role="status" aria-label="Chargement" />;
 
   const ventesLivrees = moi?.successfulOrdersCount ?? myOrders.filter(o => o.status === 'delivered').length;
@@ -160,7 +163,7 @@ export default function ResellerDashboardPage() {
               <p className="text-xs font-bold text-slate-600 uppercase">Disponible au retrait</p>
               <p className="text-3xl font-bold text-slate-900">
                 {charge && !moi ? '—' : charge
-                  ? <>{availableBalance.toLocaleString('fr-FR')} <span className="text-sm font-bold text-slate-600">F</span></>
+                  ? <>{formatNombre(availableBalance)} <span className="text-sm font-bold text-slate-600">F</span></>
                   : <span className="inline-block h-8 w-32 rounded-lg bg-slate-200 animate-pulse align-middle" role="status" aria-label="Chargement du solde" />}
               </p>
             </div>
@@ -176,7 +179,7 @@ export default function ResellerDashboardPage() {
           <Indicateur icone={<Clock className="w-4 h-4" />} titre="En attente" note={moi ? `Débloqué ${palier.jours} jours après livraison` : 'Délai non confirmé'}>
             {montant(pendingBalance)}
           </Indicateur>
-          <Indicateur icone={<TrendingUp className="w-4 h-4" />} titre="Total gagné" note="Depuis votre inscription">
+          <Indicateur icone={<TrendingUp className="w-4 h-4" />} titre="Déjà versé" note="Commissions déjà retirées">
             {montant(totalEarned)}
           </Indicateur>
           <Indicateur className="col-span-2 sm:col-span-1" icone={<ShoppingBag className="w-4 h-4" />} titre="Ventes livrées" note={state.ordersSync === 'ready' ? `${myOrders.length} commande${myOrders.length > 1 ? 's' : ''} au total` : 'Total des commandes non confirmé'}>
@@ -262,10 +265,10 @@ export default function ResellerDashboardPage() {
                     <div className="flex-1 min-w-0 space-y-0.5">
                       <h3 className="font-bold text-sm text-slate-900 truncate">{product.name}</h3>
                       <p className="text-xs font-bold text-slate-900">
-                        {product.publicPrice.toLocaleString('fr-FR')} <span className="text-xs font-bold text-slate-600">F</span>
+                        {formatNombre(product.publicPrice)} <span className="text-xs font-bold text-slate-600">F</span>
                       </p>
                       <span className="inline-block px-2 py-0.5 bg-suguba-brand/10 text-suguba-brand-dark text-xs font-bold rounded-full">
-                        Vous gagnez {product.resellerCommission.toLocaleString('fr-FR')} F
+                        Vous gagnez {formatF(product.resellerCommission)}
                       </span>
                     </div>
                   </div>
@@ -314,12 +317,12 @@ export default function ResellerDashboardPage() {
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-sm text-slate-900 truncate">{order.productName}</p>
                     <p className="text-xs text-slate-600">
-                      {new Date(order.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
-                      {' • '}{order.totalAmount.toLocaleString('fr-FR')} F
+                      {new Date(order.createdAt).toLocaleDateString('fr-FR', FORMAT_DATE.jour)}
+                      {' • '}{formatF(order.totalAmount)}
                     </p>
                   </div>
                   <div className="text-right shrink-0 space-y-1">
-                    <p className="text-xs font-bold text-suguba-brand-dark">+{order.resellerCommission.toLocaleString('fr-FR')} F</p>
+                    <p className="text-xs font-bold text-suguba-brand-dark">+{formatF(order.resellerCommission)}</p>
                     <StatutVente status={order.status} />
                   </div>
                 </div>
@@ -416,15 +419,9 @@ function Raccourci({ href, onClick, disabled, icone, titre, sousTitre, empile }:
   return <button onClick={onClick} disabled={disabled} className={classes}>{contenu}</button>;
 }
 
+// Même vocabulaire que « Mes ventes » (REV-02, audit UI/UX du 2026-10-02) :
+// l'accueil disait « En route » / « En attente » quand Ventes disait autre chose.
 function StatutVente({ status }: { status: string }) {
-  if (status === 'delivered') {
-    return <span className="inline-block px-2 py-0.5 rounded-full bg-suguba-brand/10 text-suguba-brand-dark font-bold text-xs">Livrée</span>;
-  }
-  if (status === 'in_transit' || status === 'dispatched') {
-    return <span className="inline-block px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-bold text-xs">En route</span>;
-  }
-  if (status === 'cancelled' || status === 'returned') {
-    return <span className="inline-block px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 font-bold text-xs">Annulée</span>;
-  }
-  return <span className="inline-block px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-bold text-xs">En attente</span>;
+  const s = statutVente(status);
+  return <StatusPill ton={s.ton}>{s.libelle}</StatusPill>;
 }

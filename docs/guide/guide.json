@@ -192,6 +192,39 @@
  "journal": [
   {
    "date": "2026-10-02",
+   "titre": "Audit UI/UX, lot 2 : le langage de l’argent",
+   "demande": "« oui commit puis passe au lot 2 » — deuxième lot de l’audit UI/UX du 2 octobre : un seul format de montant et de date, les mêmes mots pour la même somme, l’état réel des commissions, une saisie de montant qui évite les zéros en trop.",
+   "realise": [
+    "Un seul format de montant partout : « 24 000 F ». Fini « 215 000 FCFA » sur la fiche produit, le suivi, le reçu et les ventes, et « 172k F » dans les analyses fournisseur. Les 39 petites fonctions de formatage du code passent par une seule (lib/montant.ts) ; 79 montants écrits à la main aussi.",
+    "Diaspora : montants en euros avec la virgule française (« 36,59 € » au lieu de « 36.59 € »).",
+    "Dates : deux familles seulement — « 1 oct. » / « 1 oct., 05:53 » dans les listes, « 1 oct. 2026 » dans les détails (49 formats remplacés).",
+    "Revendeur, « Mes ventes » : un statut clair pour chacune des 8 étapes (4 n’en avaient pas), et sur chaque vente « Votre commission » dit quand l’argent devient retirable, ou s’il est déjà versé — lu dans les commissions réelles (l’ancienne bande ne lisait qu’une liste vide). « Livré & Encaissé » et « Ta Commission » disparaissent ; écran vide avec « Choisir un produit à partager ».",
+    "Revendeur : « Déjà versé » sur l’accueil comme dans Mes gains (au lieu de « Total gagné ») ; mêmes statuts sur l’accueil et dans Mes ventes ; dans Mes gains, chaque somme en attente est rattachée à son produit, sans jargon ; le bouton dit le montant (« Demander le virement de 6 000 F »).",
+    "Champs d’argent (12, équipe et fournisseur) : « F » dans le champ et rappel du montant dessous (« = 25 000 F »), pour qu’un zéro de trop se voie.",
+    "9 tests ajoutés ; 443 tests réussis ; TypeScript, linter et compilation isolée réussis. Vérifié à l’écran : fiche produit, commande, diaspora."
+   ],
+   "ecarts": [
+    "Les textes légaux et le choix de devise de la diaspora gardent « FCFA » (nom de la monnaie).",
+    "Le graphique des analyses fournisseur garde l’abréviation « 172k » sur ses étiquettes (place comptée) ; les montants affichés sont complets.",
+    "Formats de date gardés volontairement longs : documents (« 1 octobre 2026 ») et calendrier (jour de la semaine).",
+    "Les champs d’argent bruts de la création d’offre et de produit prennent le style commun des champs (fond blanc).",
+    "Écrans connectés (revendeur, équipe) vérifiés par le code et les tests, pas à l’écran. Captures du guide à refaire.",
+    "Aucune migration ; /api/reseller/me renvoie en plus le détail des commissions du revendeur."
+   ],
+   "pages": [
+    "rev-ventes",
+    "rev-gains",
+    "rev-accueil",
+    "fiche-produit",
+    "commander",
+    "adm-sponsorisations",
+    "fou-ajouter",
+    "fou-devis"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-10-02",
    "titre": "Audit UI/UX, lot 1 : les urgences",
    "demande": "« oui commence par le lot 1 » — premier lot de l’audit UI/UX du 2 octobre (docs/qa/audit-ui-ux-2026-10-02.md) : chiffre d’argent faux du livreur, confirmations sans appel, impasses et petites mises en page cassées.",
    "realise": [
@@ -2884,7 +2917,7 @@
     },
     {
      "nom": "Dernières ventes",
-     "role": "Les ventes récentes ; « Voir tout » ouvre Mes ventes."
+     "role": "Les ventes récentes, avec les mêmes statuts que « Mes ventes » ; « Voir tout » ouvre Mes ventes."
     },
     {
      "nom": "Outils de vente",
@@ -2893,6 +2926,10 @@
     {
      "nom": "Mes prix · Mes boutiques",
      "role": "Prix des articles au prix de gros ; boutiques supplémentaires avec la formule Pro."
+    },
+    {
+     "nom": "Disponible au retrait · En attente · Déjà versé",
+     "role": "Les mêmes mots que dans « Mes gains » pour les mêmes sommes (« Déjà versé » remplace « Total gagné »)."
     }
    ],
    "suite": [
@@ -3066,11 +3103,15 @@
    "elements": [
     {
      "nom": "Filtres",
-     "role": "Toutes · Livrées & payées · En cours de livraison · À confirmer."
+     "role": "Toutes · À confirmer · En livraison · Livrées."
     },
     {
-     "nom": "Carte commande",
-     "role": "Client, produit, statut, commission."
+     "nom": "Carte de vente",
+     "role": "Statut de la vente (un libellé pour chacun des 8 statuts), produit, total client, client. En bas, « Votre commission » : « Arrive après la livraison », « Retirable le 15 oct. », « Retirable maintenant », « Retrait en cours », « Versée » ou « Vente annulée : pas de commission », lu dans les commissions du serveur."
+    },
+    {
+     "nom": "Aucune vente",
+     "role": "Explique ce qui apparaîtra ici et propose « Choisir un produit à partager » ; sur un filtre vide, « Voir toutes mes ventes »."
     }
    ],
    "suite": [
@@ -3108,11 +3149,15 @@
     },
     {
      "nom": "Demander le virement",
-     "role": "Crée la demande ; Suguba la paie depuis l’admin."
+     "role": "Le bouton dit le montant (« Demander le virement de 6 000 F ») ; crée la demande, que Suguba paie depuis l’admin."
     },
     {
      "nom": "Historique des retraits",
      "role": "Toutes les demandes, leur état, et les frais déduits."
+    },
+    {
+     "nom": "Commissions en attente",
+     "role": "Chaque somme avec le produit vendu et quand elle devient retirable (« Retirable le 15 oct. », « Arrive après la livraison »)."
     }
    ],
    "suite": [
@@ -3984,7 +4029,7 @@
     },
     {
      "nom": "Part du revendeur par vente",
-     "role": "**Le fournisseur décide** combien il laisse au revendeur (en FCFA), en plus de son prix."
+     "role": "**Le fournisseur décide** combien il laisse au revendeur, en plus de son prix. Les champs de prix affichent « F » et rappellent le montant sous le champ (« = 25 000 F »)."
     },
     {
      "nom": "Sur chaque vente (aperçu)",
@@ -5128,7 +5173,7 @@
    "but": "Tarifs des packs et demandes des fournisseurs.",
    "elements": [
     {
-     "nom": "Prix (FCFA)",
+     "nom": "Prix",
      "role": "Modifier le prix de chaque pack, puis « Enregistrer »."
     },
     {

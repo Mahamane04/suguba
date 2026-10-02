@@ -13,6 +13,7 @@ import Panneau, { Info } from '@/components/admin/Panneau';
 import DossierCommande, { useCommandeParNumero } from '@/components/admin/DossierCommande';
 import { usePosteAdmin } from '@/components/admin/contexte';
 import { METIERS, anciennete, metierAffiche, urgence, type Metier, type TacheAffichee } from '@/lib/admin/poste';
+import { formatF } from '@/lib/montant';
 
 interface Collegue { id: string; nom: string; types: string[] }
 interface Reponse {
@@ -22,7 +23,7 @@ interface Reponse {
 type Filtre = 'toutes' | 'miennes' | 'libres';
 
 const COULEUR_URGENCE = { normale: 'text-slate-500', a_surveiller: 'text-amber-700 font-semibold', en_retard: 'text-rose-700 font-bold' } as const;
-const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+const fcfa = formatF;
 
 /** Lien « Pourquoi c'est bloqué ? » d'une tâche, s'il y en a un. */
 function diagnostic(t: TacheAffichee): string | null {

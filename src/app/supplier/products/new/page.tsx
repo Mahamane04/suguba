@@ -19,6 +19,8 @@ import {
   PackagePlus, ShieldCheck, CheckCircle2, ArrowLeft
 } from 'lucide-react';
 import Link from 'next/link';
+import { formatF } from '@/lib/montant';
+import { MontantInput } from '@/components/ui/Field';
 
 export default function NewSupplierProductPage() {
   const router = useRouter();
@@ -94,7 +96,7 @@ export default function NewSupplierProductPage() {
     }, 350);
     return () => { clearTimeout(minuteur); controle.abort(); };
   }, [supplierPrice, partRevendeur, modePrix, prixConseille]);
-  const fmt = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+  const fmt = formatF;
 
   const [step, setStep] = useState(0);
   const formTop = useRef<HTMLOListElement>(null);
@@ -240,7 +242,7 @@ export default function NewSupplierProductPage() {
               </h2>
               <p className="text-xs text-slate-600 mt-1 max-w-md mx-auto">
                 {publication?.publie
-                  ? `Il est visible dans le catalogue au prix de ${(publication.prix ?? 0).toLocaleString('fr-FR')} F. Vous toucherez votre prix fournisseur sur chaque vente livrée.`
+                  ? `Il est visible dans le catalogue au prix de ${formatF((publication.prix ?? 0))}. Vous toucherez votre prix fournisseur sur chaque vente livrée.`
                   : `Pas encore en vente : ${publication?.raison || 'Suguba doit fixer son prix.'}`}
               </p>
             </div>
@@ -398,10 +400,9 @@ export default function NewSupplierProductPage() {
               </div>
               {modeRemise === 'fournisseur' && (
                 <div>
-                  <label htmlFor="frais-remise" className="block text-xs font-bold text-slate-700 mb-1">Frais de déplacement ou de remise (FCFA)</label>
-                  <input id="frais-remise" type="number" min={0} step={500} value={fraisRemise}
-                    onChange={(e) => setFraisRemise(Math.max(0, parseInt(e.target.value) || 0))}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:bg-white" />
+                  <label htmlFor="frais-remise" className="block text-xs font-bold text-slate-700 mb-1">Frais de déplacement ou de remise</label>
+                  <MontantInput id="frais-remise" min={0} step={500} value={fraisRemise}
+                    onChange={(e) => setFraisRemise(Math.max(0, parseInt(e.target.value) || 0))} />
                   <span className="text-xs text-slate-500 mt-1 block">Payés par le client en plus du prix, à la place de la livraison Suguba. Mettez 0 si c’est inclus.</span>
                 </div>
               )}
@@ -452,17 +453,15 @@ export default function NewSupplierProductPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="offre-prix" className="block text-xs font-bold text-slate-700 mb-1">
-                  {modePrix === 'gros' ? 'Prix de gros (FCFA) *' : 'Prix Fournisseur Plancher Garanti (FCFA) *'}
+                  {modePrix === 'gros' ? 'Prix de gros *' : 'Prix Fournisseur Plancher Garanti *'}
                 </label>
-                <input id="offre-prix"
-                  type="number"
+                <MontantInput id="offre-prix"
                   required
                   min={1000}
                   step={500}
-                  placeholder="Ex: 30000"
+                  placeholder="Ex. : 30 000"
                   value={supplierPrice}
                   onChange={(e) => setSupplierPrice(e.target.value === '' ? '' : parseInt(e.target.value))}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:bg-white"
                 />
                 <span className="text-xs text-slate-500 mt-1 block">
                   Montant exact que vous toucherez sur chaque vente livrée.
@@ -528,15 +527,13 @@ export default function NewSupplierProductPage() {
             <div className={`rounded-2xl border border-slate-200 p-4 space-y-3 ${modePrix === 'gros' ? 'hidden' : ''}`}>
               <div>
                 <label htmlFor="offre-part" className="block text-xs font-bold text-slate-700 mb-1">
-                  Part du revendeur par vente (FCFA)
+                  Part du revendeur par vente
                 </label>
-                <input id="offre-part"
-                  type="number"
+                <MontantInput id="offre-part"
                   min={0}
                   step={250}
                   value={partRevendeur}
                   onChange={(e) => setPartRevendeur(e.target.value === '' ? '' : parseInt(e.target.value))}
-                  className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:bg-white"
                 />
                 <span className="text-xs text-slate-500 mt-1 block">
                   C’est vous qui décidez : ce que vous laissez au revendeur qui vend votre produit, en plus de votre prix.

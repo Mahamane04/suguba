@@ -7,11 +7,12 @@ import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
 import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
+import { FORMAT_DATE } from '@/lib/montant';
 
 interface Membre { id: string; nom: string; role: string; mfa: boolean | null; connexions: { le: string; appareil: string; aal: string | null }[]; deconnecteLe: string | null }
 interface Donnees { reglages: { mfaObligatoire: boolean; seuilValidation: number; disponible: boolean }; membres: Membre[] }
 
-const date = (iso: string) => new Date(iso).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+const date = (iso: string) => new Date(iso).toLocaleString('fr-FR', FORMAT_DATE.jourHeure);
 /** « Chrome sur Windows » plutôt qu'un agent utilisateur illisible. */
 function appareil(ua: string): string {
   const nav = /Edg\//.test(ua) ? 'Edge' : /Chrome\//.test(ua) ? 'Chrome' : /Firefox\//.test(ua) ? 'Firefox' : /Safari\//.test(ua) ? 'Safari' : 'Navigateur';

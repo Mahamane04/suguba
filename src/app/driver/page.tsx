@@ -20,6 +20,7 @@ import {
   Banknote, Package, Navigation, AlertCircle, ArrowRight,
   Compass, MessageCircle, Printer, Wallet, ShieldCheck
 } from 'lucide-react';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 const OtpValidationModal = dynamic(() => import('@/components/driver/OtpValidationModal'));
 const DeliveryMapModal = dynamic(() => import('@/components/driver/DeliveryMapModal'));
@@ -61,7 +62,7 @@ export default function DriverDashboardPage() {
   // Même source que le portefeuille (LIV-01, audit UI/UX du 2026-10-02) : la
   // somme faite ici comptait aussi les espèces déjà versées à Suguba.
   const { caisse, caisseServeur, aRemettre, etat: etatCaisse } = useCaisseLivreur(myDeliveredOrders, remuneration);
-  const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+  const fcfa = formatF;
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
@@ -182,7 +183,7 @@ export default function DriverDashboardPage() {
                       ) : (
                         <div className="px-3 py-1 bg-amber-100 border border-amber-300 rounded-full text-amber-900 font-bold text-xs flex items-center space-x-1">
                           <Banknote className="w-3.5 h-3.5 text-amber-700" />
-                          <span>À encaisser chez le client : {order.totalAmount.toLocaleString('fr-FR')} F</span>
+                          <span>À encaisser chez le client : {formatF(order.totalAmount)}</span>
                         </div>
                       )}
                     </div>
@@ -289,7 +290,7 @@ export default function DriverDashboardPage() {
                     <p className="font-semibold text-sm text-slate-900 truncate">{order.productName}</p>
                     <p className="text-xs text-slate-600 truncate">
                       #{order.orderNumber} · {order.neighborhood}
-                      {order.deliveredAt ? ` · ${new Date(order.deliveredAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}` : ''}
+                      {order.deliveredAt ? ` · ${new Date(order.deliveredAt).toLocaleDateString('fr-FR', FORMAT_DATE.jour)}` : ''}
                     </p>
                   </div>
                   <div className="text-right shrink-0">

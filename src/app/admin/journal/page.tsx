@@ -6,10 +6,11 @@ import { ScrollText, Search } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
 import { Card, EmptyState, Skeleton } from '@/components/ui/Surface';
+import { FORMAT_DATE } from '@/lib/montant';
 
 interface Entree { id: number; cree_le: string; auteur: string; action: string; dossier: string | null; motif: string | null; apres: Record<string, unknown> | null }
 
-const dateHeure = (iso: string) => new Date(iso).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+const dateHeure = (iso: string) => new Date(iso).toLocaleString('fr-FR', FORMAT_DATE.completHeure);
 
 /**
  * Journal des actions de l'équipe (A2, 2026-09-27) : qui a fait quoi, quand,

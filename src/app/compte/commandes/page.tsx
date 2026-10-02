@@ -11,6 +11,7 @@ import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface'
 import { useToast } from '@/components/ui/Toast';
 import { devisAccessKey, devisSurCetAppareil, orderAccessKey, recusSurCetAppareil } from '@/lib/order-access-client';
 import OngletsCompte from '@/components/compte/OngletsCompte';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 interface Commande { numero: string; produit: string; image: string | null; quantite: number; total: number; statut: string; creeLe: string; livreeLe: string | null; racheter: string | null }
 interface Devis { numero: string; produit: string; statut: string; creeLe: string; commande: string | null }
@@ -22,8 +23,8 @@ const STATUT: Record<string, [string, 'succes' | 'attente' | 'neutre' | 'danger'
 const STATUT_DEVIS: Record<string, string> = {
   demande: 'En attente de réponse', proposee: 'Prix proposé', acceptee: 'Accepté', refusee_client: 'Refusé', refusee_fournisseur: 'Sans suite',
 };
-const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
-const jour = (d: string) => new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
+const fcfa = formatF;
+const jour = (d: string) => new Date(d).toLocaleDateString('fr-FR', FORMAT_DATE.complet);
 
 /**
  * Mes commandes (2026-09-26, compte client — C1) : commandes et devis du

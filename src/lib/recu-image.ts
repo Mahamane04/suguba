@@ -1,6 +1,7 @@
 import QRCode from 'qrcode';
 import type { RecuCommande } from './recu-commande';
 import { contenuQrRemise } from './qr-remise';
+import { formatF } from '@/lib/montant';
 
 /**
  * Image du reçu client (2026-09-25), dessinée dans le téléphone (canvas),
@@ -16,7 +17,8 @@ const PROFOND = '#0B3B2C';
 const TEXTE = '#0f172a';
 const GRIS = '#475569';
 const POLICE = 'system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif';
-const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR').replace(/ | /g, ' ')} F`;
+// Sur le canvas, espaces ordinaires (certaines polices n'ont pas l'espace insécable).
+const fcfa = (n: number) => formatF(n).replace(/\u00a0/g, ' ');
 const date = (iso: string) => new Date(iso).toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' });
 
 function couper(ctx: CanvasRenderingContext2D, texte: string, largeur: number): string[] {

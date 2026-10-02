@@ -11,6 +11,7 @@ import {
   FileText, Building2, Printer, MessageCircle, 
   ArrowLeft, CheckCircle2, ShieldCheck, Download, Sparkles, Phone, Mail
 } from 'lucide-react';
+import { formatF } from '@/lib/montant';
 
 export default function B2BQuotePage() {
   const state = useSugubaStore();
@@ -62,7 +63,7 @@ export default function B2BQuotePage() {
       `🏢 *Société :* ${companyName || 'Non spécifié'}\n` +
       `👤 *Contact :* ${contactName} (${contactPhone})\n` +
       `📦 *Produit :* ${selectedProduct?.name} (x${quantity} unités)\n` +
-      `💰 *Total HT :* ${totalAmount.toLocaleString('fr-FR')} FCFA (${discountPercent}% de remise volume)\n` +
+      `💰 *Total HT :* ${formatF(totalAmount)} (${discountPercent}% de remise volume)\n` +
       `📍 *Livraison :* ${deliveryCity}\n\n` +
       `Merci de nous transmettre le bon pour accord pour préparation de la commande.`;
 
@@ -183,7 +184,7 @@ export default function B2BQuotePage() {
                   choix={products.map((p) => ({
                     valeur: p.id,
                     libelle: p.name,
-                    detail: `${p.publicPrice.toLocaleString('fr-FR')} FCFA / unité`,
+                    detail: `${formatF(p.publicPrice)} / unité`,
                   }))}
                 />
               </div>
@@ -215,29 +216,29 @@ export default function B2BQuotePage() {
             <div className="bg-slate-900 text-white p-5 rounded-3xl space-y-3">
               <div className="flex justify-between items-center text-xs text-slate-300">
                 <span>Prix unitaire catalogue :</span>
-                <span className="font-bold">{unitPrice.toLocaleString('fr-FR')} FCFA</span>
+                <span className="font-bold">{formatF(unitPrice)}</span>
               </div>
 
               <div className="flex justify-between items-center text-xs text-slate-300">
                 <span>Montant Brut ({quantity} unités) :</span>
-                <span className="font-bold">{rawSubtotal.toLocaleString('fr-FR')} FCFA</span>
+                <span className="font-bold">{formatF(rawSubtotal)}</span>
               </div>
 
               {discountPercent > 0 && (
                 <div className="flex justify-between items-center text-xs text-emerald-400 font-bold">
                   <span>Remise Volume Entreprise (-{discountPercent}%) :</span>
-                  <span>- {discountAmount.toLocaleString('fr-FR')} FCFA</span>
+                  <span>- {formatF(discountAmount)}</span>
                 </div>
               )}
 
               <div className="flex justify-between items-center text-xs text-slate-300">
                 <span>Livraison dédiée & Manutention :</span>
-                <span className="font-bold">{deliveryFee === 0 ? 'OFFERTE (Dès 20 pcs)' : `${deliveryFee.toLocaleString('fr-FR')} FCFA`}</span>
+                <span className="font-bold">{deliveryFee === 0 ? 'OFFERTE (Dès 20 pcs)' : `${formatF(deliveryFee)}`}</span>
               </div>
 
               <div className="pt-3 border-t border-white/20 flex justify-between items-center text-base font-bold text-white">
                 <span>Total Net Devis :</span>
-                <span className="text-amber-400 text-xl font-bold">{totalAmount.toLocaleString('fr-FR')} FCFA</span>
+                <span className="text-amber-400 text-xl font-bold">{formatF(totalAmount)}</span>
               </div>
             </div>
 
@@ -340,23 +341,23 @@ export default function B2BQuotePage() {
                       )}
                     </td>
                     <td className="py-3 text-center font-bold">{quantity}</td>
-                    <td className="py-3 text-right font-mono">{unitPrice.toLocaleString('fr-FR')} F</td>
+                    <td className="py-3 text-right font-mono">{formatF(unitPrice)}</td>
                     <td className="py-3 text-right font-mono text-emerald-700">-{discountPercent}%</td>
-                    <td className="py-3 text-right font-bold font-mono">{subtotalAfterDiscount.toLocaleString('fr-FR')} F</td>
+                    <td className="py-3 text-right font-bold font-mono">{formatF(subtotalAfterDiscount)}</td>
                   </tr>
                   <tr>
                     <td className="py-2.5 text-slate-600">Livraison & Manutention sur site ({deliveryCity})</td>
                     <td className="py-2.5 text-center">1</td>
-                    <td className="py-2.5 text-right font-mono">{deliveryFee.toLocaleString('fr-FR')} F</td>
+                    <td className="py-2.5 text-right font-mono">{formatF(deliveryFee)}</td>
                     <td className="py-2.5 text-right">-</td>
-                    <td className="py-2.5 text-right font-bold font-mono">{deliveryFee.toLocaleString('fr-FR')} F</td>
+                    <td className="py-2.5 text-right font-bold font-mono">{formatF(deliveryFee)}</td>
                   </tr>
                 </tbody>
                 <tfoot>
                   <tr className="border-t-2 border-slate-900">
                     <td colSpan={4} className="py-3 text-right font-bold text-sm">TOTAL NET À PAYER :</td>
                     <td className="py-3 text-right font-bold text-base text-emerald-700 font-mono">
-                      {totalAmount.toLocaleString('fr-FR')} FCFA
+                      {formatF(totalAmount)}
                     </td>
                   </tr>
                 </tfoot>

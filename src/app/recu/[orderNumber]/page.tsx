@@ -20,8 +20,9 @@ import { whatsappHelper } from '@/lib/whatsapp-helper';
 import type { RecuCommande } from '@/lib/recu-commande';
 import { AlertTriangle, Camera, CheckCircle2, Circle, Clock, Download, LifeBuoy, Printer, Send, Truck, X } from 'lucide-react';
 import type { ArticleRecu } from '@/lib/recu-commande';
+import { formatF } from '@/lib/montant';
 
-const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+const fcfa = formatF;
 const dateLongue = (iso: string) => new Date(iso).toLocaleString('fr-FR', { dateStyle: 'long', timeStyle: 'short' });
 
 /**

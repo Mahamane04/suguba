@@ -12,6 +12,7 @@ import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface'
 import { useToast } from '@/components/ui/Toast';
 import { progression } from '@/lib/reseau/missions';
 import { contestable, estTypeResultat, DELAI_CONTESTATION_H, PRIX_MIN, type TypeResultat } from '@/lib/reseau/resultats-constantes';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 /**
  * Campagnes (§ page 24) : le fournisseur mobilise des revendeurs autour d'un
@@ -50,7 +51,7 @@ const STATUT: Record<string, [string, 'succes' | 'attente' | 'neutre']> = {
   draft: ['En attente de validation', 'attente'], active: ['En cours', 'succes'],
   paused: ['En pause', 'neutre'], ended: ['Terminée', 'neutre'],
 };
-const fcfa = (v: number) => `${Math.round(v).toLocaleString('fr-FR')} F`;
+const fcfa = formatF;
 
 export default function CampagnesPage() {
   const { toast } = useToast();
@@ -294,7 +295,7 @@ function ResultatsCampagne({ campagneId, onMaj }: { campagneId: string; onMaj: (
                 <div className="flex items-center justify-between gap-2">
                   <span className="text-xs text-slate-700 min-w-0 truncate">
                     {r.genre === 'visite' ? 'Visite' : 'Demande'} via {r.revendeur.nom} · {fcfa(r.prix)} ·{' '}
-                    {new Date(r.creeLe).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                    {new Date(r.creeLe).toLocaleString('fr-FR', FORMAT_DATE.jourHeure)}
                   </span>
                   <StatusPill ton={ton}>{libelle}</StatusPill>
                 </div>

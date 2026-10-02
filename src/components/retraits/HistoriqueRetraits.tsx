@@ -5,6 +5,7 @@ import { History, Wallet } from 'lucide-react';
 import EmptyState from '@/components/ui/EmptyState';
 import PaymentLogo, { moyenDepuisCode } from '@/components/ui/PaymentLogo';
 import type { RetraitAffiche } from '@/lib/retraits-affichage';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 const STATUTS: Record<string, { libelle: string; classe: string }> = {
   pending: { libelle: 'En attente', classe: 'bg-amber-50 text-amber-800' },
@@ -13,7 +14,7 @@ const STATUTS: Record<string, { libelle: string; classe: string }> = {
   rejected: { libelle: 'Refusé', classe: 'bg-rose-50 text-rose-700' },
 };
 
-const enF = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+const enF = formatF;
 
 /** Historique des retraits — commun au revendeur et au fournisseur (lot C, 2026-09-27). */
 export default function HistoriqueRetraits({ retraits }: { retraits: RetraitAffiche[] }) {
@@ -39,7 +40,7 @@ export default function HistoriqueRetraits({ retraits }: { retraits: RetraitAffi
                       <p className="text-xs text-slate-500">Demandé {enF(r.montantDemande ?? r.montant)}, frais {enF(r.frais as number)}</p>
                     )}
                     <p className="text-xs text-slate-500 truncate">
-                      {new Date(r.creeLe).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      {new Date(r.creeLe).toLocaleDateString('fr-FR', FORMAT_DATE.complet)}
                       {' · '}<span className="font-mono">{r.id}</span>
                     </p>
                   </div>

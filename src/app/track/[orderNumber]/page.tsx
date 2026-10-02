@@ -19,6 +19,7 @@ import {
   CheckCircle2, Clock, Phone, MapPin, Truck, 
   KeyRound, ShieldCheck, MessageCircle, AlertCircle, ArrowLeft, RefreshCw, XCircle
 } from 'lucide-react';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 // Tous les statuts de OrderStatus : « annulée » et « retournée » affichaient
 // une pastille vide, et les libellés étaient en capitales criardes.
@@ -196,7 +197,7 @@ export default function OrderTrackingPage() {
       id: 'step-ramassage',
       title: 'Colis récupéré chez le vendeur',
       desc: order.pickedUpAt
-        ? `Le ${new Date(order.pickedUpAt).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} · en route vers vous`
+        ? `Le ${new Date(order.pickedUpAt).toLocaleString('fr-FR', FORMAT_DATE.jourHeure)} · en route vers vous`
         : 'Le livreur récupère votre article',
       done: ['in_transit', 'delivered'].includes(order.status),
       current: order.status === 'in_transit',
@@ -271,7 +272,7 @@ export default function OrderTrackingPage() {
             <div className="min-w-0 flex-1">
               <h3 className="font-bold text-xs text-slate-900 truncate">{order.productName}</h3>
               <p className="text-xs text-slate-500">Quantité : <strong>{order.quantity}</strong></p>
-              <p className="text-xs font-bold text-emerald-700">Total : {order.totalAmount.toLocaleString('fr-FR')} FCFA</p>
+              <p className="text-xs font-bold text-emerald-700">Total : {formatF(order.totalAmount)}</p>
             </div>
           </div>
 

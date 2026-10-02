@@ -22,8 +22,9 @@ import OffresRevendeurs, { type OffreRevendeurVue } from '@/components/product/O
 import VisiteQualifiee from '@/components/product/VisiteQualifiee';
 import BoutonQuestionFournisseur from '@/components/messagerie/BoutonQuestionFournisseur';
 import BoutonFavori from '@/components/compte/BoutonFavori';
+import { formatF, formatNombre } from '@/lib/montant';
 
-const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} FCFA`;
+const fcfa = formatF;
 
 export default function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
   const resolvedParams = use(params);
@@ -243,7 +244,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             }`}
           >
             <span className="text-sm font-bold text-slate-900 whitespace-nowrap">
-              {aPartirDe ? 'dès ' : ''}{Math.round(prixAffiche).toLocaleString('fr-FR')} F{unite && <span className="text-xs font-semibold text-slate-600"> {unite}</span>}
+              {aPartirDe ? 'dès ' : ''}{formatF(prixAffiche)}{unite && <span className="text-xs font-semibold text-slate-600"> {unite}</span>}
             </span>
             <button
               type="button"
@@ -325,7 +326,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
               <div className="flex items-center justify-between gap-3">
                 <p className="text-2xl font-bold text-suguba-brand-dark whitespace-nowrap">
                   {aPartirDe && <span className="block text-xs font-bold text-slate-500">À partir de</span>}
-                  {Math.round(prixAffiche).toLocaleString('fr-FR')} <span className="text-base">FCFA</span>
+                  {formatNombre(prixAffiche)} <span className="text-base">F</span>
                   {unite && <span className="block text-sm font-semibold text-slate-600">{unite}</span>}
                   {minimum && <span className="block text-xs font-semibold text-slate-500">{minimum}</span>}
                 </p>

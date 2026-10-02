@@ -5,6 +5,7 @@ import { Users, TrendingUp, Package, Trophy } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
 import { Card, EmptyState, Skeleton, StatCard, StatusPill } from '@/components/ui/Surface';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 /**
  * Mon réseau de revendeurs (§ 22 des écrans).
@@ -101,12 +102,12 @@ export default function RevendeursFournisseurPage() {
                     {r.articles} article{r.articles > 1 ? 's' : ''}
                     {r.ville && <span>· {r.ville}</span>}
                     {r.derniereActivite && (
-                      <span>· actif le {new Date(r.derniereActivite).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}</span>
+                      <span>· actif le {new Date(r.derniereActivite).toLocaleDateString('fr-FR', FORMAT_DATE.jour)}</span>
                     )}
                   </p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-sm font-bold text-slate-900 tabular-nums">{r.chiffreAffaires.toLocaleString('fr-FR')} F</p>
+                  <p className="text-sm font-bold text-slate-900 tabular-nums">{formatF(r.chiffreAffaires)}</p>
                   <p className="text-xs text-slate-500">{r.commandes} commande{r.commandes > 1 ? 's' : ''}</p>
                 </div>
               </div>

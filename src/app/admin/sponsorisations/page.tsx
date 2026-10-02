@@ -4,12 +4,13 @@ import React, { useEffect, useState } from 'react';
 import { Megaphone, Check, X, Pause, Eye, MousePointerClick } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
-import { Field, Input } from '@/components/ui/Field';
+import { Field, Input, MontantInput } from '@/components/ui/Field';
 import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
 import { classeCible, useCibleUrl, useDefilerVersCible } from '@/components/admin/contexte';
 import { EMPLACEMENTS } from '@/lib/reseau/sponsoring';
 import PaiementsRecus from '@/components/admin/PaiementsRecus';
+import { formatF } from '@/lib/montant';
 
 /**
  * Administration de la sponsorisation (§ 47 des écrans) : packs (prix, quotas,
@@ -103,11 +104,9 @@ export default function SponsorisationsAdminPage() {
                     </p>
                     <div className="flex items-end gap-2">
                       <div className="flex-1">
-                        <Field label="Prix (FCFA)" htmlFor={`prix-${p.id}`}>
-                          <Input
+                        <Field label="Prix" htmlFor={`prix-${p.id}`}>
+                          <MontantInput
                             id={`prix-${p.id}`}
-                            type="number"
-                            inputMode="numeric"
                             min={0}
                             step={500}
                             value={prix[p.id] ?? ''}
@@ -138,7 +137,7 @@ export default function SponsorisationsAdminPage() {
                     <div className="min-w-0">
                       <p className="text-sm font-bold text-slate-900 truncate">{s.libelle || 'Sponsorisation'}</p>
                       <p className="text-xs text-slate-500 mt-0.5">
-                        {nomEmplacement(s.emplacement)} · {s.budget.toLocaleString('fr-FR')} F
+                        {nomEmplacement(s.emplacement)} · {formatF(s.budget)}
                       </p>
                     </div>
                     <StatusPill ton={TON[s.statut] || 'neutre'}>{LIBELLE_STATUT[s.statut] || s.statut}</StatusPill>

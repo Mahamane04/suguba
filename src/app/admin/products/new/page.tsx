@@ -11,6 +11,8 @@ import ChoicePicker from '@/components/ui/ChoicePicker';
 import {
   PackagePlus, ShieldCheck, CheckCircle2, ArrowLeft, AlertTriangle
 } from 'lucide-react';
+import { formatF } from '@/lib/montant';
+import { MontantInput } from '@/components/ui/Field';
 
 /**
  * Création de produit par l'admin — l'équivalent côté Suguba de
@@ -186,7 +188,7 @@ export default function AdminNewProductPage() {
               </h2>
               <p className="text-xs text-slate-600 mt-1">
                 {publieOk
-                  ? `Il est visible dans le catalogue et partageable. Commission revendeur calculée : ${(commissionCalculee ?? 0).toLocaleString('fr-FR')} F.`
+                  ? `Il est visible dans le catalogue et partageable. Commission revendeur calculée : ${formatF((commissionCalculee ?? 0))}.`
                   : submitError}
               </p>
             </div>
@@ -265,27 +267,23 @@ export default function AdminNewProductPage() {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="champ-Prix-fournisseur-FCFA-" className="block text-xs font-bold text-slate-700 mb-1">Prix fournisseur (FCFA) *</label>
-              <input id="champ-Prix-fournisseur-FCFA-"
-                    type="number"
+                  <label htmlFor="champ-Prix-fournisseur-FCFA-" className="block text-xs font-bold text-slate-700 mb-1">Prix fournisseur *</label>
+              <MontantInput id="champ-Prix-fournisseur-FCFA-"
                     min={0}
                     step={500}
                     value={supplierPrice}
                     onChange={(e) => setSupplierPrice(parseInt(e.target.value) || 0)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-900 focus:bg-white"
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="champ-Prix-public-FCFA-" className="block text-xs font-bold text-slate-700 mb-1">Prix public (FCFA) *</label>
-              <input id="champ-Prix-public-FCFA-"
-                    type="number"
+                  <label htmlFor="champ-Prix-public-FCFA-" className="block text-xs font-bold text-slate-700 mb-1">Prix public *</label>
+              <MontantInput id="champ-Prix-public-FCFA-"
                     required
                     min={0}
                     step={500}
                     value={publicPrice}
                     onChange={(e) => setPublicPrice(parseInt(e.target.value) || 0)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold text-slate-700 focus:bg-white"
                   />
                 </div>
 

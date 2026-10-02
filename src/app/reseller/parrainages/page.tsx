@@ -12,6 +12,7 @@ import ChoicePicker from '@/components/ui/ChoicePicker';
 import { Card, EmptyState, Skeleton, StatCard, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
 import { useCodeRevendeur } from '@/lib/partage';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 /**
  * Parrainages (§ 16 des écrans).
@@ -95,7 +96,7 @@ export default function ParrainagesPage() {
         <StatCard label="Invitations" valeur={totaux.invitations} icone={UserPlus} />
         <StatCard label="Revendeurs" valeur={totaux.revendeurs} icone={Users} />
         <StatCard label="Clients" valeur={totaux.clients} />
-        <StatCard label="Gains" valeur={`${totaux.gains.toLocaleString('fr-FR')} F`} icone={Gift} accent />
+        <StatCard label="Gains" valeur={`${formatF(totaux.gains)}`} icone={Gift} accent />
       </div>
 
       <CarteLien
@@ -147,11 +148,11 @@ export default function ParrainagesPage() {
                 <p className="text-sm font-bold text-slate-900">{LIBELLE_TYPE[p.type] || p.type}</p>
                 <p className="text-xs text-slate-500">
                   {p.telephone ? `${p.telephone.slice(0, -4)}••` : 'Par lien'} ·{' '}
-                  {new Date(p.creeLe).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                  {new Date(p.creeLe).toLocaleDateString('fr-FR', FORMAT_DATE.jour)}
                 </p>
               </div>
               <StatusPill ton={p.statut === 'rewarded' ? 'succes' : p.statut === 'converted' ? 'info' : p.statut === 'rejected' ? 'danger' : 'attente'}>
-                {p.statut === 'rewarded' ? `${p.recompense.toLocaleString('fr-FR')} F` :
+                {p.statut === 'rewarded' ? `${formatF(p.recompense)}` :
                   p.statut === 'converted' ? 'Converti' : p.statut === 'rejected' ? 'Refusé' : 'En attente'}
               </StatusPill>
             </div>

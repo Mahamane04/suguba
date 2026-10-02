@@ -8,6 +8,7 @@ import type { PointJour } from '@/lib/reseau/stats';
 import Button from '@/components/ui/Button';
 import { Card, EmptyState, Skeleton, StatCard, StatusPill } from '@/components/ui/Surface';
 import { CANAUX } from '@/lib/reseau/codes';
+import { formatF, formatNombre, FORMAT_DATE } from '@/lib/montant';
 
 /**
  * Historique de partage (§ 12 des écrans) — la page qui répond à « est-ce que
@@ -75,7 +76,7 @@ export default function PartagesPage() {
       <div className="grid grid-cols-2 gap-3">
         <StatCard label="Visites" valeur={totaux.clics} aide={`${totaux.visiteurs} personnes différentes`} icone={MousePointerClick} />
         <StatCard label="Commandes" valeur={totaux.commandes} aide={`${totaux.tauxConversion}% de conversion`} icone={ShoppingBag} accent />
-        <StatCard label="Chiffre d’affaires" valeur={`${totaux.chiffreAffaires.toLocaleString('fr-FR')} F`} icone={Coins} />
+        <StatCard label="Chiffre d’affaires" valeur={`${formatF(totaux.chiffreAffaires)}`} icone={Coins} />
         <StatCard label="Liens créés" valeur={totaux.liens} icone={Link2} />
       </div>
 
@@ -101,7 +102,7 @@ export default function PartagesPage() {
                   </p>
                   <p className="text-xs text-slate-500 mt-0.5">
                     {LIBELLE_CIBLE[l.cible] || l.cible} · {nomCanal(l.canal)} ·{' '}
-                    {new Date(l.creeLe).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                    {new Date(l.creeLe).toLocaleDateString('fr-FR', FORMAT_DATE.jour)}
                   </p>
                 </div>
                 <StatusPill ton={l.commandes > 0 ? 'succes' : 'neutre'}>{l.tauxConversion}%</StatusPill>
@@ -118,9 +119,9 @@ export default function PartagesPage() {
                 </div>
                 <div className="rounded-2xl bg-slate-50 py-2">
                   <p className="text-base font-bold text-suguba-brand-dark tabular-nums">
-                    {l.chiffreAffaires.toLocaleString('fr-FR')}
+                    {formatNombre(l.chiffreAffaires)}
                   </p>
-                  <p className="text-xs font-bold text-slate-500 uppercase">FCFA</p>
+                  <p className="text-xs font-bold text-slate-500">F</p>
                 </div>
               </div>
             </Card>

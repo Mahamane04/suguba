@@ -10,13 +10,14 @@ import { Card, EmptyState, Skeleton } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
 import ChoixUniteVente, { SAISIE_UNITE_VIDE, type SaisieUnite } from '@/components/produit/ChoixUniteVente';
 import { COLONNES_CATALOGUE, FILTRES_PAR_DEFAUT, colonnesValides, type Apercu, type FiltresCatalogue } from '@/lib/admin/tableau';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 interface Ligne { id: string; nom: string; slug: string; categorie: string; statut: string; prix: number; stock: number; fournisseur: string; photos: number; creeLe: string; unite: string }
 interface Reponse { total: number; page: number; taillePage: number; categories: string[]; lignes: Ligne[]; avecUnite: boolean }
 interface Vue { id: string; nom: string; config: { filtres?: Partial<FiltresCatalogue>; colonnes?: string[] } }
 
 const STATUTS: Record<string, string> = { approved: 'En vente', submitted: 'Soumis', pending: 'En attente', rejected: 'Refusé', hidden: 'Masqué' };
-const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+const fcfa = formatF;
 
 function versParams(f: FiltresCatalogue, page?: number): URLSearchParams {
   const p = new URLSearchParams();
@@ -254,7 +255,7 @@ export default function CatalogueTableauPage() {
                     {colonnes.includes('stock') && <td className="px-3 py-2 tabular-nums">{l.stock}</td>}
                     {colonnes.includes('statut') && <td className="px-3 py-2 text-xs">{STATUTS[l.statut] || l.statut}</td>}
                     {colonnes.includes('photos') && <td className="px-3 py-2 tabular-nums">{l.photos || <span className="text-amber-700">0</span>}</td>}
-                    {colonnes.includes('creeLe') && <td className="px-3 py-2 text-xs text-slate-500 whitespace-nowrap">{new Date(l.creeLe).toLocaleDateString('fr-FR')}</td>}
+                    {colonnes.includes('creeLe') && <td className="px-3 py-2 text-xs text-slate-500 whitespace-nowrap">{new Date(l.creeLe).toLocaleDateString('fr-FR', FORMAT_DATE.complet)}</td>}
                   </tr>
                 ))}
               </tbody>

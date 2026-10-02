@@ -9,6 +9,8 @@ import { X, ShieldCheck, AlertCircle, Sparkles } from 'lucide-react';
 import ProductImage from '@/components/common/ProductImage';
 import { useToast } from '@/components/ui/Toast';
 import { calculerTarif, type ReglagesPlateforme } from '@/lib/pricing';
+import { formatF } from '@/lib/montant';
+import { MontantInput } from '@/components/ui/Field';
 
 interface ProductPricingModalProps {
   product: Product | null;
@@ -105,7 +107,7 @@ export default function ProductPricingModal({ product, isOpen, onClose }: Produc
     }
   };
 
-  const f = (n: number) => `${n.toLocaleString('fr-FR')} F`;
+  const f = (n: number) => `${formatF(n)}`;
   const statutLibelle: Record<string, { texte: string; classe: string }> = {
     ok: { texte: 'Rentable et proposé aux revendeurs', classe: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
     commission_faible: { texte: 'Vendable, mais commission trop faible pour être proposée au partage', classe: 'bg-amber-100 text-amber-900 border-amber-300' },
@@ -155,14 +157,12 @@ export default function ProductPricingModal({ product, isOpen, onClose }: Produc
           ) : (
             <>
               <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">Prix de vente au client (FCFA)</label>
-                <input
-                  type="number"
+                <label className="block text-xs font-bold text-slate-700 mb-1">Prix de vente au client</label>
+                <MontantInput
                   min={0}
                   step={500}
                   value={prixVente}
                   onChange={(e) => setPrixVente(parseInt(e.target.value) || 0)}
-                  className="w-full h-12 px-3 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold text-slate-900 focus:bg-white focus:outline-slate-600"
                 />
                 <div className="flex gap-2 mt-2">
                   <button type="button" onClick={() => setPrixVente(tarif.prixRecommande)}

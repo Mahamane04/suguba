@@ -6,6 +6,7 @@ import {
   X, MapPin, Navigation, Phone, MessageCircle, 
   ExternalLink, Compass, ShieldCheck, Banknote 
 } from 'lucide-react';
+import { formatF } from '@/lib/montant';
 
 interface DeliveryMapModalProps {
   order: Order | null;
@@ -50,7 +51,7 @@ export default function DeliveryMapModal({ order, isOpen, onClose }: DeliveryMap
     ? `https://waze.com/ul?ll=${pos.lat},${pos.lng}&navigate=yes`
     : `https://waze.com/ul?q=${encodeURIComponent(`${order.landmark} ${order.neighborhood} Bamako`)}`;
 
-  const montant = `${Math.round(order.totalAmount).toLocaleString('fr-FR')} F`;
+  const montant = `${formatF(order.totalAmount)}`;
   const instructionPaiement = order.paymentCollected
     ? 'Votre commande est déjà payée : rien à remettre au livreur.'
     : `Montant à préparer : ${montant}`;

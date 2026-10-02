@@ -7,6 +7,7 @@ import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
 import { Card, EmptyState, Skeleton } from '@/components/ui/Surface';
 import { viderCacheNotifications } from '@/components/reseau/ClocheNotifications';
+import { FORMAT_DATE } from '@/lib/montant';
 
 /** Notifications du compte (§ W). Ouvrir la page marque tout comme lu. */
 
@@ -25,7 +26,7 @@ function quand(date: string): string {
   if (minutes < 60) return `il y a ${minutes} min`;
   const heures = Math.round(minutes / 60);
   if (heures < 24) return `il y a ${heures} h`;
-  return new Date(date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  return new Date(date).toLocaleDateString('fr-FR', FORMAT_DATE.jour);
 }
 
 export default function NotificationsPage() {

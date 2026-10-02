@@ -44,9 +44,10 @@ import {
   type TrancheRetrait,
 } from '@/lib/frais-paiement';
 import { commissionExpliquee, simulerCycle, type EntreeCycle } from '@/lib/cycle-vente';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 // Espace insécable avant « F » : « 20 000 » et « F » ne se séparent jamais en fin de ligne.
-const enF = (n: number) => `${Math.round(n).toLocaleString('fr-FR')}\u00a0F`;
+const enF = formatF;
 
 interface ProduitEnLigne {
   id: string;
@@ -1167,7 +1168,7 @@ function FraisPaiementReglages({ f, ancien, onChange, onRelu }: {
           <div>
             <p className="text-xs font-semibold text-slate-700">Tarifs SasPay du compte Suguba</p>
             <p className="text-xs text-slate-600">
-              {f.saspay.releveLe ? `Relevés chez SasPay le ${new Date(f.saspay.releveLe).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}` : 'Jamais relevés'}
+              {f.saspay.releveLe ? `Relevés chez SasPay le ${new Date(f.saspay.releveLe).toLocaleString('fr-FR', FORMAT_DATE.completHeure)}` : 'Jamais relevés'}
               {' · relus seuls dès que le relevé a plus de 6 heures, sans jamais ralentir un paiement.'}
               {ancien && ' Relecture en cours en arrière-plan.'}
             </p>
@@ -1275,7 +1276,7 @@ function GrilleRetrait({ libelle, g, onChange }: { libelle: string; g: GrilleRet
           className={`${CHAMP} w-full mt-1`} />
       </label>
       <div className="flex items-center justify-between gap-2 text-xs text-slate-600">
-        <span>{g.verifieLe ? `Vérifiée le ${new Date(g.verifieLe).toLocaleDateString('fr-FR')}` : 'Jamais vérifiée'}</span>
+        <span>{g.verifieLe ? `Vérifiée le ${new Date(g.verifieLe).toLocaleDateString('fr-FR', FORMAT_DATE.complet)}` : 'Jamais vérifiée'}</span>
         <button type="button" className="underline font-semibold text-suguba-profond"
           onClick={() => onChange({ ...g, verifieLe: new Date().toISOString().slice(0, 10) })}>
           Vérifiée aujourd&apos;hui

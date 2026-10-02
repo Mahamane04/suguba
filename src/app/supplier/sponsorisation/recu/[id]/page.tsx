@@ -6,6 +6,7 @@ import { Printer } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
 import { EmptyState, Skeleton } from '@/components/ui/Surface';
+import { formatF } from '@/lib/montant';
 
 interface Sponsorisation {
   id: string; libelle: string | null; budget: number; finitLe: string | null; commenceLe: string;
@@ -31,7 +32,7 @@ export default function RecuSponsorisationPage() {
     fetch('/api/supplier/me').then((r) => (r.ok ? r.json() : null)).then((j) => setFournisseur(j?.supplier?.companyName || j?.fiche?.companyName || '')).catch(() => {});
   }, [id]);
 
-  const f = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+  const f = formatF;
   const date = (iso: string | null | undefined) => (iso ? new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }) : '—');
 
   return (

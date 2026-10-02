@@ -2,6 +2,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { chargerCaisses, niveauRetard } from '@/lib/caisse-livreur';
 import { chargerReglages } from '@/lib/platform-settings';
 import { TACHES, type Tache, type TypeTache } from './poste';
+import { formatF } from '@/lib/montant';
 
 /**
  * File « À traiter » (lot A1, 2026-09-27) — SERVEUR UNIQUEMENT.
@@ -18,7 +19,7 @@ const HEURES_DEVIS = 24;
 type Lecteur = (admin: SupabaseClient) => Promise<Tache[]>;
 
 const iso = (v: unknown) => (typeof v === 'string' && !Number.isNaN(Date.parse(v)) ? v : new Date(0).toISOString());
-const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+const fcfa = formatF;
 
 async function lignes<T = any>(requete: PromiseLike<{ data: T[] | null; error: { code?: string; message: string } | null }>): Promise<T[]> {
   const { data, error } = await requete;

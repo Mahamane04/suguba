@@ -12,6 +12,7 @@ import Button from '@/components/ui/Button';
 import PhotosProduitModal from '@/components/product/PhotosProduitModal';
 import FormulaireVariante from '@/components/product/FormulaireVariante';
 import { Package, Minus, Plus, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { formatF } from '@/lib/montant';
 
 interface ProduitStock {
   id: string;
@@ -117,7 +118,7 @@ export default function SupplierInventoryPage() {
           </div>
           <div className="bg-white rounded-3xl border border-slate-200 p-3">
             <p className="text-xs font-bold text-slate-500 uppercase">Valeur</p>
-            <p className="text-lg font-bold text-slate-900">{valeur.toLocaleString('fr-FR')} F</p>
+            <p className="text-lg font-bold text-slate-900">{formatF(valeur)}</p>
           </div>
           <div className="bg-white rounded-3xl border border-slate-200 p-3">
             <p className="text-xs font-bold text-slate-500 uppercase">Stock faible</p>

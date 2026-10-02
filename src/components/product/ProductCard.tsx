@@ -16,6 +16,7 @@ import { Image as ImageIcon, ShoppingBag, Check } from 'lucide-react';
 import { ajoutDirectPossible, suffixeUnite, texteMinimum } from '@/lib/unite-vente';
 import { ajouterAuPanier } from '@/lib/panier';
 import { useToast } from '@/components/ui/Toast';
+import { formatF, formatNombre } from '@/lib/montant';
 
 export interface ProduitCarte {
   id: string;
@@ -203,7 +204,7 @@ export default function ProductCard({
         )}
         {afficherCommission && (produit.commission ?? 0) > 0 && (
           <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-suguba-citron text-suguba-profond text-xs font-bold shadow pointer-events-none">
-            {produit.prixLibre ? 'Prix libre · ' : ''}+{produit.commission!.toLocaleString('fr-FR')} F
+            {produit.prixLibre ? 'Prix libre · ' : ''}+{formatF(produit.commission!)}
           </span>
         )}
       </div>
@@ -220,13 +221,13 @@ export default function ProductCard({
         <>
         <p className="text-base sm:text-lg font-bold text-slate-900 leading-none">
           {produit.mentionPrix === 'des' && <span className="text-xs font-bold text-slate-500">dès </span>}
-          {produit.prix.toLocaleString('fr-FR')} <span className="text-xs font-bold">F</span>
+          {formatNombre(produit.prix)} <span className="text-xs font-bold">F</span>
           {produit.suffixeUnite && <span className="text-xs font-semibold text-slate-600"> {produit.suffixeUnite}</span>}
         </p>
         {produit.minimum && <p className="text-xs font-semibold text-slate-600">{produit.minimum}</p>}
         <p className="text-xs text-slate-500">
           {afficherCommission && (produit.commission ?? 0) > 0
-            ? <>Vous gagnez <strong className="text-suguba-brand-dark">{produit.commission!.toLocaleString('fr-FR')} F</strong></>
+            ? <>Vous gagnez <strong className="text-suguba-brand-dark">{formatF(produit.commission!)}</strong></>
             : produit.mentionPrix === 'des' ? 'Prix de nos revendeurs'
               : produit.mentionPrix === 'partenaire' ? 'Prix de votre partenaire'
                 : 'Payez à la livraison'}

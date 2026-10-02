@@ -6,6 +6,7 @@
  */
 import type { CleBlocAccueil } from '@/lib/reseau/reglages';
 import type { Permission } from '@/lib/reseau/permissions';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 // ── Centre des modules ──────────────────────────────────────────────────────
 
@@ -54,8 +55,8 @@ export const BLOCS_ACCUEIL: { cle: CleBlocAccueil; titre: string; description: s
 export interface Raison { bloquant: boolean; texte: string; lien?: string; libelleLien?: string }
 export interface Diagnostic { titre: string; etat: string; raisons: Raison[] }
 
-const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
-const dateFr = (iso: string) => new Date(iso).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+const fcfa = formatF;
+const dateFr = (iso: string) => new Date(iso).toLocaleString('fr-FR', FORMAT_DATE.jourHeure);
 
 export function diagnostiquerRetrait(r: { id: string; status: string; payment_method: string; amount: number },
   ctx: { seuil: number; validation: string | null; reseauxMobile: string[] }): Diagnostic {

@@ -7,6 +7,7 @@ import { Send, ShieldAlert } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import { Textarea } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
+import { FORMAT_DATE } from '@/lib/montant';
 
 export interface MessageFil {
   id: string; auteur: 'revendeur' | 'fournisseur' | 'client' | 'suguba'; deMoi: boolean; texte: string;
@@ -14,7 +15,7 @@ export interface MessageFil {
 }
 
 const NOM: Record<MessageFil['auteur'], string> = { revendeur: 'Revendeur', fournisseur: 'Fournisseur', client: 'Client', suguba: 'Suguba' };
-const heure = (d: string) => new Date(d).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+const heure = (d: string) => new Date(d).toLocaleString('fr-FR', FORMAT_DATE.jourHeure);
 
 /**
  * Fil de messages d'un dossier (2026-09-26, Protection Suguba — lot 3).

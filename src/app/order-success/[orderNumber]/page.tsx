@@ -12,6 +12,7 @@ import {
   CheckCircle2, KeyRound, ShieldCheck, MapPin,
   Phone, ArrowRight, Home, ShoppingBag, Truck, Copy
 } from 'lucide-react';
+import { formatF } from '@/lib/montant';
 
 export default function OrderSuccessPage({ params }: { params: Promise<{ orderNumber: string }> }) {
   const resolvedParams = use(params);
@@ -118,7 +119,7 @@ export default function OrderSuccessPage({ params }: { params: Promise<{ orderNu
 
             <div className="flex justify-between text-sm font-bold text-slate-900 pt-2 border-t border-slate-200">
               <span>{order.paymentCollected ? 'Total réglé :' : 'Total à payer :'}</span>
-              <span className="text-emerald-700">{order.totalAmount.toLocaleString('fr-FR')} FCFA</span>
+              <span className="text-emerald-700">{formatF(order.totalAmount)}</span>
             </div>
           </div>
 
@@ -137,7 +138,7 @@ export default function OrderSuccessPage({ params }: { params: Promise<{ orderNu
           <div className="space-y-2 pt-2">
             <a
               href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
-                `🎉 *SUGUBA.ML — Reçu Commande #${order.orderNumber}*\n\nProduit : ${order.productName}\nTotal : ${order.totalAmount.toLocaleString('fr-FR')} FCFA\nLe code de remise s’affiche sur le reçu Suguba de la commande.\n📍 Repère : ${order.landmark} (${order.neighborhood})`
+                `🎉 *SUGUBA.ML — Reçu Commande #${order.orderNumber}*\n\nProduit : ${order.productName}\nTotal : ${formatF(order.totalAmount)}\nLe code de remise s’affiche sur le reçu Suguba de la commande.\n📍 Repère : ${order.landmark} (${order.neighborhood})`
               )}`}
               target="_blank"
               rel="noopener noreferrer"

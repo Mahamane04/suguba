@@ -1,21 +1,38 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import ProductImage from '@/components/common/ProductImage';
 import Header from '@/components/common/Header';
 import OrdersSyncNotice from '@/components/common/OrdersSyncNotice';
 import BottomNav from '@/components/common/BottomNav';
 import { useSugubaStore } from '@/lib/store';
-import EmptyState from '@/components/ui/EmptyState';
-import {
-  ShoppingBag, Phone, MapPin, Clock, CheckCircle2,
-  Truck, AlertCircle, Shield, KeyRound, Calendar, Bike,
-} from 'lucide-react';
+import Button from '@/components/ui/Button';
+import { EmptyState, StatusPill } from '@/components/ui/Surface';
+import { etatCommissionVente, statutVente, type LigneCommission } from '@/lib/libelles-vente';
+import { ShoppingBag, MapPin, Calendar } from 'lucide-react';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 export default function ResellerOrdersPage() {
   const state = useSugubaStore();
   const [filter, setFilter] = useState<string>('all');
   const [recherche, setRecherche] = useState('');
+  // REV-01 (audit UI/UX du 2026-10-02) : la bande « commission » lisait la liste
+  // locale des commissions du magasin, que rien ne remplit ; elle n'affichait
+  // donc jamais l'état réel. Les lignes viennent du grand-livre du serveur.
+  const [commissions, setCommissions] = useState<Map<string, LigneCommission[]> | null>(null);
+  useEffect(() => {
+    fetch('/api/reseller/me', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        const parVente = new Map<string, LigneCommission[]>();
+        for (const l of (j?.reseller?.commissionsParVente || []) as LigneCommission[]) {
+          if (!l.commande) continue;
+          parVente.set(l.commande, [...(parVente.get(l.commande) || []), l]);
+        }
+        setCommissions(parVente);
+      })
+      .catch(() => setCommissions(null));
+  }, []);
 
   // Ventes du revendeur CONNECTÉ (2026-09-11). La page cherchait le revendeur
   // dans les données de démonstration puis ne gardait que les commandes de ce
@@ -29,7 +46,7 @@ export default function ResellerOrdersPage() {
     : myOrders.filter(o => {
         if (filter === 'delivered') return o.status === 'delivered';
         if (filter === 'in_transit') return o.status === 'in_transit' || o.status === 'dispatched';
-        if (filter === 'pending') return o.status === 'pending_call' || o.status === 'confirmed';
+        if (filter === 'pending') return o.status === 'new' || o.status === 'pending_call' || o.status === 'confirmed';
         return true;
       });
 
@@ -40,24 +57,21 @@ export default function ResellerOrdersPage() {
 
       <main className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 py-6 w-full space-y-5">
         
-        <div><label htmlFor="ventes-recherche" className="block text-sm font-semibold mb-2">Rechercher une vente</label><input id="ventes-recherche" value={recherche} onChange={e => setRecherche(e.target.value)} placeholder="Numéro, client ou produit" className="w-full border rounded-xl p-3"/></div>
-        {/* Page Title */}
         <div className="space-y-1">
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
-            Mes Ventes & Suivi des Commandes
-          </h1>
-          <p className="text-xs text-slate-500">
-            Consultez la livraison de vos clients et le déblocage de vos commissions.
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Mes ventes</h1>
+          <p className="text-sm text-slate-600">
+            La livraison de vos clients et le moment où votre commission devient retirable.
           </p>
         </div>
+        <div><label htmlFor="ventes-recherche" className="sr-only">Rechercher une vente</label><input id="ventes-recherche" type="search" value={recherche} onChange={e => setRecherche(e.target.value)} placeholder="Rechercher : numéro, client ou produit" className="w-full h-12 px-4 border border-slate-300 rounded-full bg-white text-base"/></div>
 
         {/* Status Filter Tabs */}
         <div className="flex items-center space-x-2 overflow-x-auto pb-1 scrollbar-none">
           {[
             { id: 'all', label: `Toutes (${state.ordersSync === 'ready' ? myOrders.length : '—'})` },
-            { id: 'delivered', label: 'Livrées & Payées' },
-            { id: 'in_transit', label: 'En cours de livraison' },
             { id: 'pending', label: 'À confirmer' },
+            { id: 'in_transit', label: 'En livraison' },
+            { id: 'delivered', label: 'Livrées' },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -76,10 +90,20 @@ export default function ResellerOrdersPage() {
         {/* Orders List */}
         <div className="space-y-3">
           {filteredOrders.length === 0 ? (
-            <EmptyState icon={ShoppingBag} title={state.ordersSync === 'ready' ? 'Aucune commande trouvée pour ce filtre.' : 'La liste des commandes n’est pas encore confirmée.'} />
+            state.ordersSync !== 'ready' ? (
+              <EmptyState icone={ShoppingBag} titre="La liste de vos ventes n’est pas encore confirmée." />
+            ) : myOrders.length === 0 && !recherche ? (
+              <EmptyState icone={ShoppingBag} titre="Vos ventes apparaîtront ici"
+                texte="Quand un client commande par votre lien, vous suivez ici sa livraison et le moment où votre commission devient retirable."
+                action={<Button href="/reseller/catalog">Choisir un produit à partager</Button>} />
+            ) : (
+              <EmptyState icone={ShoppingBag} titre="Aucune vente pour ce filtre"
+                action={<Button variant="ghost" onClick={() => { setFilter('all'); setRecherche(''); }}>Voir toutes mes ventes</Button>} />
+            )
           ) : (
             filteredOrders.map((order) => {
-              const commission = state.commissions.find(c => c.orderId === order.id);
+              const statut = statutVente(order.status);
+              const etat = etatCommissionVente(commissions?.get(order.id) || [], order.status, order.resellerCommission);
 
               return (
                 <div 
@@ -87,45 +111,20 @@ export default function ResellerOrdersPage() {
                   className="bg-white p-4 sm:p-5 rounded-3xl border border-slate-200/80 shadow-xs space-y-3"
                 >
                   {/* Top Bar */}
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
                     <div className="flex items-center space-x-2">
-                      <span className="font-mono text-xs font-bold text-slate-900">
+                      <span className="font-mono text-xs font-bold text-slate-900 whitespace-nowrap">
                         #{order.orderNumber}
                       </span>
                       <span className="text-xs text-slate-500">•</span>
                       <span className="text-xs text-slate-500 flex items-center">
                         <Calendar className="w-3 h-3 mr-1" />
-                        {new Date(order.createdAt).toLocaleDateString('fr-FR')}
+                        {new Date(order.createdAt).toLocaleDateString('fr-FR', FORMAT_DATE.complet)}
                       </span>
                     </div>
 
-                    {/* Status Badge */}
-                    <div>
-                      {order.status === 'delivered' && (
-                        <span className="px-2.5 py-1 rounded-full bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs font-bold flex items-center space-x-1">
-                          <CheckCircle2 className="w-3 h-3 text-emerald-600" />
-                          <span>Livré & Encaissé</span>
-                        </span>
-                      )}
-                      {order.status === 'in_transit' && (
-                        <span className="px-2.5 py-1 rounded-full bg-slate-100 border border-slate-300 text-slate-800 text-xs font-bold flex items-center space-x-1">
-                          <Truck className="w-3 h-3 text-slate-600" />
-                          <span>En cours de livraison</span>
-                        </span>
-                      )}
-                      {order.status === 'dispatched' && (
-                        <span className="px-2.5 py-1 rounded-full bg-slate-100 border border-slate-300 text-slate-800 text-xs font-bold flex items-center space-x-1">
-                          <Bike className="w-3 h-3 text-slate-600" />
-                          <span>Livreur assigné</span>
-                        </span>
-                      )}
-                      {order.status === 'pending_call' && (
-                        <span className="px-2.5 py-1 rounded-full bg-amber-100 border border-amber-300 text-amber-800 text-xs font-bold flex items-center space-x-1">
-                          <Phone className="w-3 h-3 text-amber-600" />
-                          <span>Appel Suguba en attente</span>
-                        </span>
-                      )}
-                    </div>
+                    {/* REV-01 : un badge pour chacun des 8 statuts (4 n'en avaient pas). */}
+                    <StatusPill ton={statut.ton}>{statut.libelle}</StatusPill>
                   </div>
 
                   {/* Body Details */}
@@ -137,12 +136,9 @@ export default function ResellerOrdersPage() {
                         <ProductImage src={order.productImage} alt={order.productName} fill className="object-cover" />
                       </div>
                       <div className="min-w-0 space-y-0.5">
-                        <h4 className="font-bold text-xs text-slate-900 truncate">{order.productName}</h4>
-                        <p className="text-xs text-slate-500">
-                          Quantité : <strong>{order.quantity}</strong> • Montant : <strong>{order.totalAmount.toLocaleString('fr-FR')} FCFA</strong>
-                        </p>
-                        <p className="text-xs text-emerald-700 font-bold">
-                          Ta Commission : +{order.resellerCommission.toLocaleString('fr-FR')} FCFA
+                        <h4 className="font-semibold text-sm text-slate-900 line-clamp-2">{order.productName}</h4>
+                        <p className="text-xs text-slate-600">
+                          Quantité : <strong>{order.quantity}</strong> · Total client : <strong className="tabular-nums">{formatF(order.totalAmount)}</strong>
                         </p>
                       </div>
                     </div>
@@ -166,19 +162,14 @@ export default function ResellerOrdersPage() {
 
                   </div>
 
-                  {/* Commission Lifecycle Step */}
-                  <div className="bg-emerald-50/60 border border-emerald-100 rounded-2xl p-3 flex items-center justify-between text-xs">
-                    <div className="flex items-center space-x-2">
-                      <Shield className="w-4 h-4 text-emerald-600" />
-                      <span className="text-slate-700">
-                        {commission?.status === 'available' && 'Commission disponible pour retrait immédiat !'}
-                        {commission?.status === 'locked' && `Commission sécurisée en attente J+${commission.safetyWindowDays} (anti-retour).`}
-                        {commission?.status === 'pending' && 'Commission en cours de validation livraison.'}
-                        {commission?.status === 'potential' && 'Commission potentielle (en attente confirmation commande).'}
-                      </span>
+                  {/* Votre commission : quand elle devient retirable (REV-01, REV-02). */}
+                  <div className={`rounded-2xl p-3 flex items-center justify-between gap-3 ${etat.ton === 'danger' ? 'bg-rose-50' : 'bg-suguba-menthe'}`}>
+                    <div className="min-w-0">
+                      <p className="text-xs text-slate-600">Votre commission</p>
+                      <p className={`text-sm font-semibold ${etat.ton === 'danger' ? 'text-rose-800' : 'text-suguba-profond'}`}>{etat.libelle}</p>
                     </div>
-                    <span className="font-bold text-emerald-800 text-xs">
-                      +{order.resellerCommission.toLocaleString('fr-FR')} FCFA
+                    <span className={`shrink-0 text-base font-bold tabular-nums whitespace-nowrap ${etat.ton === 'danger' ? 'text-rose-800 line-through' : 'text-suguba-profond'}`}>
+                      +{formatF(etat.ton === 'danger' ? order.resellerCommission : etat.montant)}
                     </span>
                   </div>
 

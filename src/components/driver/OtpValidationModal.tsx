@@ -8,6 +8,7 @@ import ScannerQr from '@/components/driver/ScannerQr';
 import { lireQrRemise } from '@/lib/qr-remise';
 import { sugubaStore } from '@/lib/store';
 import { X, KeyRound, CheckCircle2, AlertTriangle, ShieldCheck, Banknote, QrCode, Package } from 'lucide-react';
+import { formatF } from '@/lib/montant';
 
 interface OtpValidationModalProps {
   order: Order | null;
@@ -33,7 +34,7 @@ interface ArticleARemettre {
   payeEnLigne: boolean;
 }
 
-const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+const fcfa = formatF;
 
 /**
  * Preuve de remise (refaite le 2026-09-25) : le livreur SCANNE le QR du reçu

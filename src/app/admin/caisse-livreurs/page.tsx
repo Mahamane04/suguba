@@ -15,9 +15,10 @@ import { classeCible, useCibleUrl, useDefilerVersCible } from '@/components/admi
 import RecuVersementModal from '@/components/common/RecuVersementModal';
 import { calculerAVerser, niveauRetard, type CaisseLivreur, type Versement } from '@/lib/caisse-livreur';
 import { AlertTriangle, Banknote, ChevronDown, Phone, Receipt, RefreshCw, Settings } from 'lucide-react';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
-const fmt = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
-const jour = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : '—');
+const fmt = formatF;
+const jour = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString('fr-FR', FORMAT_DATE.jour) : '—');
 
 interface Donnees {
   caisses: CaisseLivreur[];

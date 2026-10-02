@@ -9,6 +9,7 @@ import Button from '@/components/ui/Button';
 import { Field, Input } from '@/components/ui/Field';
 import PaymentLogo, { type MoyenPaiement } from '@/components/ui/PaymentLogo';
 import { calculerFraisPaiement, completerFraisPaiement, type ReglagesFraisPaiement } from '@/lib/frais-paiement';
+import { formatF } from '@/lib/montant';
 
 /**
  * Paiement mobile money d'une commande, via SasPay.
@@ -47,9 +48,9 @@ const RESEAUX: readonly { code: 'livraison' | 'orange_ml' | 'moov_ml' | 'wave_ml
   { code: 'wave_ml', label: 'Wave', moyen: 'wave' },
 ];
 
-const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} FCFA`;
+const fcfa = formatF;
 // Version courte pour les pastilles des moyens de paiement (espace insécable avant « F »).
-const enF = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+const enF = formatF;
 
 type CodeReseau = (typeof RESEAUX)[number]['code'];
 type Etape = 'saisie' | 'envoi' | 'attente' | 'paye' | 'echec';

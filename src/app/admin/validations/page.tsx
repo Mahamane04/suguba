@@ -9,6 +9,7 @@ import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface'
 import { useToast } from '@/components/ui/Toast';
 import { useCibleUrl, useDefilerVersCible } from '@/components/admin/contexte';
 import { anciennete } from '@/lib/admin/poste';
+import { formatF } from '@/lib/montant';
 
 interface Validation {
   id: string; type: string; libelle: string; dossier: string; montant: number | null; resume: Record<string, unknown>;
@@ -18,7 +19,7 @@ const STATUT: Record<string, { libelle: string; ton: 'attente' | 'succes' | 'dan
   en_attente: { libelle: 'En attente', ton: 'attente' }, approuvee: { libelle: 'Approuvée — à exécuter', ton: 'succes' },
   refusee: { libelle: 'Refusée', ton: 'danger' }, executee: { libelle: 'Exécutée', ton: 'neutre' }, caduque: { libelle: 'Caduque (dossier modifié)', ton: 'neutre' },
 };
-const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+const fcfa = formatF;
 
 /**
  * Validations (A3, 2026-09-27) : opérations sensibles préparées par un membre,

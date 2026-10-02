@@ -10,6 +10,7 @@ import { Field } from '@/components/ui/Field';
 import ChoicePicker from '@/components/ui/ChoicePicker';
 import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 /**
  * Sponsorisation (§ 25 des écrans).
@@ -132,7 +133,7 @@ export default function SponsorisationPage() {
                   <div className="flex items-start justify-between gap-3">
                     <p className="text-sm font-bold text-slate-900">{p.nom}</p>
                     <p className="text-lg font-bold text-suguba-brand-dark tabular-nums shrink-0">
-                      {p.prix.toLocaleString('fr-FR')} F
+                      {formatF(p.prix)}
                     </p>
                   </div>
                   {p.description && <p className="text-xs text-slate-600">{p.description}</p>}
@@ -180,16 +181,16 @@ export default function SponsorisationPage() {
                   <p className="text-xs text-slate-500 flex items-center gap-3">
                     <span className="flex items-center gap-1"><Eye className="w-3 h-3" />{s.impressions}</span>
                     <span className="flex items-center gap-1"><MousePointerClick className="w-3 h-3" />{s.clics}</span>
-                    <span>{s.budget.toLocaleString('fr-FR')} F</span>
+                    <span>{formatF(s.budget)}</span>
                   </p>
                   {s.statut !== 'rejected' && s.budget > 0 && ((s.paiement?.recu || 0) >= s.budget ? (
                     <p className="text-xs text-emerald-800 flex items-center justify-between gap-2">
-                      <span>Réglé{s.paiement?.recuLe ? ` le ${new Date(s.paiement.recuLe).toLocaleDateString('fr-FR')}` : ''}</span>
+                      <span>Réglé{s.paiement?.recuLe ? ` le ${new Date(s.paiement.recuLe).toLocaleDateString('fr-FR', FORMAT_DATE.complet)}` : ''}</span>
                       <a href={`/supplier/sponsorisation/recu/${encodeURIComponent(s.id)}`} className="font-bold underline min-h-11 inline-flex items-center">Voir le reçu</a>
                     </p>
                   ) : (
                     <p className="text-xs text-amber-800">
-                      À régler : {(s.budget - (s.paiement?.recu || 0)).toLocaleString('fr-FR')} F — la sponsorisation démarre une fois réglée, pour la durée complète du pack.
+                      À régler : {formatF(s.budget - (s.paiement?.recu || 0))} — la sponsorisation démarre une fois réglée, pour la durée complète du pack.
                     </p>
                   ))}
                 </div>

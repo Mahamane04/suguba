@@ -18,6 +18,7 @@ import { lireQrRemise } from '@/lib/qr-remise';
 import { useSugubaStore } from '@/lib/store';
 import { SavTicket } from '@/types';
 import { LifeBuoy, Truck, Phone, MessageCircle, Plus, CheckCircle2, Bike, QrCode, Image as ImageIcon } from 'lucide-react';
+import { FORMAT_DATE } from '@/lib/montant';
 
 /**
  * Service après-vente (refait en U4, 2026-09-27 : tableau, panneau latéral).
@@ -33,7 +34,7 @@ const STATUT_SAV: Record<string, [string, 'danger' | 'attente' | 'succes' | 'neu
   swapped: ['Échangé', 'succes'], resolved: ['Résolu', 'succes'], rejected: ['Refusé', 'neutre'],
 };
 const RESOLUTION: Record<string, string> = { swap_new: 'Échange contre un neuf (72 h)', repair: 'Réparation', refund: 'Remboursement' };
-const jour = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+const jour = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', FORMAT_DATE.jour);
 const pastille = (t: SavTicket) => { if (t.status === 'open' && t.issueDescription?.startsWith('[Incident de course')) return <StatusPill ton="attente">Incident à étudier</StatusPill>; const [l, ton] = STATUT_SAV[t.status] || [t.status, 'neutre']; return <StatusPill ton={ton}>{l}</StatusPill>; };
 
 export default function AdminSavPage() {

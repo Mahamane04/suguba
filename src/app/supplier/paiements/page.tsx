@@ -13,6 +13,7 @@ import { useSugubaStore } from '@/lib/store';
 import type { TauxRetrait } from '@/lib/pricing';
 import { etatGain, type SoldeFournisseur } from '@/lib/gains-fournisseur';
 import { tauxRetraitPublics, type RetraitAffiche } from '@/lib/retraits-affichage';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 interface GainAffiche {
   id: string;
@@ -25,8 +26,8 @@ interface GainAffiche {
   disponibleLe: string | null;
 }
 
-const enF = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
-const jour = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+const enF = formatF;
+const jour = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', FORMAT_DATE.jour);
 
 const TON_ETAT: Record<string, string> = {
   disponible: 'bg-suguba-brand/10 text-suguba-brand-dark',

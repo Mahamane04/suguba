@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { Users } from 'lucide-react';
+import { formatF } from '@/lib/montant';
 
 export interface OffreRevendeurVue { nom: string; code: string; prix: number }
 
@@ -22,7 +23,7 @@ export default function OffresRevendeurs({ slug, offres, id }: { slug: string; o
           <li key={o.code} className="flex items-center justify-between gap-3 py-2">
             <span className="min-w-0">
               <span className="block text-sm font-semibold text-slate-900 truncate">{o.nom}</span>
-              <span className="block text-sm font-bold text-suguba-brand-dark tabular-nums">{Math.round(o.prix).toLocaleString('fr-FR')} F</span>
+              <span className="block text-sm font-bold text-suguba-brand-dark tabular-nums">{formatF(o.prix)}</span>
             </span>
             <Link href={`/p/${slug}?ref=${encodeURIComponent(o.code)}`}
               className="shrink-0 h-10 px-4 rounded-2xl bg-suguba-profond hover:bg-suguba-profond-2 text-white text-xs font-bold inline-flex items-center">

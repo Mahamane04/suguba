@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { FORMAT_DATE } from '@/lib/montant';
 
 /**
  * Solde des fournisseurs (lot C, 2026-09-27) — le pendant de
@@ -93,7 +94,7 @@ export function etatGain(g: LigneGain, maintenant = Date.now()): { code: 'bloque
     default: {
       const fin = g.unlock_at ? Date.parse(g.unlock_at) : NaN;
       if (Number.isFinite(fin) && fin <= maintenant) return { code: 'attente_fonds', libelle: 'Attend l’argent de la livraison' };
-      const date = Number.isFinite(fin) ? new Date(fin).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) : null;
+      const date = Number.isFinite(fin) ? new Date(fin).toLocaleDateString('fr-FR', FORMAT_DATE.jour) : null;
       return { code: 'bloque', libelle: date ? `Disponible le ${date}` : 'Délai de sécurité' };
     }
   }

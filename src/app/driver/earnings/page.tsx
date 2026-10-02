@@ -13,6 +13,7 @@ import { Order } from '@/types';
 import { LIBELLE_ENCAISSEMENT, statutEncaissement, type Versement } from '@/lib/caisse-livreur';
 import { useCaisseLivreur } from '@/lib/useCaisseLivreur';
 import { ArrowLeft, Banknote, Package, Printer, Receipt, Truck, Wallet } from 'lucide-react';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 /**
  * Portefeuille livreur — refait le 2026-09-11 sur des données réelles.
@@ -52,7 +53,7 @@ export default function DriverEarningsPage() {
   // commandes : le total restait à 0 F (corrigé le 2026-09-25).
   const { caisse: c, caisseServeur, aRemettre, etat: etatCaisse, livreurGardeRemuneration } = useCaisseLivreur(livrees, remuneration);
   const gains = remuneration !== null ? livrees.length * remuneration : null;
-  const fmt = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+  const fmt = formatF;
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
@@ -112,7 +113,7 @@ export default function DriverEarningsPage() {
                   className="w-full min-h-11 flex justify-between items-center gap-2 text-sm rounded-xl hover:bg-slate-50 px-2 text-left">
                   <span className="min-w-0 truncate text-slate-700 inline-flex items-center gap-1.5">
                     <Receipt className="w-4 h-4 shrink-0 text-slate-500" />
-                    {new Date(v.createdAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} · {v.remittanceNumber}
+                    {new Date(v.createdAt).toLocaleDateString('fr-FR', FORMAT_DATE.jour)} · {v.remittanceNumber}
                   </span>
                   <span className="font-semibold text-slate-900 shrink-0">{fmt(v.amountReceived)}</span>
                 </button>
@@ -142,7 +143,7 @@ export default function DriverEarningsPage() {
                     <p className="font-bold text-sm text-slate-900 truncate">{o.productName}</p>
                     <p className="text-xs text-slate-500">
                       #{o.orderNumber} · {o.neighborhood}
-                      {o.deliveredAt ? ` · ${new Date(o.deliveredAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}` : ''}
+                      {o.deliveredAt ? ` · ${new Date(o.deliveredAt).toLocaleDateString('fr-FR', FORMAT_DATE.jour)}` : ''}
                     </p>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">

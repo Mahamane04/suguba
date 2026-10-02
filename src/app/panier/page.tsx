@@ -22,6 +22,7 @@ import { sugubaStore, useQuartierClient, definirQuartierClient } from '@/lib/sto
 import type { Order } from '@/types';
 import PartenaireVisite from '@/components/common/PartenaireVisite';
 import ChoixDestinataire from '@/components/compte/ChoixDestinataire';
+import { formatF } from '@/lib/montant';
 
 /**
  * Panier et validation (§ 29 et § 30 des écrans).
@@ -47,7 +48,7 @@ interface Devis {
 interface Reglages { livraisonParVille: Record<string, number>; pointsRelais: { id: string; nom: string; frais: number; horaires?: string }[] }
 
 const CLE_TENTATIVE = 'suguba_panier_tentative';
-const fcfa = (v: number) => `${Math.round(v).toLocaleString('fr-FR')} F`;
+const fcfa = formatF;
 const ACTIF = 'border-suguba-brand bg-suguba-brand/5 ring-1 ring-suguba-brand';
 const INACTIF = 'border-slate-200 bg-white';
 

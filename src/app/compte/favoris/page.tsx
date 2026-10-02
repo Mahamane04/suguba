@@ -8,6 +8,7 @@ import Button from '@/components/ui/Button';
 import { Card, EmptyState, Skeleton } from '@/components/ui/Surface';
 import OngletsCompte from '@/components/compte/OngletsCompte';
 import BoutonFavori from '@/components/compte/BoutonFavori';
+import { formatF } from '@/lib/montant';
 
 interface Favori { id: string; nom: string; slug: string; image: string | null; prix: number | null; disponible: boolean }
 
@@ -48,7 +49,7 @@ export default function FavorisPage() {
                     <span className="min-w-0">
                       <span className="block text-sm font-semibold text-slate-900 truncate">{f.nom}</span>
                       <span className="block text-xs text-slate-500">
-                        {!f.disponible ? 'Indisponible pour le moment' : f.prix ? `${f.prix.toLocaleString('fr-FR')} F` : 'Prix de nos revendeurs'}
+                        {!f.disponible ? 'Indisponible pour le moment' : f.prix ? `${formatF(f.prix)}` : 'Prix de nos revendeurs'}
                       </span>
                     </span>
                   </Link>

@@ -6,13 +6,14 @@ import React, { useEffect, useState } from 'react';
 import { Target, Plus, Play, Pause, Square, Check, X, ExternalLink } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
-import { Field, Input, Textarea } from '@/components/ui/Field';
+import { Field, Input, Textarea, MontantInput } from '@/components/ui/Field';
 import ChoicePicker from '@/components/ui/ChoicePicker';
 import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
 import { TYPES_MISSION, libelleType, verbeType, type TypeMission } from '@/lib/reseau/missions';
 import { estTypeResultat } from '@/lib/reseau/resultats-constantes';
 import PaiementsRecus from '@/components/admin/PaiementsRecus';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 /**
  * Administration des missions (§ 48 des écrans).
@@ -42,7 +43,7 @@ interface Preuve {
   canal: string; lien: string | null; note: string | null; photo: string | null; envoyeeLe: string;
 }
 
-const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+const fcfa = formatF;
 
 const TON: Record<string, 'succes' | 'attente' | 'neutre'> = {
   active: 'succes', draft: 'attente', paused: 'neutre', ended: 'neutre',
@@ -148,8 +149,8 @@ export default function MissionsAdminPage() {
               <Field label={`Objectif (${verbeType(type)})`} htmlFor="objectif">
                 <Input id="objectif" type="number" inputMode="numeric" min={1} value={objectif} onChange={(e) => setObjectif(e.target.value)} />
               </Field>
-              <Field label="Récompense (FCFA)" htmlFor="recompense">
-                <Input id="recompense" type="number" inputMode="numeric" min={0} step={500} value={recompense} onChange={(e) => setRecompense(e.target.value)} />
+              <Field label="Récompense" htmlFor="recompense">
+                <MontantInput id="recompense" min={0} step={500} value={recompense} onChange={(e) => setRecompense(e.target.value)} />
               </Field>
               <Field label="Date de fin" htmlFor="fin" aide="Laissez vide pour une mission sans limite.">
                 <Input id="fin" type="date" value={finitLe} onChange={(e) => setFinitLe(e.target.value)} />
@@ -191,7 +192,7 @@ export default function MissionsAdminPage() {
                   <p className="text-sm font-bold text-slate-900 truncate">{m.titre}</p>
                   <p className="text-xs text-slate-500 mt-0.5">
                     {libelleType(m.type)} · objectif {m.objectif} {verbeType(m.type)} ·{' '}
-                    {m.recompense.toLocaleString('fr-FR')} F{estTypeResultat(m.type) ? ' par résultat' : ''} · {m.participants} participant{m.participants > 1 ? 's' : ''}
+                    {formatF(m.recompense)}{estTypeResultat(m.type) ? ' par résultat' : ''} · {m.participants} participant{m.participants > 1 ? 's' : ''}
                   </p>
                 </div>
                 <StatusPill ton={TON[m.statut] || 'neutre'}>{LIBELLE_STATUT[m.statut] || m.statut}</StatusPill>
@@ -277,7 +278,7 @@ function PreuvesAVerifier({ preuves, onMaj }: { preuves: Preuve[]; onMaj: () => 
               <p>Publié sur : <strong>{p.canal}</strong></p>
               {p.lien && <a href={p.lien} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-suguba-profond underline break-all"><ExternalLink className="w-3 h-3" />Voir la publication</a>}
               {p.note && <p>« {p.note} »</p>}
-              <p className="text-slate-500">Envoyée le {new Date(p.envoyeeLe).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
+              <p className="text-slate-500">Envoyée le {new Date(p.envoyeeLe).toLocaleString('fr-FR', FORMAT_DATE.jourHeure)}</p>
             </div>
           </div>
           <p className="text-xs text-slate-500">Vérifiez que la publication montre bien le produit ou le lien Suguba, et qu’elle est publique.</p>

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { chargerProduitPublic, URL_APP } from '@/lib/shop';
+import { formatF } from '@/lib/montant';
 
 /**
  * Aperçu de partage de la page produit (2026-09-11).
@@ -17,7 +18,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const produit = await chargerProduitPublic(slug);
   if (!produit) return { title: 'Produit introuvable — Suguba' };
 
-  const titre = `${produit.nom} — ${produit.prix.toLocaleString('fr-FR')} F`;
+  const titre = `${produit.nom} — ${formatF(produit.prix)}`;
   const description = 'Vous payez à la livraison. Livré chez vous à Bamako par Suguba.';
   const image = produit.image || `${URL_APP}/icon-512.png`;
 

@@ -10,6 +10,7 @@ import PageReseau from '@/components/reseau/PageReseau';
 import { Input } from '@/components/ui/Field';
 import { EmptyState } from '@/components/ui/Surface';
 import Button from '@/components/ui/Button';
+import { formatF } from '@/lib/montant';
 
 /**
  * Recherche globale (§ Z) : produits, boutiques, fournisseurs et catégories
@@ -97,7 +98,7 @@ function Contenu() {
                       <p className="text-sm font-bold text-slate-900 truncate">{p.nom}</p>
                       <p className="text-xs text-slate-500">{p.categorie}</p>
                     </div>
-                    <span className="text-sm font-bold text-slate-900 tabular-nums shrink-0">{p.mention === 'des' && <span className="text-xs font-semibold text-slate-500">dès </span>}{p.prix.toLocaleString('fr-FR')} F</span>
+                    <span className="text-sm font-bold text-slate-900 tabular-nums shrink-0">{p.mention === 'des' && <span className="text-xs font-semibold text-slate-500">dès </span>}{formatF(p.prix)}</span>
                   </Link>
                 ))}
               </div>

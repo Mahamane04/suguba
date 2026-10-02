@@ -21,6 +21,7 @@ import { useOrderCheckout } from '@/lib/useOrderCheckout';
 import { useCodeRevendeur } from '@/lib/partage';
 import { useToast } from '@/components/ui/Toast';
 import { MARGE_BAS_FLOTTANT } from '@/lib/mise-en-page';
+import { formatF } from '@/lib/montant';
 
 interface CreateOrderModalProps {
   product: Product | null;
@@ -84,7 +85,7 @@ export default function CreateOrderModal({ product, isOpen, onClose, onSuccess }
   const totalCommission = pourLeRevendeur ? pourLeRevendeur.gain : product.resellerCommission * quantity;
   const commissionPerUnit = Math.round(totalCommission / Math.max(1, quantity));
   const totalAmount = devis?.total;
-  const fcfa = (n: number) => `${n.toLocaleString('fr-FR')} F`;
+  const fcfa = (n: number) => `${formatF(n)}`;
 
   const finishOrder = async (data?: OrderInput) => {
     try {

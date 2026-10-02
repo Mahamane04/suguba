@@ -10,6 +10,7 @@ import PaymentLogo, { moyenDepuisCode } from '@/components/ui/PaymentLogo';
 import { useToast } from '@/components/ui/Toast';
 import { useFinance } from '@/lib/admin/useFinance';
 import { useCibleUrl, usePermission, usePosteAdmin } from '@/components/admin/contexte';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 /**
  * Retraits et commissions (lot U2, 2026-09-27) — sortis de l'ancienne vue
@@ -32,8 +33,8 @@ const LIBELLE_MOYEN: Record<string, string> = {
   orange_money: 'Orange Money', moov: 'Moov Money', mobi_cash: 'Mobi Cash',
   wave: 'Wave', cash: 'Espèces au guichet',
 };
-const fmt = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
-const jour = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+const fmt = formatF;
+const jour = (iso: string) => new Date(iso).toLocaleDateString('fr-FR', FORMAT_DATE.jour);
 
 export default function RetraitsAdminPage() {
   const {data:finance,error:erreurFinance,refresh:rafraichirFinance} = useFinance();
@@ -234,7 +235,7 @@ export default function RetraitsAdminPage() {
               { cle: 'montant', titre: 'Montant', droite: true, tri: (c) => c.amount, rendu: (c) => fmt(c.amount) },
               { cle: 'produit', titre: 'Produit', rendu: (c) => c.productName },
               { cle: 'delai', titre: 'Délai', rendu: (c) => c.safetyWindowDays == null ? 'Selon la commande' : `J+${c.safetyWindowDays}` },
-              { cle: 'deblocage', titre: 'Déblocage prévu', tri: (c) => c.unlockAt || '', rendu: (c) => c.unlockAt ? new Date(c.unlockAt).toLocaleDateString('fr-FR') : 'Non renseigné' },
+              { cle: 'deblocage', titre: 'Déblocage prévu', tri: (c) => c.unlockAt || '', rendu: (c) => c.unlockAt ? new Date(c.unlockAt).toLocaleDateString('fr-FR', FORMAT_DATE.complet) : 'Non renseigné' },
               ...(peutPayer ? [{ cle: 'action', titre: 'Action', fixe: true, droite: true, rendu: (c: Commission) => (
                 <Button size="sm" variant="ghost" disabled={enCours === c.id} onClick={() => debloquer(c.id)}>Débloquer avant terme</Button>
               ) }] : []),

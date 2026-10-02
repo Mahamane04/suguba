@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import type { PointJour } from '@/lib/reseau/stats';
+import { FORMAT_DATE } from '@/lib/montant';
 
 /**
  * Barres verticales, une série, par jour.
@@ -34,7 +35,7 @@ export default function GraphiqueBarres({
   const H = 120;
   const pas = L / Math.max(1, points.length);
   const largeur = Math.max(2, pas - 2);
-  const jourCourt = (j: string) => new Date(`${j}T12:00:00Z`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  const jourCourt = (j: string) => new Date(`${j}T12:00:00Z`).toLocaleDateString('fr-FR', FORMAT_DATE.jour);
 
   return (
     <figure className="bg-white rounded-3xl border border-slate-200 p-4 space-y-3">

@@ -15,6 +15,7 @@ import Button from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import type { Product } from '@/types';
 import { Camera, ImageOff, Plus, Tag, Ban, Package } from 'lucide-react';
+import { formatF } from '@/lib/montant';
 
 interface ProduitAdmin {
   id: string;
@@ -240,11 +241,11 @@ export default function AdminProductsPage() {
                       {p.nom}
                     </Link>
                     <p className="text-xs text-slate-500">
-                      {p.prix ? `${p.prix.toLocaleString('fr-FR')} F` : 'Sans prix'}
-                      {p.prixFournisseur ? ` (fournisseur ${p.prixFournisseur.toLocaleString('fr-FR')} F)` : ''}
+                      {p.prix ? `${formatF(p.prix)}` : 'Sans prix'}
+                      {p.prixFournisseur ? ` (fournisseur ${formatF(p.prixFournisseur)})` : ''}
                     </p>
                     <p className="text-xs text-slate-500">
-                      Revendeur : {p.commission.toLocaleString('fr-FR')} F
+                      Revendeur : {formatF(p.commission)}
                       {p.partProposee > 0 ? ' (part choisie par le fournisseur)' : ' (calculée par Suguba)'}
                     </p>
                     <p className="text-xs text-slate-500">

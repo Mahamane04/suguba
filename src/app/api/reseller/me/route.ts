@@ -84,6 +84,12 @@ export async function GET(req: NextRequest) {
         commande: c.order_id || null, montant: Number(c.amount), statut: c.status,
         debloquagePrevu: c.status === 'locked' ? c.unlock_at || null : null,
       })),
+      // Toutes les commissions rattachées à une vente (REV-01, audit UI/UX du
+      // 2026-10-02) : « Mes ventes » dit enfin, vente par vente, quand
+      // l'argent devient retirable, ou s'il est déjà versé.
+      commissionsParVente: lignes.filter((c) => c.order_id).map((c) => ({
+        commande: c.order_id, montant: Number(c.amount), statut: c.status, debloquagePrevu: c.unlock_at || null,
+      })),
       totalEarned: somme('paid'),
       momoNumber: metadata.momoNumber ? String(metadata.momoNumber) : null,
       momoProvider: metadata.momoProvider ? String(metadata.momoProvider) : null,

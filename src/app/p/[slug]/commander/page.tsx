@@ -25,6 +25,7 @@ import {
   ArrowLeft, Minus, Plus, Bike, Store, Tag, ShieldCheck, Lock, Check,
   Navigation, Clock, PackageX, Info,
 } from 'lucide-react';
+import { formatF } from '@/lib/montant';
 
 /**
  * Page de commande (2026-09-13) — remplace la fenêtre « Finaliser ma
@@ -51,7 +52,7 @@ const PRECISION_VILLE: Record<string, string> = {
   Mopti: 'Sévaré - Gare',
 };
 
-const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
+const fcfa = formatF;
 
 function Section({
   numero,

@@ -5,6 +5,7 @@ import SugubaLoader from '@/components/ui/SugubaLoader';
 import React, { useCallback, useEffect, useState } from 'react';
 import { ShieldCheck, ShieldOff, Bike, MapPin } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
+import { FORMAT_DATE } from '@/lib/montant';
 
 interface Livreur {
   id: string;
@@ -171,7 +172,7 @@ export default function DriverVerificationPanel({onFait}: {onFait?: () => void} 
                 <p className="text-xs text-slate-600 bg-white border border-slate-200 rounded-xl p-2.5">
                   <span className="font-bold">Constat : </span>{l.constat}
                   {l.verifieLe && (
-                    <span className="text-slate-500"> — {new Date(l.verifieLe).toLocaleDateString('fr-FR')}</span>
+                    <span className="text-slate-500"> — {new Date(l.verifieLe).toLocaleDateString('fr-FR', FORMAT_DATE.complet)}</span>
                   )}
                 </p>
               )}

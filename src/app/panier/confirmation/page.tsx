@@ -9,6 +9,7 @@ import BottomNav from '@/components/common/BottomNav';
 import Button from '@/components/ui/Button';
 import { Card, EmptyState } from '@/components/ui/Surface';
 import type { Order } from '@/types';
+import { formatF } from '@/lib/montant';
 
 /**
  * Confirmation d'un panier. Les commandes sont groupées par identifiant public de livraison
@@ -16,7 +17,7 @@ import type { Order } from '@/types';
  * retenir pour réceptionner ses colis.
  */
 
-const fcfa = (v: number) => `${Math.round(v).toLocaleString('fr-FR')} F`;
+const fcfa = formatF;
 
 export default function ConfirmationPanierPage() {
   const [donnees, setDonnees] = useState<{ total: number; commandes: Order[] } | null>(null);

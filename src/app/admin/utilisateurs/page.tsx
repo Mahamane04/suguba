@@ -9,6 +9,7 @@ import { EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
 import TableauAdmin, { type Colonne } from '@/components/admin/TableauAdmin';
 import Panneau from '@/components/admin/Panneau';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 /**
  * Annuaire admin (§ pages 38 à 41) : clients, revendeurs, fournisseurs,
@@ -18,7 +19,7 @@ import Panneau from '@/components/admin/Panneau';
 
 type Onglet = 'clients' | 'revendeurs' | 'fournisseurs' | 'livreurs';
 const ONGLETS: [Onglet, string][] = [['revendeurs', 'Revendeurs'], ['fournisseurs', 'Fournisseurs'], ['livreurs', 'Livreurs'], ['clients', 'Clients']];
-const fcfa = (v: number) => `${Math.round(v || 0).toLocaleString('fr-FR')} F`;
+const fcfa = formatF;
 
 export default function UtilisateursPage() {
   const { toast, demander } = useToast();
@@ -87,7 +88,7 @@ export default function UtilisateursPage() {
     { cle: 'activite', titre: 'Activité', tri: triActivite, rendu: activite },
     { cle: 'badges', titre: 'Badges', rendu: (u) => (u.badges.length
       ? <span className="flex flex-wrap gap-1">{u.badges.map((b: string) => <StatusPill key={b} ton="info">{badges.find((x) => x.cle === b)?.libelle || b.replace(/_/g, ' ')}</StatusPill>)}</span> : '—') },
-    { cle: 'inscrit', titre: 'Inscrit le', cachee: true, tri: (u) => u.inscritLe || '', rendu: (u) => (u.inscritLe ? new Date(u.inscritLe).toLocaleDateString('fr-FR') : '—') },
+    { cle: 'inscrit', titre: 'Inscrit le', cachee: true, tri: (u) => u.inscritLe || '', rendu: (u) => (u.inscritLe ? new Date(u.inscritLe).toLocaleDateString('fr-FR', FORMAT_DATE.complet) : '—') },
     { cle: 'statut', titre: 'Statut', tri: (u) => u.statut, rendu: (u) => <StatusPill ton={tonStatut(u.statut)}>{libelleStatut(u.statut)}</StatusPill> },
   ];
   const colonnesClients: Colonne<any>[] = [
@@ -143,8 +144,8 @@ export default function UtilisateursPage() {
             </div>
             {u.suspension && (
               <div className="rounded-2xl bg-rose-50 text-rose-900 px-3 py-2 text-sm space-y-1">
-                <p><strong>Suspendu le {new Date(u.suspension.depuis).toLocaleDateString('fr-FR')}</strong> : {u.suspension.motif}</p>
-                {u.suspension.contestation && <p className="text-amber-900"><strong>Contestation</strong> ({new Date(u.suspension.contesteeLe).toLocaleDateString('fr-FR')}) : {u.suspension.contestation}</p>}
+                <p><strong>Suspendu le {new Date(u.suspension.depuis).toLocaleDateString('fr-FR', FORMAT_DATE.complet)}</strong> : {u.suspension.motif}</p>
+                {u.suspension.contestation && <p className="text-amber-900"><strong>Contestation</strong> ({new Date(u.suspension.contesteeLe).toLocaleDateString('fr-FR', FORMAT_DATE.complet)}) : {u.suspension.contestation}</p>}
               </div>
             )}
             <section className="space-y-2" aria-labelledby="titre-badges">

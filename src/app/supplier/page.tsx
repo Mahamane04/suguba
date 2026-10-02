@@ -11,6 +11,7 @@ import PhotosProduitModal from '@/components/product/PhotosProduitModal';
 import {
   Plus, ShieldCheck, Clock, Store, Package, Users, XCircle, Camera, ClipboardList, FileText, Wallet
 } from 'lucide-react';
+import { formatF } from '@/lib/montant';
 
 interface SupplierProduct {
   id: string;
@@ -171,7 +172,7 @@ export default function SupplierDashboardPage() {
                         {product.category} • Stock : <strong>{product.stockQuantity}</strong>
                       </p>
                       <p className="text-xs font-bold text-slate-700">
-                        Mon prix : {product.supplierPrice.toLocaleString('fr-FR')} F
+                        Mon prix : {formatF(product.supplierPrice)}
                       </p>
                     </div>
                   </div>
@@ -189,7 +190,7 @@ export default function SupplierDashboardPage() {
                     <div className="text-right">
                       <span className="text-xs text-slate-500 block">Prix public</span>
                       <span className="text-xs font-bold text-slate-800">
-                        {product.publicPrice ? `${product.publicPrice.toLocaleString('fr-FR')} F` : 'En attente'}
+                        {product.publicPrice ? `${formatF(product.publicPrice)}` : 'En attente'}
                       </span>
                     </div>
                   </div>

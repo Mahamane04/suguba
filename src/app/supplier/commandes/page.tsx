@@ -14,6 +14,7 @@ import Button from '@/components/ui/Button';
 import { useToast } from '@/components/ui/Toast';
 import OtpValidationModal from '@/components/driver/OtpValidationModal';
 import type { Order } from '@/types';
+import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 /**
  * Commandes à préparer — espace fournisseur (2026-09-24).
@@ -64,8 +65,8 @@ interface EtapeFournisseur {
   noteAdmin: string | null;
 }
 
-const enF = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
-const heure = (iso: string) => new Date(iso).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+const enF = formatF;
+const heure = (iso: string) => new Date(iso).toLocaleString('fr-FR', FORMAT_DATE.jourHeure);
 
 type Filtre = 'a_preparer' | 'en_route' | 'terminees';
 

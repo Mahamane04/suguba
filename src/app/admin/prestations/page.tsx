@@ -10,6 +10,7 @@ import Button from '@/components/ui/Button';
 import { Field, Textarea } from '@/components/ui/Field';
 import { useToast } from '@/components/ui/Toast';
 import { classeCible, useCibleUrl, useDefilerVersCible } from '@/components/admin/contexte';
+import { FORMAT_DATE } from '@/lib/montant';
 
 interface Etape {
   position: number;
@@ -37,7 +38,7 @@ interface Prestation {
   validees: number;
 }
 
-const jour = (iso: string) => new Date(iso).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+const jour = (iso: string) => new Date(iso).toLocaleString('fr-FR', FORMAT_DATE.jourHeure);
 
 /**
  * Prestations à étapes — suivi admin (2026-09-26, lot 1c). Les parcours en
