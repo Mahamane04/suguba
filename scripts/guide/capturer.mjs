@@ -4,7 +4,8 @@
 //   npm run guide:captures -- accueil,panier   → seulement ces pages
 //
 // Prérequis : serveur local lancé (npm run dev, port 3000) avec
-// SUGUBA_DEMO_MODE=true (connexion aux comptes de démonstration).
+// SUGUBA_DEMO_MODE=true pour les pages publiques ; pour les espaces pro, copie
+// locale isolée + comptes fictifs [QA] (variable COMPTES_QA, voir plus bas).
 //
 // LECTURE SEULE : aucun formulaire envoyé, aucune commande. Les seuls gestes
 // sont ouvrir le menu, ouvrir « + Vente » et ajouter au panier (stockage local
@@ -26,6 +27,14 @@ const BASE = process.env.BASE || 'http://localhost:3000';
 const CHROME = process.env.CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const HAUTEUR_MAX = 2600; // px CSS : au-delà, la capture s'arrête (listes longues)
 const INTERDITES = ['/admin/boutique-suguba'];
+
+// Espaces pro (2026-10-02) : depuis que chaque session est vérifiée contre un vrai
+// profil en base, la connexion « démo » (identifiant fictif) mène à la page de
+// connexion. Les espaces pro se capturent donc sur la COPIE LOCALE ISOLÉE, avec les
+// comptes fictifs [QA] (fichier comptes.json de l'audit) :
+//   COMPTES_QA=audit-local/2026-10-01-integral/comptes.json BASE=http://127.0.0.1:3300 npm run guide:captures -- <pages pro>
+const COMPTES_QA = process.env.COMPTES_QA ? JSON.parse(fs.readFileSync(process.env.COMPTES_QA, 'utf8')) : null;
+const COMPTE_QA_PAR_ROLE = { reseller: 'rev1', supplier: 'four1', driver: 'liv1', admin: 'admin' };
 
 const guide = JSON.parse(fs.readFileSync(path.join(GUIDE, 'guide.json'), 'utf8'));
 const filtre = process.argv[2] ? new Set(process.argv[2].split(',')) : null;
@@ -53,10 +62,12 @@ function masquer(listeNoms) {
   const reMail = /[\w.+-]+@[\w-]+\.[\w.]+/g;
   const reTel = /\+?\d(?:[\s.]?\d){7,}/g; // toute suite d'au moins 8 chiffres
   const support = (m) => m.replace(/\D/g, '').endsWith('89460000');
+  // Un montant de 8 chiffres ou plus (« 19 800 000 F ») n'est pas un téléphone.
+  const montant = (texte, i, m) => /^\s?F\b/.test(texte.slice(i + m.length));
   const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
   const noeuds = []; while (w.nextNode()) noeuds.push(w.currentNode);
   for (const t of noeuds) {
-    let v = t.nodeValue.replace(reMail, '•••@•••').replace(reTel, (m) => (support(m) ? m : '•• •• •• ••'));
+    let v = t.nodeValue.replace(reMail, '•••@•••').replace(reTel, (m, i, texte) => (support(m) || montant(texte, i, m) ? m : '•• •• •• ••'));
     if (reNoms) v = v.replace(reNoms, 'Nom masqué');
     if (v !== t.nodeValue) t.nodeValue = v;
   }
@@ -65,7 +76,7 @@ function masquer(listeNoms) {
   }
   const texte = document.body.innerText;
   return (texte.match(reMail) || []).length
-    + (texte.match(reTel) || []).filter((m) => !support(m)).length
+    + [...texte.matchAll(reTel)].filter((x) => !support(x[0]) && !montant(texte, x.index, x[0])).length
     + (reNoms ? (texte.match(reNoms) || []).length : 0);
 }
 
@@ -74,7 +85,24 @@ const page = await browser.newPage();
 await page.setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1');
 await page.evaluateOnNewDocument(() => {
   try { Object.defineProperty(Notification, 'permission', { get: () => 'denied' }); } catch {}
+  // Application « installée » : le bandeau « Installer l'application » (iPhone) ne
+  // recouvre plus le haut de chaque capture ; il reste décrit dans le guide.
+  try { Object.defineProperty(navigator, 'standalone', { get: () => true }); } catch {}
   window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); e.stopImmediatePropagation(); }, true);
+});
+// LECTURE SEULE garantie (2026-10-02) : toute requête qui écrit est bloquée dans le
+// navigateur, sauf la connexion de démonstration et les calculs de total (qui
+// n'enregistrent rien). L'accueil comptait par exemple des « vues » de produits
+// sponsorisés à chaque capture, faussant les statistiques des sponsors.
+const ECRITURES_PERMISES = ['/api/auth/logout', '/api/auth/demo-login', '/api/orders/quote', '/api/orders/cart-quote'];
+const bloquees = new Map();
+await page.setRequestInterception(true);
+page.on('request', (req) => {
+  const methode = req.method();
+  const chemin = (() => { try { return new URL(req.url()).pathname; } catch { return req.url(); } })();
+  if (['GET', 'HEAD', 'OPTIONS'].includes(methode) || ECRITURES_PERMISES.includes(chemin)) { req.continue(); return; }
+  bloquees.set(`${methode} ${chemin}`, (bloquees.get(`${methode} ${chemin}`) || 0) + 1);
+  req.abort();
 });
 const VUE = { width: 390, height: 844, deviceScaleFactor: 1.5, isMobile: true, hasTouch: true };
 await page.setViewport(VUE);
@@ -85,13 +113,18 @@ for (const role of guide.roles) {
   const pages = aCapturer.filter((p) => p.role === role.cle);
   if (!pages.length) continue;
   await page.goto(`${BASE}/legal/terms`, { waitUntil: 'domcontentloaded', timeout: 180000 });
-  const connecte = await page.evaluate(async (r) => {
+  const connecte = await page.evaluate(async (r, avecComptesQa) => {
     await fetch('/api/auth/logout', { method: 'POST' });
-    if (!r) return true;
+    if (!r || avecComptesQa) return true;
     const rep = await fetch('/api/auth/demo-login', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role: r }) });
     return rep.ok;
-  }, sessionDe[role.cle]);
+  }, sessionDe[role.cle], Boolean(COMPTES_QA));
   if (!connecte) throw new Error(`Connexion démo « ${sessionDe[role.cle]} » refusée : lancer le serveur avec SUGUBA_DEMO_MODE=true.`);
+  if (COMPTES_QA && sessionDe[role.cle]) {
+    const compte = COMPTES_QA[COMPTE_QA_PAR_ROLE[sessionDe[role.cle]]];
+    if (!compte?.cookie) throw new Error(`Compte fictif introuvable pour « ${sessionDe[role.cle]} » dans ${process.env.COMPTES_QA}.`);
+    await page.setCookie({ name: 'suguba_session', value: compte.cookie, url: BASE, httpOnly: true });
+  }
 
   for (const p of pages) {
     const { chemin, geste } = p.capture;
@@ -125,4 +158,5 @@ for (const role of guide.roles) {
 }
 await page.evaluate(() => { try { localStorage.setItem('suguba_panier', '[]'); } catch {} return fetch('/api/auth/logout', { method: 'POST' }); });
 await browser.close();
+if (bloquees.size) console.log(`Écritures bloquées : ${[...bloquees].map(([r, n]) => `${r} ×${n}`).join(', ')}`);
 if (erreurs) { console.log(`${erreurs} capture(s) en erreur.`); process.exit(1); }

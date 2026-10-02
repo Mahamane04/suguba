@@ -61,7 +61,7 @@
   {
    "titre": "En bas de chaque page",
    "points": [
-    "**Menu du bas**, qui change selon le profil. Visiteur et client : Accueil · Panier (avec son nombre d’articles) · Commandes · Compte — « Gagner de l’argent » est dans Compte et sur l’accueil. Revendeur : Accueil · Catalogue · Ventes · Gains · Marketing. Fournisseur : Dashboard · Stocks · Ajouter · Réseau. Livreur : Courses · Portefeuille. Admin : Vue globale · Produits · Analyses · SAV.",
+    "**Menu du bas**, qui change selon le profil. Visiteur et client : Accueil · Panier (avec son nombre d’articles) · Commandes · Compte — « Gagner de l’argent » est dans Compte et sur l’accueil. Revendeur : Accueil · Produits · Ventes · Gains · Outils. Fournisseur : Accueil · Produits · Colis · Paiements · Plus. Livreur : Courses · Portefeuille. Équipe Suguba : dans son espace, le menu ☰ en haut remplace cette barre (ailleurs sur le site : À traiter · Commandes · Produits · SAV).",
     "**Bulle WhatsApp verte** : écrit directement au support Suguba (+223 89 46 00 00). Plus sur l’accueil (elle recouvrait les produits) : l’aide est dans Compte → Aide.",
     "**Pendant une commande**, le menu du bas est remplacé par la barre flottante « Total + Confirmer »."
    ]
@@ -70,9 +70,11 @@
    "titre": "Comment les captures sont faites",
    "alerte": true,
    "points": [
-    "Téléphone de 390 px de large (taille iPhone), sur la vraie base, **sans rien enregistrer** : aucun formulaire envoyé, aucune commande passée.",
-    "Les espaces pro sont vus avec les **comptes de démonstration** : leurs listes sont vides et certaines pages affichent « pas encore disponible ».",
+    "Téléphone de 390 px de large (taille iPhone), **sans rien enregistrer** : aucun formulaire envoyé, aucune commande passée, et toute requête qui écrirait est bloquée dans le navigateur. Captures refaites le 2 octobre 2026.",
+    "Pages publiques (visiteur) : sur la **vraie base**, avec les vrais produits.",
+    "Espaces pro (revendeur, fournisseur, livreur, équipe) : sur une **copie locale isolée** du site, avec des **comptes fictifs « [QA] »** et leurs données de test (« [QA] Ventilateur de table », « [QA] Boutique Kadi »…). D’où le badge « Local » en haut de l’espace équipe. Les comptes de démonstration ne suffisent plus : depuis que chaque session est vérifiée contre un vrai profil, ils mènent à la page de connexion.",
     "Sur toutes les captures, **noms, téléphones et e-mails des vrais utilisateurs sont masqués**.",
+    "Le bandeau « Installer l’application » n’apparaît pas sur les captures (le téléphone est considéré comme l’ayant déjà installée) : il est décrit plus haut.",
     "Les longues pages s’affichent dans un téléphone qu’on peut faire défiler."
    ]
   }
@@ -194,6 +196,34 @@
   }
  ],
  "journal": [
+  {
+   "date": "2026-10-02",
+   "titre": "Captures du guide refaites",
+   "demande": "« refais les captures du guide »",
+   "realise": [
+    "Les 70 captures refaites après les lots 1 à 8 : 26 pages publiques sur la vraie base, 44 pages pro (revendeur 23, fournisseur 11, livreur 2, équipe 8) sur la copie locale isolée avec les comptes fictifs [QA].",
+    "Les captures pro montraient la page de connexion : la connexion de démonstration utilise un identifiant sans profil en base, refusé depuis la vérification des sessions. Le script accepte désormais les comptes [QA] (variable COMPTES_QA).",
+    "Lecture seule garantie par le script : toute requête qui écrit est bloquée dans le navigateur (seules la connexion de démonstration et les calculs de total passent). Une seule requête bloquée sur l’ensemble : le rafraîchissement de session.",
+    "Bandeau « Installer l’application » retiré des captures : il recouvrait le haut de chaque page.",
+    "Masquage : un montant de 8 chiffres ou plus suivi de « F » n’est plus pris pour un numéro de téléphone (la valeur du stock fournisseur était masquée).",
+    "Guide : méthode de capture et menus du bas mis à jour (Produits, Outils, Colis, Paiements, Plus)."
+   ],
+   "ecarts": [
+    "Les espaces pro montrent des données de test « [QA] », pas l’activité réelle : volontaire, aucune session de production n’est ouverte pour les captures.",
+    "« Dépôt et coordonnées (ancienne adresse) » : la capture commence au milieu de Ma boutique, là où l’ancienne adresse fait défiler la page.",
+    "Seules des pages de documentation et le script de capture changent : aucun code du site, aucune migration."
+   ],
+   "pages": [
+    "rev-accueil",
+    "fou-stocks",
+    "fou-ajouter",
+    "liv-courses",
+    "adm-produits",
+    "commander",
+    "panier"
+   ],
+   "statut": "en ligne"
+  },
   {
    "date": "2026-10-02",
    "titre": "Audit UI/UX, lot 8 : arbitrages et parcours de commande unique",
