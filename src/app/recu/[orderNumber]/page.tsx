@@ -200,7 +200,7 @@ export default function RecuPage() {
                   // eslint-disable-next-line @next/next/no-img-element
                   ? <img src={qr} alt="QR de remise à présenter au livreur" width={260} height={260} className="mx-auto w-[260px] h-[260px] [image-rendering:pixelated]" />
                   : <div className="mx-auto w-[260px] h-[260px] bg-slate-100 rounded-2xl animate-pulse" />}
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-500">Code de remise</p>
+                <p className="text-xs font-semibold text-slate-600">Code de remise</p>
                 <p className="font-mono text-xl font-bold tracking-[0.4em] text-slate-900" aria-live="polite">{recu.code}</p>
                 <p className="rounded-2xl bg-amber-50 text-amber-900 text-sm p-3 flex items-start gap-2 text-left">
                   <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />

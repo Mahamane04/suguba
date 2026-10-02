@@ -6,8 +6,7 @@ import { PayoutCheckout, payoutSessionStorage } from '@/lib/payout-submit';
 
 import React, { useCallback, useEffect, useState, useMemo } from 'react';
 import Button from '@/components/ui/Button';
-import Header from '@/components/common/Header';
-import BottomNav from '@/components/common/BottomNav';
+import PageReseau from '@/components/reseau/PageReseau';
 import FormulaireRetrait from '@/components/retraits/FormulaireRetrait';
 import HistoriqueRetraits from '@/components/retraits/HistoriqueRetraits';
 import { useSugubaStore } from '@/lib/store';
@@ -77,15 +76,10 @@ export default function ResellerPayoutsPage() {
   const disponible = soldes?.disponible ?? 0;
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
-      <Header />
-
-      <main className="flex-1 max-w-3xl mx-auto px-4 sm:px-6 py-6 w-full space-y-5">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Mes gains</h1>
-          <p className="text-xs text-slate-500">Vos commissions, et leur retrait par Mobile Money ou en espèces au guichet.</p>
-        </div>
-
+    // REV-14 (lot 6 de l'audit UI/UX du 2026-10-02) : coquille commune des espaces.
+    <PageReseau titre="Mes gains"
+      sousTitre="Vos commissions, et leur retrait par Mobile Money ou en espèces au guichet."
+      retour={{ href: '/reseller', libelle: 'Espace revendeur' }}>
         {/* Soldes */}
         {chargement ? (
           <div className="bg-white rounded-3xl border border-slate-200 p-8 flex justify-center">
@@ -96,12 +90,12 @@ export default function ResellerPayoutsPage() {
         ) : (
           <div className="bg-white rounded-3xl border border-slate-200 p-5 space-y-4">
             <div>
-              <p className="text-xs font-bold text-slate-500 uppercase">Disponible au retrait</p>
+              <p className="text-xs font-semibold text-slate-600">Disponible au retrait</p>
               <p className="text-3xl font-bold text-slate-900">{enF(disponible)}</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-2xl bg-slate-50 p-3">
-                <p className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1"><Clock className="w-3.5 h-3.5" />En attente</p>
+                <p className="text-xs font-semibold text-slate-600 flex items-center gap-1"><Clock className="w-3.5 h-3.5" />En attente</p>
                 <p className="text-lg font-bold text-slate-900">{enF(soldes?.attente ?? 0)}</p>
                 <p className="text-xs text-slate-500">Après livraison, délai de sécurité et réception des fonds par Suguba</p>
                 {(soldes?.attenteFonds ?? 0) > 0 && (
@@ -111,7 +105,7 @@ export default function ResellerPayoutsPage() {
                 )}
               </div>
               <div className="rounded-2xl bg-slate-50 p-3">
-                <p className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" />Déjà versé</p>
+                <p className="text-xs font-semibold text-slate-600 flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" />Déjà versé</p>
                 <p className="text-lg font-bold text-slate-900">{enF(soldes?.verse ?? 0)}</p>
                 <p className="text-xs text-slate-500">Depuis votre inscription</p>
               </div>
@@ -135,9 +129,6 @@ export default function ResellerPayoutsPage() {
         />}
 
         {erreurHistorique ? <div role="alert" className="rounded-2xl border bg-white p-4 text-sm"><p>L’historique des retraits n’a pas pu être chargé.</p><Button variant="ghost" onClick={charger}>Réessayer</Button></div> : <HistoriqueRetraits retraits={retraits} />}
-      </main>
-
-      <BottomNav />
-    </div>
+    </PageReseau>
   );
 }

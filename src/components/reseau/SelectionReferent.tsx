@@ -50,7 +50,7 @@ export default function SelectionReferent() {
     <section className="space-y-3" aria-labelledby="titre-selection-referent">
       <div className="flex items-end justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs font-bold text-suguba-brand-dark uppercase flex items-center gap-1"><Sparkles className="w-3.5 h-3.5" />Recommandé pour vous</p>
+          <p className="text-xs font-semibold text-suguba-brand-dark flex items-center gap-1"><Sparkles className="w-3.5 h-3.5" />Recommandé pour vous</p>
           <h2 id="titre-selection-referent" className="text-lg font-bold text-slate-900 truncate">La sélection de {selection.nom}</h2>
         </div>
         <Link href={selection.lienBoutique} className="shrink-0 inline-flex items-center gap-1 text-xs font-bold text-slate-700 min-h-[40px]">

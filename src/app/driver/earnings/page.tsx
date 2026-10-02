@@ -1,9 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
-import Header from '@/components/common/Header';
-import BottomNav from '@/components/common/BottomNav';
+import PageReseau from '@/components/reseau/PageReseau';
 import PrintableReceiptModal from '@/components/common/PrintableReceiptModal';
 import RecuVersementModal from '@/components/common/RecuVersementModal';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
@@ -12,7 +10,7 @@ import EmptyState from '@/components/ui/EmptyState';
 import { Order } from '@/types';
 import { LIBELLE_ENCAISSEMENT, statutEncaissement, type Versement } from '@/lib/caisse-livreur';
 import { useCaisseLivreur } from '@/lib/useCaisseLivreur';
-import { ArrowLeft, Banknote, Package, Printer, Receipt, Truck, Wallet } from 'lucide-react';
+import { Banknote, Package, Printer, Receipt, Truck, Wallet } from 'lucide-react';
 import { formatF, FORMAT_DATE } from '@/lib/montant';
 import LigneListe from '@/components/ui/LigneListe';
 import Button from '@/components/ui/Button';
@@ -58,25 +56,15 @@ export default function DriverEarningsPage() {
   const fmt = formatF;
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
-      <Header />
-
-      <main className="flex-1 max-w-3xl mx-auto px-4 sm:px-6 py-6 w-full space-y-5">
-        <div className="space-y-1">
-          <Link href="/driver" className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900">
-            <ArrowLeft className="w-4 h-4" />
-            <span>Mes courses</span>
-          </Link>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Mon portefeuille</h1>
-        </div>
-
+    // REV-14 (lot 6 de l'audit UI/UX du 2026-10-02) : coquille commune des espaces.
+    <PageReseau titre="Mon portefeuille" retour={{ href: '/driver', libelle: 'Mes courses' }}>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <Carte icone={<Truck className="w-4 h-4" />} titre="Livraisons effectuées" note="Remises confirmées par le code du client">
             {livrees.length}
           </Carte>
           <Carte icone={<Banknote className="w-4 h-4" />} titre="À remettre à Suguba"
             note={c && c.garde > 0 ? `${fmt(c.especes)} encaissés, ${fmt(c.garde)} gardés pour vous` : 'Espèces encaissées pas encore versées'} accent>
-            {aRemettre !== null ? fmt(aRemettre) : etatCaisse === 'erreur' ? '—' : <span className="inline-block h-7 w-24 rounded-lg bg-slate-700 animate-pulse align-middle" role="status" aria-label="Chargement du montant" />}
+            {aRemettre !== null ? fmt(aRemettre) : etatCaisse === 'erreur' ? '—' : <span className="inline-block h-7 w-24 rounded-lg bg-white/20 animate-pulse align-middle" role="status" aria-label="Chargement du montant" />}
           </Carte>
           <Carte
             icone={<Wallet className="w-4 h-4" />}
@@ -173,15 +161,11 @@ export default function DriverEarningsPage() {
             </div>
           )}
         </div>
-      </main>
-
       {recuPour && (
         <PrintableReceiptModal order={recuPour} isOpen={!!recuPour} onClose={() => setRecuPour(null)} />
       )}
       <RecuVersementModal versement={recuVersement} nomLivreur={c?.nom || 'Livreur'} onClose={() => setRecuVersement(null)} />
-
-      <BottomNav />
-    </div>
+    </PageReseau>
   );
 }
 
@@ -189,13 +173,13 @@ function Carte({ icone, titre, note, accent, children }: {
   icone: React.ReactNode; titre: string; note: string; accent?: boolean; children: React.ReactNode;
 }) {
   return (
-    <div className={`p-4 rounded-3xl border space-y-1 ${accent ? 'bg-slate-900 border-slate-900 text-white' : 'bg-white border-slate-200'}`}>
-      <div className={`flex items-center gap-1.5 ${accent ? 'text-slate-300' : 'text-slate-500'}`}>
+    <div className={`p-4 rounded-3xl border space-y-1 ${accent ? 'bg-suguba-profond border-suguba-profond text-white' : 'bg-white border-slate-200'}`}>
+      <div className={`flex items-center gap-1.5 ${accent ? 'text-white/80' : 'text-slate-600'}`}>
         {icone}
-        <span className="text-xs font-bold uppercase">{titre}</span>
+        <span className="text-xs font-semibold">{titre}</span>
       </div>
       <p className={`text-2xl font-bold ${accent ? 'text-white' : 'text-slate-900'}`}>{children}</p>
-      <p className={`text-xs ${accent ? 'text-slate-300' : 'text-slate-500'}`}>{note}</p>
+      <p className={`text-xs ${accent ? 'text-white/80' : 'text-slate-600'}`}>{note}</p>
     </div>
   );
 }

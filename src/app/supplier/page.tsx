@@ -5,12 +5,10 @@ import Image from 'next/image';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import CarteAccesReseau from '@/components/reseau/CarteAccesReseau';
-import { Store as StoreIcone, Users as UsersIcone, Megaphone as MegaphoneIcone, BarChart3 as BarChartIcone, UsersRound as EquipeIcone, Rocket as RocketIcone, MessageCircleQuestion as QuestionIcone } from 'lucide-react';
+import { Store as StoreIcone, Users as UsersIcone, Megaphone as MegaphoneIcone, BarChart3 as BarChartIcone, UsersRound as EquipeIcone, Rocket as RocketIcone } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import PhotosProduitModal from '@/components/product/PhotosProduitModal';
-import {
-  Plus, ShieldCheck, Clock, Store, Package, Users, XCircle, Camera, ClipboardList, FileText, Wallet
-} from 'lucide-react';
+import { Plus, ShieldCheck, Clock, Store, XCircle, Camera, ClipboardList } from 'lucide-react';
 import { formatDate, formatF } from '@/lib/montant';
 import { EmptyState as EtatVide } from '@/components/ui/Surface';
 import Link from 'next/link';
@@ -349,7 +347,7 @@ function Indicateur({ titre, valeur, note, accent }: {
 }) {
   return (
     <div className="bg-white p-4 rounded-3xl border border-slate-200 space-y-1">
-      <span className="text-xs font-bold text-slate-500 uppercase">{titre}</span>
+      <span className="text-xs font-semibold text-slate-600">{titre}</span>
       <p className={`text-2xl font-bold ${accent ? 'text-suguba-brand-dark' : 'text-slate-900'}`}>{valeur}</p>
       <p className="text-xs text-slate-500">{note}</p>
     </div>

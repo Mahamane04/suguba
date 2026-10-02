@@ -35,7 +35,8 @@ export function PageHeader({
   return (
     <div className="space-y-2">
       {retour && (
-        <Link href={retour.href} className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 min-h-[32px]">
+        // Lot 6 de l'audit UI/UX du 2026-10-02 (REV-15) : 13 px gras, cible de 32 px.
+        <Link href={retour.href} className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-slate-900 min-h-10">
           <ArrowLeft className="w-4 h-4" />
           <span>{retour.libelle}</span>
         </Link>
@@ -43,7 +44,7 @@ export function PageHeader({
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900">{titre}</h1>
-          {sousTitre && <p className="text-xs sm:text-sm text-slate-600 mt-0.5">{sousTitre}</p>}
+          {sousTitre && <p className="text-sm text-slate-600 mt-0.5">{sousTitre}</p>}
         </div>
         {action && <div className="shrink-0">{action}</div>}
       </div>
@@ -58,6 +59,7 @@ export function StatCard({
   aide,
   icone: Icone,
   accent = false,
+  alerte = false,
   href,
 }: {
   label: string;
@@ -67,15 +69,18 @@ export function StatCard({
   accent?: boolean;
   /** Une tuile mène au détail de son chiffre (ADM-10, audit UI/UX du 2026-10-02). */
   href?: string;
+  /** Chiffre qui demande d'agir (en retard, en rupture) : fond ambre (ADM-14). */
+  alerte?: boolean;
 }) {
-  const classes = 'bg-white rounded-3xl border border-slate-200 p-4 space-y-1';
+  const classes = `rounded-3xl border p-4 space-y-1 ${alerte ? 'bg-amber-50 border-amber-200' : 'bg-white border-slate-200'}`;
   const contenu = (
     <>
-        <p className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1.5">
+        {/* ADM-14 / REV-15 : libellé en casse normale, demi-gras ; le chiffre reste en gras. */}
+        <p className="text-xs font-semibold text-slate-600 flex items-center gap-1.5">
           {Icone && <Icone className="w-3.5 h-3.5" />}
           <span>{label}</span>
         </p>
-        <p className={`text-xl sm:text-2xl font-bold ${accent ? 'text-suguba-brand-dark' : 'text-slate-900'}`}>{valeur}</p>
+        <p className={`text-xl sm:text-2xl font-bold tabular-nums ${accent ? 'text-suguba-brand-dark' : 'text-slate-900'}`}>{valeur}</p>
         {aide && <p className="text-xs text-slate-500">{aide}</p>}
     </>
   );

@@ -2,8 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import Header from '@/components/common/Header';
-import BottomNav from '@/components/common/BottomNav';
+import PageReseau from '@/components/reseau/PageReseau';
 import CreateOrderModal from '@/components/reseller/CreateOrderModal';
 import ProductCard, { carteDepuisProduit } from '@/components/product/ProductCard';
 import ChoicePicker from '@/components/ui/ChoicePicker';
@@ -113,24 +112,11 @@ export default function ResellerCatalogPage() {
   useEffect(() => { if (idsAffiches) compterVues(idsAffiches.split(',')); }, [idsAffiches]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
-      <Header />
-
-      <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 py-6 w-full space-y-5">
-
-        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3">
-          <div className="space-y-1">
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Catalogue à partager</h1>
-            <p className="text-xs text-slate-500">
-              Un clic sur « Partager sur WhatsApp » envoie la photo, le prix et votre lien. Chaque vente livrée vous rapporte la commission affichée.
-            </p>
-          </div>
-          <Button href="/reseller/createur" variant="ghost" size="sm" className="self-start sm:self-auto">
-            <Sparkles className="w-4 h-4" />
-            <span>Créer un visuel</span>
-          </Button>
-        </div>
-
+    // REV-14 (lot 6 de l'audit UI/UX du 2026-10-02) : coquille commune des espaces.
+    <PageReseau titre="Catalogue à partager" large
+      sousTitre="« Partager sur WhatsApp » envoie la photo, le prix et votre lien. Chaque vente livrée vous rapporte la commission affichée."
+      retour={{ href: '/reseller', libelle: 'Espace revendeur' }}
+      action={<Button href="/reseller/createur" variant="ghost" size="sm"><Sparkles className="w-4 h-4" /><span>Créer un visuel</span></Button>}>
         {/* Ma boutique : la vitrine publique composée depuis ce catalogue. */}
         {codeRevendeur !== null && (
           <div className="bg-white border border-slate-200 rounded-3xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3" aria-busy={codeRevendeur === undefined}>
@@ -281,8 +267,6 @@ export default function ResellerCatalogPage() {
           </div>
         )}
 
-      </main>
-
       {selectedProductForOrder && (
         <CreateOrderModal
           product={selectedProductForOrder}
@@ -290,8 +274,6 @@ export default function ResellerCatalogPage() {
           onClose={() => setSelectedProductForOrder(null)}
         />
       )}
-
-      <BottomNav />
-    </div>
+    </PageReseau>
   );
 }

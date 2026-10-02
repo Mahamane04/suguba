@@ -2,11 +2,12 @@
 
 import ChoicePicker from '@/components/ui/ChoicePicker';
 import React, { useCallback, useEffect, useState } from 'react';
-import { ScrollText, Search } from 'lucide-react';
+import { ChevronDown, ScrollText, Search } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
 import { Card, EmptyState, Skeleton } from '@/components/ui/Surface';
 import { FORMAT_DATE } from '@/lib/montant';
+import { detailsLisibles, libelleAction, libelleDossier } from '@/lib/admin/libelles-journal';
 
 interface Entree { id: number; cree_le: string; auteur: string; action: string; dossier: string | null; motif: string | null; apres: Record<string, unknown> | null }
 
@@ -60,29 +61,46 @@ export default function JournalPage() {
         : entrees.length === 0 ? <EmptyState icone={ScrollText} titre="Aucune action" texte="Aucune action ne correspond à ces filtres." />
         : (
           <Card className="!p-0 overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="bg-slate-50 text-left text-xs text-slate-600">
-                <tr><th className="px-3 py-2 font-bold">Date</th><th className="px-3 py-2 font-bold">Membre</th><th className="px-3 py-2 font-bold">Action</th><th className="px-3 py-2 font-bold hidden md:table-cell">Dossier</th></tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {entrees.map((e) => (
-                  <React.Fragment key={e.id}>
-                    <tr className="hover:bg-slate-50 cursor-pointer" onClick={() => setOuverte(ouverte === e.id ? null : e.id)}>
-                      <td className="px-3 py-2 whitespace-nowrap text-xs text-slate-600 tabular-nums">{dateHeure(e.cree_le)}</td>
-                      <td className="px-3 py-2 font-semibold text-slate-900">{e.auteur}</td>
-                      <td className="px-3 py-2"><code className="text-xs">{e.action}</code>{e.motif && <span className="block text-xs text-slate-500">Motif : {e.motif}</span>}</td>
-                      <td className="px-3 py-2 hidden md:table-cell text-xs text-slate-600 break-all">{e.dossier || '—'}</td>
-                    </tr>
-                    {ouverte === e.id && (
-                      <tr><td colSpan={4} className="px-3 py-2 bg-slate-50">
-                        <p className="text-xs text-slate-600 md:hidden">Dossier : {e.dossier || '—'}</p>
-                        <pre className="text-xs text-slate-700 whitespace-pre-wrap break-all">{JSON.stringify(e.apres || {}, null, 2)}</pre>
-                      </td></tr>
+            {/* ADM-07 (lot 6 de l'audit UI/UX du 2026-10-02) : une phrase par action, la
+                nature du dossier en clair, les détails en libellés (plus de code de route
+                ni de JSON). Chaque ligne se déplie avec un vrai bouton (clavier compris). */}
+            <ul className="divide-y divide-slate-100">
+              {entrees.map((e) => {
+                const ouvert = ouverte === e.id;
+                const details = detailsLisibles(e.apres);
+                return (
+                  <li key={e.id}>
+                    <button type="button" onClick={() => setOuverte(ouvert ? null : e.id)} aria-expanded={ouvert}
+                      className="w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-slate-50">
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-sm font-semibold text-slate-900">{libelleAction(e.action)}</span>
+                        <span className="block text-sm text-slate-600">
+                          {e.auteur} · {libelleDossier(e.dossier)}
+                        </span>
+                        {e.motif && <span className="block text-sm text-slate-700 mt-0.5">Motif : {e.motif}</span>}
+                      </span>
+                      <span className="shrink-0 text-xs text-slate-600 tabular-nums whitespace-nowrap pt-0.5">{dateHeure(e.cree_le)}</span>
+                      <ChevronDown className={`w-4 h-4 shrink-0 mt-0.5 text-slate-400 transition-transform ${ouvert ? 'rotate-180' : ''}`} />
+                    </button>
+                    {ouvert && (
+                      <div className="px-4 pb-3 space-y-2">
+                        {details.length > 0 ? (
+                          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-2xl bg-slate-50 p-3 text-sm">
+                            {details.map((d) => (
+                              <React.Fragment key={d.libelle}>
+                                <dt className="text-slate-600">{d.libelle}</dt>
+                                <dd className="text-slate-900 break-words">{d.valeur}</dd>
+                              </React.Fragment>
+                            ))}
+                          </dl>
+                        ) : <p className="text-sm text-slate-600">Aucun détail enregistré.</p>}
+                        <p className="text-xs text-slate-500 break-all">Code : {e.action}{e.dossier ? ` · ${e.dossier}` : ''}</p>
+                      </div>
                     )}
-                  </React.Fragment>
-                ))}
-              </tbody>
-            </table>
+                  </li>
+                );
+              })}
+            </ul>
             {suivant && <div className="p-3 text-center"><Button type="button" variant="ghost" size="sm" onClick={() => charger(suivant)}>Voir plus</Button></div>}
           </Card>
         )}

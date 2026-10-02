@@ -7,10 +7,7 @@ import BottomNav from '@/components/common/BottomNav';
 import Footer from '@/components/common/Footer';
 import { useSugubaStore } from '@/lib/store';
 import ChoicePicker from '@/components/ui/ChoicePicker';
-import { 
-  FileText, Building2, Printer, MessageCircle, 
-  ArrowLeft, CheckCircle2, ShieldCheck, Download, Sparkles, Phone, Mail
-} from 'lucide-react';
+import { FileText, Building2, Printer, MessageCircle, ArrowLeft, CheckCircle2, Sparkles } from 'lucide-react';
 import { formatF } from '@/lib/montant';
 
 export default function B2BQuotePage() {
@@ -292,7 +289,7 @@ export default function B2BQuotePage() {
                 </div>
 
                 <div className="text-right">
-                  <span className="px-3 py-1 bg-slate-900 text-white font-mono font-bold text-xs rounded-lg uppercase">
+                  <span className="px-3 py-1 bg-slate-900 text-white font-mono font-semibold text-xs rounded-lg">
                     FACTURE PROFORMA
                   </span>
                   <p className="text-xs font-mono font-bold text-slate-900 mt-2">N° {quoteNumber}</p>
@@ -304,14 +301,14 @@ export default function B2BQuotePage() {
               {/* Client Info Card */}
               <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 grid grid-cols-2 gap-4 text-xs">
                 <div>
-                  <span className="text-xs font-bold text-slate-500 uppercase block mb-1">Destinataire / Acheteur B2B</span>
+                  <span className="text-xs font-semibold text-slate-600 block mb-1">Destinataire / Acheteur B2B</span>
                   <p className="font-bold text-sm text-slate-900">{companyName || 'Société Partenaire'}</p>
                   {nifNumber && <p className="font-mono text-slate-600">{nifNumber}</p>}
                   <p className="text-slate-700 mt-1">Attn : {contactName || 'Responsable Achats'}</p>
                 </div>
 
                 <div className="text-right">
-                  <span className="text-xs font-bold text-slate-500 uppercase block mb-1">Lieu & Modalités de Livraison</span>
+                  <span className="text-xs font-semibold text-slate-600 block mb-1">Lieu & Modalités de Livraison</span>
                   <p className="font-bold text-slate-900">{deliveryCity} (Mali)</p>
                   <p className="text-slate-600">Contact : {contactPhone || '+223 -- -- -- --'}</p>
                   <p className="text-slate-600 font-medium mt-1">Conditions : {paymentTerms}</p>

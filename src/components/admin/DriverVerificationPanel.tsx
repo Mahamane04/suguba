@@ -205,7 +205,7 @@ export default function DriverVerificationPanel({onFait}: {onFait?: () => void} 
                 </div>
               ) : ouvert === l.id ? (
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-600 uppercase tracking-wide block">
+                  <label className="text-xs font-semibold text-slate-600 block">
                     Ce que vous avez constaté au guichet
                   </label>
                   <textarea

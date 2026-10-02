@@ -24,7 +24,9 @@ test('menu : chaque entrée mène à une page qui existe', () => {
     const fichier = path.join(__dirname, '../src/app', chemin, 'page.tsx');
     assert.ok(existsSync(fichier), `${e.libelle} → ${chemin}`);
   }
-  assert.equal(poste.RUBRIQUES.length, 6, 'six destinations');
+  // ADM-11 (lot 6 de l'audit UI/UX) : « Plus » (17 entrées) scindé en « Campagnes » et « Réglages et équipe ».
+  assert.equal(poste.RUBRIQUES.length, 7, 'sept destinations');
+  for (const r of poste.RUBRIQUES) assert.ok(r.entrees.length <= 8, `${r.titre} : ${r.entrees.length} entrées`);
 });
 
 test('menu : filtré selon les droits, rubriques vides retirées', () => {
@@ -35,7 +37,7 @@ test('menu : filtré selon les droits, rubriques vides retirées', () => {
   assert.ok(!titres.includes('Équipe et sécurité'));
   assert.ok(support[0].entrees.some((e) => e.href === '/admin/a-traiter'), '« À traiter » pour tous');
   const tout = poste.rubriquesVisibles(permissionsDuRole('super_admin'));
-  assert.equal(tout.length, 6);
+  assert.equal(tout.length, 7);
   assert.deepEqual(poste.rubriquesVisibles([]), [], 'sans rôle d’équipe : aucun menu, seulement le message « demandez un rôle »');
 });
 

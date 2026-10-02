@@ -11,14 +11,10 @@ import SectionSponsorises from '@/components/reseau/SectionSponsorises';
 import { Store as StoreIcone, Target as TargetIcone, Share2 as Share2Icone, UserPlus as UserPlusIcone, Users as UsersIcone, ShieldCheck as ShieldCheckIcone, Palette as PaletteIcone, CalendarDays as CalendarIcone, Factory as FactoryIcone, Tag as TagIcone, MessageCircleQuestion as QuestionIcone } from 'lucide-react';
 import CreateOrderModal from '@/components/reseller/CreateOrderModal';
 import Button from '@/components/ui/Button';
-import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 import { partagerProduit } from '@/lib/partage';
 import { useSugubaStore, useCatalogueCharge } from '@/lib/store';
 import { Product } from '@/types';
-import {
-  Wallet, ShoppingBag, Copy, Check, Plus, ChevronRight,
-  Store, Calculator, Sparkles, QrCode, ShieldCheck, ClipboardList
-} from 'lucide-react';
+import { Wallet, ShoppingBag, Copy, Check, Plus, ChevronRight, Store, Calculator, Sparkles, QrCode, ShieldCheck, ClipboardList } from 'lucide-react';
 import { formatF, formatNombre, FORMAT_DATE, formatDate } from '@/lib/montant';
 import { statutVente } from '@/lib/libelles-vente';
 import { StatusPill } from '@/components/ui/Surface';
@@ -158,7 +154,7 @@ export default function ResellerDashboardPage() {
               Bonjour{prenom ? `, ${prenom}` : ''} 👋
             </h1>
             <div className="space-y-1">
-              <span className="text-xs font-bold text-slate-600 uppercase block">Mon code revendeur</span>
+              <span className="text-xs font-semibold text-slate-600 block">Mon code revendeur</span>
               <button
                 onClick={handleCopyRefCode}
                 disabled={!referralCode}
@@ -171,7 +167,7 @@ export default function ResellerDashboardPage() {
                   ? <Check className="w-4 h-4 text-suguba-brand-dark" />
                   : <Copy className="w-4 h-4 text-slate-400" />}
               </button>
-              <p className="text-xs text-slate-600">
+              <p className="text-sm text-slate-600">
                 {copiedRef ? 'Code copié.' : 'Il est déjà inclus dans chaque lien que vous partagez.'}
               </p>
             </div>
@@ -182,7 +178,7 @@ export default function ResellerDashboardPage() {
               tuiles qui répétaient les mêmes sommes. */}
           <div className="rounded-2xl bg-suguba-profond text-white p-4 flex flex-col justify-between gap-3">
             <div className="space-y-2">
-              <p className="text-xs text-white/80">Retirable maintenant</p>
+              <p className="text-sm text-white/80">Retirable maintenant</p>
               <p className="text-3xl font-bold tabular-nums text-suguba-citron">
                 {charge && !moi ? '—' : charge
                   ? <>{formatNombre(availableBalance)} <span className="text-sm font-bold">F</span></>
@@ -195,7 +191,7 @@ export default function ResellerDashboardPage() {
                 </dl>
               )}
               {prochainDeblocage && (
-                <p className="text-xs text-white/80">Prochain déblocage : <strong className="text-white">{formatF(prochainDeblocage.montant)}</strong> le {formatDate(prochainDeblocage.date, 'jour')}</p>
+                <p className="text-sm text-white/80">Prochain déblocage : <strong className="text-white">{formatF(prochainDeblocage.montant)}</strong> le {formatDate(prochainDeblocage.date, 'jour')}</p>
               )}
             </div>
             <Button href="/reseller/payouts" variant="citron" fullWidth>
@@ -212,7 +208,7 @@ export default function ResellerDashboardPage() {
               <h2 className="font-bold text-sm text-slate-900">
                 {moi ? `Vos commissions sont débloquées ${palier.jours} jours après la livraison` : 'Votre palier sera affiché après chargement du profil'}
               </h2>
-              <p className="text-xs text-slate-600">
+              <p className="text-sm text-slate-600">
                 {!moi ? 'Réessayez le chargement pour consulter votre progression.' : palier.prochain
                   ? `Encore ${restantes} vente${restantes > 1 ? 's' : ''} livrée${restantes > 1 ? 's' : ''} pour passer « ${palier.suivant} » et raccourcir ce délai.`
                   : 'Vous êtes au palier le plus rapide.'}
@@ -227,7 +223,7 @@ export default function ResellerDashboardPage() {
           <div className="bg-slate-100 rounded-full h-2 overflow-hidden">
             <div className="h-2 rounded-full bg-suguba-brand transition-all duration-500" style={{ width: `${moi ? progression : 0}%` }} />
           </div>
-          <p className="text-xs text-slate-600">
+          <p className="text-sm text-slate-600">
             14 jours pour un nouveau revendeur, 7 jours dès 10 ventes livrées, 3 jours dès 30. Ce délai protège contre les retours.
           </p>
         </div>
@@ -248,9 +244,9 @@ export default function ResellerDashboardPage() {
           <div className="flex items-end justify-between gap-3">
             <div>
               <h2 className="text-base font-bold text-slate-900">À partager aujourd&apos;hui</h2>
-              <p className="text-xs text-slate-600">Sur votre statut WhatsApp ou directement à un client.</p>
+              <p className="text-sm text-slate-600">Sur votre statut WhatsApp ou directement à un client.</p>
             </div>
-            <Link href="/reseller/catalog" className="text-xs font-bold text-suguba-brand-dark hover:underline flex items-center gap-0.5 shrink-0">
+            <Link href="/reseller/catalog" className="text-sm font-semibold text-suguba-brand-dark min-h-10 inline-flex items-center hover:underline flex items-center gap-0.5 shrink-0">
               <span>Voir tout</span>
               <ChevronRight className="w-3.5 h-3.5" />
             </Link>
@@ -276,7 +272,7 @@ export default function ResellerDashboardPage() {
                     </div>
                     <div className="flex-1 min-w-0 space-y-0.5">
                       <h3 className="font-bold text-sm text-slate-900 truncate">{product.name}</h3>
-                      <p className="text-xs font-bold text-slate-900">
+                      <p className="text-sm font-bold text-slate-900">
                         {formatNombre(product.publicPrice)} <span className="text-xs font-bold text-slate-600">F</span>
                       </p>
                       <span className="inline-block px-2 py-0.5 bg-suguba-brand/10 text-suguba-brand-dark text-xs font-bold rounded-full">
@@ -311,7 +307,7 @@ export default function ResellerDashboardPage() {
         <div className="bg-white rounded-3xl p-5 border border-slate-200 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="font-bold text-sm text-slate-900">Dernières ventes</h2>
-            <Link href="/reseller/orders" className="text-xs font-bold text-suguba-brand-dark hover:underline">Voir tout</Link>
+            <Link href="/reseller/orders" className="text-sm font-semibold text-suguba-brand-dark min-h-10 inline-flex items-center hover:underline">Voir tout</Link>
           </div>
 
           {myOrders.length === 0 ? (
@@ -327,13 +323,13 @@ export default function ResellerDashboardPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-sm text-slate-900 truncate">{order.productName}</p>
-                    <p className="text-xs text-slate-600">
+                    <p className="text-sm text-slate-600">
                       {new Date(order.createdAt).toLocaleDateString('fr-FR', FORMAT_DATE.jour)}
                       {' • '}{formatF(order.totalAmount)}
                     </p>
                   </div>
                   <div className="text-right shrink-0 space-y-1">
-                    <p className="text-xs font-bold text-suguba-brand-dark">+{formatF(order.resellerCommission)}</p>
+                    <p className="text-sm font-bold text-suguba-brand-dark tabular-nums">+{formatF(order.resellerCommission)}</p>
                     <StatutVente status={order.status} />
                   </div>
                 </div>

@@ -114,7 +114,7 @@ export default function ShopView({
 
             {/* Identité */}
             <div className="mt-3 space-y-2">
-              <p className="text-xs font-bold uppercase tracking-wider text-suguba-brand-dark">
+              <p className="text-xs font-semibold text-suguba-brand-dark">
                 {estRevendeur ? 'Revendeur partenaire Suguba' : boutique.presentation ? 'Fournisseur partenaire Suguba' : 'Boutique sur Suguba'}
               </p>
               <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight">{titre}</h1>

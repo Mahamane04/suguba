@@ -2,10 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { Order } from '@/types';
-import { 
-  X, MapPin, Navigation, Phone, MessageCircle, 
-  ExternalLink, Compass, ShieldCheck, Banknote 
-} from 'lucide-react';
+import { X, MapPin, Navigation, Phone, MessageCircle, ExternalLink, Compass } from 'lucide-react';
 import { formatF } from '@/lib/montant';
 
 interface DeliveryMapModalProps {
@@ -97,7 +94,7 @@ export default function DeliveryMapModal({ order, isOpen, onClose }: DeliveryMap
             <div className="flex items-start space-x-3">
               <MapPin className="w-6 h-6 text-emerald-700 shrink-0 mt-0.5" />
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-emerald-800">
+                <p className="text-xs font-semibold text-emerald-800">
                   Quartier de Destination :
                 </p>
                 <p className="text-base font-bold text-slate-900">

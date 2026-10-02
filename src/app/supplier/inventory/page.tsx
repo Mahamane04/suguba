@@ -1,17 +1,14 @@
 'use client';
 
-import SugubaLoader from '@/components/ui/SugubaLoader';
-
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import Header from '@/components/common/Header';
-import BottomNav from '@/components/common/BottomNav';
+import PageReseau from '@/components/reseau/PageReseau';
 import ProductImage from '@/components/common/ProductImage';
 import Button from '@/components/ui/Button';
+import { EmptyState, Skeleton, StatCard, StatusPill } from '@/components/ui/Surface';
 import PhotosProduitModal from '@/components/product/PhotosProduitModal';
 import FormulaireVariante from '@/components/product/FormulaireVariante';
-import { Package, Minus, Plus, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { Package, Minus, Plus, AlertTriangle, MoreHorizontal, Search } from 'lucide-react';
 import { formatF } from '@/lib/montant';
 
 interface ProduitStock {
@@ -19,22 +16,28 @@ interface ProduitStock {
   name: string;
   images: string[];
   supplierPrice: number;
+  publicPrice?: number;
   stockQuantity: number;
   status: string;
 }
 
-const STATUT: Record<string, { libelle: string; classe: string }> = {
-  approved: { libelle: 'En vente', classe: 'bg-suguba-brand/10 text-suguba-brand-dark' },
-  draft: { libelle: 'Copie à vérifier', classe: 'bg-slate-100 text-slate-700' },
-  submitted: { libelle: 'En attente', classe: 'bg-amber-50 text-amber-800' },
-  rejected: { libelle: 'Retiré', classe: 'bg-rose-50 text-rose-700' },
+const STATUT: Record<string, { libelle: string; ton: 'succes' | 'attente' | 'neutre' | 'danger' }> = {
+  approved: { libelle: 'En vente', ton: 'succes' },
+  draft: { libelle: 'Copie à vérifier', ton: 'neutre' },
+  submitted: { libelle: 'En attente', ton: 'attente' },
+  rejected: { libelle: 'Retiré', ton: 'danger' },
 };
 
 /**
  * Stocks du fournisseur — refaits le 2026-09-11 sur ses VRAIS produits
  * (/api/supplier/me), avec une mise à jour enregistrée en base
- * (/api/supplier/stock). L'ancienne page affichait les produits d'un
- * fournisseur de démonstration et ne changeait que la mémoire du téléphone.
+ * (/api/supplier/stock).
+ *
+ * FOU-06 (lot 6 de l'audit UI/UX du 2026-10-02) : chaque ligne portait sept
+ * commandes (−, +, champ, « Confirmer le stock », Photos, Modifier, Dupliquer),
+ * chaque appui sur − ou + partait au serveur, et aucun prix n'était affiché.
+ * Désormais : le prix en clair, un compteur qui ne change que l'écran, un seul
+ * « Enregistrer » quand la quantité a changé, et le reste rangé dans « Plus ».
  */
 export default function SupplierInventoryPage() {
   const router = useRouter();
@@ -45,7 +48,8 @@ export default function SupplierInventoryPage() {
   const [erreur, setErreur] = useState('');
   const [recherche, setRecherche] = useState('');
   const [filtre, setFiltre] = useState('tous');
-  const [quantites, setQuantites] = useState<Record<string, string>>({});
+  // Quantité en cours de saisie, par produit : rien ne part au serveur avant « Enregistrer ».
+  const [brouillons, setBrouillons] = useState<Record<string, number>>({});
 
   const recharger = React.useCallback(async () => {
     setErreurChargement(false);
@@ -66,13 +70,14 @@ export default function SupplierInventoryPage() {
     } catch(e) { setErreur((e as Error).message); } finally { setEnCours(null); }
   };
 
-  const changerStock = async (p: ProduitStock, nouveau: number) => {
-    if (enCours) return;
-    const quantite = Math.max(0, nouveau);
+  const ajuster = (p: ProduitStock, quantite: number) =>
+    setBrouillons((b) => ({ ...b, [p.id]: Math.max(0, Math.floor(quantite) || 0) }));
+
+  const enregistrerStock = async (p: ProduitStock) => {
+    const quantite = brouillons[p.id];
+    if (enCours || quantite === undefined) return;
     setErreur('');
     setEnCours(p.id);
-    const avant = p.stockQuantity;
-    setProduits((l) => (l || []).map((x) => (x.id === p.id ? { ...x, stockQuantity: quantite } : x)));
     try {
       const res = await fetch('/api/supplier/stock', {
         method: 'POST',
@@ -81,10 +86,10 @@ export default function SupplierInventoryPage() {
       });
       const json = await res.json().catch(() => ({}));
       if (!res.ok || !json.success) throw new Error(json.error || 'Mise à jour impossible.');
+      // L'écran ne montre la nouvelle quantité qu'une fois enregistrée.
+      setProduits((l) => (l || []).map((x) => (x.id === p.id ? { ...x, stockQuantity: quantite } : x)));
+      setBrouillons((b) => { const n = { ...b }; delete n[p.id]; return n; });
     } catch (e) {
-      // On remet la valeur d'avant : l'écran ne doit jamais montrer un stock
-      // qui n'est pas enregistré.
-      setProduits((l) => (l || []).map((x) => (x.id === p.id ? { ...x, stockQuantity: avant } : x)));
       setErreur(e instanceof Error ? e.message : 'Mise à jour impossible.');
     } finally {
       setEnCours(null);
@@ -95,108 +100,144 @@ export default function SupplierInventoryPage() {
   const unites = liste.reduce((s, p) => s + p.stockQuantity, 0);
   const valeur = liste.reduce((s, p) => s + p.supplierPrice * p.stockQuantity, 0);
   const faibles = liste.filter((p) => p.stockQuantity <= 5).length;
+  const requete = recherche.trim().toLocaleLowerCase('fr');
+  const affiches = liste.filter((p) => p.name.toLocaleLowerCase('fr').includes(requete)
+    && (filtre === 'tous' || (filtre === 'faible' ? p.stockQuantity <= 5 : p.status === filtre)));
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
-      <Header />
-
-      <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 py-6 w-full space-y-5">
-        <Link href="/supplier" className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900">
-          <ArrowLeft className="w-4 h-4" />
-          <span>Mon espace fournisseur</span>
-        </Link>
-
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Mes produits</h1>
-          <p className="text-xs text-slate-500">Tenez vos quantités à jour pour ne jamais vendre un article absent.</p>
+    <PageReseau
+      titre="Mes produits"
+      sousTitre="Tenez vos quantités à jour pour ne jamais vendre un article absent."
+      retour={{ href: '/supplier', libelle: 'Espace fournisseur' }}
+      action={<Button href="/supplier/products/new"><Plus className="w-4 h-4" />Ajouter une offre</Button>}
+    >
+      {produits !== null && (
+        // La valeur (« 19 840 000 F ») prend toute la largeur sur téléphone : en trois
+        // colonnes de 390 px, elle débordait de sa tuile.
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <div className="col-span-2 sm:col-span-1"><StatCard label="Valeur du stock" valeur={formatF(valeur)} aide="à votre prix" /></div>
+          <StatCard label="Unités" valeur={unites} />
+          <StatCard label="Stock faible" valeur={faibles} alerte={faibles > 0} />
         </div>
+      )}
 
-        {produits !== null && <div className="grid grid-cols-3 gap-3">
-          <div className="bg-white rounded-3xl border border-slate-200 p-3">
-            <p className="text-xs font-bold text-slate-500 uppercase">Unités</p>
-            <p className="text-lg font-bold text-slate-900">{unites}</p>
-          </div>
-          <div className="bg-white rounded-3xl border border-slate-200 p-3">
-            <p className="text-xs font-bold text-slate-500 uppercase">Valeur</p>
-            <p className="text-lg font-bold text-slate-900">{formatF(valeur)}</p>
-          </div>
-          <div className="bg-white rounded-3xl border border-slate-200 p-3">
-            <p className="text-xs font-bold text-slate-500 uppercase">Stock faible</p>
-            <p className={`text-lg font-bold ${faibles > 0 ? 'text-amber-700' : 'text-slate-900'}`}>{faibles}</p>
-          </div>
-        </div>}
+      {liste.length > 0 && (
+        <div className="flex flex-col sm:flex-row gap-2">
+          <label className="relative flex-1">
+            <span className="sr-only">Rechercher un produit</span>
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input type="search" value={recherche} onChange={(e) => setRecherche(e.target.value)} placeholder="Rechercher un produit"
+              className="w-full min-h-11 pl-10 pr-3 rounded-2xl border border-slate-200 bg-white text-base sm:text-sm focus:outline-none focus:ring-2 focus:ring-suguba-profond/30" />
+          </label>
+          <label className="sm:w-56">
+            <span className="sr-only">Afficher</span>
+            <select value={filtre} onChange={(e) => setFiltre(e.target.value)}
+              className="w-full min-h-11 px-3 rounded-2xl border border-slate-200 bg-white text-base sm:text-sm">
+              <option value="tous">Tous les produits</option>
+              <option value="faible">Stock faible ou rupture</option>
+              <option value="approved">En vente</option>
+              <option value="submitted">En attente</option>
+            </select>
+          </label>
+        </div>
+      )}
 
-        <div className="bg-white rounded-2xl p-4 space-y-3 border"><Button href="/supplier/products/new">Ajouter une offre</Button><label htmlFor="stock-recherche" className="block text-sm font-semibold">Rechercher un produit</label><input id="stock-recherche" value={recherche} onChange={e => setRecherche(e.target.value)} className="w-full border rounded-xl p-3"/><label htmlFor="stock-filtre" className="block text-sm font-semibold">Afficher</label><select id="stock-filtre" value={filtre} onChange={e => setFiltre(e.target.value)} className="w-full border rounded-xl p-3"><option value="tous">Tous les produits</option><option value="faible">Stock faible ou rupture</option><option value="approved">En vente</option><option value="submitted">En attente</option></select></div>
-        {erreur && (
-          <p className="rounded-2xl bg-rose-50 border border-rose-100 p-3 text-xs font-bold text-rose-700 flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4 shrink-0" />{erreur}
-          </p>
-        )}
+      {erreur && (
+        <p role="alert" className="rounded-2xl bg-rose-50 border border-rose-100 p-3 text-sm text-rose-800 flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 shrink-0" />{erreur}
+        </p>
+      )}
 
-        {erreurChargement ? <div role="alert" className="rounded-2xl border bg-white p-5 space-y-3"><p>Vos produits n’ont pas pu être chargés.</p><Button onClick={recharger}>Réessayer</Button></div> : produits === null ? (
-          <div className="bg-white rounded-3xl border border-slate-200 p-8 flex justify-center">
-            <SugubaLoader className="w-6 h-6 text-slate-400" />
-          </div>
-        ) : liste.length === 0 ? (
-          <div className="bg-white rounded-3xl border border-slate-200 p-8 text-center space-y-3">
-            <Package className="w-8 h-8 text-slate-300 mx-auto" />
-            <p className="text-sm text-slate-600">Vous n&apos;avez pas encore de produit.</p>
-            <Button href="/supplier/products/new">Ajouter un produit</Button>
-          </div>
-        ) : (
-          <div className="bg-white rounded-3xl border border-slate-200 divide-y divide-slate-100">
-            {liste.filter(p => p.name.toLocaleLowerCase('fr').includes(recherche.toLocaleLowerCase('fr')) && (filtre === 'tous' || (filtre === 'faible' ? p.stockQuantity <= 5 : p.status === filtre))).map((p) => {
-              const statut = STATUT[p.status] || { libelle: p.status, classe: 'bg-slate-100 text-slate-600' };
-              return (
-                <div key={p.id} className="p-3 sm:p-4 space-y-2">
-                <div className="flex items-center gap-3">
+      {erreurChargement ? (
+        <EmptyState erreur titre="Vos produits n’ont pas pu être chargés" texte="Vérifiez la connexion puis réessayez." onReessayer={recharger} />
+      ) : produits === null ? (
+        <Skeleton className="h-48" />
+      ) : liste.length === 0 ? (
+        <EmptyState icone={Package} titre="Vous n’avez pas encore de produit"
+          texte="Ajoutez une offre : avec une photo, elle est en vente tout de suite."
+          action={<Button href="/supplier/products/new">Ajouter une offre</Button>} />
+      ) : affiches.length === 0 ? (
+        <EmptyState icone={Search} titre="Aucun produit ne correspond"
+          action={<Button variant="ghost" onClick={() => { setRecherche(''); setFiltre('tous'); }}>Tout afficher</Button>} />
+      ) : (
+        <ul className="bg-white rounded-3xl border border-slate-200 divide-y divide-slate-100">
+          {affiches.map((p) => {
+            const statut = STATUT[p.status] || { libelle: p.status, ton: 'neutre' as const };
+            const brouillon = brouillons[p.id];
+            const quantite = brouillon ?? p.stockQuantity;
+            const modifie = brouillon !== undefined && brouillon !== p.stockQuantity;
+            return (
+              <li key={p.id} className="p-3 sm:p-4 space-y-3">
+                <div className="flex items-start gap-3">
                   <div className="relative w-14 h-14 rounded-2xl overflow-hidden bg-slate-100 shrink-0">
                     <ProductImage src={p.images[0] || ''} alt={p.name} fill sizes="56px" className="object-cover" compact />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-slate-900 line-clamp-1">{p.name}</p>
-                    <span className={`inline-block mt-0.5 px-2 py-0.5 rounded-full text-xs font-bold ${statut.classe}`}>{statut.libelle}</span>
-                    {p.stockQuantity <= 5 && (
-                      <span className="ml-1.5 inline-block px-2 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-800">
-                        {p.stockQuantity === 0 ? 'Rupture' : 'Stock faible'}
-                      </span>
-                    )}
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <p className="text-sm font-semibold text-slate-900 line-clamp-2">{p.name}</p>
+                    <p className="text-sm text-slate-700">
+                      Vous touchez <strong className="whitespace-nowrap">{formatF(p.supplierPrice)}</strong>
+                      {Number(p.publicPrice) > 0 && <span className="text-slate-500"> · client <span className="whitespace-nowrap">{formatF(Number(p.publicPrice))}</span></span>}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      <StatusPill ton={statut.ton}>{statut.libelle}</StatusPill>
+                      {p.stockQuantity <= 5 && <StatusPill ton="attente">{p.stockQuantity === 0 ? 'Rupture' : 'Stock faible'}</StatusPill>}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => changerStock(p, p.stockQuantity - 1)}
-                      disabled={enCours !== null || p.stockQuantity <= 0}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex items-center gap-1" role="group" aria-label={`Stock de ${p.name}`}>
+                    <button type="button" onClick={() => ajuster(p, quantite - 1)} disabled={quantite <= 0}
                       aria-label={`Retirer une unité de ${p.name}`}
-                      className="w-10 h-10 rounded-xl border border-slate-200 hover:bg-slate-50 flex items-center justify-center disabled:opacity-40"
-                    >
+                      className="w-11 h-11 rounded-xl border border-slate-200 hover:bg-slate-50 flex items-center justify-center disabled:opacity-40">
                       <Minus className="w-4 h-4" />
                     </button>
-                    <span className="w-10 text-center text-base font-bold text-slate-900">{p.stockQuantity}</span>
-                    <button
-                      type="button"
-                      onClick={() => changerStock(p, p.stockQuantity + 1)}
-                      disabled={enCours !== null}
+                    <input type="number" inputMode="numeric" min={0} step={1} value={quantite}
+                      onChange={(e) => ajuster(p, Number(e.target.value))}
+                      aria-label={`Quantité en stock de ${p.name}`}
+                      className="w-16 h-11 rounded-xl border border-slate-200 text-center text-base font-bold text-slate-900 tabular-nums" />
+                    <button type="button" onClick={() => ajuster(p, quantite + 1)}
                       aria-label={`Ajouter une unité de ${p.name}`}
-                      className="w-10 h-10 rounded-xl border border-slate-200 hover:bg-slate-50 flex items-center justify-center disabled:opacity-40"
-                    >
+                      className="w-11 h-11 rounded-xl border border-slate-200 hover:bg-slate-50 flex items-center justify-center">
                       <Plus className="w-4 h-4" />
                     </button>
                   </div>
+                  {modifie ? (
+                    <>
+                      <Button size="sm" loading={enCours === p.id} disabled={enCours !== null && enCours !== p.id} onClick={() => enregistrerStock(p)}>
+                        Enregistrer {quantite}
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => setBrouillons((b) => { const n = { ...b }; delete n[p.id]; return n; })}>Annuler</Button>
+                    </>
+                  ) : (
+                    <span className="text-xs text-slate-600">en stock</span>
+                  )}
+                  <Button href={`/supplier/products/${encodeURIComponent(p.id)}`} size="sm" variant="ghost" className="ml-auto">Modifier</Button>
                 </div>
-                <div className="flex flex-wrap items-end gap-2"><div><label htmlFor={`quantite-${p.id}`} className="block text-xs font-semibold mb-1">Nouvelle quantité</label><input id={`quantite-${p.id}`} type="number" min="0" step="1" value={quantites[p.id] ?? p.stockQuantity} onChange={e => setQuantites(v => ({ ...v, [p.id]: e.target.value }))} className="w-28 border rounded-xl p-2"/></div><Button size="sm" disabled={enCours !== null || quantites[p.id] === undefined || quantites[p.id] === '' || !Number.isInteger(Number(quantites[p.id])) || Number(quantites[p.id]) < 0} onClick={() => { changerStock(p, Number(quantites[p.id])); setQuantites(v => { const n = { ...v }; delete n[p.id]; return n; }); }}>Confirmer le stock</Button></div>
-                <div className="flex flex-wrap gap-2"><Button size="sm" variant="ghost" onClick={() => setPhotosPour(p)}>Photos ({p.images.length})</Button><Button href={`/supplier/products/${encodeURIComponent(p.id)}`} size="sm" variant="ghost">Modifier l’offre</Button><Button size="sm" variant="ghost" disabled={enCours !== null || ['rejected', 'archived'].includes(p.status)} onClick={() => dupliquer(p)}>{enCours === p.id ? <SugubaLoader className="w-4 h-4"/> : null}Dupliquer</Button></div>
-                <p className="text-xs text-slate-500">La copie reste à vérifier, avec un stock à zéro. Elle n’est pas mise en vente automatiquement.</p>
-                <FormulaireVariante produit={p} onCree={recharger} />
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </main>
+
+                <details className="group">
+                  <summary className="inline-flex min-h-10 cursor-pointer list-none items-center gap-1.5 text-sm font-semibold text-slate-700 [&::-webkit-details-marker]:hidden">
+                    <MoreHorizontal className="w-4 h-4" />Plus
+                  </summary>
+                  <div className="mt-2 space-y-2 rounded-2xl bg-slate-50 p-3">
+                    <div className="flex flex-wrap gap-2">
+                      <Button size="sm" variant="ghost" onClick={() => setPhotosPour(p)}>Photos ({p.images.length})</Button>
+                      <Button size="sm" variant="ghost" loading={enCours === p.id && !modifie}
+                        disabled={enCours !== null || ['rejected', 'archived'].includes(p.status)} onClick={() => dupliquer(p)}>
+                        Dupliquer
+                      </Button>
+                    </div>
+                    <p className="text-xs text-slate-600">La copie reste à vérifier, avec un stock à zéro : elle n’est pas mise en vente automatiquement.</p>
+                    <FormulaireVariante produit={p} onCree={recharger} />
+                  </div>
+                </details>
+              </li>
+            );
+          })}
+        </ul>
+      )}
 
       {photosPour && <PhotosProduitModal produit={{ id: photosPour.id, nom: photosPour.name, images: photosPour.images }} onClose={() => setPhotosPour(null)} onEnregistre={() => { setPhotosPour(null); recharger(); }}/>}
-      <BottomNav />
-    </div>
+    </PageReseau>
   );
 }

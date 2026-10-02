@@ -4,8 +4,7 @@ import SugubaLoader from '@/components/ui/SugubaLoader';
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Clock, Lock, Package, Send } from 'lucide-react';
-import Header from '@/components/common/Header';
-import BottomNav from '@/components/common/BottomNav';
+import PageReseau from '@/components/reseau/PageReseau';
 import FormulaireRetrait from '@/components/retraits/FormulaireRetrait';
 import HistoriqueRetraits from '@/components/retraits/HistoriqueRetraits';
 import { PayoutCheckout, payoutSessionStorage } from '@/lib/payout-submit';
@@ -95,15 +94,10 @@ export default function SupplierPaiementsPage() {
   const disponible = soldes?.disponible ?? 0;
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
-      <Header />
-
-      <main className="flex-1 max-w-3xl mx-auto px-4 sm:px-6 py-6 w-full space-y-5">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Mes paiements</h1>
-          <p className="text-xs text-slate-500">Ce que Suguba vous doit pour vos commandes livrées, et son retrait par Mobile Money ou en espèces au guichet.</p>
-        </div>
-
+    // REV-14 (lot 6 de l'audit UI/UX du 2026-10-02) : coquille commune des espaces.
+    <PageReseau titre="Mes paiements"
+      sousTitre="Ce que Suguba vous doit pour vos commandes livrées, et son retrait par Mobile Money ou en espèces au guichet."
+      retour={{ href: '/supplier', libelle: 'Espace fournisseur' }}>
         {chargement ? (
           <div className="bg-white rounded-3xl border border-slate-200 p-8 flex justify-center" aria-busy="true">
             <SugubaLoader className="w-6 h-6 text-slate-400" />
@@ -122,12 +116,12 @@ export default function SupplierPaiementsPage() {
             {/* Soldes */}
             <div className="bg-white rounded-3xl border border-slate-200 p-5 space-y-4">
               <div>
-                <p className="text-xs font-bold text-slate-500 uppercase">Disponible au retrait</p>
+                <p className="text-xs font-semibold text-slate-600">Disponible au retrait</p>
                 <p className="text-3xl font-bold text-slate-900 tabular-nums">{enF(disponible)}</p>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div className="col-span-2 sm:col-span-1 rounded-2xl bg-slate-50 p-3">
-                  <p className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1"><Clock className="w-3.5 h-3.5" />En attente</p>
+                  <p className="text-xs font-semibold text-slate-600 flex items-center gap-1"><Clock className="w-3.5 h-3.5" />En attente</p>
                   <p className="text-lg font-bold text-slate-900 tabular-nums">{enF((soldes?.enAttente ?? 0) + (soldes?.attenteFonds ?? 0))}</p>
                   <p className="text-xs text-slate-500">
                     {soldes?.prochainDeblocage ? `Prochain montant disponible le ${jour(soldes.prochainDeblocage)}` : 'Délai de sécurité après la livraison'}
@@ -139,12 +133,12 @@ export default function SupplierPaiementsPage() {
                   )}
                 </div>
                 <div className="rounded-2xl bg-slate-50 p-3">
-                  <p className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1"><Send className="w-3.5 h-3.5" />En cours de retrait</p>
+                  <p className="text-xs font-semibold text-slate-600 flex items-center gap-1"><Send className="w-3.5 h-3.5" />En cours de retrait</p>
                   <p className="text-lg font-bold text-slate-900 tabular-nums">{enF(soldes?.enRetrait ?? 0)}</p>
                   <p className="text-xs text-slate-500">Demandé, pas encore versé</p>
                 </div>
                 <div className="rounded-2xl bg-slate-50 p-3">
-                  <p className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" />Déjà versé</p>
+                  <p className="text-xs font-semibold text-slate-600 flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" />Déjà versé</p>
                   <p className="text-lg font-bold text-slate-900 tabular-nums">{enF(soldes?.verse ?? 0)}</p>
                   <p className="text-xs text-slate-500">Depuis l&apos;ouverture des paiements</p>
                 </div>
@@ -205,9 +199,6 @@ export default function SupplierPaiementsPage() {
             <HistoriqueRetraits retraits={retraits} />
           </>
         )}
-      </main>
-
-      <BottomNav />
-    </div>
+    </PageReseau>
   );
 }

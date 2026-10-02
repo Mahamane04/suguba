@@ -1,13 +1,10 @@
 'use client';
 
-import SugubaLoader from '@/components/ui/SugubaLoader';
-
 import ChoixUniteVente, { SAISIE_UNITE_VIDE, type SaisieUnite } from '@/components/produit/ChoixUniteVente';
 import { normaliserUniteVente } from '@/lib/unite-vente';
 import React, { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import Header from '@/components/common/Header';
-import BottomNav from '@/components/common/BottomNav';
+import PageReseau from '@/components/reseau/PageReseau';
 import PhotosUploader from '@/components/product/PhotosUploader';
 import { useToast } from '@/components/ui/Toast';
 import Button from '@/components/ui/Button';
@@ -15,12 +12,11 @@ import ChoicePicker from '@/components/ui/ChoicePicker';
 import { sugubaStore } from '@/lib/store';
 import { FAMILLES_CATEGORIES } from '@/lib/product-categories';
 import { ETAPES, MODES_REMISE, TYPES_OFFRE, type CleEtape, type ModeRemise, type TypeOffre } from '@/lib/offre';
-import {
-  PackagePlus, ShieldCheck, CheckCircle2, ArrowLeft
-} from 'lucide-react';
-import Link from 'next/link';
+import { PackagePlus, CheckCircle2, ChevronDown } from 'lucide-react';
 import { formatF } from '@/lib/montant';
 import { MontantInput } from '@/components/ui/Field';
+
+const ETAPES_OFFRE = ['Votre offre', 'Photos', 'Prix et stock', 'Vérification'];
 
 export default function NewSupplierProductPage() {
   const router = useRouter();
@@ -96,7 +92,6 @@ export default function NewSupplierProductPage() {
     }, 350);
     return () => { clearTimeout(minuteur); controle.abort(); };
   }, [supplierPrice, partRevendeur, modePrix, prixConseille]);
-  const fmt = formatF;
 
   const [step, setStep] = useState(0);
   const formTop = useRef<HTMLOListElement>(null);
@@ -119,6 +114,25 @@ export default function NewSupplierProductPage() {
     if (!draftReady || isSuccess) return;
     try { sessionStorage.setItem(draftKey, JSON.stringify({ name, category, description, images, supplierPrice, stockQuantity, partRevendeur, typeOffre, modeRemise, modePrix, fraisRemise, offreInclus, modeCommande, etapes, prixConseille, saisieUnite })); } catch { /* stockage désactivé */ }
   }, [draftReady, isSuccess, name, category, description, images, supplierPrice, stockQuantity, partRevendeur, typeOffre, modeRemise, modePrix, fraisRemise, offreInclus, modeCommande, etapes, prixConseille, saisieUnite]);
+  // FOU-05 (lot 6 de l'audit UI/UX du 2026-10-02) : « Ajouter un autre produit » ne
+  // vidait que le nom, la description et les photos ; le prix, le stock, la part
+  // et la nature de l'offre précédente restaient, et partaient avec la suivante.
+  const reinitialiser = () => {
+    setName(''); setCategory('Électroménager'); setDescription(''); setImages([]);
+    setSupplierPrice(''); setStockQuantity(''); setPartRevendeur(''); setModePrix('fixe');
+    setTypeOffre('produit'); setModeRemise('livreur'); setFraisRemise(0); setOffreInclus('');
+    setModeCommande('achat'); setEtapes([]); setPrixConseille(0); setSaisieUnite(SAISIE_UNITE_VIDE);
+    setPublication(null); setSubmitError(''); setStep(0); setIsSuccess(false);
+    try { sessionStorage.removeItem(draftKey); } catch { /* stockage désactivé */ }
+  };
+  // Les réglages par défaut (article livré par Suguba, achat direct) conviennent
+  // à la plupart des offres : ils restent repliés tant qu'on ne s'en écarte pas.
+  const reglagesParDefaut = typeOffre === 'produit' && modeRemise === 'livreur' && modeCommande === 'achat';
+  const resumeVente = [
+    MODES_REMISE.find((m) => m.valeur === modeRemise)?.libelle,
+    modeCommande === 'devis' ? 'sur devis' : 'achat direct',
+  ].filter(Boolean).join(' · ');
+
   const avancer = () => {
     if (step === 0 && (!name.trim() || !description.trim())) { toast('Ajoutez le nom et la description.', { ton: 'erreur' }); return; }
     if (step === 1 && isUploadingImage) { toast('Attendez la fin de l’envoi des photos.', { ton: 'info' }); return; }
@@ -189,83 +203,71 @@ export default function NewSupplierProductPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
-      <Header />
-
-      <main className="flex-1 max-w-3xl mx-auto px-4 sm:px-6 py-6 w-full space-y-5">
-        
-        {/* Navigation back */}
-        <Link 
-          href="/supplier" 
-          className="inline-flex items-center space-x-1.5 text-xs font-bold text-slate-600 hover:text-slate-900"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Retour à mon espace fournisseur</span>
-        </Link>
-
-        {/* Page Title */}
-        <div className="space-y-1">
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">
-            Ajouter une offre
-          </h1>
-          <p className="text-xs text-slate-500">
-            Un produit, un service ou les deux. Avec au moins une photo, votre offre est mise en vente tout de suite, au prix calculé par Suguba.
-          </p>
-        </div>
-
-        {/* Workflow reminder card */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 text-xs text-slate-900 space-y-1">
-          <p className="font-bold flex items-center">
-            <ShieldCheck className="w-4 h-4 mr-1.5 text-suguba-brand-dark" />
-            Comment ça marche :
-          </p>
-          <p className="text-xs text-slate-600">
-            Vous déposez → Suguba calcule le prix de vente et la commission des revendeurs → le produit est en vente
-            aussitôt. Suguba peut ajuster le prix ou retirer un produit après coup.
-          </p>
-        </div>
-
+    <PageReseau
+      titre="Ajouter une offre"
+      sousTitre="Avec au moins une photo, elle est en vente tout de suite, au prix calculé par Suguba."
+      retour={{ href: '/supplier', libelle: 'Espace fournisseur' }}
+    >
         {submitError && (
-          <div className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-xs font-bold">
+          <div role="alert" className="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-sm">
             {submitError}
           </div>
         )}
 
         {isSuccess ? (
-          <div className="bg-white rounded-3xl p-8 border border-slate-200 text-center space-y-4 shadow-sm">
-            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
-              <CheckCircle2 className="w-10 h-10" />
+          <div className="bg-white rounded-3xl p-8 border border-slate-200 text-center space-y-4">
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto ${publication?.publie ? 'bg-suguba-brand text-white' : 'bg-amber-50 text-amber-700'}`}>
+              <CheckCircle2 className="w-9 h-9" />
             </div>
-            <div>
+            <div className="space-y-1">
               <h2 className="text-xl font-bold text-slate-900">
-                {publication?.publie ? 'Produit en vente !' : 'Produit enregistré'}
+                {publication?.publie ? 'Offre en vente' : 'Offre enregistrée, pas encore en vente'}
               </h2>
-              <p className="text-xs text-slate-600 mt-1 max-w-md mx-auto">
+              <p className="text-sm text-slate-700 max-w-md mx-auto">
                 {publication?.publie
-                  ? `Il est visible dans le catalogue au prix de ${formatF((publication.prix ?? 0))}. Vous toucherez votre prix fournisseur sur chaque vente livrée.`
-                  : `Pas encore en vente : ${publication?.raison || 'Suguba doit fixer son prix.'}`}
+                  ? `Visible dans le catalogue à ${formatF(publication.prix ?? 0)}. Vous touchez votre prix sur chaque vente livrée.`
+                  : `${publication?.raison || 'Suguba doit fixer son prix.'} Vous pouvez compléter l’offre depuis « Mes produits ».`}
               </p>
             </div>
+            {/* FOU-05 : une seule action principale, qui dépend du résultat. */}
             <div className="flex flex-col sm:flex-row gap-2 justify-center">
-              <Button onClick={() => router.push('/supplier')} variant="secondary">
-                Retourner à mon catalogue
-              </Button>
-              {/* Enchaîner les dépôts sans repasser par le tableau de bord. */}
-              <Button onClick={() => { setIsSuccess(false); setPublication(null); setName(''); setDescription(''); setImages([]); }} variant="ghost">
-                Ajouter un autre produit
-              </Button>
+              {publication?.publie ? (
+                <>
+                  <Button onClick={reinitialiser}>Ajouter une autre offre</Button>
+                  <Button href="/supplier/inventory" variant="ghost">Voir mes produits</Button>
+                </>
+              ) : (
+                <>
+                  <Button href="/supplier/inventory">Compléter dans « Mes produits »</Button>
+                  <Button onClick={reinitialiser} variant="ghost">Ajouter une autre offre</Button>
+                </>
+              )}
             </div>
           </div>
         ) : (
           <form noValidate onSubmit={handleSubmit} className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
             
-            <ol ref={formTop} tabIndex={-1} className="flex gap-2 text-xs scroll-mt-24" aria-label="Étapes de création">{['Offre', 'Photos', 'Prix et stock', 'Vérification'].map((label, index) => <li key={label} aria-current={step === index ? 'step' : undefined} className={`flex-1 p-2 rounded-lg ${step === index ? 'bg-suguba-profond text-white' : 'bg-slate-100 text-slate-700'}`}>{index + 1}. {label}</li>)}</ol>
-            <p className="text-xs text-slate-600">Brouillon conservé dans cet onglet. Rien n’est publié avant votre confirmation.</p>
+            {/* Quatre segments + l'étape en clair : les quatre libellés côte à côte
+                tenaient sur deux lignes à 390 px. */}
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-slate-900">
+                Étape {step + 1} sur 4 · {ETAPES_OFFRE[step]}
+              </p>
+              <ol ref={formTop} tabIndex={-1} className="flex gap-1.5 scroll-mt-24" aria-label="Étapes de création">
+                {ETAPES_OFFRE.map((label, index) => (
+                  <li key={label} aria-current={step === index ? 'step' : undefined}
+                    className={`h-1.5 flex-1 rounded-full ${index <= step ? 'bg-suguba-profond' : 'bg-slate-200'}`}>
+                    <span className="sr-only">{index + 1}. {label}</span>
+                  </li>
+                ))}
+              </ol>
+              <p className="text-xs text-slate-600">Brouillon gardé dans cet onglet. Rien n’est publié avant votre confirmation.</p>
+            </div>
             <fieldset hidden={step !== 0} disabled={step !== 0} className="space-y-4">
             {/* Nom du produit */}
             <div>
               <label htmlFor="offre-nom" className="block text-xs font-bold text-slate-700 mb-1">
-                Nom du Produit *
+                Nom de l’offre *
               </label>
               <input id="offre-nom"
                 type="text"
@@ -273,7 +275,7 @@ export default function NewSupplierProductPage() {
                 placeholder="Ex: Smart TV Samsung 43 Pouces Full HD"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white focus:outline-emerald-600"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white focus:outline-suguba-profond"
               />
             </div>
 
@@ -295,7 +297,7 @@ export default function NewSupplierProductPage() {
             {/* Description */}
             <div>
               <label htmlFor="offre-description" className="block text-xs font-bold text-slate-700 mb-1">
-                Description Détaillée & Spécifications *
+                Description *
               </label>
               <textarea id="offre-description"
                 rows={3}
@@ -303,15 +305,14 @@ export default function NewSupplierProductPage() {
                 placeholder="Ex: Écran Full HD, 2 ports HDMI, garantie 1 an, livré avec support mural..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white focus:outline-emerald-600"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-medium text-slate-900 focus:bg-white focus:outline-suguba-profond"
               />
             </div>
 
             {/* Votre offre (2026-09-26) : nature et qui la remet au client.
                 Les deux choix sont indépendants (kit solaire installé par vous,
                 téléphone livré par Suguba…). */}
-            <fieldset className="rounded-2xl border border-slate-200 p-4 space-y-4">
-              <legend className="px-1 text-xs font-bold text-slate-700">Votre offre</legend>
+            <div className="space-y-4">
               <div className="space-y-2">
                 <p className="text-xs font-bold text-slate-700">Que proposez-vous ?</p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2" role="radiogroup" aria-label="Nature de l’offre">
@@ -327,6 +328,19 @@ export default function NewSupplierProductPage() {
                   })}
                 </div>
               </div>
+              {/* FOU-04 (lot 6 de l'audit UI/UX du 2026-10-02) : l'étape 1 empilait six
+                  questions. Remise, étapes, commande et frais sont repliés derrière un
+                  résumé ; ils s'ouvrent seuls dès qu'on quitte les réglages par défaut. */}
+              <details open={!reglagesParDefaut || undefined} className="group rounded-2xl border border-slate-200">
+                <summary className="flex min-h-12 cursor-pointer list-none items-center gap-2 px-4 py-2 [&::-webkit-details-marker]:hidden">
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-semibold text-slate-900">Remise et commande</span>
+                    <span className="block text-xs text-slate-600 truncate">{resumeVente}</span>
+                  </span>
+                  <span className="text-xs font-semibold text-suguba-profond group-open:hidden">Modifier</span>
+                  <ChevronDown className="h-4 w-4 text-slate-500 transition-transform group-open:rotate-180" />
+                </summary>
+                <div className="space-y-4 px-4 pb-4">
               <div className="space-y-2">
                 <p className="text-xs font-bold text-slate-700">Qui la remet au client ?</p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2" role="radiogroup" aria-label="Qui remet l’offre">
@@ -415,7 +429,9 @@ export default function NewSupplierProductPage() {
                   <span className="text-xs text-slate-500 mt-1 block">Dites clairement ce qui est compris et ce qui ne l’est pas : un supplément ne peut pas être ajouté après coup.</span>
                 </div>
               )}
-            </fieldset>
+                </div>
+              </details>
+            </div>
 
             </fieldset>
             <fieldset hidden={step !== 1} disabled={step !== 1} className="space-y-4">
@@ -453,7 +469,7 @@ export default function NewSupplierProductPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label htmlFor="offre-prix" className="block text-xs font-bold text-slate-700 mb-1">
-                  {modePrix === 'gros' ? 'Prix de gros *' : 'Prix Fournisseur Plancher Garanti *'}
+                  {modePrix === 'gros' ? 'Prix de gros *' : 'Votre prix *'}
                 </label>
                 <MontantInput id="offre-prix"
                   required
@@ -470,7 +486,7 @@ export default function NewSupplierProductPage() {
 
               <div>
                 <label htmlFor="offre-stock" className="block text-xs font-bold text-slate-700 mb-1">
-                  {typeOffre === 'service' ? 'Nombre de prestations possibles *' : 'Quantité en Stock Réel *'}
+                  {typeOffre === 'service' ? 'Nombre de prestations possibles *' : 'Quantité en stock *'}
                 </label>
                 <input id="offre-stock"
                   type="number"
@@ -495,11 +511,10 @@ export default function NewSupplierProductPage() {
                   <label htmlFor="offre-conseil" className="block text-xs font-bold text-slate-700 mb-1">
                     Prix conseillé au client (facultatif)
                   </label>
-                  <input id="offre-conseil"
-                    type="number" min={0} step={500} placeholder="Ex : 35000"
+                  <MontantInput id="offre-conseil"
+                    min={0} step={500} placeholder="Ex. : 35 000"
                     value={prixConseille || ''}
                     onChange={(e) => setPrixConseille(parseInt(e.target.value) || 0)}
-                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl text-base sm:text-sm font-bold text-slate-900 focus:bg-white"
                   />
                   <span className="text-xs text-slate-500 mt-1 block">
                     Affiché aux clients qui achètent sans revendeur, et proposé aux revendeurs. Sans prix, Suguba en calcule un.
@@ -507,11 +522,11 @@ export default function NewSupplierProductPage() {
                 </div>
                 {apercuGros && (
                   <div className="bg-slate-50 rounded-xl p-3 text-xs space-y-1.5">
-                    <p className="text-xs font-bold uppercase tracking-wider text-slate-500 pb-0.5">Sur chaque vente</p>
-                    <div className="flex justify-between"><span className="text-slate-600">Vous touchez toujours</span><strong className="text-slate-900">{fmt(Number(supplierPrice))}</strong></div>
-                    <div className="flex justify-between"><span className="text-slate-600">Prix minimal de revente</span><strong className="text-slate-900">{fmt(apercuGros.prixMinimal)}</strong></div>
-                    <div className="flex justify-between"><span className="text-slate-600">Prix conseillé</span><strong className="text-slate-900 text-sm">{fmt(apercuGros.prixConseille)}</strong></div>
-                    <div className="flex justify-between"><span className="text-slate-600">Le revendeur gagne (au prix conseillé)</span><strong className="text-suguba-brand-dark">{fmt(apercuGros.gainRevendeurAuConseil)}</strong></div>
+                    <p className="text-xs font-semibold text-slate-600 pb-0.5">Sur chaque vente</p>
+                    <div className="flex justify-between"><span className="text-slate-600">Vous touchez toujours</span><strong className="text-slate-900">{formatF(Number(supplierPrice))}</strong></div>
+                    <div className="flex justify-between"><span className="text-slate-600">Prix minimal de revente</span><strong className="text-slate-900">{formatF(apercuGros.prixMinimal)}</strong></div>
+                    <div className="flex justify-between"><span className="text-slate-600">Prix conseillé</span><strong className="text-slate-900 text-sm">{formatF(apercuGros.prixConseille)}</strong></div>
+                    <div className="flex justify-between"><span className="text-slate-600">Le revendeur gagne (au prix conseillé)</span><strong className="text-suguba-brand-dark">{formatF(apercuGros.gainRevendeurAuConseil)}</strong></div>
                     {prixConseille > 0 && !apercuGros.conseilFournisseurRetenu && (
                       <p className="text-xs text-amber-700 pt-1">Votre prix conseillé ne couvre pas la livraison et les frais : il a été relevé.</p>
                     )}
@@ -544,22 +559,22 @@ export default function NewSupplierProductPage() {
               {/* Détail du partage (2026-09-23) : qui touche quoi sur chaque vente. */}
               {apercu && (
                 <div className="bg-slate-50 rounded-xl p-3 text-xs space-y-1.5">
-                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500 pb-0.5">Sur chaque vente</p>
-                  <div className="flex justify-between"><span className="text-slate-600">Le client paie</span><strong className="text-slate-900 text-sm">{fmt(apercu.prixVente)}</strong></div>
-                  <div className="flex justify-between"><span className="text-slate-600">Vous touchez</span><strong className="text-slate-900">{fmt(Number(supplierPrice))}</strong></div>
+                  <p className="text-xs font-semibold text-slate-600 pb-0.5">Sur chaque vente</p>
+                  <div className="flex justify-between"><span className="text-slate-600">Le client paie</span><strong className="text-slate-900 text-sm">{formatF(apercu.prixVente)}</strong></div>
+                  <div className="flex justify-between"><span className="text-slate-600">Vous touchez</span><strong className="text-slate-900">{formatF(Number(supplierPrice))}</strong></div>
                   <div className="flex justify-between">
                     <span className="text-slate-600">Le revendeur reçoit</span>
-                    <strong className="text-suguba-brand-dark">{fmt(apercu.commission)}</strong>
+                    <strong className="text-suguba-brand-dark">{formatF(apercu.commission)}</strong>
                   </div>
                   {(apercu.prelevementSuguba ?? 0) > 0 && (
                     <p className="text-xs text-slate-500 -mt-1 text-right">
-                      soit votre part de {fmt(apercu.commissionBrute ?? 0)} moins {apercu.tauxPrelevement} % pour Suguba ({fmt(apercu.prelevementSuguba ?? 0)})
+                      soit votre part de {formatF(apercu.commissionBrute ?? 0)} moins {apercu.tauxPrelevement} % pour Suguba ({formatF(apercu.prelevementSuguba ?? 0)})
                     </p>
                   )}
                   {typeof apercu.partSuguba === 'number' && (
                     <div className="flex justify-between gap-3 border-t border-slate-200 pt-1.5">
                       <span className="text-slate-600">Suguba (livraison, paiement, service)</span>
-                      <strong className="text-slate-900 whitespace-nowrap">{fmt(apercu.partSuguba)}</strong>
+                      <strong className="text-slate-900 whitespace-nowrap">{formatF(apercu.partSuguba)}</strong>
                     </div>
                   )}
                   {!apercu.partChoisieUtilisee && (
@@ -572,7 +587,7 @@ export default function NewSupplierProductPage() {
                   )}
                   {apercu.commissionFaible && (
                     <p className="text-xs text-amber-700 pt-1">
-                      Part inférieure à {fmt(apercu.commissionMinimale)} : le produit sera en vente, mais pas proposé au partage des revendeurs.
+                      Part inférieure à {formatF(apercu.commissionMinimale)} : le produit sera en vente, mais pas proposé au partage des revendeurs.
                     </p>
                   )}
                 </div>
@@ -580,8 +595,36 @@ export default function NewSupplierProductPage() {
             </div>
 
             </fieldset>
-            {step === 3 && <section className="space-y-3 rounded-2xl bg-slate-50 p-4" aria-label="Récapitulatif avant publication"><h2 className="font-bold">Vérifiez votre offre</h2><p>{name} · {category}</p><p className="text-sm whitespace-pre-wrap">{description}</p><dl className="text-sm space-y-2"><div>Photos : {images.length || 'aucune — offre enregistrée en attente de photo'}</div><div>Votre prix : {fmt(Number(supplierPrice))}</div><div>Stock : {stockQuantity}</div><div>Part revendeur proposée : {fmt(Number(partRevendeur))}</div><div>Remise : {MODES_REMISE.find(m => m.valeur === modeRemise)?.libelle}</div><div>Prix client : {apercu ? fmt(apercu.prixVente) : apercuGros ? fmt(apercuGros.prixConseille) : 'calculé par Suguba à l’enregistrement'}</div></dl><p className="text-xs text-slate-600">Suguba calcule et vérifie les montants sur le serveur avant la mise en vente.</p></section>}
-            <div className="flex gap-3">{step > 0 && <Button type="button" variant="ghost" onClick={() => setStep(v => v - 1)}>Précédent</Button>}{step < 3 && <Button type="button" onClick={avancer}>Continuer</Button>}</div>
+            {step === 3 && (
+              <section className="space-y-3 rounded-2xl bg-slate-50 p-4" aria-label="Récapitulatif avant publication">
+                <h2 className="text-base font-bold text-slate-900">Vérifiez votre offre</h2>
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">{name}</p>
+                  <p className="text-xs text-slate-600">{category} · {resumeVente}</p>
+                </div>
+                <p className="text-sm text-slate-700 whitespace-pre-wrap line-clamp-4">{description}</p>
+                <dl className="divide-y divide-slate-200 text-sm">
+                  {([
+                    ['Photos', images.length ? `${images.length} photo${images.length > 1 ? 's' : ''}` : 'Aucune : offre enregistrée, en vente après ajout d’une photo'],
+                    [modePrix === 'gros' ? 'Votre prix de gros' : 'Votre prix', formatF(Number(supplierPrice))],
+                    ['Stock', String(stockQuantity)],
+                    // FOU-05 : en prix de gros, il n'y a pas de part revendeur (elle s'affichait « 0 F »).
+                    ...(modePrix === 'fixe' ? [['Part du revendeur', formatF(Number(partRevendeur))]] : []),
+                    ['Le client paie', apercu ? formatF(apercu.prixVente) : apercuGros ? `${formatF(apercuGros.prixConseille)} conseillé` : 'calculé par Suguba à l’enregistrement'],
+                  ] as [string, string][]).map(([terme, valeur]) => (
+                    <div key={terme} className="flex justify-between gap-3 py-2">
+                      <dt className="text-slate-600">{terme}</dt>
+                      <dd className="font-semibold text-slate-900 text-right">{valeur}</dd>
+                    </div>
+                  ))}
+                </dl>
+                <p className="text-xs text-slate-600">Suguba recalcule et vérifie les montants avant la mise en vente.</p>
+              </section>
+            )}
+            <div className="flex gap-3">
+              {step > 0 && <Button type="button" variant="ghost" onClick={() => setStep(v => v - 1)}>Précédent</Button>}
+              {step < 3 && <Button type="button" onClick={avancer} className="flex-1 sm:flex-none">Continuer</Button>}
+            </div>
             {/* Garantie, délai de préparation et adresse de stock retirés le
                 2026-09-11 : le fournisseur les remplissait, mais aucune
                 colonne ne les enregistrait nulle part (voir
@@ -592,17 +635,14 @@ export default function NewSupplierProductPage() {
             {/* Submit button */}
             {/* « Soumettre pour modération » : faux depuis la publication
                 automatique (2026-09-11). Le bouton dit ce qui se passe. */}
-            <Button type="submit" className={step === 3 ? '' : 'hidden'} disabled={isSubmitting} size="lg" fullWidth>
+            <Button type="submit" className={step === 3 ? '' : 'hidden'} loading={isSubmitting} size="lg" fullWidth>
               <PackagePlus className="w-4 h-4" />
-              <span>{isSubmitting ? <><SugubaLoader className="mr-2 h-4 w-4" />Envoi…</> : images.length > 0 ? 'Mettre en vente' : 'Enregistrer (photo à ajouter)'}</span>
+              <span>{images.length > 0 ? 'Mettre en vente' : 'Enregistrer (photo à ajouter)'}</span>
             </Button>
 
           </form>
         )}
 
-      </main>
-
-      <BottomNav />
-    </div>
+    </PageReseau>
   );
 }

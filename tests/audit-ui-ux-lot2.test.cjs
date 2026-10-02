@@ -113,7 +113,7 @@ test('ADM-06 : les champs d’argent montrent « F » et un écho du montant', (
   assert.match(field, /= \{formatF\(nombre\)\}/);
   const attendus = {
     'src/app/admin/sponsorisations/page.tsx': 1, 'src/app/admin/recompenses/page.tsx': 2, 'src/app/admin/missions/page.tsx': 1,
-    'src/app/supplier/devis/page.tsx': 2, 'src/app/supplier/products/new/page.tsx': 3, 'src/app/admin/products/new/page.tsx': 2,
+    'src/app/supplier/devis/page.tsx': 2, 'src/app/supplier/products/new/page.tsx': 4, 'src/app/admin/products/new/page.tsx': 2,
     'src/components/admin/ProductPricingModal.tsx': 1,
   };
   for (const [f, n] of Object.entries(attendus)) assert.equal((lire(f).match(/<MontantInput\b/g) || []).length, n, f);

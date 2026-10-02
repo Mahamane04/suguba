@@ -4,6 +4,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { ShieldCheck, ShieldAlert, LogOut } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
+import BarreEnregistrement from '@/components/ui/BarreEnregistrement';
+import { MontantInput } from '@/components/ui/Field';
 import Button from '@/components/ui/Button';
 import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
@@ -40,6 +42,8 @@ export default function SecuritePage() {
       .catch((e) => setErreur((e as Error).message));
   }, []);
   useEffect(() => { charger(); }, [charger]);
+
+  const modifie = Boolean(d) && (mfa !== d!.reglages.mfaObligatoire || (Number(seuil) || 0) !== Number(d!.reglages.seuilValidation));
 
   async function enregistrer() {
     if (mfa && d && !d.reglages.mfaObligatoire) {
@@ -85,16 +89,15 @@ export default function SecuritePage() {
               </label>
               <div className="space-y-1">
                 <p className="font-semibold text-sm">{Number(seuil) > 0 ? 'Double approbation activée' : 'Double approbation désactivée'}</p>
-                <label htmlFor="seuil" className="block text-sm font-bold text-slate-800">Double validation à partir de (F CFA)</label>
-                <input id="seuil" inputMode="numeric" value={seuil} onChange={(e) => setSeuil(e.target.value.replace(/\D/g, '').slice(0, 9))}
-                  className="w-48 h-10 px-3 rounded-xl border border-slate-300 text-sm font-bold tabular-nums" />
+                <label htmlFor="seuil" className="block text-sm font-bold text-slate-800">Double validation à partir de</label>
+                <MontantInput id="seuil" value={seuil} onChange={(e) => setSeuil(e.target.value.replace(/\D/g, '').slice(0, 9))} className="max-w-[12rem]" />
                 <p className="text-xs text-slate-500">Paiement d’un retrait ou avance de commission à partir de ce montant, et toute baisse de la part Suguba : une personne prépare, un collègue approuve (Approbations financières). Saisir 0 désactive cette protection.</p>
               </div>
-              <div className="flex flex-wrap gap-2">
-                <Button type="button" onClick={enregistrer} disabled={envoi}>Enregistrer</Button>
-                <Button href="/securite/double-authentification?suite=%2Fadmin%2Fsecurite" variant="ghost">Activer ma double authentification</Button>
-              </div>
+              <Button href="/securite/double-authentification?suite=%2Fadmin%2Fsecurite" variant="ghost">Activer ma double authentification</Button>
             </Card>
+            {/* ADM-13 : le bouton « Enregistrer » restait actif sans aucun changement. */}
+            <BarreEnregistrement modifie={modifie} envoi={envoi} onEnregistrer={enregistrer}
+              onAnnuler={() => { setMfa(d.reglages.mfaObligatoire); setSeuil(String(d.reglages.seuilValidation)); }} />
 
             <Card className="!p-0 overflow-hidden">
               <table className="w-full text-sm">

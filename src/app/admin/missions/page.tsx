@@ -262,7 +262,7 @@ function PreuvesAVerifier({ preuves, onMaj }: { preuves: Preuve[]; onMaj: () => 
 
   return (
     <section className="space-y-2.5">
-      <h2 className="text-xs font-bold uppercase tracking-wide text-slate-600 px-1">Preuves de publication à vérifier ({preuves.length})</h2>
+      <h2 className="text-sm font-semibold text-slate-800 px-1">Preuves de publication à vérifier ({preuves.length})</h2>
       {preuves.map((p) => (
         <Card key={p.id} className="space-y-3">
           <div className="flex gap-3">

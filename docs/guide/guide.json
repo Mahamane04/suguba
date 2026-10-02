@@ -52,7 +52,8 @@
     "**Sac + pastille verte** : le panier et son nombre d’articles.",
     "**Cloche** : les notifications (nouveautés des boutiques suivies, ventes…).",
     "**☰ Menu** : connexion ou « Mon espace », « Gagner avec Suguba », pages légales, téléphone du support, « Se déconnecter ».",
-    "**Suivre ma commande** (ordinateur, visiteur et client) : lien dans l’en-tête vers le suivi ; sur téléphone, c’est l’onglet « Commandes » du menu du bas."
+    "**Suivre ma commande** (ordinateur, visiteur et client) : lien dans l’en-tête vers le suivi ; sur téléphone, c’est l’onglet « Commandes » du menu du bas.",
+    "**Retour et titre de page** : chaque écran des espaces revendeur, fournisseur et livreur a le même lien de retour (« Espace revendeur », « Espace fournisseur », « Mes courses »), le même titre et la même phrase d’explication en 14 px."
    ]
   },
   {
@@ -191,6 +192,40 @@
   }
  ],
  "journal": [
+  {
+   "date": "2026-10-02",
+   "titre": "Audit UI/UX, lot 6 : le fond",
+   "demande": "« oui commit puis passe au lot 6 commence directement avec les lots restante » — sixième lot de l’audit UI/UX du 2 octobre : création d’offre, inventaire, journal, menu de l’équipe, réglages, coquille commune et typographie.",
+   "realise": [
+    "Fournisseur, ajouter une offre : l’étape 1 ne montre plus que le nom, la catégorie, la description et la nature de l’offre ; la remise, la commande, les étapes et les frais sont repliés derrière un résumé, ouvert d’office si on s’écarte du cas courant. Barre d’étapes lisible, libellés en casse de phrase, récapitulatif en lignes (sans « Part du revendeur : 0 F » en prix de gros). Après l’envoi : une seule action principale, et un formulaire entièrement vidé.",
+    "Fournisseur, Mes produits : prix affiché (« Vous touchez … · client … ») ; − et + ne partent plus au serveur à chaque appui, un seul « Enregistrer » ; Photos, Dupliquer et Variante rangés dans « Plus » ; tuiles communes.",
+    "Équipe, journal : une phrase française par action, la nature du dossier en clair, les détails en libellés (plus de code de route ni de JSON) ; validations : dossier nommé.",
+    "Équipe, menu : « Plus » (17 entrées) devient « Campagnes » et « Réglages et équipe » ; Boutique Suguba retrouve son entrée ; la vue cartes et l’ajout de produit allument « Catalogue » ; libellés alignés sur les titres ; raccourci « Simulateur » (une simple redirection) retiré.",
+    "Équipe, réglages : une seule barre d’enregistrement (Paramètres, Accueil client, Priorité au réseau, Sécurité), qui n’apparaît que s’il y a un changement, avec « Annuler » ; Sécurité n’enregistre plus sans changement et le seuil se saisit en F.",
+    "Coquille commune pour Mes ventes, Mes gains, Calculateur, Catalogue à partager, Mes paiements fournisseur, Mes produits, Ajouter une offre, Portefeuille et Aide livreur : même retour, même titre ; plus de tuile noire chez le livreur ni à la caisse.",
+    "Typographie : 62 petits libellés en capitales grasses passent en casse normale demi-grasse ; en-tête de page et lien de retour à 14 px ; accueil revendeur : les explications passent à 14 px ; onglets de Mes ventes aux couleurs de la charte.",
+    "Aide livreur : champs étiquetés, course choisie d’office, et sans course un recours (« Écrire à Suguba »)."
+   ],
+   "ecarts": [
+    "Badge revendeur (page d’impression) et démarrage revendeur gardent leur coquille propre, voulue ; les accueils revendeur, fournisseur et livreur gardent leur en-tête d’accueil.",
+    "Le passage à 14 px des textes d’explication est fait sur les écrans du lot ; le reste de l’application garde encore beaucoup de 13 px.",
+    "Le menu passe de six à sept rubriques (test du menu adapté).",
+    "Vérifié sur la copie locale avec les comptes fictifs [QA] (captures 390 et 1 440 px, 0 défaut d’accessibilité détecté) ; captures du guide à refaire. Aucune migration."
+   ],
+   "pages": [
+    "fou-ajouter",
+    "fou-stocks",
+    "adm-journal",
+    "adm-a-traiter",
+    "adm-accueil",
+    "adm-priorite-reseau",
+    "adm-securite",
+    "adm-parametres",
+    "adm-caisse",
+    "driver-aide"
+   ],
+   "statut": "en local"
+  },
   {
    "date": "2026-10-02",
    "titre": "Audit UI/UX, lot 5 : la commande",
@@ -3906,16 +3941,28 @@
    "but": "Gérer les quantités, les prix et les variantes de chaque produit.",
    "elements": [
     {
+     "nom": "Valeur · Unités · Stock faible",
+     "role": "Valeur du stock à votre prix (pleine largeur sur téléphone), nombre d’unités, et produits à 5 ou moins (en ambre s’il y en a)."
+    },
+    {
+     "nom": "Ligne produit",
+     "role": "Photo, nom, « Vous touchez … · client … », état (En vente, En attente, Copie à vérifier, Retiré) et Rupture ou Stock faible."
+    },
+    {
      "nom": "Quantité en stock",
-     "role": "Modifiable par produit."
+     "role": "− / champ / + ne changent que l’écran ; « Enregistrer N » apparaît quand la quantité a changé (un seul envoi au serveur), « Annuler » revient à la quantité enregistrée."
     },
     {
-     "nom": "Créer une variante",
-     "role": "Même produit en une autre couleur ou taille."
+     "nom": "Modifier",
+     "role": "Ouvre la fiche de l’offre."
     },
     {
-     "nom": "Ajouter un produit",
-     "role": "Vers le formulaire."
+     "nom": "Plus",
+     "role": "Photos, Dupliquer (copie à vérifier, stock à zéro, jamais mise en vente automatiquement) et Créer une variante."
+    },
+    {
+     "nom": "Ajouter une offre",
+     "role": "En haut de la page, vers le formulaire."
     }
    ],
    "suite": [
@@ -4107,6 +4154,14 @@
    "but": "Déposer un nouvel article : le fournisseur fixe son prix ET la part du revendeur. Avec au moins une photo, le produit est mis en vente aussitôt, au prix calculé par Suguba.",
    "elements": [
     {
+     "nom": "Étape 1 sur 4",
+     "role": "Une barre en quatre segments et l’étape en clair (Votre offre · Photos · Prix et stock · Vérification). Brouillon gardé dans l’onglet."
+    },
+    {
+     "nom": "Remise et commande (replié)",
+     "role": "Résumé « Un livreur Suguba · achat direct » avec « Modifier ». Il s’ouvre seul dès qu’on choisit un service, une remise par le vendeur ou le devis : qui remet, étapes, commande, frais et « ce qui est inclus » s’y trouvent."
+    },
+    {
      "nom": "Comment le client commande ?",
      "role": "Il achète directement, ou il demande un devis (le prix affiché devient « à partir de »)."
     },
@@ -4148,7 +4203,7 @@
     },
     {
      "nom": "Prix fournisseur · Stock",
-     "role": "Ce que le fournisseur touche sur chaque vente, et la quantité disponible."
+     "role": "« Votre prix » (ce que vous touchez sur chaque vente) et « Quantité en stock » (ou « Nombre de prestations possibles » pour un service)."
     },
     {
      "nom": "Le prix correspond à",
@@ -4164,7 +4219,7 @@
     },
     {
      "nom": "Enregistrer",
-     "role": "Mise en vente immédiate si une photo est présente ; Suguba peut ajuster le prix ou retirer le produit après coup."
+     "role": "Écran de vérification en lignes (photos, votre prix, stock, part du revendeur seulement en prix fixe, ce que paie le client), puis « Mettre en vente ». Après : « Ajouter une autre offre » (formulaire entièrement vidé) ou « Voir mes produits » ; sans photo, « Compléter dans Mes produits » passe en premier."
     }
    ],
    "suite": [
@@ -4609,7 +4664,7 @@
    "elements": [
     {
      "nom": "Réglages économiques",
-     "role": "Rangés en quatre blocs, chacun avec le moment où il s’applique : Commission commerciale Suguba (à la vente : mode, taux, base et qui la paie, prix de gros, politique, codes promo) · Frais de paiement du client (à l’encaissement) · Frais de retrait des partenaires (au retrait) · Coûts et rentabilité (analyse : simulateur, produits en ligne, coûts variables et fixes). Puis Livraison et formules. Une baisse de la part Suguba (dont les frais de transaction et les taux de retrait) demande un motif, dans une vraie fenêtre."
+     "role": "Rangés en quatre blocs, chacun avec le moment où il s’applique : Commission commerciale Suguba (à la vente : mode, taux, base et qui la paie, prix de gros, politique, codes promo) · Frais de paiement du client (à l’encaissement) · Frais de retrait des partenaires (au retrait) · Coûts et rentabilité (analyse : simulateur, produits en ligne, coûts variables et fixes). Puis Livraison et formules. Une baisse de la part Suguba (dont les frais de transaction et les taux de retrait) demande un motif, dans une vraie fenêtre. La barre d’enregistrement (Non enregistré · Annuler · Enregistrer les modifications) est la même que sur les autres réglages."
     },
     {
      "nom": "Frais de paiement (payés par le client)",
@@ -4645,7 +4700,7 @@
    "elements": [
     {
      "nom": "Menu latéral (ordinateur)",
-     "role": "Aux couleurs de la charte : fond vert profond, logo Suguba, page ouverte en citron. Huit rubriques repliables, une icône par page et, à côté, le nombre de dossiers en attente (mis à jour toutes les 2 minutes et au retour sur l’onglet). En bas : nom et métier, Notifications, Voir le site, Se déconnecter. Badge Production (discret) / Local / Prévisualisation (marqués). Sur téléphone : une seule barre (menu, logo, recherche) ouvre le même menu."
+     "role": "Aux couleurs de la charte : fond vert profond, logo Suguba, page ouverte en citron. Sept rubriques repliables : Aujourd’hui · Commandes · Catalogue · Réseau · Finance · Campagnes · Réglages et équipe (3 à 8 entrées chacune, libellés identiques aux titres des pages). La vue cartes du catalogue et l’ajout de produit allument « Catalogue »."
     },
     {
      "nom": "Rechercher (Ctrl K)",
@@ -4697,11 +4752,11 @@
    "elements": [
     {
      "nom": "Filtres",
-     "role": "Par dossier (commande, produit, identifiant…) et par action (payouts, products/price, note…)."
+     "role": "Par dossier (commande, produit, identifiant…) et par type d’action (Retraits, Prix des produits, Identité et documents, Réglages économiques, Notes de dossier)."
     },
     {
      "nom": "Ligne",
-     "role": "Date, membre, action, motif, dossier ; un clic montre les champs envoyés (secrets masqués)."
+     "role": "Une phrase par action (« Retrait traité », « Prix d’un produit fixé », « Connexion à l’espace équipe »…), le membre, la nature du dossier (« Retrait WTH-… », « Commande … ») et le motif. Un appui déplie les champs envoyés en libellés français (montants en F, secrets masqués) ; le code technique reste en petit dessous."
     },
     {
      "nom": "Voir plus",
@@ -4738,6 +4793,10 @@
     {
      "nom": "Tableau des membres",
      "role": "Rôle, double authentification (Activée / Pas encore), 5 dernières connexions (appareil, code vérifié), « Déconnecter partout » : ferme toutes ses sessions immédiatement."
+    },
+    {
+     "nom": "Enregistrer",
+     "role": "Barre d’enregistrement commune : seulement quand la double authentification ou le seuil a changé, avec « Annuler »."
     }
    ],
    "suite": [
@@ -4757,7 +4816,7 @@
    "elements": [
     {
      "nom": "En attente",
-     "role": "Type (retrait, avance de commission, baisse de part), montant, qui l’a demandé, détail (bénéficiaire, téléphone…). « Approuver », ou « Refuser » avec un motif. « Approuver » demande une confirmation qui rappelle l’opération, le montant et le demandeur."
+     "role": "Type (retrait, avance de commission, baisse de part), montant, qui l’a demandé, détail (bénéficiaire, téléphone…). « Approuver », ou « Refuser » avec un motif. « Approuver » demande une confirmation qui rappelle l’opération, le montant et le demandeur. Le dossier est nommé en clair (« Retrait … »), plus par son code."
     },
     {
      "nom": "Après approbation",
@@ -4821,7 +4880,7 @@
     },
     {
      "nom": "Publier / Annuler les changements",
-     "role": "Publier rend les changements visibles par les clients en une minute environ."
+     "role": "Barre d’enregistrement commune, en bas : « Non enregistré », « Annuler », « Publier » (visible par les clients en une minute environ). Elle n’apparaît que s’il y a un changement."
     }
    ],
    "suite": [
@@ -5461,7 +5520,7 @@
     },
     {
      "nom": "En retard",
-     "role": "Livreurs qui gardent des espèces depuis plus que le délai réglé (orange), ou plus du double (rouge)."
+     "role": "Livreurs qui gardent des espèces depuis plus que le délai réglé ; la tuile passe en ambre s’il y en a. Même tuile que partout ailleurs."
     },
     {
      "nom": "Plus de nouvelle course en espèces",
@@ -5581,7 +5640,7 @@
     },
     {
      "nom": "Enregistrer",
-     "role": "Ne modifie jamais une commande déjà passée ni ses commissions."
+     "role": "Barre d’enregistrement commune : apparaît dès qu’un réglage change, avec « Annuler » ; ne modifie jamais une commande déjà passée ni ses commissions."
     }
    ],
    "suite": [
@@ -5832,7 +5891,7 @@
    "elements": [
     {
      "nom": "Signaler un incident",
-     "role": "Choisir une course active et transmettre un incident à Suguba sans valider la livraison ni modifier les montants."
+     "role": "Course (choisie d’office s’il n’y en a qu’une), problème rencontré, précisions, puis « Envoyer à Suguba » : transmet l’incident sans valider la livraison ni modifier les montants. Sans course en cours : « Écrire à Suguba » (WhatsApp) et « Mes courses »."
     }
    ],
    "suite": [],

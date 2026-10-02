@@ -58,7 +58,7 @@ const RUBRIQUES_DETAIL: Rubrique[] = [
   { cle: 'pilotage', titre: 'Pilotage', entrees: [
     { libelle: 'À traiter', href: '/admin/a-traiter', permission: null },
     { libelle: 'Vue d’ensemble', href: '/admin', permission: 'finance.lire' },
-    { libelle: 'Analyses', href: '/admin/analytics', permission: 'finance.lire' },
+    { libelle: 'Analyses financières', href: '/admin/analytics', permission: 'finance.lire' },
     { libelle: 'Rapport du soir', href: '/admin/reports/daily', permission: 'finance.lire' },
     { libelle: 'Pourquoi c’est bloqué ?', href: '/admin/diagnostic', permission: null },
   ] },
@@ -67,7 +67,7 @@ const RUBRIQUES_DETAIL: Rubrique[] = [
     { libelle: 'Devis', href: '/admin/devis', permission: 'commande.lire' },
     { libelle: 'Prestations', href: '/admin/prestations', permission: 'commande.lire' },
     { libelle: 'Service après-vente', href: '/admin/sav', permission: 'commande.lire' },
-    { libelle: 'Modération des messages', href: '/admin/messages', permission: 'utilisateur.moderer' },
+    { libelle: 'Messages à vérifier', href: '/admin/messages', permission: 'utilisateur.moderer' },
   ] },
   { cle: 'catalogue', titre: 'Catalogue', entrees: [
     { libelle: 'Produits', href: '/admin/products', permission: 'produit.lire' },
@@ -110,15 +110,41 @@ const RUBRIQUES_DETAIL: Rubrique[] = [
   ] },
 ];
 
-/** Six destinations desktop, with permissions retained on every child. */
+/**
+ * Destinations du menu, permissions conservées sur chaque entrée.
+ *
+ * ADM-11 (lot 6 de l'audit UI/UX du 2026-10-02) : la rubrique « Plus » réunissait
+ * 17 entrées sans rapport entre elles, et trois pages (Produits, Nouveau produit,
+ * Boutique Suguba) n'avaient plus d'entrée : sur ces pages, rien n'était actif.
+ * Désormais sept destinations de 3 à 8 entrées, nommées par ce qu'on y fait ; la
+ * vue cartes et l'ajout de produit allument « Catalogue » (voir cheminDuMenu).
+ * « Simulateur de réglages » n'était qu'une redirection vers Paramètres : retiré.
+ */
+const parHref = (...hrefs: string[]) => hrefs.map((h) => RUBRIQUES_DETAIL.flatMap((r) => r.entrees).find((e) => e.href === h) as EntreeMenu);
 export const RUBRIQUES: Rubrique[] = [
-  {cle:'pilotage',titre:'Aujourd’hui',entrees:RUBRIQUES_DETAIL[0].entrees.filter(e=>['/admin/a-traiter','/admin'].includes(e.href))},
-  {cle:'operations',titre:'Commandes',entrees:RUBRIQUES_DETAIL[1].entrees.filter(e=>e.href!=='/admin/messages')},
-  {cle:'catalogue',titre:'Catalogue',entrees:RUBRIQUES_DETAIL[2].entrees.filter(e=>!['/admin/products/new','/admin/boutique-suguba','/admin/products'].includes(e.href))},
-  {cle:'reseau',titre:'Réseau',entrees:[...RUBRIQUES_DETAIL[3].entrees.filter(e=>e.href!=='/admin/acces-coordonnees'),...RUBRIQUES_DETAIL[1].entrees.filter(e=>e.href==='/admin/messages')]},
-  {cle:'finance',titre:'Finance',entrees:[...RUBRIQUES_DETAIL[4].entrees,...RUBRIQUES_DETAIL[7].entrees.filter(e=>e.href==='/admin/validations')]},
-  {cle:'plus',titre:'Plus',entrees:[...RUBRIQUES_DETAIL[0].entrees.filter(e=>!['/admin/a-traiter','/admin'].includes(e.href)),...RUBRIQUES_DETAIL[5].entrees,...RUBRIQUES_DETAIL[6].entrees,...RUBRIQUES_DETAIL[7].entrees.filter(e=>e.href!=='/admin/validations'),...RUBRIQUES_DETAIL[3].entrees.filter(e=>e.href==='/admin/acces-coordonnees')]},
+  { cle: 'pilotage', titre: 'Aujourd’hui', entrees: parHref('/admin/a-traiter', '/admin', '/admin/analytics', '/admin/reports/daily', '/admin/diagnostic') },
+  { cle: 'operations', titre: 'Commandes', entrees: parHref('/admin/commandes', '/admin/devis', '/admin/prestations', '/admin/sav') },
+  { cle: 'catalogue', titre: 'Catalogue', entrees: parHref('/admin/catalogue', '/admin/recherche', '/admin/boutique-suguba') },
+  { cle: 'reseau', titre: 'Réseau', entrees: parHref('/admin/utilisateurs', '/admin/livreurs', '/admin/boutiques', '/admin/verifications', '/admin/messages', '/admin/acces-coordonnees') },
+  { cle: 'finance', titre: 'Finance', entrees: parHref('/admin/retraits', '/admin/caisse-livreurs', '/admin/recompenses', '/admin/validations') },
+  { cle: 'visibilite', titre: 'Campagnes', entrees: parHref('/admin/missions', '/admin/resultats', '/admin/sponsorisations', '/admin/broadcast') },
+  { cle: 'plateforme', titre: 'Réglages et équipe', entrees: parHref('/admin/parametres', '/admin/modules', '/admin/accueil', '/admin/priorite-reseau', '/admin/equipe', '/admin/securite', '/admin/journal', '/admin/guide') },
 ];
+
+/** Pages sans entrée propre, rattachées à l'entrée qui les contient. */
+const ALIAS_MENU: [string, string][] = [['/admin/products', '/admin/catalogue']];
+export function cheminDuMenu(pathname: string): string {
+  for (const [prefixe, cible] of ALIAS_MENU) if (pathname === prefixe || pathname.startsWith(`${prefixe}/`)) return cible;
+  return pathname;
+}
+
+/** Une entrée est active pour sa page et ses sous-pages (sauf la vue d'ensemble, racine de /admin). */
+export function entreeActive(href: string, pathname: string): boolean {
+  const chemin = cheminDuMenu(pathname);
+  if (href === chemin) return true;
+  if (href === '/admin') return false;
+  return chemin.startsWith(`${href}/`);
+}
 
 /**
  * Compteurs du menu (U3, 2026-09-27) : les tâches « À traiter » de chaque

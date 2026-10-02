@@ -14,7 +14,7 @@ import { supabase } from '@/lib/supabase';
 import CodeEmail from '@/components/auth/CodeEmail';
 import { messageErreurMotDePasse, problemeMotDePasse } from '@/lib/code-email';
 import ChampMotDePasse from '@/components/auth/ChampMotDePasse';
-import { Store, ShoppingBag, Truck, Globe, ShoppingCart, ShieldAlert, Mail, Check, ArrowRight } from 'lucide-react';
+import { ShoppingCart, ShieldAlert, ArrowRight } from 'lucide-react';
 
 function GoogleIcon({ className }: { className?: string }) {
   return (
@@ -146,7 +146,7 @@ export default function RegisterPage() {
 
           <div className="flex items-center gap-3">
             <div className="h-px flex-1 bg-slate-100" />
-            <span className="text-xs font-bold text-slate-500 uppercase">ou</span>
+            <span className="text-xs font-semibold text-slate-600">ou</span>
             <div className="h-px flex-1 bg-slate-100" />
           </div>
 

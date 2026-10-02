@@ -2,9 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import ProductImage from '@/components/common/ProductImage';
-import Header from '@/components/common/Header';
+import PageReseau from '@/components/reseau/PageReseau';
 import OrdersSyncNotice from '@/components/common/OrdersSyncNotice';
-import BottomNav from '@/components/common/BottomNav';
 import { useSugubaStore } from '@/lib/store';
 import Button from '@/components/ui/Button';
 import { EmptyState, StatusPill } from '@/components/ui/Surface';
@@ -51,18 +50,11 @@ export default function ResellerOrdersPage() {
       });
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
-      <Header />
+    // REV-14 (lot 6 de l'audit UI/UX du 2026-10-02) : coquille commune des espaces.
+    <PageReseau titre="Mes ventes" large
+      sousTitre="La livraison de vos clients et le moment où votre commission devient retirable."
+      retour={{ href: '/reseller', libelle: 'Espace revendeur' }}>
       <OrdersSyncNotice />
-
-      <main className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 py-6 w-full space-y-5">
-        
-        <div className="space-y-1">
-          <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Mes ventes</h1>
-          <p className="text-sm text-slate-600">
-            La livraison de vos clients et le moment où votre commission devient retirable.
-          </p>
-        </div>
         <div><label htmlFor="ventes-recherche" className="sr-only">Rechercher une vente</label><input id="ventes-recherche" type="search" value={recherche} onChange={e => setRecherche(e.target.value)} placeholder="Rechercher : numéro, client ou produit" className="w-full h-12 px-4 border border-slate-300 rounded-full bg-white text-base"/></div>
 
         {/* Status Filter Tabs */}
@@ -76,9 +68,10 @@ export default function ResellerOrdersPage() {
             <button
               key={tab.id}
               onClick={() => setFilter(tab.id)}
-              className={`px-3 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors ${
+              aria-pressed={filter === tab.id}
+              className={`min-h-10 px-4 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
                 filter === tab.id
-                  ? 'bg-slate-900 text-white'
+                  ? 'bg-suguba-profond text-white'
                   : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
               }`}
             >
@@ -91,7 +84,8 @@ export default function ResellerOrdersPage() {
         <div className="space-y-3">
           {filteredOrders.length === 0 ? (
             state.ordersSync !== 'ready' ? (
-              <EmptyState icone={ShoppingBag} titre="La liste de vos ventes n’est pas encore confirmée." />
+              <EmptyState icone={ShoppingBag} titre="La liste de vos ventes n’est pas encore confirmée."
+                texte="Elle se met à jour dès que la connexion le permet. Vos ventes ne sont pas perdues." />
             ) : myOrders.length === 0 && !recherche ? (
               <EmptyState icone={ShoppingBag} titre="Vos ventes apparaîtront ici"
                 texte="Quand un client commande par votre lien, vous suivez ici sa livraison et le moment où votre commission devient retirable."
@@ -178,10 +172,6 @@ export default function ResellerOrdersPage() {
             })
           )}
         </div>
-
-      </main>
-
-      <BottomNav />
-    </div>
+    </PageReseau>
   );
 }

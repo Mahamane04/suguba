@@ -8,10 +8,7 @@ import Footer from '@/components/common/Footer';
 import QrCode from '@/components/common/QrCode';
 import { useSugubaStore } from '@/lib/store';
 import { useCodeRevendeur } from '@/lib/partage';
-import {
-  ShieldCheck, ArrowLeft, Download, Printer,
-  Sparkles, Award, CheckCircle2, User, Phone, MapPin, Copy, Check
-} from 'lucide-react';
+import { ShieldCheck, ArrowLeft, Printer, Sparkles, Award, CheckCircle2, MapPin, Copy, Check } from 'lucide-react';
 import LogoSuguba from '@/components/ui/LogoSuguba';
 import BoutonPartageWhatsApp from '@/components/ui/BoutonPartageWhatsApp';
 
@@ -104,7 +101,7 @@ export default function ResellerBadgePage() {
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="min-w-0 space-y-1">
                 <LogoSuguba clair className="h-7" />
-                <span className="text-xs block font-bold text-emerald-300 uppercase tracking-wider truncate">
+                <span className="text-xs block font-semibold text-emerald-300 truncate">
                   Réseau officiel Mali
                 </span>
               </div>
@@ -112,7 +109,7 @@ export default function ResellerBadgePage() {
 
             {/* Pastille sur une seule ligne : elle se coupait en deux blocs
                 décalés « REVENDEUR / AGRÉÉ » sur téléphone (capture). */}
-            <span className="shrink-0 whitespace-nowrap px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-bold uppercase tracking-wide border border-emerald-500/30">
+            <span className="shrink-0 whitespace-nowrap px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-semibold border border-emerald-500/30">
               {verifie ? 'Revendeur vérifié' : 'Revendeur'}
             </span>
           </div>
@@ -123,7 +120,7 @@ export default function ResellerBadgePage() {
             {/* Left: Reseller Identity */}
             <div className="space-y-3 text-center sm:text-left flex-1">
               <div className="space-y-0.5">
-                <span className="text-xs uppercase font-bold text-slate-500">Titulaire de la Carte</span>
+                <span className="text-xs font-semibold text-slate-600">Titulaire de la Carte</span>
                 <h2 className="text-xl font-bold text-white">{currentUser.fullName}</h2>
                 <p className="text-xs text-emerald-300 font-medium flex items-center justify-center sm:justify-start space-x-1">
                   <MapPin className="w-3.5 h-3.5 text-emerald-400" />
@@ -132,7 +129,7 @@ export default function ResellerBadgePage() {
               </div>
 
               <div className="p-3 bg-white/10 rounded-2xl border border-white/10 space-y-1 inline-block sm:block text-xs">
-                <span className="text-xs text-slate-500 block font-bold uppercase">Code Affilié Unique</span>
+                <span className="text-xs text-slate-600 block font-semibold">Code Affilié Unique</span>
                 <div className="flex items-center space-x-2">
                   <strong className="text-amber-400 font-mono text-base font-bold tracking-wider">
                     {reseller.referralCode}
@@ -153,7 +150,7 @@ export default function ResellerBadgePage() {
                 revendeur à un service tiers pour chaque affichage. */}
             <div className="bg-white p-3 rounded-2xl shadow-lg text-center space-y-1.5 shrink-0">
               {personalCatalogUrl ? <QrCode value={personalCatalogUrl} size={128} /> : <p role="status" className="max-w-32 text-slate-700">Boutique indisponible. Réessayez depuis Ma boutique.</p>}
-              <span className="text-xs font-bold text-slate-900 uppercase block tracking-wider">
+              <span className="text-xs font-semibold text-slate-900 block">
                 Scanner pour Commander
               </span>
             </div>

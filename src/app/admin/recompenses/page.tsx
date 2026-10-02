@@ -6,7 +6,7 @@ import React, { useEffect, useState } from 'react';
 import { Gift, Check, X, Save, Target, UserPlus } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
-import { Field, Input, MontantInput } from '@/components/ui/Field';
+import { Field, MontantInput } from '@/components/ui/Field';
 import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
 import { formatF, FORMAT_DATE } from '@/lib/montant';
@@ -125,7 +125,7 @@ export default function RecompensesAdminPage() {
           </Card>
 
           <section className="space-y-2.5">
-            <h2 className="text-xs font-bold uppercase tracking-wide text-slate-600 px-1 flex items-center gap-1.5"><Target className="w-3.5 h-3.5" />Missions atteintes ({missions.length})</h2>
+            <h2 className="text-sm font-semibold text-slate-800 px-1 flex items-center gap-1.5"><Target className="w-3.5 h-3.5" />Missions atteintes ({missions.length})</h2>
             {missions.length === 0 ? (
               <EmptyState icone={Gift} titre="Aucune mission à valider" />
             ) : missions.map((m) => (
@@ -148,7 +148,7 @@ export default function RecompensesAdminPage() {
           </section>
 
           <section className="space-y-2.5">
-            <h2 className="text-xs font-bold uppercase tracking-wide text-slate-600 px-1 flex items-center gap-1.5"><UserPlus className="w-3.5 h-3.5" />Parrainages en attente ({parrainages.length})</h2>
+            <h2 className="text-sm font-semibold text-slate-800 px-1 flex items-center gap-1.5"><UserPlus className="w-3.5 h-3.5" />Parrainages en attente ({parrainages.length})</h2>
             {parrainages.length === 0 ? (
               <EmptyState icone={UserPlus} titre="Aucun parrainage en attente" />
             ) : parrainages.map((p) => (

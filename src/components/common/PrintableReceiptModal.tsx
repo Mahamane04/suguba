@@ -4,7 +4,7 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import { useModalFocus } from '@/hooks/useModalFocus';
 import { Order } from '@/types';
-import { X, Printer, CheckCircle2, ShieldCheck, Phone } from 'lucide-react';
+import { X, Printer } from 'lucide-react';
 import { formatF } from '@/lib/montant';
 
 interface PrintableReceiptModalProps {
@@ -83,7 +83,7 @@ export default function PrintableReceiptModal({ order, isOpen, onClose }: Printa
 
           {/* Items Table */}
           <div className="space-y-2 border-b-2 border-dashed border-slate-300 pb-4">
-            <div className="flex justify-between font-bold text-xs uppercase text-slate-600 border-b border-slate-200 pb-1">
+            <div className="flex justify-between font-semibold text-xs text-slate-600 border-b border-slate-200 pb-1">
               <span>Désignation</span>
               <span className="text-right">Total</span>
             </div>
@@ -104,7 +104,7 @@ export default function PrintableReceiptModal({ order, isOpen, onClose }: Printa
 
           {/* Total Amount Due */}
           <div className="flex flex-wrap gap-2 justify-between items-center text-sm font-bold pt-1">
-            <span className="uppercase text-xs font-bold">TOTAL À PAYER :</span>
+            <span className="text-xs font-semibold">TOTAL À PAYER :</span>
             <span className="text-base font-bold px-3 py-1 bg-slate-100 rounded-lg">
               {formatF(order.totalAmount)}
             </span>

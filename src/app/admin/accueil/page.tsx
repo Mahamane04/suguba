@@ -1,13 +1,12 @@
 'use client';
 
-import SugubaLoader from '@/components/ui/SugubaLoader';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { LayoutTemplate, Eye, EyeOff } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
-import Button from '@/components/ui/Button';
 import { Card, EmptyState, Skeleton } from '@/components/ui/Surface';
+import BarreEnregistrement from '@/components/ui/BarreEnregistrement';
 import { useToast } from '@/components/ui/Toast';
 import { BLOCS_ACCUEIL } from '@/lib/admin/pilotage';
 import type { BlocsAccueil, CleBlocAccueil } from '@/lib/reseau/reglages';
@@ -50,6 +49,7 @@ export default function AccueilAdminPage() {
 
   return (
     <PageReseau titre="Accueil client" large sousTitre="Choisir les blocs affichés aux clients, voir l’aperçu, publier.">
+      {/* ADM-13 : même barre d'enregistrement que les autres réglages. */}
       {erreur ? <EmptyState icone={LayoutTemplate} titre="Indisponible" texte={erreur} />
         : !brouillon ? <Skeleton className="h-64" />
         : (
@@ -63,11 +63,7 @@ export default function AccueilAdminPage() {
                 </label>
               ))}
               <p className="text-xs text-slate-500">Toujours affichés : la recherche, les catégories et le catalogue.</p>
-              <div className="flex gap-2">
-                <Button type="button" onClick={publier} disabled={!modifie || envoi}>{envoi ? <><SugubaLoader className="mr-2 h-4 w-4" />Publication…</> : 'Publier'}</Button>
-                {modifie && <Button type="button" variant="ghost" onClick={() => setBrouillon(publies)}>Annuler les changements</Button>}
-                <Link href="/" target="_blank" className="h-10 px-3 rounded-xl text-sm font-semibold text-slate-700 inline-flex items-center hover:bg-slate-100">Voir le site</Link>
-              </div>
+              <Link href="/" target="_blank" className="min-h-10 inline-flex items-center text-sm font-semibold text-suguba-profond underline underline-offset-2">Voir le site</Link>
             </Card>
             <Card className="space-y-2">
               <h2 className="text-sm font-bold text-slate-900">Aperçu {modifie ? '(non publié)' : ''}</h2>
@@ -87,6 +83,10 @@ export default function AccueilAdminPage() {
             </Card>
           </div>
         )}
+      {brouillon && (
+        <BarreEnregistrement modifie={Boolean(modifie)} envoi={envoi} onEnregistrer={publier}
+          onAnnuler={() => setBrouillon(publies)} libelle="Publier" note="Visible par les clients d’ici une minute." />
+      )}
     </PageReseau>
   );
 }

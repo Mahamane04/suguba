@@ -396,7 +396,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             </a>
 
             <div className="bg-white p-5 rounded-3xl border border-slate-200 space-y-2">
-              <h2 className="font-bold text-xs text-slate-900 uppercase tracking-wider">
+              <h2 className="font-semibold text-xs text-slate-900">
                 Description du produit
               </h2>
               <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">
@@ -406,7 +406,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
 
             {product.offreInclus && (
               <div className="bg-white p-5 rounded-3xl border border-slate-200 space-y-2">
-                <h2 className="font-bold text-xs text-slate-900 uppercase tracking-wider">Ce qui est inclus</h2>
+                <h2 className="font-semibold text-xs text-slate-900">Ce qui est inclus</h2>
                 <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{product.offreInclus}</p>
               </div>
             )}
@@ -414,7 +414,7 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             {/* Prestation à étapes (lot 1c) : le client sait d'avance comment ça se passe. */}
             {product.modeRemise && product.modeRemise !== 'livreur' && (product.etapes?.length || 0) > 0 && (
               <div className="bg-white p-5 rounded-3xl border border-slate-200 space-y-3">
-                <h2 className="font-bold text-xs text-slate-900 uppercase tracking-wider">Comment ça se passe</h2>
+                <h2 className="font-semibold text-xs text-slate-900">Comment ça se passe</h2>
                 <ol className="space-y-2">
                   {[...ETAPES.filter((e) => product.etapes!.includes(e.cle)).map((e) => ({ titre: e.libelle, detail: e.detail })),
                     { titre: 'Réception finale', detail: 'Vous présentez le QR de votre reçu une fois tout vérifié' }].map((e, i) => (

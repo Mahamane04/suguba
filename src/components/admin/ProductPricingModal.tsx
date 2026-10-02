@@ -136,7 +136,7 @@ export default function ProductPricingModal({ product, isOpen, onClose }: Produc
               <ProductImage src={product.images?.[0]} alt={product.name} fill className="object-cover" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-slate-500 uppercase tracking-wider">Fournisseur : {product.supplierName}</p>
+              <p className="text-xs font-semibold text-slate-600">Fournisseur : {product.supplierName}</p>
               <h4 className="font-bold text-xs text-slate-900 truncate">{product.name}</h4>
               <p className="text-xs font-bold text-slate-700 mt-0.5">Prix fournisseur : {f(product.supplierPrice)}</p>
             </div>
@@ -184,7 +184,7 @@ export default function ProductPricingModal({ product, isOpen, onClose }: Produc
               </div>
 
               <div className="bg-slate-900 text-white rounded-2xl p-4 space-y-1.5 text-xs">
-                <p className="text-xs font-bold uppercase tracking-wider text-slate-500 pb-1">Décomposition par article</p>
+                <p className="text-xs font-semibold text-slate-600 pb-1">Décomposition par article</p>
                 <Ligne l="Prix de vente" v={f(tarif.prixVente)} fort />
                 <Ligne l="− Prix fournisseur" v={f(tarif.prixFournisseur)} classe="text-slate-300" />
                 <div className="border-t border-slate-800 my-1" />

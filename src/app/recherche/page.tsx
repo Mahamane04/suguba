@@ -79,7 +79,7 @@ function Contenu() {
         <div className="space-y-5">
           {res.categories.length > 0 && (
             <section className="space-y-2">
-              <h2 className="text-xs font-bold uppercase text-slate-600 flex items-center gap-1.5"><Tag className="w-3.5 h-3.5" />Catégories</h2>
+              <h2 className="text-xs font-semibold text-slate-600 flex items-center gap-1.5"><Tag className="w-3.5 h-3.5" />Catégories</h2>
               <div className="flex flex-wrap gap-2">
                 {res.categories.map((c) => (
                   <Link key={c} href={`/?categorie=${encodeURIComponent(c)}`} className="px-3.5 min-h-[40px] inline-flex items-center rounded-full bg-white border border-slate-200 text-xs font-bold text-slate-700">{c}</Link>
@@ -89,7 +89,7 @@ function Contenu() {
           )}
           {res.produits.length > 0 && (
             <section className="space-y-2">
-              <h2 className="text-xs font-bold uppercase text-slate-600">Produits ({res.produits.length})</h2>
+              <h2 className="text-xs font-semibold text-slate-600">Produits ({res.produits.length})</h2>
               <div className="bg-white rounded-3xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
                 {res.produits.map((p) => (
                   <Link key={p.slug} href={`/p/${p.slug}`} className="flex items-center gap-3 p-3 hover:bg-slate-50">
@@ -106,7 +106,7 @@ function Contenu() {
           )}
           {res.boutiques.length > 0 && (
             <section className="space-y-2">
-              <h2 className="text-xs font-bold uppercase text-slate-600 flex items-center gap-1.5"><Store className="w-3.5 h-3.5" />Boutiques</h2>
+              <h2 className="text-xs font-semibold text-slate-600 flex items-center gap-1.5"><Store className="w-3.5 h-3.5" />Boutiques</h2>
               <div className="bg-white rounded-3xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
                 {res.boutiques.map((b) => (
                   <Link key={b.lien} href={b.lien} className="flex items-center gap-3 p-3 hover:bg-slate-50">
@@ -122,7 +122,7 @@ function Contenu() {
           )}
           {res.fournisseurs.length > 0 && (
             <section className="space-y-2">
-              <h2 className="text-xs font-bold uppercase text-slate-600 flex items-center gap-1.5"><Factory className="w-3.5 h-3.5" />Fournisseurs</h2>
+              <h2 className="text-xs font-semibold text-slate-600 flex items-center gap-1.5"><Factory className="w-3.5 h-3.5" />Fournisseurs</h2>
               <div className="bg-white rounded-3xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
                 {res.fournisseurs.map((f) => (
                   <Link key={f.lien} href={f.lien} className="flex items-center gap-3 p-3 hover:bg-slate-50">

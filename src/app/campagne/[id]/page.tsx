@@ -61,7 +61,7 @@ export default async function PageCampagneMarque({ params, searchParams }: Param
                 ? <img src={c.marque.logo} alt={c.marque.nom} className="w-full h-full object-cover" />
                 : <span className="text-2xl font-bold text-suguba-profond">{c.marque.nom.charAt(0)}</span>}
             </div>
-            <p className="text-xs font-bold uppercase tracking-wider text-suguba-brand-dark">{c.marque.nom} · sur Suguba</p>
+            <p className="text-xs font-semibold text-suguba-brand-dark">{c.marque.nom} · sur Suguba</p>
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight">{c.titre}</h1>
             {c.message && <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{c.message}</p>}
             <PartenaireVisite refUrl={code} />

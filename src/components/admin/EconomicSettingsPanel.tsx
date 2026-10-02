@@ -1,12 +1,14 @@
 'use client';
 
+import BarreEnregistrement from '@/components/ui/BarreEnregistrement';
+
 import SugubaLoader from '@/components/ui/SugubaLoader';
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { useToast } from '@/components/ui/Toast';
 import Button from '@/components/ui/Button';
 import {
-  Calculator, ChevronDown, ChevronUp, Plus, Trash2, AlertCircle, CheckCircle2, RotateCcw, ArrowRight, Info,
+  Calculator, ChevronDown, ChevronUp, Plus, Trash2, AlertCircle, RotateCcw, ArrowRight, Info,
 } from 'lucide-react';
 import {
   calculerFraisRetrait,
@@ -795,38 +797,19 @@ export default function EconomicSettingsPanel({ ouvertParDefaut = false }: { ouv
             </div>
           )}
 
-          {/* Barre d'enregistrement : reste visible pendant le défilement, au-dessus
-              de la barre de navigation du bas sur téléphone (80 px + zone sûre). */}
-          {(modifie || erreur || erreursLocales.length > 0 || message) && (
-          <div className="sticky bottom-[calc(5.75rem+env(safe-area-inset-bottom,0px))] md:bottom-3 z-30 -mx-2 rounded-3xl bg-white/95 backdrop-blur border border-slate-200 shadow-float p-3 space-y-2">
-            {(erreursLocales.length > 0 || erreur) && (
-              <div role="alert" className="bg-rose-50 border border-rose-200 rounded-2xl p-2.5 text-xs text-rose-800 space-y-0.5">
-                {[...erreursLocales, ...(erreur ? [erreur] : [])].map((e) => <p key={e}>• {e}</p>)}
-              </div>
-            )}
-            {message && !modifie && (
-              <div role="status" className="flex items-start gap-2 bg-suguba-menthe rounded-2xl p-2.5 text-xs text-suguba-profond">
-                <CheckCircle2 className="w-4 h-4 shrink-0" /><span>{message}</span>
-              </div>
-            )}
-            <div className="flex items-center gap-2">
-              <p className="flex-1 min-w-0 text-xs text-slate-600">
-                {modifie ? <strong className="text-slate-900">Non enregistré<span className="hidden sm:inline"> : vos modifications attendent</span></strong> : 'Tout est enregistré'}
-              </p>
-              {modifie && (
-                <button type="button" onClick={annuler}
-                  className="min-h-[44px] px-3.5 rounded-full border border-slate-200 text-xs font-semibold text-slate-700 inline-flex items-center gap-1.5">
-                  <RotateCcw className="w-3.5 h-3.5" /> Annuler
-                </button>
-              )}
-              <button type="button" onClick={enregistrer} disabled={envoi || (!modifie && !recalculAReprendre) || erreursLocales.length > 0}
-                className="min-h-[44px] px-5 rounded-full bg-suguba-profond text-white text-sm font-semibold inline-flex items-center gap-2 disabled:opacity-40 active:scale-[0.98] transition-transform">
-                {envoi && <SugubaLoader className="w-4 h-4" />}
-                {recalculAReprendre && !modifie ? 'Reprendre l’actualisation du catalogue' : 'Enregistrer les modifications'}
-              </button>
-            </div>
-          </div>
-          )}
+          {/* Barre d'enregistrement commune (ADM-13) : reste visible pendant le défilement,
+              au-dessus de la barre de navigation du bas sur téléphone. */}
+          <BarreEnregistrement
+            modifie={modifie}
+            envoi={envoi}
+            onEnregistrer={enregistrer}
+            onAnnuler={annuler}
+            erreurs={[...erreursLocales, ...(erreur ? [erreur] : [])]}
+            bloque={erreursLocales.length > 0}
+            message={message}
+            actionDisponible={recalculAReprendre}
+            libelle={recalculAReprendre && !modifie ? 'Reprendre l’actualisation du catalogue' : 'Enregistrer les modifications'}
+          />
         </div></SectionActive.Provider>
       )}
     </div>

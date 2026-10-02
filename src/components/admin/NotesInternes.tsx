@@ -41,7 +41,7 @@ export default function NotesInternes({ dossier }: { dossier: string }) {
 
   return (
     <div className="rounded-2xl bg-amber-50/60 border border-amber-100 p-3 space-y-2">
-      <p className="text-xs font-bold uppercase tracking-wider text-amber-900 inline-flex items-center gap-1"><Lock className="w-3 h-3" />Notes internes · jamais visibles par le client</p>
+      <p className="text-xs font-semibold text-amber-900 inline-flex items-center gap-1"><Lock className="w-3 h-3" />Notes internes · jamais visibles par le client</p>
       {erreur && <p role="alert" className="text-xs font-semibold text-rose-700">{erreur}</p>}
       {notes && notes.length === 0 && !erreur && <p className="text-xs text-slate-500">Aucune note pour ce dossier.</p>}
       {notes && notes.length > 0 && (

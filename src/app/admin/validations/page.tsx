@@ -9,6 +9,7 @@ import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface'
 import { useToast } from '@/components/ui/Toast';
 import { useCibleUrl, useDefilerVersCible } from '@/components/admin/contexte';
 import { anciennete } from '@/lib/admin/poste';
+import { libelleDossier } from '@/lib/admin/libelles-journal';
 import { formatF } from '@/lib/montant';
 
 interface Validation {
@@ -77,7 +78,8 @@ export default function ValidationsPage() {
         {v.montant != null && <span className="text-sm font-bold tabular-nums text-slate-900">{fcfa(v.montant)}</span>}
         <StatusPill ton={STATUT[v.statut]?.ton || 'neutre'}>{STATUT[v.statut]?.libelle || v.statut}</StatusPill>
       </div>
-      <p className="text-xs text-slate-600">Demandé par <strong>{v.demandeur}</strong> {anciennete(v.creeLe)} · dossier <code>{v.dossier}</code></p>
+      {/* ADM-07 : la nature du dossier en clair, plus son code brut. */}
+      <p className="text-sm text-slate-600">Demandé par <strong>{v.demandeur}</strong> {anciennete(v.creeLe)} · {libelleDossier(v.dossier)}</p>
       <dl className="grid sm:grid-cols-2 gap-2 rounded-xl bg-slate-50 p-3 text-sm">{Object.entries(v.resume).map(([k,val])=><div key={k}><dt className="text-slate-500">{({beneficiaire:'Bénéficiaire',telephone:'Téléphone',methode:'Moyen de paiement',motif:'Motif',baisses:'Changements',commande:'Commande'} as Record<string,string>)[k] || k.replace(/_/g,' ')}</dt><dd className="break-words">{Array.isArray(val)?val.map((x:any,i)=><p key={i}>{x.libelle || 'Changement'} : {String(x.avant ?? '')} → {String(x.apres ?? '')}</p>):val && typeof val==='object'?Object.entries(val).map(([cle,valeur])=><p key={cle}>{cle.replace(/_/g,' ')} : {String(valeur)}</p>):String(val ?? '—')}</dd></div>)}</dl>
       {v.statut === 'approuvee' && <Link className="inline-flex min-h-11 items-center underline font-semibold" href={v.type === 'part_suguba' ? '/admin/parametres' : `/admin/retraits?id=${encodeURIComponent(v.dossier.split(':').slice(1).join(':'))}`}>Reprendre l’opération dans son dossier</Link>}
       {v.decideur && <p className="text-xs text-slate-600">Décidé par <strong>{v.decideur}</strong>{v.motif ? ` — ${v.motif}` : ''}</p>}
@@ -86,7 +88,7 @@ export default function ValidationsPage() {
         : refus?.id === v.id ? (
           <div className="flex flex-wrap gap-2 items-center">
             <input value={refus.motif} onChange={(e) => setRefus({ id: v.id, motif: e.target.value })} placeholder="Motif du refus" aria-label="Motif du refus"
-              className="flex-1 min-w-[12rem] h-9 px-3 rounded-xl border border-slate-300 text-sm" />
+              className="flex-1 min-w-[12rem] h-11 px-3 rounded-xl border border-slate-300 text-base sm:text-sm" />
             <Button type="button" size="sm" variant="danger" disabled={refus.motif.trim().length < 3 || envoi === v.id} onClick={() => decider(v, 'refuser', refus.motif)}>Confirmer le refus</Button>
             <Button type="button" size="sm" variant="ghost" onClick={() => setRefus(null)}>Annuler</Button>
           </div>

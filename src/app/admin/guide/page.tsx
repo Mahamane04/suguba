@@ -69,7 +69,7 @@ function Fiche({ page, numero, numeros }: { page: PageGuide; numero: string; num
         <p className="text-[15px] text-slate-800 max-w-prose"><Riche texte={page.but} /></p>
         {page.elements.length > 0 && (
           <>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 pt-1">Boutons et éléments</h4>
+            <h4 className="text-sm font-semibold text-slate-800 pt-1">Boutons et éléments</h4>
             <dl className="rounded-2xl border border-slate-200 bg-white divide-y divide-slate-100 overflow-hidden">
               {page.elements.map((e, i) => (
                 <div key={i} className="grid sm:grid-cols-[180px_minmax(0,1fr)] gap-0.5 sm:gap-3 px-4 py-2.5 text-sm">
@@ -82,7 +82,7 @@ function Fiche({ page, numero, numeros }: { page: PageGuide; numero: string; num
         )}
         {page.suite.length > 0 && (
           <>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 pt-1">Mène à</h4>
+            <h4 className="text-sm font-semibold text-slate-800 pt-1">Mène à</h4>
             <div className="flex flex-wrap gap-2">
               {page.suite.map((s) => (
                 <a key={s.id} href={`#${s.id}`} className="inline-flex items-center rounded-full bg-emerald-50 text-suguba-profond text-xs font-bold px-3 min-h-[32px] hover:ring-1 hover:ring-suguba-brand">
@@ -115,7 +115,7 @@ export default async function GuidePage() {
       <Header />
       <main className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6">
         <header className="pt-8 pb-5 space-y-2">
-          <p className="text-xs font-bold uppercase tracking-wider text-suguba-brand-dark">Page cachée · administrateur général · mise à jour le {guide.majLe}</p>
+          <p className="text-xs font-semibold text-suguba-brand-dark">Page cachée · administrateur général · mise à jour le {guide.majLe}</p>
           <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight">Guide des parcours</h1>
           <p className="text-sm sm:text-base text-slate-600 max-w-2xl">
             Toutes les pages de Suguba dans l’ordre des parcours, le rôle de chaque bouton, et le journal de chaque demande
@@ -150,18 +150,18 @@ export default async function GuidePage() {
               </div>
               <h3 className="text-lg font-bold text-slate-900 leading-snug">{j.titre}</h3>
               <blockquote className="border-l-4 border-suguba-brand bg-emerald-50/50 rounded-r-xl px-4 py-2.5 text-sm text-slate-800">
-                <span className="block text-xs font-bold uppercase tracking-wider text-suguba-brand-dark mb-1">Votre demande</span>
+                <span className="block text-xs font-semibold text-suguba-brand-dark mb-1">Votre demande</span>
                 {j.demande}
               </blockquote>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Ce qui a été fait</p>
+                  <p className="text-xs font-semibold text-slate-600 mb-1.5">Ce qui a été fait</p>
                   <ul className="space-y-1 text-sm text-slate-700 list-disc pl-5 marker:text-[#09b500]">
                     {j.realise.map((r, k) => <li key={k}><Riche texte={r} /></li>)}
                   </ul>
                 </div>
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-wider text-slate-500 mb-1.5">Écarts et points à décider</p>
+                  <p className="text-xs font-semibold text-slate-600 mb-1.5">Écarts et points à décider</p>
                   {j.ecarts.length ? (
                     <ul className="space-y-1 text-sm text-amber-900 list-disc pl-5 marker:text-amber-500">
                       {j.ecarts.map((e, k) => <li key={k}><Riche texte={e} /></li>)}

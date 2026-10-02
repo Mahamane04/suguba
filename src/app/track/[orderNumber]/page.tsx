@@ -113,7 +113,7 @@ export default function OrderTrackingPage() {
 
           <form onSubmit={rechercher} className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-4">
             <div className="space-y-2">
-              <label htmlFor="tel-suivi" className="text-xs font-bold text-slate-600 uppercase tracking-wide">
+              <label htmlFor="tel-suivi" className="text-xs font-semibold text-slate-600">
                 Votre numéro de téléphone
               </label>
               <input

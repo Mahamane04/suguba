@@ -65,7 +65,7 @@ export default function RechercheGlobale({ onFermer }: { onFermer: () => void })
           {etat === 'ok' && liste.length === 0 && groupes.every((g) => !g.erreur) && <p className="px-4 py-6 text-sm text-slate-500">Aucun résultat pour « {q.trim()} ».</p>}
           {groupes.filter((g) => g.resultats.length || g.erreur).map((g) => (
             <section key={g.cle} className="py-2">
-              <h3 className="px-4 py-1 text-xs font-bold uppercase tracking-wider text-slate-600">{g.titre}</h3>
+              <h3 className="px-4 py-1 text-xs font-semibold text-slate-600">{g.titre}</h3>
               {g.erreur && <p className="px-4 py-1 text-xs text-rose-700">{g.erreur}</p>}
               <ul>
                 {g.resultats.map((r) => {
