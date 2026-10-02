@@ -11,8 +11,11 @@ import PhotosProduitModal from '@/components/product/PhotosProduitModal';
 import {
   Plus, ShieldCheck, Clock, Store, Package, Users, XCircle, Camera, ClipboardList, FileText, Wallet
 } from 'lucide-react';
-import { formatF } from '@/lib/montant';
+import { formatDate, formatF } from '@/lib/montant';
 import { EmptyState as EtatVide } from '@/components/ui/Surface';
+import Link from 'next/link';
+import LigneListe from '@/components/ui/LigneListe';
+import { resumeAFaire, type CommandeAFaire } from '@/lib/a-faire-fournisseur';
 
 interface SupplierProduct {
   id: string;
@@ -54,6 +57,27 @@ export default function SupplierDashboardPage() {
   const [erreur, setErreur] = useState(false);
   const [essai, setEssai] = useState(0);
   const [photosPour, setPhotosPour] = useState<SupplierProduct | null>(null);
+  // FOU-01 (audit UI/UX du 2026-10-02) : l'accueil ne disait pas quoi faire. Un
+  // livreur pouvait attendre au dépôt pendant que l'écran montrait le catalogue.
+  // Ces lectures sont secondaires : si l'une échoue, l'accueil reste utilisable.
+  const [taches, setTaches] = useState<{
+    commandes: CommandeAFaire[]; devis: number;
+    soldes: { disponible: number; enAttente: number; prochainDeblocage: string | null } | null;
+  } | null>(null);
+  useEffect(() => {
+    let annule = false;
+    const lire = (url: string) => fetch(url, { cache: 'no-store' }).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    Promise.all([lire('/api/supplier/commandes'), lire('/api/supplier/devis'), lire('/api/supplier/gains')]).then(([c, d, g]) => {
+      if (annule) return;
+      const devis = Array.isArray(d?.devis) ? d.devis : Array.isArray(d) ? d : [];
+      setTaches({
+        commandes: Array.isArray(c?.commandes) ? c.commandes : [],
+        devis: devis.filter((x: { statut?: string }) => x.statut === 'demande').length,
+        soldes: g?.soldes ? { disponible: Number(g.soldes.disponible) || 0, enAttente: Number(g.soldes.enAttente) || 0, prochainDeblocage: g.soldes.prochainDeblocage || null } : null,
+      });
+    });
+    return () => { annule = true; };
+  }, [essai]);
 
   useEffect(() => {
     let cancelled = false;
@@ -107,6 +131,9 @@ export default function SupplierDashboardPage() {
     );
   }
 
+  const aFaire = taches ? resumeAFaire(taches.commandes) : null;
+  const colisAPreparer = aFaire ? aFaire.aPreparer.length + aFaire.livreursEnRoute.length : 0;
+  const argent = taches?.soldes && (taches.soldes.disponible > 0 || taches.soldes.enAttente > 0) ? taches.soldes : null;
   const actifs = products.filter(p => p.status === 'approved').length;
   // Tout ce qui n'est ni en vente ni retiré attend quelque chose (photo, prix).
   const enAttente = products.filter(p => ['submitted', 'pending', 'draft'].includes(p.status)).length;
@@ -136,17 +163,67 @@ export default function SupplierDashboardPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <Button href="/supplier/products/new" variant="primary">
-              <Plus className="w-4 h-4 stroke-[3]" />
-              <span>Ajouter une offre</span>
-            </Button>
-            <Button href="/supplier/commandes" variant="ghost">
-              <ClipboardList className="w-4 h-4" />
-              <span>Commandes à préparer</span>
-            </Button>
+            {/* Le bouton principal suit la situation : des colis attendent, on les prépare. */}
+            {colisAPreparer > 0 ? (
+              <>
+                <Button href="/supplier/commandes" variant="primary">
+                  <ClipboardList className="w-4 h-4" />
+                  <span>Préparer mes colis ({colisAPreparer})</span>
+                </Button>
+                <Button href="/supplier/products/new" variant="ghost">
+                  <Plus className="w-4 h-4 stroke-[3]" />
+                  <span>Ajouter une offre</span>
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button href="/supplier/products/new" variant="primary">
+                  <Plus className="w-4 h-4 stroke-[3]" />
+                  <span>Ajouter une offre</span>
+                </Button>
+                <Button href="/supplier/commandes" variant="ghost">
+                  <ClipboardList className="w-4 h-4" />
+                  <span>Mes commandes</span>
+                </Button>
+              </>
+            )}
 
           </div>
         </div>
+
+        {aFaire && (aFaire.livreursEnRoute.length > 0 || colisAPreparer > 0 || (taches?.devis || 0) > 0 || argent) && (
+          <section className="space-y-3" aria-labelledby="a-faire-titre">
+            <h2 id="a-faire-titre" className="font-bold text-base text-slate-900">À faire maintenant</h2>
+            {aFaire.livreursEnRoute.map((c) => (
+              <Link key={c.id} href="/supplier/commandes" className="rounded-3xl bg-suguba-profond text-white p-4 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-sm text-white/80">Livreur en route{c.livreur ? ` · ${c.livreur}` : ''}</p>
+                  <p className="text-sm font-semibold truncate">{c.quantite} × {c.produit}</p>
+                  <p className="text-xs text-white/70">Code de ramassage à lui donner</p>
+                </div>
+                <p className="text-3xl font-bold tracking-[0.25em] tabular-nums text-suguba-citron shrink-0"
+                  aria-label={`Code de ramassage ${String(c.codeRamassage || '').split('').join(' ')}`}>{c.codeRamassage}</p>
+              </Link>
+            ))}
+            {(aFaire.aPreparer.length > 0 || (taches?.devis || 0) > 0 || argent) && (
+              <div className="bg-white rounded-3xl border border-slate-200 px-4 divide-y divide-slate-100">
+                {aFaire.aPreparer.length > 0 && (
+                  <Link href="/supplier/commandes" className="block"><LigneListe titre="Colis à préparer" meta="Confirmés par le client" valeur={aFaire.aPreparer.length} /></Link>
+                )}
+                {(taches?.devis || 0) > 0 && (
+                  <Link href="/supplier/devis" className="block"><LigneListe titre="Devis à répondre" meta="Un client attend votre prix" valeur={taches!.devis} /></Link>
+                )}
+                {argent && (
+                  <Link href="/supplier/paiements" className="block">
+                    <LigneListe titre={argent.disponible > 0 ? 'Disponible au retrait' : 'Vos paiements à venir'}
+                      meta={argent.disponible > 0 ? 'Vous pouvez le retirer' : argent.prochainDeblocage ? `Premiers fonds disponibles le ${formatDate(argent.prochainDeblocage, 'jour')}` : 'Après la livraison et le délai de sécurité'}
+                      valeur={formatF(argent.disponible > 0 ? argent.disponible : argent.enAttente)} />
+                  </Link>
+                )}
+              </div>
+            )}
+          </section>
+        )}
 
         {/* Indicateurs */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -183,7 +260,7 @@ export default function SupplierDashboardPage() {
             </div>
           ) : (
             <div className="divide-y divide-slate-100">
-              {products.map((product) => (
+              {products.slice(0, 3).map((product) => (
                 <div key={product.id} className="py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                   <div className="flex items-center gap-3 min-w-0">
                     <div className="relative w-14 h-14 rounded-2xl overflow-hidden bg-slate-100 shrink-0">
@@ -222,6 +299,11 @@ export default function SupplierDashboardPage() {
                 </div>
               ))}
             </div>
+          )}
+          {products.length > 3 && (
+            <Link href="/supplier/inventory" className="inline-flex min-h-11 items-center text-sm font-bold text-suguba-brand-dark hover:underline">
+              Voir mes {products.length} produits
+            </Link>
           )}
         </div>
 

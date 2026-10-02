@@ -15,6 +15,7 @@ import { useCaisseLivreur } from '@/lib/useCaisseLivreur';
 import { ArrowLeft, Banknote, Package, Printer, Receipt, Truck, Wallet } from 'lucide-react';
 import { formatF, FORMAT_DATE } from '@/lib/montant';
 import LigneListe from '@/components/ui/LigneListe';
+import Button from '@/components/ui/Button';
 
 /**
  * Portefeuille livreur — refait le 2026-09-11 sur des données réelles.
@@ -97,6 +98,16 @@ export default function DriverEarningsPage() {
               : 'Remettez les espèces encaissées à la caisse Suguba, moins votre rémunération par course, que vous gardez.'}
             {' '}À chaque versement, vous recevez un reçu.
           </p>
+          {/* LIV-03 (audit UI/UX du 2026-10-02) : l'étape finale du métier ne disait
+              pas comment la réussir. Pas de lieu écrit en dur (l'ancienne adresse était
+              inventée) : Suguba indique le lieu et l'heure du jour sur WhatsApp. */}
+          {aRemettre !== null && aRemettre > 0 && (
+            <ol className="space-y-2 text-sm text-slate-800">
+              <li className="flex gap-3"><span className="w-6 h-6 shrink-0 rounded-full bg-suguba-menthe text-suguba-profond font-bold text-xs flex items-center justify-center">1</span><span>Comptez <strong className="tabular-nums">{fmt(aRemettre)}</strong>.</span></li>
+              <li className="flex gap-3"><span className="w-6 h-6 shrink-0 rounded-full bg-suguba-menthe text-suguba-profond font-bold text-xs flex items-center justify-center">2</span><span>Demandez à Suguba sur WhatsApp où et quand verser aujourd’hui.</span></li>
+              <li className="flex gap-3"><span className="w-6 h-6 shrink-0 rounded-full bg-suguba-menthe text-suguba-profond font-bold text-xs flex items-center justify-center">3</span><span>Le caissier vous remet un reçu de versement : il apparaît ici, dans « Mes versements ».</span></li>
+            </ol>
+          )}
           {c && (c.commandes.length > 0 || c.ecartCumule !== 0) && (
             <div className="rounded-2xl bg-slate-50 p-3 text-sm space-y-1">
               <div className="flex justify-between"><span>{c.commandes.length} commande{c.commandes.length > 1 ? 's' : ''} payée{c.commandes.length > 1 ? 's' : ''} en espèces</span><span>{fmt(c.especes)}</span></div>
@@ -121,15 +132,15 @@ export default function DriverEarningsPage() {
               ))}
             </div>
           )}
-          <a
-            href="https://wa.me/22389460000?text=Bonjour%20Suguba%2C%20je%20suis%20livreur%20et%20j%27ai%20une%20question%20sur%20mon%20portefeuille."
+          <Button
+            variant="whatsapp"
+            href={`https://wa.me/22389460000?text=${encodeURIComponent(aRemettre ? `Bonjour Suguba, je suis livreur : où et quand puis-je verser ${fmt(aRemettre)} aujourd’hui ?` : 'Bonjour Suguba, je suis livreur et j’ai une question sur mon portefeuille.')}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 h-11 px-4 rounded-2xl border border-slate-200 hover:bg-slate-50 text-sm font-bold text-slate-800"
           >
-            <WhatsAppIcon className="w-5 h-5 text-[#25D366]" />
-            <span>Contacter Suguba</span>
-          </a>
+            <WhatsAppIcon className="w-5 h-5" />
+            {aRemettre ? 'Demander où verser' : 'Contacter Suguba'}
+          </Button>
         </div>
 
         <div className="bg-white rounded-3xl p-5 border border-slate-200 space-y-3">

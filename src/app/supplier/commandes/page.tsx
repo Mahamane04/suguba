@@ -15,6 +15,8 @@ import { useToast } from '@/components/ui/Toast';
 import OtpValidationModal from '@/components/driver/OtpValidationModal';
 import type { Order } from '@/types';
 import { formatF, FORMAT_DATE } from '@/lib/montant';
+import { prioriteCommande, trierParUrgence } from '@/lib/a-faire-fournisseur';
+import LigneListe from '@/components/ui/LigneListe';
 
 /**
  * Commandes à préparer — espace fournisseur (2026-09-24).
@@ -138,12 +140,17 @@ export default function CommandesFournisseurPage() {
     return groupes;
   }, [commandes]);
 
+  // FOU-02 (audit UI/UX du 2026-10-02) : « À préparer » ne compte que ce qui
+  // demande une action ; le livreur en route passe en tête ; les commandes que
+  // le client n'a pas encore confirmées sont regroupées à part, repliées.
+  const enAttenteClient = parFiltre.a_preparer.filter((c) => prioriteCommande(c) === 3);
+  const aFaire = trierParUrgence(parFiltre.a_preparer.filter((c) => prioriteCommande(c) !== 3));
   const FILTRES: [Filtre, string][] = [
-    ['a_preparer', `À préparer (${parFiltre.a_preparer.length})`],
+    ['a_preparer', `À préparer (${aFaire.length})`],
     ['en_route', `En livraison (${parFiltre.en_route.length})`],
     ['terminees', `Terminées (${parFiltre.terminees.length})`],
   ];
-  const visibles = parFiltre[filtre];
+  const visibles = filtre === 'a_preparer' ? aFaire : parFiltre[filtre];
 
   return (
     <PageReseau titre="Commandes" sousTitre="Ce que vous devez préparer et remettre au livreur." retour={{ href: '/supplier', libelle: 'Tableau de bord' }}>
@@ -173,7 +180,9 @@ export default function CommandesFournisseurPage() {
         <EmptyState erreur titre="Commandes indisponibles" texte={erreur} onReessayer={() => { setErreur(''); setChargement(true); setRecharge((n) => n + 1); }} />
       ) : visibles.length === 0 ? (
         <EmptyState icone={PackageCheck} titre={filtre === 'a_preparer' ? 'Rien à préparer pour le moment' : 'Aucune commande ici'}
-          texte={filtre === 'a_preparer' ? 'Les nouvelles commandes de vos produits apparaîtront ici dès qu’un client aura commandé.' : undefined} />
+          texte={filtre !== 'a_preparer' ? undefined : enAttenteClient.length
+            ? `${enAttenteClient.length} commande${enAttenteClient.length > 1 ? 's attendent' : ' attend'} encore la confirmation du client : rien à faire pour l’instant.`
+            : 'Les nouvelles commandes de vos produits apparaîtront ici dès qu’un client aura commandé.'} />
       ) : (
         <div className="space-y-3">
           {visibles.map((c) => {
@@ -266,6 +275,21 @@ export default function CommandesFournisseurPage() {
             );
           })}
         </div>
+      )}
+
+      {!chargement && !erreur && filtre === 'a_preparer' && enAttenteClient.length > 0 && (
+        <details className="rounded-3xl border border-slate-200 bg-white p-4">
+          <summary className="cursor-pointer min-h-11 flex items-center text-sm font-semibold text-slate-700">
+            En attente du client ({enAttenteClient.length}) · rien à faire pour l’instant
+          </summary>
+          <div className="divide-y divide-slate-100">
+            {enAttenteClient.map((c) => (
+              <LigneListe key={c.id} titre={`${c.quantite} × ${c.produit}`}
+                meta={<span className="whitespace-nowrap">#{c.numero}</span>}
+                statut={<span className="text-slate-600">Client à confirmer</span>} />
+            ))}
+          </div>
+        </details>
       )}
 
       <OtpValidationModal

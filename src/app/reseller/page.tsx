@@ -7,7 +7,6 @@ import OrdersSyncNotice from '@/components/common/OrdersSyncNotice';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import CarteAccesReseau from '@/components/reseau/CarteAccesReseau';
-import BandeauDemarrage from '@/components/reseau/BandeauDemarrage';
 import SectionSponsorises from '@/components/reseau/SectionSponsorises';
 import { Store as StoreIcone, Target as TargetIcone, Share2 as Share2Icone, UserPlus as UserPlusIcone, Users as UsersIcone, ShieldCheck as ShieldCheckIcone, Palette as PaletteIcone, CalendarDays as CalendarIcone, Factory as FactoryIcone, Tag as TagIcone, MessageCircleQuestion as QuestionIcone } from 'lucide-react';
 import CreateOrderModal from '@/components/reseller/CreateOrderModal';
@@ -17,10 +16,10 @@ import { partagerProduit } from '@/lib/partage';
 import { useSugubaStore, useCatalogueCharge } from '@/lib/store';
 import { Product } from '@/types';
 import {
-  Wallet, TrendingUp, ShoppingBag, Clock, Copy, Check, Plus, ChevronRight,
+  Wallet, ShoppingBag, Copy, Check, Plus, ChevronRight,
   Store, Calculator, Sparkles, QrCode, ShieldCheck, ClipboardList
 } from 'lucide-react';
-import { formatF, formatNombre, FORMAT_DATE } from '@/lib/montant';
+import { formatF, formatNombre, FORMAT_DATE, formatDate } from '@/lib/montant';
 import { statutVente } from '@/lib/libelles-vente';
 import { StatusPill } from '@/components/ui/Surface';
 import BoutonPartageWhatsApp from '@/components/ui/BoutonPartageWhatsApp';
@@ -73,6 +72,8 @@ export default function ResellerDashboardPage() {
   const [moi, setMoi] = useState<{
     referralCode: string | null; tier: string; successfulOrdersCount: number;
     availableBalance: number; pendingBalance: number; totalEarned: number;
+    commissionsEnAttente?: { montant: number; debloquagePrevu: string | null }[];
+    onboardingDone?: boolean;
   } | null>(null);
 
   useEffect(() => {
@@ -106,6 +107,16 @@ export default function ResellerDashboardPage() {
     : <span className="inline-block h-6 w-20 rounded-lg bg-slate-200 animate-pulse align-middle" role="status" aria-label="Chargement" />;
 
   const ventesLivrees = moi?.successfulOrdersCount ?? myOrders.filter(o => o.status === 'delivered').length;
+  // Prochain déblocage : la plus proche date future, et ce qui se débloque ce jour-là.
+  const prochainDeblocage = (() => {
+    const futurs = (moi?.commissionsEnAttente || [])
+      .map((c) => ({ montant: Number(c.montant) || 0, t: Date.parse(c.debloquagePrevu || '') }))
+      .filter((c) => Number.isFinite(c.t) && c.t > Date.now());
+    if (!futurs.length) return null;
+    const t = Math.min(...futurs.map((c) => c.t));
+    const jour = new Date(t).toDateString();
+    return { date: new Date(t).toISOString(), montant: futurs.filter((c) => new Date(c.t).toDateString() === jour).reduce((x, c) => x + c.montant, 0) };
+  })();
   const progression = palier.prochain ? Math.min(100, Math.round((ventesLivrees / palier.prochain) * 100)) : 100;
   const restantes = palier.prochain ? Math.max(0, palier.prochain - ventesLivrees) : 0;
 
@@ -124,8 +135,15 @@ export default function ResellerDashboardPage() {
       <OrdersSyncNotice />
 
       <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 py-6 w-full space-y-5">
-        <BandeauDemarrage />
-        <section className="rounded-3xl bg-suguba-profond text-white p-5 space-y-3"><h2 className="text-xl font-bold">Quel produit allez-vous partager aujourd’hui ?</h2><p className="text-sm">Choisissez une offre, voyez votre commission et partagez son lien à vos clients.</p><Link href="/reseller/catalog" className="inline-flex rounded-xl bg-white text-suguba-profond px-4 py-3 font-bold">Choisir un produit</Link></section>
+        {/* REV-13 (audit UI/UX du 2026-10-02) : le démarrage était administratif
+            (8 étapes de profil) et ne menait jamais à une vente. */}
+        {moi && ventesLivrees === 0 && (
+          <ListeDemarrage etapes={[
+            { libelle: 'Compléter mon profil', fait: Boolean(moi.onboardingDone), href: '/reseller/demarrer' },
+            { libelle: 'Partager un produit et recevoir une commande', fait: myOrders.length > 0, href: '/reseller/catalog' },
+            { libelle: 'Première vente livrée', fait: ventesLivrees > 0, href: '/reseller/orders' },
+          ]} />
+        )}
         {charge && !moi && <div role="alert" className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950 space-y-2"><p>Votre solde et votre palier sont indisponibles. Aucun montant n’est confirmé.</p><Button variant="ghost" onClick={() => setRechargerProfil(v => v + 1)}>Réessayer le solde et le profil</Button></div>}
 
 
@@ -159,33 +177,32 @@ export default function ResellerDashboardPage() {
             </div>
           </div>
 
-          <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4 flex flex-col justify-between gap-3">
-            <div>
-              <p className="text-xs font-bold text-slate-600 uppercase">Disponible au retrait</p>
-              <p className="text-3xl font-bold text-slate-900">
+          {/* REV-02 / REV-04 (audit UI/UX du 2026-10-02) : l'argent en un seul bloc et
+              en trois mots, au lieu d'un bouton « Retirer mes gains » à 0 F suivi de trois
+              tuiles qui répétaient les mêmes sommes. */}
+          <div className="rounded-2xl bg-suguba-profond text-white p-4 flex flex-col justify-between gap-3">
+            <div className="space-y-2">
+              <p className="text-xs text-white/80">Retirable maintenant</p>
+              <p className="text-3xl font-bold tabular-nums text-suguba-citron">
                 {charge && !moi ? '—' : charge
-                  ? <>{formatNombre(availableBalance)} <span className="text-sm font-bold text-slate-600">F</span></>
-                  : <span className="inline-block h-8 w-32 rounded-lg bg-slate-200 animate-pulse align-middle" role="status" aria-label="Chargement du solde" />}
+                  ? <>{formatNombre(availableBalance)} <span className="text-sm font-bold">F</span></>
+                  : <span className="inline-block h-8 w-32 rounded-lg bg-white/20 animate-pulse align-middle" role="status" aria-label="Chargement du solde" />}
               </p>
+              {moi && (
+                <dl className="text-sm space-y-1">
+                  <div className="flex justify-between gap-3"><dt className="text-white/80">En attente</dt><dd className="font-semibold tabular-nums">{formatF(pendingBalance)}</dd></div>
+                  <div className="flex justify-between gap-3"><dt className="text-white/80">Déjà versé</dt><dd className="font-semibold tabular-nums">{formatF(totalEarned)}</dd></div>
+                </dl>
+              )}
+              {prochainDeblocage && (
+                <p className="text-xs text-white/80">Prochain déblocage : <strong className="text-white">{formatF(prochainDeblocage.montant)}</strong> le {formatDate(prochainDeblocage.date, 'jour')}</p>
+              )}
             </div>
-            <Button href="/reseller/payouts" variant="primary" fullWidth>
+            <Button href="/reseller/payouts" variant="citron" fullWidth>
               <Wallet className="w-4 h-4" />
-              <span>Retirer mes gains</span>
+              <span>Voir mes gains</span>
             </Button>
           </div>
-        </div>
-
-        {/* 2. Indicateurs */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <Indicateur icone={<Clock className="w-4 h-4" />} titre="En attente" note={moi ? `Débloqué ${palier.jours} jours après livraison` : 'Délai non confirmé'}>
-            {montant(pendingBalance)}
-          </Indicateur>
-          <Indicateur icone={<TrendingUp className="w-4 h-4" />} titre="Déjà versé" note="Commissions déjà retirées">
-            {montant(totalEarned)}
-          </Indicateur>
-          <Indicateur className="col-span-2 sm:col-span-1" icone={<ShoppingBag className="w-4 h-4" />} titre="Ventes livrées" note={state.ordersSync === 'ready' ? `${myOrders.length} commande${myOrders.length > 1 ? 's' : ''} au total` : 'Total des commandes non confirmé'}>
-            {state.ordersSync === 'ready' || moi ? ventesLivrees : '—'}
-          </Indicateur>
         </div>
 
         {/* 3. Palier : ce qui change concrètement, c'est le délai de déblocage */}
@@ -216,16 +233,10 @@ export default function ResellerDashboardPage() {
         </div>
 
         {/* 4. Actions */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {/* REV-04 : « Créer une commande » menait au même endroit que « Catalogue »
+            (la vente se crée depuis le catalogue, bouton « Vente ») : 3 raccourcis. */}
+        <div className="grid grid-cols-3 gap-3">
           <Raccourci empile href="/reseller/catalog" icone={<ShoppingBag className="w-5 h-5" />} titre="Catalogue" sousTitre="Choisir quoi partager" />
-          {/* Ouvrait la commande sur le PREMIER produit du catalogue, sans
-              choix possible. On passe par le catalogue : bouton « Vente ». */}
-          <Raccourci empile
-            href="/reseller/catalog"
-            icone={<Plus className="w-5 h-5" />}
-            titre="Créer une commande"
-            sousTitre="Choisir le produit, puis « Vente »"
-          />
           <Raccourci empile href="/reseller/orders" icone={<ClipboardList className="w-5 h-5" />} titre="Mes ventes" sousTitre="Suivre les livraisons" />
           {/* REV-04 (audit UI/UX du 2026-10-02) : « Boutiques » pointait vers
               /reseller/channels, qui redirige vers les Fournisseurs. */}
@@ -376,20 +387,6 @@ export default function ResellerDashboardPage() {
   );
 }
 
-function Indicateur({ icone, titre, note, className = '', children }: {
-  icone: React.ReactNode; titre: string; note: string; className?: string; children: React.ReactNode;
-}) {
-  return (
-    <div className={`bg-white p-4 rounded-3xl border border-slate-200 space-y-1.5 ${className}`}>
-      <div className="flex items-center gap-1.5 text-slate-600">
-        {icone}
-        <span className="text-xs font-bold uppercase">{titre}</span>
-      </div>
-      <p className="text-xl sm:text-2xl font-bold text-slate-900">{children}</p>
-      <p className="text-xs text-slate-600">{note}</p>
-    </div>
-  );
-}
 
 function Raccourci({ href, onClick, disabled, icone, titre, sousTitre, empile }: {
   href?: string; onClick?: () => void; disabled?: boolean;
@@ -424,4 +421,34 @@ function Raccourci({ href, onClick, disabled, icone, titre, sousTitre, empile }:
 function StatutVente({ status }: { status: string }) {
   const s = statutVente(status);
   return <StatusPill ton={s.ton}>{s.libelle}</StatusPill>;
+}
+
+/** Liste de démarrage (REV-13) : trois étapes vers la première vente, cochées au fil de l'eau. */
+function ListeDemarrage({ etapes }: { etapes: { libelle: string; fait: boolean; href: string }[] }) {
+  const faites = etapes.filter((e) => e.fait).length;
+  const suivante = etapes.find((e) => !e.fait);
+  return (
+    <section aria-labelledby="demarrage-titre" className="bg-white rounded-3xl border border-slate-200 p-5 space-y-3">
+      <div className="flex items-baseline justify-between gap-3">
+        <h2 id="demarrage-titre" className="font-bold text-base text-slate-900">Vers votre première vente</h2>
+        <span className="text-sm text-slate-600 tabular-nums">{faites} sur {etapes.length}</span>
+      </div>
+      <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden" aria-hidden="true">
+        <div className="h-full rounded-full bg-suguba-brand" style={{ width: `${(faites / etapes.length) * 100}%` }} />
+      </div>
+      <ol className="space-y-2">
+        {etapes.map((e) => (
+          <li key={e.libelle}>
+            <Link href={e.href} className={`flex items-center gap-3 min-h-11 rounded-2xl px-2 ${e === suivante ? 'bg-suguba-sauge font-semibold text-slate-900' : 'text-slate-600'}`}>
+              <span className={`w-6 h-6 shrink-0 rounded-full flex items-center justify-center ${e.fait ? 'bg-suguba-brand text-white' : 'border-2 border-slate-300'}`} aria-hidden="true">
+                {e.fait && <Check className="w-3.5 h-3.5" />}
+              </span>
+              <span className={e.fait ? 'line-through' : ''}>{e.libelle}</span>
+              <span className="sr-only">{e.fait ? ' (fait)' : ' (à faire)'}</span>
+            </Link>
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
 }

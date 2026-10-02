@@ -192,6 +192,33 @@
  "journal": [
   {
    "date": "2026-10-02",
+   "titre": "Audit UI/UX, lot 4 : les accueils",
+   "demande": "« oui commit puis passe au lot 4 » — quatrième lot de l’audit UI/UX du 2 octobre : chaque accueil dit d’abord quoi faire maintenant (fournisseur, revendeur, livreur, équipe).",
+   "realise": [
+    "Fournisseur : l’accueil commence par « À faire maintenant » — livreur en route avec le code de ramassage à lui donner, colis à préparer, devis à répondre, argent disponible ou à venir avec sa date. Le bouton principal devient « Préparer mes colis (n) » quand des colis attendent ; le catalogue se limite à 3 produits (« Voir mes n produits »).",
+    "Fournisseur, Commandes : « À préparer » ne compte plus les commandes que le client n’a pas confirmées ; le livreur en route passe en tête ; les attentes client sont regroupées et repliées (« rien à faire pour l’instant »).",
+    "Revendeur : l’accueil commence par « Vers votre première vente » (liste cochée : profil, première commande, première vente livrée) tant qu’aucune vente n’est livrée ; l’argent tient en une carte (retirable, en attente, déjà versé, prochain déblocage daté) ; le grand bloc sombre en double et le bouton « Retirer mes gains » à 0 F disparaissent ; 3 raccourcis au lieu de 4.",
+    "Livreur : « Remettre les espèces » donne 3 étapes (compter, demander où verser, recevoir le reçu) et un bouton WhatsApp « Demander où verser » avec le montant déjà écrit.",
+    "Équipe : la vue d’ensemble commence par « À faire maintenant » ; les chiffres viennent ensuite, cliquables, avec leur période et sans jargon ; « Appels à passer » (doublon de la file) est retiré ; les files à jour deviennent des pastilles cochées.",
+    "7 tests ajoutés ; 459 tests réussis ; TypeScript, linter et compilation isolée réussis."
+   ],
+   "ecarts": [
+    "Lieu et horaires de la caisse livreurs : aucun réglage n’existe (l’ancienne adresse était inventée) ; le livreur les demande sur WhatsApp. Ajouter un vrai réglage « caisse livreurs » est à décider.",
+    "Vue d’ensemble de l’équipe : pas encore de « commandes du jour » ni d’« appels en retard » (il faudrait de nouvelles lectures côté serveur).",
+    "Le bandeau « Terminez votre démarrage » (composant BandeauDemarrage) n’est plus affiché nulle part ; le fichier est gardé, à supprimer si la liste de démarrage convient.",
+    "Écrans connectés vérifiés par le code et les tests ; captures du guide à refaire. Aucune migration."
+   ],
+   "pages": [
+    "fou-accueil",
+    "fou-commandes",
+    "rev-accueil",
+    "liv-portefeuille",
+    "adm-vue"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-10-02",
    "titre": "Audit UI/UX, lot 3 : les composants",
    "demande": "« oui commit puis passe au lot 3 » — troisième lot de l’audit UI/UX du 2 octobre : bouton commun avec chargement, un seul bouton de partage WhatsApp, une ligne de liste commune, un seul écran vide avec « Réessayer », des pastilles plus calmes, la colonne d’action du tableau de l’équipe toujours visible.",
    "realise": [
@@ -2931,20 +2958,20 @@
    "but": "Le tableau de bord : ce qu’il faut partager aujourd’hui, les dernières ventes, et tous les outils.",
    "elements": [
     {
+     "nom": "Vers votre première vente",
+     "role": "Liste cochée tant qu’aucune vente n’est livrée : compléter mon profil · partager un produit et recevoir une commande · première vente livrée."
+    },
+    {
+     "nom": "Carte argent",
+     "role": "Retirable maintenant, En attente, Déjà versé, prochain déblocage avec sa date ; « Voir mes gains »."
+    },
+    {
      "nom": "Bandeau commissions",
      "role": "Rappel : une commission est débloquée 14 jours après la livraison."
     },
     {
-     "nom": "Terminez votre démarrage",
-     "role": "Reprend le guide en 8 étapes."
-    },
-    {
-     "nom": "Retirer mes gains",
-     "role": "Vers « Mes gains »."
-    },
-    {
      "nom": "Raccourcis",
-     "role": "Catalogue · Créer une commande · Mes ventes · Ma boutique. Sur mobile, icône au-dessus du libellé complet."
+     "role": "Catalogue · Mes ventes · Ma boutique (« Créer une commande » menait au même endroit que Catalogue)."
     },
     {
      "nom": "À partager aujourd’hui",
@@ -3768,6 +3795,10 @@
    "but": "Vue d’ensemble du fournisseur : dossier, catalogue, réseau.",
    "elements": [
     {
+     "nom": "À faire maintenant",
+     "role": "En tête : livreur en route avec le code de ramassage à lui donner, colis à préparer, devis à répondre, argent disponible ou à venir (avec la date). Le bouton principal devient « Préparer mes colis (n) » quand des colis attendent."
+    },
+    {
      "nom": "Dossier incomplet",
      "role": "Rappelle les infos manquantes (entrepôt…)."
     },
@@ -3855,6 +3886,10 @@
    "chemin": "/supplier/commandes",
    "but": "Voir les commandes de vos produits et remettre le colis au livreur avec le code de ramassage.",
    "elements": [
+    {
+     "nom": "À préparer",
+     "role": "Ne compte que ce qui demande une action ; le livreur en route passe en tête. Les commandes que le client n’a pas encore confirmées sont regroupées, repliées : « rien à faire pour l’instant »."
+    },
     {
      "nom": "Organiser la remise",
      "role": "Offre que vous remettez vous-même : après la confirmation de Suguba, la commande vous est assignée (aucun livreur). Vous voyez alors le nom, le téléphone et le repère du client pour le rendez-vous."
@@ -4396,6 +4431,10 @@
     {
      "nom": "Coordonnées",
      "role": "Le téléphone du client, son repère et le point de retrait ne restent visibles que pendant la course. Dans l’historique, le nom devient « Awa D. »."
+    },
+    {
+     "nom": "Verser en 3 étapes",
+     "role": "Comptez le montant · demandez à Suguba où et quand verser (« Demander où verser », WhatsApp) · le reçu de versement apparaît ici."
     }
    ],
    "suite": [
@@ -4416,12 +4455,16 @@
    "but": "Les chiffres du moment et les files qui attendent une action. Plus aucune action ni réglage ici : chacun a sa page (U2, 2026-09-27).",
    "elements": [
     {
-     "nom": "Chiffres",
-     "role": "Volume des commandes · Commissions générées · Appels à passer · Retraits à payer."
+     "nom": "À faire maintenant",
+     "role": "Les files qui attendent une action, en premier ; les files à jour en pastilles cochées."
     },
     {
-     "nom": "Files qui attendent une action",
-     "role": "Une carte par file non vide (commandes à confirmer, livraisons à attribuer, retraits, produits, pièces, SAV…), avec le nombre et le geste attendu ; un clic mène à la page où on la traite. Seulement les files que le rôle permet de voir."
+     "nom": "Les chiffres",
+     "role": "Commandes depuis l’ouverture · Commissions dues aux revendeurs · Retraits à payer ; chaque tuile mène à son détail."
+    },
+    {
+     "nom": "Chiffres",
+     "role": "Volume des commandes · Commissions générées · Appels à passer · Retraits à payer."
     },
     {
      "nom": "Tout voir dans « À traiter »",

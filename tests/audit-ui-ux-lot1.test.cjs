@@ -89,8 +89,10 @@ test('REV-04 / REV-06 : raccourci « Ma boutique » vers la vraie boutique, racc
   const page = lire('src/app/reseller/page.tsx');
   assert.doesNotMatch(page, /<Raccourci[^>]*href="\/reseller\/channels"/);
   assert.match(page, /<Raccourci empile href="\/reseller\/boutique"[\s\S]{0,120}titre="Ma boutique"/);
-  assert.equal((page.match(/<Raccourci empile/g) || []).length, 4);
-  assert.match(page, /className="col-span-2 sm:col-span-1"/);
+  // Lot 4 : 3 raccourcis (le doublon « Créer une commande » est retiré) ; les tuiles
+  // de chiffres, dont l'orpheline, sont fondues dans la carte d'argent.
+  assert.equal((page.match(/<Raccourci empile/g) || []).length, 3);
+  assert.match(page, /Retirable maintenant/);
 });
 
 test('PUB-07 : la page Garantie ne promet plus une durée absente des fiches', () => {

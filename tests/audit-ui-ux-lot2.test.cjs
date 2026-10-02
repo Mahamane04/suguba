@@ -99,7 +99,8 @@ test('REV-01 : « Mes ventes » lit les commissions du serveur, plus la liste lo
 
 test('REV-02 / REV-05 : mêmes mots pour la même somme, sommes rattachées à leur vente, bouton chiffré', () => {
   assert.doesNotMatch(lire('src/app/reseller/page.tsx'), /Total gagné/);
-  assert.match(lire('src/app/reseller/page.tsx'), /titre="Déjà versé"/);
+  // Lot 4 : « Déjà versé » est une ligne de la carte d'argent (plus une tuile).
+  assert.match(lire('src/app/reseller/page.tsx'), /Déjà versé<\/dt>/);
   const gains = lire('src/app/reseller/payouts/page.tsx');
   assert.doesNotMatch(gains, /Les dates viennent du grand-livre/);
   assert.match(gains, /etatCommissionVente\(\[c\]/);

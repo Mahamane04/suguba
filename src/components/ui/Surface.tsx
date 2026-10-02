@@ -58,23 +58,30 @@ export function StatCard({
   aide,
   icone: Icone,
   accent = false,
+  href,
 }: {
   label: string;
   valeur: React.ReactNode;
   aide?: string;
   icone?: React.ElementType;
   accent?: boolean;
+  /** Une tuile mène au détail de son chiffre (ADM-10, audit UI/UX du 2026-10-02). */
+  href?: string;
 }) {
-  return (
-    <div className="bg-white rounded-3xl border border-slate-200 p-4 space-y-1">
-      <p className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1.5">
-        {Icone && <Icone className="w-3.5 h-3.5" />}
-        <span>{label}</span>
-      </p>
-      <p className={`text-xl sm:text-2xl font-bold ${accent ? 'text-suguba-brand-dark' : 'text-slate-900'}`}>{valeur}</p>
-      {aide && <p className="text-xs text-slate-500">{aide}</p>}
-    </div>
+  const classes = 'bg-white rounded-3xl border border-slate-200 p-4 space-y-1';
+  const contenu = (
+    <>
+        <p className="text-xs font-bold text-slate-500 uppercase flex items-center gap-1.5">
+          {Icone && <Icone className="w-3.5 h-3.5" />}
+          <span>{label}</span>
+        </p>
+        <p className={`text-xl sm:text-2xl font-bold ${accent ? 'text-suguba-brand-dark' : 'text-slate-900'}`}>{valeur}</p>
+        {aide && <p className="text-xs text-slate-500">{aide}</p>}
+    </>
   );
+  return href
+    ? <Link href={href} className={`block hover:border-suguba-profond transition-colors ${classes}`}>{contenu}</Link>
+    : <div className={classes}>{contenu}</div>;
 }
 
 /**
