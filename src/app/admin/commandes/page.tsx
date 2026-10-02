@@ -123,7 +123,7 @@ export default function CommandesAdminPage() {
       const n = c.panier ? taillePanier.get(c.panier) || 1 : 1;
       return (
         <span className="block">
-          <span className="font-bold text-slate-900 font-mono text-xs">{c.numero}</span>
+          <span className="font-bold text-slate-900 font-mono text-xs whitespace-nowrap">{c.numero}</span>
           {n > 1 && <span className="block text-xs text-slate-500">Panier de {n} articles</span>}
         </span>
       );

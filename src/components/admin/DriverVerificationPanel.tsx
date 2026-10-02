@@ -6,6 +6,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { ShieldCheck, ShieldOff, Bike, MapPin } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 import { FORMAT_DATE } from '@/lib/montant';
+import Button from '@/components/ui/Button';
 
 interface Livreur {
   id: string;
@@ -193,22 +194,13 @@ export default function DriverVerificationPanel({onFait}: {onFait?: () => void} 
                   <p className="text-xs text-slate-600">{l.fullName} ne recevra plus de nouvelle course. Les courses en cours restent à terminer.</p>
                   {erreur && <p role="alert" className="text-sm text-rose-700 font-semibold">{erreur}</p>}
                   <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => decider(l.id, false)}
-                      disabled={enCours === l.id || constat.trim().length < 5}
-                      className="flex-1 h-11 bg-white hover:bg-rose-50 border border-rose-200 text-rose-700 disabled:opacity-50 font-bold rounded-xl text-sm flex items-center justify-center gap-1.5"
-                    >
-                      {enCours === l.id ? <SugubaLoader className="w-4 h-4" /> : <ShieldOff className="w-4 h-4" />}
-                      <span>Confirmer le retrait</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => { setOuvert(null); setConstat(''); setErreur(''); }}
-                      className="px-4 h-11 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm"
-                    >
+                    <Button type="button" variant="danger" className="flex-1" loading={enCours === l.id}
+                      disabled={constat.trim().length < 5} onClick={() => decider(l.id, false)}>
+                      <ShieldOff className="w-4 h-4" />Confirmer le retrait
+                    </Button>
+                    <Button type="button" variant="ghost" onClick={() => { setOuvert(null); setConstat(''); setErreur(''); }}>
                       Annuler
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ) : ouvert === l.id ? (
@@ -225,41 +217,26 @@ export default function DriverVerificationPanel({onFait}: {onFait?: () => void} 
                   />
                   {erreur && <p className="text-xs text-red-700 font-medium">{erreur}</p>}
                   <div className="flex gap-2">
-                    <button
-                      onClick={() => decider(l.id, true)}
-                      disabled={enCours === l.id || !l.dossierComplet}
-                      className="flex-1 h-11 bg-suguba-profond hover:bg-suguba-profond-2 disabled:bg-slate-300 text-white font-bold rounded-xl text-xs flex items-center justify-center space-x-1.5 transition-transform active:scale-[0.98]"
-                    >
-                      {enCours === l.id ? <SugubaLoader className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
-                      <span>Vérifié — autoriser les courses</span>
-                    </button>
-                    <button
-                      onClick={() => { setOuvert(null); setConstat(''); setErreur(''); }}
-                      className="px-4 h-11 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs"
-                    >
+                    <Button type="button" className="flex-1" loading={enCours === l.id} disabled={!l.dossierComplet} onClick={() => decider(l.id, true)}>
+                      <ShieldCheck className="w-4 h-4" />Vérifié — autoriser les courses
+                    </Button>
+                    <Button type="button" variant="ghost" onClick={() => { setOuvert(null); setConstat(''); setErreur(''); }}>
                       Annuler
-                    </button>
+                    </Button>
                   </div>
                 </div>
               ) : (
                 <div className="flex gap-2">
                   {!l.verifie ? (
-                    <button
-                      onClick={() => { setMode('verifier'); setOuvert(l.id); setConstat(''); setErreur(''); }}
-                      disabled={!l.dossierComplet}
-                      className="flex-1 h-11 bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white font-bold rounded-xl text-xs transition-transform active:scale-[0.98]"
-                    >
+                    <Button type="button" className="flex-1" disabled={!l.dossierComplet}
+                      onClick={() => { setMode('verifier'); setOuvert(l.id); setConstat(''); setErreur(''); }}>
                       Enregistrer la vérification
-                    </button>
+                    </Button>
                   ) : (
-                    <button
-                      type="button"
-                      onClick={() => { setMode('retirer'); setOuvert(l.id); setConstat(''); setErreur(''); }}
-                      className="flex-1 h-11 bg-white hover:bg-red-50 border border-red-200 text-red-700 font-bold rounded-xl text-xs flex items-center justify-center space-x-1.5"
-                    >
-                      <ShieldOff className="w-4 h-4" />
-                      <span>Retirer l&apos;autorisation</span>
-                    </button>
+                    <Button type="button" variant="danger" size="sm" className="ml-auto"
+                      onClick={() => { setMode('retirer'); setOuvert(l.id); setConstat(''); setErreur(''); }}>
+                      <ShieldOff className="w-4 h-4" />Retirer l&apos;autorisation
+                    </Button>
                   )}
                 </div>
               )}

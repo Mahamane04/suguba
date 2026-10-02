@@ -192,6 +192,41 @@
  "journal": [
   {
    "date": "2026-10-02",
+   "titre": "Audit UI/UX, lot 3 : les composants",
+   "demande": "« oui commit puis passe au lot 3 » — troisième lot de l’audit UI/UX du 2 octobre : bouton commun avec chargement, un seul bouton de partage WhatsApp, une ligne de liste commune, un seul écran vide avec « Réessayer », des pastilles plus calmes, la colonne d’action du tableau de l’équipe toujours visible.",
+   "realise": [
+    "Partage WhatsApp : un seul bouton, vert WhatsApp avec son logo, sur la carte produit du catalogue revendeur, l’accueil revendeur, Ma boutique / Parrainages / Démarrer et la carte revendeur (il existait en 4 versions, dont une vert profond avec une icône générique).",
+    "Boutons : le bouton commun sait afficher « en cours » sans changer de largeur et refuse le double appui ; les boutons des cartes produit passent de 32–36 px à 40 px ; « Publier le produit », « Approuver et publier à ce prix » et la vérification des livreurs utilisent le bouton commun (fini les gris ardoise et le dégradé sombre).",
+    "Pastilles de statut : « succès » n’est plus un vert vif plein (l’élément le plus voyant alors qu’il veut dire « rien à faire ») mais un fond menthe avec un point vert ; « à confirmer / en attente » passe en ambre, bien visible ; « info » en contour.",
+    "Écran vide : un seul rendu partout ; une variante « erreur » avec « Réessayer ». L’accueil fournisseur n’affiche plus « Dossier incomplet / Aucun produit » quand la connexion échoue, mais « Connexion impossible : vos produits sont toujours en ligne » ; ses Commandes ont aussi « Réessayer ».",
+    "Tableau de l’équipe : la colonne d’action reste collée au bord droit quand le tableau défile ; montants et numéros ne se coupent plus ; plus de bande vide sur mobile.",
+    "Ligne de liste commune (montant jamais coupé) pour les livraisons du livreur ; carte commande du fournisseur : le statut a sa propre ligne et ne coupe plus le produit ni le montant.",
+    "9 tests ajoutés (ils échouent tous sur l’ancien code) ; 452 tests réussis ; TypeScript, linter et compilation isolée réussis ; boutons de la carte produit mesurés à 40 px."
+   ],
+   "ecarts": [
+    "« Vente » et « Boutique » gardent des libellés courts sur la carte du catalogue (place comptée) mais ont désormais un nom accessible explicite ; leur regroupement dans un menu « ⋯ » reste au lot 6.",
+    "La ligne de liste commune n’est appliquée qu’aux listes du livreur ; son adoption ailleurs est au lot 6 (migration des pages anciennes).",
+    "Écrans connectés vérifiés par le code et les tests ; captures du guide à refaire.",
+    "Aucune migration."
+   ],
+   "pages": [
+    "rev-catalogue",
+    "rev-accueil",
+    "rev-boutique",
+    "fou-accueil",
+    "fou-commandes",
+    "liv-courses",
+    "liv-portefeuille",
+    "adm-commandes",
+    "adm-retraits",
+    "adm-livreurs",
+    "adm-produit-nouveau",
+    "adm-produits"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-10-02",
    "titre": "Audit UI/UX, lot 2 : le langage de l’argent",
    "demande": "« oui commit puis passe au lot 2 » — deuxième lot de l’audit UI/UX du 2 octobre : un seul format de montant et de date, les mêmes mots pour la même somme, l’état réel des commissions, une saisie de montant qui évite les zéros en trop.",
    "realise": [
@@ -3755,6 +3790,10 @@
     {
      "nom": "Commandes à préparer · Mes paiements",
      "role": "Vers la page Commandes (codes de ramassage) et vers le solde et les retraits."
+    },
+    {
+     "nom": "Connexion impossible",
+     "role": "Si la lecture échoue : « vos produits sont toujours en ligne » et « Réessayer », au lieu d’un compte qui paraît vide."
     }
    ],
    "suite": [
@@ -3843,6 +3882,10 @@
     {
      "nom": "Contact du client (remise par vous)",
      "role": "Visible une fois la remise organisée (« Organiser la remise »), jusqu’à la remise ; ensuite il disparaît."
+    },
+    {
+     "nom": "Réessayer",
+     "role": "Si les commandes ne se chargent pas, un bouton relance la lecture ; la relecture automatique (chaque minute) efface l’erreur dès qu’elle réussit."
     }
    ],
    "suite": [

@@ -8,6 +8,7 @@ import Carrousel from '@/components/product/Carrousel';
 import AfficheModal from '@/components/product/AfficheModal';
 import Button from '@/components/ui/Button';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
+import BoutonPartageWhatsApp from '@/components/ui/BoutonPartageWhatsApp';
 import { compterClic } from '@/lib/sponsorises';
 import { partagerProduit, prechargerImage, prechargerLienPartage, useCodeRevendeur } from '@/lib/partage';
 import type { Product } from '@/types';
@@ -151,7 +152,22 @@ export default function ProductCard({
     if (monCode) prechargerLienPartage(produit.slug);
   };
 
-  const boutonPartage = (pleineLargeur: boolean) => (
+  // Catalogue revendeur (pleine largeur) : le partage EST l'action principale,
+  // avec le bouton WhatsApp commun (REV-03, lot 3 de l'audit UI/UX du 2026-10-02).
+  // Vue client (V1, 2026-09-27) : partager reste possible mais ne doit plus
+  // concurrencer l'achat — bouton neutre à côté de « Acheter », 40 px.
+  const boutonPartage = (pleineLargeur: boolean) => pleineLargeur ? (
+    <BoutonPartageWhatsApp
+      size="sm"
+      onClick={partager}
+      onPointerDown={precharger}
+      onMouseEnter={precharger}
+      loading={preparation}
+      aria-label={`Partager ${produit.nom} sur WhatsApp`}
+      className="flex-1 min-w-0"
+      libelle={<><span className="sm:hidden">Partager</span><span className="hidden sm:inline">Partager sur WhatsApp</span></>}
+    />
+  ) : (
     <button
       type="button"
       onClick={partager}
@@ -159,23 +175,9 @@ export default function ProductCard({
       onMouseEnter={precharger}
       disabled={preparation}
       aria-label={`Partager ${produit.nom} sur WhatsApp`}
-      // Vue client (V1, 2026-09-27) : partager reste possible mais ne doit
-      // plus concurrencer l'achat — bouton neutre à côté de « Acheter ».
-      // Catalogue revendeur (pleine largeur) : le partage EST l'action
-      // principale, il garde le vert WhatsApp.
-      className={`h-9 rounded-2xl font-bold text-xs inline-flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] disabled:opacity-70 ${
-        pleineLargeur
-          ? 'flex-1 min-w-0 bg-suguba-wa hover:bg-[#1fbf5b] text-suguba-profond'
-          : 'w-9 shrink-0 bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-      }`}
+      className="h-10 w-10 shrink-0 rounded-full bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 inline-flex items-center justify-center transition-all active:scale-[0.97] disabled:opacity-70"
     >
       {preparation ? <SugubaLoader className="w-4 h-4" /> : <WhatsAppIcon className="w-4 h-4" />}
-      {pleineLargeur ? (
-        <>
-          <span className="sm:hidden">Partager</span>
-          <span className="hidden sm:inline">Partager sur WhatsApp</span>
-        </>
-      ) : null}
     </button>
   );
 
@@ -237,17 +239,17 @@ export default function ProductCard({
 
         <div className="mt-auto pt-1.5 space-y-2">
           {presentation ? (
-            <Button href={lien} variant="secondary" size="sm" fullWidth className="!h-9 !py-0">Voir le produit</Button>
+            <Button href={lien} variant="secondary" size="sm" fullWidth>Voir le produit</Button>
           ) : partageEnAvant ? (
             // Catalogue revendeur : partage direct + affiche pour le statut.
             <div className="flex items-center gap-2">
               {boutonPartage(true)}
-              {hrefStudio ? <Link href={hrefStudio} aria-label={`Créer un visuel de ${produit.nom}`} title="Personnaliser le visuel" className="h-9 w-9 shrink-0 rounded-2xl border border-slate-200 hover:bg-slate-50 text-slate-700 inline-flex items-center justify-center"><ImageIcon className="w-4 h-4"/></Link> : <button
+              {hrefStudio ? <Link href={hrefStudio} aria-label={`Créer un visuel de ${produit.nom}`} title="Personnaliser le visuel" className="h-10 w-10 shrink-0 rounded-full border border-slate-200 hover:bg-slate-50 text-slate-700 inline-flex items-center justify-center"><ImageIcon className="w-4 h-4"/></Link> : <button
                 type="button"
                 onClick={() => setAfficheOuverte(true)}
                 aria-label={`Créer une affiche de ${produit.nom} pour mon statut WhatsApp`}
                 title="Affiche pour mon statut"
-                className="h-9 w-9 shrink-0 rounded-2xl border border-slate-200 hover:bg-slate-50 text-slate-700 inline-flex items-center justify-center"
+                className="h-10 w-10 shrink-0 rounded-full border border-slate-200 hover:bg-slate-50 text-slate-700 inline-flex items-center justify-center"
               >
                 <ImageIcon className="w-4 h-4" />
               </button>}
@@ -257,12 +259,12 @@ export default function ProductCard({
               {produit.ajoutDirect ? (
                 // V2 (2026-09-27) : offre simple → ajout au panier sans quitter
                 // le catalogue ; le compteur de la barre du bas le confirme.
-                <Button type="button" onClick={ajouter} variant="primary" size="sm" className="flex-1 !h-9 !py-0"
+                <Button type="button" onClick={ajouter} variant="primary" size="sm" className="flex-1"
                   aria-label={`Ajouter ${produit.nom} au panier`}>
                   {ajoute ? <><Check className="w-4 h-4" />Ajouté</> : <><ShoppingBag className="w-4 h-4" />Ajouter</>}
                 </Button>
               ) : (
-                <Button href={lien} variant={enRupture ? 'secondary' : 'primary'} size="sm" className="flex-1 !h-9 !py-0">
+                <Button href={lien} variant={enRupture ? 'secondary' : 'primary'} size="sm" className="flex-1">
                   {enRupture ? 'Voir' : produit.aChoisir ? 'Choisir' : 'Acheter'}
                 </Button>
               )}

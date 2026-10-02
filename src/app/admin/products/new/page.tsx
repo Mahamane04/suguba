@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { formatF } from '@/lib/montant';
 import { MontantInput } from '@/components/ui/Field';
+import Button from '@/components/ui/Button';
 
 /**
  * Création de produit par l'admin — l'équivalent côté Suguba de
@@ -193,18 +194,8 @@ export default function AdminNewProductPage() {
               </p>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 justify-center">
-              <button
-                onClick={resetForm}
-                className="bg-slate-700 hover:bg-slate-800 text-white font-bold py-3 px-6 rounded-2xl text-xs transition-colors"
-              >
-                Ajouter un autre produit
-              </button>
-              <button
-                onClick={() => router.push('/admin/products')}
-                className="bg-slate-900 hover:bg-black text-white font-bold py-3 px-6 rounded-2xl text-xs transition-colors"
-              >
-                Voir les produits
-              </button>
+              <Button type="button" onClick={() => router.push('/admin/products')}>Voir les produits</Button>
+              <Button type="button" variant="ghost" onClick={resetForm}>Ajouter un autre produit</Button>
             </div>
           </div>
         ) : (
@@ -316,14 +307,12 @@ export default function AdminNewProductPage() {
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full bg-slate-700 hover:bg-slate-800 disabled:opacity-50 text-white font-bold py-3.5 px-4 rounded-2xl text-xs shadow-lg shadow-slate-800/20 flex items-center justify-center space-x-2 transition-transform active:scale-[0.98]"
-            >
+            {/* ADM-08 (audit UI/UX du 2026-10-02) : bouton commun, au lieu d'un gris
+                ardoise hors charte sur le geste qui publie un produit. */}
+            <Button type="submit" size="lg" fullWidth loading={isSubmitting}>
               <PackagePlus className="w-4 h-4" />
-              <span>{isSubmitting ? 'Publication...' : 'Publier le produit'}</span>
-            </button>
+              Publier le produit
+            </Button>
 
           </form>
         )}

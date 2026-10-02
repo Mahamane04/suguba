@@ -3,7 +3,7 @@
 import SugubaLoader from '@/components/ui/SugubaLoader';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { PackageCheck, KeyRound, Truck, CheckCircle2, Clock, Package, Handshake, Phone, QrCode, Circle, AlertTriangle, Camera, X } from 'lucide-react';
+import { PackageCheck, KeyRound, Truck, CheckCircle2, Clock, Package, Handshake, Phone, QrCode, Circle, AlertTriangle, Camera, X, MapPin } from 'lucide-react';
 import { Field, Input, Textarea } from '@/components/ui/Field';
 import { compresserImage } from '@/lib/compression-image';
 import { ETAPES, libelleEtape, type CleEtape } from '@/lib/offre';
@@ -119,7 +119,8 @@ export default function CommandesFournisseurPage() {
       .then((r) => r.json())
       .then((d) => {
         if (annule) return;
-        if (d.error) setErreur(d.error);
+        // Une relecture réussie efface l'erreur précédente.
+        setErreur(d.error || '');
         setCommandes(d.commandes || []);
         setRamassageActif(d.ramassageActif !== false);
       })
@@ -169,7 +170,7 @@ export default function CommandesFournisseurPage() {
       </div>
 
       {chargement ? <Skeleton className="h-40" /> : erreur ? (
-        <EmptyState icone={Package} titre="Commandes indisponibles" texte={erreur} />
+        <EmptyState erreur titre="Commandes indisponibles" texte={erreur} onReessayer={() => { setErreur(''); setChargement(true); setRecharge((n) => n + 1); }} />
       ) : visibles.length === 0 ? (
         <EmptyState icone={PackageCheck} titre={filtre === 'a_preparer' ? 'Rien à préparer pour le moment' : 'Aucune commande ici'}
           texte={filtre === 'a_preparer' ? 'Les nouvelles commandes de vos produits apparaîtront ici dès qu’un client aura commandé.' : undefined} />
@@ -183,14 +184,16 @@ export default function CommandesFournisseurPage() {
                   <div className="relative w-14 h-14 rounded-2xl overflow-hidden bg-slate-100 shrink-0">
                     <ProductImage src={c.image || ''} alt={c.produit} fill className="object-cover" />
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-slate-900 truncate">{c.produit}</p>
-                    <p className="text-xs text-slate-500">#{c.numero} · {heure(c.creeLe)}</p>
-                    <p className="text-xs text-slate-700 mt-0.5">
-                      Quantité <strong>{c.quantite}</strong> · vous recevez <strong>{enF(c.montantFournisseur)}</strong>
+                  {/* FOU-03 (audit UI/UX du 2026-10-02) : la pastille, insécable, partageait
+                      la ligne du titre et écrasait produit et montant à 390 px. */}
+                  <div className="min-w-0 flex-1 space-y-0.5">
+                    <StatusPill ton={e.ton}>{e.libelle}</StatusPill>
+                    <p className="text-sm font-semibold text-slate-900 line-clamp-2">{c.produit}</p>
+                    <p className="text-xs text-slate-500"><span className="whitespace-nowrap">#{c.numero}</span> · {heure(c.creeLe)}</p>
+                    <p className="text-xs text-slate-700">
+                      Quantité <strong>{c.quantite}</strong> · vous recevez <strong className="whitespace-nowrap tabular-nums">{enF(c.montantFournisseur)}</strong>
                     </p>
                   </div>
-                  <StatusPill ton={e.ton}>{e.libelle}</StatusPill>
                 </div>
 
                 {c.codeRamassage && (
@@ -253,7 +256,7 @@ export default function CommandesFournisseurPage() {
 
                 <ul className="text-xs text-slate-600 space-y-1">
                   {(!c.modeRemise || c.modeRemise === 'livreur') && (
-                    <li className="flex items-center gap-2"><Clock className="w-3.5 h-3.5 text-slate-400" />Livraison vers {c.quartierClient || c.ville || 'le client'}</li>
+                    <li className="flex items-center gap-2"><MapPin className="w-3.5 h-3.5 text-slate-500" />Livraison vers {c.quartierClient || c.ville || 'le client'}</li>
                   )}
                   {c.livreur && <li className="flex items-center gap-2"><Truck className="w-3.5 h-3.5 text-slate-400" />Livreur : {c.livreur}</li>}
                   {c.recupereeLe && <li className="flex items-center gap-2"><PackageCheck className="w-3.5 h-3.5 text-suguba-profond" />Récupérée le {heure(c.recupereeLe)}</li>}

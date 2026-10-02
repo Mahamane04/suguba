@@ -23,6 +23,7 @@ import {
 import { formatF, formatNombre, FORMAT_DATE } from '@/lib/montant';
 import { statutVente } from '@/lib/libelles-vente';
 import { StatusPill } from '@/components/ui/Surface';
+import BoutonPartageWhatsApp from '@/components/ui/BoutonPartageWhatsApp';
 
 /**
  * Tableau de bord revendeur — converti au design system (2026-09-10).
@@ -275,17 +276,16 @@ export default function ResellerDashboardPage() {
                   <div className="flex items-center gap-2">
                     {/* Partage en un clic : photo + texte + lien avec le code
                         du revendeur (voir src/lib/partage.ts). */}
-                    <button
-                      type="button"
+                    <BoutonPartageWhatsApp
+                      size="sm"
+                      className="flex-1"
+                      libelle="Partager"
+                      aria-label={`Partager ${product.name} sur WhatsApp`}
                       onClick={() => partagerProduit(
                         { nom: product.name, prix: product.publicPrice, slug: product.slug, images: product.images },
                         referralCode,
                       )}
-                      className="flex-1 h-9 rounded-2xl bg-suguba-wa hover:bg-[#1fbf5b] text-suguba-profond text-xs font-bold inline-flex items-center justify-center gap-1.5 active:scale-[0.97] transition-all"
-                    >
-                      <WhatsAppIcon className="w-4 h-4" />
-                      <span>Partager</span>
-                    </button>
+                    />
                     <Button onClick={() => setSelectedProductForOrder(product)} variant="ghost" size="sm" aria-label="Créer une commande pour ce produit">
                       <Plus className="w-4 h-4" />
                     </Button>

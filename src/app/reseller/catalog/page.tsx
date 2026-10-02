@@ -241,18 +241,24 @@ export default function ResellerCatalogPage() {
                 sponsorisationId={classes[i]?.sponsorise ? sponsorises.get(product.id) : null}
               >
                 <div className="grid grid-cols-2 gap-1.5">
+                  {/* REV-07 (audit UI/UX du 2026-10-02) : 32 px, sous la cible tactile ; 40 px et nom explicite. */}
                   <button
+                    type="button"
                     onClick={() => setSelectedProductForOrder(product)}
-                    className="h-8 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-700 inline-flex items-center justify-center gap-1"
+                    aria-label={`Enregistrer une vente de ${product.name} pour un client`}
+                    className="h-10 rounded-full border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-700 inline-flex items-center justify-center gap-1"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Vente</span>
                   </button>
                   {codeRevendeur ? (
                     <button
+                      type="button"
                       onClick={() => basculerBoutique(product.id)}
                       disabled={enCours === product.id}
-                      className={`h-8 rounded-xl border text-xs font-bold inline-flex items-center justify-center gap-1 transition-colors disabled:opacity-60 ${
+                      aria-pressed={maSelection.has(product.id)}
+                      aria-label={maSelection.has(product.id) ? `Retirer ${product.name} de ma boutique` : `Ajouter ${product.name} à ma boutique`}
+                      className={`h-10 rounded-full border text-xs font-semibold inline-flex items-center justify-center gap-1 transition-colors disabled:opacity-60 ${
                         maSelection.has(product.id)
                           ? 'bg-suguba-brand/10 border-suguba-brand/30 text-suguba-brand-dark'
                           : 'border-slate-200 text-slate-700 hover:bg-slate-50'
@@ -264,7 +270,7 @@ export default function ResellerCatalogPage() {
                   ) : (
                     <Link
                       href={`/p/${product.slug}`}
-                      className="h-8 rounded-xl border border-slate-200 hover:bg-slate-50 text-xs font-bold text-slate-700 inline-flex items-center justify-center"
+                      className="h-10 rounded-full border border-slate-200 hover:bg-slate-50 text-xs font-semibold text-slate-700 inline-flex items-center justify-center"
                     >
                       Voir
                     </Link>

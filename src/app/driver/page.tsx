@@ -20,7 +20,8 @@ import {
   Banknote, Package, Navigation, AlertCircle, ArrowRight,
   Compass, MessageCircle, Printer, Wallet, ShieldCheck
 } from 'lucide-react';
-import { formatF, FORMAT_DATE } from '@/lib/montant';
+import { formatDate, formatF, FORMAT_DATE } from '@/lib/montant';
+import LigneListe from '@/components/ui/LigneListe';
 
 const OtpValidationModal = dynamic(() => import('@/components/driver/OtpValidationModal'));
 const DeliveryMapModal = dynamic(() => import('@/components/driver/DeliveryMapModal'));
@@ -285,29 +286,22 @@ export default function DriverDashboardPage() {
             {myDeliveredOrders.slice(0, 3).map((order) => {
               const statut = statutEncaissement(order, caisseServeur);
               return (
-                <div key={order.id} className="py-3 flex items-center gap-3">
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-sm text-slate-900 truncate">{order.productName}</p>
-                    <p className="text-xs text-slate-600 truncate">
-                      #{order.orderNumber} · {order.neighborhood}
-                      {order.deliveredAt ? ` · ${new Date(order.deliveredAt).toLocaleDateString('fr-FR', FORMAT_DATE.jour)}` : ''}
-                    </p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-sm font-bold text-slate-900 tabular-nums whitespace-nowrap">{fcfa(order.totalAmount)}</p>
-                    <p className={`text-xs font-semibold whitespace-nowrap ${statut === 'a_remettre' ? 'text-amber-800' : 'text-slate-600'}`}>
-                      {LIBELLE_ENCAISSEMENT[statut]}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedOrderForReceipt(order)}
-                    aria-label={`Reçu de la commande ${order.orderNumber}`}
-                    className="w-11 h-11 shrink-0 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center"
-                  >
-                    <Printer className="w-4 h-4" />
-                  </button>
-                </div>
+                <LigneListe key={order.id}
+                  titre={order.productName}
+                  meta={<>#{order.orderNumber} · {order.neighborhood}{order.deliveredAt ? ` · ${formatDate(order.deliveredAt, 'jour')}` : ''}</>}
+                  valeur={fcfa(order.totalAmount)}
+                  statut={<span className={statut === 'a_remettre' ? 'text-amber-800' : 'text-slate-600'}>{LIBELLE_ENCAISSEMENT[statut]}</span>}
+                  action={
+                    <button
+                      type="button"
+                      onClick={() => setSelectedOrderForReceipt(order)}
+                      aria-label={`Reçu de la commande ${order.orderNumber}`}
+                      className="w-11 h-11 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center"
+                    >
+                      <Printer className="w-4 h-4" />
+                    </button>
+                  }
+                />
               );
             })}
           </div>

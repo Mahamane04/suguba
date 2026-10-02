@@ -14,6 +14,7 @@ import { LIBELLE_ENCAISSEMENT, statutEncaissement, type Versement } from '@/lib/
 import { useCaisseLivreur } from '@/lib/useCaisseLivreur';
 import { ArrowLeft, Banknote, Package, Printer, Receipt, Truck, Wallet } from 'lucide-react';
 import { formatF, FORMAT_DATE } from '@/lib/montant';
+import LigneListe from '@/components/ui/LigneListe';
 
 /**
  * Portefeuille livreur — refait le 2026-09-11 sur des données réelles.
@@ -137,32 +138,27 @@ export default function DriverEarningsPage() {
             <EmptyState icon={Package} title="Aucune livraison effectuée pour le moment." />
           ) : (
             <div className="divide-y divide-slate-100">
-              {livrees.map((o) => (
-                <div key={o.id} className="py-3 flex items-center justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-bold text-sm text-slate-900 truncate">{o.productName}</p>
-                    <p className="text-xs text-slate-500">
-                      #{o.orderNumber} · {o.neighborhood}
-                      {o.deliveredAt ? ` · ${new Date(o.deliveredAt).toLocaleDateString('fr-FR', FORMAT_DATE.jour)}` : ''}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <div className="text-right">
-                      <p className="text-sm font-bold text-slate-900">{fmt(o.totalAmount)}</p>
-                      <p className={`text-xs font-semibold whitespace-nowrap ${statutEncaissement(o, caisseServeur) === 'a_remettre' ? 'text-amber-800' : 'text-slate-600'}`}>
-                        {LIBELLE_ENCAISSEMENT[statutEncaissement(o, caisseServeur)]}
-                      </p>
-                    </div>
-                    <button
-                      onClick={() => setRecuPour(o)}
-                      aria-label={`Reçu de la commande ${o.orderNumber}`}
-                      className="w-10 h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center"
-                    >
-                      <Printer className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              ))}
+              {livrees.map((o) => {
+                const statut = statutEncaissement(o, caisseServeur);
+                return (
+                  <LigneListe key={o.id}
+                    titre={o.productName}
+                    meta={<>#{o.orderNumber} · {o.neighborhood}{o.deliveredAt ? ` · ${new Date(o.deliveredAt).toLocaleDateString('fr-FR', FORMAT_DATE.jour)}` : ''}</>}
+                    valeur={fmt(o.totalAmount)}
+                    statut={<span className={statut === 'a_remettre' ? 'text-amber-800' : 'text-slate-600'}>{LIBELLE_ENCAISSEMENT[statut]}</span>}
+                    action={
+                      <button
+                        type="button"
+                        onClick={() => setRecuPour(o)}
+                        aria-label={`Reçu de la commande ${o.orderNumber}`}
+                        className="w-11 h-11 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center"
+                      >
+                        <Printer className="w-4 h-4" />
+                      </button>
+                    }
+                  />
+                );
+              })}
             </div>
           )}
         </div>

@@ -10,9 +10,10 @@ import { useSugubaStore } from '@/lib/store';
 import { useCodeRevendeur } from '@/lib/partage';
 import {
   ShieldCheck, ArrowLeft, Download, Printer,
-  Share2, Sparkles, Award, CheckCircle2, User, Phone, MapPin, Copy, Check
+  Sparkles, Award, CheckCircle2, User, Phone, MapPin, Copy, Check
 } from 'lucide-react';
 import LogoSuguba from '@/components/ui/LogoSuguba';
+import BoutonPartageWhatsApp from '@/components/ui/BoutonPartageWhatsApp';
 
 export default function ResellerBadgePage() {
   const state = useSugubaStore();
@@ -77,17 +78,10 @@ export default function ResellerBadgePage() {
               <span>Imprimer mon Badge</span>
             </button>
 
-            {personalCatalogUrl && <a
+            {personalCatalogUrl && <BoutonPartageWhatsApp size="sm" libelle="Partager"
               href={`https://api.whatsapp.com/send?text=${encodeURIComponent(
                 `🪪 *CARTE REVENDEUR SUGUBA MALI*\n\nNom : ${currentUser.fullName}\nCode Partenaire : ${reseller.referralCode}\n\nScannez mon QR Code ou commandez via mon lien officiel :\n${personalCatalogUrl}`
-              )}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-3.5 py-2 bg-suguba-wa hover:bg-[#20bd5a] text-suguba-profond font-bold rounded-2xl text-xs flex items-center space-x-1.5 transition-all shadow-xs"
-            >
-              <Share2 className="w-3.5 h-3.5" />
-              <span>Partager</span>
-            </a>}
+              )}`} />}
           </div>
         </div>
 

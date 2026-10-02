@@ -11,6 +11,7 @@ import { useToast } from '@/components/ui/Toast';
 import { calculerTarif, type ReglagesPlateforme } from '@/lib/pricing';
 import { formatF } from '@/lib/montant';
 import { MontantInput } from '@/components/ui/Field';
+import Button from '@/components/ui/Button';
 
 interface ProductPricingModalProps {
   product: Product | null;
@@ -117,12 +118,14 @@ export default function ProductPricingModal({ product, isOpen, onClose }: Produc
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
       <div className="bg-white w-full max-w-lg rounded-3xl shadow-2xl border border-slate-100 overflow-hidden max-h-[92vh] flex flex-col">
-        <div className="p-4 sm:p-5 bg-gradient-to-r from-slate-800 to-slate-900 text-white flex items-center justify-between">
+        {/* ADM-08 (audit UI/UX du 2026-10-02) : en-tête blanc comme le panneau
+            latéral, au lieu d'un dégradé ardoise hors charte. */}
+        <div className="p-4 sm:p-5 bg-white border-b border-slate-200 flex items-center justify-between">
           <div className="flex items-center space-x-2">
-            <ShieldCheck className="w-5 h-5 text-slate-300" />
-            <h3 className="font-bold text-base sm:text-lg">Tarification du produit</h3>
+            <ShieldCheck className="w-5 h-5 text-suguba-profond" />
+            <h3 className="font-bold text-base sm:text-lg text-slate-900">Tarification du produit</h3>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center">
+          <button type="button" onClick={onClose} aria-label="Fermer" className="w-10 h-10 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center">
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -210,14 +213,10 @@ export default function ProductPricingModal({ product, isOpen, onClose }: Produc
                 </div>
               )}
 
-              <button
-                type="submit"
-                disabled={envoi || tarif.statut === 'sous_plancher'}
-                className="w-full h-[52px] bg-slate-700 hover:bg-slate-800 disabled:opacity-50 text-white font-bold rounded-2xl text-xs flex items-center justify-center space-x-2 transition-transform active:scale-[0.98]"
-              >
-                {envoi ? <SugubaLoader className="w-4 h-4" /> : <ShieldCheck className="w-4 h-4" />}
-                <span>{tarif.statut === 'sous_plancher' ? 'Prix sous le plancher' : 'Approuver et publier à ce prix'}</span>
-              </button>
+              <Button type="submit" size="lg" fullWidth loading={envoi} disabled={tarif.statut === 'sous_plancher'}>
+                <ShieldCheck className="w-4 h-4" />
+                {tarif.statut === 'sous_plancher' ? 'Prix sous le plancher' : 'Approuver et publier à ce prix'}
+              </Button>
             </>
           )}
         </form>

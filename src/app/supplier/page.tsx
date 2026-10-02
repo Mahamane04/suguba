@@ -12,6 +12,7 @@ import {
   Plus, ShieldCheck, Clock, Store, Package, Users, XCircle, Camera, ClipboardList, FileText, Wallet
 } from 'lucide-react';
 import { formatF } from '@/lib/montant';
+import { EmptyState as EtatVide } from '@/components/ui/Surface';
 
 interface SupplierProduct {
   id: string;
@@ -47,23 +48,33 @@ export default function SupplierDashboardPage() {
   const [supplier, setSupplier] = useState<SupplierMe | null>(null);
   const [products, setProducts] = useState<SupplierProduct[]>([]);
   const [loading, setLoading] = useState(true);
+  // FOU-07 (audit UI/UX du 2026-10-02) : un échec de lecture s'affichait comme un
+  // compte vide (« Dossier fournisseur incomplet », « Aucun produit déposé ») ;
+  // sur un réseau faible, le fournisseur croyait avoir perdu son catalogue.
+  const [erreur, setErreur] = useState(false);
+  const [essai, setEssai] = useState(0);
   const [photosPour, setPhotosPour] = useState<SupplierProduct | null>(null);
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setErreur(false);
     (async () => {
       try {
-        const res = await fetch('/api/supplier/me');
+        const res = await fetch('/api/supplier/me', { cache: 'no-store' });
+        if (!res.ok) throw new Error(String(res.status));
         const json = await res.json();
         if (cancelled) return;
         setSupplier(json.supplier || null);
         setProducts(json.products || []);
+      } catch {
+        if (!cancelled) setErreur(true);
       } finally {
         if (!cancelled) setLoading(false);
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [essai]);
 
   if (loading) {
     return (
@@ -76,6 +87,20 @@ export default function SupplierDashboardPage() {
             {Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-24 bg-white border border-slate-200 rounded-3xl" />)}
           </div>
           <div className="h-64 bg-white border border-slate-200 rounded-3xl" />
+        </main>
+        <BottomNav />
+      </div>
+    );
+  }
+
+  if (erreur) {
+    return (
+      <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
+        <Header />
+        <main className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 py-6 w-full">
+          <EtatVide erreur titre="Connexion impossible"
+            texte="Vos produits sont toujours en ligne. Vérifiez votre connexion, puis réessayez."
+            onReessayer={() => setEssai((n) => n + 1)} />
         </main>
         <BottomNav />
       </div>
