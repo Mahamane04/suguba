@@ -1,5 +1,8 @@
 /** REQ-AUD-003/004/005. Historical amounts only; no current product prices. */
-export function syntheseFinance(orders: any[], commissions: any[], debut?: string, fin?: string) {
+/** Une commande qui attend son appel de confirmation depuis plus de 4 h est en retard (même seuil que « À traiter »). */
+export const RETARD_APPEL_MS = 4 * 3_600_000;
+
+export function syntheseFinance(orders: any[], commissions: any[], debut?: string, fin?: string, maintenant = Date.now()) {
   const nombre = (v: unknown) => v == null || v === '' || !Number.isFinite(Number(v)) ? null : Number(v);
   const inclus = (date: string | null) => !!date && Number.isFinite(Date.parse(date)) && (!debut || Date.parse(date) >= Date.parse(`${debut}T00:00:00.000Z`)) && (!fin || Date.parse(date) < Date.parse(`${fin}T00:00:00.000Z`) + 86_400_000);
   const creees = orders.filter(o => inclus(o.created_at));
@@ -26,6 +29,8 @@ export function syntheseFinance(orders: any[], commissions: any[], debut?: strin
     encaisseSurLivrees:somme('total',lignes.filter(o=>o.encaissee)),
     livraisonsSansDate:orders.filter(o=>o.status==='delivered'&&!o.delivered_at).length,
     enAttente:orders.filter(o=>o.status==='pending_call').length, enLivraison:orders.filter(o=>['dispatched','in_transit'].includes(o.status)).length,
+    // Lot 4 de l'audit UI/UX (arbitrage) : la vue d'ensemble montre les appels en retard.
+    appelsEnRetard:orders.filter(o=>['new','pending_call'].includes(o.status) && Number.isFinite(Date.parse(o.created_at)) && Date.parse(o.created_at) < maintenant - RETARD_APPEL_MS).length,
     grandLivre, verrouillees, lignes };
 }
 export type Finance = ReturnType<typeof syntheseFinance>;

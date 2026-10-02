@@ -139,9 +139,13 @@ export default function ResellerOrdersPage() {
 
                     {/* Customer & Location */}
                     <div className="bg-slate-50 p-3 rounded-2xl border border-slate-200/80 text-xs space-y-1 sm:w-72">
-                      <p className="font-bold text-slate-800 flex items-center">
-                        <span className="text-slate-500 mr-1.5 font-normal">Client :</span>
-                        {order.customerName} ({order.customerPhone})
+                      <p className="font-bold text-slate-800 flex flex-wrap items-baseline gap-x-1.5">
+                        <span className="text-slate-500 font-normal">Client :</span>
+                        {order.customerName}
+                        {/* REV-10 : numéro complet (cliquable) pendant la commande, masqué ensuite. */}
+                        {order.customerPhone && (String(order.customerPhone).startsWith('••')
+                          ? <span className="font-normal text-slate-500 whitespace-nowrap">({order.customerPhone})</span>
+                          : <a href={`tel:${order.customerPhone}`} className="font-semibold text-suguba-profond underline underline-offset-2 whitespace-nowrap">{order.customerPhone}</a>)}
                       </p>
                       <p className="text-slate-600 flex items-start">
                         <MapPin className="w-3.5 h-3.5 text-slate-400 mr-1 shrink-0 mt-0.5" />
@@ -172,6 +176,9 @@ export default function ResellerOrdersPage() {
             })
           )}
         </div>
+      <p className="text-xs text-slate-600 px-1">
+        Le numéro de votre client est visible pendant que sa commande est en cours ; ensuite il est masqué, comme dans « Mes clients ».
+      </p>
     </PageReseau>
   );
 }

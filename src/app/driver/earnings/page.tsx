@@ -51,7 +51,7 @@ export default function DriverEarningsPage() {
   // (LIV-01, audit UI/UX du 2026-10-02). L'ancien calcul reposait sur
   // `paymentCollected`, que le code de remise passe à vrai pour TOUTES les
   // commandes : le total restait à 0 F (corrigé le 2026-09-25).
-  const { caisse: c, caisseServeur, aRemettre, etat: etatCaisse, livreurGardeRemuneration } = useCaisseLivreur(livrees, remuneration);
+  const { caisse: c, caisseServeur, aRemettre, etat: etatCaisse, livreurGardeRemuneration, lieuCaisse, horairesCaisse } = useCaisseLivreur(livrees, remuneration);
   const gains = remuneration !== null ? livrees.length * remuneration : null;
   const fmt = formatF;
 
@@ -92,7 +92,12 @@ export default function DriverEarningsPage() {
           {aRemettre !== null && aRemettre > 0 && (
             <ol className="space-y-2 text-sm text-slate-800">
               <li className="flex gap-3"><span className="w-6 h-6 shrink-0 rounded-full bg-suguba-menthe text-suguba-profond font-bold text-xs flex items-center justify-center">1</span><span>Comptez <strong className="tabular-nums">{fmt(aRemettre)}</strong>.</span></li>
-              <li className="flex gap-3"><span className="w-6 h-6 shrink-0 rounded-full bg-suguba-menthe text-suguba-profond font-bold text-xs flex items-center justify-center">2</span><span>Demandez à Suguba sur WhatsApp où et quand verser aujourd’hui.</span></li>
+              <li className="flex gap-3"><span className="w-6 h-6 shrink-0 rounded-full bg-suguba-menthe text-suguba-profond font-bold text-xs flex items-center justify-center">2</span>
+                {/* Arbitrage du lot 4 : le lieu vient de Paramètres › Livraison ; sans lui, on le demande. */}
+                {lieuCaisse
+                  ? <span>Versez à la caisse : <strong>{lieuCaisse}</strong>{horairesCaisse ? <> · {horairesCaisse}</> : null}.</span>
+                  : <span>Demandez à Suguba sur WhatsApp où et quand verser aujourd’hui.</span>}
+              </li>
               <li className="flex gap-3"><span className="w-6 h-6 shrink-0 rounded-full bg-suguba-menthe text-suguba-profond font-bold text-xs flex items-center justify-center">3</span><span>Le caissier vous remet un reçu de versement : il apparaît ici, dans « Mes versements ».</span></li>
             </ol>
           )}
@@ -121,13 +126,13 @@ export default function DriverEarningsPage() {
             </div>
           )}
           <Button
-            variant="whatsapp"
-            href={`https://wa.me/22389460000?text=${encodeURIComponent(aRemettre ? `Bonjour Suguba, je suis livreur : où et quand puis-je verser ${fmt(aRemettre)} aujourd’hui ?` : 'Bonjour Suguba, je suis livreur et j’ai une question sur mon portefeuille.')}`}
+            variant={lieuCaisse ? 'ghost' : 'whatsapp'}
+            href={`https://wa.me/22389460000?text=${encodeURIComponent(aRemettre && !lieuCaisse ? `Bonjour Suguba, je suis livreur : où et quand puis-je verser ${fmt(aRemettre)} aujourd’hui ?` : 'Bonjour Suguba, je suis livreur et j’ai une question sur mon portefeuille.')}`}
             target="_blank"
             rel="noopener noreferrer"
           >
             <WhatsAppIcon className="w-5 h-5" />
-            {aRemettre ? 'Demander où verser' : 'Contacter Suguba'}
+            {aRemettre && !lieuCaisse ? 'Demander où verser' : 'Contacter Suguba'}
           </Button>
         </div>
 

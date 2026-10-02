@@ -84,7 +84,8 @@ export default function ClientsRevendeurPage() {
       )}
 
       <p className="text-xs text-slate-500 px-1">
-        Les numéros sont masqués : c’est Suguba qui appelle et livre. Vous touchez votre commission
+        Les numéros sont masqués : c’est Suguba qui appelle et livre. Pendant une livraison en cours,
+        le numéro de votre client est visible dans « Mes ventes ». Vous touchez votre commission
         sur chaque commande de ces clients, même quand ils commandent sans repasser par votre lien.
       </p>
     </PageReseau>

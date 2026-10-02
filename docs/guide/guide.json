@@ -196,6 +196,35 @@
  "journal": [
   {
    "date": "2026-10-02",
+   "titre": "Audit UI/UX, lot 8 : arbitrages et parcours de commande unique",
+   "demande": "« faire ce qui te semble le mieu pour le numéro client / Parcours commande si les unifiers optimise l'UI/UX fait le / fait tous ce qui a faire pour le lot 4 / traite les arbitrages ensuite pousse la branche »",
+   "realise": [
+    "Numéro du client (REV-10) : la règle déjà appliquée aux livreurs et fournisseurs vaut aussi pour le revendeur — numéro complet et cliquable tant que la commande est en cours (il peut aider la livraison à aboutir), puis « •• 34 56 » comme dans « Mes clients ». Le masquage est fait par le serveur : le numéro ne quitte plus le serveur après la livraison.",
+    "Parcours de commande unique (PUB-10) : l’achat direct et le panier partagent le même formulaire (en-tête, étapes numérotées, coordonnées, livraison, code promo, garanties, barre du bas) et les mêmes règles. Le tunnel direct perd la moitié de son code (694 → 348 lignes) sans changer de comportement.",
+    "Le panier gagne ce qui lui manquait : erreur qui mène au champ fautif, code promo replié avec les trois messages, barre masquée pendant la saisie, minimum de vente respecté, point relais retiré si un article est remis par son vendeur, bandeau « Reprendre ma commande » après une coupure, total en erreur affiché au lieu de casser la page. Un panier d’une seule commande mène au même écran « Commande reçue » que l’achat direct ; à plusieurs livraisons, l’écran de fin a la même tête.",
+    "Caisse des livreurs (lot 4) : nouveau réglage « Où les livreurs versent les espèces » (lieu, horaires) dans Paramètres › Livraison, sans migration. Le portefeuille du livreur l’affiche (« Versez à la caisse : … ») ; vide, il garde « Demander où verser ». Jamais publié sur le site public ; rappelé sur la tuile de la Caisse livreurs.",
+    "Vue d’ensemble (lot 4) : rangée « Aujourd’hui » — commandes du jour, livrées aujourd’hui, appels en retard (plus de 4 h).",
+    "Bandeau de démarrage revendeur, inutilisé depuis le lot 4 : supprimé."
+   ],
+   "ecarts": [
+    "Les deux tunnels gardent chacun leur appel serveur (prix négocié et devis détaillé n’existent que pour l’achat direct) : l’unification porte sur ce que voit le client.",
+    "Accès du revendeur au numéro de son client pendant la commande : non inscrit au journal des accès (la table n’accepte que livreur et fournisseur ; il faudrait une migration).",
+    "Vérifié sur la copie locale : commandes fictives [QA] par l’achat direct, par un panier d’un article et par un panier à deux livraisons ; réglage de caisse essayé dans la base locale puis retiré. Captures du guide à refaire."
+   ],
+   "pages": [
+    "panier",
+    "panier-confirmation",
+    "commander",
+    "rev-ventes",
+    "rev-clients",
+    "liv-portefeuille",
+    "adm-vue",
+    "adm-parametres"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-10-02",
    "titre": "Audit UI/UX, lot 7 : les finitions",
    "demande": "« … commence directement avec les lots restante » — les constats de l’audit UI/UX du 2 octobre qui n’étaient rangés dans aucun des six lots.",
    "realise": [
@@ -2168,7 +2197,7 @@
     },
     {
      "nom": "Commande reçue (écran suivant)",
-     "role": "En premier : « Suguba appelle le … pour confirmer la commande. Gardez ce téléphone allumé. » Puis le numéro de commande (à copier), le code de remise, le récapitulatif « À payer à la livraison », et « Payer maintenant par Mobile Money » replié (facultatif). Un seul bouton plein : « Suivre ma commande » ; ensuite « Garder mon reçu sur WhatsApp », « Continuer mes achats » et un lien pour créer un compte gratuit."
+     "role": "En premier : « Suguba appelle le … pour confirmer la commande. Gardez ce téléphone allumé. » Puis le numéro de commande (à copier), le code de remise, le récapitulatif « À payer à la livraison », et « Payer maintenant par Mobile Money » replié (facultatif). Un seul bouton plein : « Suivre ma commande » ; ensuite « Garder mon reçu sur WhatsApp », « Continuer mes achats » et un lien pour créer un compte gratuit. Le panier utilise désormais exactement le même formulaire (composants communs)."
     }
    ],
    "suite": [
@@ -2212,40 +2241,40 @@
    "but": "Commander plusieurs articles en une fois, avec une seule saisie des coordonnées.",
    "elements": [
     {
-     "nom": "← Continuer mes achats",
-     "role": "Revient à la page précédente sans perdre le panier."
+     "nom": "En-tête",
+     "role": "« Mon panier », « Rien à payer maintenant » et le revendeur d’origine ; la flèche ramène aux achats. Même formulaire que l’achat direct, étape par étape."
     },
     {
-     "nom": "Articles",
-     "role": "Quantité − / + et corbeille pour retirer."
+     "nom": "1 · Vos articles",
+     "role": "Chaque article avec − / + (jamais sous le minimum du vendeur, jamais au-delà du stock), son montant et la corbeille."
     },
     {
-     "nom": "Coordonnées",
-     "role": "Nom, téléphone (WhatsApp)."
+     "nom": "2 · Vos coordonnées",
+     "role": "« Pour qui commandez-vous ? », nom et téléphone : mêmes libellés, mêmes aides et mêmes erreurs que l’achat direct ; une erreur mène directement au champ à corriger."
     },
     {
-     "nom": "Livraison",
-     "role": "À domicile ou point relais, ville, quartier, repère, instructions."
+     "nom": "3 · Livraison",
+     "role": "À domicile ou point relais (avec frais et horaires), ville, quartier, « Utiliser ma position actuelle », repère pour le livreur, instructions. Si un article est remis par son vendeur, le point relais n’est pas proposé."
     },
     {
-     "nom": "Code promo",
-     "role": "« Appliquer » vérifie le code."
+     "nom": "Ajouter un code promo",
+     "role": "Replié ; « appliqué », « reconnu mais sans remise » ou « invalide »."
     },
     {
      "nom": "Récapitulatif",
-     "role": "Si les articles viennent de plusieurs fournisseurs, le nombre de livraisons est indiqué."
+     "role": "Articles, livraison (« 2 fournisseurs » s’il y a plusieurs livraisons), remise, total. Si le total ne peut pas être calculé, le message s’affiche et la confirmation attend."
     },
     {
      "nom": "Barre flottante",
-     "role": "← Retour · Total · Confirmer."
+     "role": "« Total à la livraison » (et « · 2 livraisons ») et « Confirmer » ; masquée pendant la saisie."
     },
     {
-     "nom": "Votre partenaire : …",
-     "role": "Rappel du revendeur d’origine du client. Simple indication : l’attribution est décidée par le serveur à la commande."
+     "nom": "Reprendre ma commande",
+     "role": "Si la connexion a coupé pendant l’envoi, un bandeau propose de reprendre la même demande, sans doublon."
     },
     {
-     "nom": "Pour qui commandez-vous ?",
-     "role": "Comme sur la commande d’un article : « Pour moi » ou un proche enregistré."
+     "nom": "Après la commande",
+     "role": "Une seule commande : écran « Commande reçue », le même qu’après un achat direct. Plusieurs livraisons : « Commande reçue » avec une carte par livraison."
     }
    ],
    "suite": [
@@ -2272,7 +2301,7 @@
    "elements": [
     {
      "nom": "Suivre une commande",
-     "role": "Bouton plein « Suivre ma commande » (ou « Suivre mes commandes ») ; sous chaque livraison, « Payer … par Mobile Money » replié et facultatif, une commande à la fois ; « Continuer mes achats » en contour."
+     "role": "« Commande reçue » : Suguba appelle le numéro donné pour confirmer ; une carte par livraison avec son code, « Payer … par Mobile Money » replié et facultatif ; « Suivre mes commandes », « Continuer mes achats », lien pour créer un compte."
     }
    ],
    "suite": [
@@ -3297,7 +3326,7 @@
     },
     {
      "nom": "Carte de vente",
-     "role": "Statut de la vente (un libellé pour chacun des 8 statuts), produit, total client, client. En bas, « Votre commission » : « Arrive après la livraison », « Retirable le 15 oct. », « Retirable maintenant », « Retrait en cours », « Versée » ou « Vente annulée : pas de commission », lu dans les commissions du serveur."
+     "role": "Statut de la vente (un libellé pour chacun des 8 statuts), produit, total client, client. En bas, « Votre commission » : « Arrive après la livraison », « Retirable le 15 oct. », « Retirable maintenant », « Retrait en cours », « Versée » ou « Vente annulée : pas de commission », lu dans les commissions du serveur. Le numéro du client est complet (et cliquable) tant que la commande est en cours ; ensuite il devient « •• 34 56 », comme dans « Mes clients »."
     },
     {
      "nom": "Aucune vente",
@@ -3634,6 +3663,10 @@
     {
      "nom": "Partager ma boutique",
      "role": "Vers Ma boutique quand la liste est vide."
+    },
+    {
+     "nom": "Numéros masqués",
+     "role": "Toujours « •• 34 56 » : pendant une livraison en cours, le numéro complet se trouve dans « Mes ventes »."
     }
    ],
    "suite": [
@@ -4590,7 +4623,7 @@
     },
     {
      "nom": "Verser en 3 étapes",
-     "role": "Comptez le montant · demandez à Suguba où et quand verser (« Demander où verser », WhatsApp) · le reçu de versement apparaît ici."
+     "role": "Comptez le montant · versez à la caisse (lieu et horaires indiqués par l’équipe dans Paramètres › Livraison ; sinon « Demander où verser » sur WhatsApp) · le reçu de versement apparaît dans « Mes versements »."
     }
    ],
    "suite": [
@@ -4613,6 +4646,10 @@
     {
      "nom": "À faire maintenant",
      "role": "Les files qui attendent une action, en premier ; les files à jour en pastilles cochées."
+    },
+    {
+     "nom": "Aujourd’hui",
+     "role": "Commandes du jour (et montant depuis minuit), livrées aujourd’hui, appels en retard (clients pas encore appelés après 4 h, tuile ambre s’il y en a). Heure de Bamako."
     },
     {
      "nom": "Les chiffres",
@@ -4716,7 +4753,7 @@
    "elements": [
     {
      "nom": "Réglages économiques",
-     "role": "Rangés en quatre blocs, chacun avec le moment où il s’applique : Commission commerciale Suguba (à la vente : mode, taux, base et qui la paie, prix de gros, politique, codes promo) · Frais de paiement du client (à l’encaissement) · Frais de retrait des partenaires (au retrait) · Coûts et rentabilité (analyse : simulateur, produits en ligne, coûts variables et fixes). Puis Livraison et formules. Une baisse de la part Suguba (dont les frais de transaction et les taux de retrait) demande un motif, dans une vraie fenêtre. La barre d’enregistrement (Non enregistré · Annuler · Enregistrer les modifications) est la même que sur les autres réglages."
+     "role": "Rangés en quatre blocs, chacun avec le moment où il s’applique : Commission commerciale Suguba (à la vente : mode, taux, base et qui la paie, prix de gros, politique, codes promo) · Frais de paiement du client (à l’encaissement) · Frais de retrait des partenaires (au retrait) · Coûts et rentabilité (analyse : simulateur, produits en ligne, coûts variables et fixes). Puis Livraison et formules. Une baisse de la part Suguba (dont les frais de transaction et les taux de retrait) demande un motif, dans une vraie fenêtre. La barre d’enregistrement (Non enregistré · Annuler · Enregistrer les modifications) est la même que sur les autres réglages. Livraison : « Où les livreurs versent les espèces » (lieu et horaires), affiché aux seuls livreurs connectés."
     },
     {
      "nom": "Frais de paiement (payés par le client)",

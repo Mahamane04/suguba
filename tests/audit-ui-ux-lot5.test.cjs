@@ -51,7 +51,9 @@ test('PUB-02 : « Commande reçue » — la prochaine étape d’abord, Mobile M
   assert.match(src, /<Button href=\{`\/track\/\$\{order\.orderNumber\}`\} size="lg" fullWidth>/);
   assert.equal((src.match(/<Button\b(?![^>]*variant=)/g) || []).length, 2, 'le bouton plein + le repli « Vérifier ma commande »');
   assert.doesNotMatch(src, /bg-slate-900|bg-emerald-600 hover/);
-  assert.match(lire('src/app/p/[slug]/commander/page.tsx'), /rien à payer maintenant/);
+  // Lot 8 (PUB-10) : la phrase vit dans le formulaire commun aux deux tunnels.
+  assert.match(lire('src/components/commande/FormulaireCommande.tsx'), /rien à payer maintenant/);
+  assert.match(lire('src/app/p/[slug]/commander/page.tsx'), /<GarantiesCommande \/>/);
 });
 
 test('PUB-01 / PUB-08 : la fiche produit annonce la livraison ; « Partager » en contour pour le client', () => {

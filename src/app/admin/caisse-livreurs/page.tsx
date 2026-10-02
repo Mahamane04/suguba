@@ -25,6 +25,7 @@ interface Donnees {
   migrationRequise: boolean;
   remunerationParCourse: number;
   livreurGardeRemuneration: boolean;
+  lieuCaisse?: string | null;
   delaiHeures: number;
 }
 
@@ -100,7 +101,7 @@ export default function CaisseLivreursPage() {
               <StatCard label="En retard" valeur={enRetard} alerte={enRetard > 0} aide={`Espèces gardées plus de ${d.delaiHeures} h`} />
               <StatCard label="Règle en vigueur" icone={Settings} href="/admin/parametres"
                 valeur={<span className="block text-sm">{d.livreurGardeRemuneration ? `Le livreur garde ${fmt(d.remunerationParCourse)} par course` : 'Le livreur verse tout'}</span>}
-                aide="Modifier dans Paramètres › Livraison" />
+                aide={d.lieuCaisse ? `Caisse : ${d.lieuCaisse} · modifier dans Paramètres › Livraison` : 'Lieu de la caisse à indiquer dans Paramètres › Livraison'} />
             </div>
 
             {d.caisses.length === 0 ? (

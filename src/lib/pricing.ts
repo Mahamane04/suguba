@@ -255,6 +255,13 @@ export interface ReglagesPlateforme {
    */
   plafondEspecesCollecteur?: number;
   /**
+   * Où et quand les livreurs versent leurs espèces (lot 4 de l'audit UI/UX du
+   * 2026-10-02, arbitrage). Vide : le portefeuille du livreur lui fait demander le
+   * lieu sur WhatsApp. Stocké avec les autres réglages (aucune colonne nouvelle) ;
+   * remis aux seuls livreurs connectés, jamais publié.
+   */
+  caisseLivreurs?: { lieu: string; horaires: string };
+  /**
    * Paiement par carte bancaire (SasPay, réseaux internationaux) —
    * 2026-09-26, compte client C3. Faux par défaut : la page diaspora ne le
    * propose pas, et le serveur le refuse, tant qu'un vrai paiement test n'a
@@ -385,6 +392,7 @@ export const REGLAGES_PAR_DEFAUT: ReglagesPlateforme = {
   livreurGardeRemuneration: true,
   delaiVersementEspecesHeures: 24,
   plafondEspecesCollecteur: 150000,
+  caisseLivreurs: { lieu: '', horaires: '' },
   paiementCarteVerifie: false,
   coutsFixesMensuels: [
     { libelle: 'Estimation provisoire globale — à remplacer par le détail ci-dessous', montant: 300000 },
@@ -1255,6 +1263,13 @@ export function completerReglages(partiels: Partial<ReglagesPlateforme> | null |
   r.fraisPaiement = completerFraisPaiement(r.fraisPaiement);
   r.couvrirCoutsDansLePrix = r.couvrirCoutsDansLePrix === true;
   r.livreurGardeRemuneration = r.livreurGardeRemuneration !== false;
+  {
+    const c: Record<string, unknown> = r.caisseLivreurs && typeof r.caisseLivreurs === 'object' ? r.caisseLivreurs as Record<string, unknown> : {};
+    r.caisseLivreurs = {
+      lieu: String(c.lieu ?? '').replace(/\s+/g, ' ').trim().slice(0, 160),
+      horaires: String(c.horaires ?? '').replace(/\s+/g, ' ').trim().slice(0, 120),
+    };
+  }
   {
     const d = Number(r.delaiVersementEspecesHeures);
     r.delaiVersementEspecesHeures = Number.isFinite(d) && d >= 1 ? Math.round(d) : 24;

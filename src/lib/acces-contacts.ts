@@ -46,10 +46,31 @@ export function commandePourLivreur(o: Record<string, any>, extras: { pickup_loc
   };
 }
 
-/** Commande vue par le revendeur qui l'a apportée : c'est son client, mais pas les chiffres internes. */
+/** « +223 70 12 34 56 » → « •• 34 56 » : assez pour reconnaître un client, pas pour l'appeler. */
+export function telephoneMasque(telephone: string | null | undefined): string {
+  const chiffres = String(telephone || '').replace(/\D/g, '');
+  if (chiffres.length < 4) return '••';
+  return `•• ${chiffres.slice(-4, -2)} ${chiffres.slice(-2)}`;
+}
+
+/** Commande en cours, du premier appel à la remise : le revendeur peut aider son client. */
+export const STATUTS_SUIVI_REVENDEUR = ['new', 'pending_call', 'confirmed', 'dispatched', 'in_transit'] as const;
+
+/**
+ * Commande vue par le revendeur qui l'a apportée : son client, sans les chiffres internes.
+ *
+ * REV-10 (audit UI/UX du 2026-10-02, arbitrage) : « Mes ventes » montrait le numéro
+ * complet de chaque client, pour toujours, alors que « Mes clients » le masquait.
+ * Même règle que pour les autres intervenants : le numéro est visible tant que la
+ * commande est en cours (le revendeur peut aider la livraison à aboutir), puis il
+ * devient « •• 34 56 », comme dans « Mes clients ». Il ne quitte pas le serveur.
+ */
 export function commandePourRevendeur(o: Record<string, any>) {
   const propre: Record<string, any> = { ...o };
   for (const c of INTERNES) delete propre[c];
+  const enCours = (STATUTS_SUIVI_REVENDEUR as readonly unknown[]).includes(o.status);
+  if (!enCours) propre.customer_phone = telephoneMasque(o.customer_phone);
+  propre.telephoneVisible = enCours;
   return propre;
 }
 

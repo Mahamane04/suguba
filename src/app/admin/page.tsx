@@ -47,6 +47,9 @@ export default function VueEnsemblePage() {
   const pret = state.ordersSync === 'ready';
 
   const {data:finance,error:erreurFinance} = useFinance();
+  // Arbitrage du lot 4 (audit UI/UX du 2026-10-02) : « aujourd'hui » à l'heure de Bamako (UTC).
+  const aujourdhui = new Date().toISOString().slice(0, 10);
+  const { data: jour } = useFinance(aujourdhui, aujourdhui);
   const volume = finance?.volumeCree ?? 0;
   const commissions = finance ? finance.grandLivre.available + finance.grandLivre.locked : 0;
   const types = (Object.keys(DESTINATION) as TypeTache[]).filter((t) => poste?.permissions.includes(TACHES[t].permission));
@@ -95,6 +98,18 @@ export default function VueEnsemblePage() {
       {/* ADM-10 (audit UI/UX du 2026-10-02) : les chiffres viennent APRÈS ce qu'il faut
           faire ; chacun dit sa période et mène à son détail. « Appels à passer »
           répétait la file « Commande à confirmer » juste au-dessus : retiré. */}
+      <section className="space-y-2" aria-labelledby="titre-jour">
+        <h2 id="titre-jour" className="text-sm font-bold text-slate-900">Aujourd’hui</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <StatCard href="/admin/commandes" label="Commandes du jour" valeur={jour ? jour.creees : '—'}
+            aide={jour ? `${fcfa(jour.volumeCree)} commandés depuis minuit` : 'Chargement…'} />
+          <StatCard href="/admin/commandes?statut=delivered" label="Livrées aujourd’hui" valeur={jour ? jour.livrees : '—'}
+            aide={jour ? `${fcfa(jour.volumeLivre)} livrés` : 'Chargement…'} />
+          <StatCard href="/admin/commandes?statut=pending_call" label="Appels en retard" valeur={jour ? jour.appelsEnRetard : '—'}
+            alerte={Boolean(jour && jour.appelsEnRetard > 0)} aide="Clients pas encore appelés après 4 h" />
+        </div>
+      </section>
+
       <section className="space-y-2" aria-labelledby="titre-chiffres">
         <h2 id="titre-chiffres" className="text-sm font-bold text-slate-900">Les chiffres</h2>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

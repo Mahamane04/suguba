@@ -2,7 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { CheckCircle2, Package, Phone, Smartphone, Truck } from 'lucide-react';
+import { CheckCircle2, Package, Smartphone, Truck } from 'lucide-react';
 import DeliveryCodeNotice from '@/components/common/DeliveryCodeNotice';
 import SasPayPaymentDesk from '@/components/common/SasPayPaymentDesk';
 import Header from '@/components/common/Header';
@@ -55,18 +55,20 @@ export default function ConfirmationPanierPage() {
     <div className="min-h-screen flex flex-col bg-slate-100">
       <Header />
       <main className="flex-1 max-w-xl w-full mx-auto px-4 py-6 space-y-4">
+        {/* PUB-10 (audit UI/UX du 2026-10-02) : même tête que « Commande reçue » après un
+            achat direct — la prochaine étape d'abord, en grand. */}
         <div className="text-center space-y-2 pt-2">
-          <CheckCircle2 className="w-12 h-12 text-suguba-brand-dark mx-auto" />
-          <h1 className="text-xl font-bold text-slate-900">Commande enregistrée</h1>
+          <div className="w-16 h-16 bg-suguba-brand text-white rounded-full flex items-center justify-center mx-auto">
+            <CheckCircle2 className="w-9 h-9" />
+          </div>
+          <h1 className="text-2xl font-bold text-slate-900">Commande reçue</h1>
+          <p className="text-base text-slate-800 max-w-sm mx-auto">
+            Suguba appelle le <strong className="whitespace-nowrap">{donnees?.commandes[0]?.customerPhone}</strong> pour confirmer la commande. Gardez ce téléphone allumé.
+          </p>
           <p className="text-sm text-slate-600">
-            {donnees?.commandes.length} article{(donnees?.commandes.length || 0) > 1 ? 's' : ''} · {fcfa(donnees?.total || 0)} à payer à la livraison
+            {donnees?.commandes.length} article{(donnees?.commandes.length || 0) > 1 ? 's' : ''} · <strong className="text-slate-900">{fcfa(donnees?.total || 0)}</strong> à payer à la livraison
           </p>
         </div>
-
-        <Card className="flex items-start gap-3">
-          <Phone className="w-5 h-5 text-slate-700 shrink-0 mt-0.5" />
-          <p className="text-sm text-slate-700">Suguba vous appelle pour confirmer, puis organise la livraison. Gardez votre téléphone à portée.</p>
-        </Card>
 
         {livraisons.map(([code, commandes], i) => (
           <Card key={code} className="space-y-3">
@@ -112,6 +114,10 @@ export default function ConfirmationPanierPage() {
           <Truck className="w-4 h-4" />{(donnees?.commandes.length || 0) > 1 ? 'Suivre mes commandes' : 'Suivre ma commande'}
         </Button>
         <Button href="/" variant="ghost" fullWidth>Continuer mes achats</Button>
+        <p className="text-center text-xs text-slate-600">
+          Retrouvez vos commandes sur tous vos téléphones :{' '}
+          <Link href="/compte/commandes" className="font-semibold text-suguba-profond underline underline-offset-2">créer un compte gratuit</Link>
+        </p>
       </main>
       <BottomNav />
     </div>

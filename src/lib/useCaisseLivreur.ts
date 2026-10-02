@@ -7,6 +7,8 @@ interface ReponseCaisse {
   caisse: CaisseLivreur | null;
   livreurGardeRemuneration: boolean;
   migrationRequise: boolean;
+  lieuCaisse?: string | null;
+  horairesCaisse?: string | null;
 }
 
 /**
@@ -48,5 +50,8 @@ export function useCaisseLivreur(livrees: { totalAmount: number; paymentMethod?:
     caisseServeur: reponse?.caisse || null,
     aRemettre,
     livreurGardeRemuneration: reponse?.livreurGardeRemuneration !== false,
+    /** Où verser, si l'équipe l'a renseigné dans Paramètres › Livraison. */
+    lieuCaisse: reponse?.lieuCaisse || null,
+    horairesCaisse: reponse?.horairesCaisse || null,
   };
 }

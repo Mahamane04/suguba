@@ -641,6 +641,27 @@ export default function EconomicSettingsPanel({ ouvertParDefaut = false }: { ouv
                   })}
                 </div>
               </div>
+              {/* Lot 4 de l'audit UI/UX (arbitrage) : le portefeuille du livreur dit où verser. */}
+              <div className="sm:col-span-2 space-y-2 rounded-2xl bg-suguba-sauge p-3">
+                <p className="text-xs font-semibold text-slate-700 inline-flex items-center gap-1">
+                  Où les livreurs versent les espèces
+                  <InfoBulle texte="Affiché dans le portefeuille des livreurs connectés (jamais sur le site public). Laissé vide, le livreur demande le lieu et l'heure à Suguba sur WhatsApp." />
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <label className="space-y-1">
+                    <span className="block text-xs font-semibold text-slate-700">Lieu de la caisse</span>
+                    <input value={r.caisseLivreurs?.lieu ?? ''} maxLength={160} placeholder="Ex. : bureau Suguba, Hamdallaye, en face de …"
+                      onChange={(e) => maj('caisseLivreurs', { lieu: e.target.value, horaires: r.caisseLivreurs?.horaires ?? '' })}
+                      className={`${CHAMP} w-full`} />
+                  </label>
+                  <label className="space-y-1">
+                    <span className="block text-xs font-semibold text-slate-700">Horaires</span>
+                    <input value={r.caisseLivreurs?.horaires ?? ''} maxLength={120} placeholder="Ex. : lundi au samedi, 17 h – 20 h"
+                      onChange={(e) => maj('caisseLivreurs', { lieu: r.caisseLivreurs?.lieu ?? '', horaires: e.target.value })}
+                      className={`${CHAMP} w-full`} />
+                  </label>
+                </div>
+              </div>
               <Num l="Alerte espèces non versées après" suffixe="h" v={r.delaiVersementEspecesHeures ?? 24} on={(v) => maj('delaiVersementEspecesHeures', v)}
                 info="Au-delà de ce délai après la livraison, la Caisse livreurs signale le livreur en orange ; au double, en rouge." />
               <Num l="Plafond d’espèces non versées" suffixe="F" v={r.plafondEspecesCollecteur ?? 150000} on={(v) => maj('plafondEspecesCollecteur', v)}

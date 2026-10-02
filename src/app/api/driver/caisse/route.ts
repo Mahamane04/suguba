@@ -28,5 +28,8 @@ export async function GET(req: NextRequest) {
     migrationRequise,
     remunerationParCourse: remunerationRetenue(reglages),
     livreurGardeRemuneration: reglages.livreurGardeRemuneration !== false,
+    // Lieu et horaires de la caisse : remis au livreur connecté seulement.
+    lieuCaisse: reglages.caisseLivreurs?.lieu || null,
+    horairesCaisse: reglages.caisseLivreurs?.horaires || null,
   }, { headers: { 'Cache-Control': 'no-store' } });
 }

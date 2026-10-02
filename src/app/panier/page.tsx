@@ -1,28 +1,25 @@
 'use client';
 
-import SugubaLoader from '@/components/ui/SugubaLoader';
-
 import { rememberOrderAccess } from '@/lib/order-access-client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ShoppingBag, Minus, Plus, Trash2, Truck, Store, Check, AlertTriangle, ArrowLeft } from 'lucide-react';
+import { ShoppingBag, Minus, Plus, Trash2, AlertTriangle } from 'lucide-react';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
-import { MARGE_BAS_FLOTTANT } from '@/lib/mise-en-page';
-import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
 import Button from '@/components/ui/Button';
-import { Field, Input, Textarea } from '@/components/ui/Field';
-import ChoicePicker from '@/components/ui/ChoicePicker';
 import { Card, EmptyState, Skeleton } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
 import { changerQuantite, retirerDuPanier, usePanier, viderPanier } from '@/lib/panier';
-import { sugubaStore, useQuartierClient, definirQuartierClient } from '@/lib/store';
+import { sugubaStore, useSugubaStore, useQuartierClient, definirQuartierClient } from '@/lib/store';
 import type { Order } from '@/types';
-import PartenaireVisite from '@/components/common/PartenaireVisite';
-import ChoixDestinataire from '@/components/compte/ChoixDestinataire';
 import { formatF } from '@/lib/montant';
+import {
+  BarreCommande, CodePromoCommande, CoordonneesCommande, EnteteCommande, GarantiesCommande,
+  LivraisonCommande, RecalculEnCours, SectionCommande, TEXTE_PAIEMENT, type ReglagesLivraison,
+} from '@/components/commande/FormulaireCommande';
+import { avisCodePromo, erreursCommande, premierChampEnErreur, telephoneNormalise, type ModeReception } from '@/lib/formulaire-commande';
 
 /**
  * Panier et validation (§ 29 et § 30 des écrans).
@@ -31,6 +28,15 @@ import { formatF } from '@/lib/montant';
  * à chaque changement : le total affiché est celui qui sera facturé. Une
  * seule livraison par fournisseur ; si le panier mélange plusieurs
  * fournisseurs, le client le voit AVANT de valider (« 2 livraisons »).
+ *
+ * PUB-10 (audit UI/UX du 2026-10-02) : même formulaire que l'achat direct
+ * (components/commande/FormulaireCommande) — étapes numérotées, mêmes libellés,
+ * mêmes aides, erreur qui mène au champ fautif, code promo replié, barre du bas
+ * masquée pendant la saisie. Corrigés au passage : un devis en erreur cassait la
+ * page, le minimum de vente n'était pas tenu, le point relais était proposé pour
+ * un article remis par son vendeur, et une demande interrompue n'était pas
+ * proposée à la reprise. Un panier d'une seule commande mène au même écran
+ * « Commande reçue » que l'achat direct.
  *
  * Coupure réseau pendant la validation : la clé de la tentative est gardée,
  * et un nouvel appui retrouve le même panier sans créer de doublon.
@@ -45,12 +51,9 @@ interface Devis {
   lignes: LigneDevis[]; indisponibles: string[]; livraisons: number;
   articles: number; livraison: number; remise: number; total: number; codePromoValide: boolean;
 }
-interface Reglages { livraisonParVille: Record<string, number>; pointsRelais: { id: string; nom: string; frais: number; horaires?: string }[] }
 
 const CLE_TENTATIVE = 'suguba_panier_tentative';
 const fcfa = formatF;
-const ACTIF = 'border-suguba-brand bg-suguba-brand/5 ring-1 ring-suguba-brand';
-const INACTIF = 'border-slate-200 bg-white';
 
 function nouvelleCle(): string {
   const b = crypto.getRandomValues(new Uint8Array(16));
@@ -58,6 +61,8 @@ function nouvelleCle(): string {
   const h = Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('');
   return `${h.slice(0, 8)}-${h.slice(8, 12)}-${h.slice(12, 16)}-${h.slice(16, 20)}-${h.slice(20)}`;
 }
+
+type CorpsPanier = Record<string, unknown> & { customerName: string };
 
 export default function PanierPage() {
   const router = useRouter();
@@ -69,14 +74,16 @@ export default function PanierPage() {
   };
   const { toast } = useToast();
   const articles = usePanier();
+  const state = useSugubaStore();
   const quartierMemorise = useQuartierClient();
 
   const [devis, setDevis] = useState<Devis | null>(null);
   const [devisEnCours, setDevisEnCours] = useState(false);
-  const [reglages, setReglages] = useState<Reglages | null>(null);
+  const [erreurDevis, setErreurDevis] = useState('');
+  const [reglages, setReglages] = useState<ReglagesLivraison | null>(null);
   const [nom, setNom] = useState('');
   const [telephone, setTelephone] = useState('');
-  const [mode, setMode] = useState<'domicile' | 'relais'>('domicile');
+  const [mode, setMode] = useState<ModeReception>('home_delivery');
   const [relaisId, setRelaisId] = useState('');
   const [ville, setVille] = useState('Bamako');
   const [quartier, setQuartier] = useState('');
@@ -84,18 +91,44 @@ export default function PanierPage() {
   const [positionClient, setPositionClient] = useState<{ lat: number; lng: number } | null>(null);
   const [repere, setRepere] = useState('');
   const [instructions, setInstructions] = useState('');
-  const [promo, setPromo] = useState('');
+  const [promoSaisi, setPromoSaisi] = useState('');
   const [promoSoumis, setPromoSoumis] = useState('');
   const [tentative, setTentative] = useState(false);
   const [envoi, setEnvoi] = useState(false);
   const [monte, setMonte] = useState(false);
+  // Demande envoyée dont la réponse n'est pas arrivée (coupure) : reprenable sans doublon.
+  const [enSuspens, setEnSuspens] = useState<{ cle: string; corps: CorpsPanier } | null>(null);
   const requete = useRef(0);
 
-  useEffect(() => { setMonte(true); }, []);
+  useEffect(() => {
+    setMonte(true);
+    try {
+      const precedente = JSON.parse(sessionStorage.getItem(CLE_TENTATIVE) || 'null');
+      if (precedente?.cle && precedente?.corps) setEnSuspens(precedente);
+    } catch { /* stockage illisible */ }
+  }, []);
   useEffect(() => { if (quartierMemorise && !quartier) setQuartier(quartierMemorise); }, [quartierMemorise]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetch('/api/settings/public').then((r) => (r.ok ? r.json() : null)).then((j) => j && setReglages(j)).catch(() => undefined);
   }, []);
+
+  // Fiche de chaque article (minimum de vente, stock, qui le remet), si le catalogue est chargé.
+  const produits = useMemo(() => new Map(state.products.map((p) => [p.id, p])), [state.products]);
+  const minimum = (id: string) => Math.max(1, Number(produits.get(id)?.quantiteMin) || 1);
+  const maximum = (id: string) => {
+    const stock = produits.get(id)?.stockQuantity;
+    return Math.max(minimum(id), Math.min(50, typeof stock === 'number' && stock > 0 ? stock : 50));
+  };
+  // Le minimum du vendeur est tenu dans le panier aussi (le serveur le refusait seulement à l'envoi).
+  useEffect(() => {
+    for (const a of articles) if (a.quantity < minimum(a.productId)) changerQuantite(a.productId, minimum(a.productId));
+  }, [articles, produits]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Un article remis par son vendeur ne peut pas passer par un point relais.
+  const remiseVendeurDansPanier = articles.some((a) => {
+    const m = produits.get(a.productId)?.modeRemise;
+    return Boolean(m && m !== 'livreur');
+  });
+  useEffect(() => { if (remiseVendeurDansPanier) setMode('home_delivery'); }, [remiseVendeurDansPanier]);
 
   const relais = reglages?.pointsRelais.find((p) => p.id === relaisId) || reglages?.pointsRelais[0];
 
@@ -109,57 +142,99 @@ export default function PanierPage() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           lignes: articles, city: ville, neighborhood: quartier,
-          positionClient: mode === 'relais' ? null : positionClient,
-          pickupPointId: mode === 'relais' ? relais?.id : undefined, promoCode: promoSoumis || undefined,
+          positionClient: mode === 'pickup_point' ? null : positionClient,
+          pickupPointId: mode === 'pickup_point' ? relais?.id : undefined, promoCode: promoSoumis || undefined,
         }),
       })
-        .then((r) => r.json())
-        .then((d) => { if (numero === requete.current) setDevis(d); })
-        .catch(() => undefined)
+        .then(async (r) => {
+          const d = await r.json().catch(() => null);
+          if (numero !== requete.current) return;
+          // Un devis refusé (503, article retiré…) cassait la page : on le dit, sans total périmé.
+          if (!r.ok || !d || !Array.isArray(d.lignes)) {
+            setDevis(null);
+            setErreurDevis(d?.error || 'Le total n’a pas pu être calculé. Vérifiez la connexion.');
+            return;
+          }
+          setErreurDevis('');
+          setDevis(d);
+        })
+        .catch(() => { if (numero === requete.current) setErreurDevis('Le total n’a pas pu être calculé. Vérifiez la connexion.'); })
         .finally(() => { if (numero === requete.current) setDevisEnCours(false); });
     }, 250);
     return () => clearTimeout(minuterie);
   }, [articles, ville, quartier, positionClient, mode, relais?.id, promoSoumis]);
 
-  const villes = useMemo(() => {
-    const liste = Object.entries(reglages?.livraisonParVille || { Bamako: 1500 });
-    return liste
-      .sort(([a], [b]) => (a === 'Bamako' ? -1 : b === 'Bamako' ? 1 : a.localeCompare(b)))
-      .map(([v, frais]) => ({ valeur: v, libelle: v, detail: v === 'Bamako' ? 'Selon le quartier' : fcfa(Number(frais)) }));
-  }, [reglages]);
-
-  const telNormalise = telephone.replace(/[\s().-]/g, '');
-  const erreurs = {
-    nom: nom.trim().length < 2 ? 'Indiquez votre nom et prénom.' : undefined,
-    tel: !/^\+?\d{8,15}$/.test(telNormalise) ? 'Numéro invalide : 8 chiffres minimum.' : undefined,
-    quartier: mode === 'domicile' && !quartier.trim() ? 'Choisissez votre quartier.' : undefined,
-    repere: mode === 'domicile' && !repere.trim() ? 'Un repère aide le livreur à vous trouver.' : undefined,
-  };
-  const voir = (e?: string) => (tentative ? e : undefined);
+  const erreurs = erreursCommande({ nom, telephone, mode, quartier, repere });
+  const erreursVisibles = tentative ? erreurs : {};
   const indisponibles = devis?.indisponibles || [];
+  const avisPromo = avisCodePromo({
+    soumis: promoSoumis, reconnu: !devis || !promoSoumis ? null : devis.codePromoValide, remise: devis?.remise ?? 0, formater: fcfa,
+  });
+
+  const envoyer = async (corps: CorpsPanier, cle: string) => {
+    setEnvoi(true);
+    try {
+      const reponse = await fetch('/api/orders/cart', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': cle },
+        body: JSON.stringify(corps),
+      });
+      const data = await reponse.json().catch(() => null);
+      if (!reponse.ok || !data?.success || !Array.isArray(data.orders)) {
+        if (data?.definitive) {
+          try { sessionStorage.removeItem(CLE_TENTATIVE); } catch { /* ignoré */ }
+          setEnSuspens(null);
+        }
+        toast(data?.error || 'Confirmation non reçue. Réessayez : votre panier ne sera pas commandé deux fois.', { ton: 'erreur' });
+        return;
+      }
+
+      const commandes = data.orders as Order[];
+      for (const c of commandes) { sugubaStore.addOrderFromCloud(c); rememberOrderAccess(c.orderNumber, cle); }
+      try {
+        sessionStorage.setItem('suguba_dernier_panier', JSON.stringify({ total: data.total, commandes }));
+        sessionStorage.removeItem(CLE_TENTATIVE);
+      } catch { /* ignoré */ }
+      setEnSuspens(null);
+      viderPanier();
+      // Une seule commande : le même écran « Commande reçue » que l'achat direct.
+      router.push(commandes.length === 1 ? `/order-success/${commandes[0].orderNumber}` : '/panier/confirmation');
+    } catch {
+      toast('Connexion perdue. Réessayez : votre panier ne sera pas commandé deux fois.', { ton: 'erreur' });
+    } finally {
+      setEnvoi(false);
+    }
+  };
 
   const valider = async (e?: React.FormEvent) => {
     e?.preventDefault();
     setTentative(true);
-    if (Object.values(erreurs).some(Boolean)) {
-      toast('Complétez les champs en rouge.', { ton: 'erreur' });
+    const premierChamp = premierChampEnErreur(erreurs);
+    if (premierChamp) {
+      const champ = document.getElementById(premierChamp);
+      champ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      champ?.focus({ preventScroll: true });
       return;
     }
     if (indisponibles.length > 0) {
       toast('Retirez d’abord les articles indisponibles.', { ton: 'erreur' });
       return;
     }
+    if (!devis) {
+      toast(erreurDevis || 'Le total est en cours de calcul, réessayez dans un instant.', { ton: 'info' });
+      return;
+    }
 
-    const corps = {
+    const retrait = mode === 'pickup_point' ? relais : undefined;
+    const corps: CorpsPanier = {
       lignes: articles,
-      customerName: nom, customerPhone: telNormalise,
-      city: mode === 'relais' ? 'Bamako' : ville,
-      neighborhood: mode === 'relais' ? 'Point Relais Partenaire' : quartier,
-      landmark: mode === 'relais' ? relais?.nom || 'Point relais' : repere,
-      deliveryNotes: instructions || undefined,
-      pickupPointId: mode === 'relais' ? relais?.id : undefined,
+      customerName: nom.trim(), customerPhone: telephoneNormalise(telephone),
+      city: retrait ? 'Bamako' : ville,
+      neighborhood: retrait ? 'Point Relais Partenaire' : quartier,
+      landmark: retrait ? retrait.nom || 'Point relais' : repere.trim(),
+      deliveryNotes: retrait ? `Retrait en Point Relais : ${retrait.nom}` : instructions.trim() || undefined,
+      pickupPointId: retrait?.id,
       promoCode: promoSoumis || undefined,
-      positionClient: mode === 'relais' ? undefined : positionClient || undefined,
+      positionClient: retrait ? undefined : positionClient || undefined,
     };
 
     // Même panier = même clé : une réponse perdue se rattrape sans doublon.
@@ -169,40 +244,12 @@ export default function PanierPage() {
       if (precedente?.cle && JSON.stringify(precedente.corps) === JSON.stringify(corps)) cle = precedente.cle;
       sessionStorage.setItem(CLE_TENTATIVE, JSON.stringify({ cle, corps }));
     } catch { /* stockage bloqué : clé en mémoire */ }
-
-    setEnvoi(true);
-    try {
-      const reponse = await fetch('/api/orders/cart', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': cle },
-        body: JSON.stringify(corps),
-      });
-      const data = await reponse.json().catch(() => null);
-      if (!reponse.ok || !data?.success || !Array.isArray(data.orders)) {
-        if (data?.definitive) { try { sessionStorage.removeItem(CLE_TENTATIVE); } catch { /* ignoré */ } }
-        toast(data?.error || 'Confirmation non reçue. Réessayez : votre panier ne sera pas commandé deux fois.', { ton: 'erreur' });
-        return;
-      }
-
-      const commandes = data.orders as Order[];
-      for (const c of commandes) { sugubaStore.addOrderFromCloud(c); rememberOrderAccess(c.orderNumber, cle); }
-      // Un SMS par code de livraison (un par fournisseur), pas un par article.
-      try {
-        sessionStorage.setItem('suguba_dernier_panier', JSON.stringify({ total: data.total, commandes }));
-        sessionStorage.removeItem(CLE_TENTATIVE);
-      } catch { /* ignoré */ }
-      if (mode === 'domicile' && ville === 'Bamako') definirQuartierClient(quartier);
-      viderPanier();
-      router.push('/panier/confirmation');
-    } catch {
-      toast('Connexion perdue. Réessayez : votre panier ne sera pas commandé deux fois.', { ton: 'erreur' });
-    } finally {
-      setEnvoi(false);
-    }
+    await envoyer(corps, cle);
   };
 
   if (!monte) {
     return (
-      <div className="min-h-screen bg-slate-100"><Header />
+      <div className="min-h-screen bg-slate-50"><Header />
         <main className="max-w-3xl mx-auto px-4 py-6 space-y-3"><Skeleton className="h-24" /><Skeleton className="h-40" /></main>
       </div>
     );
@@ -211,9 +258,10 @@ export default function PanierPage() {
   // Panier vide : rien à confirmer, donc aucune raison de cacher le menu du bas.
   if (articles.length === 0) {
     return (
-      <div className="min-h-screen flex flex-col bg-slate-100 pb-20 md:pb-0">
+      <div className="min-h-screen flex flex-col bg-slate-50">
         <Header />
-        <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-8">
+        <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-8 space-y-4">
+          {enSuspens && <ReprisePanier corps={enSuspens.corps} envoi={envoi} onReprendre={() => envoyer(enSuspens.corps, enSuspens.cle)} />}
           <EmptyState icone={ShoppingBag} titre="Votre panier est vide"
             texte="Ajoutez plusieurs articles depuis leur fiche, puis commandez tout en une fois."
             action={<Button href="/">Découvrir les produits</Button>} />
@@ -223,207 +271,126 @@ export default function PanierPage() {
     );
   }
 
-  return (
-    <div className="min-h-screen flex flex-col bg-slate-100">
-      <Header />
-      <form id="formulaire-panier" onSubmit={valider} className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 py-4 sm:py-6 pb-40 md:pb-10 grid gap-5 md:grid-cols-[1fr_340px] md:items-start">
-        <div className="space-y-4 min-w-0">
-          {/* Le menu du bas est masqué pendant la commande : le retour doit
-              rester visible et évident, en haut comme dans la barre du bas. */}
-          <div className="space-y-1">
-            <button
-              type="button"
-              onClick={retour}
-              className="-ml-2 inline-flex items-center gap-1.5 rounded-full px-2 min-h-[40px] text-sm font-bold text-slate-600 hover:text-slate-900 hover:bg-white transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Continuer mes achats
-            </button>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900">Mon panier</h1>
-            <PartenaireVisite className="mt-1" />
-          </div>
+  const libelleTotal = `Total à la livraison${devis && devis.livraisons > 1 ? ` · ${devis.livraisons} livraisons` : ''}`;
 
-          <Card padding="p-0" className="overflow-hidden divide-y divide-slate-100">
-            {articles.map((a) => {
-              const ligne = devis?.lignes.find((l) => l.productId === a.productId);
-              const indispo = indisponibles.includes(a.productId);
-              return (
-                <div key={a.productId} className="p-3 flex gap-3">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  {ligne?.image ? <img src={ligne.image} alt="" className="w-16 h-16 rounded-2xl object-cover shrink-0" /> : <div className="w-16 h-16 rounded-2xl bg-slate-100 shrink-0" />}
-                  <div className="min-w-0 flex-1 space-y-1.5">
-                    {ligne ? (
-                      <Link href={`/p/${ligne.slug}`} className="block text-sm font-bold text-slate-900 line-clamp-2">{ligne.nom}</Link>
-                    ) : indispo ? (
-                      <p className="text-sm font-bold text-rose-700 flex items-center gap-1"><AlertTriangle className="w-4 h-4" />Article plus disponible</p>
-                    ) : <Skeleton className="h-4 w-32" />}
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="inline-flex items-center rounded-2xl border border-slate-200 bg-white">
-                        <button type="button" onClick={() => changerQuantite(a.productId, a.quantity - 1)} aria-label="Diminuer la quantité" className="w-9 h-9 flex items-center justify-center text-slate-700">
-                          <Minus className="w-3.5 h-3.5" />
-                        </button>
-                        <span className="w-7 text-center text-sm font-bold tabular-nums">{a.quantity}</span>
-                        <button type="button" onClick={() => changerQuantite(a.productId, a.quantity + 1)} disabled={a.quantity >= 50} aria-label="Augmenter la quantité" className="w-9 h-9 flex items-center justify-center text-slate-700 disabled:text-slate-300">
-                          <Plus className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {ligne && <span className="text-sm font-bold text-slate-900 tabular-nums">{fcfa(ligne.montantArticles)}</span>}
-                        <button type="button" onClick={() => retirerDuPanier(a.productId)} aria-label="Retirer du panier" className="w-9 h-9 rounded-2xl flex items-center justify-center text-slate-400 hover:text-rose-600">
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+  return (
+    <div className="min-h-screen bg-slate-50">
+      <EnteteCommande titre="Mon panier" onRetour={retour} libelleRetour="Continuer mes achats" />
+
+      <form id="formulaire-panier" onSubmit={valider} noValidate
+        className="max-w-5xl mx-auto px-4 py-4 md:py-8 grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_340px] gap-4 md:gap-6 items-start pb-36 md:pb-10">
+        <div className="space-y-4 min-w-0">
+          {enSuspens && <ReprisePanier corps={enSuspens.corps} envoi={envoi} onReprendre={() => envoyer(enSuspens.corps, enSuspens.cle)} />}
+
+          <SectionCommande numero={1} titre={articles.length > 1 ? `Vos articles (${articles.length})` : 'Votre article'} complete={indisponibles.length === 0}>
+            <ul className="divide-y divide-slate-100 -my-1">
+              {articles.map((a) => {
+                const ligne = devis?.lignes.find((l) => l.productId === a.productId);
+                const indispo = indisponibles.includes(a.productId);
+                const mini = minimum(a.productId);
+                const maxi = maximum(a.productId);
+                return (
+                  <li key={a.productId} className="py-3 flex gap-3">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    {ligne?.image ? <img src={ligne.image} alt="" className="w-16 h-16 rounded-2xl object-cover shrink-0" /> : <div className="w-16 h-16 rounded-2xl bg-slate-100 shrink-0" />}
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      {ligne ? (
+                        <Link href={`/p/${ligne.slug}`} className="block text-sm font-bold text-slate-900 line-clamp-2">{ligne.nom}</Link>
+                      ) : indispo ? (
+                        <p className="text-sm font-bold text-rose-700 flex items-center gap-1"><AlertTriangle className="w-4 h-4" />Article plus disponible</p>
+                      ) : <Skeleton className="h-4 w-32" />}
+                      {mini > 1 && <p className="text-xs text-slate-600">Minimum : {mini}</p>}
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="inline-flex items-center rounded-2xl border border-slate-200 bg-white">
+                          <button type="button" onClick={() => changerQuantite(a.productId, Math.max(mini, a.quantity - 1))} disabled={a.quantity <= mini}
+                            aria-label="Diminuer la quantité" className="w-10 h-10 flex items-center justify-center text-slate-700 disabled:text-slate-300">
+                            <Minus className="w-4 h-4" />
+                          </button>
+                          <span className="w-8 text-center text-sm font-bold tabular-nums" aria-live="polite">{a.quantity}</span>
+                          <button type="button" onClick={() => changerQuantite(a.productId, Math.min(maxi, a.quantity + 1))} disabled={a.quantity >= maxi}
+                            aria-label="Augmenter la quantité" className="w-10 h-10 flex items-center justify-center text-slate-700 disabled:text-slate-300">
+                            <Plus className="w-4 h-4" />
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {ligne && <span className="text-sm font-bold text-slate-900 tabular-nums">{fcfa(ligne.montantArticles)}</span>}
+                          <button type="button" onClick={() => retirerDuPanier(a.productId)} aria-label={`Retirer ${ligne?.nom || 'cet article'} du panier`}
+                            className="w-10 h-10 rounded-2xl flex items-center justify-center text-slate-400 hover:text-rose-600">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
-              );
-            })}
-          </Card>
+                  </li>
+                );
+              })}
+            </ul>
+          </SectionCommande>
 
-          <Card className="space-y-4">
-            <p className="text-sm font-bold text-slate-900">Vos coordonnées</p>
-            {/* Compte client (C2) : « Pour moi » ou un proche enregistré. */}
-            <ChoixDestinataire onChoisir={(c) => {
-              setNom(c.nom); setTelephone(c.telephone);
-              if (c.quartier) setQuartier(c.quartier);
-              setRepere(c.repere || '');
-            }} />
-            <Field label="Nom et prénom" htmlFor="nom" erreur={voir(erreurs.nom)} requis>
-              <Input id="nom" value={nom} onChange={(e) => setNom(e.target.value)} autoComplete="name" aria-invalid={Boolean(voir(erreurs.nom))} />
-            </Field>
-            <Field label="Téléphone (WhatsApp)" htmlFor="tel" erreur={voir(erreurs.tel)} aide="Suguba vous appelle pour confirmer." requis>
-              <Input id="tel" type="tel" inputMode="tel" value={telephone} onChange={(e) => setTelephone(e.target.value)} autoComplete="tel" aria-invalid={Boolean(voir(erreurs.tel))} />
-            </Field>
-          </Card>
+          <SectionCommande numero={2} titre="Vos coordonnées" complete={!erreurs.nom && !erreurs.tel}>
+            <CoordonneesCommande nom={nom} onNom={setNom} telephone={telephone} onTelephone={setTelephone} erreurs={erreursVisibles}
+              onDestinataire={(c) => { setNom(c.nom); setTelephone(c.telephone); if (c.quartier) setQuartier(c.quartier); setRepere(c.repere || ''); }} />
+          </SectionCommande>
 
-          <Card className="space-y-4">
-            <p className="text-sm font-bold text-slate-900">Livraison</p>
-            <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Mode de livraison">
-              <button type="button" role="radio" aria-checked={mode === 'domicile'} onClick={() => setMode('domicile')} className={`rounded-2xl border p-3 text-left ${mode === 'domicile' ? ACTIF : INACTIF}`}>
-                <Truck className="w-4 h-4 text-slate-700" />
-                <span className="block text-xs font-bold text-slate-900 mt-1">À domicile</span>
-              </button>
-              <button type="button" role="radio" aria-checked={mode === 'relais'} onClick={() => setMode('relais')} disabled={!reglages?.pointsRelais.length} className={`rounded-2xl border p-3 text-left disabled:opacity-50 ${mode === 'relais' ? ACTIF : INACTIF}`}>
-                <Store className="w-4 h-4 text-slate-700" />
-                <span className="block text-xs font-bold text-slate-900 mt-1">Point relais</span>
-              </button>
-            </div>
+          <SectionCommande numero={3} titre="Livraison" complete={mode === 'pickup_point' ? Boolean(relais) : !erreurs.quartier && !erreurs.repere}>
+            <LivraisonCommande reglages={reglages} mode={mode} onMode={setMode}
+              relaisImpossible={remiseVendeurDansPanier ? 'Un de vos articles est remis par son vendeur : la commande se reçoit à domicile.' : null}
+              ville={ville} onVille={(v) => { setVille(v); setQuartier(''); setPositionClient(null); }}
+              quartier={quartier} onQuartier={(q) => { setQuartier(q); definirQuartierClient(q); }} onPosition={setPositionClient}
+              repere={repere} onRepere={setRepere} instructions={instructions} onInstructions={setInstructions}
+              relaisChoisiId={relais?.id} onRelais={setRelaisId} erreurs={erreursVisibles} />
+          </SectionCommande>
 
-            {mode === 'domicile' ? (
-              <>
-                <Field label="Ville" htmlFor="ville">
-                  <ChoicePicker id="ville" valeur={ville} choix={villes} onChange={(v) => { setVille(v); setPositionClient(null); }} />
-                </Field>
-                <Field label="Quartier" htmlFor="quartier" erreur={voir(erreurs.quartier)} requis>
-                  {ville === 'Bamako' ? (
-                    <NeighborhoodPicker id="quartier" value={quartier} onChange={setQuartier} onPosition={setPositionClient} placeholder="Choisir mon quartier" invalide={Boolean(voir(erreurs.quartier))} />
-                  ) : (
-                    <Input id="quartier" value={quartier} onChange={(e) => setQuartier(e.target.value)} aria-invalid={Boolean(voir(erreurs.quartier))} />
-                  )}
-                </Field>
-                <Field label="Repère" htmlFor="repere" erreur={voir(erreurs.repere)} aide="Ex. : près de la mosquée, portail bleu." requis>
-                  <Input id="repere" value={repere} onChange={(e) => setRepere(e.target.value)} aria-invalid={Boolean(voir(erreurs.repere))} />
-                </Field>
-                <Field label="Instructions (facultatif)" htmlFor="instructions">
-                  <Textarea id="instructions" rows={2} value={instructions} onChange={(e) => setInstructions(e.target.value)} maxLength={1000} />
-                </Field>
-              </>
-            ) : (
-              <div className="space-y-2" role="radiogroup" aria-label="Point relais">
-                {reglages?.pointsRelais.map((p) => (
-                  <button key={p.id} type="button" role="radio" aria-checked={relais?.id === p.id} onClick={() => setRelaisId(p.id)}
-                    className={`w-full rounded-2xl border p-3 text-left flex items-start justify-between gap-3 ${relais?.id === p.id ? ACTIF : INACTIF}`}>
-                    <span className="min-w-0">
-                      <span className="block text-xs font-bold text-slate-900">{p.nom}</span>
-                      {p.horaires && <span className="block text-xs text-slate-500">{p.horaires}</span>}
-                    </span>
-                    <span className="text-xs font-bold text-slate-900 shrink-0">{p.frais === 0 ? 'Gratuit' : fcfa(p.frais)}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </Card>
-
-          <Card className="space-y-2">
-            <Field label="Code promo (facultatif)" htmlFor="promo">
-              <div className="flex gap-2">
-                <Input id="promo" value={promo} onChange={(e) => setPromo(e.target.value.toUpperCase())} />
-                <Button type="button" variant="ghost" onClick={() => setPromoSoumis(promo.trim())}>Appliquer</Button>
-              </div>
-            </Field>
-            {promoSoumis && devis && (
-              <p className={`text-xs font-bold ${devis.codePromoValide ? 'text-suguba-brand-dark' : 'text-rose-600'}`}>
-                {devis.codePromoValide ? `Code appliqué : -${fcfa(devis.remise)}` : 'Ce code n’est pas valable.'}
-              </p>
-            )}
-          </Card>
-          <Card className="md:hidden">
-            <Recapitulatif devis={devis} enCours={devisEnCours} />
-          </Card>
+          <CodePromoCommande saisi={promoSaisi} onSaisi={setPromoSaisi} onAppliquer={() => setPromoSoumis(promoSaisi.trim())} avis={avisPromo} />
         </div>
 
-        <aside className="hidden md:block">
-          <Card className="space-y-3 sticky top-24">
-            <Recapitulatif devis={devis} enCours={devisEnCours} />
-            <Button type="submit" size="lg" fullWidth disabled={envoi || !devis || indisponibles.length > 0}>
-              {envoi ? <SugubaLoader className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+        <aside className="md:sticky md:top-20 space-y-3">
+          <Card padding="p-4 sm:p-5" className="space-y-3">
+            <h2 className="text-sm font-bold text-slate-900">Récapitulatif</h2>
+            {devis ? <Recapitulatif devis={devis} enCours={devisEnCours} />
+              : erreurDevis && !devisEnCours ? <p role="alert" className="text-sm font-semibold text-rose-700">{erreurDevis}</p>
+              : <div className="space-y-2" aria-busy="true"><Skeleton className="h-4" /><Skeleton className="h-4" /><Skeleton className="h-7" /></div>}
+            <p className="text-xs text-slate-500">{TEXTE_PAIEMENT}</p>
+            <Button type="submit" size="lg" fullWidth loading={envoi} disabled={!devis || indisponibles.length > 0} className="hidden md:inline-flex">
               Confirmer la commande
             </Button>
-            <p className="text-xs text-slate-500 text-center">Rien à payer maintenant · Payez à la livraison</p>
           </Card>
+          <GarantiesCommande />
         </aside>
       </form>
 
-      {/* Téléphone : total et validation toujours sous le pouce, dans une
-          barre flottante décollée du bord (même style que le menu du bas
-          qu'elle remplace) — collée tout en bas, elle passait sous la barre
-          du navigateur et sous le geste d'accueil de l'iPhone. */}
-      <div
-        className="md:hidden fixed inset-x-3 z-40 bg-white border border-slate-200 rounded-3xl shadow-float px-3 py-2.5"
-        style={{ bottom: MARGE_BAS_FLOTTANT }}
-      >
-        <div className="flex items-center justify-between gap-2.5">
-          <button
-            type="button"
-            onClick={retour}
-            aria-label="Retour"
-            className="w-11 h-11 shrink-0 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <div className="min-w-0 flex-1">
-            <p className="text-xs text-slate-500">
-              Total{devis && devis.livraisons > 1 ? ` · ${devis.livraisons} livraisons` : ''}
-            </p>
-            <p className="text-lg font-bold text-slate-900 tabular-nums">
-              {devis ? fcfa(devis.total) : '…'}{devisEnCours && <SugubaLoader className="inline w-3.5 h-3.5 ml-1 text-slate-400" />}
-            </p>
-          </div>
-          <Button type="submit" form="formulaire-panier" size="lg" disabled={envoi || !devis || indisponibles.length > 0}>
-            {envoi ? <SugubaLoader className="w-4 h-4" /> : <Check className="w-4 h-4" />}
-            Confirmer
-          </Button>
-        </div>
-      </div>
+      <BarreCommande formulaire="formulaire-panier" libelle={libelleTotal}
+        total={devis ? fcfa(devis.total) : '…'} envoi={envoi} desactive={!devis || indisponibles.length > 0} />
     </div>
   );
 }
 
-function Recapitulatif({ devis, enCours }: { devis: Devis | null; enCours: boolean }) {
-  if (!devis) return <Skeleton className="h-28" />;
+function Recapitulatif({ devis, enCours }: { devis: Devis; enCours: boolean }) {
   return (
-    <div className={`space-y-2 text-sm ${enCours ? 'opacity-60' : ''}`}>
-      <p className="text-sm font-bold text-slate-900">Récapitulatif</p>
-      <div className="flex justify-between"><span className="text-slate-600">Articles</span><span className="font-bold tabular-nums">{fcfa(devis.articles)}</span></div>
-      <div className="flex justify-between">
-        <span className="text-slate-600">Livraison{devis.livraisons > 1 ? ` (${devis.livraisons} fournisseurs)` : ''}</span>
-        <span className="font-bold tabular-nums">{devis.livraison === 0 ? 'Gratuite' : fcfa(devis.livraison)}</span>
+    <dl className={`space-y-2 text-sm ${enCours ? 'opacity-60' : ''}`}>
+      <div className="flex justify-between gap-3"><dt className="text-slate-600">Articles</dt><dd className="font-bold text-slate-900 tabular-nums whitespace-nowrap">{fcfa(devis.articles)}</dd></div>
+      <div className="flex justify-between gap-3">
+        <dt className="text-slate-600">Livraison{devis.livraisons > 1 ? ` (${devis.livraisons} fournisseurs)` : ''}</dt>
+        <dd className="font-bold text-slate-900 tabular-nums whitespace-nowrap">{devis.livraison === 0 ? 'Gratuite' : fcfa(devis.livraison)}</dd>
       </div>
-      {devis.remise > 0 && <div className="flex justify-between text-suguba-brand-dark"><span>Remise</span><span className="font-bold tabular-nums">-{fcfa(devis.remise)}</span></div>}
-      <div className="flex justify-between border-t border-slate-100 pt-2"><span className="font-bold">Total</span><span className="font-bold text-lg tabular-nums">{fcfa(devis.total)}</span></div>
+      {devis.remise > 0 && <div className="flex justify-between gap-3 text-suguba-brand-dark"><dt className="font-semibold">Remise</dt><dd className="font-bold tabular-nums whitespace-nowrap">−{fcfa(devis.remise)}</dd></div>}
+      <div className="flex justify-between items-baseline gap-3 pt-3 border-t border-slate-100">
+        <dt className="font-bold text-slate-900">Total{enCours && <RecalculEnCours />}</dt>
+        <dd className="text-xl font-bold text-slate-900 tabular-nums whitespace-nowrap">{fcfa(devis.total)}</dd>
+      </div>
       {devis.livraisons > 1 && (
         <p className="text-xs text-slate-500">Vos articles viennent de {devis.livraisons} fournisseurs : ils arrivent en {devis.livraisons} livraisons, chacune avec son code.</p>
       )}
+    </dl>
+  );
+}
+
+/** Même bandeau que l'achat direct : une demande partie sans réponse se reprend sans doublon. */
+function ReprisePanier({ corps, envoi, onReprendre }: { corps: CorpsPanier; envoi: boolean; onReprendre: () => void }) {
+  return (
+    <div role="status" className="rounded-2xl border border-amber-300 bg-amber-50 p-4 text-sm text-slate-900 space-y-2">
+      <p>Une commande pour {corps.customerName} est conservée dans cet onglet. Reprenez-la pour retrouver sa confirmation sans créer de doublon.</p>
+      <Button type="button" onClick={onReprendre} loading={envoi}>Reprendre ma commande</Button>
     </div>
   );
 }
