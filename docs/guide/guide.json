@@ -1,5 +1,5 @@
 {
- "majLe": "2026-10-01",
+ "majLe": "2026-10-02",
  "roles": [
   {
    "cle": "visiteur",
@@ -190,6 +190,23 @@
   }
  ],
  "journal": [
+  {
+   "date": "2026-10-02",
+   "titre": "Sécurité : écriture sur les produits fermée à la clé publique",
+   "demande": "Revue des règles d’accès (RLS) de la base, puis « Fait le nécessaire donc le 1 » : retirer les droits d’écriture inutiles sur les produits.",
+   "realise": [
+    "Revue de la base locale isolée : les 63 tables ont leur protection RLS active ; aucune fonction sensible n’est appelable avec la clé publique (le correctif du 1er octobre tient).",
+    "La clé publique du site et les comptes connectés gardaient, sur la table des produits, des droits d’écriture (ajout, modification, suppression) hérités des réglages par défaut de Supabase. Rien n’était exploitable (aucune règle ne les autorisait), mais une seule erreur future aurait suffi pour qu’un visiteur change un prix ou un stock. Ces droits sont retirés ; la lecture du catalogue public est inchangée.",
+    "Vérifié sur la base locale : 12 droits avant, 0 après ; écriture refusée, lecture des produits approuvés toujours possible, prix fournisseur toujours caché. Test automatique ajouté (il échoue sans le correctif) ; 424 tests réussis."
+   ],
+   "ecarts": [
+    "SQL à exécuter par le fondateur dans Supabase › SQL Editor : supabase/A-EXECUTER-2026-10-02-droits-products.sql (aucune donnée modifiée, sans ordre à respecter avec le code, sans risque à relancer).",
+    "Aucun changement visible dans l’application ; pas de capture.",
+    "Restent en recommandation : un test qui bloque toute nouvelle table sans RLS, et la diffusion en temps réel de la table des commandes (à vérifier ou retirer)."
+   ],
+   "pages": [],
+   "statut": "en local"
+  },
   {
    "date": "2026-10-01",
    "titre": "Audit intégral : sécurité, argent, parcours et interface",
