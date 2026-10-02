@@ -12,7 +12,7 @@ import { useToast } from '@/components/ui/Toast';
 import Panneau, { Info } from '@/components/admin/Panneau';
 import DossierCommande, { useCommandeParNumero } from '@/components/admin/DossierCommande';
 import { usePosteAdmin } from '@/components/admin/contexte';
-import { METIERS, anciennete, urgence, type Metier, type TacheAffichee } from '@/lib/admin/poste';
+import { METIERS, anciennete, metierAffiche, urgence, type Metier, type TacheAffichee } from '@/lib/admin/poste';
 
 interface Collegue { id: string; nom: string; types: string[] }
 interface Reponse {
@@ -103,7 +103,7 @@ export default function ATraiterPage() {
       action={<Button type="button" variant="ghost" size="sm" onClick={() => { charger(metier); rafraichir(); }} aria-label="Actualiser"><RefreshCw className="w-4 h-4" /></Button>}>
 
       <div className="flex flex-wrap items-center gap-2">
-        <ChoicePicker ariaLabel="Métier" valeur={metier || 'toutes'} onChange={v=>choisirMetier(v as Exclude<typeof metier, null>)} choix={(direction ? [{ valeur: 'toutes' as const, libelle: 'Tous les métiers' }, ...METIERS.filter(m=>m.valeur!=='direction')] : METIERS.filter(m=>m.valeur===donnees?.metierMembre))}/>
+        <ChoicePicker ariaLabel="Métier" valeur={metierAffiche(metier)} onChange={v=>choisirMetier(v as Exclude<typeof metier, null>)} choix={(direction ? [{ valeur: 'toutes' as const, libelle: 'Tous les métiers' }, ...METIERS.filter(m=>m.valeur!=='direction')] : METIERS.filter(m=>m.valeur===donnees?.metierMembre))}/>
         <span className="hidden lg:block w-px h-6 bg-slate-300 mx-1" aria-hidden="true" />
         <div className="flex flex-wrap gap-2" role="group" aria-label="Responsable">
           {([['toutes', 'Tous'], ['miennes', 'Mes dossiers'], ['libres', 'Sans responsable']] as [Filtre, string][]).map(([f, libelle]) => (

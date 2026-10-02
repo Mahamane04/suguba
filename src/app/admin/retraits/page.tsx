@@ -194,7 +194,7 @@ export default function RetraitsAdminPage() {
           <form onSubmit={payerAuGuichet} className="flex flex-col sm:flex-row gap-2 max-w-xl">
             <label htmlFor="code-retrait" className="sr-only">Code du retrait</label>
             <input id="code-retrait" type="text" placeholder="Code du retrait (ex. : WTH-K7M3P9)" value={code} onChange={(e) => setCode(e.target.value)}
-              className="flex-1 h-11 px-3.5 bg-white border border-slate-300 rounded-2xl text-base sm:text-sm font-mono font-bold text-slate-900 uppercase focus:outline-none focus:ring-2 focus:ring-suguba-profond" />
+              className="w-full sm:flex-1 h-12 sm:h-11 px-3.5 bg-white border border-slate-300 rounded-2xl text-base sm:text-sm font-mono font-bold text-slate-900 uppercase focus:outline-none focus:ring-2 focus:ring-suguba-profond" />
             <Button type="submit">Payer en espèces</Button>
           </form>
           {retourGuichet && <p role="alert" className="text-sm font-semibold text-rose-700">{retourGuichet}</p>}

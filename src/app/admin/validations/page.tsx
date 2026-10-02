@@ -35,6 +35,10 @@ export default function ValidationsPage() {
   const [erreur, setErreur] = useState('');
   const [migration, setMigration] = useState(false);
   const [refus, setRefus] = useState<{ id: string; motif: string } | null>(null);
+  // ADM-05 (audit UI/UX du 2026-10-02) : « Approuver » partait en un clic, sans
+  // récapitulatif, et un double clic envoyait deux décisions.
+  const [approbation, setApprobation] = useState<string | null>(null);
+  const [envoi, setEnvoi] = useState<string | null>(null);
 
   const charger = useCallback(() => {
     fetch('/api/admin/validations', { cache: 'no-store' })
@@ -45,12 +49,21 @@ export default function ValidationsPage() {
   useEffect(() => { charger(); }, [charger]);
 
   async function decider(v: Validation, decision: 'approuver' | 'refuser', motif?: string) {
-    const r = await fetch('/api/admin/validations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: v.id, decision, motif }) });
-    const j = await r.json().catch(() => ({}));
-    if (!r.ok) { toast(j.error || 'Décision impossible.', { ton: 'erreur' }); return; }
-    setRefus(null);
-    toast(decision === 'approuver' ? 'Approuvée : l’opération peut maintenant être exécutée.' : 'Refusée.', { ton: 'succes' });
-    charger();
+    if (envoi) return;
+    setEnvoi(v.id);
+    try {
+      const r = await fetch('/api/admin/validations', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: v.id, decision, motif }) });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) { toast(j.error || 'Décision impossible.', { ton: 'erreur' }); return; }
+      setRefus(null);
+      setApprobation(null);
+      toast(decision === 'approuver' ? 'Approuvée : l’opération peut maintenant être exécutée.' : 'Refusée.', { ton: 'succes' });
+      charger();
+    } catch {
+      toast('Décision non envoyée. Vérifiez votre connexion et réessayez.', { ton: 'erreur' });
+    } finally {
+      setEnvoi(null);
+    }
   }
 
   const enAttente = (liste || []).filter((v) => v.statut === 'en_attente');
@@ -73,13 +86,24 @@ export default function ValidationsPage() {
           <div className="flex flex-wrap gap-2 items-center">
             <input value={refus.motif} onChange={(e) => setRefus({ id: v.id, motif: e.target.value })} placeholder="Motif du refus" aria-label="Motif du refus"
               className="flex-1 min-w-[12rem] h-9 px-3 rounded-xl border border-slate-300 text-sm" />
-            <Button type="button" size="sm" variant="danger" disabled={refus.motif.trim().length < 3} onClick={() => decider(v, 'refuser', refus.motif)}>Confirmer le refus</Button>
+            <Button type="button" size="sm" variant="danger" disabled={refus.motif.trim().length < 3 || envoi === v.id} onClick={() => decider(v, 'refuser', refus.motif)}>Confirmer le refus</Button>
             <Button type="button" size="sm" variant="ghost" onClick={() => setRefus(null)}>Annuler</Button>
+          </div>
+        ) : approbation === v.id ? (
+          <div role="group" aria-label="Confirmer l’approbation" className="rounded-xl border border-slate-200 bg-white p-3 space-y-2">
+            <p className="text-sm text-slate-900">
+              Approuver <strong>{v.libelle}</strong>{v.montant != null && <> de <strong className="tabular-nums">{fcfa(v.montant)}</strong></>}, demandé par <strong>{v.demandeur}</strong> ?
+            </p>
+            <p className="text-xs text-slate-600">L’opération pourra ensuite être exécutée une fois, depuis son dossier.</p>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" size="sm" disabled={envoi === v.id} onClick={() => decider(v, 'approuver')}><CheckCircle2 className="w-4 h-4" />Confirmer l’approbation</Button>
+              <Button type="button" size="sm" variant="ghost" disabled={envoi === v.id} onClick={() => setApprobation(null)}>Annuler</Button>
+            </div>
           </div>
         ) : (
           <div className="flex gap-2">
-            <Button type="button" size="sm" onClick={() => decider(v, 'approuver')}><CheckCircle2 className="w-4 h-4" />Approuver</Button>
-            <Button type="button" size="sm" variant="ghost" onClick={() => setRefus({ id: v.id, motif: '' })}><XCircle className="w-4 h-4" />Refuser</Button>
+            <Button type="button" size="sm" onClick={() => { setRefus(null); setApprobation(v.id); }}><CheckCircle2 className="w-4 h-4" />Approuver</Button>
+            <Button type="button" size="sm" variant="ghost" onClick={() => { setApprobation(null); setRefus({ id: v.id, motif: '' }); }}><XCircle className="w-4 h-4" />Refuser</Button>
           </div>
         ))}
     </li>

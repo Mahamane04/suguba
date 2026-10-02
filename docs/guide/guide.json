@@ -192,6 +192,41 @@
  "journal": [
   {
    "date": "2026-10-02",
+   "titre": "Audit UI/UX, lot 1 : les urgences",
+   "demande": "« oui commence par le lot 1 » — premier lot de l’audit UI/UX du 2 octobre (docs/qa/audit-ui-ux-2026-10-02.md) : chiffre d’argent faux du livreur, confirmations sans appel, impasses et petites mises en page cassées.",
+   "realise": [
+    "Livreur : l’accueil affiche « À remettre à Suguba », le même montant que le portefeuille (il montrait 196 750 F « dans la sacoche », versements compris, contre 46 850 F réellement à remettre). Chaque livraison dit vraiment comment elle a été payée : « Payé en ligne », « Espèces · à remettre » ou « Espèces · versé » (tout était marqué « Payé en ligne »).",
+    "Livreur : un bandeau prévient quand les courses en espèces sont suspendues (plafond ou retard) ; l’écran vide explique qu’il sera prévenu ; la liste des dernières livraisons ne se casse plus à 390 px.",
+    "Équipe : dans le tableau des commandes, « Confirmer » devient « Appeler » et ouvre le dossier ; la confirmation reste dans le panneau, après l’appel. « Approuver » une opération financière demande une confirmation et ne part qu’une fois. Retirer l’autorisation d’un livreur exige un motif écrit (aussi contrôlé par le serveur) et affiche un message.",
+    "Équipe : « À traiter » affiche « Tous les métiers » pour la Direction (au lieu de « Choisir… ») ; au guichet, le champ « Code du retrait » n’est plus écrasé sur mobile ; les boutons des produits passent en 2 × 2 sur mobile.",
+    "Revendeur : le raccourci « Boutiques », qui menait aux Fournisseurs, devient « Ma boutique » ; les raccourcis ne sont plus tronqués (« Catalo… ») et la 3ᵉ tuile ne reste plus seule sur sa ligne.",
+    "Tous : page « Cette page n’existe plus » en français (recherche, catalogue, suivi, WhatsApp) au lieu de la page anglaise par défaut ; page « Cette page n’a pas pu s’afficher » avec « Réessayer » ; libellés de la barre du bas à 13 px ; l’ombre légère des cartes (shadow-xs, 27 usages) existe enfin.",
+    "Garantie : le texte ne promet plus une durée « sur chaque fiche produit » qui n’existe pas.",
+    "10 tests ajoutés (ils échouent tous sur l’ancien code) ; 434 tests réussis ; TypeScript et compilation isolée réussis."
+   ],
+   "ecarts": [
+    "Texte de la page Garantie modifié : à valider par le fondateur (la durée n’est pas en base ; ajouter le champ reste à faire).",
+    "Captures du guide non refaites (port 3000 occupé par un autre outil, sessions de démonstration) : npm run guide:captures -- liv-courses,liv-portefeuille,rev-accueil,adm-produits,garantie.",
+    "Vérifié dans le navigateur : page introuvable (adresse inconnue et vitrine /s/ inexistante) et barre du bas. Les écrans connectés (livreur, équipe, revendeur) sont vérifiés par le code et les tests, pas à l’écran.",
+    "Barre du bas fournisseur à 320 px : « Paiements » (62 px) dépasse d’environ 1 px son onglet (60 px), sans toucher ses voisins ; tout tient dès 360 px.",
+    "Aucune migration ; aucune donnée modifiée."
+   ],
+   "pages": [
+    "liv-courses",
+    "liv-portefeuille",
+    "adm-commandes",
+    "adm-validations",
+    "adm-livreurs",
+    "adm-a-traiter",
+    "adm-retraits",
+    "adm-produits",
+    "rev-accueil",
+    "garantie"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-10-02",
    "titre": "Sécurité : écriture sur les produits fermée à la clé publique",
    "demande": "Revue des règles d’accès (RLS) de la base, puis « Fait le nécessaire donc le 1 » : retirer les droits d’écriture inutiles sur les produits.",
    "realise": [
@@ -2841,7 +2876,7 @@
     },
     {
      "nom": "Raccourcis",
-     "role": "Catalogue · Créer une commande · Mes ventes · Boutiques."
+     "role": "Catalogue · Créer une commande · Mes ventes · Ma boutique. Sur mobile, icône au-dessus du libellé complet."
     },
     {
      "nom": "À partager aujourd’hui",
@@ -4201,6 +4236,14 @@
    "but": "Les livraisons assignées par Suguba, et l’historique.",
    "elements": [
     {
+     "nom": "À remettre à Suguba",
+     "role": "Le même montant que le portefeuille : espèces encaissées pas encore versées, moins la rémunération gardée. Remplace « Espèces dans ma sacoche », qui comptait aussi les espèces déjà versées."
+    },
+    {
+     "nom": "Courses en espèces suspendues",
+     "role": "Bandeau quand le plafond ou le retard d’espèces bloque les nouvelles courses payées en espèces ; « Voir comment verser »."
+    },
+    {
      "nom": "Remise du colis",
      "role": "« Scanner le QR du client » (caméra), ou saisir le code écrit sous le QR. Le scan affiche les articles et le paiement ; « Confirmer la remise » enregistre la livraison. Pour des espèces, il faut cocher « J'ai encaissé X F »."
     },
@@ -4221,8 +4264,8 @@
      "role": "Accepté seulement après le ramassage : le client donne son code, la commande passe « livrée »."
     },
     {
-     "nom": "Livraisons effectuées",
-     "role": "Historique."
+     "nom": "Dernières livraisons",
+     "role": "Les 3 dernières : montant et paiement (« Payé en ligne », « Espèces · à remettre » ou « Espèces · versé »), reçu ; « Voir les … livraisons dans mon portefeuille » pour tout voir."
     }
    ],
    "suite": [
@@ -4256,7 +4299,7 @@
     },
     {
      "nom": "Mes livraisons",
-     "role": "Détail par course : « Encaissé » (espèces) ou « Payé en ligne » (Mobile Money)."
+     "role": "Détail par course : « Payé en ligne » (Mobile Money), « Espèces · à remettre » ou « Espèces · versé »."
     },
     {
      "nom": "Contacter Suguba",
@@ -4322,7 +4365,7 @@
    "elements": [
     {
      "nom": "Livreurs — vérification au guichet",
-     "role": "Livreurs à rencontrer : l’agent a vu la personne, sa moto et ses papiers, et écrit ce qu’il a constaté. La vérification donne le droit de recevoir des courses."
+     "role": "Livreurs à rencontrer : l’agent a vu la personne, sa moto et ses papiers, et écrit ce qu’il a constaté. La vérification donne le droit de recevoir des courses. « Retirer l’autorisation » demande d’écrire pourquoi ; un message confirme le retrait."
     },
     {
      "nom": "Livreurs actifs",
@@ -4534,7 +4577,7 @@
    "elements": [
     {
      "nom": "En attente",
-     "role": "Type (retrait, avance de commission, baisse de part), montant, qui l’a demandé, détail (bénéficiaire, téléphone…). « Approuver », ou « Refuser » avec un motif."
+     "role": "Type (retrait, avance de commission, baisse de part), montant, qui l’a demandé, détail (bénéficiaire, téléphone…). « Approuver », ou « Refuser » avec un motif. « Approuver » demande une confirmation qui rappelle l’opération, le montant et le demandeur."
     },
     {
      "nom": "Après approbation",
@@ -4757,8 +4800,8 @@
      "role": "Commande (panier signalé), date, client, produit, quartier, total, statut, livreur ; revendeur et paiement en colonnes à afficher. Tri en cliquant sur un en-tête ; « Colonnes » choisit ce qui s’affiche (retenu par ce navigateur). Sur téléphone : une carte par commande."
     },
     {
-     "nom": "Confirmer",
-     "role": "Sur une commande à confirmer (droit « modifier les commandes ») : elle passe « À attribuer ». Refusé si elle a changé entre-temps."
+     "nom": "Appeler",
+     "role": "Sur une commande à confirmer : ouvre le dossier sur l’appel au client. La confirmation se fait dans le panneau, une fois le client joint (« Client joint : confirmer la commande »)."
     },
     {
      "nom": "Attribuer · Changer de livreur",

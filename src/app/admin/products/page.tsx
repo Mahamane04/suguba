@@ -255,7 +255,9 @@ export default function AdminProductsPage() {
                     </p>
                   </div>
                 </div>
-                <div className="flex gap-2">
+                {/* ADM-12 (audit UI/UX du 2026-10-02) : 4 boutons sur une ligne
+                    débordaient de la carte à 390 px ; 2 × 2 sur mobile. */}
+                <div className="grid grid-cols-2 sm:flex gap-2">
                   <Button
                     onClick={() => setPhotosPour(p)}
                     variant={p.images.length === 0 ? 'primary' : 'ghost'}

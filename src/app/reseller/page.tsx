@@ -179,7 +179,7 @@ export default function ResellerDashboardPage() {
           <Indicateur icone={<TrendingUp className="w-4 h-4" />} titre="Total gagné" note="Depuis votre inscription">
             {montant(totalEarned)}
           </Indicateur>
-          <Indicateur icone={<ShoppingBag className="w-4 h-4" />} titre="Ventes livrées" note={state.ordersSync === 'ready' ? `${myOrders.length} commande${myOrders.length > 1 ? 's' : ''} au total` : 'Total des commandes non confirmé'}>
+          <Indicateur className="col-span-2 sm:col-span-1" icone={<ShoppingBag className="w-4 h-4" />} titre="Ventes livrées" note={state.ordersSync === 'ready' ? `${myOrders.length} commande${myOrders.length > 1 ? 's' : ''} au total` : 'Total des commandes non confirmé'}>
             {state.ordersSync === 'ready' || moi ? ventesLivrees : '—'}
           </Indicateur>
         </div>
@@ -213,17 +213,19 @@ export default function ResellerDashboardPage() {
 
         {/* 4. Actions */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <Raccourci href="/reseller/catalog" icone={<ShoppingBag className="w-5 h-5" />} titre="Catalogue" sousTitre="Choisir quoi partager" />
+          <Raccourci empile href="/reseller/catalog" icone={<ShoppingBag className="w-5 h-5" />} titre="Catalogue" sousTitre="Choisir quoi partager" />
           {/* Ouvrait la commande sur le PREMIER produit du catalogue, sans
               choix possible. On passe par le catalogue : bouton « Vente ». */}
-          <Raccourci
+          <Raccourci empile
             href="/reseller/catalog"
             icone={<Plus className="w-5 h-5" />}
             titre="Créer une commande"
             sousTitre="Choisir le produit, puis « Vente »"
           />
-          <Raccourci href="/reseller/orders" icone={<ClipboardList className="w-5 h-5" />} titre="Mes ventes" sousTitre="Suivre les livraisons" />
-          <Raccourci href="/reseller/channels" icone={<Store className="w-5 h-5" />} titre="Boutiques" sousTitre="Partager une boutique" />
+          <Raccourci empile href="/reseller/orders" icone={<ClipboardList className="w-5 h-5" />} titre="Mes ventes" sousTitre="Suivre les livraisons" />
+          {/* REV-04 (audit UI/UX du 2026-10-02) : « Boutiques » pointait vers
+              /reseller/channels, qui redirige vers les Fournisseurs. */}
+          <Raccourci empile href="/reseller/boutique" icone={<Store className="w-5 h-5" />} titre="Ma boutique" sousTitre="Partager ma vitrine" />
         </div>
 
         {/* 5. Produits à partager */}
@@ -371,11 +373,11 @@ export default function ResellerDashboardPage() {
   );
 }
 
-function Indicateur({ icone, titre, note, children }: {
-  icone: React.ReactNode; titre: string; note: string; children: React.ReactNode;
+function Indicateur({ icone, titre, note, className = '', children }: {
+  icone: React.ReactNode; titre: string; note: string; className?: string; children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white p-4 rounded-3xl border border-slate-200 space-y-1.5">
+    <div className={`bg-white p-4 rounded-3xl border border-slate-200 space-y-1.5 ${className}`}>
       <div className="flex items-center gap-1.5 text-slate-600">
         {icone}
         <span className="text-xs font-bold uppercase">{titre}</span>
@@ -386,9 +388,11 @@ function Indicateur({ icone, titre, note, children }: {
   );
 }
 
-function Raccourci({ href, onClick, disabled, icone, titre, sousTitre }: {
+function Raccourci({ href, onClick, disabled, icone, titre, sousTitre, empile }: {
   href?: string; onClick?: () => void; disabled?: boolean;
   icone: React.ReactNode; titre: string; sousTitre: string;
+  /** Grille à 2 colonnes sur mobile : icône au-dessus du texte. */
+  empile?: boolean;
 }) {
   const contenu = (
     <>
@@ -396,14 +400,17 @@ function Raccourci({ href, onClick, disabled, icone, titre, sousTitre }: {
         {icone}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="font-bold text-sm text-slate-900 truncate">{titre}</p>
-        <p className="text-xs text-slate-600 truncate">{sousTitre}</p>
+        <p className={`font-semibold text-sm text-slate-900 ${empile ? 'sm:truncate' : 'truncate'}`}>{titre}</p>
+        <p className={`text-xs text-slate-600 ${empile ? 'line-clamp-2 sm:truncate' : 'truncate'}`}>{sousTitre}</p>
       </div>
-      <ChevronRight className="w-4 h-4 text-slate-300 shrink-0" />
+      <ChevronRight className={`${empile ? 'hidden sm:block ' : ''}w-4 h-4 text-slate-300 shrink-0`} />
     </>
   );
+  // REV-06 (audit UI/UX du 2026-10-02) : sur mobile, l'icône passe au-dessus
+  // du texte ; en ligne, il ne restait qu'environ 65 px (« Catalo… », « Mes v… »).
   const classes =
-    'bg-white p-3.5 rounded-3xl border border-slate-200 hover:border-slate-300 flex items-center gap-3 ' +
+    'bg-white p-3.5 rounded-3xl border border-slate-200 hover:border-slate-300 flex ' +
+    (empile ? 'flex-col items-start sm:flex-row sm:items-center gap-2 sm:gap-3 ' : 'items-center gap-3 ') +
     'text-left transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none';
   if (href) return <Link href={href} className={classes}>{contenu}</Link>;
   return <button onClick={onClick} disabled={disabled} className={classes}>{contenu}</button>;

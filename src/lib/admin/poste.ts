@@ -32,6 +32,14 @@ export function metierDuRole(role: RoleEquipe | string | null | undefined): Meti
   }
 }
 
+/**
+ * Valeur montrée par le sélecteur de métier de « À traiter » (ADM-03, audit
+ * UI/UX du 2026-10-02). Pour la Direction, le serveur renvoie « direction »,
+ * qui veut dire « toutes les files » (voir preparerTaches) ; la liste proposée
+ * n'a pas cette valeur, et le sélecteur affichait « Choisir… ».
+ */
+export const metierAffiche = (m: Metier | 'toutes' | null): Metier | 'toutes' => (!m || m === 'direction' ? 'toutes' : m);
+
 export function libelleMetier(m: Metier): string {
   return METIERS.find((x) => x.valeur === m)?.libelle || 'Direction';
 }

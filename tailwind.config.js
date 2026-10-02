@@ -99,6 +99,10 @@ module.exports = {
         '5xl': '2.5rem',
       },
       boxShadow: {
+        /* `shadow-xs` est utilisée par 18 fichiers mais n'existe pas en
+           Tailwind 3 (seulement en v4) : ces cartes n'avaient aucune ombre
+           (audit UI/UX du 2026-10-02). Valeur de la v4, en neutre slate. */
+        'xs': '0 1px 2px 0 rgb(15 23 42 / 0.05)',
         'brand-sm': '0 2px 8px rgb(9 181 0 / 0.15)',
         'brand-md': '0 4px 16px rgb(9 181 0 / 0.20)',
         'brand-lg': '0 8px 32px rgb(9 181 0 / 0.25)',

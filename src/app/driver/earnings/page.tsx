@@ -10,15 +10,8 @@ import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 import { useSugubaStore } from '@/lib/store';
 import EmptyState from '@/components/ui/EmptyState';
 import { Order } from '@/types';
-import { calculerAVerser, type CaisseLivreur, type Versement } from '@/lib/caisse-livreur';
-
-function caisseLocale(livrees: Order[], parCourse: number): CaisseLivreur {
-  const enEspeces = livrees.filter((o) => o.paymentMethod !== 'mobile_money');
-  return {
-    driverId: '', nom: 'Livreur', telephone: null, commandes: [], versements: [], ecartCumule: 0, plusAncienne: null,
-    ...calculerAVerser(enEspeces.map((o) => o.totalAmount), parCourse),
-  };
-}
+import { LIBELLE_ENCAISSEMENT, statutEncaissement, type Versement } from '@/lib/caisse-livreur';
+import { useCaisseLivreur } from '@/lib/useCaisseLivreur';
 import { ArrowLeft, Banknote, Package, Printer, Receipt, Truck, Wallet } from 'lucide-react';
 
 /**
@@ -39,7 +32,6 @@ export default function DriverEarningsPage() {
   const state = useSugubaStore();
   const [recuPour, setRecuPour] = useState<Order | null>(null);
   const [remuneration, setRemuneration] = useState<number | null>(null);
-  const [caisse, setCaisse] = useState<{ caisse: CaisseLivreur | null; livreurGardeRemuneration: boolean; migrationRequise: boolean } | null>(null);
   const [recuVersement, setRecuVersement] = useState<Versement | null>(null);
 
   useEffect(() => {
@@ -47,10 +39,6 @@ export default function DriverEarningsPage() {
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => setRemuneration(j && typeof j.remunerationParLivraison === 'number' ? j.remunerationParLivraison : null))
       .catch(() => setRemuneration(null));
-    fetch('/api/driver/caisse', { cache: 'no-store' })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => setCaisse(j))
-      .catch(() => setCaisse(null));
   }, []);
 
   // /api/orders/feed ne renvoie que les courses de CE livreur (voir /driver).
@@ -58,14 +46,11 @@ export default function DriverEarningsPage() {
     .filter((o) => o.status === 'delivered')
     .sort((a, b) => Date.parse(b.deliveredAt || b.createdAt || '') - Date.parse(a.deliveredAt || a.createdAt || ''));
   // Le montant à remettre vient de /api/driver/caisse (commandes non payées en
-  // Mobile Money et pas encore versées). L'ancien calcul reposait sur
+  // Mobile Money et pas encore versées), par le même hook que l'accueil /driver
+  // (LIV-01, audit UI/UX du 2026-10-02). L'ancien calcul reposait sur
   // `paymentCollected`, que le code de remise passe à vrai pour TOUTES les
   // commandes : le total restait à 0 F (corrigé le 2026-09-25).
-  // Tant que le SQL de la caisse n'est pas exécuté, aucun versement n'existe :
-  // on recalcule sur place à partir des livraisons, avec la même règle.
-  const c = caisse?.caisse
-    || (caisse?.migrationRequise && remuneration !== null ? caisseLocale(livrees, caisse.livreurGardeRemuneration ? remuneration : 0) : null);
-  const aRemettre = c ? Math.max(0, c.aVerser - c.ecartCumule) : caisse ? 0 : null;
+  const { caisse: c, caisseServeur, aRemettre, etat: etatCaisse, livreurGardeRemuneration } = useCaisseLivreur(livrees, remuneration);
   const gains = remuneration !== null ? livrees.length * remuneration : null;
   const fmt = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
 
@@ -88,7 +73,7 @@ export default function DriverEarningsPage() {
           </Carte>
           <Carte icone={<Banknote className="w-4 h-4" />} titre="À remettre à Suguba"
             note={c && c.garde > 0 ? `${fmt(c.especes)} encaissés, ${fmt(c.garde)} gardés pour vous` : 'Espèces encaissées pas encore versées'} accent>
-            {aRemettre !== null ? fmt(aRemettre) : <span className="inline-block h-7 w-24 rounded-lg bg-slate-700 animate-pulse align-middle" />}
+            {aRemettre !== null ? fmt(aRemettre) : etatCaisse === 'erreur' ? '—' : <span className="inline-block h-7 w-24 rounded-lg bg-slate-700 animate-pulse align-middle" role="status" aria-label="Chargement du montant" />}
           </Carte>
           <Carte
             icone={<Wallet className="w-4 h-4" />}
@@ -105,7 +90,7 @@ export default function DriverEarningsPage() {
             {c?.bloque && (
               <span className="block mb-1 font-bold text-rose-700">{c.raison} Versez vos espèces à Suguba pour recevoir de nouvelles courses payées en espèces.</span>
             )}
-            {caisse?.livreurGardeRemuneration === false
+            {!livreurGardeRemuneration
               ? 'Remettez toutes les espèces encaissées à la caisse Suguba. Votre rémunération vous est payée à part.'
               : 'Remettez les espèces encaissées à la caisse Suguba, moins votre rémunération par course, que vous gardez.'}
             {' '}À chaque versement, vous recevez un reçu.
@@ -163,8 +148,8 @@ export default function DriverEarningsPage() {
                   <div className="flex items-center gap-3 shrink-0">
                     <div className="text-right">
                       <p className="text-sm font-bold text-slate-900">{fmt(o.totalAmount)}</p>
-                      <p className={`text-xs font-bold ${o.paymentMethod === 'mobile_money' ? 'text-slate-500' : 'text-emerald-700'}`}>
-                        {o.paymentMethod === 'mobile_money' ? 'Payé en ligne' : 'Encaissé'}
+                      <p className={`text-xs font-semibold whitespace-nowrap ${statutEncaissement(o, caisseServeur) === 'a_remettre' ? 'text-amber-800' : 'text-slate-600'}`}>
+                        {LIBELLE_ENCAISSEMENT[statutEncaissement(o, caisseServeur)]}
                       </p>
                     </div>
                     <button

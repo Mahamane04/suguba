@@ -4,6 +4,7 @@ import SugubaLoader from '@/components/ui/SugubaLoader';
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { ShieldCheck, ShieldOff, Bike, MapPin } from 'lucide-react';
+import { useToast } from '@/components/ui/Toast';
 
 interface Livreur {
   id: string;
@@ -42,7 +43,11 @@ export default function DriverVerificationPanel({onFait}: {onFait?: () => void} 
   const [chargement, setChargement] = useState(true);
   const [cloud, setCloud] = useState(true);
   const [ouvert, setOuvert] = useState<string | null>(null);
+  // ADM-05 (audit UI/UX du 2026-10-02) : « Retirer l'autorisation » agissait en
+  // un clic, sans motif, et son succès comme son échec restaient invisibles.
+  const [mode, setMode] = useState<'verifier' | 'retirer'>('verifier');
   const [constat, setConstat] = useState('');
+  const { toast } = useToast();
   const [enCours, setEnCours] = useState<string | null>(null);
   const [erreur, setErreur] = useState('');
 
@@ -76,6 +81,7 @@ export default function DriverVerificationPanel({onFait}: {onFait?: () => void} 
         setErreur(json.error || 'Échec de l\'enregistrement.');
         return;
       }
+      toast(json.message || (verifie ? 'Livreur vérifié.' : 'Autorisation retirée.'), { ton: 'succes' });
       setOuvert(null);
       setConstat('');
       await charger();
@@ -170,7 +176,41 @@ export default function DriverVerificationPanel({onFait}: {onFait?: () => void} 
                 </p>
               )}
 
-              {ouvert === l.id ? (
+              {ouvert === l.id && mode === 'retirer' ? (
+                <div className="space-y-2">
+                  <label htmlFor={`motif-retrait-${l.id}`} className="text-sm font-semibold text-slate-900 block">
+                    Pourquoi retirez-vous l&apos;autorisation ?
+                  </label>
+                  <textarea
+                    id={`motif-retrait-${l.id}`}
+                    value={constat}
+                    onChange={(e) => setConstat(e.target.value)}
+                    rows={2}
+                    placeholder="Papiers expirés, plainte d’un client, véhicule hors service…"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm focus:outline-none focus:border-slate-900"
+                  />
+                  <p className="text-xs text-slate-600">{l.fullName} ne recevra plus de nouvelle course. Les courses en cours restent à terminer.</p>
+                  {erreur && <p role="alert" className="text-sm text-rose-700 font-semibold">{erreur}</p>}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => decider(l.id, false)}
+                      disabled={enCours === l.id || constat.trim().length < 5}
+                      className="flex-1 h-11 bg-white hover:bg-rose-50 border border-rose-200 text-rose-700 disabled:opacity-50 font-bold rounded-xl text-sm flex items-center justify-center gap-1.5"
+                    >
+                      {enCours === l.id ? <SugubaLoader className="w-4 h-4" /> : <ShieldOff className="w-4 h-4" />}
+                      <span>Confirmer le retrait</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setOuvert(null); setConstat(''); setErreur(''); }}
+                      className="px-4 h-11 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm"
+                    >
+                      Annuler
+                    </button>
+                  </div>
+                </div>
+              ) : ouvert === l.id ? (
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-600 uppercase tracking-wide block">
                     Ce que vous avez constaté au guichet
@@ -204,7 +244,7 @@ export default function DriverVerificationPanel({onFait}: {onFait?: () => void} 
                 <div className="flex gap-2">
                   {!l.verifie ? (
                     <button
-                      onClick={() => { setOuvert(l.id); setConstat(''); setErreur(''); }}
+                      onClick={() => { setMode('verifier'); setOuvert(l.id); setConstat(''); setErreur(''); }}
                       disabled={!l.dossierComplet}
                       className="flex-1 h-11 bg-slate-900 hover:bg-black disabled:bg-slate-300 text-white font-bold rounded-xl text-xs transition-transform active:scale-[0.98]"
                     >
@@ -212,11 +252,11 @@ export default function DriverVerificationPanel({onFait}: {onFait?: () => void} 
                     </button>
                   ) : (
                     <button
-                      onClick={() => decider(l.id, false)}
-                      disabled={enCours === l.id}
+                      type="button"
+                      onClick={() => { setMode('retirer'); setOuvert(l.id); setConstat(''); setErreur(''); }}
                       className="flex-1 h-11 bg-white hover:bg-red-50 border border-red-200 text-red-700 font-bold rounded-xl text-xs flex items-center justify-center space-x-1.5"
                     >
-                      {enCours === l.id ? <SugubaLoader className="w-4 h-4" /> : <ShieldOff className="w-4 h-4" />}
+                      <ShieldOff className="w-4 h-4" />
                       <span>Retirer l&apos;autorisation</span>
                     </button>
                   )}

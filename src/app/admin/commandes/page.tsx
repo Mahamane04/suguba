@@ -3,7 +3,7 @@
 import SugubaLoader from '@/components/ui/SugubaLoader';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { ShoppingBag, Search, Truck } from 'lucide-react';
+import { PhoneCall, ShoppingBag, Search, Truck } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import Button from '@/components/ui/Button';
 import { Input } from '@/components/ui/Field';
@@ -94,15 +94,6 @@ export default function CommandesAdminPage() {
 
   const apresAction = () => { setOuverte(null); setSelection(new Set()); setRetry((v) => v + 1); rafraichir(); };
 
-  const confirmerCommande = async (c: Commande) => {
-    setEnCours(true);
-    const r = await actionCommande({ action: 'confirmer', orderId: c.id });
-    setEnCours(false);
-    if (!r) { toast('Action non confirmée. Vérifiez votre connexion.', { ton: 'erreur' }); return; }
-    toast(r.message, { ton: r.ok ? 'succes' : 'erreur', duree: 7000 });
-    if (r.ok) apresAction();
-  };
-
   // Attribution groupée : une tournée confiée au même livreur.
   const attribuerSelection = async () => {
     const driverId = livreurGroupe || livreurs?.[0]?.id;
@@ -149,7 +140,10 @@ export default function CommandesAdminPage() {
     { cle: 'revendeur', titre: 'Revendeur', cachee: true, tri: (c) => c.revendeur || '', rendu: (c) => c.revendeur || '—' },
     { cle: 'paiement', titre: 'Paiement', cachee: true, rendu: (c) => libellePaiement(c.paiement) },
     { cle: 'action', titre: 'Action', fixe: true, droite: true, rendu: (c) => (
-      c.statut === 'pending_call' && peutModifier ? <Button size="sm" disabled={enCours} onClick={() => confirmerCommande(c)}>Confirmer</Button>
+      // ADM-02 (audit UI/UX du 2026-10-02) : « Confirmer » validait la commande
+      // en un clic depuis la ligne, sans l'appel au client que le dossier impose
+      // (« Client joint : confirmer la commande »). La ligne ouvre le dossier.
+      c.statut === 'pending_call' && peutModifier ? <Button size="sm" variant="ghost" onClick={() => setOuverte(c.id)}><PhoneCall className="w-4 h-4" />Appeler</Button>
         : attribuable(c) && peutAttribuer ? <Button size="sm" variant="ghost" onClick={() => setOuverte(c.id)}>{c.statut === 'confirmed' ? 'Attribuer' : 'Changer de livreur'}</Button>
         : null
     ) },

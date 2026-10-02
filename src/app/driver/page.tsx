@@ -13,6 +13,8 @@ import { useSugubaStore, sugubaStore } from '@/lib/store';
 import { cloudSyncService } from '@/lib/cloud-sync';
 import EmptyState from '@/components/ui/EmptyState';
 import { Order } from '@/types';
+import { useCaisseLivreur } from '@/lib/useCaisseLivreur';
+import { LIBELLE_ENCAISSEMENT, statutEncaissement } from '@/lib/caisse-livreur';
 import { 
   Truck, Phone, MapPin, KeyRound, CheckCircle2, 
   Banknote, Package, Navigation, AlertCircle, ArrowRight,
@@ -31,11 +33,15 @@ export default function DriverDashboardPage() {
 
   const currentUser = state.currentUser;
   const [driver, setDriver] = useState<{ vehicleType: string | null; licensePlate: string | null; verifie?: boolean } | null>(null);
+  const [remuneration, setRemuneration] = useState<number | null>(null);
 
   useEffect(() => {
     fetch('/api/driver/me')
       .then((res) => (res.ok ? res.json() : { driver: null }))
-      .then((json) => setDriver(json.driver || null))
+      .then((json) => {
+        setDriver(json.driver || null);
+        setRemuneration(typeof json.remunerationParLivraison === 'number' ? json.remunerationParLivraison : null);
+      })
       .catch(() => setDriver(null));
   }, []);
 
@@ -48,15 +54,14 @@ export default function DriverDashboardPage() {
     o => o.status === 'dispatched' || o.status === 'in_transit'
   );
 
-  const myDeliveredOrders = state.orders.filter(o => o.status === 'delivered');
+  const myDeliveredOrders = state.orders
+    .filter(o => o.status === 'delivered')
+    .sort((a, b) => Date.parse(b.deliveredAt || b.createdAt || '') - Date.parse(a.deliveredAt || a.createdAt || ''));
 
-  // Seulement ce que le livreur a réellement encaissé : une commande payée en
-  // Mobile Money n'entre pas dans sa sacoche. Filtrer sur `paymentCollected`
-  // donnait toujours 0 : le code de remise le passe à vrai pour TOUTES les
-  // commandes livrées (corrigé le 2026-09-25).
-  const totalCollectedCash = myDeliveredOrders
-    .filter((o) => o.paymentMethod !== 'mobile_money')
-    .reduce((acc, o) => acc + o.totalAmount, 0);
+  // Même source que le portefeuille (LIV-01, audit UI/UX du 2026-10-02) : la
+  // somme faite ici comptait aussi les espèces déjà versées à Suguba.
+  const { caisse, caisseServeur, aRemettre, etat: etatCaisse } = useCaisseLivreur(myDeliveredOrders, remuneration);
+  const fcfa = (n: number) => `${Math.round(n).toLocaleString('fr-FR')} F`;
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
@@ -92,8 +97,13 @@ export default function DriverDashboardPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <div className="rounded-2xl bg-slate-50 p-3">
-              <p className="text-xs font-bold text-slate-500 uppercase">Espèces dans ma sacoche</p>
-              <p className="text-lg font-bold text-slate-900">{state.ordersSync === 'ready' ? totalCollectedCash.toLocaleString('fr-FR') : '—'} F</p>
+              <p className="text-xs font-semibold text-slate-600">À remettre à Suguba</p>
+              <p className="text-lg font-bold text-slate-900 tabular-nums">
+                {aRemettre !== null ? fcfa(aRemettre) : etatCaisse === 'erreur' ? '—' : (
+                  <span className="inline-block h-6 w-20 rounded-lg bg-slate-200 animate-pulse align-middle" role="status" aria-label="Chargement du montant" />
+                )}
+              </p>
+              {etatCaisse === 'erreur' && <p className="text-xs text-slate-600">Montant indisponible, voir le portefeuille.</p>}
             </div>
             <Link
               href="/driver/earnings"
@@ -105,6 +115,21 @@ export default function DriverDashboardPage() {
           </div>
         </div>
 
+        {/* Plafond ou retard d'espèces (LIV-02) : le livreur ne recevait plus de
+            course payée en espèces sans que l'accueil le dise ; il attendait. */}
+        {caisse?.bloque && (
+          <div role="status" className="rounded-3xl border border-amber-200 bg-amber-50 p-4 space-y-2">
+            <p className="flex items-start gap-2 text-sm font-semibold text-amber-900">
+              <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+              <span>Courses payées en espèces suspendues. {caisse.raison}</span>
+            </p>
+            <p className="text-sm text-amber-900">Versez vos espèces à Suguba pour en recevoir de nouvelles.</p>
+            <Link href="/driver/earnings" className="inline-flex min-h-11 items-center text-sm font-bold text-amber-900 underline">
+              Voir comment verser
+            </Link>
+          </div>
+        )}
+
         {/* Active Runs Section */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -115,9 +140,16 @@ export default function DriverDashboardPage() {
           </div>
 
           {myAssignedOrders.length === 0 ? (
-            <div className="bg-white rounded-3xl p-8 text-center text-slate-500 text-xs border border-slate-200 shadow-xs">
-              <Truck className="w-10 h-10 mx-auto text-slate-300 mb-2" />
-              {state.ordersSync === 'ready' ? 'Aucune livraison en attente pour le moment.' : 'La liste des courses n’est pas encore confirmée.'}
+            <div className="bg-white rounded-3xl p-8 text-center border border-slate-200 space-y-1">
+              <Truck className="w-10 h-10 mx-auto text-slate-400 mb-2" />
+              {state.ordersSync === 'ready' ? (
+                <>
+                  <p className="text-sm font-semibold text-slate-900">Pas de course pour l’instant</p>
+                  <p className="text-sm text-slate-600">Vous serez prévenu dès qu’une course vous est attribuée. Restez joignable.</p>
+                </>
+              ) : (
+                <p className="text-sm text-slate-600">La liste des courses n’est pas encore confirmée.</p>
+              )}
             </div>
           ) : (
             <div className="space-y-4">
@@ -239,43 +271,50 @@ export default function DriverDashboardPage() {
         {/* Completed Runs History */}
         <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-xs space-y-4">
           <h2 className="font-bold text-base text-slate-900">
-            Livraisons effectuées
+            Dernières livraisons
           </h2>
 
+          {/* LIV-04 : le montant et le statut se cassaient sur 5 lignes à 390 px
+              (bloc de texte sans min-w-0, colonne de droite compressible). Le
+              statut lit maintenant le moyen de paiement et la caisse (LIV-01). */}
           <div className="divide-y divide-slate-100">
             {myDeliveredOrders.length === 0 && (
               <EmptyState icon={Package} title={state.ordersSync === 'ready' ? 'Aucune livraison effectuée pour le moment.' : 'Historique non confirmé.'} />
             )}
-            {myDeliveredOrders.map((order) => (
-              <div key={order.id} className="py-3 flex items-center justify-between">
-                <div>
-                  <p className="font-bold text-xs text-slate-900">
-                    Commande #{order.orderNumber} • {order.customerName}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    {order.neighborhood} • {order.productName}
-                  </p>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <button
-                    onClick={() => setSelectedOrderForReceipt(order)}
-                    className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold flex items-center space-x-1"
-                  >
-                    <Printer className="w-3.5 h-3.5" />
-                    <span>Reçu</span>
-                  </button>
-                  <div className="text-right">
-                    <span className="text-xs font-bold text-emerald-700 block">
-                      {order.totalAmount.toLocaleString('fr-FR')} F
-                    </span>
-                    <span className="text-xs text-emerald-700 font-bold">
-                      {order.paymentCollected ? 'Payé en ligne' : 'Encaissé'}
-                    </span>
+            {myDeliveredOrders.slice(0, 3).map((order) => {
+              const statut = statutEncaissement(order, caisseServeur);
+              return (
+                <div key={order.id} className="py-3 flex items-center gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-sm text-slate-900 truncate">{order.productName}</p>
+                    <p className="text-xs text-slate-600 truncate">
+                      #{order.orderNumber} · {order.neighborhood}
+                      {order.deliveredAt ? ` · ${new Date(order.deliveredAt).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}` : ''}
+                    </p>
                   </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-sm font-bold text-slate-900 tabular-nums whitespace-nowrap">{fcfa(order.totalAmount)}</p>
+                    <p className={`text-xs font-semibold whitespace-nowrap ${statut === 'a_remettre' ? 'text-amber-800' : 'text-slate-600'}`}>
+                      {LIBELLE_ENCAISSEMENT[statut]}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedOrderForReceipt(order)}
+                    aria-label={`Reçu de la commande ${order.orderNumber}`}
+                    className="w-11 h-11 shrink-0 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 flex items-center justify-center"
+                  >
+                    <Printer className="w-4 h-4" />
+                  </button>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
+          {myDeliveredOrders.length > 3 && (
+            <Link href="/driver/earnings" className="inline-flex min-h-11 items-center text-sm font-bold text-suguba-brand-dark hover:underline">
+              Voir les {myDeliveredOrders.length} livraisons dans mon portefeuille
+            </Link>
+          )}
         </div>
 
       </main>
