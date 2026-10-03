@@ -198,6 +198,38 @@
  "journal": [
   {
    "date": "2026-10-03",
+   "titre": "Boutique revendeur, lot 5 : corrections de relecture",
+   "demande": "« “Ma boutique” doit montrer la boutique elle-même (logo, couverture, produits ajoutés) et non les réglages ; il veut des outils pour gérer sa boutique (personnalisation, catégories/rayons, produits mis en avant, et ce qui aide à vendre), pour un vrai sentiment d’appropriation. »",
+   "realise": [
+    "« Mes articles » et « Statistiques » ne tombent plus à cause d’un emoji. Quand l’un des 3 derniers articles ajoutés (depuis moins de 14 jours) avait un nom long avec un emoji placé juste à la 60e place, le nom cité dans l’annonce était coupé au milieu de l’emoji. Pour un revendeur sans abonné ayant un compte (le cas le plus courant), ou qui avait annoncé depuis moins de 24 h, les deux pages affichaient une erreur dès l’ouverture : il ne pouvait même plus retirer l’article. Pour les autres, l’annonce ne partait jamais (« Vos abonnés n’ont pas pu être prévenus »). Ce nom vient du fournisseur : un seul produit touchait tous les revendeurs qui l’ajoutaient. Le nom est maintenant coupé sans casser l’emoji, et la feuille fermée ne prépare plus rien.",
+    "Toutes les notifications (annonces des revendeurs, « Nouveau chez … », « Baisse de prix chez … ») : un titre ou un texte trop long n’est plus coupé au milieu d’un emoji. La base refuse un emoji coupé en deux : dans ce cas, personne n’était prévenu, sans aucun message.",
+    "Titre de l’annonce : un nom de boutique qui annonce un prix, une remise ou un numéro de téléphone (« Soldes -50 % tout à 5 000 F », « Appelez 76 12 34 56 ») n’entre plus dans la notification ; elle dit alors « Nouveautés chez Awa D. ». Le revendeur le voit dans l’aperçu avant d’envoyer. « Bamako 2000 » ou « Mode 223 » restent affichés tels quels. L’annonce reste donc sans texte libre, ni prix ni remise, comme la feuille le dit au revendeur.",
+    "Feuille « Prévenir mes abonnés » : le sous-titre dit ce que l’écran propose vraiment. « Vos nouveautés, dans leurs notifications Suguba. » quand l’annonce peut partir ou vient de partir ; « Vos nouveautés, sur votre statut WhatsApp. » quand aucun abonné n’a de compte ou qu’une annonce date de moins de 24 h. Avant, la première ligne promettait les notifications au-dessus d’un écran qui disait que personne ne pouvait être prévenu.",
+    "Après l’envoi, le bouton devient « Annonce envoyée · Publier sur mon statut » : il rouvre la feuille sur le résultat (« N abonnés prévenus ») et « Publier sur mon statut WhatsApp ». Avant, le bouton disparaissait : dès que la feuille se fermait (un toucher à côté suffit), le résultat et le message prêt pour le statut étaient perdus, et rien ne disait que l’annonce était partie.",
+    "Notification « Baisse de prix chez <boutique> » (abonnés d’une boutique de fournisseur) : les montants sont écrits comme partout, « 120 000 F au lieu de 150 000 F ».",
+    "Guide : l’entrée du lot 5 ne dit plus que les promotions « n’existent pas ». Les boutiques de revendeur n’en font pas, mais les baisses de prix d’un fournisseur sont bien annoncées à ses abonnés ; la fiche « Notifications » décrit ces annonces.",
+    "Tests : tests/ma-boutique-lot5-relecture.test.cjs (9 tests, tous en échec sur le code du lot 5) ; ma-boutique-lot5 adapté (bouton après l’envoi, ligne de REPRISE)."
+   ],
+   "ecarts": [
+    "En local sur la branche ux/boutique-revendeur, non publié. Aucune migration.",
+    "6 constats relus, tous fondés.",
+    "Titre de l’annonce : le plan disait « Nouveautés chez <enseigne> », sans condition. Choix de la relecture, à valider par le fondateur : quand le nom de la boutique annonce un prix, une remise ou un numéro, le titre prend « Prénom I. » à la place. L’autre possibilité était de garder le nom tel quel et de ne plus promettre « ni prix, ni remise ». La feuille n’explique pas ce remplacement au revendeur : il le constate dans l’aperçu.",
+    "Le nom de la boutique lui-même reste libre : « Soldes -50 % » peut toujours être choisi et s’affiche en titre de la vitrine, dans l’annuaire et la recherche. Le refuser à l’enregistrement serait une décision du fondateur (hors de ce lot).",
+    "Un nombre seul, sans monnaie ni séparateur, passe dans le titre (« Tout à 5000 ») : rien ne le distingue de « Bamako 2000 ». Sont refusés : « % », un montant avec sa monnaie (F, FCFA, fr, k), des milliers séparés (« 5 000 »), une baisse (« -50 »), un mot de remise avec un chiffre, « 2 pour 1 », et 8 chiffres ou plus à la suite (téléphone).",
+    "« Annonce envoyée · Publier sur mon statut » reste tant que la page est ouverte. Après un rechargement, ou après le retrait d’un article dans « Mes articles », plus rien ne rappelle que l’annonce est partie et le message prêt pour le statut ne peut plus être retrouvé (les articles annoncés ne sont plus des nouveautés). Seul un nouvel essai avant 24 h le dit, par son refus daté. À trancher par le fondateur : afficher « Abonnés prévenus le … » pendant 24 h.",
+    "Le sous-titre « Vos nouveautés, sur votre statut WhatsApp. » est un texte choisi à la relecture (le plan ne donnait pas de sous-titre).",
+    "Un emoji à cheval sur la 60e place du nom d’un article est retiré en entier du nom cité ; le reste du nom est inchangé. Le refus d’un emoji coupé par la base est son comportement documenté : il est simulé dans les tests et n’a pas été rejoué sur une vraie base (aucune base réelle n’est touchée).",
+    "Captures et vérifications à faire sur la copie locale [QA], à 390 px : feuille « Prévenir mes abonnés » d’une boutique dont tous les abonnés sont inscrits par téléphone (sous-titre) ; après un envoi [QA], fermer la feuille puis toucher « Annonce envoyée · Publier sur mon statut » ; boutique [QA] nommée « Soldes -50 % » (aperçu « Nouveautés chez Prénom I. ») ; article [QA] au nom long avec un emoji à la 60e place (« Mes articles » et « Statistiques » s’ouvrent). Aucun serveur n’a été lancé."
+   ],
+   "pages": [
+    "rev-boutique-articles",
+    "rev-boutique-stats",
+    "notifications"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-10-03",
    "titre": "Boutique revendeur, lot 5 : prévenir mes abonnés",
    "demande": "« “Ma boutique” doit montrer la boutique elle-même (logo, couverture, produits ajoutés) et non les réglages ; il veut des outils pour gérer sa boutique (personnalisation, catégories/rayons, produits mis en avant, et ce qui aide à vendre), pour un vrai sentiment d’appropriation. »",
    "realise": [
@@ -208,7 +240,7 @@
     "Une annonce par 24 h : une seconde annonce le même jour est refusée avec « Vous avez déjà prévenu vos abonnés : une annonce par 24 h. Prochaine annonce possible le … ». Deux envois au même moment (deux téléphones, deux onglets) : un seul part.",
     "Après l’envoi : « 12 abonnés prévenus » (le nombre de notifications réellement écrites), le rappel des abonnés par téléphone, l’heure de la prochaine annonce possible, puis « Publier sur mon statut WhatsApp ». WhatsApp s’ouvre avec un message prêt (le titre, les noms des articles, « Vous payez à la livraison », le lien de la boutique) et c’est le revendeur qui choisit « Mon statut » : un partage fait par lui, à la main.",
     "Abonnés tous inscrits par téléphone (aucun compte) : la feuille le dit (« Aucun de vos abonnés n’a de compte Suguba ») et propose seulement le statut WhatsApp ; aucune annonce n’est consommée.",
-    "« Suivre » une boutique : la phrase affichée à l’abonné devient « Vous serez prévenu des nouveautés de cette boutique » (elle promettait aussi des promotions, qui n’existent pas). La page « Boutiques suivies » dit « Leurs nouveautés, en premier. »",
+    "« Suivre » une boutique : la phrase affichée à l’abonné devient « Vous serez prévenu des nouveautés de cette boutique » (elle promettait aussi des promotions, que les boutiques de revendeur ne font pas ; seules les baisses de prix d’un fournisseur sont annoncées à ses abonnés : « Baisse de prix chez … »). La page « Boutiques suivies » dit « Leurs nouveautés, en premier. »",
     "Fournisseurs : les annonces automatiques « Nouveau chez <boutique> » (produit mis en ligne) et « Baisse de prix chez <boutique> » ne partaient plus du tout, sans aucun message, dès que le fournisseur avait 2 boutiques. Elles partent maintenant aux abonnés de sa boutique principale.",
     "Tests : tests/ma-boutique-lot5.test.cjs (20 tests) ; ma-boutique-lot4-relecture adapté (une entrée plus récente en tête du journal)."
    ],
@@ -3023,7 +3055,11 @@
    "elements": [
     {
      "nom": "Nouveautés chez <boutique>",
-     "role": "Annonce d’un revendeur à ses abonnés qui ont un compte : jusqu’à 3 noms d’articles, sans prix. La toucher ouvre sa boutique. Une par 24 h et par boutique au plus."
+     "role": "Annonce d’un revendeur à ses abonnés qui ont un compte : jusqu’à 3 noms d’articles, sans prix. La toucher ouvre sa boutique. Une par 24 h et par boutique au plus. Le nom affiché est celui de la boutique, ou « Awa D. » s’il annonce un prix, une remise ou un numéro de téléphone."
+    },
+    {
+     "nom": "Nouveau chez <boutique> · Baisse de prix chez <boutique>",
+     "role": "Annonces automatiques aux abonnés (avec un compte) de la boutique principale d’un fournisseur : un produit mis en ligne, ou un prix qui baisse (« Téléviseur : 120 000 F au lieu de 150 000 F »). Les toucher ouvre le produit."
     },
     {
      "nom": "Mes boutiques suivies",
@@ -4087,11 +4123,11 @@
     },
     {
      "nom": "Prévenir mes abonnés (N nouveautés)",
-     "role": "Affiché seulement quand des articles ont été ajoutés à la boutique depuis la dernière annonce (14 jours au plus) et qu’elle a au moins un abonné. Ouvre la feuille « Prévenir mes abonnés »."
+     "role": "Affiché seulement quand des articles ont été ajoutés à la boutique depuis la dernière annonce (14 jours au plus) et qu’elle a au moins un abonné. Ouvre la feuille « Prévenir mes abonnés ». Après l’envoi, il devient « Annonce envoyée · Publier sur mon statut » : il rouvre la feuille sur le résultat, tant que la page reste ouverte."
     },
     {
      "nom": "Prévenir mes abonnés (feuille)",
-     "role": "Aperçu de la notification, écrite par Suguba sans texte libre : « Nouveautés chez <boutique> » et jusqu’à 3 noms d’articles, sans prix ni remise. « N abonnés avec un compte seront prévenus dans l’application » ; ceux inscrits par téléphone ne reçoivent rien. Action : « Prévenir mes N abonnés ». Une annonce par 24 h : sinon « Vous avez déjà prévenu vos abonnés… Prochaine annonce possible le … ». Après l’envoi : « N abonnés prévenus » (chiffre réel) et « Publier sur mon statut WhatsApp », un partage fait à la main avec un message prêt. Rien n’est envoyé par WhatsApp ni par SMS."
+     "role": "Aperçu de la notification, écrite par Suguba sans texte libre : « Nouveautés chez <boutique> » et jusqu’à 3 noms d’articles, sans prix ni remise (si le nom de la boutique annonce un prix, une remise ou un numéro de téléphone : « Nouveautés chez Awa D. »). « N abonnés avec un compte seront prévenus dans l’application » ; ceux inscrits par téléphone ne reçoivent rien. Action : « Prévenir mes N abonnés ». Une annonce par 24 h : sinon « Vous avez déjà prévenu vos abonnés… Prochaine annonce possible le … ». Après l’envoi : « N abonnés prévenus » (chiffre réel) et « Publier sur mon statut WhatsApp », un partage fait à la main avec un message prêt. Rien n’est envoyé par WhatsApp ni par SMS. Sous-titre : « Vos nouveautés, dans leurs notifications Suguba. » quand l’annonce part dans l’application ; « Vos nouveautés, sur votre statut WhatsApp. » quand la feuille ne propose que le statut (aucun abonné avec un compte, ou annonce de moins de 24 h)."
     },
     {
      "nom": "N articles ne s’affichent plus",
@@ -4187,7 +4223,7 @@
     },
     {
      "nom": "Prévenir mes abonnés (N nouveautés)",
-     "role": "Sous « Abonnés », seulement quand des articles ont été ajoutés depuis la dernière annonce et que la boutique a au moins un abonné (jamais si elle est masquée par Suguba). Ouvre la même feuille que dans « Mes articles » : aperçu de la notification, destinataires réels, une annonce par 24 h, puis « Publier sur mon statut WhatsApp »."
+     "role": "Sous « Abonnés », seulement quand des articles ont été ajoutés depuis la dernière annonce et que la boutique a au moins un abonné (jamais si elle est masquée par Suguba). Ouvre la même feuille que dans « Mes articles » : aperçu de la notification, destinataires réels, une annonce par 24 h, puis « Publier sur mon statut WhatsApp ». Après l’envoi, il devient « Annonce envoyée · Publier sur mon statut » et rouvre la feuille sur le résultat, tant que la page reste ouverte."
     },
     {
      "nom": "Vos articles les plus vus",

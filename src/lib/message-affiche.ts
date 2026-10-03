@@ -20,7 +20,12 @@ const MONTANT_MONNAIE = /\d[\d\s.,]*\s*(?:k\s*)?(?:f\b|fr\b|frs\b|francs?\b|f?\s
 // « Écran 8K », qui ne sont pas des prix.
 const MILLIERS_K = /(?:\d{2,}|\d+[.,]\d+)\s*k\b/i;
 // … un grand nombre (« 5000 », « 15.000 », « 2 500 ») ou une baisse chiffrée (« -10 », « moins 500 »).
-const GRAND_NOMBRE = /\d{1,3}(?:[\s.,]\d{3})+|\d{3,}/;
+// Relecture du lot 5 (2026-10-03) : le grand nombre se lit en deux temps. Milliers
+// séparés (« 5 000 », « 15.000 ») : toujours un prix. Nombre d'un seul tenant
+// (« 5000 ») : un prix sur une affiche, pas dans un nom de boutique (« Bamako 2000 »,
+// « Mode 223 ») — voir promesseChiffree.
+const MILLIERS_SEPARES = /\d{1,3}(?:[\s.,]\d{3})+/;
+const NOMBRE_SEUL = /\d{3,}/;
 const BAISSE = /(?:^|[\s(])[-−–]\s*\d|\bmoins\s+\d/i;
 // … ou un nombre avec un mot de remise (« Promo 30 ce week-end », « Remise 20 »,
 // « Soldes 50 », « 1 acheté 1 offert ») : une remise chiffrée, même sans « % » ni
@@ -30,18 +35,41 @@ const MOT_REMISE = /\b(?:promos?|promotions?|remises?|soldes?|reduc|reducs|reduc
 // « 2 pour 1 », « 1 = 2 » : une offre chiffrée, même sans mot de remise.
 const N_POUR_M = /\d\s*(?:pour|=)\s*\d/i;
 
+/** Ce qu'un texte court annonce à tort. */
+export type PromesseChiffree = 'pourcentage' | 'montant' | 'remise';
+
+/**
+ * Le texte annonce-t-il un pourcentage, un prix ou une remise chiffrée ? null sinon.
+ *
+ * Relecture du lot 5 (2026-10-03) : la règle du message des affiches sert aussi
+ * au titre de l'annonce aux abonnés (« Nouveautés chez <nom de la boutique> »,
+ * voir annonce-boutique.ts) — un seul langage pour « ni prix, ni remise ».
+ * `nombreSeul: false` laisse passer un nombre d'un seul tenant, sans monnaie
+ * (« Bamako 2000 », « Mode 223 » sont de vrais noms de boutique) ; sur une
+ * affiche, il reste refusé.
+ */
+export function promesseChiffree(texte: string | null | undefined, options: { nombreSeul?: boolean } = {}): PromesseChiffree | null {
+  const t = String(texte || '').trim();
+  if (!t) return null;
+  if (POURCENTAGE.test(t)) return 'pourcentage';
+  const grandNombre = MILLIERS_SEPARES.test(t) || (options.nombreSeul !== false && NOMBRE_SEUL.test(t));
+  if (MONTANT_MONNAIE.test(t) || MILLIERS_K.test(t) || grandNombre || BAISSE.test(t)) return 'montant';
+  const sansAccents = t.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if ((/\d/.test(t) && MOT_REMISE.test(sansAccents)) || N_POUR_M.test(t)) return 'remise';
+  return null;
+}
+
+const REFUS: Record<PromesseChiffree, string> = {
+  pourcentage: 'Pas de pourcentage : Suguba n’applique pas de remise sur cette affiche.',
+  montant: 'Pas de prix ni de montant : le vrai prix est déjà sur l’affiche.',
+  remise: 'Pas de remise chiffrée : Suguba n’applique pas de remise sur cette affiche.',
+};
+
 /** null si le message peut être imprimé, sinon la raison du refus (affichée sous le champ). */
 export function refusMessageAffiche(texte: string | null | undefined): string | null {
   const t = String(texte || '').trim();
   if (!t) return null;
   if (t.length > MESSAGE_AFFICHE_MAX) return `${MESSAGE_AFFICHE_MAX} caractères au plus.`;
-  if (POURCENTAGE.test(t)) return 'Pas de pourcentage : Suguba n’applique pas de remise sur cette affiche.';
-  if (MONTANT_MONNAIE.test(t) || MILLIERS_K.test(t) || GRAND_NOMBRE.test(t) || BAISSE.test(t)) {
-    return 'Pas de prix ni de montant : le vrai prix est déjà sur l’affiche.';
-  }
-  const sansAccents = t.normalize('NFD').replace(/[̀-ͯ]/g, '');
-  if ((/\d/.test(t) && MOT_REMISE.test(sansAccents)) || N_POUR_M.test(t)) {
-    return 'Pas de remise chiffrée : Suguba n’applique pas de remise sur cette affiche.';
-  }
-  return null;
+  const promesse = promesseChiffree(t);
+  return promesse ? REFUS[promesse] : null;
 }

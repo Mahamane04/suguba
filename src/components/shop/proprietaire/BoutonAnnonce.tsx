@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { BellRing } from 'lucide-react';
+import { BellRing, CheckCircle2 } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import FeuilleAnnonce from '@/components/shop/proprietaire/FeuilleAnnonce';
 import {
-  annonceAProposer, libelleBoutonAnnonce, modeAnnonce, type EtatAnnonce, type ResultatAnnonce,
+  annonceAProposer, libelleBoutonAnnonce, LIBELLE_ANNONCE_ENVOYEE, modeAnnonce, type EtatAnnonce, type ResultatAnnonce,
 } from '@/lib/annonce-boutique';
 
 /**
@@ -20,9 +20,14 @@ import {
  * qui ne mènerait à rien.
  *
  * L'envoi est un POST SANS CORPS : le texte, les articles et les destinataires
- * sont décidés par le serveur. Une seule requête à la fois. Après l'envoi, le
- * bouton disparaît (il n'y a plus de nouveauté à annoncer) et la feuille montre
- * le résultat réel.
+ * sont décidés par le serveur. Une seule requête à la fois. Après l'envoi, la
+ * feuille montre le résultat réel et le bouton d'annonce laisse la place à
+ * « Annonce envoyée · Publier sur mon statut », qui rouvre la feuille (relecture
+ * du lot 5, 2026-10-03). Avant, le bouton disparaissait : une fois la feuille
+ * fermée (un toucher sur le fond suffit), le résultat et « Publier sur mon statut
+ * WhatsApp » étaient perdus, et rien ne disait que l'annonce était partie. Cet
+ * accès dure tant que la page reste ouverte : après un rechargement, l'aperçu
+ * n'existe plus (les articles annoncés ne sont plus des nouveautés).
  *
  * Statut WhatsApp : le lien est le lien suivi de la boutique (/go/<code>, le même
  * que « Partager ma boutique » sur WhatsApp), préparé seulement quand la feuille
@@ -114,7 +119,12 @@ export default function BoutonAnnonce({
 
   return (
     <>
-      {annonceAProposer(etat) && !resultat && (
+      {resultat ? (
+        <Button type="button" variant="ghost" fullWidth className={className} aria-haspopup="dialog"
+          onClick={() => setOuvert(true)}>
+          <CheckCircle2 className="w-4 h-4 shrink-0 text-suguba-brand-dark" aria-hidden="true" />{LIBELLE_ANNONCE_ENVOYEE}
+        </Button>
+      ) : annonceAProposer(etat) && (
         <Button type="button" variant="secondary" fullWidth className={className} aria-haspopup="dialog"
           onClick={() => { setErreur(null); setOuvert(true); }}>
           <BellRing className="w-4 h-4 shrink-0" />{libelleBoutonAnnonce(etat.nouveautes)}

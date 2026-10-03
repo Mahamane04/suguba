@@ -6,6 +6,8 @@
  * n'a pas pu être écrit. D'où l'absence totale d'exception ici.
  */
 import { getSupabaseAdmin } from '../supabase-admin';
+import { formatF } from '../montant';
+import { couperTexte } from '../texte-entier';
 
 export interface Notification {
   id: number;
@@ -28,6 +30,10 @@ function lienInterne(lien: string | null | undefined): string | null {
  * VRAIMENT écrites (lot 5 du chantier boutique, 2026-10-03) : « N prévenus » doit
  * être un chiffre réel, pas le nombre de destinataires visés. Les appelants qui
  * n'en ont pas besoin l'ignorent.
+ *
+ * Relecture du lot 5 (2026-10-03) : le titre (140) et le texte (400) ne sont plus
+ * coupés au milieu d'un emoji. La base refuse une demi-paire isolée : l'écriture
+ * entière était alors rejetée et personne n'était prévenu, sans aucun message.
  */
 export async function notifier(
   profileIds: string | string[],
@@ -44,8 +50,8 @@ export async function notifier(
       lot.map((id) => ({
         profile_id: id,
         kind: contenu.type || 'info',
-        title: contenu.titre.slice(0, 140),
-        body: contenu.texte ? contenu.texte.slice(0, 400) : null,
+        title: couperTexte(contenu.titre, 140),
+        body: contenu.texte ? couperTexte(contenu.texte, 400) : null,
         link: lienInterne(contenu.lien),
       })),
     );
@@ -180,7 +186,8 @@ export async function annoncerBaissePrix(productId: string, ancien: number, nouv
     await notifierAbonnes(boutique.id, {
       type: 'promotion',
       titre: `Baisse de prix chez ${boutique.name}`,
-      texte: `${produit.name} : ${nouveau.toLocaleString('fr-FR')} F au lieu de ${ancien.toLocaleString('fr-FR')} F.`,
+      // Montants écrits comme partout (formatF) : relecture du lot 5, 2026-10-03.
+      texte: `${produit.name} : ${formatF(nouveau)} au lieu de ${formatF(ancien)}.`,
       lien: `/p/${produit.slug}`,
     });
   } catch (erreur) {

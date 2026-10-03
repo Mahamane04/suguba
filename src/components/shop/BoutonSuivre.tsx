@@ -113,9 +113,12 @@ export default function BoutonSuivre({ slug, abonnesInitial }: { slug: string; a
 
       {message && <p className="text-xs text-amber-700">{message}</p>}
       {/* Lot 5 du chantier boutique (2026-10-03) : la phrase promettait aussi des
-          remises, qu'aucune boutique ne propose (prix barrés hors chantier,
-          décision du fondateur). On ne promet que ce qui arrive : les nouveautés,
-          que le revendeur annonce désormais à ses abonnés. */}
+          remises, que les boutiques de revendeur ne font pas (prix barrés hors
+          chantier, décision du fondateur). On ne promet que ce qui arrive : les
+          nouveautés, que le revendeur annonce désormais à ses abonnés.
+          Relecture du lot 5 : ce bouton est aussi monté sur les boutiques de
+          fournisseur, dont les abonnés reçoivent en plus « Baisse de prix chez … »
+          quand un prix baisse (annoncerBaissePrix). Le texte affiché ne change pas. */}
       {suit && (
         <p className="text-xs text-slate-500">
           Vous serez prévenu des nouveautés de cette boutique.{' '}

@@ -716,7 +716,7 @@ function brancherRoutes(appels) {
   };
 }
 
-test('BoutonAnnonce : rien avant la lecture ; « Prévenir mes abonnés (2 nouveautés) » ; envoi sans corps ; résultat réel, puis le bouton disparaît', async () => {
+test('BoutonAnnonce : rien avant la lecture ; « Prévenir mes abonnés (2 nouveautés) » ; envoi sans corps ; résultat réel, puis le bouton d’annonce disparaît', async () => {
   const appels = [];
   brancherRoutes(appels);
   try {
@@ -750,7 +750,9 @@ test('BoutonAnnonce : rien avant la lecture ; « Prévenir mes abonnés (2 nouve
     assert.equal(etat.notifications.length, 2);
     vue = page.rendre();
     assert.deepEqual(vue.feuille.props.resultat && [vue.feuille.props.resultat.prevenus, vue.feuille.props.resultat.sansCompte], [2, 1]);
-    assert.equal(vue.bouton, null, 'plus de nouveauté à annoncer : le bouton disparaît');
+    // Relecture du lot 5 : le bouton d'annonce laisse la place à l'accès au résultat
+    // (voir ma-boutique-lot5-relecture) ; plus rien ne propose un second envoi.
+    assert.equal(libelle(vue.bouton), 'Annonce envoyée · Publier sur mon statut', 'plus de nouveauté à annoncer : le bouton d’annonce disparaît');
     assert.equal(vue.feuille.props.erreur, null);
 
     // Le statut WhatsApp est proposé : le lien suivi de la boutique est préparé (POST), une fois.
@@ -852,5 +854,6 @@ test('Guide : lot 5 en tête du journal ; fiches Mes articles, Statistiques, vit
   assert.match(fiche('vitrine-boutique'), /Vous serez prévenu des nouveautés de cette boutique/);
   assert.doesNotMatch(fiche('vitrine-boutique'), /promotions/);
   assert.match(fiche('notifications'), /Nouveautés chez/);
-  assert.match(lire('REPRISE.md').split('\n').find((l) => l.startsWith('> **')), /boutique revendeur, lot 5 « Prévenir mes abonnés »/);
+  // Relecture du lot 5 : une ligne plus récente passe en tête de REPRISE.
+  assert.ok(lire('REPRISE.md').split('\n').some((l) => l.startsWith('> **') && /boutique revendeur, lot 5 « Prévenir mes abonnés »/.test(l)));
 });

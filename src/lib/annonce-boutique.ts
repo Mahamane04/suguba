@@ -16,7 +16,10 @@
  *    statut WhatsApp, à la main.
  */
 import { NOUVEAU_JOURS } from './boutique-ordre';
+import { nomPublic, nomPublicBoutique } from './enseigne';
+import { promesseChiffree } from './message-affiche';
 import { formatNombre } from './montant';
+import { couperTexte, texteBienForme } from './texte-entier';
 
 /** Une annonce aux abonnés par période de 24 h (décision du fondateur). */
 export const ANNONCE_DELAI_HEURES = 24;
@@ -74,9 +77,18 @@ export function annoncable(p: ProduitAnnonce | null | undefined): boolean {
     && Number(p.stock) > 0;
 }
 
-/** Nom d'article propre pour un texte court : sans caractère de contrôle ni balise, 60 caractères au plus. */
+/**
+ * Nom d'article propre pour un texte court : sans caractère de contrôle ni balise,
+ * 60 caractères au plus.
+ *
+ * Relecture du lot 5 (2026-10-03) : la coupe ne tombe plus au milieu d'un emoji
+ * (voir texte-entier.ts). Un nom de 75 caractères avec un emoji à cheval sur la
+ * 60e place donnait un nom cité mal formé : « Mes articles » et « Statistiques »
+ * tombaient au chargement, et l'annonce ne partait jamais.
+ */
 function nomPropre(nom: unknown): string {
-  return String(nom ?? '').replace(/[\u0000-\u001f\u007f<>]/g, '').replace(/\s+/g, ' ').trim().slice(0, 60).trim();
+  const propre = texteBienForme(nom).replace(/[\u0000-\u001f\u007f<>]/g, '').replace(/\s+/g, ' ').trim();
+  return couperTexte(propre, 60).trim();
 }
 
 /**
@@ -103,6 +115,37 @@ function enumeration(noms: readonly string[]): string {
   return `${noms.slice(0, -1).join(', ')} et ${noms[noms.length - 1]}`;
 }
 
+// Un numéro de téléphone : 8 chiffres ou plus, collés ou séparés (« 76 12 34 56 », « 76.12.34.56 »).
+const NUMERO = /(?:\d[\s.\-]?){8,}/;
+
+/**
+ * Ce nom de boutique peut-il entrer dans le titre de l'annonce ? (relecture du
+ * lot 5, 2026-10-03)
+ *
+ * Le nom d'une boutique est un texte libre de 60 caractères, que le revendeur
+ * change quand il veut. Repris tel quel dans « Nouveautés chez <nom> », il
+ * laissait pousser chaque jour à ses abonnés « Soldes -50 % tout à 5 000 F » ou un
+ * numéro de téléphone, alors que l'annonce est « sans texte libre, ni prix, ni
+ * remise » (décision du fondateur) et que la feuille le promet au revendeur.
+ * Refusés : pourcentage, montant, remise chiffrée (même règle que le message
+ * des affiches) et numéro de téléphone. « Bamako 2000 » ou « Mode 223 » restent
+ * de vrais noms.
+ */
+export function nomAnnoncable(nom: string | null | undefined): boolean {
+  const t = String(nom || '');
+  return promesseChiffree(t, { nombreSeul: false }) === null && !NUMERO.test(t);
+}
+
+/**
+ * Nom cité dans « Nouveautés chez … » : le nom public de la boutique (l'enseigne,
+ * sinon « Awa D. » ; jamais le nom complet), ou « Awa D. » quand l'enseigne
+ * annonce un prix, une remise ou un numéro.
+ */
+export function nomBoutiqueAnnonce(nomBoutique: string | null | undefined, nomComplet: string | null | undefined): string {
+  const nom = nomPublicBoutique(nomBoutique, nomComplet);
+  return nomAnnoncable(nom) ? nom : nomPublic(nomComplet || null);
+}
+
 /** Notification composée par Suguba (aucun texte libre). */
 export interface ContenuAnnonce {
   titre: string;
@@ -115,8 +158,9 @@ export interface ContenuAnnonce {
 
 /**
  * « Nouveautés chez <enseigne> » (ou « chez Awa D. », jamais le nom complet :
- * `nomBoutique` est le nom public calculé par le serveur), puis jusqu'à 3 noms
- * d'articles, et « et N autres articles » au-delà. Ni prix ni pourcentage.
+ * `nomBoutique` est le nom calculé par le serveur, voir nomBoutiqueAnnonce), puis
+ * jusqu'à 3 noms d'articles, et « et N autres articles » au-delà. Ni prix ni
+ * pourcentage.
  */
 export function contenuAnnonce(params: { nomBoutique: string; slug: string; nouveautes: readonly { nom: string }[] }): ContenuAnnonce {
   const noms = params.nouveautes.slice(0, ANNONCE_ARTICLES_CITES).map((n) => nomPropre(n.nom) || 'Article');
@@ -137,15 +181,19 @@ export function contenuAnnonce(params: { nomBoutique: string; slug: string; nouv
  * revendeur lui-même) : le titre de l'annonce, les noms cités, « vous payez à la
  * livraison » et le lien de la boutique. Aucun prix : ce texte reste vrai même
  * si un prix change d'ici là.
+ *
+ * Toujours bien formé (relecture du lot 5, 2026-10-03) : ce texte passe par
+ * encodeURIComponent, qui lève une exception sur une demi-paire isolée. Même si
+ * l'état reçu en contenait une, l'écran ne tombe pas.
  */
 export function texteStatutAnnonce(params: { titre: string; noms: readonly string[]; url: string }): string {
-  return [
+  return texteBienForme([
     `🆕 *${params.titre}*`,
     ...(params.noms.length ? ['', ...params.noms.map((n) => `• ${n}`)] : []),
     '',
     '✅ Vous payez à la livraison, livré chez vous à Bamako.',
     `👉 ${params.url}`,
-  ].join('\n');
+  ].join('\n'));
 }
 
 // ── Ce que l'écran affiche ──────────────────────────────────────────────────
@@ -202,12 +250,31 @@ export function modeAnnonce(etat: EtatAnnonce, envoyee: boolean, maintenant: num
   return 'prete';
 }
 
+/**
+ * Sous-titre de la feuille : ce que l'écran propose VRAIMENT (relecture du lot 5,
+ * 2026-10-03). Il était fixe (« …dans leurs notifications Suguba ») et s'affichait
+ * aussi quand aucun abonné n'a de compte, au-dessus d'un écran qui dit l'inverse.
+ * Quand rien ne part dans l'application, la feuille ne propose que le statut WhatsApp.
+ */
+export function sousTitreAnnonce(mode: ModeAnnonce): string {
+  return mode === 'prete' || mode === 'envoyee'
+    ? 'Vos nouveautés, dans leurs notifications Suguba.'
+    : 'Vos nouveautés, sur votre statut WhatsApp.';
+}
+
 const s = (n: number) => (n > 1 ? 's' : '');
 
 /** « Prévenir mes abonnés (2 nouveautés) » : le bouton de Mes articles et des Statistiques. */
 export function libelleBoutonAnnonce(nouveautes: number): string {
   return `Prévenir mes abonnés (${formatNombre(nouveautes)} nouveauté${s(nouveautes)})`;
 }
+
+/**
+ * Après l'envoi, le bouton d'annonce devient cet accès (relecture du lot 5,
+ * 2026-10-03) : il rouvre la feuille sur le résultat et « Publier sur mon statut
+ * WhatsApp ». Avant, tout était perdu dès que la feuille se fermait.
+ */
+export const LIBELLE_ANNONCE_ENVOYEE = 'Annonce envoyée · Publier sur mon statut';
 
 /** « Prévenir mes 12 abonnés » : l'action principale de la feuille. */
 export function libelleEnvoiAnnonce(avecCompte: number): string {

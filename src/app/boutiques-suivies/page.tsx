@@ -42,7 +42,9 @@ export default function BoutiquesSuiviesPage() {
   }, []);
 
   // Lot 5 du chantier boutique (2026-10-03) : « et leurs promotions » retiré, comme
-  // sous le bouton « Suivre ». Aucune boutique ne propose de promotion pour l'instant.
+  // sous le bouton « Suivre ». Les boutiques de revendeur ne font pas de promotion ;
+  // seules les baisses de prix d'un fournisseur sont annoncées (« Baisse de prix
+  // chez … », relecture du lot 5). Le texte affiché ne change pas.
   return (
     <PageReseau titre="Boutiques suivies" sousTitre="Leurs nouveautés, en premier.">
       {chargement ? (

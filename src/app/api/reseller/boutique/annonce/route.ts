@@ -6,10 +6,9 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { boutiqueDuProprietaire, type BoutiqueReseau } from '@/lib/reseau/boutiques';
 import { journaliser } from '@/lib/reseau/db';
 import { notifierAbonnes } from '@/lib/reseau/notifications';
-import { nomPublicBoutique } from '@/lib/enseigne';
 import { formatDate } from '@/lib/montant';
 import {
-  ANNONCE_DELAI_HEURES, contenuAnnonce, debutDesNouveautes, nouveautesAAnnoncer, prochaineAnnonce,
+  ANNONCE_DELAI_HEURES, contenuAnnonce, debutDesNouveautes, nomBoutiqueAnnonce, nouveautesAAnnoncer, prochaineAnnonce,
   type EtatAnnonce, type ProduitAnnonce, type ResultatAnnonce,
 } from '@/lib/annonce-boutique';
 
@@ -36,7 +35,10 @@ import {
  *    en a aucune ;
  *  - 409 s'il n'a aucun abonné avec un compte : l'annonce ne partirait vers
  *    personne et bloquerait la suivante pour rien ;
- *  - message composé ICI : « Nouveautés chez <enseigne> » et 3 noms d'articles ;
+ *  - message composé ICI : « Nouveautés chez <enseigne> » et 3 noms d'articles.
+ *    Relecture du lot 5 (2026-10-03) : une enseigne qui annonce un prix, une
+ *    remise ou un numéro de téléphone n'entre pas dans le titre (« chez Awa D. »
+ *    à la place) : le nom d'une boutique est un texte libre, l'annonce non ;
  *  - prevenus et sansCompte sont des chiffres réels (notifications écrites,
  *    abonnés inscrits par téléphone seul).
  *
@@ -69,7 +71,7 @@ interface Lecture {
   derniere: string | null;
   possibleLe: string | null;
   nouveautes: { id: string; nom: string }[];
-  /** Nom public (l'enseigne, ou « Awa D. » ; jamais le nom complet). Lu seulement s'il y a des nouveautés. */
+  /** Nom cité dans le titre (l'enseigne, ou « Awa D. » ; jamais le nom complet, ni un prix). Lu seulement s'il y a des nouveautés. */
   nomBoutique: string | null;
   /** null si le compte n'a pas pu être lu (ou n'a pas été lu, sans nouveauté) : jamais un 0 inventé. */
   avecCompte: number | null;
@@ -132,9 +134,10 @@ async function lire(admin: Admin, uid: string, maintenant: number): Promise<{ lu
 
   // Nom public. Profil illisible : rien ne part (sans le nom du compte, on ne
   // peut pas vérifier que le nom de la boutique n'est pas le nom complet).
+  // Enseigne qui annonce un prix, une remise ou un numéro : « Awa D. » à la place.
   const { data: profil, error: erreurProfil } = await admin.from('profiles').select('full_name').eq('id', uid).maybeSingle();
   if (erreurProfil || !profil) return { refus: refus(503, INDISPONIBLE) };
-  lu.nomBoutique = nomPublicBoutique(boutique.nom, (profil as { full_name?: string | null }).full_name ?? null);
+  lu.nomBoutique = nomBoutiqueAnnonce(boutique.nom, (profil as { full_name?: string | null }).full_name ?? null);
 
   [lu.avecCompte, lu.sansCompte] = await Promise.all([
     compterAbonnes(admin, boutique.id, true),

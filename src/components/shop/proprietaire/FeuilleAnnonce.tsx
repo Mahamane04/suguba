@@ -7,7 +7,7 @@ import Button from '@/components/ui/Button';
 import BoutonPartageWhatsApp from '@/components/ui/BoutonPartageWhatsApp';
 import { formatDate } from '@/lib/montant';
 import {
-  libelleEnvoiAnnonce, modeAnnonce, phraseDestinataires, phraseResultat, phraseSansCompte, texteStatutAnnonce,
+  libelleEnvoiAnnonce, modeAnnonce, phraseDestinataires, phraseResultat, phraseSansCompte, sousTitreAnnonce, texteStatutAnnonce,
   type EtatAnnonce, type ResultatAnnonce,
 } from '@/lib/annonce-boutique';
 
@@ -29,6 +29,15 @@ import {
  *
  * Quand rien ne peut partir dans l'application (annonce de moins de 24 h, ou aucun
  * abonné avec un compte), la feuille le dit et propose seulement le statut WhatsApp.
+ *
+ * Relecture du lot 5 (2026-10-03) :
+ *  - feuille FERMÉE, rien n'est composé. Elle est montée dès qu'un aperçu existe,
+ *    et le lien du statut WhatsApp était calculé à chaque rendu : un nom d'article
+ *    mal formé (emoji coupé en deux) faisait tomber « Mes articles » et les
+ *    Statistiques au chargement, feuille fermée. Le message est de plus toujours
+ *    bien formé (texteStatutAnnonce) ;
+ *  - le sous-titre suit le mode : il promettait « dans leurs notifications
+ *    Suguba » même quand aucun abonné n'a de compte.
  *
  * Composant d'affichage : l'état, l'envoi et le lien viennent de BoutonAnnonce.
  */
@@ -59,6 +68,9 @@ export default function FeuilleAnnonce({
 }) {
   const apercu = etat.apercu;
   if (!apercu) return null;
+  const titre = 'Prévenir mes abonnés';
+  // Fermée : la même feuille (elle garde son état et rend le focus), sans contenu.
+  if (!ouvert) return <Sheet ouvert={false} onFermer={onFermer} titre={titre}>{null}</Sheet>;
 
   const mode = modeAnnonce(etat, Boolean(resultat));
   const avecCompte = etat.abonnesAvecCompte ?? 0;
@@ -110,8 +122,8 @@ export default function FeuilleAnnonce({
     <Sheet
       ouvert={ouvert}
       onFermer={onFermer}
-      titre="Prévenir mes abonnés"
-      sousTitre="Vos nouveautés, dans leurs notifications Suguba."
+      titre={titre}
+      sousTitre={sousTitreAnnonce(mode)}
       pied={pied}
     >
       <div className="space-y-4">
