@@ -11,7 +11,7 @@ import { Card, EmptyState, Skeleton, StatCard, StatusPill } from '@/components/u
 import PartageBoutique from '@/components/shop/proprietaire/PartageBoutique';
 import { formatF, formatNombre, formatDate } from '@/lib/montant';
 import { PORTE_MA_BOUTIQUE } from '@/lib/reseau/porte-boutique';
-import { PERIODES_STATS, type OrigineVisite, type PointJour } from '@/lib/reseau/stats';
+import { PERIODES_STATS, statsDeLaPeriode, type OrigineVisite, type PointJour } from '@/lib/reseau/stats';
 
 /**
  * Statistiques de ma boutique (lot 4 du chantier boutique, 2026-10-03).
@@ -59,7 +59,9 @@ const pluriel = (n: number | null | undefined, mot: string) => `${mot}${n != nul
 
 export default function StatistiquesBoutiquePage() {
   const [jours, setJours] = useState<number>(7);
-  const [stats, setStats] = useState<Stats | null>(null);
+  // Dernière réponse reçue, de N'IMPORTE QUELLE période (relecture du lot 4) :
+  // seule celle de la période cochée s'affiche (statsDeLaPeriode, plus bas).
+  const [lues, setLues] = useState<Stats | null>(null);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState(false);
   const [partage, setPartage] = useState(false);
@@ -71,7 +73,7 @@ export default function StatistiquesBoutiquePage() {
       const r = await fetch(`/api/reseller/boutique/stats?jours=${periode}`, { cache: 'no-store', signal });
       const d = await r.json().catch(() => null);
       if (!r.ok || !d) { setErreur(true); return; }
-      setStats(d as Stats);
+      setLues(d as Stats);
     } catch (e) {
       if ((e as Error)?.name !== 'AbortError') setErreur(true);
     } finally {
@@ -85,7 +87,14 @@ export default function StatistiquesBoutiquePage() {
     return () => controle.abort();
   }, [jours, charger]);
 
-  const boutique = stats?.boutique ?? null;
+  // Relecture du lot 4 (2026-10-03) : après un changement de période, les chiffres de
+  // l'ancienne période restaient affichés sous la nouvelle étiquette, et pour de bon
+  // si la lecture échouait (le message d'erreur n'apparaissait que sans aucun
+  // chiffre). Ils ne s'affichent plus que pour la période cochée : sinon le
+  // chargement, ou l'erreur avec « Réessayer ».
+  const stats = statsDeLaPeriode(lues, jours);
+  // La boutique ne dépend pas de la période : l'action « Partager » reste en place.
+  const boutique = lues?.boutique ?? null;
   const enLigne = boutique?.statut === 'active';
 
   return (
@@ -204,6 +213,10 @@ export default function StatistiquesBoutiquePage() {
               ? <>Visites mesurées depuis le {formatDate(stats.mesureDepuis, 'complet')}. </>
               : <>Aucune visite mesurée pour l’instant. </>}
             Une visite = un client qui reste au moins 2 secondes sur votre boutique ; vous-même et les aperçus de liens ne sont pas comptés, et un même client compte une fois par jour.
+            {/* Relecture du lot 4 (2026-10-03) : /r/<code> affiche la même vitrine sans
+                la mesurer (canonical sans redirection, décision du fondateur). Le dire
+                évite qu'un revendeur qui partage encore son ancien lien croie à zéro visiteur. */}
+            {' '}Les clients venus par votre ancien lien de boutique (adresse en /r/…) ne sont pas comptés.
           </p>
         </div>
       ) : null}

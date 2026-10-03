@@ -25,6 +25,7 @@ import BoutonQuestionFournisseur from '@/components/messagerie/BoutonQuestionFou
 import BoutonFavori from '@/components/compte/BoutonFavori';
 import { formatF, formatNombre } from '@/lib/montant';
 import { initiale } from '@/lib/initiale';
+import { titreVitrine } from '@/lib/enseigne';
 
 const fcfa = formatF;
 
@@ -94,6 +95,13 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
       }))
       .catch(() => {});
   }, [refCode]);
+  // Relecture du lot 4 (2026-10-03) : sans enseigne, le bandeau disait « Boutique de
+  // Awa D. ». Décision du fondateur sur le nom public : l'enseigne, sinon « La
+  // sélection de Awa D. » (titreVitrine, comme le titre de sa vitrine).
+  const titreRecommandeur = !recommandeur ? ''
+    : !recommandeur.slug ? `Recommandé par ${recommandeur.nom}`
+      : recommandeur.enseigne ? `Boutique de ${recommandeur.enseigne}`
+        : titreVitrine({ type: 'revendeur', nom: recommandeur.nom, enseigne: false });
 
   const [offresGros, setOffresGros] = useState<{ offres: OffreRevendeurVue[]; achatDirect: boolean } | null>(null);
   useEffect(() => {
@@ -278,7 +286,11 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
         {/* Lot 4 du chantier boutique (2026-10-03) : le client revient vers la boutique
             d'où il vient (« Boutique de <enseigne> · Voir sa boutique »), seulement si
             elle est en ligne ; sinon « Recommandé par Awa D. ». Jetons de la charte
-            (plus de classes emerald). */}
+            (plus de classes emerald).
+            Relecture du lot 4 : à 390 px, le nom de la boutique était coupé dès 6 à 7
+            caractères (« Boutique de Awa M… ») : le titre passe sur 2 lignes et, sur
+            téléphone, le lien se réduit à « Voir » (« Voir sa boutique » pour les
+            lecteurs d'écran, et en entier dès la tablette). */}
         {recommandeur && (
           <div className="bg-suguba-sauge border border-suguba-menthe rounded-2xl px-3.5 py-2.5 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
@@ -286,8 +298,8 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
                 {initiale(recommandeur.enseigne || recommandeur.nom)}
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-bold text-suguba-profond truncate">
-                  {recommandeur.slug ? `Boutique de ${recommandeur.enseigne || recommandeur.nom}` : `Recommandé par ${recommandeur.nom}`}
+                <p className="text-xs font-bold text-suguba-profond line-clamp-2 break-words">
+                  {titreRecommandeur}
                 </p>
                 <p className="text-xs text-slate-600">
                   Partenaire revendeur officiel Suguba
@@ -297,9 +309,9 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
             {recommandeur.slug ? (
               <Link
                 href={`/boutique/${encodeURIComponent(recommandeur.slug)}`}
-                className="shrink-0 inline-flex items-center gap-1 min-h-10 px-1 text-sm font-semibold text-suguba-brand-dark underline underline-offset-2"
+                className="shrink-0 inline-flex items-center gap-1 min-h-10 min-w-10 px-1 text-sm font-semibold text-suguba-brand-dark underline underline-offset-2"
               >
-                <Store className="w-4 h-4" aria-hidden="true" />Voir sa boutique
+                <Store className="w-4 h-4" aria-hidden="true" />Voir<span className="sr-only sm:not-sr-only"> sa boutique</span>
               </Link>
             ) : (
               <span className="shrink-0 px-2.5 py-1 rounded-full bg-white text-suguba-profond text-xs font-semibold ring-1 ring-inset ring-suguba-menthe">

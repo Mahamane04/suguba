@@ -230,7 +230,7 @@ export default function MesArticlesPage() {
               <strong className="text-slate-900 tabular-nums">{rangement.coups.length}/{COUPS_DE_COEUR_MAX}</strong> coups de cœur
             </span>
             <BoutonPartageWhatsApp type="button" size="sm" className="ml-auto" libelle="Partager"
-              aria-label="Partager ma boutique sur WhatsApp" aria-haspopup="dialog" onClick={() => setPartage(true)} />
+              aria-label="Partager ma boutique" aria-haspopup="dialog" onClick={() => setPartage(true)} />
           </Card>
 
           {masques > 0 && (

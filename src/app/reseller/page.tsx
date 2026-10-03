@@ -23,7 +23,7 @@ import BoutonPartageWhatsApp from '@/components/ui/BoutonPartageWhatsApp';
 import { initiale } from '@/lib/initiale';
 import { PORTE_MA_BOUTIQUE, sansPrechargement } from '@/lib/reseau/porte-boutique';
 import ListeEtapes from '@/components/reseau/ListeEtapes';
-import { progressionBoutique, type EtapeBoutique } from '@/lib/reseau/etapes-boutique';
+import { prochaineEtape, progressionBoutique, type EtapeBoutique } from '@/lib/reseau/etapes-boutique';
 
 // « Partager ma boutique » (lot 4 du chantier boutique, 2026-10-03) : feuille
 // chargée à la demande, au premier « Partager » (elle embarque le QR).
@@ -464,7 +464,8 @@ function CarteMaBoutique({ boutique, charge }: { boutique: ApercuBoutique | null
   // ouvre directement son outil (panneau de la vitrine ou catalogue).
   const etapes = boutique?.etapes || [];
   const prete = etapes.length ? progressionBoutique(etapes) : null;
-  const prochaine = etapes.find((e) => !e.fait);
+  // Relecture du lot 4 : boutique masquée, « Partager ma boutique » n'est pas proposée.
+  const prochaine = prochaineEtape(etapes, partageable);
   return (
     <section aria-labelledby="ma-boutique-titre" className="bg-white rounded-3xl border border-slate-200 overflow-hidden">
       <div className="relative h-16 bg-suguba-profond" aria-hidden="true">
@@ -524,7 +525,7 @@ function CarteMaBoutique({ boutique, charge }: { boutique: ApercuBoutique | null
             <BoutonPartageWhatsApp
               type="button"
               libelle="Partager"
-              aria-label="Partager ma boutique sur WhatsApp"
+              aria-label="Partager ma boutique"
               aria-haspopup="dialog"
               onPointerDown={() => setFeuilleChargee(true)}
               onClick={() => { setFeuilleChargee(true); setPartage(true); }}

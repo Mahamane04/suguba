@@ -123,6 +123,10 @@ export async function creerLienTracke(params: {
  *
  * Lecture en échec : null, sans rien créer (un doublon vaut mieux pas que
  * deux) ; l'appelant partage alors l'adresse brute.
+ *
+ * `libelle` peut être une fonction (relecture du lot 4, 2026-10-03) : elle n'est
+ * appelée qu'à la création, pour calculer le nom du rayon côté serveur sans
+ * relire la boutique à chaque préparation d'un lien qui existe déjà.
  */
 export async function lienPermanent(params: {
   ownerId: string;
@@ -130,7 +134,7 @@ export async function lienPermanent(params: {
   cible: 'store';
   ref: string;
   canal: CanalPartage;
-  libelle?: string | null;
+  libelle?: string | null | (() => Promise<string | null>);
 }): Promise<{ lien: LienTracke; cree: boolean } | null> {
   const a = admin();
   if (!a || !params.ownerId || !params.ref) return null;
@@ -150,13 +154,17 @@ export async function lienPermanent(params: {
   }
   if (Array.isArray(data) && data[0]) return { lien: versLien(data[0]), cree: false };
 
+  // Libellé illisible : le lien est créé quand même, « Mes partages » lit la clé du rayon.
+  const libelle = typeof params.libelle === 'function'
+    ? await params.libelle().catch(() => null)
+    : params.libelle ?? null;
   const lien = await creerLienTracke({
     ownerId: params.ownerId,
     ownerRole: params.ownerRole ?? null,
     cible: params.cible,
     ref: params.ref,
     canal: params.canal,
-    libelle: params.libelle ?? null,
+    libelle,
   });
   if (!lien) return null;
   await journaliser({

@@ -373,7 +373,7 @@ test('BandeauProprietaire : Partager, Personnaliser, Articles, Outils et « Voir
   const html = renderToStaticMarkup(React.createElement(Bandeau, { identite: identite(), statut: 'active', urlPartage: 'https://app.sugubaml.com/boutique/awa-mode' }));
   // Lot 4 (2026-10-03) : « Partager » ouvre la feuille « Partager ma boutique » (lien
   // suivi, message avec articles) au lieu d'un lien WhatsApp à l'adresse brute.
-  assert.match(html, /<button[^>]*type="button" aria-label="Partager ma boutique sur WhatsApp" aria-haspopup="dialog"[^>]*>[\s\S]*?Partager<\/button>/);
+  assert.match(html, /<button[^>]*type="button" aria-label="Partager ma boutique" aria-haspopup="dialog"[^>]*>[\s\S]*?Partager<\/button>/);
   assert.match(html, /<a href="\/reseller\/boutique"[^>]*>[\s\S]*?Personnaliser<\/span>/);
   // Lot 3 (2026-10-03) : « Articles » ouvre « Mes articles » (il menait au catalogue).
   assert.match(html, /<a href="\/reseller\/boutique\/articles"[^>]*>[\s\S]*?Articles<\/span>/);

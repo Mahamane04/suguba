@@ -198,6 +198,44 @@
  "journal": [
   {
    "date": "2026-10-03",
+   "titre": "Boutique revendeur, lot 4 : corrections de relecture",
+   "demande": "« “Ma boutique” doit montrer la boutique elle-même (logo, couverture, produits ajoutés) et non les réglages ; il veut des outils pour gérer sa boutique (personnalisation, catégories/rayons, produits mis en avant, et ce qui aide à vendre), pour un vrai sentiment d’appropriation. »",
+   "realise": [
+    "Statistiques : en changeant de période (7 ou 30 jours), les chiffres de l’ancienne période ne s’affichent plus sous la nouvelle. Pendant la lecture, la page montre le chargement ; si la lecture échoue (réseau), « Vos statistiques n’ont pas pu être lues » et « Réessayer ». Avant, les visites, commandes et gains des 7 derniers jours restaient affichés, sans message, sous « 30 derniers jours ».",
+    "Conseil des Statistiques : « Vos liens WhatsApp marchent » ne s’affiche plus que si au moins la moitié des visites viennent de ses liens WhatsApp (il s’affichait avec « Liens WhatsApp : 0 » juste en dessous). Sinon : « Imprimez votre carte avec son QR pour vos clients du quartier : chaque scan sera compté ici. »",
+    "Le bas de la page Statistiques le dit : les clients venus par l’ancien lien de boutique (adresse en /r/…) ne sont pas comptés.",
+    "Lien de partage de la boutique : il n’est plus créé par la simple ouverture d’une adresse. Un autre site ne peut plus, en faisant ouvrir cette adresse à un revendeur connecté, créer un lien à son nom avec un libellé choisi par ce site, cocher l’étape « Partager ma boutique » ni compter un partage qui n’a pas eu lieu. Le nom du rayon affiché dans « Mes partages » vient maintenant des articles de la boutique.",
+    "Fiche produit ouverte par le lien d’un revendeur sans nom de boutique : le bandeau dit « La sélection de Awa D. », comme le titre de sa vitrine (il disait « Boutique de Awa D. »). Sur téléphone, le nom de la boutique passe sur 2 lignes au lieu d’être coupé (« Boutique de Awa M… ») et le lien devient « Voir » (« Voir sa boutique » sur tablette et ordinateur, et pour les lecteurs d’écran).",
+    "Bouton « Stats » du bandeau de la vitrine : « 7 j : 1 250 visites », avec l’espace des milliers, comme la page Statistiques.",
+    "Les boutons « Partager » du bandeau de la vitrine, de la carte de l’accueil et de « Mes articles » s’annoncent « Partager ma boutique » aux lecteurs d’écran : ils ouvrent la feuille (WhatsApp, Copier, QR), plus WhatsApp directement.",
+    "Feuille « Partager ma boutique » : l’aperçu du texte s’intitule « Votre message » (il disait « Message envoyé » alors que rien n’est parti avant le toucher de WhatsApp).",
+    "Accueil : quand Suguba a masqué la boutique, la carte « Ma boutique » ne propose plus « Partager ma boutique » comme prochaine étape (le lien ne menait à rien) : elle propose l’étape suivante, ou rien, comme la vitrine.",
+    "Guide : le journal du lot 4 et les fiches de la carte professionnelle et du créateur disent qu’ouvrir « Ma carte & QR » ou choisir la carte « Ma boutique » prépare aussi le lien suivi (étape cochée, ligne « Ma boutique » dans « Mes partages ») ; le journal et la fiche des Statistiques disent que les visites par /r/<code> ne sont pas comptées.",
+    "Tests : tests/ma-boutique-lot4-relecture.test.cjs (9 tests, tous en échec sur le code du lot 4) ; ma-boutique-lot4 et ma-boutique-lot2 adaptés (lien préparé en POST, bandeau de la fiche produit, nom du bouton « Partager »)."
+   ],
+   "ecarts": [
+    "En local sur la branche ux/boutique-revendeur, non publié. Aucune migration.",
+    "13 constats relus, tous fondés ; deux étaient en double (chiffres de l’ancienne période dans Statistiques, conseil « Vos liens WhatsApp marchent »).",
+    "Ouvrir « Ma carte & QR » ou choisir la carte « Ma boutique » dans « Créer un visuel » prépare toujours le lien suivi : l’étape « Partager ma boutique » est cochée et une ligne « Ma boutique » apparaît dans « Mes partages », même si rien n’est encore imprimé ni envoyé. Gardé tel quel (la carte et son QR doivent porter le lien) ; c’est maintenant écrit dans le guide.",
+    "Les visites par l’ancienne adresse /r/<code> ne sont toujours pas comptées : c’est dit au revendeur et dans le guide, pas changé. Les compter aussi serait un choix à faire par le fondateur.",
+    "Fiche produit : avec un nom de boutique choisi, le bandeau garde « Boutique de <enseigne> » (libellé du plan) ; seul le cas sans enseigne suit le titre public « La sélection de Awa D. ».",
+    "Le seuil de « Vos liens WhatsApp marchent » (au moins la moitié des visites) est une règle fixe choisie à la relecture, à valider par le fondateur.",
+    "Un lien de rayon dont aucun article ne porte plus la catégorie est créé sans libellé : « Mes partages » affiche la clé du rayon rendue lisible (« Ma boutique · Electromenager »).",
+    "Captures et vérifications à faire sur la copie locale [QA], à 390 px : Statistiques (passer à 30 jours réseau coupé), fiche produit ouverte par le lien d’un revendeur sans enseigne, puis avec une enseigne longue, carte de l’accueil d’une boutique masquée. Aucun serveur n’a été lancé."
+   ],
+   "pages": [
+    "rev-boutique-stats",
+    "fiche-produit",
+    "vitrine-boutique",
+    "rev-accueil",
+    "rev-partages",
+    "rev-badge",
+    "rev-createur"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-10-03",
    "titre": "Boutique revendeur, lot 4 : partager et mesurer",
    "demande": "« “Ma boutique” doit montrer la boutique elle-même (logo, couverture, produits ajoutés) et non les réglages ; il veut des outils pour gérer sa boutique (personnalisation, catégories/rayons, produits mis en avant, et ce qui aide à vendre), pour un vrai sentiment d’appropriation. »",
    "realise": [
@@ -219,9 +257,10 @@
     "« Commandes à votre nom » et « Gains des ventes livrées » comptent TOUS les liens du revendeur, pas seulement la boutique (le premier revendeur garde son client 30 jours) : ce sont les commandes passées pendant la période, hors annulées ; les gains sont la commission de celles qui sont livrées.",
     "« Articles les plus vus » vient des visites des fiches produit ouvertes par ses liens (mesure déjà en place) : « — » si cette mesure n’existe pas dans la base.",
     "Les visites ne sont comptées qu’à partir de la mise en ligne de ce lot (« Visites mesurées depuis le … »). Ces chiffres ne servent à aucun paiement ni à aucune mission.",
-    "Le lien suivi est préparé dès l’ouverture de la feuille : l’étape « Partager ma boutique » peut être cochée sans que le message ait été envoyé. Si WhatsApp est touché avant que le lien soit prêt, c’est l’adresse de la boutique qui part : la vente reste attribuée, seul le clic n’est pas compté.",
+    "Le lien suivi est préparé dès l’ouverture de la feuille : l’étape « Partager ma boutique » peut être cochée sans que le message ait été envoyé. Il l’est aussi dès l’ouverture de « Ma carte & QR » (le QR de la carte) et dès le choix de la carte « Ma boutique » dans « Créer un visuel » : l’étape est alors cochée et une ligne « Ma boutique » apparaît dans « Mes partages », sans aucun partage (précisé à la relecture). Si WhatsApp est touché avant que le lien soit prêt, c’est l’adresse de la boutique qui part : la vente reste attribuée, seul le clic n’est pas compté.",
     "L’étape de « prête à X % » s’appelle « Partager ma boutique » (le plan disait « Premier partage ») : un libellé d’action, comme les autres étapes.",
     "Origine des visites : seul un lien suivi de la boutique donne « WhatsApp » ou « QR » ; un client arrivé par le lien d’un article, puis passé à la boutique, compte en « adresse directe ».",
+    "Les visites de la vitrine ouverte par l’ancienne adresse /r/<code> ne sont pas comptées (canonical sans redirection, décision du fondateur) : seules comptent /boutique/<adresse> et les liens /go/ qui y mènent. Les anciens partages en /r/ ne remontent donc pas dans les Statistiques (précisé à la relecture).",
     "Bouton « Stats » : le bandeau a maintenant 4 outils (Personnaliser, Articles, Stats, Outils), sur 2 lignes sur téléphone ; « Outils » reste, comme décidé.",
     "La bulle du support Suguba sur /boutique/ (décision du fondateur) n’est pas dans ce lot : elle est prévue au lot 8, avec l’adresse à l’enseigne.",
     "À lancer par le fondateur en production après déploiement, en lecture seule : SELECT count(*) FROM analytics_events WHERE event='STORE_VIEW' AND occurred_at > now() - interval '1 day';",
@@ -2336,7 +2375,7 @@
     },
     {
      "nom": "Boutique de … · Voir sa boutique",
-     "role": "Arrivé par le lien d’un revendeur (lien, boutique /r/ ou /boutique/, même après être passé par l’accueil) : « Boutique de <enseigne> » et « Voir sa boutique », qui ramène à sa boutique, quand elle est en ligne ; sinon « Recommandé par Awa D. » et son code. Jamais le nom complet."
+     "role": "Arrivé par le lien d’un revendeur (lien, boutique /r/ ou /boutique/, même après être passé par l’accueil), quand sa boutique est en ligne : « Boutique de <enseigne> » s’il a choisi un nom de boutique, sinon « La sélection de Awa D. » (comme le titre de sa vitrine), et « Voir sa boutique », qui ramène à sa boutique. Sur téléphone, le lien s’écrit « Voir » et un nom long passe sur 2 lignes. Boutique pas en ligne : « Recommandé par Awa D. » et son code. Jamais le nom complet."
     },
     {
      "nom": "Vendu par nos revendeurs partenaires",
@@ -3470,7 +3509,7 @@
     },
     {
      "nom": "Carte « Ma boutique »",
-     "role": "Sous le solde : couverture, logo, nom public (l’enseigne, ou « Awa D. »), « N articles · N abonnés », « Masquée par Suguba » le cas échéant. Tant qu’elle n’est pas complète : « Ma boutique est prête à X % », sa barre et la prochaine étape (logo, couverture, nom, coup de cœur, partage…), qui ouvre le bon panneau sur la vitrine ou « Mes articles ». « N articles » compte les articles que la vitrine affiche ; « — » si le nombre est illisible. « Voir ma boutique » ouvre la vitrine dans le même onglet ; « Partager » ouvre la feuille « Partager ma boutique » (toute la boutique, coups de cœur ou un rayon, lien suivi ; absent si la boutique est masquée)."
+     "role": "Sous le solde : couverture, logo, nom public (l’enseigne, ou « Awa D. »), « N articles · N abonnés », « Masquée par Suguba » le cas échéant. Tant qu’elle n’est pas complète : « Ma boutique est prête à X % », sa barre et la prochaine étape (logo, couverture, nom, coup de cœur, partage…), qui ouvre le bon panneau sur la vitrine ou « Mes articles ». Boutique masquée par Suguba : « Partager ma boutique » n’est pas proposée comme prochaine étape. « N articles » compte les articles que la vitrine affiche ; « — » si le nombre est illisible. « Voir ma boutique » ouvre la vitrine dans le même onglet ; « Partager » ouvre la feuille « Partager ma boutique » (toute la boutique, coups de cœur ou un rayon, lien suivi ; absent si la boutique est masquée)."
     },
     {
      "nom": "Raccourcis",
@@ -3817,11 +3856,11 @@
     },
     {
      "nom": "Bandeau « Ma boutique » (propriétaire)",
-     "role": "Collé sous l’en-tête : logo, « En ligne » ou « Masquée par Suguba », et « Partager » (absent si la boutique est masquée), qui ouvre la feuille « Partager ma boutique ». Dessous : Personnaliser (réglages), Articles (« Mes articles » : ranger, coups de cœur, retirer), Stats (« 7 j : N visites », « — » si la mesure manque) et Outils (« Tous mes outils »)."
+     "role": "Collé sous l’en-tête : logo, « En ligne » ou « Masquée par Suguba », et « Partager » (absent si la boutique est masquée), qui ouvre la feuille « Partager ma boutique ». Dessous : Personnaliser (réglages), Articles (« Mes articles » : ranger, coups de cœur, retirer), Stats (« 7 j : 1 250 visites », « — » si la mesure manque) et Outils (« Tous mes outils »)."
     },
     {
      "nom": "Partager ma boutique (feuille, propriétaire)",
-     "role": "De gros boutons : toute ma boutique, mes coups de cœur, ou un rayon (avec son nombre d’articles, dès 2 rayons). Message déjà écrit : nom de la boutique, 3 articles avec leur vrai prix, « Vous payez à la livraison », et un lien suivi /go/<code>, toujours le même pour un même choix et un même canal, préparé dès qu’on touche un choix (sinon l’adresse de la boutique). WhatsApp, Copier le lien, QR. Ouverte aussi par ?partager=1 (Mes clients, porte « Ma boutique »)."
+     "role": "De gros boutons : toute ma boutique, mes coups de cœur, ou un rayon (avec son nombre d’articles, dès 2 rayons). Message déjà écrit (aperçu « Votre message ») : nom de la boutique, 3 articles avec leur vrai prix, « Vous payez à la livraison », et un lien suivi /go/<code>, toujours le même pour un même choix et un même canal, préparé dès qu’on touche un choix (sinon l’adresse de la boutique). WhatsApp, Copier le lien, QR. Ouverte aussi par ?partager=1 (Mes clients, porte « Ma boutique »)."
     },
     {
      "nom": "Voir comme un client",
@@ -3918,7 +3957,7 @@
      "libelle": "Fiche produit"
     }
    ],
-   "note": "Capture à refaire sur la copie locale. L’ancienne adresse /r/<code> affiche la même vitrine, sans les éléments du propriétaire, et désigne /boutique/<adresse> comme adresse de référence (sans redirection). Elle reste ouverte quand Suguba a masqué la boutique : sélection sous « Prénom I. », sans logo ni couverture."
+   "note": "Capture à refaire sur la copie locale. L’ancienne adresse /r/<code> affiche la même vitrine, sans les éléments du propriétaire, et désigne /boutique/<adresse> comme adresse de référence (sans redirection) ; ses visites ne sont pas comptées dans les Statistiques. Elle reste ouverte quand Suguba a masqué la boutique : sélection sous « Prénom I. », sans logo ni couverture."
   },
   {
    "id": "rev-boutique",
@@ -4056,11 +4095,11 @@
    "elements": [
     {
      "nom": "7 derniers jours · 30 derniers jours",
-     "role": "Période des chiffres."
+     "role": "Période des chiffres. Pendant la lecture d’une autre période, la page montre le chargement ; si la lecture échoue, « Vos statistiques n’ont pas pu être lues » et « Réessayer » : jamais les chiffres d’une autre période sous l’étiquette cochée."
     },
     {
      "nom": "Visites",
-     "role": "Clients restés au moins 2 secondes sur la boutique, chacun compté une fois par jour ; « N personnes différentes ». Ni le propriétaire ni les aperçus de liens WhatsApp ne comptent."
+     "role": "Clients restés au moins 2 secondes sur la boutique, chacun compté une fois par jour ; « N personnes différentes ». Ni le propriétaire ni les aperçus de liens WhatsApp ne comptent. Les visites de l’ancienne adresse /r/<code> ne sont pas comptées (rappelé en bas de page)."
     },
     {
      "nom": "Commandes à votre nom",
@@ -4072,7 +4111,7 @@
     },
     {
      "nom": "Conseil",
-     "role": "Une phrase à règles fixes selon les chiffres : partager sa boutique, choisir des coups de cœur, imprimer sa carte avec QR…"
+     "role": "Une phrase à règles fixes selon les chiffres : partager sa boutique, choisir des coups de cœur, imprimer sa carte avec QR… « Vos liens WhatsApp marchent » seulement si au moins la moitié des visites viennent de ses liens WhatsApp."
     },
     {
      "nom": "Visites par jour",
@@ -4092,7 +4131,7 @@
     },
     {
      "nom": "Visites mesurées depuis le …",
-     "role": "Date de la première visite mesurée, et rappel de ce qu’est une visite."
+     "role": "Date de la première visite mesurée, rappel de ce qu’est une visite, et « Les clients venus par votre ancien lien de boutique (adresse en /r/…) ne sont pas comptés. »"
     },
     {
      "nom": "Partager ma boutique",
@@ -4313,7 +4352,7 @@
     },
     {
      "nom": "Liens de ma boutique",
-     "role": "« Ma boutique », « Ma boutique · Coups de cœur » ou « Ma boutique · <rayon> » (au lieu de l’adresse brute), avec leurs visites et commandes. Un même partage réutilise le même lien : pas de doublon."
+     "role": "« Ma boutique », « Ma boutique · Coups de cœur » ou « Ma boutique · <rayon> » (au lieu de l’adresse brute), avec leurs visites et commandes. Un même partage réutilise le même lien : pas de doublon. Le nom du rayon vient des articles de la boutique."
     }
    ],
    "suite": [
@@ -4422,7 +4461,7 @@
     },
     {
      "nom": "Ma boutique",
-     "role": "Carte de la boutique (logo, couverture, nom public) avec trois articles : les coups de cœur, puis la suite de la sélection, aux prix affichés dans la boutique. Si tous les articles sont épuisés, la carte les montre, comme la vitrine ; le catalogue seulement quand la vitrine le montre elle-même (sélection vide, ou aucun article encore en vente). Si les articles ne peuvent pas être lus : « Vos articles n’ont pas pu être lus : la carte n’est pas créée. Réessayez. » « Configurer ma boutique » et « Compléter le logo et la couverture » ouvrent le panneau du logo, ou de la couverture, directement sur la vitrine. Si le nom public ne peut pas être lu : « Boutique indisponible », jamais le nom enregistré. Lot 4 : le lien et le QR de la carte sont le lien suivi de la boutique (toujours le même), sinon son adresse."
+     "role": "Carte de la boutique (logo, couverture, nom public) avec trois articles : les coups de cœur, puis la suite de la sélection, aux prix affichés dans la boutique. Si tous les articles sont épuisés, la carte les montre, comme la vitrine ; le catalogue seulement quand la vitrine le montre elle-même (sélection vide, ou aucun article encore en vente). Si les articles ne peuvent pas être lus : « Vos articles n’ont pas pu être lus : la carte n’est pas créée. Réessayez. » « Configurer ma boutique » et « Compléter le logo et la couverture » ouvrent le panneau du logo, ou de la couverture, directement sur la vitrine. Si le nom public ne peut pas être lu : « Boutique indisponible », jamais le nom enregistré. Lot 4 : le lien et le QR de la carte sont le lien suivi de la boutique (toujours le même), sinon son adresse. Choisir la carte « Ma boutique » prépare ce lien : cela coche l’étape « Partager ma boutique » et fait apparaître la ligne « Ma boutique » dans « Mes partages »."
     },
     {
      "nom": "Format",
@@ -4495,7 +4534,7 @@
     },
     {
      "nom": "QR boutique",
-     "role": "Ouvre directement la boutique pour commander. Lot 4 : le QR des nouvelles cartes est un lien suivi (canal QR), toujours le même, dont les scans sont comptés dans « Mes partages » et « Statistiques » ; si le lien n’est pas prêt, l’adresse de la boutique. Boutique illisible : « Ouvrir Ma boutique » à la place du QR. Aucun lien d’inscription présenté comme une boutique."
+     "role": "Ouvre directement la boutique pour commander. Lot 4 : le QR des nouvelles cartes est un lien suivi (canal QR), toujours le même, dont les scans sont comptés dans « Mes partages » et « Statistiques » ; si le lien n’est pas prêt, l’adresse de la boutique. Ouvrir la carte prépare ce lien : cela coche l’étape « Partager ma boutique » et fait apparaître la ligne « Ma boutique » dans « Mes partages », même avant toute impression. Boutique illisible : « Ouvrir Ma boutique » à la place du QR. Aucun lien d’inscription présenté comme une boutique."
     },
     {
      "nom": "Imprimer et partager",

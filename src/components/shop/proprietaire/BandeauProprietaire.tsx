@@ -6,6 +6,7 @@ import { BarChart3, Eye, LayoutGrid, PackagePlus, SlidersHorizontal } from 'luci
 import BoutonPartageWhatsApp from '@/components/ui/BoutonPartageWhatsApp';
 import { StatusPill } from '@/components/ui/Surface';
 import { initiale } from '@/lib/initiale';
+import { formatNombre } from '@/lib/montant';
 import { PAGE_MES_ARTICLES, PAGE_STATISTIQUES } from '@/lib/reseau/porte-boutique';
 import type { ArticlePartage } from '@/lib/partage-boutique';
 import { useProprietaire, type IdentiteVitrine } from './ModeProprietaire';
@@ -82,14 +83,16 @@ export default function BandeauProprietaire({
           <p className="text-sm font-bold text-slate-900 truncate">Ma boutique</p>
           {enLigne ? <StatusPill ton="succes">En ligne</StatusPill> : <StatusPill ton="attente">Masquée par Suguba</StatusPill>}
         </div>
-        {/* Boutique masquée : un lien partagé mènerait le client à une page introuvable. */}
+        {/* Boutique masquée : un lien partagé mènerait le client à une page introuvable.
+            Relecture du lot 4 : le bouton ouvre une feuille (WhatsApp, Copier, QR), son
+            nom n'annonce plus « sur WhatsApp » ; aria-haspopup dit qu'elle s'ouvre. */}
         {enLigne && (
           <BoutonPartageWhatsApp
             type="button"
             size="sm"
             className="shrink-0"
             libelle="Partager"
-            aria-label="Partager ma boutique sur WhatsApp"
+            aria-label="Partager ma boutique"
             aria-haspopup="dialog"
             onClick={ouvrirPartage}
           />
@@ -104,7 +107,8 @@ export default function BandeauProprietaire({
             href={PAGE_STATISTIQUES}
             icone={BarChart3}
             libelle="Stats"
-            detail={`7 j : ${visites7j == null ? '—' : `${visites7j} visite${visites7j > 1 ? 's' : ''}`}`}
+            // formatNombre (relecture du lot 4) : « 1 250 visites », comme la page Statistiques.
+            detail={`7 j : ${visites7j == null ? '—' : `${formatNombre(visites7j)} visite${visites7j > 1 ? 's' : ''}`}`}
           />
           <Outil href="/reseller/outils" icone={LayoutGrid} libelle="Outils" />
         </nav>

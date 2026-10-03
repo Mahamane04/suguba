@@ -92,7 +92,10 @@ export default function CreateurContenusPage() {
   // Lien suivi de la boutique (lot 4, 2026-10-03), préparé dès le choix « Ma boutique ».
   const lienBoutique = useRef<Promise<string | null> | null>(null);
   const lienSuiviBoutique = () => {
-    lienBoutique.current ??= fetch('/api/reseller/boutique/partage?canal=whatsapp', { cache: 'no-store' })
+    // POST depuis la relecture du lot 4 (2026-10-03) : préparer le lien l'écrit en base.
+    lienBoutique.current ??= fetch('/api/reseller/boutique/partage', {
+      method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ canal: 'whatsapp' }),
+    })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => (d?.suivi && typeof d.url === 'string' ? d.url as string : null))
       .catch(() => null)

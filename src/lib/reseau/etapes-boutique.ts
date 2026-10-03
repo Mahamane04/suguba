@@ -76,6 +76,18 @@ export function etapesBoutique(etat: EtatBoutique): EtapeBoutique[] {
   ];
 }
 
+/**
+ * Prochaine étape proposée (carte « Ma boutique » de l'accueil). Relecture du lot 4
+ * (2026-10-03) : une boutique masquée par Suguba ne se partage pas (la vitrine
+ * n'ouvre pas la feuille et le bandeau n'a plus « Partager ») ; « Partager ma
+ * boutique » menait donc à une vitrine où rien ne se passait. Elle n'est plus
+ * proposée tant que la boutique n'est pas en ligne : l'étape suivante, ou rien.
+ * Même règle que la liste de la vitrine (EnteteEditable).
+ */
+export function prochaineEtape<E extends Pick<EtapeBoutique, 'cle' | 'fait'>>(etapes: readonly E[], enLigne: boolean): E | null {
+  return etapes.find((e) => !e.fait && (enLigne || e.cle !== 'partage')) ?? null;
+}
+
 /** Étapes faites, total et pourcentage arrondi (100 seulement quand tout est fait). */
 export function progressionBoutique(etapes: Pick<EtapeBoutique, 'fait'>[]): { faites: number; total: number; pourcentage: number } {
   const total = etapes.length;

@@ -178,46 +178,50 @@ test('lienPermanent : un lien existant (même propriétaire, ref et canal) est r
   assert.deepEqual(ecritures(), []);
 });
 
-// ── Route privée GET /api/reseller/boutique/partage ─────────────────────────
+// ── Route privée POST /api/reseller/boutique/partage ────────────────────────
+// (GET jusqu'à la relecture du lot 4 : préparer le lien l'écrit en base.)
 
-test('GET /api/reseller/boutique/partage : session revendeur, boutique de la SESSION, /go/<code> réutilisé, repli brut', async () => {
-  const { GET } = require('../src/app/api/reseller/boutique/partage/route.ts');
+test('POST /api/reseller/boutique/partage : session revendeur, boutique de la SESSION, /go/<code> réutilisé, repli brut', async () => {
+  const route = require('../src/app/api/reseller/boutique/partage/route.ts');
+  const preparer = (corps = {}) => route.POST(requete('/api/reseller/boutique/partage', { method: 'POST', body: JSON.stringify(corps) }));
   baseAwa();
+  etat.products = [produit('a', { category: 'Pagnes' })];
+  etat.reseller_shop_items = [{ reseller_id: 'rev-1', product_id: 'a', position: 0 }];
   sessionCourante = null;
-  assert.equal((await GET(requete('/api/reseller/boutique/partage'))).status, 401);
+  assert.equal((await preparer()).status, 401);
   sessionCourante = revendeur('rev-1', { role: 'customer', roles: { customer: 'active', reseller: 'active' } });
-  assert.equal((await GET(requete('/api/reseller/boutique/partage'))).status, 401);
+  assert.equal((await preparer()).status, 401);
 
   sessionCourante = revendeur('rev-1');
-  assert.equal((await GET(requete('/api/reseller/boutique/partage?canal=facebook'))).status, 400);
-  assert.equal((await GET(requete('/api/reseller/boutique/partage?rayon=Pagnes'))).status, 400);
+  assert.equal((await preparer({ canal: 'facebook' })).status, 400);
+  assert.equal((await preparer({ rayon: 'Pagnes' })).status, 400);
 
-  let json = await (await GET(requete('/api/reseller/boutique/partage?canal=whatsapp&owner=rev-2'))).json();
+  let json = await (await preparer({ canal: 'whatsapp', owner: 'rev-2' })).json();
   assert.equal(json.suivi, true);
   assert.match(json.url, /^http:\/\/localhost\/go\/[A-Z0-9]{6}$/);
   const premier = json.url;
-  json = await (await GET(requete('/api/reseller/boutique/partage?canal=whatsapp'))).json();
+  json = await (await preparer({ canal: 'whatsapp' })).json();
   assert.equal(json.url, premier, 'un second partage WhatsApp réutilise le même /go/<code>');
   assert.equal(etat.tracking_links.length, 1);
   assert.equal(etat.tracking_links[0].owner_id, 'rev-1');
 
-  // Rayon : ref « slug~cle », libellé gardé pour « Mes partages ».
-  json = await (await GET(requete('/api/reseller/boutique/partage?canal=whatsapp&rayon=pagnes&nom=%3Cb%3EPagnes%3C%2Fb%3E'))).json();
+  // Rayon : ref « slug~cle », libellé tiré des articles de la boutique (jamais de la requête).
+  json = await (await preparer({ canal: 'whatsapp', rayon: 'pagnes', nom: '<b>Pirate</b>' })).json();
   assert.equal(json.suivi, true);
   const rayon = etat.tracking_links.find((l) => l.target_ref === 'awa-mode~pagnes');
   assert.ok(rayon);
-  assert.equal(rayon.label, 'bPagnes/b', 'ni balise ni caractère de contrôle');
+  assert.equal(rayon.label, 'Pagnes', 'le nom réel du rayon, pas celui de la requête');
   assert.equal(etat.analytics_events.filter((e) => e.event === 'SHARE').length, 2, 'SHARE à la création seulement');
 
   // Suivi indisponible : l'adresse brute, jamais d'erreur.
   fautes['tracking_links:select'] = '42P01';
-  json = await (await GET(requete('/api/reseller/boutique/partage?canal=qr&rayon=coups-de-coeur'))).json();
+  json = await (await preparer({ canal: 'qr', rayon: 'coups-de-coeur' })).json();
   assert.deepEqual(json, { url: 'http://localhost/boutique/awa-mode?rayon=coups-de-coeur', suivi: false });
 
   // Boutique masquée : on ne partage pas une page introuvable.
   delete fautes['tracking_links:select'];
   etat.stores[0].status = 'hidden';
-  assert.equal((await GET(requete('/api/reseller/boutique/partage'))).status, 409);
+  assert.equal((await preparer()).status, 409);
 });
 
 // ── Règles pures du partage ─────────────────────────────────────────────────
@@ -641,10 +645,10 @@ test('/api/shop/revendeur : enseigne et adresse de la boutique principale ACTIVE
   assert.deepEqual(ecritures(), []);
   // Bandeau de la fiche produit : « Boutique de <enseigne> · Voir sa boutique », jetons de la charte.
   const fiche = sansCommentaires(lire('src/app/p/[slug]/page.tsx'));
-  assert.match(fiche, /`Boutique de \$\{recommandeur\.enseigne \|\| recommandeur\.nom\}`/);
+  assert.match(fiche, /`Boutique de \$\{recommandeur\.enseigne\}`/);
   assert.match(fiche, /href=\{`\/boutique\/\$\{encodeURIComponent\(recommandeur\.slug\)\}`\}/);
-  assert.match(fiche, /Voir sa boutique/);
-  const bandeau = fiche.slice(fiche.indexOf('{recommandeur && ('), fiche.indexOf('Voir sa boutique') + 400);
+  assert.match(fiche, /Voir<span className="sr-only sm:not-sr-only"> sa boutique<\/span>/);
+  const bandeau = fiche.slice(fiche.indexOf('{recommandeur && ('), fiche.indexOf(' sa boutique</span>') + 400);
   assert.doesNotMatch(bandeau, /emerald/, 'plus de classes emerald');
   assert.match(bandeau, /bg-suguba-sauge/);
 });
@@ -672,7 +676,7 @@ test('Source : la feuille « Partager ma boutique » est branchée partout ; QR 
   assert.match(feuille, /role="radiogroup" aria-label="Que partager \?"/);
   assert.match(feuille, /onPointerDown=\{\(\) => precharger\('whatsapp', c\.cle, true\)\}/, 'lien préchargé au toucher');
   assert.match(feuille, /deja === 'echec' && !toucher/, 'un échec n’est relancé que par un geste, jamais en boucle');
-  assert.match(feuille, /\/api\/reseller\/boutique\/partage\?/);
+  assert.match(feuille, /fetch\('\/api\/reseller\/boutique\/partage', \{\s*method: 'POST'/);
   assert.match(feuille, /adresseBoutique\(/, 'repli sur l’adresse brute');
   assert.match(feuille, /Copier le lien/);
   assert.match(feuille, />QR\s*</);
@@ -691,7 +695,7 @@ test('Source : la feuille « Partager ma boutique » est branchée partout ; QR 
   assert.match(mode, /searchParams\.delete\('partager'\)/);
   // Carte professionnelle : QR en lien suivi de canal « qr », repli sur l'adresse brute.
   const badge = sansCommentaires(lire('src/app/reseller/badge/page.tsx'));
-  assert.match(badge, /\/api\/reseller\/boutique\/partage\?canal=qr/);
+  assert.match(badge, /'\/api\/reseller\/boutique\/partage', \{\s*method: 'POST'[\s\S]*?JSON\.stringify\(\{ canal: 'qr' \}\)/);
   assert.match(badge, /const valeurQr = lienQr \|\| personalCatalogUrl;/);
   assert.match(badge, /<QrCode value=\{valeurQr\}/);
   // Créateur : carte de la boutique en lien suivi.

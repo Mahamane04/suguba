@@ -118,6 +118,12 @@ export function plusVus(lignes: { product_id: string | null }[], nombre = 3): { 
 /**
  * Une phrase de conseil, à règles FIXES, calculée sur les chiffres affichés.
  * Jamais de conseil quand les visites ne sont pas mesurées (null).
+ *
+ * Relecture du lot 4 (2026-10-03) : « Vos liens WhatsApp marchent » s'affichait
+ * sans regarder l'origine des visites, y compris avec « Liens WhatsApp : 0 » juste
+ * en dessous. La phrase n'affirme plus que ce que montrent les chiffres : au moins
+ * la moitié des visites viennent de ses liens WhatsApp. Sinon, le conseil de la
+ * carte avec QR reste, sans rien affirmer sur WhatsApp.
  */
 export function conseilBoutique(s: {
   visites: number | null;
@@ -133,7 +139,23 @@ export function conseilBoutique(s: {
       : 'Des clients visitent votre boutique : partagez un rayon ou vos coups de cœur pour les aider à choisir.';
   }
   if (s.origine && s.origine.qr === 0 && s.visites >= 10) {
-    return 'Vos liens WhatsApp marchent : imprimez aussi votre carte avec son QR pour vos clients du quartier.';
+    return s.origine.whatsapp > 0 && s.origine.whatsapp * 2 >= s.visites
+      ? 'Vos liens WhatsApp marchent : imprimez aussi votre carte avec son QR pour vos clients du quartier.'
+      : 'Imprimez votre carte avec son QR pour vos clients du quartier : chaque scan sera compté ici.';
   }
   return 'Continuez : partagez votre boutique chaque semaine pour garder vos clients.';
+}
+
+/**
+ * Chiffres à afficher pour la période COCHÉE (relecture du lot 4, 2026-10-03).
+ *
+ * Après un changement de période, la page gardait les chiffres de l'ancienne
+ * période sous l'étiquette de la nouvelle : pendant la lecture, et pour de bon si
+ * la lecture échouait (réseau mobile), sans aucun message. Des chiffres de 7 jours
+ * présentés comme ceux de 30 jours sont des chiffres inventés : un résultat ne
+ * s'affiche que si sa période (`jours`, renvoyée par la route) est celle cochée ;
+ * sinon la page montre le chargement ou l'erreur avec « Réessayer ».
+ */
+export function statsDeLaPeriode<T extends { jours: number }>(stats: T | null | undefined, jours: number): T | null {
+  return stats && stats.jours === jours ? stats : null;
 }

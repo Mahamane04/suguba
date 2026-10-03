@@ -133,13 +133,14 @@ export default function PartageBoutique({
     const deja = cache.current.get(cleCache);
     if (deja === 'en_cours' || deja === 'pret' || (deja === 'echec' && !toucher)) return;
     cache.current.set(cleCache, 'en_cours');
-    const parametres = new URLSearchParams({ canal });
-    if (cle) {
-      parametres.set('rayon', cle);
-      const libelle = listeChoix.find((c) => c.cle === cle)?.libelle;
-      if (libelle && cle !== RAYON_COUPS_DE_COEUR) parametres.set('nom', libelle);
-    }
-    fetch(`/api/reseller/boutique/partage?${parametres.toString()}`, { cache: 'no-store' })
+    // Relecture du lot 4 (2026-10-03) : POST (créer un lien n'est pas une lecture),
+    // et plus de nom de rayon envoyé : le serveur le tire des articles de la boutique.
+    fetch('/api/reseller/boutique/partage', {
+      method: 'POST',
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cle ? { canal, rayon: cle } : { canal }),
+    })
       .then((r) => (r.ok ? r.json() : null))
       .catch(() => null)
       .then((d) => {
@@ -149,7 +150,7 @@ export default function PartageBoutique({
         setUrls((u) => ({ ...u, [cleCache]: url || adresseBoutique(window.location.origin, slug, cle) }));
         if (d?.suivi) onLienPret?.();
       });
-  }, [slug, enLigne, listeChoix, onLienPret]);
+  }, [slug, enLigne, onLienPret]);
 
   // À l'ouverture et à chaque choix : le lien WhatsApp se prépare tout de suite.
   useEffect(() => {
@@ -236,7 +237,9 @@ export default function PartageBoutique({
           </div>
 
           <div className="space-y-1.5">
-            <p className="text-xs font-semibold text-slate-600">Message envoyé</p>
+            {/* Relecture du lot 4 : « Message envoyé » faisait croire que le message
+                était déjà parti ; rien ne part avant le toucher de WhatsApp. */}
+            <p className="text-xs font-semibold text-slate-600">Votre message</p>
             <p className="whitespace-pre-line break-words rounded-2xl bg-slate-50 border border-slate-200 p-3 text-sm text-slate-800">{texte}</p>
           </div>
 

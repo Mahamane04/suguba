@@ -45,7 +45,10 @@ export default function ResellerBadgePage() {
   useEffect(() => {
     if (!boutique) return;
     let annule = false;
-    fetch('/api/reseller/boutique/partage?canal=qr', { cache: 'no-store' })
+    // POST depuis la relecture du lot 4 (2026-10-03) : préparer le lien l'écrit en base.
+    fetch('/api/reseller/boutique/partage', {
+      method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ canal: 'qr' }),
+    })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (!annule && typeof d?.url === 'string' && d.url) setLienQr(d.url); })
       .catch(() => undefined);
