@@ -5,10 +5,15 @@ import { useFieldContext } from './Field';
 
 export interface Choix { valeur: string; libelle: string; detail?: string; groupe?: string }
 /** Sélection seule : le focus reste sur le champ, l’option active est annoncée. */
-export default function ChoicePicker({ id, valeur, choix, onChange, placeholder = 'Choisir…', invalide = false, ariaLabel, className = '', triggerClassName = '', prefixe }: {
+export default function ChoicePicker({ id, valeur, choix, onChange, placeholder = 'Choisir…', invalide = false, ariaLabel, className = '', triggerClassName = '', prefixe, nu = false, rendu, listeClassName = '' }: {
   id?: string; valeur: string; choix: Choix[]; onChange: (valeur: string) => void;
   placeholder?: string; invalide?: boolean; ariaLabel?: string; className?: string;
   triggerClassName?: string; prefixe?: string;
+  /** Déclencheur sans habillage de champ (bordure, fond, hauteur) : l'appelant le dessine. */
+  nu?: boolean;
+  /** Contenu du déclencheur à la place du libellé + chevron par défaut. */
+  rendu?: (selection: Choix | undefined, ouvert: boolean) => React.ReactNode;
+  listeClassName?: string;
 }) {
   const generated = useId(); const field = useFieldContext();
   const controlId = id || field?.id || generated;
@@ -51,12 +56,16 @@ export default function ChoicePicker({ id, valeur, choix, onChange, placeholder 
       aria-controls={listId} aria-expanded={ouvert} aria-activedescendant={ouvert && choix[actif] ? `${listId}-${actif}` : undefined}
       aria-invalid={invalide || field?.invalid} aria-required={field?.required} aria-describedby={field?.description} aria-label={ariaLabel}
       onClick={()=>ouvert?setOuvert(false):ouvrir()} onKeyDown={surTouche} onBlur={()=>setOuvert(false)}
-      className={`w-full min-h-12 flex items-center justify-between gap-2 border rounded-2xl px-3.5 text-base sm:text-sm text-left focus:outline-none focus:ring-2 focus:ring-suguba-profond focus:border-suguba-profond ${invalide || field?.invalid?'border-rose-500':'border-slate-200'} ${triggerClassName || 'bg-white text-slate-900'}`}>
-      <span className="min-w-0">{prefixe && <span className="block text-xs font-semibold">{prefixe}</span>}<span className="block truncate">{selection?.libelle || placeholder}{selection?.detail && <span> · {selection.detail}</span>}</span></span>
-      <ChevronDown aria-hidden="true" className={`w-4 h-4 shrink-0 ${ouvert?'rotate-180':''}`} />
+      className={nu
+        ? `w-full flex items-center gap-2 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-suguba-citron ${invalide || field?.invalid ? 'ring-2 ring-rose-400' : ''} ${triggerClassName}`
+        : `w-full min-h-12 flex items-center justify-between gap-2 border rounded-2xl px-3.5 text-base sm:text-sm text-left focus:outline-none focus:ring-2 focus:ring-suguba-profond focus:border-suguba-profond ${invalide || field?.invalid?'border-rose-500':'border-slate-200'} ${triggerClassName || 'bg-white text-slate-900'}`}>
+      {rendu ? rendu(selection, ouvert) : <>
+        <span className="min-w-0">{prefixe && <span className="block text-xs font-semibold">{prefixe}</span>}<span className="block truncate">{selection?.libelle || placeholder}{selection?.detail && <span> · {selection.detail}</span>}</span></span>
+        <ChevronDown aria-hidden="true" className={`w-4 h-4 shrink-0 ${ouvert?'rotate-180':''}`} />
+      </>}
     </button>
     <ul id={listId} role="listbox" aria-label={ariaLabel || 'Choix disponibles'} hidden={!ouvert}
-      className="absolute z-30 mt-1.5 w-full min-w-0 max-h-72 overflow-y-auto bg-white border border-slate-200 rounded-2xl shadow-float p-1.5">
+      className={`absolute z-30 mt-1.5 w-full min-w-0 max-h-72 overflow-y-auto bg-white border border-slate-200 rounded-2xl shadow-float p-1.5 ${listeClassName}`}>
       {choix.map((c,i)=><React.Fragment key={c.valeur}>
         {c.groupe && c.groupe!==choix[i-1]?.groupe && <li role="presentation" className="px-3 pt-2 pb-1 text-xs font-bold text-slate-600">{c.groupe}</li>}
         <li id={`${listId}-${i}`} role="option" aria-selected={valeur===c.valeur}

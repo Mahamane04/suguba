@@ -1,5 +1,5 @@
 {
- "majLe": "2026-10-02",
+ "majLe": "2026-10-03",
  "roles": [
   {
    "cle": "visiteur",
@@ -196,6 +196,28 @@
   }
  ],
  "journal": [
+  {
+   "date": "2026-10-03",
+   "titre": "Sélecteur « Mon quartier » redessiné",
+   "demande": "« refaire les design cette bouton » (capture de l’accueil, pastille « Mon quartier » et cible de localisation entourées)",
+   "realise": [
+    "Une seule pilule à la place d’un cadre carré à deux lignes et d’une cible GPS isolée sans fond : même forme et même hauteur (48 px) que « Boutiques » à côté.",
+    "Repère citron à gauche, « Mon quartier » en petit, le quartier en gras ; tant qu’aucun quartier n’est choisi, « Choisir » est en citron pour inviter à toucher.",
+    "La localisation (« Utiliser ma position actuelle ») est rangée dans la même pilule, derrière un séparateur, avec une cible de 40 px.",
+    "Liste des quartiers au moins aussi large que 16 rem (elle prenait la largeur de la pastille). Nom complet en infobulle quand il est coupé.",
+    "« Boutiques » passe à la même hauteur que la pilule, texte un cran plus grand.",
+    "Même pilule sur la page des boutiques. Les champs « Quartier » des formulaires ne changent pas."
+   ],
+   "ecarts": [
+    "Sur un téléphone de 375 px, un nom très long (« Boulkassoumbougou ») est coupé dans la pilule ; il reste lisible en entier juste en dessous (« Boulkassoumbougou et alentours ») et sur la page des boutiques.",
+    "Vérifié dans le navigateur à 375 px et sur ordinateur (accueil et page des boutiques, liste ouverte, quartier choisi). Aucune migration."
+   ],
+   "pages": [
+    "accueil",
+    "boutiques-quartier"
+   ],
+   "statut": "en local"
+  },
   {
    "date": "2026-10-02",
    "titre": "Captures du guide refaites",
@@ -1822,7 +1844,7 @@
    "elements": [
     {
      "nom": "Mon quartier",
-     "role": "Pastille en haut à gauche. Choisir son quartier (ou « Utiliser ma position »). Sert à afficher les boutiques proches, et pré-remplit le quartier lors d’une commande."
+     "role": "Pilule en haut à gauche : repère citron, « Mon quartier » puis le quartier choisi en gras (« Choisir » en citron tant qu’il n’y en a pas). Toucher la pilule ouvre la liste des quartiers ; la cible à droite, dans la même pilule, utilise la position du téléphone. Sert à afficher les boutiques proches, et pré-remplit le quartier lors d’une commande. Même pilule sur la page des boutiques."
     },
     {
      "nom": "Boutiques",

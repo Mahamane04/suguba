@@ -133,9 +133,9 @@ export default function HomePage() {
               />
               <Link
                 href={quartierSitue ? `/boutiques?quartier=${encodeURIComponent(quartierSitue)}` : '/boutiques'}
-                className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-white text-suguba-profond text-xs font-bold px-3.5 min-h-[40px] hover:bg-emerald-50 transition-colors"
+                className="shrink-0 inline-flex items-center gap-1.5 rounded-full bg-white text-suguba-profond text-sm font-bold px-4 h-12 hover:bg-suguba-menthe transition-colors"
               >
-                <Store className="w-3.5 h-3.5" />
+                <Store className="w-4 h-4" />
                 Boutiques<span className="hidden sm:inline"> proches</span>
               </Link>
             </div>
