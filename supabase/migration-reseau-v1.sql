@@ -47,7 +47,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS stores_owner_key ON public.stores (owner_type,
 ALTER TABLE public.stores ENABLE ROW LEVEL SECURITY;
 
 COMMENT ON COLUMN public.stores.slug IS
-  'Adresse publique /boutique/<slug>. Attribuée une fois, jamais modifiée : elle circule dans des liens déjà partagés.';
+  'Adresse publique /boutique/<slug>. Ne suit pas le nom de la boutique : elle circule dans des liens déjà partagés. Depuis le 2026-10-03 (A-EXECUTER-2026-10-03-vitrine-boutique.sql), son propriétaire peut la changer UNE fois ; l''ancienne adresse redirige vers la nouvelle.';
 
 -- Galerie et recrutement côté fournisseur (§ 7 et § 18) : les fournisseurs
 -- existants gardent leur fiche `suppliers`, la boutique la complète.

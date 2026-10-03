@@ -198,6 +198,41 @@
  "journal": [
   {
    "date": "2026-10-03",
+   "titre": "Boutique revendeur, lot 8 : adresse à l’enseigne et contact",
+   "demande": "« “Ma boutique” doit montrer la boutique elle-même (logo, couverture, produits ajoutés) et non les réglages ; il veut des outils pour gérer sa boutique (personnalisation, catégories/rayons, produits mis en avant, et ce qui aide à vendre), pour un vrai sentiment d’appropriation. »",
+   "realise": [
+    "Adresse de ma boutique (nouvelle section de « Personnaliser », visible après le SQL du lot 6) : le revendeur donne à sa boutique une adresse à son enseigne — app.sugubaml.com/boutique/awa-mode au lieu de …/boutique/awa-traore-diallo, tirée de son nom complet au premier accès. UNE seule fois, selon votre décision. Le champ accepte ce qu’il tape (« Awa Mode ») et « Vos clients ouvriront : … » montre aussitôt l’adresse exacte. Si la boutique a un nom d’enseigne, son adresse est proposée d’office.",
+    "L’avertissement est écrit avant le bouton, puis redit dans la confirmation : « Une seule fois. Vous ne pourrez plus changer d’adresse ensuite, ni revenir à l’ancienne. Votre ancienne adresse et vos QR codes déjà partagés continuent d’ouvrir votre boutique. » « Changer mon adresse » vérifie d’abord que l’adresse est libre, puis demande « Changer l’adresse de votre boutique ? » (Changer / Garder l’actuelle).",
+    "Refusés, avec la raison sous le champ : une adresse déjà prise — y compris l’ancienne adresse d’une boutique qui a changé —, moins de 3 caractères, une adresse sans lettre, une adresse réservée à Suguba (« suguba », « admin », « support »…), un numéro de téléphone, et l’adresse que la boutique porte déjà.",
+    "Après le changement : le lien, le QR code et l’adresse affichés dans « Personnaliser » portent la nouvelle adresse sans recharger la page ; la section dit « Adresse changée », rappelle l’ancienne, et ne propose plus rien. Un second changement est refusé par la base elle-même, même demandé deux fois en même temps.",
+    "L’ancienne adresse redirige pour toujours vers la nouvelle, en gardant le rayon visé, le code du revendeur et le lien suivi : un QR imprimé, un lien /go/<code> ou un message WhatsApp d’avant le changement ouvrent la boutique, la vente reste attribuée au revendeur et la visite comptée. « Suivre » et les notifications déjà envoyées aux abonnés continuent de mener à la boutique.",
+    "Une adresse déjà portée n’est jamais redonnée : une nouvelle boutique (première boutique d’un compte ou boutique supplémentaire) dont le nom donnerait l’ancienne adresse d’une autre reçoit « -2 ». Sinon elle capterait ses anciens liens et QR codes.",
+    "Contact sur la vitrine (votre décision) : la bulle verte « Besoin d’aide ? » du support Suguba s’affiche maintenant sur /boutique/<adresse>, comme sur /r/ et /s/ ; le client n’y avait aucun contact. Elle ouvre WhatsApp avec Suguba (+223 89 46 00 00), jamais avec le revendeur. Pour un revendeur, un fournisseur ou un livreur connecté, dont la barre du bas reste affichée sur tablette et ordinateur, la bulle reste au-dessus de la barre : à partir de 768 px, elle se posait sur le dernier onglet (défaut déjà présent sur /r/ et /s/).",
+    "Avant le SQL, rien ne change : pas de section « Adresse de ma boutique », aucune requête de plus, une adresse inconnue reste « page introuvable », les boutiques se créent comme avant. Sous l’adresse, « Personnaliser » écrit « Ne change pas avec le nom » (avant : « Ne change jamais ») ; après le SQL, « Modifiable une fois, plus bas », puis « Changée une fois : définitive ».",
+    "Tests : tests/ma-boutique-lot8.test.cjs (27 tests, dont 18 en échec sans ce lot). Trois d’entre eux exécutent le vrai fichier SQL dans une base PostgreSQL locale : changement, second changement refusé, adresse prise refusée, nouvelle boutique sur une ancienne adresse, et base sans le fichier. 2 vérifications du lot 6 adaptées."
+   ],
+   "ecarts": [
+    "En local sur la branche ux/boutique-revendeur, non publié. Aucun nouveau fichier SQL : la liste des anciennes adresses et la fonction du changement sont dans supabase/A-EXECUTER-2026-10-03-vitrine-boutique.sql, livré au lot 6. Tant que vous ne l’avez pas exécuté (Supabase › SQL Editor, copie locale isolée puis production), la section « Adresse de ma boutique » n’apparaît pas. Si vous l’avez déjà exécuté, rien à relancer : ce lot n’y ajoute qu’un commentaire sur la colonne de l’adresse (le relancer reste sans risque).",
+    "WhatsApp du revendeur : PAS fait, selon votre décision (« pas tout de suite »). Ni champ « Mon numéro WhatsApp », ni bouton « Écrire à <enseigne> » ; le numéro d’un revendeur n’apparaît nulle part sur sa vitrine, et un numéro de téléphone est refusé dans l’adresse. À rouvrir si vous acceptez le risque de vente hors plateforme.",
+    "Redirection « permanente » de l’ancienne adresse : à vérifier sur la copie locale [QA] avec un vrai téléphone. Next.js envoie cette page par morceaux : selon le moment, le navigateur reçoit une vraie redirection permanente (code 308) ou la même redirection exécutée dans la page (code 200, puis saut immédiat vers la nouvelle adresse). Dans les deux cas le client arrive à la nouvelle adresse. Aucun serveur n’a été lancé pour ce lot : ce point n’a pas pu être observé.",
+    "Boutique masquée par Suguba : son ancienne adresse affiche « page introuvable », comme la nouvelle pour un client (pas de redirection permanente vers une page introuvable, que les navigateurs garderaient). La redirection reprend dès que la boutique est de nouveau en ligne. Le revendeur peut changer d’adresse même quand sa boutique est masquée. À valider par vous.",
+    "Boutique principale seulement. Une boutique supplémentaire (formule Pro) n’a pas cette section : elle n’a pas « Personnaliser » (écart déjà noté au lot 7), et son adresse vient du nom choisi à sa création. Côté fournisseur : rien, hors de ce chantier.",
+    "Mes partages : les liens suivis créés avant le changement restent listés et continuent de compter leurs clics ; le premier partage suivant crée un nouveau lien pour la nouvelle adresse. Deux lignes « Ma boutique » peuvent donc coexister ; elles ne sont pas fusionnées.",
+    "Adresse proposée : seulement à partir d’un vrai nom d’enseigne. Si la boutique porte encore le nom du revendeur (« Awa D. »), le champ est vide et il écrit son adresse : le changement unique ne se gaspille pas sur « awa-d ». Choix non prévu au plan, à valider par vous.",
+    "/r/<code> : inchangé, selon votre décision — il désigne /boutique/<adresse> comme adresse de référence (la nouvelle, après un changement), sans redirection.",
+    "À décider : faut-il dire au revendeur qu’il peut changer d’adresse (carte sur l’accueil, ou étape de « Ma boutique est prête à X % ») ? Aujourd’hui la section ne se trouve que dans « Personnaliser », signalée par « Modifiable une fois, plus bas » sous l’adresse.",
+    "Captures et vérifications à faire sur la copie locale [QA], à 390 px, après le SQL : section « Adresse de ma boutique » (proposition, aperçu, avertissement, confirmation, puis « Adresse changée ») ; ancien QR scanné avec un téléphone ; /r/<code> et /go/<code> ; bulle « Besoin d’aide ? » sur /boutique/ pour un client, pour le propriétaire et en vue client — vérifier qu’elle ne gêne ni la pastille « Vue client · Revenir » ni les cartes d’articles."
+   ],
+   "pages": [
+    "rev-boutique",
+    "vitrine-boutique",
+    "mes-boutiques",
+    "rev-demarrer"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-10-03",
    "titre": "Boutique revendeur, lot 7 : corrections de relecture",
    "demande": "« “Ma boutique” doit montrer la boutique elle-même (logo, couverture, produits ajoutés) et non les réglages ; il veut des outils pour gérer sa boutique (personnalisation, catégories/rayons, produits mis en avant, et ce qui aide à vendre), pour un vrai sentiment d’appropriation. »",
    "realise": [
@@ -315,7 +350,7 @@
    "ecarts": [
     "En local sur la branche ux/boutique-revendeur, non publié.",
     "SQL À LANCER PAR LE FONDATEUR : supabase/A-EXECUTER-2026-10-03-vitrine-boutique.sql, dans Supabase › SQL Editor — d’abord sur la copie locale isolée, puis en production —, suivi des 4 vérifications écrites en bas du fichier (attendu : 1 ligne ; store_slug_aliases ; false | false ; 0). Son effet : la tuile « Rayons », la page « Mes rayons » et le champ « Annonce sur ma boutique » apparaissent pour les revendeurs. Tant qu’il n’est pas exécuté, rien de cela n’est visible, et rien n’est en panne.",
-    "Changement d’adresse : le fichier crée la liste des anciennes adresses et la fonction qui fait le changement (décision du fondateur : oui, une seule fois, l’ancienne adresse redirige), mais aucun écran ne s’en sert encore — c’est le lot 8. Si le fondateur revenait sur cette décision, le bloc 2 du fichier se retire sans rien changer au reste.",
+    "Changement d’adresse : le fichier crée la liste des anciennes adresses et la fonction qui fait le changement (décision du fondateur : oui, une seule fois, l’ancienne adresse redirige), mais aucun écran ne s’en servait à ce lot : il est livré au lot 8 (section « Adresse de ma boutique » de « Personnaliser »). Si le fondateur revenait sur cette décision, le bloc 2 du fichier se retire sans rien changer au reste.",
     "Le lien d’un rayon (?rayon=…) est tiré de son nom, par la même règle que les rayons automatiques du lot 4 (le plan disait « slugifier », réservé au serveur). Renommer un rayon change donc son lien : un ancien lien ouvre alors la boutique en haut de page. La feuille « Modifier le rayon » le dit.",
     "Un rayon qui porte le nom d’une catégorie (un rayon « Mode » alors que des articles sont de catégorie « Mode ») réunit ses articles cochés ET les autres articles de cette catégorie : la vitrine n’affiche jamais deux rayons du même nom. Choix non prévu au plan, à valider par le fondateur.",
     "Un article en coup de cœur reste affiché dans « Coups de cœur », pas dans son rayon (règle du lot 3). Un rayon dont tous les articles sont en coups de cœur ou ne s’affichent plus n’apparaît pas sur la vitrine ; « Mes rayons » le signale (« Pas affiché »).",
@@ -3689,7 +3724,7 @@
     },
     {
      "nom": "Nom de votre boutique",
-     "role": "Crée la boutique avec ce nom, dont l’adresse est tirée (/boutique/awa-mode) ; si elle existe déjà, la renomme sans changer l’adresse. Rien n’est créé avant cette étape. Sans enseigne choisie, le champ part vide (« Revendeur Suguba » compris). Un nom réservé à Suguba est refusé avec un message ; son propre nom est enregistré en « Awa D. »."
+     "role": "Crée la boutique avec ce nom, dont l’adresse est tirée (/boutique/awa-mode) ; si elle existe déjà, la renomme sans changer l’adresse. Rien n’est créé avant cette étape. Sans enseigne choisie, le champ part vide (« Revendeur Suguba » compris). Un nom réservé à Suguba est refusé avec un message ; son propre nom est enregistré en « Awa D. ». Une adresse déjà portée par une autre boutique, aujourd’hui ou avant un changement d’adresse, n’est jamais donnée : la nouvelle reçoit « -2 ». L’adresse se change ensuite une seule fois, dans « Personnaliser » (après le SQL du lot 6)."
     },
     {
      "nom": "Dernière étape",
@@ -4164,6 +4199,14 @@
     {
      "nom": "Aperçu de lien",
      "role": "Titre : l’enseigne (et le rayon pour un lien de rayon) ; description : le mot d’accueil ; image : la couverture, sinon le logo. Adresse de référence : /boutique/<adresse>."
+    },
+    {
+     "nom": "Ancienne adresse (après un changement)",
+     "role": "Quand le revendeur a changé l’adresse de sa boutique (une seule fois, dans « Personnaliser »), l’ancienne adresse redirige pour toujours vers la nouvelle, en gardant le rayon visé (?rayon=), le code du revendeur (?ref=) et le lien suivi (?via=) : anciens QR codes, liens /go/<code> et messages WhatsApp ouvrent la boutique, la vente reste attribuée. Boutique masquée par Suguba : l’ancienne adresse affiche la page introuvable."
+    },
+    {
+     "nom": "Besoin d’aide ? (support Suguba)",
+     "role": "Bulle verte en bas à droite, comme sur /r/ et /s/. Elle propose « Aide pour commander », « Devenir Revendeur rémunéré » et « Suivre mon colis / SAV », qui ouvrent WhatsApp avec le support Suguba (+223 89 46 00 00). Jamais le numéro du revendeur : il n’apparaît nulle part sur la vitrine. Le propriétaire la voit aussi, toujours au-dessus de sa barre du bas (téléphone, tablette et ordinateur)."
     }
    ],
    "suite": [
@@ -4200,14 +4243,14 @@
      "libelle": "Mes boutiques"
     }
    ],
-   "note": "Capture à refaire sur la copie locale. L’ancienne adresse /r/<code> affiche la même vitrine, sans les éléments du propriétaire, et désigne /boutique/<adresse> comme adresse de référence (sans redirection) ; ses visites ne sont pas comptées dans les Statistiques. Elle reste ouverte quand Suguba a masqué la boutique : sélection sous « Prénom I. », sans logo ni couverture."
+   "note": "Capture à refaire sur la copie locale. L’ancien lien /r/<code> affiche la même vitrine, sans les éléments du propriétaire, et désigne /boutique/<adresse> comme adresse de référence (sans redirection) ; ses visites ne sont pas comptées dans les Statistiques. Elle reste ouverte quand Suguba a masqué la boutique : sélection sous « Prénom I. », sans logo ni couverture."
   },
   {
    "id": "rev-boutique",
    "role": "revendeur",
    "titre": "Personnaliser ma boutique",
    "chemin": "/reseller/boutique",
-   "but": "Les réglages de la vitrine /boutique/ : couverture, logo, photos de la boutique, nom, mot d’accueil, présentation, quartier et familles vendues, avec le lien et le QR code à partager. « Ma boutique » ouvre la vitrine elle-même ; on arrive ici par « Personnaliser ».",
+   "but": "Les réglages de la vitrine /boutique/ : couverture, logo, photos de la boutique, nom, mot d’accueil, présentation, quartier et familles vendues, avec le lien et le QR code à partager, et l’adresse de la boutique (modifiable une seule fois, après le SQL du lot 6). « Ma boutique » ouvre la vitrine elle-même ; on arrive ici par « Personnaliser ».",
    "elements": [
     {
      "nom": "Voir ma boutique",
@@ -4219,7 +4262,7 @@
     },
     {
      "nom": "Abonnés · Adresse",
-     "role": "L’adresse complète (app.sugubaml.com/boutique/…), qui ne change jamais."
+     "role": "Le nombre d’abonnés, et l’adresse complète (app.sugubaml.com/boutique/…). Sous l’adresse : « Ne change pas avec le nom » ; après le SQL du lot 6, « Modifiable une fois, plus bas », puis « Changée une fois : définitive »."
     },
     {
      "nom": "Lien / QR",
@@ -4250,6 +4293,10 @@
      "role": "Après le SQL du lot 6 seulement : « Gérer mes rayons » ouvre la page où créer ses rayons et choisir leur ordre."
     },
     {
+     "nom": "Adresse de ma boutique",
+     "role": "Après le SQL du lot 6 seulement. Donner à la boutique une adresse à son enseigne (…/boutique/awa-mode), une seule fois. Le champ accepte ce qu’on tape (« Awa Mode ») ; « Vos clients ouvriront : … » montre l’adresse exacte ; avec un nom d’enseigne, son adresse est déjà proposée. Encadré ambre : « Une seule fois. Vous ne pourrez plus changer d’adresse ensuite, ni revenir à l’ancienne. Votre ancienne adresse et vos QR codes déjà partagés continuent d’ouvrir votre boutique. » « Changer mon adresse » vérifie qu’elle est libre, puis demande confirmation (Changer / Garder l’actuelle). Refusés, avec la raison sous le champ : adresse déjà prise (même l’ancienne adresse d’une autre boutique), moins de 3 caractères, sans lettre, réservée à Suguba, numéro de téléphone. Ensuite : « Adresse changée », avec le rappel de l’ancienne adresse, et plus rien à faire ; le lien et le QR de la page portent la nouvelle adresse."
+    },
+    {
      "nom": "Barre d’enregistrement",
      "role": "Apparaît dès qu’un texte ou une famille change : « Non enregistré », Annuler, Enregistrer ; puis « Boutique mise à jour ». Reste au-dessus de la barre du bas, aussi sur tablette et ordinateur."
     }
@@ -4268,7 +4315,7 @@
      "libelle": "Gérer mes rayons"
     }
    ],
-   "note": "Le compte démo n’a pas de vrai profil : la capture montre « Boutique pas encore disponible ». Avec un vrai compte, la boutique se crée à la première ouverture, au nom « Prénom I. ». Capture d’avant le lot 2 (photos, familles et barre d’enregistrement absentes).",
+   "note": "Le compte démo n’a pas de vrai profil : la capture montre « Boutique pas encore disponible ». Avec un vrai compte, la boutique se crée à la première ouverture, au nom « Prénom I. ». Capture d’avant le lot 2 (photos, familles et barre d’enregistrement absentes). La section « Adresse de ma boutique » (lot 8) n’y figure pas non plus : capture à refaire sur la copie locale.",
    "capture": {
     "chemin": "/reseller/boutique"
    }
@@ -4557,7 +4604,7 @@
     },
     {
      "nom": "Créer une boutique",
-     "role": "Nom et quartier, dans la limite de la formule. Pour un revendeur, un nom réservé à Suguba (« Suguba », « Admin »…) est refusé ; aucune boutique ne reçoit une adresse réservée (/boutique/suguba…)."
+     "role": "Nom et quartier, dans la limite de la formule. Pour un revendeur, un nom réservé à Suguba (« Suguba », « Admin »…) est refusé ; aucune boutique ne reçoit une adresse réservée (/boutique/suguba…). Elle ne reçoit jamais non plus l’ancienne adresse d’une boutique qui a changé d’adresse : son adresse porte alors « -2 »."
     },
     {
      "nom": "Choisir les articles",

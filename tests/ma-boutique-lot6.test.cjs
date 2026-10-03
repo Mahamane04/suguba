@@ -545,7 +545,9 @@ test('SQL (texte) : droits retirés à PUBLIC, anon et authenticated pour la tab
 
 test('APRÈS : PATCH {reglages: {rayons}} n’écrit que stores.reglages ; articles filtrés par la sélection de la SESSION ; reseller_shop_items jamais touché', async () => {
   baseAwa({ migree: true, reglages: { annonce: { texte: 'Bonjour', fin: jour(5) } } });
-  assert.deepEqual((await (await lireBoutique()).json()).options, { reglages: true, adresse: false });
+  // Lot 8 (2026-10-03) : le même fichier SQL crée la table des anciennes adresses ;
+  // `adresse` (faux jusqu'au lot 7) dit maintenant que le changement d'adresse est permis.
+  assert.deepEqual((await (await lireBoutique()).json()).options, { reglages: true, adresse: true });
 
   operations = [];
   const selectionAvant = JSON.stringify(etat.reseller_shop_items);
@@ -557,7 +559,7 @@ test('APRÈS : PATCH {reglages: {rayons}} n’écrit que stores.reglages ; artic
   const json = await reponse.json();
   const attendus = [{ cle: 'pagnes', nom: 'Pagnes', ids: ['p1', 'p2', 'p3'] }, { cle: 'pour-la-fete', nom: 'Pour la fête', ids: ['c2'] }];
   assert.deepEqual(json.boutique.reglages.rayons, attendus, 'l’article de Moussa et l’inconnu sont retirés ; p1 reste dans son premier rayon');
-  assert.deepEqual(json.options, { reglages: true, adresse: false });
+  assert.deepEqual(json.options, { reglages: true, adresse: true });
   assert.deepEqual(reglagesDe().rayons, attendus);
   assert.deepEqual(reglagesDe().annonce, { texte: 'Bonjour', fin: jour(5) }, 'l’annonce n’est pas effacée par les rayons');
   // Une seule écriture : un UPDATE de stores, avec seulement la date et les réglages.

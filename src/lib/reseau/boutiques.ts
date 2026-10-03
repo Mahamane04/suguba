@@ -10,11 +10,22 @@ import { adresseReservee, nomPublicBoutique } from '../enseigne';
 import { cleClient } from './attribution';
 import { classerParProximite, quartierReconnu, type NiveauProximite } from './proximite';
 import { OPTION_ABSENTE, lireReglages, normaliserReglages, type ReglagesBoutique } from '../boutique-reglages';
+import { adresseBienFormee, adresseDepuis, refusAdresse, type ResultatAdresse } from '../adresse-boutique';
 
 type Admin = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
 
 function schemaIncomplet(error: { code?: string } | null): boolean {
   return !!error && (error.code === '42P01' || error.code === 'PGRST205' || error.code === '42703');
+}
+
+/**
+ * La table store_slug_aliases n'existe pas encore (lot 8 du chantier boutique,
+ * 2026-10-03) : supabase/A-EXECUTER-2026-10-03-vitrine-boutique.sql pas exécuté
+ * (42P01), ou cache de l'API pas rechargé (PGRST205). Ce n'est pas une panne :
+ * aucune boutique n'a pu changer d'adresse, il n'y a donc aucune ancienne adresse.
+ */
+function aliasAbsents(error: { code?: string } | null): boolean {
+  return !!error && (error.code === '42P01' || error.code === 'PGRST205');
 }
 
 export type TypeProprietaire = 'supplier' | 'reseller' | 'suguba';
@@ -58,6 +69,12 @@ export interface BoutiqueReseau {
    * écran en panne, l'option n'existe simplement pas encore.
    */
   options: { reglages: boolean };
+  /**
+   * Présente seulement quand la boutique a été retrouvée par son ANCIENNE adresse
+   * (lot 8, 2026-10-03 : un seul changement d'adresse, l'ancienne redirige). `slug`
+   * porte toujours l'adresse actuelle : la vitrine redirige alors vers elle.
+   */
+  ancienneAdresse?: string;
 }
 
 function versBoutique(r: any): BoutiqueReseau {
@@ -125,12 +142,37 @@ export async function nomsPublicsRevendeurs<T>(
   });
 }
 
+/**
+ * Boutique d'une adresse.
+ *
+ * Lot 8 du chantier boutique (2026-10-03) : une boutique peut changer d'adresse UNE
+ * fois (changerAdresse). Quand aucune boutique ne porte l'adresse demandée, elle est
+ * cherchée parmi les ANCIENNES adresses (store_slug_aliases) : la boutique revient
+ * avec son adresse actuelle dans `slug` et l'adresse demandée dans `ancienneAdresse`.
+ * Les liens, QR codes et notifications déjà partagés restent valides : la vitrine
+ * redirige, « Suivre » et la mesure des visites d'un onglet resté ouvert répondent.
+ *
+ * Une lecture de plus, seulement pour une adresse introuvable. Table absente (SQL
+ * pas exécuté) ou lecture en échec : null, la page introuvable d'avant.
+ */
 export async function boutiqueParSlug(slug: string): Promise<BoutiqueReseau | null> {
   const a = getSupabaseAdmin();
   if (!a) return null;
-  const { data, error } = await a.from('stores').select('*').ilike('slug', slug.trim()).maybeSingle();
-  if (error || !data) return null;
-  return versBoutique(data);
+  const demandee = slug.trim();
+  const { data, error } = await a.from('stores').select('*').ilike('slug', demandee).maybeSingle();
+  if (error) return null;
+  if (data) return versBoutique(data);
+
+  // Une ancienne adresse est toujours une adresse qui a existé : minuscules,
+  // chiffres et tirets. Tout le reste (robots, fautes de frappe) s'arrête ici.
+  const ancienne = demandee.toLowerCase();
+  if (!/^[a-z0-9-]{1,80}$/.test(ancienne)) return null;
+  const { data: alias, error: erreurAlias } = await a.from('store_slug_aliases').select('store_id').eq('slug', ancienne).maybeSingle();
+  const boutiqueId = !erreurAlias && alias && typeof alias.store_id === 'string' ? alias.store_id : null;
+  if (!boutiqueId) return null;
+  const { data: actuelle, error: erreurBoutique } = await a.from('stores').select('*').eq('id', boutiqueId).maybeSingle();
+  if (erreurBoutique || !actuelle) return null;
+  return { ...versBoutique(actuelle), ancienneAdresse: ancienne };
 }
 
 export async function boutiqueDuProprietaire(
@@ -210,11 +252,31 @@ export function slugsCandidats(base: string, proprietaireId: string | null | und
 }
 
 /**
+ * Parmi `candidats`, les adresses qu'une boutique a DÉJÀ portées avant de changer
+ * d'adresse (lot 8 du chantier boutique, 2026-10-03). Une nouvelle boutique ne doit
+ * jamais en recevoir une : elle capterait les liens et QR codes de l'autre, qui
+ * redirigent vers sa nouvelle adresse.
+ *
+ * Table absente (SQL pas exécuté) : ensemble vide, rien à écarter. null quand la
+ * lecture échoue pour une autre raison : l'appelant ne crée rien — jamais « aucune
+ * ancienne adresse » inventé sur une panne.
+ */
+export async function adressesDejaPortees(a: Admin, candidats: readonly string[]): Promise<Set<string> | null> {
+  if (candidats.length === 0) return new Set();
+  const { data, error } = await a.from('store_slug_aliases').select('slug').in('slug', candidats.map((c) => c.toLowerCase()));
+  if (error) return aliasAbsents(error) ? new Set() : null;
+  return new Set((Array.isArray(data) ? data : []).map((l: any) => String(l.slug)));
+}
+
+/**
  * Récupère la boutique d'un compte, ou la crée au premier accès.
  *
- * L'adresse (slug) n'est attribuée qu'UNE fois : la renommer casserait tous
- * les liens et QR codes déjà partagés — même règle que pour les fournisseurs
- * (voir migration-boutiques.sql).
+ * L'adresse (slug) est attribuée à la création et ne suit PAS le nom : la
+ * renommer à chaque changement de nom casserait les liens et QR codes déjà
+ * partagés — même règle que pour les fournisseurs (voir migration-boutiques.sql).
+ * Lot 8 (2026-10-03) : son propriétaire peut la changer UNE fois (changerAdresse),
+ * l'ancienne adresse redirige alors pour toujours vers la nouvelle. Une adresse
+ * déjà portée par une autre boutique n'est donc jamais donnée à une nouvelle.
  */
 export async function obtenirOuCreerBoutique(params: {
   typeProprietaire: TypeProprietaire;
@@ -240,7 +302,14 @@ export async function obtenirOuCreerBoutique(params: {
   // même tirées du nom d'un compte. Elle part alors d'une adresse neutre.
   const adresse = slugifier(params.adresseDepuis || params.nom);
   const base = params.typeProprietaire !== 'suguba' && adresseReservee(adresse) ? 'ma-boutique' : adresse;
-  for (const candidat of slugsCandidats(base, params.proprietaireId)) {
+  const candidats = slugsCandidats(base, params.proprietaireId);
+  // Anciennes adresses d'autres boutiques (lot 8) : écartées, en une lecture.
+  const portees = await adressesDejaPortees(a, candidats);
+  if (!portees) {
+    console.error('[RESEAU] Création de boutique impossible : anciennes adresses illisibles.');
+    return null;
+  }
+  for (const candidat of candidats.filter((c) => !portees.has(c))) {
     const { data, error } = await a
       .from('stores')
       .insert({
@@ -294,7 +363,8 @@ function colonneAbsente(error: { code?: string } | null): boolean {
 /**
  * Met à jour une boutique. Liste blanche stricte : ni le slug, ni le
  * propriétaire, ni le nombre d'abonnés ne sont modifiables par cette route —
- * un revendeur pourrait sinon s'attribuer 10 000 abonnés.
+ * un revendeur pourrait sinon s'attribuer 10 000 abonnés. L'adresse (slug) ne
+ * change que par changerAdresse, une seule fois (lot 8).
  *
  * Lot 6 du chantier boutique (2026-10-03) : `vitrine` porte les réglages de
  * vitrine (rayons maison, annonce datée). Ils ne passent JAMAIS par `champs` :
@@ -411,6 +481,84 @@ export async function majBoutique(
   }
   if (error) return { ok: false, erreur: error.message };
   return { ok: true };
+}
+
+// ── Adresse à l'enseigne (lot 8 du chantier boutique, 2026-10-03) ───────────
+
+/**
+ * Ce que la base permet pour l'adresse d'une boutique.
+ *  - `option` : la table store_slug_aliases existe (SQL exécuté). Faux : la section
+ *    « Adresse de ma boutique » n'est pas proposée — table absente ou lecture en
+ *    échec, ce n'est jamais un écran « en panne » ;
+ *  - `ancienne` : l'adresse d'avant le changement, s'il a déjà eu lieu (il est
+ *    unique) ; null tant que la boutique n'a jamais changé d'adresse.
+ * Une seule lecture, par l'index idx_store_slug_aliases_store.
+ */
+export async function etatAdresse(boutiqueId: string): Promise<{ option: boolean; ancienne: string | null }> {
+  const a = getSupabaseAdmin();
+  if (!a) return { option: false, ancienne: null };
+  const { data, error } = await a.from('store_slug_aliases').select('slug').eq('store_id', boutiqueId).limit(1);
+  if (error || !Array.isArray(data)) return { option: false, ancienne: null };
+  const ancienne = data[0] && typeof (data[0] as any).slug === 'string' ? String((data[0] as any).slug) : null;
+  return { option: true, ancienne };
+}
+
+/**
+ * L'adresse est-elle libre : portée par aucune boutique, ni aujourd'hui (stores)
+ * ni avant (store_slug_aliases) ? null quand on ne sait pas (lecture en échec) :
+ * jamais « libre » sur une panne. Simple aide à la saisie : c'est la fonction SQL
+ * de changerAdresse, transactionnelle, qui décide au moment du changement.
+ */
+export async function adresseLibre(adresse: string): Promise<boolean | null> {
+  const a = getSupabaseAdmin();
+  if (!a || !adresseBienFormee(adresse)) return null;
+  // `adresse` ne contient que [a-z0-9-] : aucun joker pour ilike.
+  const { data: active, error } = await a.from('stores').select('id').ilike('slug', adresse).limit(1);
+  if (error || !Array.isArray(active)) return null;
+  if (active.length > 0) return false;
+  const { data: anciennes, error: erreurAlias } = await a.from('store_slug_aliases').select('slug').eq('slug', adresse).limit(1);
+  if (erreurAlias || !Array.isArray(anciennes)) return null;
+  return anciennes.length === 0;
+}
+
+/**
+ * Change l'adresse d'une boutique — UNE seule fois (décision du fondateur).
+ *
+ * Tout se joue dans la fonction SQL changer_adresse_boutique (transactionnelle,
+ * réservée à service_role) : elle vérifie que la boutique est bien à ce
+ * propriétaire, qu'elle n'a jamais changé d'adresse, que la nouvelle n'est portée
+ * par aucune boutique ni aucune ancienne adresse, puis garde l'ancienne dans
+ * store_slug_aliases — /boutique/<ancienne> redirige alors vers la nouvelle
+ * (boutiqueParSlug). Aucune table d'articles n'est touchée : reseller_shop_items
+ * garde son effet commercial.
+ *
+ * Refusé ICI, avant la base, ce qu'elle ne connaît pas : adresse réservée à
+ * Suguba, sans lettre, numéro de téléphone (refusAdresse).
+ *
+ * Fonction ou table absente (PGRST202, 42883, 42P01, PGRST205) : 'indisponible',
+ * l'option n'existe simplement pas encore. Toute autre erreur : 'erreur'. La
+ * fonction est une seule transaction : jamais d'adresse changée sans son ancienne
+ * adresse gardée. Si seule la réponse s'est perdue, l'essai suivant répond
+ * 'deja_change' et la page relue affiche la nouvelle adresse.
+ */
+export async function changerAdresse(boutiqueId: string, proprietaireId: string, nouveau: string): Promise<ResultatAdresse> {
+  const adresse = adresseDepuis(nouveau);
+  if (!adresseBienFormee(adresse)) return 'invalide';
+  if (refusAdresse(adresse) !== null) return 'reservee';
+  const a = getSupabaseAdmin();
+  if (!a || !boutiqueId || !proprietaireId) return 'erreur';
+  const { data, error } = await a.rpc('changer_adresse_boutique', {
+    p_store_id: boutiqueId,
+    p_owner_id: proprietaireId,
+    p_nouveau: adresse,
+  });
+  if (error) {
+    if (aliasAbsents(error) || error.code === 'PGRST202' || error.code === '42883') return 'indisponible';
+    console.error('[RESEAU] Changement d’adresse impossible:', error.code);
+    return 'erreur';
+  }
+  const reponses: readonly ResultatAdresse[] = ['ok', 'invalide', 'introuvable', 'identique', 'deja_change', 'pris'];
+  return reponses.includes(data as ResultatAdresse) ? (data as ResultatAdresse) : 'erreur';
 }
 
 // ── Abonnements ────────────────────────────────────────────────────────────

@@ -11,10 +11,11 @@
 --        • le champ « Annonce sur ma boutique » dans « Personnaliser » (un
 --          message affiché jusqu'à une date, 14 jours au plus, sans prix ni
 --          pourcentage).
---   2. store_slug_aliases et changer_adresse_boutique : la base du changement
---      d'adresse UNIQUE à l'enseigne (décision du fondateur : oui, une seule
---      fois, l'ancienne adresse redirige). L'écran viendra au lot 8 ; tant que
---      la fonction n'est pas appelée, l'adresse actuelle reste la seule.
+--   2. store_slug_aliases et changer_adresse_boutique : le changement d'adresse
+--      UNIQUE à l'enseigne (décision du fondateur : oui, une seule fois,
+--      l'ancienne adresse redirige). Dès qu'il est exécuté, le revendeur voit la
+--      section « Adresse de ma boutique » dans « Personnaliser » (lot 8) ; tant
+--      qu'il ne s'en sert pas, son adresse actuelle reste la seule.
 --
 -- Le code fonctionne AVANT ce fichier : rayons personnalisés, annonce datée et
 -- changement d'adresse restent simplement invisibles (ni tuile, ni champ, ni
@@ -95,6 +96,10 @@ EXCEPTION WHEN unique_violation THEN
 END $$;
 REVOKE ALL ON FUNCTION public.changer_adresse_boutique(TEXT, TEXT, TEXT) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.changer_adresse_boutique(TEXT, TEXT, TEXT) TO service_role;
+
+-- L'ancien commentaire disait « jamais modifiée » (lot 8 : simple texte, aucune donnée touchée).
+COMMENT ON COLUMN public.stores.slug IS
+  'Adresse publique /boutique/<slug>. Ne suit pas le nom de la boutique. Son propriétaire peut la changer UNE fois (changer_adresse_boutique) : l''ancienne est gardée dans store_slug_aliases et redirige vers la nouvelle.';
 
 COMMIT;
 

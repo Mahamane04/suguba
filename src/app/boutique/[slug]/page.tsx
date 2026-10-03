@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { cache } from 'react';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import ShopView, { type ProprietaireVitrine, type ReglagesVitrine, type SuiviProprietaire } from '@/components/shop/ShopView';
 import BoutonSuivre from '@/components/shop/BoutonSuivre';
 import GalerieBoutique from '@/components/shop/GalerieBoutique';
@@ -20,6 +20,7 @@ import { cleRayon, rayonMaisonDe, RAYON_SANS_CATEGORIE, type RayonChoisi } from 
 import { annonceEnCours, type ReglagesBoutique } from '@/lib/boutique-reglages';
 import { aUnLienDeBoutique, compterVisitesBoutique } from '@/lib/reseau/db';
 import { debutPeriode } from '@/lib/reseau/stats';
+import { adresseDeRedirection } from '@/lib/adresse-boutique';
 
 /**
  * Boutique du réseau — /boutique/<adresse>.
@@ -28,10 +29,21 @@ import { debutPeriode } from '@/lib/reseau/stats';
  * Suguba). Les anciennes adresses /s/<slug> et /r/<code> continuent de
  * fonctionner : elles circulent déjà dans des liens partagés et des QR codes
  * imprimés, on ne les casse pas.
+ *
+ * Lot 8 du chantier boutique (2026-10-03) : une boutique peut changer d'adresse UNE
+ * fois. Son ANCIENNE adresse redirige alors pour toujours (redirection permanente)
+ * vers la nouvelle, en gardant ?rayon, ?ref et ?via : un QR imprimé, un lien suivi
+ * /go/<code> ou un message WhatsApp d'avant le changement ouvrent la boutique, la
+ * vente reste attribuée et la visite comptée. Sans la table des anciennes adresses
+ * (SQL pas exécuté), rien ne change : adresse inconnue = page introuvable.
  */
 export const dynamic = 'force-dynamic';
 
-type Recherche = { editer?: string | string[]; partager?: string | string[]; rayon?: string | string[]; via?: string | string[] };
+type Recherche = {
+  editer?: string | string[]; partager?: string | string[]; rayon?: string | string[]; via?: string | string[];
+  /** Code revendeur d'un lien partagé : lu ici seulement pour le garder dans une redirection (lot 8). */
+  ref?: string | string[];
+};
 type Params = { params: Promise<{ slug: string }>; searchParams?: Promise<Recherche> };
 type ParamsPage = Params;
 
@@ -75,6 +87,9 @@ type Charge = {
   reglages: (ReglagesBoutique & { option: boolean }) | null;
 };
 
+/** Ancienne adresse d'une boutique en ligne (lot 8) : `deplacee` est son adresse actuelle. */
+type Deplacee = { deplacee: string };
+
 /**
  * Lot 1 du chantier boutique (2026-10-03) :
  *  - cache() : generateMetadata et la page appelaient chacun charger(), soit
@@ -85,9 +100,14 @@ type Charge = {
  *    par Suguba » (il tombait sur une page introuvable sans explication) ; le
  *    visiteur, lui, obtient toujours la page introuvable (voir la page).
  */
-const charger = cache(async (slug: string): Promise<Charge | null> => {
+const charger = cache(async (slug: string): Promise<Charge | Deplacee | null> => {
   const boutique = await boutiqueParSlug(slug);
   if (!boutique) return null;
+  // Lot 8 (2026-10-03) : retrouvée par son ANCIENNE adresse. Rien d'autre n'est lu :
+  // la page redirige vers l'adresse actuelle. Boutique masquée par Suguba : page
+  // introuvable, comme à sa nouvelle adresse pour un visiteur — une redirection
+  // permanente, gardée par les navigateurs, ne doit pas mener à une page introuvable.
+  if (boutique.ancienneAdresse) return boutique.statut === 'active' ? { deplacee: boutique.slug } : null;
   // Seule une boutique REVENDEUR masquée reste visible (pour son propriétaire) :
   // les autres gardent la page introuvable, sans autre requête. Lot 7 (2026-10-03) :
   // les boutiques supplémentaires (formules Pro) d'un revendeur aussi, comme sa principale.
@@ -186,6 +206,8 @@ export async function generateMetadata({ params, searchParams }: Params): Promis
   const { slug } = await params;
   const charge = await charger(slug);
   if (!charge) return { title: 'Boutique introuvable — Suguba' };
+  // Ancienne adresse (lot 8) : même redirection que la page, pour les robots d'aperçu aussi.
+  if ('deplacee' in charge) permanentRedirect(adresseDeRedirection(charge.deplacee, (await searchParams) || {}));
   // Boutique masquée par Suguba : seul son propriétaire la voit. Titre neutre
   // (rien d'elle dans un aperçu de lien) et jamais indexée.
   if (charge.statut !== 'active') return { title: 'Boutique — Suguba', robots: { index: false, follow: false } };
@@ -237,6 +259,9 @@ export default async function BoutiqueReseauPage({ params, searchParams }: Param
   const { slug } = await params;
   const charge = await charger(slug);
   if (!charge) notFound();
+  // Ancienne adresse (lot 8) : redirection permanente vers l'adresse actuelle, en
+  // gardant ?rayon, ?ref et ?via. Avant toute lecture de session : rien de privé ici.
+  if ('deplacee' in charge) permanentRedirect(adresseDeRedirection(charge.deplacee, (await searchParams) || {}));
 
   // Le propriétaire voit « Modifier la boutique » (et une invitation à ajouter
   // logo et couverture s'ils manquent) ; les visiteurs, jamais.

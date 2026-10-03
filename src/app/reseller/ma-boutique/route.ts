@@ -22,7 +22,8 @@ import { adresseVitrine, PORTE_MA_BOUTIQUE } from '@/lib/reseau/porte-boutique';
  * compte justement sur cette bascule.
  *
  * Sans boutique, elle est créée avec « Prénom I. » (nomPublic), jamais avec le
- * nom complet : son adresse en est tirée et ne change plus.
+ * nom complet : son adresse en est tirée, et ne se change ensuite qu'UNE fois
+ * (lot 8, « Adresse de ma boutique » dans Personnaliser).
  *
  * Lot 7 (2026-10-03) : ?boutique=<id> ouvre une boutique supplémentaire (formule
  * Pro) du compte. Le bandeau « C'est votre boutique · Gérer » de SA vitrine passe
@@ -55,7 +56,7 @@ export async function GET(req: NextRequest) {
       const { data: profil, error } = await admin.from('profiles').select('full_name').eq('id', session.uid).maybeSingle();
       // Relecture du lot 1 (2026-10-03) : profil illisible = rien n'est créé.
       // L'erreur était ignorée et la boutique naissait « Revendeur Suguba », sous
-      // une adresse revendeur-suguba-N qui ne change plus.
+      // une adresse revendeur-suguba-N (qui ne se change qu'une fois, lot 8).
       if (error || !profil) return vers('/reseller/boutique');
       boutique = await obtenirOuCreerBoutique({
         typeProprietaire: 'reseller',

@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { MessageCircle, X, ShoppingBag, Users, Phone, HelpCircle } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import { useClavierOuvert } from '@/lib/useClavierOuvert';
+import { useSugubaStore } from '@/lib/store';
 
 // Liste AUTORISÉE plutôt que liste d'exclusion (2026-09-13) : sur les écrans
 // de formulaire ou d'action (retraits, paiement, badge, commande…), la bulle
@@ -12,17 +13,39 @@ import { useClavierOuvert } from '@/lib/useClavierOuvert';
 // accessible par le menu et les liens « Une question ? » de chaque écran.
 // Retirée de l'accueil le 2026-09-27 (V1 vue client) : elle recouvrait les
 // cartes produits ; l'aide reste dans Compte → Aide et dans le menu.
+// Lot 8 du chantier boutique (2026-10-03, décision du fondateur) : la bulle du
+// support Suguba s'affiche aussi sur la vitrine officielle /boutique/<adresse>,
+// comme sur /r/ et /s/. Le client n'y avait AUCUN contact. C'est le support de
+// Suguba, pas le WhatsApp du revendeur (pas pour l'instant : la commande reste sur
+// Suguba). « /boutique/ » ne couvre pas l'annuaire « /boutiques ».
 const VISIBLE_SUR_EXACT = ['/rejoindre'];
-const VISIBLE_SUR_PREFIXE = ['/s/', '/r/'];
+const VISIBLE_SUR_PREFIXE = ['/s/', '/r/', '/boutique/'];
+
+// Profils dont la barre du bas reste affichée sur tablette et ordinateur : la même
+// liste que `navigationMetier` de BottomNav (un test vérifie qu'elles sont égales).
+const ROLES_BARRE_PERMANENTE = ['supplier', 'reseller', 'driver'];
 
 export default function WhatsAppFloatingButton() {
-  const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname() || '';
+  const visible = VISIBLE_SUR_EXACT.includes(pathname) || VISIBLE_SUR_PREFIXE.some((p) => pathname.startsWith(p));
+  // Hors des vitrines, rien n'est monté : ni état, ni abonnement au magasin.
+  return visible ? <BulleSupport /> : null;
+}
+
+function BulleSupport() {
+  const [isOpen, setIsOpen] = useState(false);
   // Masqué pendant la saisie : même décalage que la barre du bas sur iPhone
   // après fermeture du clavier (voir src/lib/useClavierOuvert.ts).
   const clavierOuvert = useClavierOuvert();
-  const visible = VISIBLE_SUR_EXACT.includes(pathname) || VISIBLE_SUR_PREFIXE.some((p) => pathname.startsWith(p));
-  if (!visible) return null;
+  // Lot 8 du chantier boutique (2026-10-03) : sur /boutique/<adresse>, le propriétaire
+  // est un revendeur, dont la barre du bas reste affichée à toutes les largeurs. À
+  // partir de 768 px, la bulle redescend à 24 px du bas (`md:bottom-6`) : elle se
+  // poserait sur son onglet « Gains » (même défaut que la pastille « Vue client »,
+  // relecture du lot 2 ; il existait déjà sur /r/ et /s/ pour un revendeur ou un
+  // fournisseur connecté). Pour ces profils, elle reste au-dessus de la barre.
+  const etat = useSugubaStore();
+  const role = etat.currentUser.id ? etat.currentUser.role : null;
+  const barrePermanente = ROLES_BARRE_PERMANENTE.includes(role || '');
   const supportPhone = '22389460000';
 
   const handleOpenWhatsApp = (topic: string) => {
@@ -38,8 +61,9 @@ export default function WhatsAppFloatingButton() {
     // au-dessus de la barre, zone sûre iOS comprise, et passe devant elle
     // (z-50 contre z-40). La valeur reste une classe et non un style en ligne,
     // sinon `md:bottom-6` ne pourrait plus reprendre la main sur desktop, où
-    // la barre du bas n'existe pas.
-    <div hidden={clavierOuvert} className="fixed bottom-[calc(6rem+env(safe-area-inset-bottom,0px))] md:bottom-6 right-4 z-50">
+    // la barre du bas n'existe pas — sauf pour un profil dont la barre reste
+    // affichée (`barrePermanente`) : la bulle garde alors sa hauteur.
+    <div hidden={clavierOuvert} className={`fixed bottom-[calc(6rem+env(safe-area-inset-bottom,0px))] ${barrePermanente ? '' : 'md:bottom-6'} right-4 z-50`}>
       
       {/* Expanded Popup Menu */}
       {isOpen && (

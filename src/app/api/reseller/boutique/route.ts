@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { sessionAvecRole } from '@/lib/reseau/route-session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { boutiqueDuProprietaire, majBoutique, obtenirOuCreerBoutique, MAX_GALERIE, type BoutiqueReseau } from '@/lib/reseau/boutiques';
+import { boutiqueDuProprietaire, etatAdresse, majBoutique, obtenirOuCreerBoutique, MAX_GALERIE, type BoutiqueReseau } from '@/lib/reseau/boutiques';
 import { estEnseigne, nomPublic, nomPublicBoutique, nomReserve } from '@/lib/enseigne';
 import { champsBoutiqueRevendeur, NOM_BOUTIQUE_MAX } from '@/lib/reseau/champs-boutique-revendeur';
 import { OPTION_ABSENTE } from '@/lib/boutique-reglages';
@@ -35,12 +35,18 @@ import { OPTION_ABSENTE } from '@/lib/boutique-reglages';
  *  - GET renvoie `options` {reglages, adresse} : ce que la base permet déjà.
  *    `reglages` est vrai quand la colonne stores.reglages existe (fichier
  *    supabase/A-EXECUTER-2026-10-03-vitrine-boutique.sql exécuté) : les écrans
- *    ne proposent « Mes rayons » et l'annonce datée que dans ce cas. `adresse`
- *    (changement d'adresse, lot 8) reste faux tant que ce lot n'est pas livré ;
+ *    ne proposent « Mes rayons » et l'annonce datée que dans ce cas ;
  *  - PATCH accepte `reglages` {rayons?, annonce?} : validés et fusionnés par
  *    majBoutique (src/lib/boutique-reglages.ts). Les articles d'un rayon sont
  *    filtrés par la sélection de la SESSION, lue ici. Option absente : 409
  *    « Option pas encore activée », jamais 500.
+ *
+ * Lot 8 (2026-10-03) : `options.adresse` devient vrai quand la base permet le
+ * changement d'adresse (table store_slug_aliases, même fichier SQL), et la réponse
+ * porte `ancienneAdresse` : l'adresse d'avant, quand le changement — unique — a
+ * déjà eu lieu. « Personnaliser » n'affiche la section « Adresse de ma boutique »
+ * que dans ce cas. L'adresse elle-même ne se change JAMAIS par PATCH (`slug` y est
+ * ignoré) : voir /api/reseller/boutique/adresse.
  */
 
 type Admin = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
@@ -49,6 +55,19 @@ async function lireProfil(admin: Admin | null, uid: string) {
   if (!admin) return { profil: null, illisible: true };
   const { data, error } = await admin.from('profiles').select('full_name, reseller_code').eq('id', uid).maybeSingle();
   return { profil: data as { full_name: string | null; reseller_code: string | null } | null, illisible: Boolean(error) || !data };
+}
+
+/**
+ * Ce que la base permet déjà pour cette boutique (lots 6 et 8). La colonne
+ * stores.reglages et la table des anciennes adresses viennent du MÊME fichier SQL :
+ * sans la colonne, la table n'existe pas non plus, rien n'est lu. Avec elle, une
+ * lecture (etatAdresse) ; table absente ou illisible : `adresse` faux, la section
+ * n'est simplement pas proposée.
+ */
+async function permisParLaBase(boutique: BoutiqueReseau | null) {
+  const reglages = Boolean(boutique?.options.reglages);
+  const adresse = boutique && reglages ? await etatAdresse(boutique.id) : { option: false, ancienne: null };
+  return { options: { reglages, adresse: adresse.option }, ancienneAdresse: adresse.ancienne };
 }
 
 /** Nom affiché aux clients : l'enseigne, ou « Awa D. » (jamais le nom complet). */
@@ -85,7 +104,7 @@ export async function GET(req: NextRequest) {
     codeRevendeur: profil?.reseller_code || null,
     vitrine: illisible ? null : vitrineDe(boutique, profil?.full_name),
     maxGalerie: MAX_GALERIE,
-    options: { reglages: Boolean(boutique?.options.reglages), adresse: false },
+    ...(await permisParLaBase(boutique)),
   });
 }
 
@@ -184,6 +203,6 @@ export async function PATCH(req: NextRequest) {
   return NextResponse.json({
     boutique: apres,
     vitrine: illisible ? null : vitrineDe(apres, profil?.full_name),
-    options: { reglages: Boolean(apres?.options.reglages), adresse: false },
+    ...(await permisParLaBase(apres)),
   });
 }

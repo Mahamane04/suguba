@@ -5,6 +5,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { Store, Users, Eye, Megaphone, Rows3 } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import CarteLien from '@/components/reseau/CarteLien';
+import AdresseBoutique from '@/components/reseau/AdresseBoutique';
 import LogoUploader from '@/components/common/LogoUploader';
 import CouvertureEditeur from '@/components/reseau/CouvertureEditeur';
 import GalerieEditeur from '@/components/reseau/GalerieEditeur';
@@ -56,10 +57,17 @@ import { FAMILLES_CATEGORIES } from '@/lib/product-categories';
  *    n'applique pas de remise). Enregistrée avec les textes, par la même barre ;
  *  - « Mes rayons » : lien vers la page où créer et ordonner ses rayons.
  *
+ * Lot 8 (2026-10-03), seulement quand la base le permet (`options.adresse`, table
+ * store_slug_aliases du même fichier SQL) : « Adresse de ma boutique »
+ * (AdresseBoutique). Le revendeur donne à sa boutique une adresse à son enseigne,
+ * UNE seule fois ; l'ancienne adresse redirige vers la nouvelle. Le lien, le QR et
+ * l'adresse affichés ici suivent aussitôt, sans recharger la page.
+ *
  * Elle est créée automatiquement au premier accès : un revendeur ne doit pas
  * avoir à « créer une boutique » avant de pouvoir partager son premier
- * produit. Son adresse (/boutique/<slug>) n'est attribuée qu'une fois et n'est
- * jamais renommée — elle circule déjà dans des liens WhatsApp et des QR codes.
+ * produit. Son adresse (/boutique/<slug>) ne suit pas le nom de la boutique — elle
+ * circule déjà dans des liens WhatsApp et des QR codes : elle ne change que par
+ * cette section, une fois, et l'ancienne continue alors d'ouvrir la boutique.
  */
 
 interface Boutique {
@@ -122,6 +130,10 @@ export default function MaBoutiqueRevendeurPage() {
 
   // La base permet les rayons maison et l'annonce datée (colonne stores.reglages).
   const [optionReglages, setOptionReglages] = useState(false);
+  // Lot 8 : la base permet le changement d'adresse (table store_slug_aliases) ;
+  // `ancienneAdresse` : l'adresse d'avant, quand le changement a déjà eu lieu.
+  const [optionAdresse, setOptionAdresse] = useState(false);
+  const [ancienneAdresse, setAncienneAdresse] = useState<string | null>(null);
 
   const [textes, setTextes] = useState<Textes>({ nom: '', accroche: '', description: '', quartier: '', categories: [], annonce: '', annonceFin: '' });
   const [message, setMessage] = useState('');
@@ -145,6 +157,8 @@ export default function MaBoutiqueRevendeurPage() {
         setTextes(textesDe(data.boutique));
         if (data.maxGalerie) setMaxGalerie(data.maxGalerie);
         setOptionReglages(Boolean(data.options?.reglages));
+        setOptionAdresse(Boolean(data.options?.adresse));
+        setAncienneAdresse(typeof data.ancienneAdresse === 'string' ? data.ancienneAdresse : null);
       })
       .catch(() => { if (!annule) setIndisponible(true); })
       .finally(() => { if (!annule) setChargement(false); });
@@ -257,7 +271,8 @@ export default function MaBoutiqueRevendeurPage() {
           <div className="grid grid-cols-2 gap-3">
             <StatCard label="Abonnés" valeur={boutique.abonnes} icone={Users} accent />
             {/* Adresse complète, telle que les clients la tapent (2026-10-03). */}
-            <StatCard label="Adresse" valeur={<span className="text-sm break-all">{origine.replace(/^https?:\/\//, '')}/boutique/{boutique.slug}</span>} aide="Ne change jamais" />
+            <StatCard label="Adresse" valeur={<span className="text-sm break-all">{origine.replace(/^https?:\/\//, '')}/boutique/{boutique.slug}</span>}
+              aide={!optionAdresse ? 'Ne change pas avec le nom' : ancienneAdresse ? 'Changée une fois : définitive' : 'Modifiable une fois, plus bas'} />
           </div>
 
           {/* Même règle que l'accueil et la vitrine (relecture du lot 1, 2026-10-03) :
@@ -393,6 +408,24 @@ export default function MaBoutiqueRevendeurPage() {
               </p>
               <Button href={PAGE_RAYONS} variant="ghost" fullWidth>Gérer mes rayons</Button>
             </Card>
+          )}
+
+          {/* Lot 8 : seulement quand la base le permet. Avant le SQL, la section n'existe pas. */}
+          {optionAdresse && (
+            <AdresseBoutique
+              // Enseigne changée puis enregistrée : la section repart de sa nouvelle proposition.
+              key={`adresse-${vitrine?.enseigne ? vitrine.nom : ''}`}
+              origine={origine}
+              actuelle={boutique.slug}
+              ancienne={ancienneAdresse}
+              // Proposée seulement à partir d'une vraie enseigne : le changement est
+              // unique, il ne se gaspille pas sur « awa-d ».
+              nomPublic={vitrine?.enseigne ? vitrine.nom : null}
+              onChange={(nouvelle, ancienne) => {
+                setBoutique((b) => (b ? { ...b, slug: nouvelle } : b));
+                setAncienneAdresse(ancienne);
+              }}
+            />
           )}
 
           <Card className="space-y-2">

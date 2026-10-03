@@ -18,7 +18,7 @@ import { positionAjout, trierSelection, type LigneSelection } from '../boutique-
 import { adresseReservee } from '../enseigne';
 import { chargerReglages } from '../platform-settings';
 import { FORMULES_BOUTIQUES_PAR_DEFAUT, type FormuleBoutique } from '../pricing';
-import { boutiqueParSlug, lireBoutiqueDuCompte, type BoutiqueReseau } from './boutiques';
+import { adressesDejaPortees, boutiqueParSlug, lireBoutiqueDuCompte, type BoutiqueReseau } from './boutiques';
 import { quartierReconnu } from './proximite';
 
 export type TypeCompteBoutique = 'reseller' | 'supplier';
@@ -112,8 +112,15 @@ export async function creerBoutiqueSupplementaire(params: {
   // relecture du lot 2 du chantier boutique (2026-10-03).
   const adresse = slugifier(nom);
   const base = adresseReservee(adresse) ? 'ma-boutique' : adresse;
-  for (let i = 0; i < 30; i++) {
-    const candidat = i === 0 ? base : `${base}-${i + 1}`;
+  const candidats = Array.from({ length: 30 }, (_, i) => (i === 0 ? base : `${base}-${i + 1}`));
+  // Lot 8 du chantier boutique (2026-10-03) : jamais l'ANCIENNE adresse d'une
+  // boutique qui a changé d'adresse — la nouvelle boutique capterait ses liens et
+  // QR codes déjà partagés. Une lecture ; illisible (hors table absente) : rien
+  // n'est créé.
+  const portees = await adressesDejaPortees(a, candidats);
+  if (!portees) return { ok: false, erreur: 'Création impossible pour le moment.', statut: 503 };
+  for (const candidat of candidats) {
+    if (portees.has(candidat)) continue;
     const ligne: Record<string, unknown> = {
       owner_type: params.type, owner_id: params.proprietaireId, slug: candidat, name: nom,
       // La toute première boutique d'un compte devient la principale.
