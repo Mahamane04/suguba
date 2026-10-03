@@ -9,6 +9,7 @@ import BoutonPartageWhatsApp from '@/components/ui/BoutonPartageWhatsApp';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 import { Card, EmptyState, Skeleton, StatCard, StatusPill } from '@/components/ui/Surface';
 import PartageBoutique from '@/components/shop/proprietaire/PartageBoutique';
+import BoutonAnnonce from '@/components/shop/proprietaire/BoutonAnnonce';
 import { formatF, formatNombre, formatDate } from '@/lib/montant';
 import { PORTE_MA_BOUTIQUE } from '@/lib/reseau/porte-boutique';
 import { PERIODES_STATS, statsDeLaPeriode, type OrigineVisite, type PointJour } from '@/lib/reseau/stats';
@@ -27,6 +28,10 @@ import { PERIODES_STATS, statsDeLaPeriode, type OrigineVisite, type PointJour } 
  *  - abonnés, clics des liens de la boutique, 3 articles les plus vus ;
  *  - une phrase de conseil à règles fixes et « mesuré depuis le … ».
  * Une mesure indisponible s'affiche « — », jamais 0. Action principale : partager.
+ *
+ * Lot 5 (2026-10-03) : sous « Abonnés », « Prévenir mes abonnés (N nouveautés) »
+ * quand des articles ont été ajoutés depuis la dernière annonce (BoutonAnnonce,
+ * qui lit lui-même la route privée de l'annonce ; absent si la boutique est masquée).
  */
 
 interface Stats {
@@ -188,6 +193,9 @@ export default function StatistiquesBoutiquePage() {
               {stats.nouveauxAbonnes != null && <> · <span className="tabular-nums">+{formatNombre(stats.nouveauxAbonnes)}</span> sur la période</>}
             </span>
           </Card>
+
+          {/* Lot 5 : l'annonce ne dépend pas de la période ; rien ne s'affiche sans nouveauté ni abonné. */}
+          {enLigne && <BoutonAnnonce />}
 
           <Card padding="px-4 pt-4 pb-2" className="space-y-1">
             <h2 className="text-sm font-bold text-slate-900">Vos articles les plus vus</h2>

@@ -364,10 +364,22 @@ export async function enregistrerConversion(params: {
 
 // ── Journal analytique ─────────────────────────────────────────────────────
 
+/**
+ * Lot 5 du chantier boutique (2026-10-03) : STORE_ANNOUNCE = un revendeur a
+ * prévenu ses abonnés de ses nouveautés (/api/reseller/boutique/annonce). C'est
+ * cet événement, lu par reseller_id (index existant), qui tient la limite d'une
+ * annonce par 24 h : aucune migration.
+ */
 export type EvenementAnalytique =
   | 'PRODUCT_VIEW' | 'STORE_VIEW' | 'SHARE' | 'CLICK'
-  | 'ORDER' | 'REFERRAL' | 'FOLLOW' | 'MISSION_JOIN' | 'MISSION_DONE';
+  | 'ORDER' | 'REFERRAL' | 'FOLLOW' | 'MISSION_JOIN' | 'MISSION_DONE'
+  | 'STORE_ANNOUNCE';
 
+/**
+ * Écrit un événement. Renvoie vrai quand il est bien écrit (lot 5, 2026-10-03) :
+ * l'annonce aux abonnés ne part que si sa trace, qui fait la limite des 24 h, est
+ * en base. Les autres appelants ignorent ce retour, comme avant.
+ */
 export async function journaliser(params: {
   evenement: EvenementAnalytique;
   acteurId?: string | null;
@@ -378,9 +390,9 @@ export async function journaliser(params: {
   linkCode?: string | null;
   montant?: number | null;
   meta?: Record<string, unknown>;
-}): Promise<void> {
+}): Promise<boolean> {
   const a = admin();
-  if (!a) return;
+  if (!a) return false;
   const { error } = await a.from('analytics_events').insert({
     event: params.evenement,
     actor_id: params.acteurId ?? null,
@@ -393,6 +405,7 @@ export async function journaliser(params: {
     meta: params.meta ?? {},
   });
   if (error && schemaIncomplet(error)) signalerMigrationManquante('analytics_events');
+  return !error;
 }
 
 // ── Équipe administrative ──────────────────────────────────────────────────

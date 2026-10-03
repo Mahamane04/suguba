@@ -112,9 +112,13 @@ export default function BoutonSuivre({ slug, abonnesInitial }: { slug: string; a
       )}
 
       {message && <p className="text-xs text-amber-700">{message}</p>}
+      {/* Lot 5 du chantier boutique (2026-10-03) : la phrase promettait aussi des
+          remises, qu'aucune boutique ne propose (prix barrés hors chantier,
+          décision du fondateur). On ne promet que ce qui arrive : les nouveautés,
+          que le revendeur annonce désormais à ses abonnés. */}
       {suit && (
         <p className="text-xs text-slate-500">
-          Vous serez prévenu des nouveautés et des promotions.{' '}
+          Vous serez prévenu des nouveautés de cette boutique.{' '}
           <a href="/boutiques-suivies" className="underline font-bold text-suguba-brand-dark">Mes boutiques suivies</a>
         </p>
       )}

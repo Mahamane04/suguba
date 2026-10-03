@@ -23,17 +23,25 @@ function lienInterne(lien: string | null | undefined): string | null {
   return lien.startsWith('/') && !lien.startsWith('//') ? lien.slice(0, 300) : null;
 }
 
+/**
+ * Écrit une notification pour chaque compte. Renvoie le nombre de notifications
+ * VRAIMENT écrites (lot 5 du chantier boutique, 2026-10-03) : « N prévenus » doit
+ * être un chiffre réel, pas le nombre de destinataires visés. Les appelants qui
+ * n'en ont pas besoin l'ignorent.
+ */
 export async function notifier(
   profileIds: string | string[],
   contenu: { type?: string; titre: string; texte?: string | null; lien?: string | null },
-): Promise<void> {
+): Promise<number> {
   const a = getSupabaseAdmin();
   const ids = Array.from(new Set((Array.isArray(profileIds) ? profileIds : [profileIds]).filter(Boolean)));
-  if (!a || ids.length === 0) return;
+  if (!a || ids.length === 0) return 0;
+  let ecrites = 0;
   // Par lots : une boutique très suivie ne doit pas produire une requête géante.
   for (let i = 0; i < ids.length; i += 500) {
+    const lot = ids.slice(i, i + 500);
     const { error } = await a.from('notifications').insert(
-      ids.slice(i, i + 500).map((id) => ({
+      lot.map((id) => ({
         profile_id: id,
         kind: contenu.type || 'info',
         title: contenu.titre.slice(0, 140),
@@ -43,9 +51,11 @@ export async function notifier(
     );
     if (error) {
       console.warn('[NOTIF] non écrite:', error.code);
-      return;
+      return ecrites;
     }
+    ecrites += lot.length;
   }
+  return ecrites;
 }
 
 /**
@@ -53,6 +63,9 @@ export async function notifier(
  * téléphone seul ne reçoivent rien automatiquement : leur écrire sur WhatsApp
  * depuis un numéro Suguba sans qu'ils l'aient demandé, en masse, ferait
  * bannir le numéro (règles anti-ban du projet).
+ *
+ * Renvoie le nombre d'abonnés réellement prévenus (notifications écrites), et
+ * non plus le nombre visé (lot 5 du chantier boutique, 2026-10-03).
  */
 export async function notifierAbonnes(
   boutiqueId: string,
@@ -67,9 +80,8 @@ export async function notifierAbonnes(
     .not('follower_id', 'is', null)
     .limit(5000);
   if (error || !data) return 0;
-  const ids = data.map((f: any) => f.follower_id as string);
-  await notifier(ids, contenu);
-  return ids.length;
+  const ids = data.map((f: any) => f.follower_id as string).filter(Boolean);
+  return notifier(ids, contenu);
 }
 
 export async function mesNotifications(profileId: string, limite = 50): Promise<{ notifications: Notification[]; nonLues: number }> {
@@ -103,6 +115,30 @@ export async function marquerLues(profileId: string): Promise<void> {
 }
 
 /**
+ * Boutique PRINCIPALE d'un fournisseur (lot 5 du chantier boutique, 2026-10-03).
+ *
+ * Les annonces lisaient sa boutique avec .maybeSingle() : depuis les boutiques
+ * multiples (2026-09-24), dès qu'un fournisseur en a deux, la lecture échoue et
+ * l'annonce s'arrêtait EN SILENCE. Même règle que boutiqueDuProprietaire : la
+ * principale, sinon la plus ancienne. `*` : la colonne principale peut manquer.
+ */
+async function boutiquePrincipaleFournisseur(
+  a: NonNullable<ReturnType<typeof getSupabaseAdmin>>,
+  fournisseurId: string,
+): Promise<{ id: string; name: string } | null> {
+  const { data, error } = await a
+    .from('stores')
+    .select('*')
+    .eq('owner_type', 'supplier')
+    .eq('owner_id', fournisseurId)
+    .order('created_at', { ascending: true })
+    .limit(10);
+  if (error || !Array.isArray(data) || data.length === 0) return null;
+  const principale = data.find((b: any) => b.principale !== false) || data[0];
+  return principale?.id ? { id: String(principale.id), name: String(principale.name || '') } : null;
+}
+
+/**
  * Nouveau produit en ligne : prévient les abonnés (avec compte) de la
  * boutique du fournisseur (§ 10 — « nouveau produit »). Appelée seulement au
  * PASSAGE en approuvé, jamais à chaque changement de prix : sinon chaque
@@ -114,12 +150,7 @@ export async function annoncerNouveauProduit(productId: string): Promise<void> {
   try {
     const { data: produit } = await a.from('products').select('name, slug, supplier_id').eq('id', productId).maybeSingle();
     if (!produit?.supplier_id) return;
-    const { data: boutique } = await a
-      .from('stores')
-      .select('id, name')
-      .eq('owner_type', 'supplier')
-      .eq('owner_id', produit.supplier_id)
-      .maybeSingle();
+    const boutique = await boutiquePrincipaleFournisseur(a, produit.supplier_id);
     if (!boutique) return;
     await notifierAbonnes(boutique.id, {
       type: 'nouveaute',
@@ -144,8 +175,7 @@ export async function annoncerBaissePrix(productId: string, ancien: number, nouv
   try {
     const { data: produit } = await a.from('products').select('name, slug, supplier_id').eq('id', productId).maybeSingle();
     if (!produit?.supplier_id) return;
-    const { data: boutique } = await a.from('stores').select('id, name')
-      .eq('owner_type', 'supplier').eq('owner_id', produit.supplier_id).maybeSingle();
+    const boutique = await boutiquePrincipaleFournisseur(a, produit.supplier_id);
     if (!boutique) return;
     await notifierAbonnes(boutique.id, {
       type: 'promotion',

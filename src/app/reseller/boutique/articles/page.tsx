@@ -12,6 +12,7 @@ import { useToast } from '@/components/ui/Toast';
 import FeuilleArticle from '@/components/shop/proprietaire/FeuilleArticle';
 import BoutonPartageWhatsApp from '@/components/ui/BoutonPartageWhatsApp';
 import PartageBoutique, { versArticlesPartage } from '@/components/shop/proprietaire/PartageBoutique';
+import BoutonAnnonce from '@/components/shop/proprietaire/BoutonAnnonce';
 import { formatF } from '@/lib/montant';
 import {
   ARTICLES_MAX, COUPS_DE_COEUR_MAX, PASTILLE_ETAT, basculerCoupDeCoeur, memeRangement, mettreEnPremier, monterArticle,
@@ -40,6 +41,11 @@ import { CATALOGUE_DEPUIS_BOUTIQUE, PORTE_MA_BOUTIQUE } from '@/lib/reseau/porte
  *
  * Lot 4 (2026-10-03) : « Partager » ouvre « Partager ma boutique » (toute la
  * boutique, coups de cœur ou un rayon), avec les articles enregistrés de la page.
+ *
+ * Lot 5 (2026-10-03) : « Prévenir mes abonnés (N nouveautés) », sous les
+ * compteurs, seulement quand des articles ont été ajoutés depuis la dernière
+ * annonce et que la boutique a des abonnés (BoutonAnnonce lit lui-même la route
+ * privée de l'annonce ; relu quand un article est retiré).
  */
 
 const VIDE: Rangement = { coups: [], autres: [] };
@@ -232,6 +238,9 @@ export default function MesArticlesPage() {
             <BoutonPartageWhatsApp type="button" size="sm" className="ml-auto" libelle="Partager"
               aria-label="Partager ma boutique" aria-haspopup="dialog" onClick={() => setPartage(true)} />
           </Card>
+
+          {/* Lot 5 : rien ne s'affiche sans nouveauté à annoncer ni abonné. */}
+          <BoutonAnnonce rafraichir={articles.length} />
 
           {masques > 0 && (
             <p role="status" className="rounded-2xl bg-amber-50 border border-amber-200 p-3 text-sm text-amber-950">

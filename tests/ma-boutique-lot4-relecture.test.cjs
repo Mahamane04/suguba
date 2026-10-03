@@ -318,8 +318,12 @@ test('Accueil : boutique masquée, la prochaine étape n’est jamais « Partage
 
 test('Guide : relecture du lot 4 en tête ; carte & QR et créateur cochent l’étape ; visites par /r/ non comptées ; titre sans enseigne', () => {
   const guide = JSON.parse(lire('docs/guide/guide.json'));
-  const [tete] = guide.journal;
-  assert.equal(tete.titre, 'Boutique revendeur, lot 4 : corrections de relecture');
+  // Lot 5 (2026-10-03) : une entrée plus récente passe en tête ; la relecture du lot 4
+  // reste juste avant l'entrée du lot 4.
+  const rang = guide.journal.findIndex((j) => j.titre === 'Boutique revendeur, lot 4 : corrections de relecture');
+  assert.ok(rang >= 0);
+  const tete = guide.journal[rang];
+  assert.equal(guide.journal[rang + 1].titre, 'Boutique revendeur, lot 4 : partager et mesurer');
   assert.equal(tete.statut, 'en local');
   assert.match(tete.demande, /^« “Ma boutique” doit montrer la boutique elle-même/);
   assert.ok(tete.ecarts.length > 0);

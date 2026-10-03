@@ -198,6 +198,44 @@
  "journal": [
   {
    "date": "2026-10-03",
+   "titre": "Boutique revendeur, lot 5 : prévenir mes abonnés",
+   "demande": "« “Ma boutique” doit montrer la boutique elle-même (logo, couverture, produits ajoutés) et non les réglages ; il veut des outils pour gérer sa boutique (personnalisation, catégories/rayons, produits mis en avant, et ce qui aide à vendre), pour un vrai sentiment d’appropriation. »",
+   "realise": [
+    "« Prévenir mes abonnés (N nouveautés) » : nouveau bouton dans « Mes articles » (sous les compteurs) et dans les Statistiques (sous « Abonnés »). Il n’apparaît que quand il y a lieu : des articles ajoutés à la boutique depuis la dernière annonce, et au moins un abonné. Le bouton « Suivre » de la vitrine tient enfin sa promesse : jusqu’ici, les abonnés d’une boutique de revendeur n’étaient jamais prévenus de rien.",
+    "La feuille « Prévenir mes abonnés » montre la notification telle que les abonnés la recevront. Elle est écrite par Suguba, sans texte libre : « Nouveautés chez <nom de la boutique> » (ou « chez Awa D. », jamais le nom complet), puis « À découvrir : » et jusqu’à 3 noms d’articles (« et 2 autres articles » au-delà). Ni prix, ni pourcentage, ni remise.",
+    "Les destinataires réels sont annoncés avant l’envoi : « 12 abonnés avec un compte seront prévenus dans l’application », et « 3 abonnés inscrits par téléphone ne reçoivent rien ». Une seule action : « Prévenir mes 12 abonnés ».",
+    "Les abonnés qui ont un compte reçoivent la notification dans leur page « Notifications » ; la toucher ouvre la boutique. Rien ne part par WhatsApp ni par SMS : dans l’application seulement, comme décidé.",
+    "Une annonce par 24 h : une seconde annonce le même jour est refusée avec « Vous avez déjà prévenu vos abonnés : une annonce par 24 h. Prochaine annonce possible le … ». Deux envois au même moment (deux téléphones, deux onglets) : un seul part.",
+    "Après l’envoi : « 12 abonnés prévenus » (le nombre de notifications réellement écrites), le rappel des abonnés par téléphone, l’heure de la prochaine annonce possible, puis « Publier sur mon statut WhatsApp ». WhatsApp s’ouvre avec un message prêt (le titre, les noms des articles, « Vous payez à la livraison », le lien de la boutique) et c’est le revendeur qui choisit « Mon statut » : un partage fait par lui, à la main.",
+    "Abonnés tous inscrits par téléphone (aucun compte) : la feuille le dit (« Aucun de vos abonnés n’a de compte Suguba ») et propose seulement le statut WhatsApp ; aucune annonce n’est consommée.",
+    "« Suivre » une boutique : la phrase affichée à l’abonné devient « Vous serez prévenu des nouveautés de cette boutique » (elle promettait aussi des promotions, qui n’existent pas). La page « Boutiques suivies » dit « Leurs nouveautés, en premier. »",
+    "Fournisseurs : les annonces automatiques « Nouveau chez <boutique> » (produit mis en ligne) et « Baisse de prix chez <boutique> » ne partaient plus du tout, sans aucun message, dès que le fournisseur avait 2 boutiques. Elles partent maintenant aux abonnés de sa boutique principale.",
+    "Tests : tests/ma-boutique-lot5.test.cjs (20 tests) ; ma-boutique-lot4-relecture adapté (une entrée plus récente en tête du journal)."
+   ],
+   "ecarts": [
+    "En local sur la branche ux/boutique-revendeur, non publié. Aucune migration.",
+    "« Nouveautés » = articles ajoutés depuis la dernière annonce, mais jamais plus de 14 jours en arrière (la durée de l’étiquette « Nouveau »), et seulement ceux que la vitrine affiche et qui sont en stock. Le plan disait « depuis la dernière annonce » : sans cette limite, la toute première annonce aurait présenté toute la boutique comme nouvelle. À valider par le fondateur.",
+    "Le bouton compte toutes les nouveautés (« 5 nouveautés ») ; la notification en nomme 3 et ajoute « et 2 autres articles » (le plan disait « 3 au maximum »).",
+    "Aucun abonné avec un compte : l’envoi est refusé, au lieu de répondre « 0 prévenu », pour ne pas bloquer l’annonce suivante pendant 24 h. Le bouton reste affiché quand la boutique n’a que des abonnés par téléphone (la feuille propose alors le statut WhatsApp) ; sans aucun abonné, il n’apparaît pas. De même, si aucune notification n’a pu être écrite, les 24 h ne sont pas consommées : le revendeur peut réessayer tout de suite.",
+    "Un abonné inscrit par téléphone ne reçoit rien dans l’application, même s’il crée ensuite un compte avec ce numéro : son abonnement reste rattaché au téléphone tant qu’il ne suit pas de nouveau la boutique en étant connecté. Or la phrase « Vous serez prévenu des nouveautés de cette boutique » s’affiche aussi pour lui (texte du plan) : pour lui, la promesse ne tient que par le statut WhatsApp du revendeur. À trancher par le fondateur : lui proposer de se connecter, ou changer la phrase quand il n’a pas de compte.",
+    "Un revendeur abonné à sa propre boutique (possible avant le lot 2) est compté parmi les prévenus : il reçoit sa propre notification.",
+    "« Publier sur mon statut WhatsApp » ouvre WhatsApp avec le message prêt ; aucun lien ne peut ouvrir directement le statut, le revendeur choisit « Mon statut » dans WhatsApp. Le lien du message est le lien suivi WhatsApp de la boutique (le même que « Partager ma boutique ») : s’il n’existait pas, il est créé quand la feuille propose le statut, ce qui coche l’étape « Partager ma boutique ».",
+    "La limite d’une annonce par 24 h est tenue par revendeur, pour sa boutique principale ; les boutiques Pro viendront au lot 7.",
+    "Fournisseur à plusieurs boutiques : seuls les abonnés de la boutique principale sont prévenus d’un nouveau produit ou d’une baisse de prix (comme prévu au plan) ; ceux d’une boutique supplémentaire ne le sont pas.",
+    "Le sous-titre de la page « Boutiques suivies » a été corrigé aussi (il n’était pas dans la liste du plan) : il portait la même promesse de promotions.",
+    "Captures et vérifications à faire sur la copie locale [QA] (capture de la feuille sans toucher « Prévenir ») : un client [QA] suit la boutique ; le revendeur [QA] ajoute 2 articles puis annonce ; la notification arrive dans /notifications du client et son lien ouvre la vitrine ; une seconde annonce le même jour est refusée avec un message clair ; un abonné inscrit par téléphone seul est compté dans « ne reçoivent rien ». Aucun serveur n’a été lancé."
+   ],
+   "pages": [
+    "rev-boutique-articles",
+    "rev-boutique-stats",
+    "vitrine-boutique",
+    "notifications",
+    "boutiques-suivies"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-10-03",
    "titre": "Boutique revendeur, lot 4 : corrections de relecture",
    "demande": "« “Ma boutique” doit montrer la boutique elle-même (logo, couverture, produits ajoutés) et non les réglages ; il veut des outils pour gérer sa boutique (personnalisation, catégories/rayons, produits mis en avant, et ce qui aide à vendre), pour un vrai sentiment d’appropriation. »",
    "realise": [
@@ -2953,6 +2991,10 @@
    "but": "Les boutiques que le client suit, pour voir leurs nouveautés en premier. Fonctionne sans compte (le numéro est mémorisé sur le téléphone).",
    "elements": [
     {
+     "nom": "Leurs nouveautés, en premier",
+     "role": "Sous-titre de la page : il ne promet plus de promotions, seulement les nouveautés (celles qu’un revendeur annonce arrivent dans « Notifications »)."
+    },
+    {
      "nom": "Liste des boutiques",
      "role": "Chaque ligne ouvre la boutique. Boutique de revendeur : son enseigne, sinon « Awa D. », jamais son nom complet."
     },
@@ -2969,15 +3011,20 @@
    ],
    "capture": {
     "chemin": "/boutiques-suivies"
-   }
+   },
+   "note": "Capture d’avant le lot 5 du chantier boutique : le sous-titre disait encore « Leurs nouveautés et leurs promotions, en premier. »"
   },
   {
    "id": "notifications",
    "role": "visiteur",
    "titre": "Notifications",
    "chemin": "/notifications",
-   "but": "Les messages reçus : nouveaux produits et baisses de prix des boutiques suivies ; pour les pros, les ventes et les récompenses.",
+   "but": "Les messages reçus : nouveaux produits et baisses de prix des boutiques suivies, nouveautés annoncées par un revendeur suivi ; pour les pros, les ventes et les récompenses.",
    "elements": [
+    {
+     "nom": "Nouveautés chez <boutique>",
+     "role": "Annonce d’un revendeur à ses abonnés qui ont un compte : jusqu’à 3 noms d’articles, sans prix. La toucher ouvre sa boutique. Une par 24 h et par boutique au plus."
+    },
     {
      "nom": "Mes boutiques suivies",
      "role": "Accès direct à la liste."
@@ -2987,11 +3034,16 @@
     {
      "id": "boutiques-suivies",
      "libelle": "Boutiques suivies"
+    },
+    {
+     "id": "vitrine-boutique",
+     "libelle": "Boutique annoncée"
     }
    ],
    "capture": {
     "chemin": "/notifications"
-   }
+   },
+   "note": "Capture d’avant le lot 5 du chantier boutique : la page est la même, seules les annonces « Nouveautés chez … » des revendeurs s’y ajoutent."
   },
   {
    "id": "diaspora",
@@ -3880,7 +3932,7 @@
     },
     {
      "nom": "N abonnés (propriétaire)",
-     "role": "Remplace « Suivre » : on ne s’abonne pas à sa propre boutique."
+     "role": "Remplace « Suivre » : on ne s’abonne pas à sa propre boutique. Pour leur annoncer ses nouveaux articles : « Prévenir mes abonnés », dans « Mes articles » et les Statistiques."
     },
     {
      "nom": "Sélection vide (propriétaire)",
@@ -3908,7 +3960,7 @@
     },
     {
      "nom": "Suivre · Copier le lien · Partager · Devenir revendeur",
-     "role": "Ce que voit un client. En gestion, le propriétaire ne les voit qu’en vue client, sans effet. Sous un autre profil, il garde Copier le lien et Partager (sauf boutique masquée), sans Suivre ni Devenir revendeur. Ses liens d’achat ne portent pas son code : sa visite ne fait pas de lui son propre revendeur d’origine. Quand il partage un article, le lien garde son code."
+     "role": "Ce que voit un client. En gestion, le propriétaire ne les voit qu’en vue client, sans effet. Sous un autre profil, il garde Copier le lien et Partager (sauf boutique masquée), sans Suivre ni Devenir revendeur. Ses liens d’achat ne portent pas son code : sa visite ne fait pas de lui son propre revendeur d’origine. Quand il partage un article, le lien garde son code. Après « Suivre » : « Vous serez prévenu des nouveautés de cette boutique ». L’abonné qui a un compte reçoit dans ses notifications les annonces du revendeur (« Nouveautés chez … », une par 24 h au plus) ; celui inscrit par téléphone seul ne reçoit rien."
     },
     {
      "nom": "Onglet Boutique",
@@ -4034,6 +4086,14 @@
      "role": "À côté des compteurs : ouvre la feuille « Partager ma boutique » avec les articles enregistrés (toute la boutique, coups de cœur ou un rayon)."
     },
     {
+     "nom": "Prévenir mes abonnés (N nouveautés)",
+     "role": "Affiché seulement quand des articles ont été ajoutés à la boutique depuis la dernière annonce (14 jours au plus) et qu’elle a au moins un abonné. Ouvre la feuille « Prévenir mes abonnés »."
+    },
+    {
+     "nom": "Prévenir mes abonnés (feuille)",
+     "role": "Aperçu de la notification, écrite par Suguba sans texte libre : « Nouveautés chez <boutique> » et jusqu’à 3 noms d’articles, sans prix ni remise. « N abonnés avec un compte seront prévenus dans l’application » ; ceux inscrits par téléphone ne reçoivent rien. Action : « Prévenir mes N abonnés ». Une annonce par 24 h : sinon « Vous avez déjà prévenu vos abonnés… Prochaine annonce possible le … ». Après l’envoi : « N abonnés prévenus » (chiffre réel) et « Publier sur mon statut WhatsApp », un partage fait à la main avec un message prêt. Rien n’est envoyé par WhatsApp ni par SMS."
+    },
+    {
      "nom": "N articles ne s’affichent plus",
      "role": "Avertissement quand des articles ne sont plus en vente ou ne rapportent plus rien : ils restent dans la liste ; « Touchez-le pour le retirer » (un article) ou « Touchez un article pour le retirer » (plusieurs)."
     },
@@ -4124,6 +4184,10 @@
     {
      "nom": "Abonnés",
      "role": "Nombre d’abonnés et « +N sur la période »."
+    },
+    {
+     "nom": "Prévenir mes abonnés (N nouveautés)",
+     "role": "Sous « Abonnés », seulement quand des articles ont été ajoutés depuis la dernière annonce et que la boutique a au moins un abonné (jamais si elle est masquée par Suguba). Ouvre la même feuille que dans « Mes articles » : aperçu de la notification, destinataires réels, une annonce par 24 h, puis « Publier sur mon statut WhatsApp »."
     },
     {
      "nom": "Vos articles les plus vus",

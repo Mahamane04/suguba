@@ -41,8 +41,10 @@ export default function BoutiquesSuiviesPage() {
     return () => { annule = true; };
   }, []);
 
+  // Lot 5 du chantier boutique (2026-10-03) : « et leurs promotions » retiré, comme
+  // sous le bouton « Suivre ». Aucune boutique ne propose de promotion pour l'instant.
   return (
-    <PageReseau titre="Boutiques suivies" sousTitre="Leurs nouveautés et leurs promotions, en premier.">
+    <PageReseau titre="Boutiques suivies" sousTitre="Leurs nouveautés, en premier.">
       {chargement ? (
         <div className="space-y-3"><Skeleton className="h-16" /><Skeleton className="h-16" /></div>
       ) : boutiques.length === 0 ? (
