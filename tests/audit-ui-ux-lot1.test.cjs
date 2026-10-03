@@ -85,13 +85,18 @@ test('PUB-05 : pages 404 et erreur en français, avec une issue', () => {
   assert.doesNotMatch(erreur, /error\.message/, 'le détail technique n’est jamais affiché');
 });
 
-test('REV-04 / REV-06 : raccourci « Ma boutique » vers la vraie boutique, raccourcis empilés sur mobile', () => {
+test('REV-04 / REV-06 : « Ma boutique » vers la vraie boutique, raccourcis empilés sur mobile', () => {
   const page = lire('src/app/reseller/page.tsx');
   assert.doesNotMatch(page, /<Raccourci[^>]*href="\/reseller\/channels"/);
-  assert.match(page, /<Raccourci empile href="\/reseller\/boutique"[\s\S]{0,120}titre="Ma boutique"/);
-  // Lot 4 : 3 raccourcis (le doublon « Créer une commande » est retiré) ; les tuiles
-  // de chiffres, dont l'orpheline, sont fondues dans la carte d'argent.
-  assert.equal((page.match(/<Raccourci empile/g) || []).length, 3);
+  // Chantier boutique, lot 1 (2026-10-03) : le 3e raccourci, qui ouvrait les
+  // réglages, devient la carte « Ma boutique » ; son bouton vise la porte unique
+  // /reseller/ma-boutique, qui ouvre la vitrine. Restent 2 raccourcis empilés.
+  assert.equal(require('../src/lib/reseau/porte-boutique.ts').PORTE_MA_BOUTIQUE, '/reseller/ma-boutique');
+  assert.match(page, /<CarteMaBoutique boutique=\{boutique\}/);
+  assert.match(page, /<Button href=\{PORTE_MA_BOUTIQUE\}[^>]*>[\s\S]{0,80}Voir ma boutique/);
+  assert.doesNotMatch(page, /<Raccourci[^>]*href="\/reseller\/boutique"/);
+  assert.equal((page.match(/<Raccourci empile/g) || []).length, 2);
+  assert.match(page, /<div className="grid grid-cols-2 gap-3">\s*<Raccourci empile href="\/reseller\/catalog"/);
   assert.match(page, /Retirable maintenant/);
 });
 

@@ -137,6 +137,7 @@ export default function BoutiqueFournisseurPage() {
           <CarteLien
             titre="Le lien de ma boutique"
             url={`${origine}/boutique/${boutique.slug}`}
+            lienOuvrir={`/boutique/${boutique.slug}`}
             aide="À mettre sur vos affiches, vos cartes et vos publications."
             texteWhatsApp={`🏪 ${nom} sur Suguba\n\nNotre catalogue, livré à Bamako.\n👉 ${origine}/boutique/${boutique.slug}`}
           />

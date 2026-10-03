@@ -61,7 +61,8 @@ export default function ClientsRevendeurPage() {
           icone={Users}
           titre="Aucun client pour l’instant"
           texte="Dès qu’une personne arrive par votre lien ou votre QR code, elle vous est rattachée — et toutes ses commandes suivantes aussi."
-          action={<Button href="/reseller/boutique">Partager ma boutique</Button>}
+          // La vitrine elle-même, prête à partager (porte unique, 2026-10-03).
+          action={<Button href="/reseller/ma-boutique?partager=1">Partager ma boutique</Button>}
         />
       ) : (
         <Card padding="p-0" className="overflow-hidden divide-y divide-slate-100">

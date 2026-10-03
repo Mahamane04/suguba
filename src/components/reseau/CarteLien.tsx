@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Copy, Check, QrCode as QrIcon } from 'lucide-react';
+import { Copy, Check, Eye, QrCode as QrIcon } from 'lucide-react';
 import QrCode from '@/components/common/QrCode';
 import Button from '@/components/ui/Button';
 import { Card } from '@/components/ui/Surface';
@@ -19,11 +19,18 @@ export default function CarteLien({
   url,
   aide,
   texteWhatsApp,
+  lienOuvrir,
 }: {
   titre: string;
   url: string;
   aide?: string;
   texteWhatsApp?: string;
+  /**
+   * Adresse interne de la page partagée (2026-10-03) : « Ouvrir », dans le MÊME
+   * onglet. On ne pouvait que copier le lien et le coller ailleurs pour voir sa
+   * propre boutique — en sortant de l'application installée.
+   */
+  lienOuvrir?: string;
 }) {
   const [copie, setCopie] = useState(false);
   const [qrVisible, setQrVisible] = useState(false);
@@ -46,15 +53,22 @@ export default function CarteLien({
           <p className="text-sm font-bold text-slate-900">{titre}</p>
           {aide && <p className="text-xs text-slate-500 mt-0.5">{aide}</p>}
         </div>
-        <button
-          type="button"
-          onClick={() => setQrVisible((v) => !v)}
-          aria-expanded={qrVisible}
-          className="shrink-0 w-10 h-10 rounded-2xl border border-slate-200 bg-white text-slate-700 flex items-center justify-center active:scale-95"
-        >
-          <QrIcon className="w-4 h-4" />
-          <span className="sr-only">Afficher le QR code</span>
-        </button>
+        <div className="shrink-0 flex items-center gap-2">
+          {lienOuvrir && (
+            <Button href={lienOuvrir} variant="ghost" size="sm">
+              <Eye className="w-4 h-4" />Ouvrir
+            </Button>
+          )}
+          <button
+            type="button"
+            onClick={() => setQrVisible((v) => !v)}
+            aria-expanded={qrVisible}
+            className="shrink-0 w-10 h-10 rounded-2xl border border-slate-200 bg-white text-slate-700 flex items-center justify-center active:scale-95"
+          >
+            <QrIcon className="w-4 h-4" />
+            <span className="sr-only">Afficher le QR code</span>
+          </button>
+        </div>
       </div>
 
       <div className="flex items-center gap-2">

@@ -9,8 +9,25 @@ import type { Boutique } from '@/lib/shop';
 import BadgeConfiance from '@/components/ui/BadgeConfiance';
 import { quartierReconnu } from '@/lib/reseau/proximite';
 import AncrageRevendeur from '@/components/common/AncrageRevendeur';
-import { ShieldCheck, Truck, KeyRound, Store, Users, MapPin, Pencil, ImagePlus, ArrowDown } from 'lucide-react';
+import Button from '@/components/ui/Button';
+import { StatusPill } from '@/components/ui/Surface';
+import { ShieldCheck, Truck, KeyRound, Store, Users, MapPin, Pencil, ImagePlus, ArrowDown, ChevronRight, PackagePlus } from 'lucide-react';
 import { initiale } from '@/lib/initiale';
+import { PORTE_MA_BOUTIQUE } from '@/lib/reseau/porte-boutique';
+import { whatsappHelper } from '@/lib/whatsapp-helper';
+
+/**
+ * Propriétaire connecté sur SA vitrine (lot 1 du chantier boutique, 2026-10-03).
+ * Absent pour un visiteur, et toujours absent sur /r/ et /s/ : leur rendu ne
+ * change pas.
+ */
+export interface ProprietaireVitrine {
+  /** 'active', ou 'hidden' / 'suspended' quand Suguba l'a masquée. */
+  statut: string;
+  abonnes: number;
+  /** Profil actif revendeur. Sinon : bandeau « C'est votre boutique · Gérer ». */
+  gestion: boolean;
+}
 
 /**
  * Vitrine commune aux boutiques fournisseur (/s/), revendeur (/r/) et réseau
@@ -37,6 +54,7 @@ export default function ShopView({
   suivre,
   galerie,
   lienModifier,
+  proprietaire,
 }: {
   boutique: Boutique;
   urlPartage: string;
@@ -53,6 +71,8 @@ export default function ShopView({
   galerie?: React.ReactNode;
   /** Présent seulement quand le visiteur est le propriétaire : page où modifier la boutique. */
   lienModifier?: string | null;
+  /** Propriétaire de la boutique revendeur principale : il n'y voit plus les éléments du visiteur. */
+  proprietaire?: ProprietaireVitrine | null;
 }) {
   const estRevendeur = boutique.type === 'revendeur';
   const titre = estRevendeur ? `La sélection de ${boutique.nom}` : boutique.nom;
@@ -65,10 +85,22 @@ export default function ShopView({
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 pb-20 md:pb-10">
       <Header />
-      {/* Boutique d'un revendeur : il devient le revendeur d'origine du visiteur (lot B). */}
-      {estRevendeur && refCode && <AncrageRevendeur code={refCode} />}
+      {/* Boutique d'un revendeur : il devient le revendeur d'origine du visiteur (lot B).
+          Jamais pour son propriétaire : il deviendrait pour 30 jours son propre
+          revendeur d'origine (2026-10-03). */}
+      {estRevendeur && refCode && !proprietaire && <AncrageRevendeur code={refCode} />}
 
       <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
+        {/* Profil actif autre que revendeur : un seul bandeau, vers la porte unique,
+            qui rebascule le profil. Lien classique (page rechargée) : le menu du
+            bas reprend le profil revendeur. */}
+        {proprietaire && !proprietaire.gestion && (
+          <a href={PORTE_MA_BOUTIQUE}
+            className="flex items-center justify-between gap-3 min-h-12 rounded-2xl bg-suguba-profond text-white px-4 py-2">
+            <span className="text-sm font-semibold">C’est votre boutique</span>
+            <span className="inline-flex items-center gap-1 text-sm font-bold text-suguba-citron">Gérer<ChevronRight className="w-4 h-4" /></span>
+          </a>
+        )}
         <section className="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden">
           {/* Couverture */}
           <div className="relative h-28 sm:h-56">
@@ -89,9 +121,9 @@ export default function ShopView({
             {lienModifier && (
               <Link
                 href={lienModifier}
-                className="absolute top-3 right-3 inline-flex items-center gap-1.5 h-9 px-3 rounded-full bg-white/95 backdrop-blur text-slate-900 text-xs font-bold shadow-sm hover:bg-white"
+                className="absolute top-3 right-3 inline-flex items-center gap-1.5 h-10 px-3.5 rounded-full bg-white/95 backdrop-blur text-slate-900 text-xs font-bold shadow-sm hover:bg-white"
               >
-                <Pencil className="w-3.5 h-3.5" /> Modifier la boutique
+                <Pencil className="w-3.5 h-3.5" /> {proprietaire ? 'Personnaliser' : 'Modifier la boutique'}
               </Link>
             )}
           </div>
@@ -119,6 +151,20 @@ export default function ShopView({
                 {estRevendeur ? 'Revendeur partenaire Suguba' : boutique.presentation ? 'Fournisseur partenaire Suguba' : 'Boutique sur Suguba'}
               </p>
               <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight">{titre}</h1>
+              {proprietaire && (
+                proprietaire.statut === 'active' ? (
+                  <StatusPill ton="succes">En ligne</StatusPill>
+                ) : (
+                  <div className="rounded-2xl bg-amber-50 border border-amber-200 p-3 space-y-1">
+                    <StatusPill ton="attente">Masquée par Suguba</StatusPill>
+                    <p className="text-sm text-amber-950">Vos clients ne la voient pas pour le moment : vous seul la voyez.</p>
+                    <a href={whatsappHelper.getSupportChatLink()} target="_blank" rel="noopener noreferrer"
+                      className="inline-flex items-center min-h-10 text-sm font-semibold text-suguba-brand-dark underline underline-offset-2">
+                      Écrire au support Suguba
+                    </a>
+                  </div>
+                )
+              )}
               {accroche && <p className="text-sm text-slate-600">{accroche}</p>}
               {boutique.badges && boutique.badges.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
@@ -151,8 +197,15 @@ export default function ShopView({
 
             {/* Actions */}
             <div className="mt-4 flex flex-wrap items-start gap-2">
-              {suivre && <div className="flex-none">{suivre}</div>}
-              <ShopShareBar url={urlPartage} texte={texteWhatsApp} />
+              {/* Le propriétaire ne s'abonne pas à sa propre boutique : il voit ses abonnés. */}
+              {proprietaire ? (
+                <p className="flex-none inline-flex items-center gap-2 h-11 px-4 rounded-2xl bg-suguba-sauge text-sm text-suguba-profond">
+                  <Users className="w-4 h-4" />
+                  <span><strong className="tabular-nums">{proprietaire.abonnes}</strong> abonné{proprietaire.abonnes > 1 ? 's' : ''}</span>
+                </p>
+              ) : suivre && <div className="flex-none">{suivre}</div>}
+              {/* Boutique masquée : un lien partagé mènerait le client à une page introuvable. */}
+              {(!proprietaire || proprietaire.statut === 'active') && <ShopShareBar url={urlPartage} texte={texteWhatsApp} />}
             </div>
 
             {complement && <div className="mt-4">{complement}</div>}
@@ -188,11 +241,19 @@ export default function ShopView({
 
         {galerie}
 
-        {boutique.selectionVide && (
+        {boutique.selectionVide && (proprietaire ? (
+          // Le propriétaire reçoit une action, pas l'avis destiné aux clients (2026-10-03).
+          <div className="bg-white border border-slate-200 rounded-2xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <p className="text-sm text-slate-700">Vos clients voient le catalogue Suguba en attendant vos articles.</p>
+            <Button href="/reseller/catalog" variant="secondary" size="sm" className="self-start sm:self-auto shrink-0">
+              <PackagePlus className="w-4 h-4" />Choisir mes articles
+            </Button>
+          </div>
+        ) : (
           <p className="text-xs text-slate-500 bg-white border border-slate-200 rounded-2xl p-3">
             Sélection en préparation — voici en attendant les articles du catalogue Suguba.
           </p>
-        )}
+        ))}
 
         {nbArticles === 0 ? (
           <div className="bg-white rounded-3xl border border-slate-200 p-8 text-center space-y-2">
@@ -238,6 +299,7 @@ export default function ShopView({
           </section>
         )}
 
+        {!proprietaire && (
         <div className="bg-white rounded-3xl border border-slate-200 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center space-x-3">
             <Users className="w-6 h-6 text-suguba-brand-dark shrink-0" />
@@ -250,10 +312,12 @@ export default function ShopView({
             Devenir revendeur
           </Link>
         </div>
+        )}
       </main>
 
       <Footer />
-      <BottomNav />
+      {/* Sur sa vitrine, l'onglet « Boutique » du propriétaire reste allumé. */}
+      <BottomNav actif={proprietaire ? PORTE_MA_BOUTIQUE : undefined} />
     </div>
   );
 }

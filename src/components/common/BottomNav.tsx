@@ -8,14 +8,19 @@ import { useClavierOuvert } from '@/lib/useClavierOuvert';
 import { useBarreSurEcranVisible } from '@/lib/useBarreSurEcranVisible';
 import { usePanier } from '@/lib/panier';
 import { useDansPosteAdmin } from '@/components/admin/contexte';
+import { PORTE_MA_BOUTIQUE, sansPrechargement } from '@/lib/reseau/porte-boutique';
 import {
-  Home, Grid3X3, ShoppingCart, Wallet, TrendingUp,
+  Home, Grid3X3, ShoppingCart, Wallet,
   PackagePlus, ShieldCheck, Truck, Store, Users,
   LifeBuoy, PackageSearch, Boxes, ClipboardList,
   ShoppingBag, UserRound,
 } from 'lucide-react';
 
-type NavItem = { label: string; href: string; icon: React.ElementType; panier?: boolean };
+type NavItem = {
+  label: string; href: string; icon: React.ElementType; panier?: boolean;
+  /** Autres chemins qui allument l'onglet (ex. « Boutique » sur les réglages de la boutique). */
+  prefixesActifs?: string[];
+};
 
 /**
  * ⚠️ Chaque href ci-dessous doit correspondre à une page réellement présente
@@ -28,12 +33,18 @@ type NavItem = { label: string; href: string; icon: React.ElementType; panier?: 
 function getNavItems(role: string | null): NavItem[] {
   switch (role) {
     case 'reseller':
+      // « Boutique » remplace « Outils » (décision du fondateur, lot 1 du chantier
+      // boutique, 2026-10-03) : voir sa boutique en 1 toucher depuis n'importe
+      // quel écran. Il vise la porte unique (aucune adresse gardée dans le
+      // navigateur) ; « Tous mes outils » reste sur l'accueil. « Gains » reste :
+      // le solde est le premier motif d'usage. Réversible en une ligne.
       return [
         { label: 'Accueil',     href: '/reseller',           icon: Home        },
         { label: 'Produits',   href: '/reseller/catalog',   icon: Grid3X3     },
+        { label: 'Boutique',    href: PORTE_MA_BOUTIQUE,     icon: Store,
+          prefixesActifs: [PORTE_MA_BOUTIQUE, '/reseller/boutique'] },
         { label: 'Ventes',      href: '/reseller/orders',    icon: ShoppingCart},
         { label: 'Gains',       href: '/reseller/payouts',   icon: Wallet      },
-        { label: 'Outils',      href: '/reseller/outils',  icon: TrendingUp  },
       ];
     case 'supplier':
       return [
@@ -114,8 +125,15 @@ function getNavItems(role: string | null): NavItem[] {
  * disponible de façon SYNCHRONE dès le tout premier rendu de ce composant :
  * plus de requête ici, plus de flash.
  */
-export default function BottomNav() {
+export default function BottomNav({ actif }: {
+  /**
+   * Chemin à allumer à la place de l'adresse visitée (2026-10-03) : la vitrine
+   * /boutique/<adresse> de son propriétaire allume l'onglet « Boutique ».
+   */
+  actif?: string;
+} = {}) {
   const pathname = usePathname();
+  const chemin = actif || pathname || '';
   const state = useSugubaStore();
   // id vide = personne connue pour l'instant (visiteur, ou identité pas
   // encore résolue lors du tout premier chargement de l'app).
@@ -174,13 +192,15 @@ export default function BottomNav() {
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive =
-              pathname === item.href ||
-              (!RACINES.includes(item.href) && pathname.startsWith(item.href));
+              chemin === item.href ||
+              (item.prefixesActifs || []).some((p) => chemin === p || chemin.startsWith(`${p}/`)) ||
+              (!RACINES.includes(item.href) && chemin.startsWith(item.href));
 
             return (
               <Link
                 key={item.href}
                 href={item.href}
+                prefetch={sansPrechargement(item.href) ? false : undefined}
                 aria-label={item.label}
                 aria-current={isActive ? 'page' : undefined}
                 className={`flex flex-col items-center justify-center flex-1 min-w-0 py-2 px-0 rounded-xl transition-colors duration-150 active:scale-95 ${

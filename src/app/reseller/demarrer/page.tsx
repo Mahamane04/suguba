@@ -4,7 +4,7 @@ import SugubaLoader from '@/components/ui/SugubaLoader';
 
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, ArrowLeft, ArrowRight, MapPin, PartyPopper, Phone } from 'lucide-react';
+import { Check, ArrowLeft, ArrowRight, MapPin, PartyPopper, Phone, Store, PackagePlus } from 'lucide-react';
 import Header from '@/components/common/Header';
 import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
 import CarteLien from '@/components/reseau/CarteLien';
@@ -13,6 +13,7 @@ import { Field, Input } from '@/components/ui/Field';
 import { Card } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
 import { FAMILLES_CATEGORIES } from '@/lib/product-categories';
+import { PORTE_MA_BOUTIQUE } from '@/lib/reseau/porte-boutique';
 
 /**
  * Démarrage du revendeur (§ 4 des écrans) — huit étapes courtes, UNE question
@@ -93,12 +94,24 @@ export default function DemarrerPage() {
           body: JSON.stringify({ categories }),
         }).catch(() => undefined);
       }
-      if (etape === 7) {
-        await enregistrerProfil({ onboardingDone: true });
-        router.push('/reseller');
-        return;
-      }
       setEtape((e) => Math.min(ETAPES.length - 1, e + 1));
+    } catch (erreur) {
+      toast((erreur as Error).message, { ton: 'erreur' });
+    } finally {
+      setEnvoi(false);
+    }
+  };
+
+  /**
+   * Dernière étape (lot 1 du chantier boutique, 2026-10-03) : elle annonçait
+   * « Votre boutique est prête » alors que la sélection était vide. Elle mène
+   * maintenant à la boutique elle-même, ou au choix des articles.
+   */
+  const terminer = async (destination: string) => {
+    setEnvoi(true);
+    try {
+      await enregistrerProfil({ onboardingDone: true });
+      router.push(destination);
     } catch (erreur) {
       toast((erreur as Error).message, { ton: 'erreur' });
     } finally {
@@ -230,13 +243,14 @@ export default function DemarrerPage() {
           {etape === 7 && (
             <div className="space-y-3 text-center">
               <PartyPopper className="w-10 h-10 text-suguba-brand mx-auto" />
-              <p className="text-sm text-slate-700">Votre boutique est prête. Partagez-la sur votre statut WhatsApp dès maintenant.</p>
+              <p className="text-sm text-slate-700">Votre boutique est créée. Il reste à choisir vos articles.</p>
             </div>
           )}
         </Card>
 
         {etape === 7 && slugBoutique && (
           <CarteLien titre="Ma boutique" url={`${origine}/boutique/${slugBoutique}`}
+            lienOuvrir={`/boutique/${slugBoutique}`}
             texteWhatsApp={`🛍️ Ma boutique Suguba — ${nomBoutique}\nCommandez, vous payez à la livraison.\n👉 ${origine}/boutique/${slugBoutique}`} />
         )}
 
@@ -246,11 +260,22 @@ export default function DemarrerPage() {
               <ArrowLeft className="w-4 h-4" />
             </Button>
           )}
-          <Button fullWidth size="lg" onClick={continuer} disabled={envoi || !peutContinuer}>
-            {envoi ? <SugubaLoader className="w-4 h-4" /> : etape === 7 ? <Check className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
-            {etape === 7 ? 'Aller à mon espace' : 'Continuer'}
-          </Button>
+          {etape === 7 ? (
+            <Button fullWidth size="lg" onClick={() => terminer(PORTE_MA_BOUTIQUE)} loading={envoi}>
+              <Store className="w-4 h-4" />Ouvrir ma boutique
+            </Button>
+          ) : (
+            <Button fullWidth size="lg" onClick={continuer} disabled={envoi || !peutContinuer}>
+              {envoi ? <SugubaLoader className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
+              Continuer
+            </Button>
+          )}
         </div>
+        {etape === 7 && (
+          <Button variant="ghost" fullWidth onClick={() => terminer('/reseller/catalog')} disabled={envoi}>
+            <PackagePlus className="w-4 h-4" />Choisir mes articles
+          </Button>
+        )}
       </main>
     </div>
   );

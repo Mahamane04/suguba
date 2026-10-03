@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import SugubaLoader from '@/components/ui/SugubaLoader';
+import { sansPrechargement } from '@/lib/reseau/porte-boutique';
 
 /**
  * Bouton unique de l'application — point d'entrée du design system.
@@ -87,8 +88,10 @@ export default function Button(props: ProprietesBouton | ProprietesLien) {
   // les lecteurs d'écran en dépendent.
   if ('href' in props && props.href !== undefined) {
     const { href, ...resteLien } = reste as ProprietesLien;
+    // Porte « Ma boutique » (2026-10-03) : une route qui redirige, jamais
+    // préchargée (voir src/lib/reseau/porte-boutique.ts).
     return (
-      <Link href={href} className={classes} {...resteLien}>
+      <Link href={href} prefetch={sansPrechargement(href) ? false : undefined} className={classes} {...resteLien}>
         {children}
       </Link>
     );

@@ -8,6 +8,7 @@ import Footer from '@/components/common/Footer';
 import QrCode from '@/components/common/QrCode';
 import { useSugubaStore } from '@/lib/store';
 import { useCodeRevendeur } from '@/lib/partage';
+import { PORTE_MA_BOUTIQUE } from '@/lib/reseau/porte-boutique';
 import { ShieldCheck, ArrowLeft, Printer, Sparkles, Award, CheckCircle2, MapPin, Copy, Check } from 'lucide-react';
 import LogoSuguba from '@/components/ui/LogoSuguba';
 import BoutonPartageWhatsApp from '@/components/ui/BoutonPartageWhatsApp';
@@ -146,7 +147,7 @@ export default function ResellerBadgePage() {
                 remplace un appel à quickchart.io qui envoyait le lien du
                 revendeur à un service tiers pour chaque affichage. */}
             <div className="bg-white p-3 rounded-2xl shadow-lg text-center space-y-1.5 shrink-0">
-              {personalCatalogUrl ? <QrCode value={personalCatalogUrl} size={128} /> : <p role="status" className="max-w-32 text-slate-700">Boutique indisponible. Réessayez depuis Ma boutique.</p>}
+              {personalCatalogUrl ? <QrCode value={personalCatalogUrl} size={128} /> : <p role="status" className="max-w-32 text-slate-700">Boutique indisponible. <Link href={PORTE_MA_BOUTIQUE} prefetch={false} className="inline-flex items-center min-h-10 font-bold text-suguba-brand-dark underline underline-offset-2">Ouvrir Ma boutique</Link></p>}
               <span className="text-xs font-semibold text-slate-900 block">
                 Scanner pour Commander
               </span>

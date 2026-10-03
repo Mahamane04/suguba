@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { ChevronRight } from 'lucide-react';
+import { sansPrechargement } from '@/lib/reseau/porte-boutique';
 
 /**
  * Bloc d'accès aux écrans du réseau, posé sur les tableaux de bord.
@@ -33,6 +34,7 @@ export default function CarteAccesReseau({ titre, entrees }: { titre: string; en
             <Link
               key={entree.href}
               href={entree.href}
+              prefetch={sansPrechargement(entree.href) ? false : undefined}
               className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 active:bg-slate-100 transition-colors"
             >
               <div className="w-9 h-9 rounded-2xl bg-suguba-brand/10 text-suguba-brand-dark flex items-center justify-center shrink-0">

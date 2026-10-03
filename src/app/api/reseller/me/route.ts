@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { libererCommissionsEchues } from '@/lib/commissions';
+import { boutiqueDuProprietaire } from '@/lib/reseau/boutiques';
 
 /**
  * Fiche revendeur réelle du compte connecté.
@@ -22,6 +23,14 @@ import { libererCommissionsEchues } from '@/lib/commissions';
  * serveur (voir /api/orders/sync) ne trouvait aucun profil correspondant, et
  * il ne touchait donc AUCUNE commission sur les ventes qu'il générait.
  */
+
+/** Aperçu de la boutique pour la carte « Ma boutique » de l'accueil (?avec=boutique). */
+interface ApercuBoutique {
+  slug: string; nom: string; logo: string | null; couverture: string | null;
+  /** Articles choisis (reseller_shop_items) ; null si le compte est illisible : « — », jamais 0. */
+  articles: number | null;
+  abonnes: number; statut: string;
+}
 
 // Mêmes seuils que la règle appliquée jusqu'ici côté client.
 function paliers(ventes: number): 'new' | 'verified' | 'vip' {
@@ -64,7 +73,31 @@ export async function GET(req: NextRequest) {
   const ventes = ventesLivrees || 0;
   const metadata = (profil?.metadata || {}) as Record<string, unknown>;
 
+  // Carte « Ma boutique » de l'accueil (lot 1 du chantier boutique, 2026-10-03).
+  // Lue seulement sur demande : le catalogue et le démarrage, qui appellent
+  // aussi cette route, ne paient aucune requête de plus. Lue APRÈS les soldes
+  // et dans un try : une boutique illisible donne boutique: null, jamais un
+  // 503 qui rendrait le solde « indisponible ». Rien n'est créé ici.
+  let boutique: ApercuBoutique | null = null;
+  if (req.nextUrl.searchParams.get('avec') === 'boutique') {
+    try {
+      const b = await boutiqueDuProprietaire('reseller', session.uid);
+      if (b) {
+        const { count, error } = await admin.from('reseller_shop_items')
+          .select('product_id', { count: 'exact', head: true }).eq('reseller_id', session.uid);
+        boutique = {
+          slug: b.slug, nom: b.nom, logo: b.logo, couverture: b.couverture,
+          articles: error || count == null ? null : count,
+          abonnes: b.abonnes, statut: b.statut,
+        };
+      }
+    } catch {
+      boutique = null;
+    }
+  }
+
   return NextResponse.json({
+    ...(req.nextUrl.searchParams.get('avec') === 'boutique' ? { boutique } : {}),
     reseller: {
       referralCode: profil?.reseller_code || null,
       fullName: profil?.full_name || null,

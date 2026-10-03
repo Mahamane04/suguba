@@ -4,7 +4,7 @@ import SugubaLoader from '@/components/ui/SugubaLoader';
 
 import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Store, Plus, ExternalLink, Check, Crown, Clock, ListChecks, Settings2 } from 'lucide-react';
+import { Store, Plus, Eye, Check, Crown, Clock, ListChecks, Settings2 } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import { Card, Skeleton, StatusPill } from '@/components/ui/Surface';
 import Button from '@/components/ui/Button';
@@ -124,7 +124,8 @@ export default function MesBoutiquesPage() {
               {b.principale && <StatusPill ton="info">Principale</StatusPill>}
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button href={`/boutique/${b.slug}`} target="_blank" variant="ghost" size="sm"><ExternalLink className="w-4 h-4" />Voir</Button>
+              {/* Même onglet (2026-10-03) : un nouvel onglet faisait sortir de l'application installée. */}
+              <Button href={`/boutique/${b.slug}`} variant="ghost" size="sm"><Eye className="w-4 h-4" />Voir</Button>
               {b.principale ? (
                 <Button href={`${espace}/boutique`} variant="ghost" size="sm"><Settings2 className="w-4 h-4" />Gérer</Button>
               ) : (

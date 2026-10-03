@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
+import { cache } from 'react';
 import { notFound } from 'next/navigation';
-import ShopView from '@/components/shop/ShopView';
+import ShopView, { type ProprietaireVitrine } from '@/components/shop/ShopView';
 import BoutonSuivre from '@/components/shop/BoutonSuivre';
 import GalerieBoutique from '@/components/shop/GalerieBoutique';
 import { chargerBoutiqueFournisseur, chargerBoutiqueRevendeur, chargerProduitsDeLaBoutique, chargerProduitsSuguba, URL_APP, type Boutique } from '@/lib/shop';
@@ -27,16 +28,32 @@ type Params = { params: Promise<{ slug: string }> };
 type Charge = {
   vitrine: Boutique; slugBoutique: string; abonnes: number; galerie: string[]; quartier: string | null;
   accroche: string | null; proprietaireId: string | null; typeProprietaire: string; principale: boolean;
+  /** 'active', ou 'hidden' / 'suspended' quand Suguba l'a masquée (décidé dans la page). */
+  statut: string;
 };
 
-async function charger(slug: string): Promise<Charge | null> {
+/**
+ * Lot 1 du chantier boutique (2026-10-03) :
+ *  - cache() : generateMetadata et la page appelaient chacun charger(), soit
+ *    deux fois la dizaine de requêtes d'une vitrine sur un réseau lent. Une
+ *    seule fois par requête désormais ;
+ *  - le statut est RENVOYÉ au lieu de donner null : le propriétaire d'une
+ *    boutique masquée par Suguba voit sa vitrine avec la pastille « Masquée
+ *    par Suguba » (il tombait sur une page introuvable sans explication) ; le
+ *    visiteur, lui, obtient toujours la page introuvable (voir la page).
+ */
+const charger = cache(async (slug: string): Promise<Charge | null> => {
   const boutique = await boutiqueParSlug(slug);
-  if (!boutique || boutique.statut !== 'active') return null;
+  if (!boutique) return null;
+  // Seule une boutique revendeur principale masquée reste visible (pour son
+  // propriétaire) : les autres gardent la page introuvable, sans autre requête.
+  if (boutique.statut !== 'active' && !(boutique.typeProprietaire === 'reseller' && boutique.principale !== false)) return null;
   const commun = {
     accroche: boutique.accroche,
     proprietaireId: boutique.proprietaireId,
     typeProprietaire: boutique.typeProprietaire,
     principale: boutique.principale !== false,
+    statut: boutique.statut,
   };
   const enPlus = {
     couverture: boutique.couverture,
@@ -106,12 +123,15 @@ async function charger(slug: string): Promise<Charge | null> {
   }
 
   return null;
-}
+});
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
   const charge = await charger(slug);
   if (!charge) return { title: 'Boutique introuvable — Suguba' };
+  // Boutique masquée par Suguba : seul son propriétaire la voit. Titre neutre
+  // (rien d'elle dans un aperçu de lien) et jamais indexée.
+  if (charge.statut !== 'active') return { title: 'Boutique — Suguba', robots: { index: false, follow: false } };
 
   const { vitrine } = charge;
   const titre = `${vitrine.nom} — Suguba`;
@@ -141,6 +161,18 @@ export default async function BoutiqueReseauPage({ params }: Params) {
   // logo et couverture s'ils manquent) ; les visiteurs, jamais.
   const session = await verifySessionToken((await cookies()).get(SESSION_COOKIE_NAME)?.value);
   const estProprietaire = Boolean(session && !session.apercu && charge.proprietaireId && session.uid === charge.proprietaireId);
+  // Vue du propriétaire (lot 1 du chantier boutique, 2026-10-03) : sa boutique
+  // revendeur principale, celle qu'ouvre la porte « Ma boutique ». Le mode
+  // propriétaire côté fournisseur n'est pas dans ce chantier, les boutiques
+  // supplémentaires (formules Pro) viendront au lot 7 : leur rendu ne change pas.
+  // `gestion` : son profil actif est revendeur ; sinon, un bandeau « Gérer » le
+  // ramène à la porte unique, qui rebascule le profil.
+  const proprietaire: ProprietaireVitrine | null =
+    estProprietaire && charge.typeProprietaire === 'reseller' && charge.principale
+      ? { statut: charge.statut, abonnes: charge.abonnes, gestion: session?.role === 'reseller' }
+      : null;
+  // Boutique masquée par Suguba : page introuvable pour tout autre visiteur.
+  if (charge.statut !== 'active' && !proprietaire) notFound();
   const lienModifier = !estProprietaire ? null
     : !charge.principale ? '/compte/boutiques'
       : charge.typeProprietaire === 'supplier' ? '/supplier/boutique'
@@ -155,6 +187,7 @@ export default async function BoutiqueReseauPage({ params }: Params) {
       quartier={charge.quartier}
       accroche={charge.accroche}
       lienModifier={lienModifier}
+      proprietaire={proprietaire}
       suivre={<BoutonSuivre slug={charge.slugBoutique} abonnesInitial={charge.abonnes} />}
       galerie={charge.galerie.length > 0 ? (
         <section className="bg-white rounded-3xl border border-slate-200 p-4 sm:p-5 space-y-3">

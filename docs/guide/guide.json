@@ -14,7 +14,7 @@
    "titre": "Revendeur",
    "lettre": "R",
    "acces": "Connecté comme revendeur",
-   "intro": "Le revendeur partage des produits avec son lien personnel et touche une commission sur chaque vente livrée. Menu du bas : Accueil · Produits · Ventes · Gains · Outils.",
+   "intro": "Le revendeur partage des produits avec son lien personnel et touche une commission sur chaque vente livrée. Menu du bas : Accueil · Produits · Boutique · Ventes · Gains (« Tous mes outils » est sur l’accueil).",
    "sessionDemo": "reseller"
   },
   {
@@ -61,7 +61,7 @@
   {
    "titre": "En bas de chaque page",
    "points": [
-    "**Menu du bas**, qui change selon le profil. Visiteur et client : Accueil · Panier (avec son nombre d’articles) · Commandes · Compte — « Gagner de l’argent » est dans Compte et sur l’accueil. Revendeur : Accueil · Produits · Ventes · Gains · Outils. Fournisseur : Accueil · Produits · Colis · Paiements · Plus. Livreur : Courses · Portefeuille. Équipe Suguba : dans son espace, le menu ☰ en haut remplace cette barre (ailleurs sur le site : À traiter · Commandes · Produits · SAV).",
+    "**Menu du bas**, qui change selon le profil. Visiteur et client : Accueil · Panier (avec son nombre d’articles) · Commandes · Compte — « Gagner de l’argent » est dans Compte et sur l’accueil. Revendeur : Accueil · Produits · Boutique · Ventes · Gains — « Boutique » ouvre sa vitrine et reste allumé sur ses réglages et sur sa vitrine. Fournisseur : Accueil · Produits · Colis · Paiements · Plus. Livreur : Courses · Portefeuille. Équipe Suguba : dans son espace, le menu ☰ en haut remplace cette barre (ailleurs sur le site : À traiter · Commandes · Produits · SAV).",
     "**Bulle WhatsApp verte** : écrit directement au support Suguba (+223 89 46 00 00). Plus sur l’accueil (elle recouvrait les produits) : l’aide est dans Compte → Aide.",
     "**Pendant une commande**, le menu du bas est remplacé par la barre flottante « Total + Confirmer »."
    ]
@@ -188,14 +188,52 @@
    "titre": "Pages volontairement non capturées",
    "points": [
     "`/admin/boutique-suguba` : l’ouvrir **crée** la boutique officielle de Suguba. À ouvrir par vous le moment venu.",
-    "`/boutique/<adresse>` : aucune boutique réseau n’existe encore en base ; elles se créent quand un revendeur ou un fournisseur ouvre « Ma boutique ».",
+    "`/boutique/<adresse>` : décrite dans la fiche « Ma boutique (la vitrine) » ; sa capture est à refaire sur la copie locale avec un compte revendeur [QA].",
     "`/order-success/<n°>` et `/track/<n°>` : il faut une vraie commande.",
-    "`/r/<code>` et `/go/<code>` : liens courts de partage, qui redirigent en mémorisant le revendeur.",
+    "`/r/<code>` : ancienne vitrine d’un revendeur, toujours partagée, affichée sans redirection (même présentation que /boutique/, sans les outils du propriétaire). `/go/<code>` : lien court de partage, qui redirige en mémorisant le revendeur.",
     "`/auth/callback` : page technique de retour après la connexion Google."
    ]
   }
  ],
  "journal": [
+  {
+   "date": "2026-10-03",
+   "titre": "Boutique revendeur, lot 1 : « Ma boutique » ouvre ma boutique",
+   "demande": "« “Ma boutique” doit montrer la boutique elle-même (logo, couverture, produits ajoutés) et non les réglages ; il veut des outils pour gérer sa boutique (personnalisation, catégories/rayons, produits mis en avant, et ce qui aide à vendre), pour un vrai sentiment d’appropriation. »",
+   "realise": [
+    "Une seule porte : /reseller/ma-boutique trouve la boutique du compte connecté (ou la crée avec « Prénom I. », jamais le nom complet) et ouvre la vitrine /boutique/<adresse> dans le même onglet, y compris dans l’application installée.",
+    "Accueil : carte « Ma boutique » sous le solde (couverture, logo, nom, « N articles · N abonnés », « Masquée par Suguba » le cas échéant) avec « Voir ma boutique » et « Partager » ; 2 raccourcis au lieu de 3 ; étape « Choisir mes articles » dans « Vers votre première vente » ; « Tous mes outils » dans l’en-tête « Outils de vente ».",
+    "Barre du bas du revendeur : Accueil · Produits · Boutique · Ventes · Gains (« Boutique » remplace « Outils », décision du fondateur). L’onglet reste allumé sur les réglages et sur sa vitrine.",
+    "Toutes les entrées « Ma boutique » mènent à la vitrine : bloc « Mon réseau », Outils, Mes clients (« Partager ma boutique »), le catalogue (« Voir ma boutique », plus l’ancienne /r/ dans un nouvel onglet), la carte professionnelle (« Ouvrir Ma boutique »), la fin du démarrage. « Voir » de Mes boutiques reste dans le même onglet.",
+    "Sur sa vitrine, le propriétaire ne voit plus « Suivre » (remplacé par « N abonnés ») ni « Devenir revendeur », et ne devient plus son propre revendeur d’origine. Pastille « En ligne » ou « Masquée par Suguba » avec « Écrire au support Suguba » ; « Personnaliser » sur la couverture ; avec une sélection vide, « Vos clients voient le catalogue Suguba en attendant vos articles · Choisir mes articles ». Avec un autre profil actif : bandeau « C’est votre boutique · Gérer ».",
+    "Une boutique masquée par Suguba reste visible pour son propriétaire ; un client obtient la page introuvable, sans titre ni indexation.",
+    "« Ma boutique » (réglages) devient « Personnaliser ma boutique » : « Voir ma boutique » en haut, avertissement si Suguba l’a masquée, adresse complète. « Ouvrir » ajouté à la carte du lien (réglages, démarrage, et Ma boutique du fournisseur).",
+    "Démarrage, dernière étape : « Votre boutique est créée. Il reste à choisir vos articles. », boutons « Ouvrir ma boutique » et « Choisir mes articles ».",
+    "Vitrine chargée une seule fois par affichage (elle l’était deux fois). Tests : tests/ma-boutique-lot1.test.cjs (11 tests, 10 échouent sur l’ancien code) ; REV-04 et le test du guide mis à jour."
+   ],
+   "ecarts": [
+    "En local sur la branche ux/boutique-revendeur, non publié. Aucune migration.",
+    "Captures non refaites (aucun serveur lancé pour ce lot) : à refaire sur la copie locale avec les comptes [QA] pour vitrine-boutique, rev-accueil, rev-boutique, rev-catalogue, rev-clients, mes-boutiques, rev-demarrer, rev-badge et fou-boutique.",
+    "Vérifications manuelles du plan non faites (390 px et 1440 px, vrai iPhone avec l’application installée, boutique masquée sur la copie locale) : seuls les tests automatiques et la compilation de types ont été passés.",
+    "Le bandeau propriétaire (Partager, Personnaliser, Articles, Stats), « Voir comme un client » et les crayons arrivent au lot 2 : ?editer= et ?partager=1 sont déjà transmis par la porte, mais la vitrine ne les ouvre pas encore.",
+    "Titre public inchangé (« La sélection de … ») et boutique encore créée à l’ouverture du démarrage avec le nom du compte : corrigés au lot 2 (enseigne).",
+    "Vue du propriétaire réservée à la boutique revendeur principale : les boutiques supplémentaires (formules Pro, lot 7) et les vitrines fournisseur (hors chantier) gardent leur rendu actuel.",
+    "La carte de l’accueil n’a pas encore la barre « Ma boutique est prête à X % » (lot 2) ; « Partager » envoie l’adresse brute (lien suivi au lot 4)."
+   ],
+   "pages": [
+    "vitrine-boutique",
+    "rev-accueil",
+    "rev-boutique",
+    "rev-catalogue",
+    "rev-clients",
+    "mes-boutiques",
+    "rev-demarrer",
+    "rev-badge",
+    "reseller-outils",
+    "fou-boutique"
+   ],
+   "statut": "en local"
+  },
   {
    "date": "2026-10-03",
    "titre": "Sélecteur « Mon quartier » redessiné",
@@ -3153,9 +3191,21 @@
     {
      "nom": "Terminer plus tard",
      "role": "Reprise possible depuis l’accueil revendeur."
+    },
+    {
+     "nom": "Dernière étape",
+     "role": "« Votre boutique est créée. Il reste à choisir vos articles. » ; « Ouvrir ma boutique » (action principale) ou « Choisir mes articles ». La carte du lien a aussi « Ouvrir »."
     }
    ],
    "suite": [
+    {
+     "id": "vitrine-boutique",
+     "libelle": "Ouvrir ma boutique"
+    },
+    {
+     "id": "rev-catalogue",
+     "libelle": "Choisir mes articles"
+    },
     {
      "id": "rev-accueil",
      "libelle": "Accueil revendeur"
@@ -3174,7 +3224,7 @@
    "elements": [
     {
      "nom": "Vers votre première vente",
-     "role": "Liste cochée tant qu’aucune vente n’est livrée : compléter mon profil · partager un produit et recevoir une commande · première vente livrée."
+     "role": "Liste cochée tant qu’aucune vente n’est livrée : compléter mon profil · choisir mes articles · partager un produit et recevoir une commande · première vente livrée."
     },
     {
      "nom": "Carte argent",
@@ -3185,8 +3235,12 @@
      "role": "Rappel : une commission est débloquée 14 jours après la livraison."
     },
     {
+     "nom": "Carte « Ma boutique »",
+     "role": "Sous le solde : couverture, logo, nom, « N articles · N abonnés » (« — » si le nombre est illisible), « Masquée par Suguba » le cas échéant. « Voir ma boutique » ouvre la vitrine dans le même onglet ; « Partager » l’envoie sur WhatsApp."
+    },
+    {
      "nom": "Raccourcis",
-     "role": "Catalogue · Mes ventes · Ma boutique (« Créer une commande » menait au même endroit que Catalogue)."
+     "role": "Catalogue · Mes ventes (« Ma boutique » est devenue la carte ci-dessus)."
     },
     {
      "nom": "À partager aujourd’hui",
@@ -3198,7 +3252,7 @@
     },
     {
      "nom": "Outils de vente",
-     "role": "Affiches statut · Ma carte & QR · Simulateur · Ma boutique · Fournisseurs · Missions · Créer un visuel · Mon calendrier · Mes partages · Mes parrainages · Mes clients · Mon profil vérifié."
+     "role": "Créer un visuel · Ma carte & QR · Simulateur ; « Tous mes outils » ouvre la page Outils (elle a quitté la barre du bas)."
     },
     {
      "nom": "Mes prix · Mes boutiques",
@@ -3207,6 +3261,10 @@
     {
      "nom": "Disponible au retrait · En attente · Déjà versé",
      "role": "Les mêmes mots que dans « Mes gains » pour les mêmes sommes (« Déjà versé » remplace « Total gagné »)."
+    },
+    {
+     "nom": "Mon réseau",
+     "role": "« Ma boutique » ouvre la vitrine (« Voir, gérer et partager ma vitrine ») ; puis Mes prix, Mes boutiques, Fournisseurs, Mes questions, Missions, Créer un visuel, Mon calendrier, Mes partages, Mes parrainages, Mes clients, Mon profil vérifié."
     }
    ],
    "suite": [
@@ -3223,12 +3281,16 @@
      "libelle": "Mes gains"
     },
     {
-     "id": "rev-boutique",
+     "id": "vitrine-boutique",
      "libelle": "Ma boutique"
     },
     {
      "id": "rev-missions",
      "libelle": "Missions"
+    },
+    {
+     "id": "reseller-outils",
+     "libelle": "Tous mes outils"
     }
    ],
    "capture": {
@@ -3275,7 +3337,7 @@
    "elements": [
     {
      "nom": "Ma boutique · N articles",
-     "role": "Une ligne au-dessus de la recherche, avec « Voir » : le premier produit remonte dans l’écran."
+     "role": "Une ligne au-dessus de la recherche, avec « Voir ma boutique » : la vraie vitrine, dans le même onglet (l’ancienne /r/ s’ouvrait dans un nouvel onglet)."
     },
     {
      "nom": "Recommandés · Tous les fournisseurs",
@@ -3322,6 +3384,10 @@
     {
      "id": "fiche-produit",
      "libelle": "Fiche produit"
+    },
+    {
+     "id": "vitrine-boutique",
+     "libelle": "Ma boutique"
     }
    ],
    "capture": {
@@ -3483,12 +3549,80 @@
    }
   },
   {
+   "id": "vitrine-boutique",
+   "role": "revendeur",
+   "titre": "Ma boutique (la vitrine)",
+   "chemin": "/boutique/<adresse>",
+   "but": "La vraie vitrine du revendeur — couverture, logo, nom, articles — telle que ses clients la voient. « Ma boutique » y mène en 1 toucher depuis l’accueil et l’onglet Boutique, et aussi depuis Outils, Mes clients, le catalogue, la carte professionnelle et la fin du démarrage.",
+   "elements": [
+    {
+     "nom": "Porte « Ma boutique »",
+     "role": "L’adresse /reseller/ma-boutique trouve la boutique du compte connecté et l’ouvre dans le même onglet, y compris dans l’application installée. Sans boutique, elle la crée avec « Prénom I. » (jamais le nom complet)."
+    },
+    {
+     "nom": "Pastille d’état (propriétaire)",
+     "role": "« En ligne », ou « Masquée par Suguba » avec « Écrire au support Suguba ». Une boutique masquée reste visible pour son propriétaire ; un client obtient la page introuvable."
+    },
+    {
+     "nom": "Personnaliser (propriétaire)",
+     "role": "Bouton posé sur la couverture : ouvre « Personnaliser ma boutique » (photos, nom, présentation, quartier)."
+    },
+    {
+     "nom": "N abonnés (propriétaire)",
+     "role": "Remplace « Suivre » : on ne s’abonne pas à sa propre boutique."
+    },
+    {
+     "nom": "Sélection vide (propriétaire)",
+     "role": "« Vos clients voient le catalogue Suguba en attendant vos articles » avec « Choisir mes articles » (vers le catalogue)."
+    },
+    {
+     "nom": "C’est votre boutique · Gérer",
+     "role": "Seulement quand le propriétaire navigue avec un autre profil (client, fournisseur) : repasse en profil revendeur et rouvre la boutique."
+    },
+    {
+     "nom": "Suivre · Copier le lien · Partager · Devenir revendeur",
+     "role": "Ce que voit un client. Le propriétaire garde « Copier le lien » et « Partager », mais ne voit ni « Suivre » ni « Devenir revendeur » ; sa visite ne fait pas de lui son propre revendeur d’origine."
+    },
+    {
+     "nom": "Onglet Boutique",
+     "role": "Reste allumé dans la barre du bas quand le propriétaire est sur sa vitrine."
+    }
+   ],
+   "suite": [
+    {
+     "id": "rev-boutique",
+     "libelle": "Personnaliser ma boutique"
+    },
+    {
+     "id": "rev-catalogue",
+     "libelle": "Choisir mes articles"
+    },
+    {
+     "id": "fiche-produit",
+     "libelle": "Fiche produit"
+    }
+   ],
+   "note": "Capture à refaire sur la copie locale. L’ancienne adresse /r/<code> affiche la même vitrine, sans les éléments du propriétaire."
+  },
+  {
    "id": "rev-boutique",
    "role": "revendeur",
-   "titre": "Ma boutique",
+   "titre": "Personnaliser ma boutique",
    "chemin": "/reseller/boutique",
-   "but": "Sa vitrine personnelle /boutique/ : logo, couverture, nom, accroche, quartier, présentation, avec le lien et le QR code à partager.",
+   "but": "Les réglages de la vitrine /boutique/ : logo, couverture, nom, accroche, quartier, présentation, avec le lien et le QR code à partager. « Ma boutique » ouvre maintenant la vitrine elle-même ; on arrive ici par « Personnaliser ».",
    "elements": [
+    {
+     "nom": "Voir ma boutique",
+     "role": "En haut à droite : ouvre la vitrine dans le même onglet."
+    },
+    {
+     "nom": "Masquée par Suguba",
+     "role": "Pastille ambre avec « Écrire au support Suguba », seulement quand Suguba a masqué la boutique."
+    },
+    {
+     "nom": "Abonnés · Adresse",
+     "role": "L’adresse complète (app.sugubaml.com/boutique/…), qui ne change jamais."
+    },
     {
      "nom": "Logo · Couverture",
      "role": "Photos de la vitrine."
@@ -3507,10 +3641,14 @@
     },
     {
      "nom": "Lien / QR",
-     "role": "Carte à copier ou partager."
+     "role": "Carte à copier ou partager ; « Ouvrir » affiche la vitrine dans le même onglet."
     }
    ],
    "suite": [
+    {
+     "id": "vitrine-boutique",
+     "libelle": "Voir ma boutique"
+    },
     {
      "id": "boutiques-quartier",
      "libelle": "Boutiques proches"
@@ -3577,12 +3715,20 @@
     {
      "nom": "Choisir les articles",
      "role": "Chaque boutique supplémentaire a sa propre sélection. La principale se gère dans « Ma boutique »."
+    },
+    {
+     "nom": "Voir · Gérer",
+     "role": "« Voir » ouvre la vitrine dans le même onglet (plus de nouvel onglet) ; « Gérer » (boutique principale) ouvre « Personnaliser ma boutique »."
     }
    ],
    "suite": [
     {
      "id": "rev-boutique",
      "libelle": "Ma boutique principale"
+    },
+    {
+     "id": "vitrine-boutique",
+     "libelle": "Voir la vitrine"
     }
    ],
    "capture": {
@@ -3724,7 +3870,7 @@
    "elements": [
     {
      "nom": "Partager ma boutique",
-     "role": "Vers Ma boutique quand la liste est vide."
+     "role": "Quand la liste est vide : ouvre la vitrine, prête à partager."
     },
     {
      "nom": "Numéros masqués",
@@ -3733,7 +3879,7 @@
    ],
    "suite": [
     {
-     "id": "rev-boutique",
+     "id": "vitrine-boutique",
      "libelle": "Ma boutique"
     }
    ],
@@ -3874,7 +4020,7 @@
     },
     {
      "nom": "QR boutique",
-     "role": "Ouvre directement la boutique pour commander. Aucun lien d’inscription présenté comme une boutique."
+     "role": "Ouvre directement la boutique pour commander. Boutique illisible : « Ouvrir Ma boutique » à la place du QR. Aucun lien d’inscription présenté comme une boutique."
     },
     {
      "nom": "Imprimer et partager",
@@ -3885,6 +4031,10 @@
     {
      "id": "rev-accueil",
      "libelle": "Accueil revendeur"
+    },
+    {
+     "id": "vitrine-boutique",
+     "libelle": "Ma boutique"
     }
    ],
    "note": "Le compte démo n’a pas de code revendeur : la carte affiche « — » à la place.",
@@ -4398,6 +4548,10 @@
     {
      "nom": "Galerie",
      "role": "Jusqu’à 10 photos."
+    },
+    {
+     "nom": "Le lien de ma boutique",
+     "role": "Copier, QR, WhatsApp, et « Ouvrir » : la vitrine /boutique/ dans le même onglet."
     }
    ],
    "suite": [
@@ -6006,14 +6160,19 @@
    "role": "revendeur",
    "titre": "Outils",
    "chemin": "/reseller/outils",
-   "but": "Retrouver le studio, la boutique, les rappels et les résultats de partage.",
+   "but": "Retrouver le studio, la boutique, les rappels et les résultats de partage. La page a quitté la barre du bas (remplacée par « Boutique ») : « Tous mes outils » de l’accueil y mène.",
    "elements": [
     {
      "nom": "Outils",
-     "role": "Rangés par usage — Partager (Catalogue à partager, Créer un visuel, Ma boutique, Mon calendrier, Mes prix), Suivre (Mes partages, Mes clients, Missions, Mes parrainages), Mon activité (Fournisseurs, Mon profil vérifié, Votre carte professionnelle, Combien pouvez-vous gagner ?). Chaque entrée porte le titre exact de la page qu’elle ouvre."
+     "role": "Rangés par usage — Partager (Catalogue à partager, Créer un visuel, Ma boutique, Mon calendrier, Mes prix), Suivre (Mes partages, Mes clients, Missions, Mes parrainages), Mon activité (Fournisseurs, Mon profil vérifié, Votre carte professionnelle, Combien pouvez-vous gagner ?). Chaque entrée porte le titre exact de la page qu’elle ouvre. « Ma boutique » ouvre la vitrine elle-même."
     }
    ],
-   "suite": [],
+   "suite": [
+    {
+     "id": "vitrine-boutique",
+     "libelle": "Ma boutique"
+    }
+   ],
    "capture": false,
    "note": "Nouvelle page validée dans le rapport local du 30 septembre 2026."
   },

@@ -19,6 +19,8 @@ import { formatF, formatNombre, FORMAT_DATE, formatDate } from '@/lib/montant';
 import { statutVente } from '@/lib/libelles-vente';
 import { StatusPill } from '@/components/ui/Surface';
 import BoutonPartageWhatsApp from '@/components/ui/BoutonPartageWhatsApp';
+import { initiale } from '@/lib/initiale';
+import { PORTE_MA_BOUTIQUE } from '@/lib/reseau/porte-boutique';
 
 /**
  * Tableau de bord revendeur — converti au design system (2026-09-10).
@@ -51,6 +53,12 @@ const PALIERS = {
 
 type Palier = keyof typeof PALIERS;
 
+/** Aperçu de la boutique renvoyé par /api/reseller/me?avec=boutique (lot 1 du chantier boutique). */
+interface ApercuBoutique {
+  slug: string; nom: string; logo: string | null; couverture: string | null;
+  articles: number | null; abonnes: number; statut: string;
+}
+
 export default function ResellerDashboardPage() {
   const state = useSugubaStore();
   const catalogueCharge = useCatalogueCharge();
@@ -71,15 +79,19 @@ export default function ResellerDashboardPage() {
     commissionsEnAttente?: { montant: number; debloquagePrevu: string | null }[];
     onboardingDone?: boolean;
   } | null>(null);
+  // Carte « Ma boutique » (2026-10-03) : lue dans la même requête que le solde.
+  const [boutique, setBoutique] = useState<ApercuBoutique | null>(null);
+  const [origine, setOrigine] = useState('https://app.sugubaml.com');
+  useEffect(() => { setOrigine(window.location.origin); }, []);
 
   useEffect(() => {
     let annule = false;
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
     setCharge(false); setMoi(null);
-    fetch('/api/reseller/me', { signal: controller.signal })
+    fetch('/api/reseller/me?avec=boutique', { signal: controller.signal })
       .then((res) => (res.ok ? res.json() : { reseller: null }))
-      .then((json) => { if (!annule) setMoi(json.reseller || null); })
+      .then((json) => { if (!annule) { setMoi(json.reseller || null); setBoutique(json.boutique || null); } })
       .catch(() => {})
       .finally(() => { clearTimeout(timeout); if (!annule) setCharge(true); });
     return () => { annule = true; clearTimeout(timeout); controller.abort(); };
@@ -136,6 +148,8 @@ export default function ResellerDashboardPage() {
         {moi && ventesLivrees === 0 && (
           <ListeDemarrage etapes={[
             { libelle: 'Compléter mon profil', fait: Boolean(moi.onboardingDone), href: '/reseller/demarrer' },
+            // Une boutique sans articles montre le catalogue Suguba à vos clients (2026-10-03).
+            { libelle: 'Choisir mes articles', fait: (boutique?.articles ?? 0) > 0, href: '/reseller/catalog' },
             { libelle: 'Partager un produit et recevoir une commande', fait: myOrders.length > 0, href: '/reseller/catalog' },
             { libelle: 'Première vente livrée', fait: ventesLivrees > 0, href: '/reseller/orders' },
           ]} />
@@ -201,6 +215,10 @@ export default function ResellerDashboardPage() {
           </div>
         </div>
 
+        {/* 2. Ma boutique (lot 1 du chantier boutique, 2026-10-03) : la vitrine elle-même,
+            en 1 toucher, à la place du raccourci qui ouvrait les réglages. */}
+        <CarteMaBoutique boutique={boutique} charge={charge} origine={origine} />
+
         {/* 3. Palier : ce qui change concrètement, c'est le délai de déblocage */}
         <div className="bg-white rounded-3xl p-5 border border-slate-200 space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -230,13 +248,11 @@ export default function ResellerDashboardPage() {
 
         {/* 4. Actions */}
         {/* REV-04 : « Créer une commande » menait au même endroit que « Catalogue »
-            (la vente se crée depuis le catalogue, bouton « Vente ») : 3 raccourcis. */}
-        <div className="grid grid-cols-3 gap-3">
+            (la vente se crée depuis le catalogue, bouton « Vente »). « Ma boutique »
+            est devenue la carte ci-dessus (2026-10-03) : 2 raccourcis. */}
+        <div className="grid grid-cols-2 gap-3">
           <Raccourci empile href="/reseller/catalog" icone={<ShoppingBag className="w-5 h-5" />} titre="Catalogue" sousTitre="Choisir quoi partager" />
           <Raccourci empile href="/reseller/orders" icone={<ClipboardList className="w-5 h-5" />} titre="Mes ventes" sousTitre="Suivre les livraisons" />
-          {/* REV-04 (audit UI/UX du 2026-10-02) : « Boutiques » pointait vers
-              /reseller/channels, qui redirige vers les Fournisseurs. */}
-          <Raccourci empile href="/reseller/boutique" icone={<Store className="w-5 h-5" />} titre="Ma boutique" sousTitre="Partager ma vitrine" />
         </div>
 
         {/* 5. Produits à partager */}
@@ -340,7 +356,14 @@ export default function ResellerDashboardPage() {
 
         {/* 7. Outils de vente */}
         <div className="space-y-2.5">
-          <h2 className="font-bold text-sm text-slate-900">Outils de vente</h2>
+          {/* « Outils » a quitté la barre du bas pour « Boutique » (2026-10-03) : la page reste à 1 toucher d'ici. */}
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="font-bold text-sm text-slate-900">Outils de vente</h2>
+            <Link href="/reseller/outils" className="text-sm font-semibold text-suguba-brand-dark min-h-10 inline-flex items-center gap-0.5 hover:underline shrink-0">
+              <span>Tous mes outils</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Raccourci href="/reseller/createur" icone={<Sparkles className="w-5 h-5" />} titre="Créer un visuel" sousTitre="Produit ou boutique" />
             <Raccourci href="/reseller/badge" icone={<QrCode className="w-5 h-5" />} titre="Ma carte & QR" sousTitre="Votre carte revendeur" />
@@ -354,7 +377,7 @@ export default function ResellerDashboardPage() {
         <CarteAccesReseau
           titre="Mon réseau"
           entrees={[
-            { libelle: 'Ma boutique', href: '/reseller/boutique', icone: StoreIcone, aide: 'Votre vitrine et son lien à partager' },
+            { libelle: 'Ma boutique', href: PORTE_MA_BOUTIQUE, icone: StoreIcone, aide: 'Voir, gérer et partager ma vitrine' },
             { libelle: 'Mes prix', href: '/reseller/prix', icone: TagIcone, aide: 'Articles au prix de gros : fixez votre prix' },
             { libelle: 'Mes boutiques', href: '/compte/boutiques', icone: StoreIcone, aide: 'Plusieurs boutiques avec la formule Pro' },
             { libelle: 'Fournisseurs', href: '/reseller/fournisseurs', icone: FactoryIcone, aide: 'Suivre et découvrir les fournisseurs' },
@@ -410,6 +433,68 @@ function Raccourci({ href, onClick, disabled, icone, titre, sousTitre, empile }:
     'text-left transition-all active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none';
   if (href) return <Link href={href} className={classes}>{contenu}</Link>;
   return <button onClick={onClick} disabled={disabled} className={classes}>{contenu}</button>;
+}
+
+/**
+ * Carte « Ma boutique » (lot 1 du chantier boutique, 2026-10-03) : couverture,
+ * logo, nom, « N articles · N abonnés », état. Action principale « Voir ma
+ * boutique » (porte unique, même onglet) ; secondaire « Partager ». Boutique
+ * illisible ou pas encore créée : la carte garde son bouton, jamais d'erreur.
+ */
+function CarteMaBoutique({ boutique, charge, origine }: { boutique: ApercuBoutique | null; charge: boolean; origine: string }) {
+  const nom = boutique?.nom || 'Ma boutique';
+  // Pas de partage d'une boutique masquée : le client tomberait sur une page introuvable.
+  const adresse = boutique && boutique.statut === 'active' ? `${origine}/boutique/${boutique.slug}` : null;
+  const pluriel = (n: number) => (n > 1 ? 's' : '');
+  return (
+    <section aria-labelledby="ma-boutique-titre" className="bg-white rounded-3xl border border-slate-200 overflow-hidden">
+      <div className="relative h-16 bg-suguba-profond" aria-hidden="true">
+        {boutique?.couverture && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={boutique.couverture} alt="" className="absolute inset-0 w-full h-full object-cover" />
+        )}
+      </div>
+      <div className="px-4 pb-4 space-y-3">
+        <div className="flex items-start gap-3">
+          {boutique?.logo ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={boutique.logo} alt="" className="-mt-7 w-14 h-14 shrink-0 rounded-2xl object-cover bg-white ring-4 ring-white" />
+          ) : (
+            <span aria-hidden="true" className="-mt-7 w-14 h-14 shrink-0 rounded-2xl bg-suguba-menthe text-suguba-profond ring-4 ring-white flex items-center justify-center text-xl font-bold">
+              {initiale(nom)}
+            </span>
+          )}
+          <div className="min-w-0 flex-1 pt-2 space-y-1">
+            <h2 id="ma-boutique-titre" className="text-base font-bold text-slate-900 truncate">{nom}</h2>
+            {!charge ? (
+              <span className="block h-4 w-32 rounded-lg bg-slate-200 animate-pulse" role="status" aria-label="Chargement de votre boutique" />
+            ) : boutique ? (
+              <p className="text-sm text-slate-600">
+                {/* Compte illisible : « — articles », jamais un 0 inventé. */}
+                {boutique.articles ?? '—'} article{boutique.articles == null ? 's' : pluriel(boutique.articles)} · {boutique.abonnes} abonné{pluriel(boutique.abonnes)}
+              </p>
+            ) : (
+              <p className="text-sm text-slate-600">Votre vitrine à votre nom, à partager partout.</p>
+            )}
+            {boutique && boutique.statut !== 'active' && <StatusPill ton="attente">Masquée par Suguba</StatusPill>}
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Button href={PORTE_MA_BOUTIQUE} className="flex-1">
+            <Store className="w-4 h-4" />
+            <span>Voir ma boutique</span>
+          </Button>
+          {adresse && (
+            <BoutonPartageWhatsApp
+              libelle="Partager"
+              aria-label="Partager ma boutique sur WhatsApp"
+              href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`🛍️ Ma boutique Suguba — ${nom}\n\nCommandez, vous payez à la livraison à Bamako.\n👉 ${adresse}`)}`}
+            />
+          )}
+        </div>
+      </div>
+    </section>
+  );
 }
 
 // Même vocabulaire que « Mes ventes » (REV-02, audit UI/UX du 2026-10-02) :

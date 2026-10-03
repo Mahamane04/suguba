@@ -1,6 +1,7 @@
 import { Award, BarChart3, BadgeCheck, CalendarDays, Calculator, Gift, ImagePlus, Package, Store, Tag, Target, Truck, Users } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import GrilleOutils from '@/components/reseau/GrilleOutils';
+import { PORTE_MA_BOUTIQUE } from '@/lib/reseau/porte-boutique';
 
 /** Outils du revendeur (REV-12) : intitulés identiques aux titres des pages, rangés par usage. */
 export default function Outils() {
@@ -11,7 +12,8 @@ export default function Outils() {
         { titre: 'Partager', outils: [
           { href: '/reseller/catalog', titre: 'Catalogue à partager', aide: 'Les produits, leur commission, le partage WhatsApp', icone: Package },
           { href: '/reseller/createur', titre: 'Créer un visuel', aide: 'Image produit ou carte boutique pour WhatsApp et Facebook', icone: ImagePlus },
-          { href: '/reseller/boutique', titre: 'Ma boutique', aide: 'Personnaliser et partager ma vitrine', icone: Store },
+          // La vitrine elle-même, dans le même onglet (porte unique, 2026-10-03).
+          { href: PORTE_MA_BOUTIQUE, titre: 'Ma boutique', aide: 'Voir, gérer et partager ma vitrine', icone: Store },
           { href: '/reseller/calendrier', titre: 'Mon calendrier', aide: 'Préparer mes publications et rappels', icone: CalendarDays },
           { href: '/reseller/prix', titre: 'Mes prix', aide: 'Mon prix de vente sur les articles au prix de gros', icone: Tag },
         ] },

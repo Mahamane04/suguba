@@ -11,7 +11,8 @@ import { classerAvecSponsorises } from '@/lib/reseau/sponsoring';
 import Button from '@/components/ui/Button';
 import { useSugubaStore, useCatalogueCharge } from '@/lib/store';
 import { Product } from '@/types';
-import { Search, Plus, Sparkles, Check, Store, ExternalLink } from 'lucide-react';
+import { Search, Plus, Sparkles, Check, Store, Eye } from 'lucide-react';
+import { PORTE_MA_BOUTIQUE } from '@/lib/reseau/porte-boutique';
 
 /**
  * Catalogue revendeur — refondu le 2026-09-11 sur la carte produit commune :
@@ -125,16 +126,21 @@ export default function ResellerCatalogPage() {
             <div className="flex items-center gap-2.5 min-w-0">
               <Store className="w-5 h-5 text-suguba-profond shrink-0" />
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-900 truncate">Ma boutique · {maSelection.size} article{maSelection.size > 1 ? 's' : ''}</p>
+                {/* Sur téléphone, le libellé passe à la ligne plutôt que de couper le nombre
+                    d'articles : « Voir ma boutique » est maintenant écrit en entier (2026-10-03). */}
+                <p className="text-sm font-semibold text-slate-900 leading-tight sm:truncate">Ma boutique · {maSelection.size} article{maSelection.size > 1 ? 's' : ''}</p>
                 <p className="hidden sm:block text-xs text-slate-600">
                   Ajoutez des articles ci-dessous, puis partagez votre boutique : chaque vente vous est attribuée.
                 </p>
               </div>
             </div>
+            {/* La vraie vitrine /boutique/<adresse>, dans le même onglet (2026-10-03) :
+                l'ancienne /r/<code>, appauvrie, s'ouvrait dans un nouvel onglet et
+                faisait sortir de l'application installée. */}
             {codeRevendeur ? (
-              <Button href={`/r/${codeRevendeur}`} target="_blank" variant="secondary" size="sm">
-                <ExternalLink className="w-4 h-4" />
-                <span>Voir<span className="hidden sm:inline"> ma boutique</span></span>
+              <Button href={PORTE_MA_BOUTIQUE} variant="secondary" size="sm" className="shrink-0">
+                <Eye className="w-4 h-4" />
+                <span>Voir ma boutique</span>
               </Button>
             ) : (
               <span className="inline-block h-10 w-40 rounded-full bg-slate-200 animate-pulse" role="status" aria-label="Chargement de votre boutique" />

@@ -14,10 +14,12 @@ const ids = new Set(guide.pages.map((p) => p.id));
 // Pages de l'application volontairement absentes du guide (voir « À savoir »).
 const HORS_GUIDE = new Set([
   '/auth/callback',            // retour technique de la connexion Google
-  '/boutique/*',               // aucune boutique réseau en base pour l'instant
   '/order-success/*',          // exige une vraie commande
   '/track/*',                  // exige une vraie commande
-  '/r/*',                      // lien court qui redirige
+  // Ancienne vitrine revendeur (même ShopView que /boutique/, sans le mode
+  // propriétaire) : toujours partagée, elle s'affiche sans rediriger. Décrite
+  // dans la note de la fiche « vitrine-boutique » (2026-10-03).
+  '/r/*',
   '/reseller/story-generator', // redirige vers /reseller/marketing
 ]);
 
