@@ -24,6 +24,30 @@ export const PORTE_MA_BOUTIQUE = '/reseller/ma-boutique';
 export const PAGE_MES_ARTICLES = '/reseller/boutique/articles';
 
 /**
+ * Boutiques supplémentaires (formules Pro, lot 7, 2026-10-03) : « Mes boutiques »,
+ * où l'on en ouvre une et d'où l'on rejoint chacune.
+ */
+export const PAGE_MES_BOUTIQUES = '/compte/boutiques';
+
+/**
+ * « Mes articles » de la boutique principale, ou d'une boutique Pro
+ * (?boutique=<id>, lot 7). L'identifiant n'est qu'une demande : la route vérifie
+ * que la boutique appartient à la session.
+ */
+export function pageMesArticles(boutiquePro?: string | null): string {
+  return boutiquePro ? `${PAGE_MES_ARTICLES}?boutique=${encodeURIComponent(boutiquePro)}` : PAGE_MES_ARTICLES;
+}
+
+/**
+ * Porte « Ma boutique », vers la principale ou vers une boutique Pro du compte
+ * (?boutique=<id>, lot 7) : le bandeau « C'est votre boutique · Gérer » d'une
+ * boutique Pro doit ramener à ELLE, pas à la principale.
+ */
+export function porteMaBoutique(boutiquePro?: string | null): string {
+  return boutiquePro ? `${PORTE_MA_BOUTIQUE}?boutique=${encodeURIComponent(boutiquePro)}` : PORTE_MA_BOUTIQUE;
+}
+
+/**
  * « Statistiques de ma boutique » (lot 4, 2026-10-03) : visites mesurées,
  * commandes à son nom, gains des ventes livrées, abonnés.
  */

@@ -198,6 +198,44 @@
  "journal": [
   {
    "date": "2026-10-03",
+   "titre": "Boutique revendeur, lot 7 : boutiques Pro au même niveau",
+   "demande": "« “Ma boutique” doit montrer la boutique elle-même (logo, couverture, produits ajoutés) et non les réglages ; il veut des outils pour gérer sa boutique (personnalisation, catégories/rayons, produits mis en avant, et ce qui aide à vendre), pour un vrai sentiment d’appropriation. »",
+   "realise": [
+    "Une boutique supplémentaire (formule Pro) se gère maintenant comme la boutique principale, là où le client la regarde. Son revendeur y voit le bandeau « Ma boutique » (« En ligne » ou « Masquée par Suguba », « Partager »), trois outils — Articles, Mes boutiques, Outils — et « Voir comme un client ». Avant : aucun outil, seulement « Modifier la boutique », qui menait à « Mes boutiques » où rien ne se modifiait.",
+    "Crayons sur la vitrine d’une boutique Pro : couverture, logo, nom et mot d’accueil. Avant ce lot, une boutique Pro ne pouvait recevoir ni logo ni couverture, nulle part. Mêmes règles que la principale : image envoyée depuis son téléphone, enregistrée dès la fin de l’envoi ; nom réservé à Suguba refusé ; son propre nom enregistré en « Awa D. ».",
+    "« Mes articles » fonctionne pour chaque boutique Pro (« Choisir les articles » dans « Mes boutiques », ou « Articles » sur sa vitrine) : ranger, 6 coups de cœur au plus, « Vous gagnez X F », retirer. Sa vitrine affiche « Coups de cœur » en tête et l’étiquette « Nouveau » pendant 14 jours, comme la principale.",
+    "« Ajouter des articles » d’une boutique Pro ouvre une liste à cocher avec recherche (accents ignorés) et un seul bouton « Enregistrer N articles », toujours visible en bas de la fenêtre.",
+    "Enregistrement sans perte. Avant, enregistrer les articles d’une boutique supplémentaire effaçait TOUS ses articles puis les réécrivait : si la seconde étape échouait (réseau coupé), la boutique restait vide ; et à chaque enregistrement l’ordre repartait de zéro. Maintenant, seuls les articles décochés sont retirés, les nouveaux s’ajoutent à la suite, l’ordre et les coups de cœur des autres sont gardés ; en cas de panne, rien ne change. Vaut aussi pour les boutiques supplémentaires des fournisseurs.",
+    "Uniquement des articles qui rapportent quelque chose : un article sans commission, ou dont le prix est sous le plancher, ne peut plus entrer dans une boutique Pro de revendeur, n’est plus proposé dans la liste à cocher, et n’apparaît plus dans la vitrine (il y restait affiché). S’il y était déjà, il reste dans « Mes articles » avec la pastille « Sans gain », pour être retiré.",
+    "Une boutique Pro masquée par Suguba reste visible pour son revendeur, avec la pastille « Masquée par Suguba » et le lien du support (avant : page introuvable, sans explication). Pour tout autre visiteur, elle reste introuvable.",
+    "Sous un autre profil (client, fournisseur), le revendeur voit sur sa boutique Pro le seul bandeau « C’est votre boutique · Gérer », qui repasse en profil revendeur et rouvre CETTE boutique. Sa visite n’est plus comptée, et ses liens d’achat ne portent plus son code (il ne devient plus son propre revendeur d’origine).",
+    "« Partager » sur une boutique Pro : toute la boutique, ses coups de cœur ou un rayon, par WhatsApp, lien copié ou QR, avec l’adresse de cette boutique.",
+    "Chaque boutique visée est vérifiée par le serveur : celle d’un autre compte répond « Boutique introuvable », et rien n’est lu ni écrit. Ranger ou vider une boutique Pro ne touche jamais aux articles de la boutique principale, donc à aucune offre du revendeur sur les fiches produit.",
+    "Tests : tests/ma-boutique-lot7.test.cjs (25 tests), dont l’écran « Mes articles » joué sur une boutique Pro (ranger 3 articles, 1 coup de cœur, recharger : tout est gardé) et la panne d’enregistrement qui ne vide plus la boutique. Les 25 échouent sur le code d’avant."
+   ],
+   "ecarts": [
+    "En local sur la branche ux/boutique-revendeur, non publié. Aucun SQL pour ce lot.",
+    "Vérification prévue par le plan, à faire par le fondateur sur la copie QA avec un compte [QA] doté d’une formule Pro : changer le logo de la boutique secondaire par le crayon, ranger 3 articles et mettre 1 coup de cœur, recharger — tout doit être gardé. Les captures de « Mes boutiques » et de « Mes articles » sont à refaire.",
+    "Restent propres à la boutique principale, et ne sont donc pas proposés sur une boutique Pro : « Personnaliser » (présentation, quartier, photos, familles de l’annuaire), les Statistiques, « Mes rayons » et l’annonce datée, « Prévenir mes abonnés », la carte « prête à X % ». À décider : les ouvrir aussi aux boutiques Pro.",
+    "Le partage d’une boutique Pro envoie son adresse directe, sans lien suivi /go/ : les liens suivis, « Mes partages » et les Statistiques ne connaissent que la boutique principale. Les visites d’une boutique Pro sont mesurées mais affichées nulle part.",
+    "Le filtre « qui rapporte quelque chose » ne vaut que pour les boutiques des revendeurs. Les boutiques supplémentaires des fournisseurs gardent tous leurs produits approuvés (comme leur boutique principale), leur liste à cocher dans « Mes boutiques », et n’ont pas de mode propriétaire : hors de ce chantier, par décision du fondateur.",
+    "Les articles d’une boutique Pro ne sont pas des offres sur la fiche produit : seuls ceux de la boutique principale le sont (les deux listes d’articles restent séparées, par décision du fondateur). La confirmation de retrait d’une boutique Pro n’annonce donc pas la perte d’une offre.",
+    "« Ajouter des articles » d’une boutique Pro ne passe pas par le catalogue (dont le bouton « Boutique » compose la boutique principale) mais par la liste à cocher, limitée aux 300 articles les plus récents.",
+    "Plus de 60 articles cochés : l’enregistrement est refusé (« 60 articles au plus dans une boutique »). Avant, la liste était coupée sans le dire, et les articles coupés étaient retirés de la boutique.",
+    "Écart avec le plan : l’enregistrement de la sélection ne renumérote pas les articles gardés (le plan parlait d’une « mise à jour des positions »). Leur place ne change pas, les nouveaux prennent la suite : moins d’écritures sur un réseau lent, et le même résultat à l’écran.",
+    "Ajouter, retirer et ranger les articles de la boutique PRINCIPALE passent désormais par le même code que les boutiques Pro. Rien ne change pour elle (les tests du lot 3 le vérifient) ; trois vérifications des lots 1 et 3 ont été réécrites, parce que la règle qu’elles décrivaient change par ce lot.",
+    "« Mon prix » d’un article au prix de gros vaut pour toutes les boutiques du revendeur, principale et Pro."
+   ],
+   "pages": [
+    "vitrine-boutique",
+    "rev-boutique-articles",
+    "mes-boutiques",
+    "rev-prix"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-10-03",
    "titre": "Boutique revendeur, lot 6 : corrections de relecture",
    "demande": "« “Ma boutique” doit montrer la boutique elle-même (logo, couverture, produits ajoutés) et non les réglages ; il veut des outils pour gérer sa boutique (personnalisation, catégories/rayons, produits mis en avant, et ce qui aide à vendre), pour un vrai sentiment d’appropriation. »",
    "realise": [
@@ -3999,7 +4037,7 @@
    "role": "revendeur",
    "titre": "Ma boutique (la vitrine)",
    "chemin": "/boutique/<adresse>",
-   "but": "La vraie vitrine du revendeur (couverture, logo, nom, articles), telle que ses clients la voient. C’est aussi là qu’il la gère : bandeau « Ma boutique », crayons, « prête à X % », et « Voir comme un client ». « Ma boutique » y mène en 1 toucher depuis l’accueil et l’onglet Boutique, et aussi depuis Outils, Mes clients, le catalogue, la carte professionnelle et la fin du démarrage.",
+   "but": "La vraie vitrine du revendeur (couverture, logo, nom, articles), telle que ses clients la voient. C’est aussi là qu’il la gère : bandeau « Ma boutique », crayons, « prête à X % », et « Voir comme un client ». « Ma boutique » y mène en 1 toucher depuis l’accueil et l’onglet Boutique, et aussi depuis Outils, Mes clients, le catalogue, la carte professionnelle et la fin du démarrage. Ses boutiques supplémentaires (formules Pro) se gèrent de la même façon, chacune à sa propre adresse.",
    "elements": [
     {
      "nom": "Porte « Ma boutique »",
@@ -4034,8 +4072,12 @@
      "role": "8 étapes : boutique créée, nom de la boutique, logo, couverture, mot d’accueil, 5 articles, 1 coup de cœur, partager ma boutique (cochée dès qu’un lien suivi de la boutique existe). Chaque étape ouvre son panneau, le catalogue, « Mes articles » ou la feuille de partage. La carte disparaît à 100 %."
     },
     {
+     "nom": "Boutique supplémentaire (formule Pro, propriétaire)",
+     "role": "Même bandeau, mêmes trois crayons et même « Voir comme un client » que la boutique principale. Outils : Articles (« Mes articles » de cette boutique), Mes boutiques, Outils. Couverture, logo, nom et mot d’accueil sont enregistrés pour CETTE boutique. « Partager » envoie son adresse (WhatsApp, lien, QR), sans lien suivi. Pas de Personnaliser, de Stats, de Rayons ni de « prête à X % » : ils règlent la boutique principale. Sans article : « Cette boutique n’a pas encore d’articles : vos clients la voient vide » et « Choisir ses articles »."
+    },
+    {
      "nom": "Pastille d’état (propriétaire)",
-     "role": "« Masquée par Suguba » avec « Cette adresse affiche « page introuvable » à vos clients : vous seul la voyez ici. » et « Écrire au support Suguba ». Une boutique masquée reste visible pour son propriétaire ; un client obtient la page introuvable à cette adresse."
+     "role": "« Masquée par Suguba » avec « Cette adresse affiche « page introuvable » à vos clients : vous seul la voyez ici. » et « Écrire au support Suguba ». Une boutique masquée reste visible pour son propriétaire ; un client obtient la page introuvable à cette adresse. Vaut aussi pour une boutique supplémentaire (formule Pro)."
     },
     {
      "nom": "N abonnés (propriétaire)",
@@ -4047,7 +4089,7 @@
     },
     {
      "nom": "N articles ne s’affichent plus (propriétaire)",
-     "role": "« N articles de votre sélection ne s’affichent plus · Voir » : articles retirés de la vente, refusés ou sans commission. Calculé pour le propriétaire seulement ; « Voir » ouvre « Mes articles ». Masqué en vue client."
+     "role": "« N articles de votre sélection ne s’affichent plus · Voir » : articles retirés de la vente, refusés ou sans commission. Calculé pour le propriétaire seulement ; « Voir » ouvre « Mes articles » (ceux de la boutique affichée, principale ou Pro). Masqué en vue client."
     },
     {
      "nom": "Annonce de la boutique",
@@ -4055,7 +4097,7 @@
     },
     {
      "nom": "Coups de cœur",
-     "role": "Les articles choisis par le revendeur (6 au plus), en tête des articles, avec une icône cœur ; ils ne sont pas répétés dans les rayons."
+     "role": "Les articles choisis par le revendeur (6 au plus), en tête des articles, avec une icône cœur ; ils ne sont pas répétés dans les rayons. Chaque boutique Pro a les siens."
     },
     {
      "nom": "Recherche · rayons",
@@ -4067,7 +4109,7 @@
     },
     {
      "nom": "C’est votre boutique · Gérer",
-     "role": "Seulement quand le propriétaire navigue avec un autre profil (client, fournisseur) : repasse en profil revendeur et rouvre la boutique avec ses outils. Dans ce cas, « Personnaliser » reste posé sur la couverture."
+     "role": "Seulement quand le propriétaire navigue avec un autre profil (client, fournisseur) : repasse en profil revendeur et rouvre la boutique avec ses outils — la boutique affichée, principale ou Pro. Sur la boutique principale, « Personnaliser » reste posé sur la couverture."
     },
     {
      "nom": "Suivre · Copier le lien · Partager · Devenir revendeur",
@@ -4122,6 +4164,10 @@
     {
      "id": "fiche-produit",
      "libelle": "Fiche produit"
+    },
+    {
+     "id": "mes-boutiques",
+     "libelle": "Mes boutiques"
     }
    ],
    "note": "Capture à refaire sur la copie locale. L’ancienne adresse /r/<code> affiche la même vitrine, sans les éléments du propriétaire, et désigne /boutique/<adresse> comme adresse de référence (sans redirection) ; ses visites ne sont pas comptées dans les Statistiques. Elle reste ouverte quand Suguba a masqué la boutique : sélection sous « Prénom I. », sans logo ni couverture."
@@ -4202,8 +4248,12 @@
    "role": "revendeur",
    "titre": "Mes articles",
    "chemin": "/reseller/boutique/articles",
-   "but": "Gérer les articles de sa boutique sans fouiller le catalogue : les ranger, choisir ses coups de cœur (en tête de la vitrine), voir ce que rapporte chacun et retirer. On y arrive par « Articles » sur sa vitrine, par l’étape « Choisir un coup de cœur » ou par l’alerte « ne s’affichent plus ».",
+   "but": "Gérer les articles de sa boutique sans fouiller le catalogue : les ranger, choisir ses coups de cœur (en tête de la vitrine), voir ce que rapporte chacun et retirer. On y arrive par « Articles » sur sa vitrine, par l’étape « Choisir un coup de cœur » ou par l’alerte « ne s’affichent plus ». La même page gère chaque boutique supplémentaire (formule Pro), par « Choisir les articles » de « Mes boutiques ».",
    "elements": [
+    {
+     "nom": "Boutique supplémentaire (formule Pro)",
+     "role": "Adresse /reseller/boutique/articles?boutique=<id>. Le sous-titre nomme la boutique (« Boutique « Awa Maison » : son ordre et ses coups de cœur »), et le retour mène à sa vitrine. Même rangement, mêmes 6 coups de cœur, même gain par article que la boutique principale. La boutique doit appartenir au compte connecté : sinon « Boutique introuvable » et « Mes boutiques ». « Prévenir mes abonnés » n’y figure pas (annonce de la boutique principale), et « Partager » envoie l’adresse de cette boutique."
+    },
     {
      "nom": "12/60 articles · 2/6 coups de cœur",
      "role": "Articles de la boutique (60 au plus) et coups de cœur (6 au plus)."
@@ -4246,7 +4296,7 @@
     },
     {
      "nom": "Cet article (feuille)",
-     "role": "Coup de cœur ; Mettre en premier ; Mon prix (articles au prix de gros) ; Partager cet article (WhatsApp, avec son lien) ; Voir dans ma boutique ; Retirer de ma boutique, après la confirmation « Votre offre disparaîtra aussi de la fiche produit de cet article ». Si le retrait échoue : « Retrait impossible. Réessayez. », et l’article reste dans la liste."
+     "role": "Coup de cœur ; Mettre en premier ; Mon prix (articles au prix de gros) ; Partager cet article (WhatsApp, avec son lien) ; Voir dans ma boutique ; Retirer de ma boutique, après la confirmation « Votre offre disparaîtra aussi de la fiche produit de cet article ». Si le retrait échoue : « Retrait impossible. Réessayez. », et l’article reste dans la liste. Boutique Pro : « Voir dans ma boutique » ouvre cette boutique, et la confirmation dit seulement « Il disparaîtra de la vitrine de cette boutique » (ses articles ne sont pas des offres sur la fiche produit)."
     },
     {
      "nom": "Enregistrer l’ordre",
@@ -4254,7 +4304,11 @@
     },
     {
      "nom": "Ajouter des articles",
-     "role": "Ouvre le catalogue, avec le bandeau « Revenir à ma boutique ». Boutique vide : « Aucun article dans votre boutique » et ce même bouton."
+     "role": "Ouvre le catalogue, avec le bandeau « Revenir à ma boutique ». Boutique vide : « Aucun article dans votre boutique » et ce même bouton. Boutique Pro : ouvre la fenêtre « Choisir les articles »."
+    },
+    {
+     "nom": "Choisir les articles (fenêtre, boutique Pro)",
+     "role": "Liste à cocher avec recherche (accents ignorés) : seuls les articles qui rapportent quelque chose au revendeur sont proposés. « N/60 cochés », et un seul bouton en bas, « Enregistrer N articles ». Seuls les articles décochés sont retirés ; les nouveaux s’ajoutent à la suite ; l’ordre et les coups de cœur des autres sont gardés. Si un rangement n’est pas encore enregistré : « Enregistrez d’abord l’ordre, ou annulez-le ». Plus de 60 cochés : bouton inactif, « 60 articles au plus : décochez-en ». En cas de panne : « Rien n’a changé dans cette boutique »."
     }
    ],
    "suite": [
@@ -4269,9 +4323,13 @@
     {
      "id": "rev-prix",
      "libelle": "Mon prix"
+    },
+    {
+     "id": "mes-boutiques",
+     "libelle": "Mes boutiques"
     }
    ],
-   "note": "Capture à refaire sur la copie locale. Le gain affiché vient d’une adresse réservée au revendeur connecté : il n’apparaît jamais dans la vitrine publique."
+   "note": "Capture à refaire sur la copie locale. Le gain affiché vient d’une adresse réservée au revendeur connecté : il n’apparaît jamais dans la vitrine publique. Pour une boutique Pro, la capture demande un compte [QA] doté d’une formule Pro."
   },
   {
    "id": "rev-boutique-stats",
@@ -4434,7 +4492,7 @@
     },
     {
      "nom": "Depuis « Mon prix » (Mes articles)",
-     "role": "N’affiche que l’article choisi (ou les articles au prix de gros de sa boutique, dans l’ordre de la vitrine). Le retour mène à « Mes articles » ; « Tous mes prix » revient à la liste complète, avec le retour vers « Mon espace »."
+     "role": "N’affiche que l’article choisi (ou les articles au prix de gros de sa boutique, dans l’ordre de la vitrine). Le retour mène à « Mes articles » ; « Tous mes prix » revient à la liste complète, avec le retour vers « Mon espace ». Ouvert depuis une boutique Pro, le retour mène à « Mes articles » de cette boutique ; le prix vaut pour toutes les boutiques du revendeur."
     }
    ],
    "suite": [
@@ -4457,7 +4515,7 @@
    "role": "revendeur",
    "titre": "Mes boutiques",
    "chemin": "/compte/boutiques",
-   "but": "Ouvrir plusieurs boutiques (une par type de clients) avec les formules Pro. Même page pour les fournisseurs.",
+   "but": "Ouvrir plusieurs boutiques (une par type de clients) avec les formules Pro, et rejoindre chacune pour la gérer. Même page pour les fournisseurs.",
    "elements": [
     {
      "nom": "Formule",
@@ -4473,11 +4531,15 @@
     },
     {
      "nom": "Choisir les articles",
-     "role": "Chaque boutique supplémentaire a sa propre sélection. La principale se gère dans « Ma boutique ». Liste à cocher avec recherche (les accents sont ignorés), lignes de 60 px, puis « Enregistrer N article(s) »."
+     "role": "Chaque boutique supplémentaire a sa propre sélection. Revendeur : ouvre « Mes articles » de cette boutique (ajouter, ranger, coups de cœur, retirer) ; seuls les articles qui lui rapportent quelque chose y sont proposés. Fournisseur : liste à cocher sur place, avec recherche (les accents sont ignorés), lignes de 60 px, puis « Enregistrer N article(s) ». Dans les deux cas, enregistrer ne vide plus la boutique : seuls les articles décochés sont retirés, l’ordre des autres est gardé. La principale se gère dans « Ma boutique »."
     },
     {
      "nom": "Voir · Gérer",
-     "role": "« Voir » ouvre la vitrine dans le même onglet (plus de nouvel onglet) ; « Gérer » (boutique principale) ouvre « Personnaliser ma boutique »."
+     "role": "« Voir » ouvre la vitrine dans le même onglet (plus de nouvel onglet) ; « Gérer » (boutique principale) ouvre « Personnaliser ma boutique ». Revendeur, boutique supplémentaire : « Voir » ouvre sa vitrine avec ses outils et ses crayons."
+    },
+    {
+     "nom": "Logo, couverture et nom (boutique supplémentaire d’un revendeur)",
+     "role": "Rappel sous la boutique : « Logo, couverture et nom : touchez « Voir », puis les crayons de la boutique ». Ils se changent sur la vitrine, comme pour la boutique principale."
     }
    ],
    "suite": [
@@ -4488,11 +4550,16 @@
     {
      "id": "vitrine-boutique",
      "libelle": "Voir la vitrine"
+    },
+    {
+     "id": "rev-boutique-articles",
+     "libelle": "Choisir les articles (revendeur)"
     }
    ],
    "capture": {
     "chemin": "/compte/boutiques"
-   }
+   },
+   "note": "Capture d’avant le lot 7 du chantier boutique (rappel des crayons et lien « Choisir les articles » vers « Mes articles » absents)."
   },
   {
    "id": "compte-profils",

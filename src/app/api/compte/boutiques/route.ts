@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sessionDeLaRequete } from '@/lib/reseau/route-session';
 import { exigerDroitFournisseur } from '@/lib/reseau/contexte-fournisseur';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { majBoutique } from '@/lib/reseau/boutiques';
+import { boutiqueParSlug, majBoutique } from '@/lib/reseau/boutiques';
 import { champsBoutiqueRevendeur } from '@/lib/reseau/champs-boutique-revendeur';
-import { nomReserve } from '@/lib/enseigne';
+import { estEnseigne, nomPublicBoutique, nomReserve } from '@/lib/enseigne';
+import { partageable } from '@/lib/shop';
 import {
   articlesDeLaBoutique, boutiqueDuCompte, boutiquesDuCompte, creerBoutiqueSupplementaire,
   definirArticlesDeLaBoutique, demanderFormule, formulesBoutiques, situationFormule,
@@ -17,6 +18,18 @@ import {
  * GET  : boutiques du compte, formule en cours, limite, demande en attente,
  *        formules disponibles et articles sélectionnables.
  * POST : { action: 'creer' | 'articles' | 'modifier' | 'demander_formule', … }
+ *
+ * Lot 7 du chantier boutique (2026-10-03), boutiques Pro au même niveau :
+ *  - le catalogue proposé à un REVENDEUR ne contient que des articles qui lui
+ *    rapportent quelque chose (`partageable`) : il pouvait cocher un article à
+ *    commission nulle, que sa vitrine affichait ;
+ *  - 'articles' n'efface plus la sélection avant de la réécrire (voir
+ *    definirArticlesDeLaBoutique) : ordre et coups de cœur sont gardés ;
+ *  - 'modifier' sert aussi aux crayons de la vitrine d'une boutique Pro
+ *    (couverture, logo, nom et mot d'accueil). Pour un revendeur, la réponse porte
+ *    `boutique` et `vitrine` {nom, enseigne} — le nom que voient les clients,
+ *    calculé ICI — et son propre nom est enregistré en « Prénom I. », comme le
+ *    fait PATCH /api/reseller/boutique pour la boutique principale.
  */
 
 /** Numéro Mobile Money de Suguba affiché pour payer une formule. */
@@ -48,14 +61,16 @@ export async function GET(req: NextRequest) {
     boutiques.filter((b) => !b.principale).map(async (b) => [b.id, await articlesDeLaBoutique(b.id)] as const),
   ));
 
-  // Articles sélectionnables : ses produits pour un fournisseur, le catalogue en vente pour un revendeur.
+  // Articles sélectionnables : ses produits pour un fournisseur ; pour un revendeur,
+  // le catalogue en vente QUI LUI RAPPORTE quelque chose (lot 7) — la commission et
+  // l'état du prix sont lus pour filtrer, jamais renvoyés.
   let catalogue: { id: string; nom: string; image: string | null; prix: number }[] = [];
   if (admin) {
-    let requete = admin.from('products').select('id, name, images, public_price').eq('status', 'approved').gt('public_price', 0)
+    let requete = admin.from('products').select('id, name, images, public_price, reseller_commission, pricing_status').eq('status', 'approved').gt('public_price', 0)
       .order('created_at', { ascending: false }).limit(300);
     if (c.type === 'supplier') requete = requete.eq('supplier_id', c.proprietaireId);
     const { data } = await requete;
-    catalogue = (data || []).map((p: any) => ({
+    catalogue = (data || []).filter((p: any) => c.type !== 'reseller' || partageable(p)).map((p: any) => ({
       id: p.id, nom: p.name, image: Array.isArray(p.images) ? p.images[0] || null : null, prix: Number(p.public_price) || 0,
     }));
   }
@@ -98,9 +113,12 @@ export async function POST(req: NextRequest) {
     if (boutique.principale) return NextResponse.json({ error: 'Les articles de la boutique principale se gèrent dans « Ma boutique ».' }, { status: 400 });
     const r = await definirArticlesDeLaBoutique({
       type: c.type, proprietaireId: c.proprietaireId, boutiqueId: boutique.id,
-      produits: Array.isArray(corps.produits) ? corps.produits : [],
+      // Transmis tel quel : une liste absente ou illisible est REFUSÉE (lot 7). La
+      // remplacer par une liste vide, comme avant, vidait la boutique.
+      produits: corps.produits,
     });
-    return r.ok ? NextResponse.json({ success: true }) : NextResponse.json({ error: r.erreur }, { status: 400 });
+    // `refuses` : nouveaux articles écartés (plus en vente, ou sans gain pour un revendeur).
+    return r.ok ? NextResponse.json({ success: true, refuses: r.refuses || 0 }) : NextResponse.json({ error: r.erreur }, { status: r.statut || 400 });
   }
 
   if (corps.action === 'modifier') {
@@ -111,13 +129,40 @@ export async function POST(req: NextRequest) {
     // Les champs bruts passaient ici, principale comprise : le durcissement du
     // lot 2 se contournait par cette action.
     let champs: Record<string, unknown> = brut;
+    // Nom complet du compte (revendeur seulement) : il sert à calculer le nom
+    // public et ne quitte jamais le serveur.
+    let nomComplet: string | null | undefined;
     if (c.type === 'reseller') {
       const filtre = champsBoutiqueRevendeur(brut, { uid: c.proprietaireId, baseSupabase: process.env.NEXT_PUBLIC_SUPABASE_URL, boutique });
       if (!filtre.ok) return NextResponse.json({ error: filtre.erreur }, { status: 400 });
       champs = filtre.champs;
+      const admin = getSupabaseAdmin();
+      const { data: profil, error } = admin
+        ? await admin.from('profiles').select('full_name').eq('id', c.proprietaireId).maybeSingle()
+        : { data: null, error: { code: 'indisponible' } };
+      if (!error && profil) {
+        nomComplet = profil.full_name ?? null;
+        // Son propre nom n'est pas une enseigne : enregistré en « Prénom I. » (lot 7,
+        // même règle que la boutique principale).
+        if (typeof champs.nom === 'string' && champs.nom.trim()) {
+          champs.nom = nomPublicBoutique(champs.nom.trim().replace(/\s+/g, ' '), nomComplet);
+        }
+      }
     }
     const r = await majBoutique(boutique.id, c.proprietaireId, champs);
-    return r.ok ? NextResponse.json({ success: true }) : NextResponse.json({ error: r.erreur }, { status: 400 });
+    if (!r.ok) return NextResponse.json({ error: r.erreur }, { status: 400 });
+    if (c.type !== 'reseller') return NextResponse.json({ success: true });
+    // Crayons de la vitrine (lot 7) : l'écran se met à jour sur place avec ce que
+    // la base a gardé. Profil illisible : pas de nom public plutôt qu'un nom non vérifié.
+    // L'adresse ne change jamais ici : une seule lecture suffit pour la relire.
+    const apres = await boutiqueParSlug(boutique.slug);
+    return NextResponse.json({
+      success: true,
+      boutique: apres,
+      vitrine: apres && nomComplet !== undefined
+        ? { nom: nomPublicBoutique(apres.nom, nomComplet), enseigne: estEnseigne(apres.nom, nomComplet) }
+        : null,
+    });
   }
 
   return NextResponse.json({ error: 'Action inconnue.' }, { status: 400 });

@@ -13,7 +13,8 @@
  */
 import { randomBytes } from 'node:crypto';
 import { getSupabaseAdmin } from '../supabase-admin';
-import { slugifier } from '../shop';
+import { partageable, slugifier } from '../shop';
+import { positionAjout, trierSelection, type LigneSelection } from '../boutique-ordre';
 import { adresseReservee } from '../enseigne';
 import { chargerReglages } from '../platform-settings';
 import { FORMULES_BOUTIQUES_PAR_DEFAUT, type FormuleBoutique } from '../pricing';
@@ -138,40 +139,83 @@ export async function boutiqueDuCompte(type: TypeCompteBoutique, proprietaireId:
   return toutes.find((b) => b.id === boutiqueId) || null;
 }
 
+/** Articles d'une boutique supplémentaire, dans l'ordre de sa vitrine (même tri que « Mes articles »). */
 export async function articlesDeLaBoutique(boutiqueId: string): Promise<string[]> {
   const a = getSupabaseAdmin();
   if (!a) return [];
-  const { data, error } = await a.from('store_products').select('product_id, position')
+  const { data, error } = await a.from('store_products').select('product_id, position, added_at')
     .eq('store_id', boutiqueId).order('position', { ascending: true });
   if (error || !data) return [];
-  return data.map((l: any) => l.product_id);
+  return trierSelection(data as LigneSelection[]).map((l) => l.product_id);
 }
 
 /**
- * Remplace la sélection d'une boutique supplémentaire. Un fournisseur ne peut
- * y mettre que SES produits ; un revendeur, n'importe quel produit en vente.
+ * Enregistre la sélection d'une boutique supplémentaire. Un fournisseur ne peut
+ * y mettre que SES produits ; un revendeur, seulement des articles en vente qui
+ * lui rapportent quelque chose (`partageable`, comme sa boutique principale).
+ *
+ * Lot 7 du chantier boutique (2026-10-03) — enregistrement SANS PERTE. Avant :
+ * tout effacer, puis tout réinsérer, sans transaction. Une insertion en échec
+ * (réseau, base) laissait la boutique VIDE, et chaque enregistrement remettait
+ * l'ordre à zéro, coups de cœur compris. Désormais :
+ *  1. la sélection actuelle est lue ; illisible, rien n'est écrit ;
+ *  2. les NOUVEAUX articles sont insérés d'abord, à la suite du dernier
+ *     (positionAjout, jamais un coup de cœur) : si l'insertion échoue, rien n'a
+ *     changé ;
+ *  3. seuls les articles RETIRÉS sont supprimés ;
+ *  4. les articles gardés ne sont pas réécrits : leur place et leur coup de cœur
+ *     restent (position négative, voir src/lib/boutique-ordre.ts).
+ *
+ * Un article déjà dans la boutique y reste même s'il ne rapporte plus rien : la
+ * vitrine ne l'affiche plus, « Mes articles » le signale et permet de le retirer
+ * (même règle que la boutique principale). `refuses` : nouveaux articles écartés
+ * (plus en vente, sans gain, ou produit d'un autre fournisseur). Plus de 60
+ * articles, ou une liste illisible : rien n'est écrit.
  */
 export async function definirArticlesDeLaBoutique(params: {
   type: TypeCompteBoutique; proprietaireId: string; boutiqueId: string; produits: string[];
-}): Promise<{ ok: boolean; erreur?: string }> {
+}): Promise<{ ok: boolean; erreur?: string; statut?: number; refuses?: number }> {
   const a = getSupabaseAdmin();
-  if (!a) return { ok: false, erreur: 'Base indisponible.' };
-  const ids = Array.from(new Set(params.produits.filter((x) => typeof x === 'string'))).slice(0, MAX_ARTICLES_BOUTIQUE);
-  let valides: string[] = [];
-  if (ids.length) {
-    let requete = a.from('products').select('id').in('id', ids).eq('status', 'approved');
+  if (!a) return { ok: false, erreur: 'Base indisponible.', statut: 503 };
+  // Liste illisible : refus. Ignorer une entrée (comme avant) la faisait passer pour
+  // « décochée » : une requête mal formée retirait des articles gardés.
+  if (!Array.isArray(params.produits) || !params.produits.every((x) => typeof x === 'string' && x.length > 0)) {
+    return { ok: false, erreur: 'Liste d’articles illisible. Rien n’a changé dans cette boutique.', statut: 400 };
+  }
+  const voulus = Array.from(new Set(params.produits));
+  // Plus de 60 : refus net. Couper la liste (comme avant) traitait les articles
+  // coupés comme « retirés » : des articles gardés par le propriétaire disparaissaient.
+  if (voulus.length > MAX_ARTICLES_BOUTIQUE) return { ok: false, erreur: `${MAX_ARTICLES_BOUTIQUE} articles au plus dans une boutique.`, statut: 400 };
+
+  const { data: lignes, error: lecture } = await a.from('store_products').select('product_id, position').eq('store_id', params.boutiqueId);
+  if (lecture || !Array.isArray(lignes)) return { ok: false, erreur: 'Enregistrement impossible (mise à jour de la base à faire ?).', statut: 503 };
+  const actuels = new Set<string>(lignes.map((l: any) => l.product_id));
+  const garde = new Set(voulus);
+  const nouveaux = voulus.filter((id) => !actuels.has(id));
+  const retires = Array.from(actuels).filter((id) => !garde.has(id));
+
+  let acceptes: string[] = [];
+  if (nouveaux.length) {
+    let requete = a.from('products').select('id, reseller_commission, pricing_status').in('id', nouveaux).eq('status', 'approved');
     if (params.type === 'supplier') requete = requete.eq('supplier_id', params.proprietaireId);
-    const { data } = await requete;
-    const ok = new Set((data || []).map((p: any) => p.id));
-    valides = ids.filter((id) => ok.has(id));
+    const { data, error } = await requete;
+    if (error || !Array.isArray(data)) return { ok: false, erreur: 'Enregistrement impossible. Réessayez.', statut: 503 };
+    const ok = new Set(data.filter((p: any) => params.type !== 'reseller' || partageable(p)).map((p: any) => p.id));
+    acceptes = nouveaux.filter((id) => ok.has(id));
   }
-  const { error: effacement } = await a.from('store_products').delete().eq('store_id', params.boutiqueId);
-  if (effacement) return { ok: false, erreur: 'Enregistrement impossible (mise à jour de la base à faire ?).' };
-  if (valides.length) {
-    const { error } = await a.from('store_products').insert(valides.map((product_id, position) => ({ store_id: params.boutiqueId, product_id, position })));
-    if (error) return { ok: false, erreur: 'Enregistrement impossible.' };
+
+  // Les nouveaux d'abord : une insertion en échec ne retire rien à la boutique.
+  if (acceptes.length) {
+    const suite = positionAjout(lignes.map((l: any) => l.position));
+    const { error } = await a.from('store_products')
+      .insert(acceptes.map((product_id, i) => ({ store_id: params.boutiqueId, product_id, position: suite + i })));
+    if (error) return { ok: false, erreur: 'Enregistrement impossible. Rien n’a changé dans cette boutique.', statut: 503 };
   }
-  return { ok: true };
+  if (retires.length) {
+    const { error } = await a.from('store_products').delete().eq('store_id', params.boutiqueId).in('product_id', retires);
+    if (error) return { ok: false, erreur: 'Les articles retirés n’ont pas pu l’être. Réessayez.', statut: 503 };
+  }
+  return { ok: true, refuses: nouveaux.length - acceptes.length };
 }
 
 /** Demande de formule : une seule demande en attente à la fois, avec sa référence de paiement. */

@@ -406,7 +406,10 @@ test('Barre du bas : « Boutique » remplace « Outils » ; vitrine chargée une
   assert.match(page, /const charger = cache\(async/);
   assert.match(page, /if \(charge\.statut !== 'active' && !proprietaire\) notFound\(\);/);
   assert.match(page, /robots: \{ index: false, follow: false \}/);
-  assert.match(page, /estProprietaire && charge\.typeProprietaire === 'reseller' && charge\.principale/);
+  // Lot 7 (2026-10-03) : les boutiques Pro d'un revendeur aussi (la règle exigeait
+  // `charge.principale`) ; `boutiquePro` les distingue de la principale.
+  assert.match(page, /estProprietaire && charge\.typeProprietaire === 'reseller'\s*\?/);
+  assert.match(page, /\.\.\.\(pro \? \{ boutiquePro: pro \} : \{\}\)/);
   assert.match(page, /gestion: session\?\.role === 'reseller'/);
   assert.match(page, /proprietaire=\{proprietaire\}/);
   // /r/ et /s/ ne passent pas la prop : leur rendu reste celui du visiteur.

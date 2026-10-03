@@ -2,12 +2,12 @@
 
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { BarChart3, Eye, LayoutGrid, PackagePlus, Rows3, SlidersHorizontal } from 'lucide-react';
+import { BarChart3, Eye, LayoutGrid, PackagePlus, Rows3, SlidersHorizontal, Store } from 'lucide-react';
 import BoutonPartageWhatsApp from '@/components/ui/BoutonPartageWhatsApp';
 import { StatusPill } from '@/components/ui/Surface';
 import { initiale } from '@/lib/initiale';
 import { formatNombre } from '@/lib/montant';
-import { PAGE_MES_ARTICLES, PAGE_RAYONS, PAGE_STATISTIQUES } from '@/lib/reseau/porte-boutique';
+import { PAGE_MES_ARTICLES, PAGE_MES_BOUTIQUES, PAGE_RAYONS, PAGE_STATISTIQUES, pageMesArticles } from '@/lib/reseau/porte-boutique';
 import type { ArticlePartage, RayonChoisi } from '@/lib/partage-boutique';
 import { useProprietaire, type IdentiteVitrine } from './ModeProprietaire';
 import PartageBoutique from './PartageBoutique';
@@ -37,6 +37,13 @@ import PartageBoutique from './PartageBoutique';
  * stores.reglages). Avant le SQL, le bandeau est exactement celui du lot 5. La
  * feuille de partage reçoit les rayons maison : « Partager ce rayon » les propose.
  *
+ * Lot 7 (2026-10-03) : boutique SUPPLÉMENTAIRE (formule Pro, `boutiquePro`). Le
+ * même bandeau, avec les outils qui existent pour elle : Articles (« Mes
+ * articles » de CETTE boutique), Mes boutiques et Outils. Personnaliser, Stats et
+ * Rayons ne règlent que la boutique principale : les y proposer mènerait à une
+ * autre boutique. « Partager » envoie l'adresse de la boutique, sans lien suivi :
+ * les liens suivis et les statistiques restent ceux de la principale.
+ *
  * Aucune donnée privée ici (ni gain, ni commission, ni prix de gros) : le
  * bandeau est rendu dans le HTML de la vitrine du propriétaire.
  */
@@ -49,6 +56,7 @@ export default function BandeauProprietaire({
   visites7j = null,
   rayons,
   optionRayons = false,
+  boutiquePro = null,
 }: {
   identite: IdentiteVitrine;
   /** 'active', ou 'hidden' / 'suspended' quand Suguba l'a masquée. */
@@ -64,6 +72,8 @@ export default function BandeauProprietaire({
   rayons?: readonly RayonChoisi[];
   /** La base permet les rayons maison : la tuile « Rayons » est proposée. */
   optionRayons?: boolean;
+  /** Identifiant d'une boutique supplémentaire (formule Pro) ; absent : la principale. */
+  boutiquePro?: string | null;
 }) {
   const proprietaire = useProprietaire();
   const identite = proprietaire?.identite ?? identiteInitiale;
@@ -115,20 +125,29 @@ export default function BandeauProprietaire({
             Avec « Rayons », 5 tuiles : 3 puis 2 sur téléphone (grille de 6 colonnes),
             une ligne au-delà. Les deux du bas sont plus larges : « 7 j : 1 250 visites »
             ne s'y coupe pas. Sans l'option, le bandeau est exactement celui du lot 5. */}
-        <nav aria-label="Gérer ma boutique" className={optionRayons ? 'grid grid-cols-6 sm:grid-cols-5 gap-2' : 'grid grid-cols-2 sm:grid-cols-4 gap-2'}>
-          <Outil href="/reseller/boutique" icone={SlidersHorizontal} libelle="Personnaliser" largeur={optionRayons ? TIERS : undefined} />
-          <Outil href={PAGE_MES_ARTICLES} icone={PackagePlus} libelle="Articles" largeur={optionRayons ? TIERS : undefined} />
-          {optionRayons && <Outil href={PAGE_RAYONS} icone={Rows3} libelle="Rayons" largeur={TIERS} />}
-          <Outil
-            href={PAGE_STATISTIQUES}
-            icone={BarChart3}
-            libelle="Stats"
-            // formatNombre (relecture du lot 4) : « 1 250 visites », comme la page Statistiques.
-            detail={`7 j : ${visites7j == null ? '—' : `${formatNombre(visites7j)} visite${visites7j > 1 ? 's' : ''}`}`}
-            largeur={optionRayons ? MOITIE : undefined}
-          />
-          <Outil href="/reseller/outils" icone={LayoutGrid} libelle="Outils" largeur={optionRayons ? MOITIE : undefined} />
-        </nav>
+        {boutiquePro ? (
+          // Boutique Pro : trois tuiles sur une ligne, à toutes les largeurs.
+          <nav aria-label="Gérer ma boutique" className="grid grid-cols-3 gap-2">
+            <Outil href={pageMesArticles(boutiquePro)} icone={PackagePlus} libelle="Articles" />
+            <Outil href={PAGE_MES_BOUTIQUES} icone={Store} libelle="Mes boutiques" />
+            <Outil href="/reseller/outils" icone={LayoutGrid} libelle="Outils" />
+          </nav>
+        ) : (
+          <nav aria-label="Gérer ma boutique" className={optionRayons ? 'grid grid-cols-6 sm:grid-cols-5 gap-2' : 'grid grid-cols-2 sm:grid-cols-4 gap-2'}>
+            <Outil href="/reseller/boutique" icone={SlidersHorizontal} libelle="Personnaliser" largeur={optionRayons ? TIERS : undefined} />
+            <Outil href={PAGE_MES_ARTICLES} icone={PackagePlus} libelle="Articles" largeur={optionRayons ? TIERS : undefined} />
+            {optionRayons && <Outil href={PAGE_RAYONS} icone={Rows3} libelle="Rayons" largeur={TIERS} />}
+            <Outil
+              href={PAGE_STATISTIQUES}
+              icone={BarChart3}
+              libelle="Stats"
+              // formatNombre (relecture du lot 4) : « 1 250 visites », comme la page Statistiques.
+              detail={`7 j : ${visites7j == null ? '—' : `${formatNombre(visites7j)} visite${visites7j > 1 ? 's' : ''}`}`}
+              largeur={optionRayons ? MOITIE : undefined}
+            />
+            <Outil href="/reseller/outils" icone={LayoutGrid} libelle="Outils" largeur={optionRayons ? MOITIE : undefined} />
+          </nav>
+        )}
         <div className="flex justify-end">
           <button
             type="button"
@@ -147,6 +166,7 @@ export default function BandeauProprietaire({
           boutique={boutique}
           articles={articles}
           onLienPret={proprietaire?.marquerPartage}
+          suivi={!boutiquePro}
         />
       )}
     </>

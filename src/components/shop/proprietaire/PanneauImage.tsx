@@ -18,6 +18,11 @@ import { useToast } from '@/components/ui/Toast';
  * ne jamais montrer comme acquise une image qui ne l'est pas.
  * Relecture du lot 2 (2026-10-03) : retrait confirmé d'abord, puisqu'il est
  * enregistré aussitôt (bouton « Retirer » de 40 px dans LogoUploader).
+ *
+ * Lot 7 (2026-10-03) : pour une boutique supplémentaire (formule Pro,
+ * `boutiquePro`), l'image passe par l'action « modifier » de « Mes boutiques »
+ * (POST /api/compte/boutiques), qui vérifie que la boutique appartient à la
+ * session et applique la même liste blanche (image du dossier du compte).
  */
 export type SujetImage = 'logo' | 'couverture';
 
@@ -28,6 +33,7 @@ export default function PanneauImage({
   valeur,
   nom,
   onEnregistre,
+  boutiquePro = null,
 }: {
   sujet: SujetImage;
   ouvert: boolean;
@@ -38,6 +44,8 @@ export default function PanneauImage({
   nom: string;
   /** Appelé une fois l'image enregistrée (null = retirée). */
   onEnregistre: (url: string | null) => void;
+  /** Identifiant d'une boutique supplémentaire (formule Pro) ; absent : la principale. */
+  boutiquePro?: string | null;
 }) {
   const { toast } = useToast();
   const [envoi, setEnvoi] = useState(false);
@@ -47,11 +55,17 @@ export default function PanneauImage({
   const enregistrer = async (url: string | null) => {
     setEnvoi(true);
     try {
-      const reponse = await fetch('/api/reseller/boutique', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ [sujet]: url }),
-      });
+      const reponse = boutiquePro
+        ? await fetch('/api/compte/boutiques', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'modifier', boutiqueId: boutiquePro, champs: { [sujet]: url } }),
+        })
+        : await fetch('/api/reseller/boutique', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ [sujet]: url }),
+        });
       const data = await reponse.json().catch(() => ({}));
       if (!reponse.ok) {
         toast(data.error || 'Enregistrement impossible.', { ton: 'erreur' });

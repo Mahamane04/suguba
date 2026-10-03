@@ -256,9 +256,11 @@ test('Route « ajouter » : rien n’est écrit pour un article déjà présent 
 
 // ── Lecture du source ───────────────────────────────────────────────────────
 
-test('Source : plus de « position: count », aucune écriture de position hors de boutique-ordre et de la route shop', () => {
+test('Source : plus de « position: count », aucune écriture de position hors de boutique-ordre, de la route shop et de la couche commune', () => {
   for (const f of fichiers('src/app/api')) assert.doesNotMatch(lire(f), /position:\s*count/, f);
-  const autorises = new Set(['src/lib/boutique-ordre.ts', 'src/app/api/reseller/shop/route.ts']);
+  // Lot 7 (2026-10-03) : les écritures de la route shop vivent dans la couche commune
+  // src/lib/reseau/articles-boutique.ts (boutique principale et boutiques Pro).
+  const autorises = new Set(['src/lib/boutique-ordre.ts', 'src/app/api/reseller/shop/route.ts', 'src/lib/reseau/articles-boutique.ts']);
   for (const f of fichiers('src')) {
     if (autorises.has(f)) continue;
     const src = sansCommentaires(lire(f));
@@ -266,10 +268,13 @@ test('Source : plus de « position: count », aucune écriture de position hors 
     assert.doesNotMatch(src, /\.(insert|update|upsert)\(\s*[^)]*\bposition\b/, `${f} écrit une position`);
   }
   const shop = sansCommentaires(lire('src/app/api/reseller/shop/route.ts'));
-  assert.match(shop, /from '@\/lib\/boutique-ordre'/);
-  assert.match(shop, /position: positionAjout\(/);
-  assert.match(shop, /\.update\(\{ position: p\.position \}\)/);
-  assert.doesNotMatch(shop, /\.upsert\(/, 'plus d’upsert qui remettrait une position à zéro');
+  assert.match(shop, /from '@\/lib\/reseau\/articles-boutique'/);
+  assert.doesNotMatch(shop, /\.(insert|update|upsert|delete)\(/, 'la route n’écrit plus elle-même : tout passe par la couche commune');
+  const couche = sansCommentaires(lire('src/lib/reseau/articles-boutique.ts'));
+  assert.match(couche, /from '\.\.\/boutique-ordre'/);
+  assert.match(couche, /position: positionAjout\(/);
+  assert.match(couche, /\.update\(\{ position: p\.position \}\)/);
+  assert.doesNotMatch(couche, /\.upsert\(/, 'plus d’upsert qui remettrait une position à zéro');
 });
 
 // ── Route privée GET /api/reseller/boutique/articles ────────────────────────
@@ -329,7 +334,10 @@ test('Données privées : ni commission ni gain dans la vitrine publique ; jamai
   // La route des articles exige une session revendeur, identité tirée de la session.
   const route = lire('src/app/api/reseller/boutique/articles/route.ts');
   assert.match(route, /session\.role === 'reseller'/);
-  assert.match(route, /\.eq\('reseller_id', session\.uid\)/);
+  // Lot 7 (2026-10-03) : la sélection est lue par la couche commune, pour la boutique de la session.
+  assert.match(route, /const cible = await cibleArticles\(session\.uid, demandee\);/);
+  assert.match(route, /await lireSelection\(admin, cible\)/);
+  assert.match(lire('src/lib/reseau/articles-boutique.ts'), /colonne: 'reseller_id', valeur: uid/);
 });
 
 // ── Vitrine ─────────────────────────────────────────────────────────────────

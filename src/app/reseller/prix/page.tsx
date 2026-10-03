@@ -12,7 +12,7 @@ import ChargementPage from '@/components/common/ChargementPage';
 import { useToast } from '@/components/ui/Toast';
 import { formatF } from '@/lib/montant';
 import Button from '@/components/ui/Button';
-import { PAGE_MES_ARTICLES } from '@/lib/reseau/porte-boutique';
+import { pageMesArticles } from '@/lib/reseau/porte-boutique';
 
 /**
  * Mes prix — articles au prix de gros (2026-09-24).
@@ -31,6 +31,10 @@ import { PAGE_MES_ARTICLES } from '@/lib/reseau/porte-boutique';
  * l'adresse changent : « Tous mes prix » (/reseller/prix) laissait la liste
  * filtrée sur l'article choisi, et l'écran vide renvoyait sur lui-même. Le
  * filtre est maintenant déduit de l'adresse à chaque rendu (useSearchParams).
+ *
+ * Lot 7 (2026-10-03) : ?boutiquePro=<id> (« Mon prix » d'un article d'une
+ * boutique supplémentaire) ne change que le retour, qui revient à « Mes articles »
+ * de CETTE boutique. Simple indication de navigation : rien n'est lu avec.
  */
 
 interface Article {
@@ -54,6 +58,7 @@ function MesPrix() {
   const q = useSearchParams();
   const boutique = q.get('boutique') === '1';
   const produit = q.get('produit') || null;
+  const boutiquePro = q.get('boutiquePro') || null;
 
   useEffect(() => {
     // Réponse d'un filtre précédent arrivée trop tard : ignorée.
@@ -75,7 +80,7 @@ function MesPrix() {
   return (
     <PageReseau titre="Mes prix"
       sousTitre={boutique ? 'Articles au prix de gros de votre boutique : c’est vous qui fixez le prix.' : 'Articles au prix de gros : c’est vous qui fixez le prix.'}
-      retour={depuisBoutique ? { href: PAGE_MES_ARTICLES, libelle: 'Mes articles' } : { href: '/reseller', libelle: 'Mon espace' }}
+      retour={depuisBoutique ? { href: pageMesArticles(boutiquePro), libelle: 'Mes articles' } : { href: '/reseller', libelle: 'Mon espace' }}
       action={produit ? <Button href="/reseller/prix" variant="ghost" size="sm">Tous mes prix</Button> : undefined}>
       <Card className="bg-suguba-sauge border-transparent text-xs text-slate-700 space-y-1">
         <p><strong>Votre prix</strong> s’affiche dans votre boutique et sur les liens que vous partagez.</p>

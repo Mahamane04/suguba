@@ -17,7 +17,7 @@ import Button from '@/components/ui/Button';
 import { StatusPill } from '@/components/ui/Surface';
 import { ShieldCheck, Truck, KeyRound, Store, Users, MapPin, Pencil, ImagePlus, ArrowDown, ChevronRight, PackagePlus, Megaphone } from 'lucide-react';
 import { initiale } from '@/lib/initiale';
-import { PAGE_MES_ARTICLES, PORTE_MA_BOUTIQUE } from '@/lib/reseau/porte-boutique';
+import { PORTE_MA_BOUTIQUE, pageMesArticles, porteMaBoutique } from '@/lib/reseau/porte-boutique';
 import { whatsappHelper } from '@/lib/whatsapp-helper';
 import VisiteBoutique from '@/components/shop/VisiteBoutique';
 import type { ArticlePartage, RayonChoisi } from '@/lib/partage-boutique';
@@ -45,6 +45,14 @@ export interface ProprietaireVitrine {
    * refusés…), calculé côté serveur pour lui seul (lot 3, 2026-10-03).
    */
   articlesMasques?: number;
+  /**
+   * Boutique SUPPLÉMENTAIRE (formule Pro, lot 7, 2026-10-03) : son identifiant.
+   * Les outils du propriétaire visent alors cette boutique — crayons enregistrés
+   * par « Mes boutiques », « Mes articles » de cette boutique — et ceux qui
+   * n'existent que pour la principale (Personnaliser, Stats, Rayons, « prête à
+   * X % », annonce) ne sont pas proposés. Absent : la boutique principale.
+   */
+  boutiquePro?: string;
 }
 
 /**
@@ -121,7 +129,7 @@ export default function ShopView({
   galerie?: React.ReactNode;
   /** Présent seulement quand le visiteur est le propriétaire : page où modifier la boutique. */
   lienModifier?: string | null;
-  /** Propriétaire de la boutique revendeur principale : il n'y voit plus les éléments du visiteur. */
+  /** Propriétaire de la boutique revendeur (principale, ou Pro depuis le lot 7) : il n'y voit plus les éléments du visiteur. */
   proprietaire?: ProprietaireVitrine | null;
   /** ?editer= reçu par la vitrine du propriétaire : panneau d'édition à ouvrir (lot 2). */
   editer?: PanneauBoutique | null;
@@ -153,6 +161,9 @@ export default function ShopView({
   const gestion = Boolean(proprietaire?.gestion);
   const enLigne = !proprietaire || proprietaire.statut === 'active';
   const masques = proprietaire?.articlesMasques ?? 0;
+  // Boutique supplémentaire (formule Pro, lot 7) : ses outils la visent, elle.
+  const boutiquePro = proprietaire?.boutiquePro ?? null;
+  const lienArticles = pageMesArticles(boutiquePro);
   /**
    * Élément du visiteur, montré au propriétaire seulement en vue client, et sans
    * effet (`inert`) : il ne peut ni s'abonner à sa boutique ni s'y inscrire.
@@ -300,6 +311,17 @@ export default function ShopView({
     </div>
   );
 
+  // Boutique Pro sans article (lot 7) : elle ne montre jamais le catalogue Suguba à
+  // la place. Son propriétaire reçoit l'action, pas seulement « Revenez bientôt ».
+  const noticeBoutiqueProVide = (
+    <div className={`bg-white border border-slate-200 rounded-2xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2 ${gestion ? 'group-data-[vue=client]:hidden' : ''}`}>
+      <p className="text-sm text-slate-700">Cette boutique n’a pas encore d’articles : vos clients la voient vide.</p>
+      <Button href={lienArticles} variant="secondary" size="sm" className="self-start sm:self-auto shrink-0">
+        <PackagePlus className="w-4 h-4" />Choisir ses articles
+      </Button>
+    </div>
+  );
+
   const devenirRevendeur = (
     <div className="bg-white rounded-3xl border border-slate-200 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       <div className="flex items-center space-x-3">
@@ -321,7 +343,7 @@ export default function ShopView({
           qui rebascule le profil. Lien classique (page rechargée) : le menu du
           bas reprend le profil revendeur. */}
       {proprietaire && !gestion && (
-        <a href={PORTE_MA_BOUTIQUE}
+        <a href={porteMaBoutique(boutiquePro)}
           className="flex items-center justify-between gap-3 min-h-12 rounded-2xl bg-suguba-profond text-white px-4 py-2">
           <span className="text-sm font-semibold">C’est votre boutique</span>
           <span className="inline-flex items-center gap-1 text-sm font-bold text-suguba-citron">Gérer<ChevronRight className="w-4 h-4" /></span>
@@ -337,6 +359,7 @@ export default function ShopView({
           visites7j={suiviProprietaire?.visites7j ?? null}
           rayons={rayonsMaison}
           optionRayons={Boolean(reglages?.option)}
+          boutiquePro={boutiquePro}
         />
       )}
 
@@ -353,6 +376,7 @@ export default function ShopView({
           dejaPartage={Boolean(suiviProprietaire?.dejaPartage)}
           enLigne={enLigne}
           panneauInitial={editer || null}
+          boutiquePro={boutiquePro}
           pied={garanties}
         >
           {actions}
@@ -389,7 +413,7 @@ export default function ShopView({
         <div role="note" aria-label="Annonce de la boutique" className="flex items-start gap-3 rounded-2xl bg-suguba-menthe border border-suguba-profond/10 px-4 py-3">
           <Megaphone className="w-5 h-5 mt-0.5 shrink-0 text-suguba-brand-dark" aria-hidden="true" />
           <p className="min-w-0 flex-1 text-sm font-semibold text-suguba-profond break-words">{annonce}</p>
-          {gestion && (
+          {gestion && !boutiquePro && (
             <Link href="/reseller/boutique#annonce" className="shrink-0 inline-flex items-center min-h-10 -my-2 px-1 text-sm font-semibold text-suguba-brand-dark underline underline-offset-2 group-data-[vue=client]:hidden">
               Modifier
             </Link>
@@ -407,7 +431,7 @@ export default function ShopView({
           <p className="text-sm text-amber-950">
             <strong className="tabular-nums">{masques}</strong> article{masques > 1 ? 's' : ''} de votre sélection ne s’affiche{masques > 1 ? 'nt' : ''} plus.
           </p>
-          <Link href={PAGE_MES_ARTICLES} className="shrink-0 inline-flex items-center gap-1 min-h-10 px-1 text-sm font-semibold text-suguba-brand-dark underline underline-offset-2">
+          <Link href={lienArticles} className="shrink-0 inline-flex items-center gap-1 min-h-10 px-1 text-sm font-semibold text-suguba-brand-dark underline underline-offset-2">
             Voir<ChevronRight className="w-4 h-4" />
           </Link>
         </div>
@@ -419,6 +443,8 @@ export default function ShopView({
           {vueClient(noticeClient)}
         </>
       ) : proprietaire ? noticeProprietaire : noticeClient)}
+
+      {proprietaire && boutiquePro && nbArticles === 0 && noticeBoutiqueProVide}
 
       {nbArticles === 0 ? (
         <div className="bg-white rounded-3xl border border-slate-200 p-8 text-center space-y-2">

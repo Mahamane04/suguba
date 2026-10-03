@@ -195,8 +195,13 @@ async function avecOffre(admin: ClientAdmin, liste: ProduitVitrine[]): Promise<P
 /**
  * Un produit est proposable aux revendeurs s'il leur rapporte quelque chose :
  * ni sous le plancher, ni à commission trop faible.
+ *
+ * Exportée au lot 7 du chantier boutique (2026-10-03) : la même règle vaut pour
+ * les boutiques supplémentaires (formules Pro) d'un revendeur — leur vitrine,
+ * leur sélection et la liste où il choisit ses articles. Elle était recopiée ;
+ * une copie oubliée y laissait entrer des articles qui ne rapportent rien.
  */
-function partageable(p: any): boolean {
+export function partageable(p: any): boolean {
   return Number(p.reseller_commission) > 0 && (!p.pricing_status || p.pricing_status === 'ok');
 }
 
@@ -244,10 +249,20 @@ export async function compterVitrine(admin: ClientAdmin, revendeurId: string): P
  * différence entre sa sélection et les articles réellement servis. 0 si la
  * lecture échoue : jamais une alerte inventée.
  */
-export async function compterArticlesNonServis(revendeurId: string, servis: readonly string[]): Promise<number> {
+export async function compterArticlesNonServis(
+  revendeurId: string,
+  servis: readonly string[],
+  /**
+   * Boutique supplémentaire (formule Pro, lot 7, 2026-10-03) : sa propre sélection
+   * (store_products). Absente : la boutique principale, comme avant.
+   */
+  boutiqueProId?: string | null,
+): Promise<number> {
   const admin = getSupabaseAdmin();
   if (!admin) return 0;
-  const { data, error } = await admin.from('reseller_shop_items').select('product_id').eq('reseller_id', revendeurId);
+  const { data, error } = boutiqueProId
+    ? await admin.from('store_products').select('product_id').eq('store_id', boutiqueProId)
+    : await admin.from('reseller_shop_items').select('product_id').eq('reseller_id', revendeurId);
   if (error || !Array.isArray(data)) return 0;
   const affiches = new Set(servis);
   return data.filter((l: any) => l.product_id && !affiches.has(l.product_id)).length;
@@ -539,20 +554,39 @@ export async function chargerProduitsSuguba(): Promise<ProduitVitrine[]> {
  * Articles d'une boutique SUPPLÉMENTAIRE (2026-09-24, formules Pro) : sa
  * propre sélection (store_products), dans l'ordre choisi. Pour un revendeur,
  * ses prix enregistrés remplacent le prix conseillé des articles au prix de gros.
+ *
+ * Lot 7 du chantier boutique (2026-10-03), boutiques Pro au même niveau que la
+ * principale :
+ *  - boutique d'un REVENDEUR (`revendeurId` fourni) : seuls les articles qui lui
+ *    rapportent quelque chose (`partageable`), comme sa boutique principale. Un
+ *    article à commission nulle ou sous le plancher y restait affiché ;
+ *  - même convention que la principale : position négative = coup de cœur,
+ *    « Nouveau » pendant 14 jours après l'ajout, tri identique à « Mes articles »
+ *    (trierSelection).
+ * Boutique supplémentaire d'un FOURNISSEUR : ses propres produits, sans ce filtre
+ * (sa boutique principale ne l'applique pas non plus), sans coup de cœur ni
+ * « Nouveau » : son rendu ne change pas (hors de ce chantier).
  */
 export async function chargerProduitsDeLaBoutique(storeId: string, revendeurId?: string | null): Promise<ProduitVitrine[]> {
   const admin = getSupabaseAdmin();
   if (!admin) return [];
   const { data: selection, error } = await admin.from('store_products')
-    .select('product_id, position').eq('store_id', storeId).order('position', { ascending: true });
+    .select('product_id, position, added_at').eq('store_id', storeId).order('position', { ascending: true });
   if (error || !selection?.length) return [];
-  const ids = selection.map((s: any) => s.product_id);
+  const lignes = trierSelection(selection as LigneSelection[]);
+  const ids = lignes.map((s) => s.product_id);
+  const parArticle = new Map(lignes.map((s) => [s.product_id, s]));
   const { data } = await admin.from('products').select(CHAMPS_PRODUIT).in('id', ids).eq('status', 'approved');
   const ordre = new Map(ids.map((id: string, i: number) => [id, i]));
-  const produits = (data || []).sort((a: any, b: any) => (ordre.get(a.id) ?? 0) - (ordre.get(b.id) ?? 0));
+  const produits = (data || [])
+    .filter((p: any) => !revendeurId || partageable(p))
+    .sort((a: any, b: any) => (ordre.get(a.id) ?? 0) - (ordre.get(b.id) ?? 0));
   const sesPrix = revendeurId ? await prixEnregistres(admin, revendeurId, produits.map((p: any) => p.id)) : new Map<string, number>();
+  const maintenant = Date.now();
   return avecOffre(admin, produits.map((p: any) => {
     const v = versVitrine(p);
-    return sesPrix.has(p.id) ? { ...v, prix: sesPrix.get(p.id) as number } : v;
+    const avecPrix = sesPrix.has(p.id) ? { ...v, prix: sesPrix.get(p.id) as number } : v;
+    const ligne = revendeurId ? parArticle.get(p.id) : undefined;
+    return ligne ? { ...avecPrix, coupDeCoeur: estCoupDeCoeur(ligne.position), nouveau: estNouveau(ligne.added_at, maintenant) } : avecPrix;
   }));
 }

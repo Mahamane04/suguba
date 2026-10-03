@@ -16,6 +16,11 @@ import { useToast } from '@/components/ui/Toast';
  * alors « Awa D. » (ou le nom complet sur les plus anciennes), que le revendeur
  * n'a jamais choisi. Le nom complet n'est d'ailleurs jamais envoyé au navigateur.
  * L'adresse de la boutique ne change pas quand on la renomme.
+ *
+ * Lot 7 (2026-10-03) : pour une boutique supplémentaire (formule Pro,
+ * `boutiquePro`), l'enregistrement passe par l'action « modifier » de « Mes
+ * boutiques » (POST /api/compte/boutiques), qui renvoie comme la route de la
+ * principale `boutique` et `vitrine` {nom, enseigne}.
  */
 export interface NomAccueil {
   nom: string;
@@ -28,11 +33,14 @@ export default function PanneauNomAccueil({
   onFermer,
   valeur,
   onEnregistre,
+  boutiquePro = null,
 }: {
   ouvert: boolean;
   onFermer: () => void;
   valeur: NomAccueil;
   onEnregistre: (nouveau: NomAccueil) => void;
+  /** Identifiant d'une boutique supplémentaire (formule Pro) ; absent : la principale. */
+  boutiquePro?: string | null;
 }) {
   const { toast } = useToast();
   const nomInitial = valeur.enseigne ? valeur.nom : '';
@@ -58,11 +66,17 @@ export default function PanneauNomAccueil({
     if (Object.keys(corps).length === 0) { onFermer(); return; }
     setEnvoi(true);
     try {
-      const reponse = await fetch('/api/reseller/boutique', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(corps),
-      });
+      const reponse = boutiquePro
+        ? await fetch('/api/compte/boutiques', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'modifier', boutiqueId: boutiquePro, champs: corps }),
+        })
+        : await fetch('/api/reseller/boutique', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(corps),
+        });
       const data = await reponse.json().catch(() => ({}));
       if (!reponse.ok) { toast(data.error || 'Enregistrement impossible.', { ton: 'erreur' }); return; }
       // Nom affiché calculé par le serveur (enseigne, ou « Awa D. »).

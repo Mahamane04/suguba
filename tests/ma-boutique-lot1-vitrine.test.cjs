@@ -106,21 +106,31 @@ test('Boutique revendeur masquée : son propriétaire la voit, avec son état ; 
   assert.deepEqual(el.props.proprietaire, { statut: 'hidden', abonnes: 7, gestion: false });
 });
 
-test('Boutiques masquées hors périmètre : boutique Pro et boutique fournisseur restent introuvables, même pour leur propriétaire', async () => {
+test('Boutiques masquées : la boutique fournisseur reste introuvable ; la boutique Pro suit la règle de la principale (lot 7)', async () => {
   reinitialiser();
-  sessionCourante = session('rev-1');
-  await assert.rejects(ouvrir('awa-pro'), Introuvable, 'boutique supplémentaire (formule Pro)');
   sessionCourante = session('fou-1', { role: 'supplier', roles: { supplier: 'active' } });
   await assert.rejects(ouvrir('kadi-shop'), Introuvable, 'boutique fournisseur');
   sessionCourante = null;
   await assert.rejects(ouvrir('inconnue'), Introuvable);
-  // Boutique Pro ACTIVE ouverte par son propriétaire : rendu inchangé jusqu'au lot 7
-  // (« Modifier la boutique » vers Mes boutiques, pas de mode propriétaire).
-  etat.stores[1].status = 'active';
+  // Lot 7 (2026-10-03) : une boutique supplémentaire (formule Pro) masquée est, comme
+  // la principale, introuvable pour tous sauf pour son propriétaire, qui la voit avec
+  // son état. `boutiquePro` porte son identifiant : ses outils la visent, elle.
+  await assert.rejects(ouvrir('awa-pro'), Introuvable, 'visiteur');
+  sessionCourante = session('rev-2');
+  await assert.rejects(ouvrir('awa-pro'), Introuvable, 'autre revendeur');
+  sessionCourante = session('rev-1', { apercu: { depuis: { uid: 'admin-1', phone: '+22300000001' } } });
+  await assert.rejects(ouvrir('awa-pro'), Introuvable, 'aperçu admin');
   sessionCourante = session('rev-1');
-  const el = await ouvrir('awa-pro');
-  assert.equal(el.props.proprietaire, null);
-  assert.equal(el.props.lienModifier, '/compte/boutiques');
+  let el = await ouvrir('awa-pro');
+  assert.deepEqual(el.props.proprietaire, { statut: 'hidden', abonnes: 1, gestion: true, boutiquePro: 's-pro' });
+  // Boutique Pro ACTIVE ouverte par son propriétaire : mode propriétaire (avant le
+  // lot 7 : aucun, seulement « Modifier la boutique » vers Mes boutiques).
+  etat.stores[1].status = 'active';
+  el = await ouvrir('awa-pro');
+  assert.deepEqual(el.props.proprietaire, { statut: 'active', abonnes: 1, gestion: true, boutiquePro: 's-pro' });
+  assert.equal(el.props.lienModifier, null, 'les crayons et le bandeau remplacent le lien posé sur la couverture');
+  assert.equal(el.props.boutique.nom, 'Awa Pro');
+  assert.deepEqual(ecritures, [], 'afficher une vitrine n’écrit rien');
 });
 
 test('Boutique active : le visiteur voit la vitrine sans mode propriétaire ; métadonnées neutres et noindex si masquée', async () => {

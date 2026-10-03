@@ -13,6 +13,7 @@ import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
 import SelecteurArticles from '@/components/reseau/SelecteurArticles';
 import { useToast } from '@/components/ui/Toast';
 import { formatF } from '@/lib/montant';
+import { pageMesArticles } from '@/lib/reseau/porte-boutique';
 
 /**
  * Mes boutiques (2026-09-24) — revendeur ou fournisseur.
@@ -24,6 +25,15 @@ import { formatF } from '@/lib/montant';
  *
  * Lot 6 du chantier boutique (2026-10-03) : la liste d'articles à cocher est
  * devenue src/components/reseau/SelecteurArticles.tsx, partagée avec « Mes rayons ».
+ *
+ * Lot 7 (2026-10-03), boutiques Pro au même niveau que la principale :
+ *  - REVENDEUR : « Choisir les articles » mène à « Mes articles » de la boutique
+ *    (?boutique=<id>) : y ajouter, ranger, mettre en coup de cœur, retirer. Son
+ *    logo, sa couverture et son nom se changent par les crayons de sa vitrine
+ *    (« Voir ») ;
+ *  - FOURNISSEUR : la liste à cocher reste ici (le mode propriétaire côté
+ *    fournisseur n'est pas dans ce chantier). Elle n'efface plus la sélection
+ *    avant de la réécrire : une panne ne vide plus la boutique.
  */
 
 interface Boutique { id: string; slug: string; nom: string; quartier: string | null; principale: boolean; abonnes: number; statut: string }
@@ -131,12 +141,19 @@ export default function MesBoutiquesPage() {
               <Button href={`/boutique/${b.slug}`} variant="ghost" size="sm"><Eye className="w-4 h-4" />Voir</Button>
               {b.principale ? (
                 <Button href={`${espace}/boutique`} variant="ghost" size="sm"><Settings2 className="w-4 h-4" />Gérer</Button>
+              ) : d.type === 'reseller' ? (
+                <Button href={pageMesArticles(b.id)} variant="secondary" size="sm">
+                  <ListChecks className="w-4 h-4" />Choisir les articles
+                </Button>
               ) : (
                 <Button variant="secondary" size="sm" onClick={() => setSelection(selection === b.id ? null : b.id)}>
                   <ListChecks className="w-4 h-4" />Choisir les articles
                 </Button>
               )}
             </div>
+            {!b.principale && d.type === 'reseller' && (
+              <p className="text-xs text-slate-600">Logo, couverture et nom : touchez « Voir », puis les crayons de la boutique.</p>
+            )}
             {selection === b.id && (
               <SelecteurArticles
                 catalogue={d.catalogue}

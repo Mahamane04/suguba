@@ -27,6 +27,13 @@ import { etapesBoutique, progressionBoutique, type PanneauBoutique } from '@/lib
  *
  * Réservé au propriétaire en gestion, chargé avec next/dynamic : jamais envoyé
  * aux visiteurs. Les crayons et la carte disparaissent en vue client.
+ *
+ * Lot 7 (2026-10-03) : boutique SUPPLÉMENTAIRE (formule Pro, `boutiquePro`). Les
+ * trois mêmes crayons, enregistrés par l'action « modifier » de « Mes boutiques »
+ * (/api/compte/boutiques), qui vérifie que la boutique appartient à la session —
+ * avant ce lot, une boutique Pro n'avait aucun moyen de changer son logo. La
+ * carte « Ma boutique est prête à X % » n'y figure pas : ses étapes (catalogue,
+ * partage suivi) sont celles de la boutique principale.
  */
 export default function EnteteEditable({
   identite: identiteInitiale,
@@ -39,6 +46,7 @@ export default function EnteteEditable({
   dejaPartage = false,
   enLigne = true,
   panneauInitial,
+  boutiquePro = null,
   children,
   pied,
 }: {
@@ -57,6 +65,8 @@ export default function EnteteEditable({
   enLigne?: boolean;
   /** ?editer= reçu à l'ouverture. */
   panneauInitial?: PanneauBoutique | null;
+  /** Identifiant d'une boutique supplémentaire (formule Pro) ; absent : la principale. */
+  boutiquePro?: string | null;
   children?: React.ReactNode;
   pied?: React.ReactNode;
 }) {
@@ -125,7 +135,7 @@ export default function EnteteEditable({
         {children}
       </EnteteBoutique>
 
-      {prete.pourcentage < 100 && (
+      {!boutiquePro && prete.pourcentage < 100 && (
         <ListeEtapes
           id="boutique-prete-titre"
           className="group-data-[vue=client]:hidden"
@@ -150,6 +160,7 @@ export default function EnteteEditable({
         valeur={identite.couverture}
         nom={identite.nom}
         onEnregistre={(url) => maj({ couverture: url })}
+        boutiquePro={boutiquePro}
       />
       <PanneauImage
         sujet="logo"
@@ -158,12 +169,14 @@ export default function EnteteEditable({
         valeur={identite.logo}
         nom={identite.nom}
         onEnregistre={(url) => maj({ logo: url })}
+        boutiquePro={boutiquePro}
       />
       <PanneauNomAccueil
         ouvert={panneau === 'nom'}
         onFermer={fermer}
         valeur={{ nom: identite.nom, enseigne: identite.enseigne, accroche: identite.accroche }}
         onEnregistre={(nouveau) => maj(nouveau)}
+        boutiquePro={boutiquePro}
       />
     </>
   );

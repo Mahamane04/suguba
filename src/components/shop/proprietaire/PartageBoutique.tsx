@@ -45,6 +45,11 @@ const QrCode = dynamic(() => import('@/components/common/QrCode'), { ssr: false 
  * dans son ordre (fournis avec la boutique, ou lus avec elle). `choixInitial`
  * ouvre la feuille sur un rayon : « Partager ce rayon » de « Mes rayons » — seul
  * le lien de ce rayon est alors préparé (relecture du lot 6).
+ *
+ * Lot 7 (2026-10-03) : `suivi={false}` pour une boutique supplémentaire (formule
+ * Pro). Aucun lien suivi n'est demandé : la route privée ne connaît que la
+ * boutique principale, et son lien mènerait à l'autre boutique. La feuille partage
+ * alors l'adresse de la boutique (ou de son rayon), dans le message comme dans le QR.
  */
 
 export interface BoutiqueAPartager {
@@ -70,6 +75,7 @@ export default function PartageBoutique({
   articles: articlesFournis,
   onLienPret,
   choixInitial = null,
+  suivi = true,
 }: {
   ouvert: boolean;
   onFermer: () => void;
@@ -81,6 +87,8 @@ export default function PartageBoutique({
   onLienPret?: () => void;
   /** Clé du rayon proposé à l'ouverture (« Partager ce rayon », lot 6) ; null : toute la boutique. */
   choixInitial?: string | null;
+  /** Faux : boutique Pro, partagée par son adresse, sans lien suivi (lot 7). */
+  suivi?: boolean;
 }) {
   const { toast } = useToast();
   const [boutiqueLue, setBoutiqueLue] = useState<BoutiqueAPartager | null>(null);
@@ -156,7 +164,7 @@ export default function PartageBoutique({
    * automatiques (ouverture, changement de choix) ne relancent jamais.
    */
   const precharger = useCallback((canal: CanalBoutique, cle: string | null, toucher = false) => {
-    if (!slug || !enLigne) return;
+    if (!slug || !enLigne || !suivi) return;
     const cleCache = `${canal}:${cle ?? ''}`;
     const deja = cache.current.get(cleCache);
     if (deja === 'en_cours' || deja === 'pret' || (deja === 'echec' && !toucher)) return;
@@ -178,7 +186,7 @@ export default function PartageBoutique({
         setUrls((u) => ({ ...u, [cleCache]: url || adresseBoutique(window.location.origin, slug, cle) }));
         if (d?.suivi) onLienPret?.();
       });
-  }, [slug, enLigne, onLienPret]);
+  }, [slug, enLigne, suivi, onLienPret]);
 
   // À l'ouverture et à chaque choix : le lien WhatsApp se prépare tout de suite.
   useEffect(() => {
@@ -190,7 +198,8 @@ export default function PartageBoutique({
 
   const cle = choisi?.cle ?? null;
   const url = ouvert ? urls[`whatsapp:${cle ?? ''}`] || brute(cle) : '';
-  const urlQr = urls[`qr:${cle ?? ''}`] || null;
+  // Sans lien suivi (boutique Pro) : le QR porte l'adresse elle-même, tout de suite.
+  const urlQr = urls[`qr:${cle ?? ''}`] || (!suivi && ouvert ? brute(cle) : '') || null;
   const texte = ouvert && boutique ? texteBoutique({ identite: boutique, choix: choisi, articles: articlesAAnnoncer(articles || [], cle, undefined, rayons), url }) : '';
   // « ma boutique », « mes coups de cœur » ou « le rayon « Pagnes » » (lecteurs d'écran, QR).
   const objet = !cle ? 'ma boutique' : cle === RAYON_COUPS_DE_COEUR ? 'mes coups de cœur' : `le rayon « ${choisi?.libelle} »`;

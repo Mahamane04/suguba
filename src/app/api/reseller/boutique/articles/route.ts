@@ -5,7 +5,10 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { chargerReglages } from '@/lib/platform-settings';
 import { calculerTarifGros, prixMinimalGros } from '@/lib/pricing';
 import { prixEnregistres } from '@/lib/prix-revendeur';
-import { ARTICLES_MAX, COUPS_DE_COEUR_MAX, estCoupDeCoeur, trierSelection, type ArticleBoutique, type EtatArticle, type LigneSelection } from '@/lib/boutique-ordre';
+import { partageable } from '@/lib/shop';
+import { ARTICLES_MAX, COUPS_DE_COEUR_MAX, estCoupDeCoeur, type ArticleBoutique, type EtatArticle } from '@/lib/boutique-ordre';
+import { cibleArticles, lireSelection } from '@/lib/reseau/articles-boutique';
+import { estEnseigne, nomPublicBoutique } from '@/lib/enseigne';
 
 /**
  * « Mes articles » (lot 3 du chantier boutique, 2026-10-03) — ROUTE PRIVÉE.
@@ -25,8 +28,15 @@ import { ARTICLES_MAX, COUPS_DE_COEUR_MAX, estCoupDeCoeur, trierSelection, type 
  *    vente : refusé, retiré, supprimé) ou 'sans_gain' (plus de commission ou
  *    prix sous le plancher) — ces deux derniers ne s'affichent plus.
  *
- * Boutique principale seulement (reseller_shop_items) ; les boutiques Pro
- * (?boutique=<id>) viendront au lot 7.
+ * Lot 7 (2026-10-03) : ?boutique=<id> lit les articles d'une boutique
+ * supplémentaire (formule Pro, store_products) par la couche commune
+ * src/lib/reseau/articles-boutique.ts. La boutique doit appartenir à la SESSION
+ * (boutiqueDuCompte) : celle d'un autre compte, ou un identifiant inconnu, donne
+ * 404 sans rien lire de ses articles. La réponse porte alors `boutique` {id, slug,
+ * nom, enseigne, statut} — le nom que voient les clients (l'enseigne, ou
+ * « Awa D. »), jamais le nom complet. Sans ce paramètre : la boutique principale,
+ * réponse inchangée. Avec l'identifiant de SA boutique principale : ses articles
+ * habituels, et `principale: true`.
  */
 
 async function revendeurConnecte(req: NextRequest) {
@@ -41,16 +51,31 @@ export async function GET(req: NextRequest) {
   const admin = getSupabaseAdmin();
   if (!admin) return NextResponse.json({ error: 'Vos articles sont indisponibles. Réessayez.' }, { status: 503 });
 
-  const limites = { max: ARTICLES_MAX, coupsDeCoeurMax: COUPS_DE_COEUR_MAX };
-  const { data: selection, error } = await admin
-    .from('reseller_shop_items')
-    .select('product_id, position, added_at')
-    .eq('reseller_id', session.uid)
-    .order('position', { ascending: true });
-  if (error || !Array.isArray(selection)) {
-    return NextResponse.json({ error: 'Vos articles sont indisponibles. Réessayez.' }, { status: 503 });
+  // Boutique visée : la principale de la session, ou une boutique Pro qui lui appartient.
+  const demandee = req.nextUrl.searchParams.get('boutique');
+  const cible = await cibleArticles(session.uid, demandee);
+  if (!cible) return NextResponse.json({ error: 'Boutique introuvable.' }, { status: 404 });
+
+  const limites: Record<string, unknown> = { max: ARTICLES_MAX, coupsDeCoeurMax: COUPS_DE_COEUR_MAX };
+  // ?boutique=<identifiant de SA boutique principale> : ce sont ses articles
+  // habituels ; l'écran le sait et se comporte comme sans paramètre.
+  if (demandee !== null && !cible.pro) limites.principale = true;
+  if (cible.pro) {
+    // Nom public calculé ICI : le nom complet du compte ne quitte pas le serveur.
+    // Profil illisible : rien n'est renvoyé plutôt qu'un nom qu'on ne sait pas vérifier.
+    const { data: profil, error: erreurProfil } = await admin.from('profiles').select('full_name').eq('id', session.uid).maybeSingle();
+    if (erreurProfil || !profil) return NextResponse.json({ error: 'Vos articles sont indisponibles. Réessayez.' }, { status: 503 });
+    limites.boutique = {
+      id: cible.boutique.id,
+      slug: cible.boutique.slug,
+      nom: nomPublicBoutique(cible.boutique.nom, profil.full_name),
+      enseigne: estEnseigne(cible.boutique.nom, profil.full_name),
+      statut: cible.boutique.statut,
+    };
   }
-  const lignes = trierSelection(selection as LigneSelection[]);
+
+  const lignes = await lireSelection(admin, cible);
+  if (!lignes) return NextResponse.json({ error: 'Vos articles sont indisponibles. Réessayez.' }, { status: 503 });
   if (lignes.length === 0) return NextResponse.json({ articles: [], ...limites });
 
   const ids = lignes.map((l) => l.product_id);
@@ -79,11 +104,11 @@ export async function GET(req: NextRequest) {
     const prixVitrine = monPrix ?? (prixPublic > 0 ? prixPublic : null);
     // Même filtre que la vitrine (lib/shop.ts) : approuvé, commission > 0, prix « ok ».
     const enVente = p.status === 'approved';
-    const partageable = Number(p.reseller_commission) > 0 && (!p.pricing_status || p.pricing_status === 'ok');
+    const rapporte = partageable(p);
     const gain = !enVente ? null
       : gros ? calculerTarifGros(Number(p.supplier_price) || 0, prixVitrine ?? 0, reglages!).commission
         : Number(p.reseller_commission) || 0;
-    const etat: EtatArticle = !enVente ? 'retire' : !partageable ? 'sans_gain' : Number(p.stock) > 0 ? 'affiche' : 'epuise';
+    const etat: EtatArticle = !enVente ? 'retire' : !rapporte ? 'sans_gain' : Number(p.stock) > 0 ? 'affiche' : 'epuise';
     return {
       id: p.id,
       slug: p.slug || null,

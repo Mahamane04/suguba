@@ -28,6 +28,12 @@ import { PORTE_MA_BOUTIQUE } from '@/lib/reseau/porte-boutique';
  *
  * Page privée : le gain affiché ici vient de /api/reseller/boutique/articles,
  * jamais de la vitrine publique.
+ *
+ * Lot 7 (2026-10-03) : la même feuille pour une boutique supplémentaire (formule
+ * Pro, `pro`). « Voir dans ma boutique » ouvre CETTE boutique. Le retrait n'y
+ * annonce pas la disparition d'une offre : les articles d'une boutique Pro ne
+ * sont pas des offres sur la fiche produit (seule la boutique principale en
+ * porte) — l'annoncer serait faux.
  */
 export default function FeuilleArticle({
   article,
@@ -39,6 +45,7 @@ export default function FeuilleArticle({
   onBasculerCoup,
   onMettreEnPremier,
   onRetirer,
+  pro = null,
 }: {
   article: ArticleBoutique | null;
   ouvert: boolean;
@@ -52,6 +59,8 @@ export default function FeuilleArticle({
   onMettreEnPremier: () => void;
   /** Retrait confirmé : true quand la boutique l'a bien retiré. */
   onRetirer: () => Promise<boolean>;
+  /** Boutique supplémentaire (formule Pro) : son identifiant et l'adresse de sa vitrine. */
+  pro?: { id: string; vitrine: string } | null;
 }) {
   const { confirmer } = useToast();
   const code = useCodeRevendeur();
@@ -79,7 +88,9 @@ export default function FeuilleArticle({
   const retirer = async () => {
     const ok = await confirmer({
       titre: `Retirer « ${article.nom} » de votre boutique ?`,
-      message: 'Il disparaîtra de votre vitrine. Votre offre disparaîtra aussi de la fiche produit de cet article.',
+      message: pro
+        ? 'Il disparaîtra de la vitrine de cette boutique.'
+        : 'Il disparaîtra de votre vitrine. Votre offre disparaîtra aussi de la fiche produit de cet article.',
       confirmer: 'Retirer',
       annuler: 'Garder',
       danger: true,
@@ -133,7 +144,15 @@ export default function FeuilleArticle({
             <ArrowUpToLine className="w-4 h-4" />Mettre en premier
           </Button>
           {article.modePrix === 'gros' && (
-            <Button href={`/reseller/prix?boutique=1&produit=${encodeURIComponent(article.id)}`} fullWidth variant="ghost">
+            <Button
+              // Boutique Pro : le prix du revendeur vaut pour toutes ses boutiques ; le
+              // filtre ?boutique=1 ne connaît que la principale, et le retour revient ici.
+              href={pro
+                ? `/reseller/prix?produit=${encodeURIComponent(article.id)}&boutiquePro=${encodeURIComponent(pro.id)}`
+                : `/reseller/prix?boutique=1&produit=${encodeURIComponent(article.id)}`}
+              fullWidth
+              variant="ghost"
+            >
               <Tag className="w-4 h-4" />Mon prix
             </Button>
           )}
@@ -141,7 +160,7 @@ export default function FeuilleArticle({
             <BoutonPartageWhatsApp fullWidth onClick={partager} onPointerDown={precharger} loading={partage}
               libelle="Partager cet article" aria-label={`Partager ${article.nom} sur WhatsApp`} />
           )}
-          <Button href={PORTE_MA_BOUTIQUE} fullWidth variant="ghost">
+          <Button href={pro ? pro.vitrine : PORTE_MA_BOUTIQUE} fullWidth variant="ghost">
             <Eye className="w-4 h-4" />Voir dans ma boutique
           </Button>
           <Button type="button" fullWidth variant="danger" onClick={retirer} loading={retrait}>

@@ -88,9 +88,10 @@ type Charge = {
 const charger = cache(async (slug: string): Promise<Charge | null> => {
   const boutique = await boutiqueParSlug(slug);
   if (!boutique) return null;
-  // Seule une boutique revendeur principale masquée reste visible (pour son
-  // propriétaire) : les autres gardent la page introuvable, sans autre requête.
-  if (boutique.statut !== 'active' && !(boutique.typeProprietaire === 'reseller' && boutique.principale !== false)) return null;
+  // Seule une boutique REVENDEUR masquée reste visible (pour son propriétaire) :
+  // les autres gardent la page introuvable, sans autre requête. Lot 7 (2026-10-03) :
+  // les boutiques supplémentaires (formules Pro) d'un revendeur aussi, comme sa principale.
+  if (boutique.statut !== 'active' && boutique.typeProprietaire !== 'reseller') return null;
   const commun = {
     storeId: boutique.id,
     accroche: boutique.accroche,
@@ -113,7 +114,8 @@ const charger = cache(async (slug: string): Promise<Charge | null> => {
     if (!data?.reseller_code) return null;
     const vitrine = await chargerBoutiqueRevendeur(data.reseller_code);
     if (!vitrine) return null;
-    // Boutique supplémentaire (formule Pro) : sa propre sélection d'articles.
+    // Boutique supplémentaire (formule Pro) : sa propre sélection d'articles. Lot 7 :
+    // seulement ceux qui rapportent quelque chose, coups de cœur en tête, « Nouveau ».
     if (!boutique.principale) {
       vitrine.produits = await chargerProduitsDeLaBoutique(boutique.id, boutique.proprietaireId);
       vitrine.selectionVide = false;
@@ -241,21 +243,24 @@ export default async function BoutiqueReseauPage({ params, searchParams }: Param
   const session = await verifySessionToken((await cookies()).get(SESSION_COOKIE_NAME)?.value);
   const estProprietaire = Boolean(session && !session.apercu && charge.proprietaireId && session.uid === charge.proprietaireId);
   // Vue du propriétaire (lot 1 du chantier boutique, 2026-10-03) : sa boutique
-  // revendeur principale, celle qu'ouvre la porte « Ma boutique ». Le mode
-  // propriétaire côté fournisseur n'est pas dans ce chantier, les boutiques
-  // supplémentaires (formules Pro) viendront au lot 7 : leur rendu ne change pas.
+  // revendeur, celle qu'ouvre la porte « Ma boutique ». Le mode propriétaire côté
+  // fournisseur n'est pas dans ce chantier : son rendu ne change pas.
   // `gestion` : son profil actif est revendeur ; sinon, un bandeau « Gérer » le
   // ramène à la porte unique, qui rebascule le profil.
+  // Lot 7 (2026-10-03) : ses boutiques supplémentaires (formules Pro) aussi.
+  // `boutiquePro` porte alors l'identifiant de la boutique : ses outils (crayons,
+  // « Mes articles ») visent ELLE, pas la principale.
+  const pro = charge.principale ? null : charge.storeId;
   const proprietaire: ProprietaireVitrine | null =
-    estProprietaire && charge.typeProprietaire === 'reseller' && charge.principale
-      ? { statut: charge.statut, abonnes: charge.abonnes, gestion: session?.role === 'reseller' }
+    estProprietaire && charge.typeProprietaire === 'reseller'
+      ? { statut: charge.statut, abonnes: charge.abonnes, gestion: session?.role === 'reseller', ...(pro ? { boutiquePro: pro } : {}) }
       : null;
   // Lot 3 (2026-10-03) : « N articles de votre sélection ne s'affichent plus ».
   // Calculé ici, pour le propriétaire seulement (une requête de plus pour lui,
   // aucune pour un visiteur) : sa sélection moins les articles réellement servis.
   if (proprietaire && charge.proprietaireId) {
     const servis = charge.vitrine.selectionVide ? [] : charge.vitrine.produits.map((p) => p.id);
-    const masques = await compterArticlesNonServis(charge.proprietaireId, servis);
+    const masques = await compterArticlesNonServis(charge.proprietaireId, servis, pro);
     if (masques > 0) proprietaire.articlesMasques = masques;
   }
   // Boutique masquée par Suguba : page introuvable pour tout autre visiteur.
@@ -271,7 +276,9 @@ export default async function BoutiqueReseauPage({ params, searchParams }: Param
   // feuille de partage du propriétaire qui gère ; ?rayon=<cle> ouvre ce rayon.
   const partager = Boolean(proprietaire?.gestion) && seul(recherche.partager) === '1';
   const rayon = rayonDemande(recherche.rayon);
-  const suiviProprietaire = proprietaire?.gestion && charge.proprietaireId
+  // Boutique principale seulement : « Stats » et « Partager ma boutique » (étape de
+  // « prête à X % ») ne concernent qu'elle ; rien n'est lu pour une boutique Pro.
+  const suiviProprietaire = proprietaire?.gestion && !pro && charge.proprietaireId
     ? await suiviDuProprietaire(charge.storeId, charge.proprietaireId)
     : null;
   // Visite mesurée (lot 4) : seulement un visiteur d'une boutique en ligne. Le
@@ -281,16 +288,21 @@ export default async function BoutiqueReseauPage({ params, searchParams }: Param
     : null;
   // Lot 6 (2026-10-03) : rayons maison et annonce. L'annonce n'est transmise que
   // jusqu'à sa date de fin : passé ce jour, son texte ne figure plus dans la page.
-  // Le propriétaire qui gère voit la tuile « Rayons » quand la base le permet.
+  // Le propriétaire qui gère voit la tuile « Rayons » quand la base le permet
+  // (boutique principale : « Mes rayons » n'écrit que les siens).
   const reglages: ReglagesVitrine | null = charge.reglages
     ? {
       rayons: charge.reglages.rayons,
       annonce: annonceEnCours(charge.reglages.annonce)?.texte ?? null,
-      option: charge.reglages.option && Boolean(proprietaire?.gestion),
+      option: charge.reglages.option && Boolean(proprietaire?.gestion) && !pro,
     }
     : null;
+  // Boutique Pro d'un revendeur (lot 7) : pas de lien « Personnaliser » posé sur la
+  // couverture. En gestion, les crayons le remplacent ; sous un autre profil, le
+  // seul bandeau « C'est votre boutique · Gérer » y ramène (« Mes boutiques »
+  // n'afficherait pas les boutiques revendeur à un profil client ou fournisseur).
   const lienModifier = !estProprietaire ? null
-    : !charge.principale ? '/compte/boutiques'
+    : !charge.principale ? (charge.typeProprietaire === 'reseller' ? null : '/compte/boutiques')
       : charge.typeProprietaire === 'supplier' ? '/supplier/boutique'
         : charge.typeProprietaire === 'reseller' ? '/reseller/boutique'
           : null;

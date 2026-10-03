@@ -3,6 +3,7 @@ import { verifyActiveSession } from '@/lib/active-session';
 import { possedeRoleActif, SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { boutiqueDuProprietaire, obtenirOuCreerBoutique } from '@/lib/reseau/boutiques';
+import { boutiqueDuCompte } from '@/lib/reseau/boutiques-multiples';
 import { nomPublic } from '@/lib/shop';
 import { adresseVitrine, PORTE_MA_BOUTIQUE } from '@/lib/reseau/porte-boutique';
 
@@ -22,6 +23,12 @@ import { adresseVitrine, PORTE_MA_BOUTIQUE } from '@/lib/reseau/porte-boutique';
  *
  * Sans boutique, elle est créée avec « Prénom I. » (nomPublic), jamais avec le
  * nom complet : son adresse en est tirée et ne change plus.
+ *
+ * Lot 7 (2026-10-03) : ?boutique=<id> ouvre une boutique supplémentaire (formule
+ * Pro) du compte. Le bandeau « C'est votre boutique · Gérer » de SA vitrine passe
+ * par ici pour rebasculer le profil, puis y revenir. La boutique doit appartenir
+ * à la session (boutiqueDuCompte) ; sinon, la boutique principale, comme sans
+ * paramètre — jamais la boutique d'un autre compte.
  */
 export const dynamic = 'force-dynamic';
 
@@ -36,6 +43,11 @@ export async function GET(req: NextRequest) {
   if (session.apercu) return vers('/reseller/boutique');
 
   try {
+    const demandee = req.nextUrl.searchParams.get('boutique');
+    if (demandee && demandee.length <= 100) {
+      const pro = await boutiqueDuCompte('reseller', session.uid, demandee);
+      if (pro?.slug) return vers(adresseVitrine(pro.slug, req.nextUrl.searchParams));
+    }
     let boutique = await boutiqueDuProprietaire('reseller', session.uid);
     if (!boutique) {
       const admin = getSupabaseAdmin();
