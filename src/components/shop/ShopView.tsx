@@ -17,7 +17,7 @@ import Button from '@/components/ui/Button';
 import { StatusPill } from '@/components/ui/Surface';
 import { ShieldCheck, Truck, KeyRound, Store, Users, MapPin, Pencil, ImagePlus, ArrowDown, ChevronRight, PackagePlus } from 'lucide-react';
 import { initiale } from '@/lib/initiale';
-import { PORTE_MA_BOUTIQUE } from '@/lib/reseau/porte-boutique';
+import { PAGE_MES_ARTICLES, PORTE_MA_BOUTIQUE } from '@/lib/reseau/porte-boutique';
 import { whatsappHelper } from '@/lib/whatsapp-helper';
 
 // Outils du propriétaire (lot 2 du chantier boutique, 2026-10-03) : chargés à la
@@ -38,6 +38,11 @@ export interface ProprietaireVitrine {
   abonnes: number;
   /** Profil actif revendeur. Sinon : bandeau « C'est votre boutique · Gérer ». */
   gestion: boolean;
+  /**
+   * Articles de sa sélection que la vitrine ne montre plus (retirés de la vente,
+   * refusés…), calculé côté serveur pour lui seul (lot 3, 2026-10-03).
+   */
+  articlesMasques?: number;
 }
 
 /**
@@ -101,6 +106,7 @@ export default function ShopView({
   // inerte et caché (`hidden group-data-[vue=client]:block`), jusqu'à la vue client.
   const gestion = Boolean(proprietaire?.gestion);
   const enLigne = !proprietaire || proprietaire.statut === 'active';
+  const masques = proprietaire?.articlesMasques ?? 0;
   /**
    * Élément du visiteur, montré au propriétaire seulement en vue client, et sans
    * effet (`inert`) : il ne peut ni s'abonner à sa boutique ni s'y inscrire.
@@ -279,6 +285,7 @@ export default function ShopView({
           infos={infos}
           description={boutique.description}
           articles={boutique.selectionVide ? 0 : nbArticles}
+          coupsDeCoeur={boutique.selectionVide ? 0 : boutique.produits.filter((p) => p.coupDeCoeur).length}
           panneauInitial={editer || null}
           pied={garanties}
         >
@@ -310,6 +317,20 @@ export default function ShopView({
       )}
 
       {galerie}
+
+      {/* Lot 3 (2026-10-03) : alerte réelle, pour le propriétaire seulement. La vitrine
+          n'affiche plus ces articles (retirés de la vente, refusés…) ; « Mes articles »
+          dit lesquels et permet de les retirer. */}
+      {proprietaire && masques > 0 && (
+        <div role="status" className={`rounded-2xl bg-amber-50 border border-amber-200 px-3 py-2 flex items-center justify-between gap-3 ${gestion ? 'group-data-[vue=client]:hidden' : ''}`}>
+          <p className="text-sm text-amber-950">
+            <strong className="tabular-nums">{masques}</strong> article{masques > 1 ? 's' : ''} de votre sélection ne s’affiche{masques > 1 ? 'nt' : ''} plus.
+          </p>
+          <Link href={PAGE_MES_ARTICLES} className="shrink-0 inline-flex items-center gap-1 min-h-10 px-1 text-sm font-semibold text-suguba-brand-dark underline underline-offset-2">
+            Voir<ChevronRight className="w-4 h-4" />
+          </Link>
+        </div>
+      )}
 
       {boutique.selectionVide && (gestion ? (
         <>

@@ -14,6 +14,7 @@ import { prixEnregistres } from './prix-revendeur';
 import { ajoutDirectPossible, lireMesure, lireUniteVente, suffixeUnite, texteMinimum } from './unite-vente';
 import { libelleTypeOffre, normaliserTypeOffre } from './offre';
 import { estEnseigne, nomPublic } from './enseigne';
+import { estCoupDeCoeur, estNouveau, trierSelection, type LigneSelection } from './boutique-ordre';
 
 type ClientAdmin = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
 
@@ -41,6 +42,13 @@ export interface ProduitVitrine {
   quantiteAjout?: number;
   ajoutDirect?: boolean;
   aChoisir?: boolean;
+  /**
+   * Coup de cœur choisi par le revendeur (position négative, lot 3 du chantier
+   * boutique, 2026-10-03) : affiché en tête de sa vitrine, sous « Coups de cœur ».
+   */
+  coupDeCoeur?: boolean;
+  /** Ajouté à la boutique depuis moins de 14 jours : étiquette « Nouveau » (lot 3). */
+  nouveau?: boolean;
 }
 
 export interface Boutique {
@@ -191,17 +199,48 @@ function partageable(p: any): boolean {
  * catalogue Suguba. null si l'une des lectures échoue : « — », jamais un 0 inventé.
  */
 export async function compterArticlesEnVitrine(admin: ClientAdmin, revendeurId: string): Promise<number | null> {
-  const { data: selection, error } = await admin.from('reseller_shop_items').select('product_id').eq('reseller_id', revendeurId);
-  if (error || !Array.isArray(selection)) return null;
+  return (await compterVitrine(admin, revendeurId)).articles;
+}
+
+/**
+ * Articles affichés ET coups de cœur parmi eux (lot 3 du chantier boutique,
+ * 2026-10-03) : l'étape « 1 coup de cœur » de « Ma boutique est prête à X % ».
+ * Un coup de cœur sur un article que la vitrine n'affiche plus ne compte pas.
+ * null partout si une lecture échoue.
+ */
+export async function compterVitrine(admin: ClientAdmin, revendeurId: string): Promise<{ articles: number | null; coupsDeCoeur: number | null }> {
+  const illisible = { articles: null, coupsDeCoeur: null };
+  const { data: selection, error } = await admin.from('reseller_shop_items').select('product_id, position').eq('reseller_id', revendeurId);
+  if (error || !Array.isArray(selection)) return illisible;
   const ids = selection.map((s: any) => s.product_id).filter(Boolean);
-  if (ids.length === 0) return 0;
+  if (ids.length === 0) return { articles: 0, coupsDeCoeur: 0 };
   const { data: produits, error: erreurProduits } = await admin
     .from('products')
     .select('id, reseller_commission, pricing_status')
     .in('id', ids)
     .eq('status', 'approved');
-  if (erreurProduits || !Array.isArray(produits)) return null;
-  return produits.filter(partageable).length;
+  if (erreurProduits || !Array.isArray(produits)) return illisible;
+  const affiches = new Set(produits.filter(partageable).map((p: any) => p.id));
+  return {
+    articles: affiches.size,
+    coupsDeCoeur: selection.filter((s: any) => affiches.has(s.product_id) && estCoupDeCoeur(s.position)).length,
+  };
+}
+
+/**
+ * Articles choisis par le revendeur que sa vitrine ne montre plus (retirés de
+ * la vente, refusés, sans commission) — lot 3 du chantier boutique, 2026-10-03.
+ * Calculé côté serveur, POUR LE PROPRIÉTAIRE SEULEMENT (/boutique/<adresse>) :
+ * différence entre sa sélection et les articles réellement servis. 0 si la
+ * lecture échoue : jamais une alerte inventée.
+ */
+export async function compterArticlesNonServis(revendeurId: string, servis: readonly string[]): Promise<number> {
+  const admin = getSupabaseAdmin();
+  if (!admin) return 0;
+  const { data, error } = await admin.from('reseller_shop_items').select('product_id').eq('reseller_id', revendeurId);
+  if (error || !Array.isArray(data)) return 0;
+  const affiches = new Set(servis);
+  return data.filter((l: any) => l.product_id && !affiches.has(l.product_id)).length;
 }
 
 async function compterLivraisons(admin: ClientAdmin, productIds: string[]): Promise<number> {
@@ -313,13 +352,18 @@ export async function chargerBoutiqueRevendeur(codeBrut: string): Promise<Boutiq
     .maybeSingle();
   if (role && role.status !== 'active') return null;
 
+  // Lot 3 du chantier boutique (2026-10-03) : position (négative = coup de cœur)
+  // et date d'ajout (« Nouveau » pendant 14 jours). Tri refait ici, identique à
+  // « Mes articles » (positions en double laissées par l'ancien ajout).
   const { data: selection } = await admin
     .from('reseller_shop_items')
-    .select('product_id, position')
+    .select('product_id, position, added_at')
     .eq('reseller_id', profil.id)
     .order('position', { ascending: true });
 
-  const ids = (selection || []).map((s) => s.product_id);
+  const lignes = trierSelection((selection || []) as LigneSelection[]);
+  const ids = lignes.map((s) => s.product_id);
+  const parArticle = new Map(lignes.map((s) => [s.product_id, s]));
   let produits: any[] = [];
   let selectionVide = false;
 
@@ -347,9 +391,13 @@ export async function chargerBoutiqueRevendeur(codeBrut: string): Promise<Boutiq
   // prix conseillé. Seuls les articles au prix de gros peuvent en avoir un
   // (voir /api/reseller/prix), les autres gardent leur prix fixe.
   const sesPrix = await prixEnregistres(admin, profil.id, produits.map((p) => p.id));
+  const maintenant = Date.now();
   const liste = await avecOffre(admin, produits.map((p) => {
     const v = versVitrine(p);
-    return sesPrix.has(p.id) ? { ...v, prix: sesPrix.get(p.id) as number } : v;
+    const avecPrix = sesPrix.has(p.id) ? { ...v, prix: sesPrix.get(p.id) as number } : v;
+    // Catalogue Suguba montré à la place d'une sélection vide : ni coup de cœur ni « Nouveau ».
+    const ligne = selectionVide ? undefined : parArticle.get(p.id);
+    return ligne ? { ...avecPrix, coupDeCoeur: estCoupDeCoeur(ligne.position), nouveau: estNouveau(ligne.added_at, maintenant) } : avecPrix;
   }));
   // Logo, couverture et nom choisis dans « Ma boutique » (table stores). Sans
   // cette lecture, l'ancienne adresse /r/<code> — celle que les revendeurs

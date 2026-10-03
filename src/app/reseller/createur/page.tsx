@@ -18,11 +18,22 @@ import { lienProduit, prechargerLienPartage, texteProduit, useCodeRevendeur } fr
 import { genererAffiche, genererCarteBoutique, partagerAffiche, telechargerAffiche, type FormatAffiche, type IdentiteBoutique, type ThemeAffiche } from '@/lib/affiche';
 import { formatF } from '@/lib/montant';
 import { PORTE_MA_BOUTIQUE } from '@/lib/reseau/porte-boutique';
+import { selectionPourCarte, type ArticleBoutique } from '@/lib/boutique-ordre';
+import { MESSAGE_AFFICHE_MAX, refusMessageAffiche } from '@/lib/message-affiche';
 
 // Lot 2 du chantier boutique (2026-10-03) : « Configurer » et « Compléter le logo
 // et la couverture » ouvrent le panneau du logo SUR la vitrine (porte unique,
 // jamais préchargée), au lieu du formulaire de réglages.
 const EDITER_LOGO = `${PORTE_MA_BOUTIQUE}?editer=logo`;
+
+// Lot 3 du chantier boutique (2026-10-03) :
+//  - la carte « Ma boutique » montrait les 3 premiers articles du CATALOGUE, au
+//    prix public, alors qu'elle promet « Logo, couverture et sélection ». Elle
+//    prend maintenant les coups de cœur, puis la vraie sélection, aux prix
+//    affichés dans la vitrine (route privée des articles, lue à la demande) ;
+//  - le « Bandeau promo » devient « Message » et refuse « % » et les montants
+//    (décision du fondateur) : l'affiche annonçait des remises que Suguba
+//    n'applique pas.
 
 type TypeVisuel = 'produit' | 'boutique';
 interface Boutique extends IdentiteBoutique { id: string; description?: string | null }
@@ -60,6 +71,14 @@ export default function CreateurContenusPage() {
   const [generation, setGeneration] = useState(false);
   const resultat = useRef<HTMLElement>(null);
   const verrouGeneration = useRef(false);
+  const refusMessage = refusMessageAffiche(promo);
+  // Articles de SA boutique (coups de cœur d'abord), lus une fois, seulement pour la carte boutique.
+  const articlesBoutique = useRef<Promise<ArticleBoutique[]> | null>(null);
+  const lireArticlesBoutique = () => (articlesBoutique.current ??= fetch('/api/reseller/boutique/articles', { cache: 'no-store' })
+    .then((r) => (r.ok ? r.json() : null))
+    .then((d) => (Array.isArray(d?.articles) ? d.articles as ArticleBoutique[] : []))
+    .catch(() => []));
+  useEffect(() => { if (typeVisuel === 'boutique') lireArticlesBoutique(); }, [typeVisuel]);
 
   useEffect(() => {
     if (!apercu || generation) return;
@@ -103,7 +122,7 @@ export default function CreateurContenusPage() {
 
   const generer = async () => {
     if (verrouGeneration.current) return;
-    if ((typeVisuel === 'produit' && !produit) || (typeVisuel === 'boutique' && !boutique)) return;
+    if ((typeVisuel === 'produit' && (!produit || refusMessage)) || (typeVisuel === 'boutique' && !boutique)) return;
     verrouGeneration.current = true;
     setGeneration(true);
     try {
@@ -111,7 +130,10 @@ export default function CreateurContenusPage() {
       let lien: string;
       if (typeVisuel === 'boutique' && boutique) {
         lien = `${window.location.origin}/boutique/${boutique.slug}`;
-        image = await genererCarteBoutique(boutique, produits.slice(0, 3).map((p) => ({ nom: p.name, prix: p.publicPrice, image: p.images[0] })), { format, lien, qr: avecQr });
+        const selection = selectionPourCarte(await lireArticlesBoutique());
+        // Sélection vide ou illisible : la vitrine montre alors le catalogue Suguba, la carte aussi.
+        const offres = selection.length > 0 ? selection : produits.slice(0, 3).map((p) => ({ nom: p.name, prix: p.publicPrice, image: p.images[0] }));
+        image = await genererCarteBoutique(boutique, offres, { format, lien, qr: avecQr });
       } else if (produit) {
         const partage = { nom: produit.name, prix: produit.publicPrice, slug: produit.slug, images: produit.images };
         const codeLien = code ? await prechargerLienPartage(produit.slug) : null;
@@ -132,7 +154,7 @@ export default function CreateurContenusPage() {
     if (await partagerAffiche(fichier, texte) === 'telecharge') toast('Image téléchargée. Publiez-la depuis votre galerie.', { ton: 'info' });
   };
 
-  const peutGenerer = typeVisuel === 'boutique' ? Boolean(boutique) : Boolean(produit);
+  const peutGenerer = typeVisuel === 'boutique' ? Boolean(boutique) : Boolean(produit) && !refusMessage;
 
   return <PageReseau titre="Créer un visuel" sousTitre="Choisissez ce que vous voulez promouvoir. Suguba prépare le visuel avec votre boutique." retour={{ href: '/reseller', libelle: 'Espace revendeur' }}>
     <fieldset disabled={generation} className="min-w-0 space-y-5">
@@ -170,11 +192,11 @@ export default function CreateurContenusPage() {
     </div></Card>
 
     <Card className="space-y-3"><p className="text-sm font-bold text-slate-900">4. Finalisez le visuel</p>
-      {typeVisuel === 'produit' && <><div className="flex gap-2" role="radiogroup" aria-label="Style">{THEMES.map((t) => <button key={t.valeur} type="button" role="radio" aria-checked={theme === t.valeur} onClick={() => setTheme(t.valeur)} className={`flex-1 h-12 rounded-2xl border flex items-center justify-center gap-2 text-xs font-bold ${theme === t.valeur ? 'border-suguba-brand ring-2 ring-suguba-brand' : 'border-slate-200 bg-white'}`}><span className={`w-4 h-4 rounded-full ${t.pastille}`} />{t.libelle}</button>)}</div><Field label="Bandeau promo (facultatif)" htmlFor="promo" aide="Ex. : « Nouveau », « Stock limité ». "><Input id="promo" value={promo} onChange={(e) => setPromo(e.target.value)} maxLength={40} /></Field></>}
+      {typeVisuel === 'produit' && <><div className="flex gap-2" role="radiogroup" aria-label="Style">{THEMES.map((t) => <button key={t.valeur} type="button" role="radio" aria-checked={theme === t.valeur} onClick={() => setTheme(t.valeur)} className={`flex-1 h-12 rounded-2xl border flex items-center justify-center gap-2 text-xs font-bold ${theme === t.valeur ? 'border-suguba-brand ring-2 ring-suguba-brand' : 'border-slate-200 bg-white'}`}><span className={`w-4 h-4 rounded-full ${t.pastille}`} />{t.libelle}</button>)}</div><Field label="Message (facultatif)" htmlFor="promo" aide="Ex. : « Nouveau », « Stock limité ». Sans pourcentage ni prix : le vrai prix est déjà sur l’affiche." erreur={refusMessage || undefined}><Input id="promo" value={promo} onChange={(e) => setPromo(e.target.value)} maxLength={MESSAGE_AFFICHE_MAX} /></Field></>}
       <label className="flex items-center gap-3 min-h-[44px]"><input type="checkbox" checked={avecQr} onChange={(e) => setAvecQr(e.target.checked)} className="w-5 h-5 accent-[#09b500]" /><span className="text-sm text-slate-800">Ajouter un QR code qui ouvre directement {typeVisuel === 'boutique' ? 'la boutique' : 'le produit'}</span></label>
     </Card>
 
-    <Button onClick={generer} disabled={!peutGenerer || generation} fullWidth size="lg">{generation ? <SugubaLoader className="w-4 h-4" /> : <Palette className="w-4 h-4" />}{generation ? 'Création…' : peutGenerer ? `Créer ${typeVisuel === 'boutique' ? 'la carte de ma boutique' : "l’affiche du produit"}` : typeVisuel === 'boutique' ? 'Configurez d’abord votre boutique' : 'Choisissez d’abord un produit'}</Button>
+    <Button onClick={generer} disabled={!peutGenerer || generation} fullWidth size="lg">{generation ? <SugubaLoader className="w-4 h-4" /> : <Palette className="w-4 h-4" />}{generation ? 'Création…' : peutGenerer ? `Créer ${typeVisuel === 'boutique' ? 'la carte de ma boutique' : "l’affiche du produit"}` : typeVisuel === 'boutique' ? 'Configurez d’abord votre boutique' : produit ? 'Corrigez d’abord le message' : 'Choisissez d’abord un produit'}</Button>
     </fieldset>
     {generation && <div role="status" className="flex items-center gap-4 rounded-2xl border border-emerald-100 bg-white p-5"><SugubaLoader className="h-12 w-12" /><div><p className="font-bold text-suguba-profond">Suguba prépare votre visuel…</p><p className="mt-1 text-sm text-slate-500">Assemblage des photos, du logo et du QR code.</p></div></div>}
     {apercu && fichier && <section ref={resultat} tabIndex={-1} aria-label="Votre visuel est prêt" className="scroll-mt-24 rounded-3xl focus:outline-none focus-visible:ring-2 focus-visible:ring-suguba-profond"><Card className="space-y-4"><div role="status" className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-50 text-emerald-700"><Check className="h-5 w-5" /></span><div><h2 className="text-base font-bold text-slate-900">Votre visuel est prêt</h2><p className="text-xs text-slate-500">Téléchargez-le ou partagez-le avec vos clients.</p></div></div><div className="grid grid-cols-2 gap-2"><Button variant="ghost" onClick={() => telechargerAffiche(fichier)}><Download className="w-4 h-4" />Télécharger</Button><Button onClick={partager}><Share2 className="w-4 h-4" />Partager</Button></div><Button variant="ghost" href={typeVisuel === 'produit' && produit ? `/reseller/calendrier?produit=${encodeURIComponent(produit.slug)}` : '/reseller/calendrier'}>Planifier une publication</Button><img src={apercu} alt="Aperçu du visuel créé" className={`mx-auto w-full rounded-2xl border border-slate-200 ${format === 'story' ? 'max-w-[360px]' : 'max-w-[520px]'}`} /></Card></section>}

@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import ShopView, { type ProprietaireVitrine } from '@/components/shop/ShopView';
 import BoutonSuivre from '@/components/shop/BoutonSuivre';
 import GalerieBoutique from '@/components/shop/GalerieBoutique';
-import { chargerBoutiqueFournisseur, chargerBoutiqueRevendeur, chargerProduitsDeLaBoutique, chargerProduitsSuguba, URL_APP, type Boutique } from '@/lib/shop';
+import { chargerBoutiqueFournisseur, chargerBoutiqueRevendeur, chargerProduitsDeLaBoutique, chargerProduitsSuguba, compterArticlesNonServis, URL_APP, type Boutique } from '@/lib/shop';
 import { boutiqueParSlug } from '@/lib/reseau/boutiques';
 import { badgesDuCompte } from '@/lib/reseau/verifications-db';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
@@ -184,6 +184,14 @@ export default async function BoutiqueReseauPage({ params, searchParams }: Param
     estProprietaire && charge.typeProprietaire === 'reseller' && charge.principale
       ? { statut: charge.statut, abonnes: charge.abonnes, gestion: session?.role === 'reseller' }
       : null;
+  // Lot 3 (2026-10-03) : « N articles de votre sélection ne s'affichent plus ».
+  // Calculé ici, pour le propriétaire seulement (une requête de plus pour lui,
+  // aucune pour un visiteur) : sa sélection moins les articles réellement servis.
+  if (proprietaire && charge.proprietaireId) {
+    const servis = charge.vitrine.selectionVide ? [] : charge.vitrine.produits.map((p) => p.id);
+    const masques = await compterArticlesNonServis(charge.proprietaireId, servis);
+    if (masques > 0) proprietaire.articlesMasques = masques;
+  }
   // Boutique masquée par Suguba : page introuvable pour tout autre visiteur.
   if (charge.statut !== 'active' && !proprietaire) notFound();
   // ?editer=logo|couverture|nom (porte « Ma boutique », lot 2) : ouvre le panneau,

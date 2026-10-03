@@ -3,6 +3,7 @@ import SugubaLoader from '@/components/ui/SugubaLoader';
 import Link from 'next/link';
 import { AlertTriangle, ArrowLeft, RefreshCw } from 'lucide-react';
 import Button from '@/components/ui/Button';
+import { sansPrechargement } from '@/lib/reseau/porte-boutique';
 
 /**
  * Briques de mise en page communes (2026-09-11) : chaque écran les réécrivait
@@ -36,7 +37,9 @@ export function PageHeader({
     <div className="space-y-2">
       {retour && (
         // Lot 6 de l'audit UI/UX du 2026-10-02 (REV-15) : 13 px gras, cible de 32 px.
-        <Link href={retour.href} className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-slate-900 min-h-10">
+        // Lot 3 du chantier boutique (2026-10-03) : un retour vers la porte « Ma boutique »
+        // (une route qui redirige) n'est jamais préchargé, comme dans Button.
+        <Link href={retour.href} prefetch={sansPrechargement(retour.href) ? false : undefined} className="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-600 hover:text-slate-900 min-h-10">
           <ArrowLeft className="w-4 h-4" />
           <span>{retour.libelle}</span>
         </Link>

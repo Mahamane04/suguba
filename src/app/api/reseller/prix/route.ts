@@ -4,6 +4,7 @@ import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { chargerReglages } from '@/lib/platform-settings';
 import { calculerTarifGros, prixMinimalGros } from '@/lib/pricing';
+import { trierSelection, type LigneSelection } from '@/lib/boutique-ordre';
 
 /**
  * Prix du revendeur pour les articles au prix de gros (2026-09-24).
@@ -13,6 +14,12 @@ import { calculerTarifGros, prixMinimalGros } from '@/lib/pricing';
  * POST : { productId, prix } enregistre son prix (boutique + liens partagés),
  *        refusé sous le prix minimal ; { productId, prix: null } revient au
  *        prix conseillé.
+ *
+ * Lot 3 du chantier boutique (2026-10-03) : « Votre prix s'affiche dans votre
+ * boutique », mais la page listait TOUS les articles au prix de gros.
+ *   ?boutique=1    : seulement ceux de SA boutique (sélection de la session),
+ *                    dans l'ordre de sa vitrine ;
+ *   ?produit=<id>  : un seul article (« Mon prix » de la feuille « Cet article »).
  */
 
 async function revendeurConnecte(req: NextRequest) {
@@ -26,10 +33,29 @@ export async function GET(req: NextRequest) {
   const admin = getSupabaseAdmin();
   if (!admin) return NextResponse.json({ articles: [] });
 
-  const { data: produits, error } = await admin.from('products')
-    .select('*').eq('status', 'approved').eq('mode_prix', 'gros').limit(500);
+  const parametres = req.nextUrl.searchParams;
+  const produit = parametres.get('produit');
+  if (produit !== null && (produit.length === 0 || produit.length > 100)) {
+    return NextResponse.json({ error: 'Article illisible.' }, { status: 400 });
+  }
+  // Sélection de SA boutique (identité de la session), dans l'ordre de sa vitrine.
+  let ordreBoutique: string[] | null = null;
+  if (parametres.get('boutique') === '1') {
+    const { data: lignes, error: lecture } = await admin.from('reseller_shop_items')
+      .select('product_id, position, added_at').eq('reseller_id', session.uid);
+    if (lecture || !Array.isArray(lignes)) return NextResponse.json({ error: 'Votre boutique est illisible pour le moment.' }, { status: 503 });
+    ordreBoutique = trierSelection(lignes as LigneSelection[]).map((l) => l.product_id);
+    if (ordreBoutique.length === 0) return NextResponse.json({ articles: [], disponible: true });
+  }
+
+  let requete = admin.from('products').select('*').eq('status', 'approved').eq('mode_prix', 'gros');
+  if (produit) requete = requete.eq('id', produit);
+  if (ordreBoutique) requete = requete.in('id', ordreBoutique);
+  const { data: lus, error } = await requete.limit(500);
   // Colonne absente : pas encore d'article au prix de gros.
   if (error) return NextResponse.json({ articles: [], disponible: false });
+  const rang = new Map((ordreBoutique || []).map((id, i) => [id, i]));
+  const produits = ordreBoutique ? [...(lus || [])].sort((a: any, b: any) => (rang.get(a.id) ?? 0) - (rang.get(b.id) ?? 0)) : lus;
 
   const { data: prix } = await admin.from('reseller_prices')
     .select('product_id, price').eq('reseller_id', session.uid);

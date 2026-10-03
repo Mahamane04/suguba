@@ -2,6 +2,7 @@
 
 import QRCode from 'qrcode';
 import { lienProduit, type ProduitAPartager } from '@/lib/partage';
+import { MESSAGE_AFFICHE_MAX, refusMessageAffiche } from '@/lib/message-affiche';
 
 /**
  * Affiche de vente d'un produit, dessinée dans le navigateur (2026-09-11) —
@@ -129,7 +130,11 @@ export interface OptionsAffiche {
   lien?: string | null;
   /** Ajoute le QR code de ce même lien dans le pied de l'affiche. */
   qr?: boolean;
-  /** Bandeau promotionnel (« -10 % ce week-end »), 40 caractères max. */
+  /**
+   * « Message » court (« Nouveau », « Stock limité »), 40 caractères max. Lot 3 du
+   * chantier boutique (2026-10-03) : ni pourcentage ni montant (voir
+   * src/lib/message-affiche.ts), le prix imprimé est le seul vrai prix.
+   */
   promo?: string | null;
   /** Identité visuelle du revendeur, sans téléphone ni adresse. */
   boutique?: IdentiteBoutique | null;
@@ -143,6 +148,9 @@ export async function genererAffiche(
   if (!(p.prix > 0)) {
     throw new Error("Ce produit n'est pas encore en vente (prix non fixé) : pas d'affiche possible.");
   }
+  // Jamais de remise inventée sur l'affiche, même si l'écran a été contourné (lot 3, 2026-10-03).
+  const refus = refusMessageAffiche(promo);
+  if (refus) throw new Error(refus);
   const L = 1080;
   const H = format === 'story' ? 1920 : 1080;
   const marge = 60;
@@ -225,7 +233,7 @@ export async function genererAffiche(
   }
   ctx.restore();
 
-  const textePromo = (promo || '').trim().slice(0, 40);
+  const textePromo = (promo || '').trim().slice(0, MESSAGE_AFFICHE_MAX);
   if (textePromo) {
     ctx.font = `900 ${format === 'story' ? 40 : 34}px ${POLICE}`;
     const lPromo = ctx.measureText(textePromo).width + 56;

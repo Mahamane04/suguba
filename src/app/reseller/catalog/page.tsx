@@ -11,14 +11,23 @@ import { classerAvecSponsorises } from '@/lib/reseau/sponsoring';
 import Button from '@/components/ui/Button';
 import { useSugubaStore, useCatalogueCharge } from '@/lib/store';
 import { Product } from '@/types';
-import { Search, Plus, Sparkles, Check, Store, Eye } from 'lucide-react';
+import { Search, Plus, Sparkles, Check, Store, Eye, ArrowLeft } from 'lucide-react';
 import { PORTE_MA_BOUTIQUE } from '@/lib/reseau/porte-boutique';
+import { useToast } from '@/components/ui/Toast';
 
 /**
  * Catalogue revendeur — refondu le 2026-09-11 sur la carte produit commune :
  * plusieurs photos, partage WhatsApp en un clic (photo + texte + lien), deux
  * colonnes sur téléphone. Le partage y est l'action principale : c'est le
  * métier du revendeur.
+ *
+ * Lot 3 du chantier boutique (2026-10-03) :
+ *  - pastille « Dans ma boutique (N) » : les articles déjà choisis ;
+ *  - après un ajout, « Ajouté à ma boutique · Voir ma boutique » ;
+ *  - ?depuis=boutique (« Ajouter des articles » de Mes articles) : le bandeau
+ *    « Ma boutique » reste collé en haut avec « Revenir à ma boutique » ;
+ *  - retirer un article de sa boutique est confirmé, et sa conséquence annoncée
+ *    (son offre disparaît aussi de la fiche produit).
  */
 export default function ResellerCatalogPage() {
   const state = useSugubaStore();
@@ -44,6 +53,20 @@ export default function ResellerCatalogPage() {
   const [selectionLue, setSelectionLue] = useState(false);
   const [enCours, setEnCours] = useState<string | null>(null);
   const [erreurBoutique, setErreurBoutique] = useState('');
+  const { confirmer } = useToast();
+  const [seulementBoutique, setSeulementBoutique] = useState(false);
+  // Arrivée depuis sa boutique (?depuis=boutique) : lu au montage, sans useSearchParams.
+  const [depuisBoutique, setDepuisBoutique] = useState(false);
+  useEffect(() => {
+    try { setDepuisBoutique(new URLSearchParams(window.location.search).get('depuis') === 'boutique'); } catch { /* adresse illisible : catalogue normal */ }
+  }, []);
+  // « Ajouté à ma boutique · Voir ma boutique », quelques secondes après un ajout.
+  const [ajoutRecent, setAjoutRecent] = useState(0);
+  useEffect(() => {
+    if (!ajoutRecent) return;
+    const minuterie = setTimeout(() => setAjoutRecent(0), 6000);
+    return () => clearTimeout(minuterie);
+  }, [ajoutRecent]);
 
   useEffect(() => {
     fetch('/api/reseller/me')
@@ -57,10 +80,18 @@ export default function ResellerCatalogPage() {
       .finally(() => setSelectionLue(true));
   }, []);
 
-  const basculerBoutique = async (productId: string) => {
+  const basculerBoutique = async (productId: string, nom: string) => {
     setErreurBoutique('');
-    setEnCours(productId);
     const dedans = maSelection.has(productId);
+    // Un retrait n'est jamais anodin : l'offre du revendeur disparaît aussi de la fiche produit.
+    if (dedans && !(await confirmer({
+      titre: `Retirer « ${nom} » de votre boutique ?`,
+      message: 'Il disparaîtra de votre vitrine. Votre offre disparaîtra aussi de la fiche produit de cet article.',
+      confirmer: 'Retirer',
+      annuler: 'Garder',
+      danger: true,
+    }))) return;
+    setEnCours(productId);
     try {
       const res = await fetch('/api/reseller/shop', {
         method: 'POST',
@@ -74,6 +105,7 @@ export default function ResellerCatalogPage() {
         if (dedans) suivant.delete(productId); else suivant.add(productId);
         return suivant;
       });
+      setAjoutRecent(dedans ? 0 : Date.now());
     } catch {
       setErreurBoutique('Erreur réseau.');
     } finally {
@@ -96,7 +128,8 @@ export default function ResellerCatalogPage() {
     const matchesCategory = selectedCategory === 'all' || p.category === selectedCategory;
     const bonFournisseur = fournisseur === 'all' || p.supplierName === fournisseur;
     const bonSponso = tri !== 'sponsorises' || sponsorises.has(p.id);
-    return matchesSearch && matchesCategory && bonFournisseur && bonSponso;
+    const dansBoutique = !seulementBoutique || maSelection.has(p.id);
+    return matchesSearch && matchesCategory && bonFournisseur && bonSponso && dansBoutique;
   });
 
   // Tri (§ page 9 : marge, popularité, nouveautés, sponsorisés). Par défaut
@@ -124,7 +157,8 @@ export default function ResellerCatalogPage() {
         {/* Ma boutique : la vitrine publique composée depuis ce catalogue. */}
         {/* REV-11 (lot 7 de l'audit UI/UX du 2026-10-02) : sur une ligne, pour que le
             premier produit remonte (il apparaissait vers 605 px sur téléphone). */}
-        <div className="bg-white border border-slate-200 rounded-2xl px-3 py-2 flex items-center justify-between gap-3" aria-busy={!selectionLue}>
+        {/* ?depuis=boutique (lot 3, 2026-10-03) : le bandeau reste collé en haut et ramène à la boutique. */}
+        <div className={`bg-white border border-slate-200 rounded-2xl px-3 py-2 flex items-center justify-between gap-3 ${depuisBoutique ? 'sticky top-16 z-30 shadow-float' : ''}`} aria-busy={!selectionLue}>
           <div className="flex items-center gap-2.5 min-w-0">
             <Store className="w-5 h-5 text-suguba-profond shrink-0" />
             <div className="min-w-0">
@@ -143,10 +177,17 @@ export default function ResellerCatalogPage() {
           {/* La vraie vitrine /boutique/<adresse>, dans le même onglet (2026-10-03) :
               l'ancienne /r/<code>, appauvrie, s'ouvrait dans un nouvel onglet et
               faisait sortir de l'application installée. La porte n'a pas besoin du code. */}
-          <Button href={PORTE_MA_BOUTIQUE} variant="secondary" size="sm" className="shrink-0">
-            <Eye className="w-4 h-4" />
-            <span>Voir ma boutique</span>
-          </Button>
+          {depuisBoutique ? (
+            <Button href={PORTE_MA_BOUTIQUE} size="sm" className="shrink-0">
+              <ArrowLeft className="w-4 h-4" />
+              <span>Revenir à ma boutique</span>
+            </Button>
+          ) : (
+            <Button href={PORTE_MA_BOUTIQUE} variant="secondary" size="sm" className="shrink-0">
+              <Eye className="w-4 h-4" />
+              <span>Voir ma boutique</span>
+            </Button>
+          )}
         </div>
         {erreurBoutique && (
           <p role="alert" className="text-sm text-rose-800 bg-rose-50 border border-rose-200 rounded-2xl p-3">{erreurBoutique}</p>
@@ -186,9 +227,25 @@ export default function ResellerCatalogPage() {
               choix={[{ valeur: 'all', libelle: 'Tous les fournisseurs' }, ...fournisseurs.map((f) => ({ valeur: f, libelle: f }))]}
             />
           </div>
-          {categories.length > 1 && (
+          {(categories.length > 1 || maSelection.size > 0 || seulementBoutique) && (
             <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-              {categories.map((cat) => (
+              {/* Lot 3 (2026-10-03) : les articles déjà dans sa boutique, d'un toucher. Reste
+                  affichée tant que le filtre est actif, même si le dernier article est retiré. */}
+              {(maSelection.size > 0 || seulementBoutique) && (
+                <button
+                  type="button"
+                  onClick={() => setSeulementBoutique((v) => !v)}
+                  aria-pressed={seulementBoutique}
+                  className={`min-h-10 px-3.5 rounded-full text-sm font-semibold whitespace-nowrap inline-flex items-center gap-1.5 transition-colors ${
+                    seulementBoutique
+                      ? 'bg-suguba-profond text-white'
+                      : 'bg-suguba-menthe text-suguba-profond hover:bg-[#dcefd8]'
+                  }`}
+                >
+                  <Store className="w-4 h-4" />Dans ma boutique ({maSelection.size})
+                </button>
+              )}
+              {categories.length > 1 && categories.map((cat) => (
                 <button
                   key={cat}
                   onClick={() => setSelectedCategory(cat)}
@@ -222,7 +279,9 @@ export default function ResellerCatalogPage() {
           <div className="bg-white rounded-3xl border border-slate-200 p-8 text-center text-sm text-slate-500">
             {approvedProducts.length === 0
               ? 'Le catalogue est en cours de remplissage. Les produits apparaîtront ici dès leur validation.'
-              : 'Aucun produit ne correspond à votre recherche.'}
+              : seulementBoutique
+                ? 'Aucun article de votre boutique ne correspond à ces filtres.'
+                : 'Aucun produit ne correspond à votre recherche.'}
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -250,7 +309,7 @@ export default function ResellerCatalogPage() {
                   {codeRevendeur ? (
                     <button
                       type="button"
-                      onClick={() => basculerBoutique(product.id)}
+                      onClick={() => basculerBoutique(product.id, product.name)}
                       disabled={enCours === product.id}
                       aria-pressed={maSelection.has(product.id)}
                       aria-label={maSelection.has(product.id) ? `Retirer ${product.name} de ma boutique` : `Ajouter ${product.name} à ma boutique`}
@@ -276,6 +335,19 @@ export default function ResellerCatalogPage() {
             ))}
           </div>
         )}
+
+      {/* Après un ajout (lot 3) : au-dessus de la barre du bas, toujours affichée pour un revendeur. */}
+      {ajoutRecent > 0 && (
+        <div role="status" className="fixed inset-x-4 z-40 bottom-[calc(6rem+env(safe-area-inset-bottom,0px))] mx-auto max-w-md rounded-2xl bg-suguba-profond text-white shadow-float px-4 py-1.5 flex items-center justify-between gap-3">
+          <span className="flex items-center gap-2 text-sm font-semibold min-w-0">
+            <Check className="w-4 h-4 text-suguba-citron shrink-0" />
+            <span className="truncate">Ajouté à ma boutique</span>
+          </span>
+          <Link href={PORTE_MA_BOUTIQUE} prefetch={false} className="shrink-0 inline-flex items-center min-h-10 text-sm font-bold text-suguba-citron underline underline-offset-2">
+            Voir ma boutique
+          </Link>
+        </div>
+      )}
 
       {selectedProductForOrder && (
         <CreateOrderModal

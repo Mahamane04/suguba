@@ -16,6 +16,19 @@
 
 export const PORTE_MA_BOUTIQUE = '/reseller/ma-boutique';
 
+/**
+ * « Mes articles » (lot 3, 2026-10-03) : ranger la vitrine, choisir ses coups de
+ * cœur, voir ce que rapporte chaque article, retirer. Une vraie page (pas une
+ * redirection) : elle peut être préchargée.
+ */
+export const PAGE_MES_ARTICLES = '/reseller/boutique/articles';
+
+/**
+ * Catalogue ouvert pour ajouter des articles depuis sa boutique (lot 3) : un
+ * bandeau collant « Revenir à ma boutique » y ramène.
+ */
+export const CATALOGUE_DEPUIS_BOUTIQUE = '/reseller/catalog?depuis=boutique';
+
 /** Panneaux d'édition que la vitrine du propriétaire sait ouvrir à l'arrivée (?editer=, lot 2). */
 export const PANNEAUX_EDITION = ['logo', 'couverture', 'nom'] as const;
 

@@ -9,6 +9,8 @@ import { Card, EmptyState, Skeleton } from '@/components/ui/Surface';
 import ProductImage from '@/components/common/ProductImage';
 import { useToast } from '@/components/ui/Toast';
 import { formatF } from '@/lib/montant';
+import Button from '@/components/ui/Button';
+import { PAGE_MES_ARTICLES } from '@/lib/reseau/porte-boutique';
 
 /**
  * Mes prix — articles au prix de gros (2026-09-24).
@@ -17,7 +19,13 @@ import { formatF } from '@/lib/montant';
  * vente, affiché dans sa boutique et sur ses liens partagés. Il peut encore le
  * changer au cas par cas dans « + Vente » après négociation avec son client.
  * Jamais sous le prix minimal, qui couvre le prix de gros et tous les frais.
+ *
+ * Lot 3 du chantier boutique (2026-10-03) : ?boutique=1 ne montre que les
+ * articles de SA boutique, ?produit=<id> un seul (« Mon prix » de la feuille
+ * « Cet article » de Mes articles, qui y ramène).
  */
+
+interface Filtre { boutique: boolean; produit: string | null }
 
 interface Article {
   id: string; nom: string; slug: string; image: string | null;
@@ -31,22 +39,50 @@ export default function MesPrixPage() {
   const { toast } = useToast();
   const [articles, setArticles] = useState<Article[]>([]);
   const [chargement, setChargement] = useState(true);
+  // Lu au montage (sans useSearchParams) : la liste attend le filtre.
+  const [filtre, setFiltre] = useState<Filtre | null>(null);
+  useEffect(() => {
+    try {
+      const q = new URLSearchParams(window.location.search);
+      setFiltre({ boutique: q.get('boutique') === '1', produit: q.get('produit') || null });
+    } catch {
+      setFiltre({ boutique: false, produit: null });
+    }
+  }, []);
 
-  const charger = React.useCallback(() => fetch('/api/reseller/prix', { cache: 'no-store' })
-    .then((r) => r.json()).then((d) => setArticles(d.articles || []))
-    .catch(() => toast('Connexion impossible.', { ton: 'erreur' }))
-    .finally(() => setChargement(false)), [toast]);
+  const charger = React.useCallback(() => {
+    if (!filtre) return;
+    const q = new URLSearchParams();
+    if (filtre.boutique) q.set('boutique', '1');
+    if (filtre.produit) q.set('produit', filtre.produit);
+    const suite = q.toString();
+    fetch(`/api/reseller/prix${suite ? `?${suite}` : ''}`, { cache: 'no-store' })
+      .then((r) => r.json()).then((d) => setArticles(d.articles || []))
+      .catch(() => toast('Connexion impossible.', { ton: 'erreur' }))
+      .finally(() => setChargement(false));
+  }, [toast, filtre]);
   useEffect(() => { charger(); }, [charger]);
 
+  const depuisBoutique = Boolean(filtre?.boutique || filtre?.produit);
+
   return (
-    <PageReseau titre="Mes prix" sousTitre="Articles au prix de gros : c’est vous qui fixez le prix." retour={{ href: '/reseller', libelle: 'Mon espace' }}>
+    <PageReseau titre="Mes prix"
+      sousTitre={filtre?.boutique ? 'Articles au prix de gros de votre boutique : c’est vous qui fixez le prix.' : 'Articles au prix de gros : c’est vous qui fixez le prix.'}
+      retour={depuisBoutique ? { href: PAGE_MES_ARTICLES, libelle: 'Mes articles' } : { href: '/reseller', libelle: 'Mon espace' }}
+      action={filtre?.produit ? <Button href="/reseller/prix" variant="ghost" size="sm">Tous mes prix</Button> : undefined}>
       <Card className="bg-suguba-sauge border-transparent text-xs text-slate-700 space-y-1">
         <p><strong>Votre prix</strong> s’affiche dans votre boutique et sur les liens que vous partagez.</p>
         <p>Pour un client qui négocie, changez le prix au moment d’enregistrer la vente dans « + Vente ».</p>
       </Card>
       {chargement ? <Skeleton className="h-40" /> : articles.length === 0 ? (
-        <EmptyState icone={Tag} titre="Aucun article au prix de gros pour le moment"
-          texte="Quand un fournisseur mettra un article au prix de gros, vous pourrez fixer votre prix ici." />
+        depuisBoutique ? (
+          <EmptyState icone={Tag} titre="Aucun article au prix de gros dans votre boutique"
+            texte="Les articles de votre boutique ont un prix fixe : vous ne pouvez pas le changer."
+            action={<Button href="/reseller/prix" variant="ghost">Tous mes prix</Button>} />
+        ) : (
+          <EmptyState icone={Tag} titre="Aucun article au prix de gros pour le moment"
+            texte="Quand un fournisseur mettra un article au prix de gros, vous pourrez fixer votre prix ici." />
+        )
       ) : (
         <div className="space-y-3">
           {articles.map((a) => <LigneArticle key={a.id} a={a} onChange={(maj) => setArticles((l) => l.map((x) => (x.id === a.id ? { ...x, ...maj } : x)))} />)}

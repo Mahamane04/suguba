@@ -35,6 +35,7 @@ export default function EnteteEditable({
   infos,
   description,
   articles,
+  coupsDeCoeur = 0,
   panneauInitial,
   children,
   pied,
@@ -46,6 +47,8 @@ export default function EnteteEditable({
   description?: string | null;
   /** Articles que la vitrine affiche (0 quand elle montre le catalogue Suguba). */
   articles: number;
+  /** Coups de cœur parmi eux : étape « Choisir un coup de cœur » (lot 3, 2026-10-03). */
+  coupsDeCoeur?: number;
   /** ?editer= reçu à l'ouverture. */
   panneauInitial?: PanneauBoutique | null;
   children?: React.ReactNode;
@@ -90,6 +93,7 @@ export default function EnteteEditable({
     couverture: identite.couverture,
     accueil: identite.accroche,
     articles,
+    coupsDeCoeur,
   });
   const prete = progressionBoutique(etapes);
 

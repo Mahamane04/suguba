@@ -4,7 +4,7 @@ import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { libererCommissionsEchues } from '@/lib/commissions';
 import { boutiqueDuProprietaire } from '@/lib/reseau/boutiques';
-import { compterArticlesEnVitrine } from '@/lib/shop';
+import { compterVitrine } from '@/lib/shop';
 import { estEnseigne, nomPublic } from '@/lib/enseigne';
 import { etapesBoutique, type EtapeBoutique } from '@/lib/reseau/etapes-boutique';
 
@@ -92,8 +92,9 @@ export async function GET(req: NextRequest) {
       const b = await boutiqueDuProprietaire('reseller', session.uid);
       if (b) {
         // Même filtre que la vitrine (relecture du lot 1, 2026-10-03) : un article
-        // retiré ou refusé n'y apparaît pas, il ne doit pas compter ici.
-        const articles = await compterArticlesEnVitrine(admin, session.uid);
+        // retiré ou refusé n'y apparaît pas, il ne doit pas compter ici. Lot 3 :
+        // + les coups de cœur parmi eux (étape « 1 coup de cœur »), même lecture.
+        const { articles, coupsDeCoeur } = await compterVitrine(admin, session.uid);
         // Lot 2 (2026-10-03) : le nom que voient les clients (l'enseigne, ou
         // « Awa D. »), comme sur la vitrine ; le nom complet reste ici.
         const enseigne = estEnseigne(b.nom, profil?.full_name);
@@ -101,7 +102,7 @@ export async function GET(req: NextRequest) {
           slug: b.slug, nom: enseigne ? b.nom : nomPublic(profil?.full_name || null), logo: b.logo, couverture: b.couverture,
           articles,
           abonnes: b.abonnes, statut: b.statut,
-          etapes: etapesBoutique({ enseigne, logo: b.logo, couverture: b.couverture, accueil: b.accroche, articles }),
+          etapes: etapesBoutique({ enseigne, logo: b.logo, couverture: b.couverture, accueil: b.accroche, articles, coupsDeCoeur }),
         };
       }
     } catch {

@@ -8,16 +8,16 @@
  * envie d'acheter, et le revendeur ne savait pas quoi faire pour l'améliorer.
  * Chaque étape mène à son outil (crayon de la vitrine ou catalogue).
  *
- * « Boutique créée » est offerte d'emblée : une boutique neuve part à 1 étape sur 6,
- * jamais de 0 %. Les étapes « 1 coup de cœur » (lot 3) et « premier partage »
- * (lot 4) s'ajouteront ici.
+ * « Boutique créée » est offerte d'emblée : une boutique neuve part à 1 étape sur 7,
+ * jamais de 0 %. Lot 3 (2026-10-03) : + « Choisir un coup de cœur », qui mène à
+ * « Mes articles ». L'étape « premier partage » (lot 4) s'ajoutera ici.
  */
-import { PORTE_MA_BOUTIQUE } from './porte-boutique';
+import { PAGE_MES_ARTICLES, PORTE_MA_BOUTIQUE } from './porte-boutique';
 
 /** Articles choisis à partir desquels la vitrine a l'air d'une vraie boutique. */
 export const ARTICLES_POUR_ETRE_PRETE = 5;
 
-export type CleEtapeBoutique = 'creee' | 'enseigne' | 'logo' | 'couverture' | 'accueil' | 'articles';
+export type CleEtapeBoutique = 'creee' | 'enseigne' | 'logo' | 'couverture' | 'accueil' | 'articles' | 'coupDeCoeur';
 export type PanneauBoutique = 'logo' | 'couverture' | 'nom';
 
 export interface EtapeBoutique {
@@ -39,6 +39,8 @@ export interface EtatBoutique {
   accueil: string | null | undefined;
   /** Articles que la vitrine affiche ; null = compte illisible (l'étape reste à faire). */
   articles: number | null | undefined;
+  /** Coups de cœur parmi les articles affichés ; null ou absent = illisible (l'étape reste à faire). */
+  coupsDeCoeur?: number | null;
 }
 
 const rempli = (v: string | null | undefined) => Boolean(v && String(v).trim());
@@ -56,6 +58,12 @@ export function etapesBoutique(etat: EtatBoutique): EtapeBoutique[] {
       libelle: `Choisir ${ARTICLES_POUR_ETRE_PRETE} articles`,
       fait: typeof etat.articles === 'number' && etat.articles >= ARTICLES_POUR_ETRE_PRETE,
       href: '/reseller/catalog',
+    },
+    {
+      cle: 'coupDeCoeur',
+      libelle: 'Choisir un coup de cœur',
+      fait: typeof etat.coupsDeCoeur === 'number' && etat.coupsDeCoeur >= 1,
+      href: PAGE_MES_ARTICLES,
     },
   ];
 }

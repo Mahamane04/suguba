@@ -6,6 +6,7 @@ import { Eye, LayoutGrid, PackagePlus, SlidersHorizontal } from 'lucide-react';
 import BoutonPartageWhatsApp from '@/components/ui/BoutonPartageWhatsApp';
 import { StatusPill } from '@/components/ui/Surface';
 import { initiale } from '@/lib/initiale';
+import { PAGE_MES_ARTICLES } from '@/lib/reseau/porte-boutique';
 import { useProprietaire, type IdentiteVitrine } from './ModeProprietaire';
 
 /**
@@ -16,9 +17,9 @@ import { useProprietaire, type IdentiteVitrine } from './ModeProprietaire';
  *  - barre collante sous l'en-tête : miniature du logo, « Ma boutique », état,
  *    et l'action principale « Partager » (WhatsApp, adresse de la boutique ; le
  *    lien suivi viendra au lot 4) ;
- *  - trois outils à icône et libellé : Personnaliser (réglages), Articles (le
- *    catalogue, jusqu'à « Mes articles » au lot 3) et Outils (« Tous mes outils »
- *    reste accessible ici, décision du fondateur) ;
+ *  - trois outils à icône et libellé : Personnaliser (réglages), Articles
+ *    (« Mes articles » depuis le lot 3 : ranger, coups de cœur, retirer) et
+ *    Outils (« Tous mes outils » reste accessible ici, décision du fondateur) ;
  *  - « Voir comme un client », qui masque tous les outils sans recharger.
  *
  * Aucune donnée privée ici (ni gain, ni commission, ni prix de gros) : le
@@ -69,7 +70,7 @@ export default function BandeauProprietaire({
       <div className="group-data-[vue=client]:hidden space-y-2">
         <nav aria-label="Gérer ma boutique" className="grid grid-cols-3 gap-2">
           <Outil href="/reseller/boutique" icone={SlidersHorizontal} libelle="Personnaliser" />
-          <Outil href="/reseller/catalog" icone={PackagePlus} libelle="Articles" />
+          <Outil href={PAGE_MES_ARTICLES} icone={PackagePlus} libelle="Articles" />
           <Outil href="/reseller/outils" icone={LayoutGrid} libelle="Outils" />
         </nav>
         <div className="flex justify-end">
