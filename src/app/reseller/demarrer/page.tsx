@@ -243,10 +243,14 @@ export default function DemarrerPage() {
           )}
 
           {etape === 5 && (
+            // Relecture du lot 8 du chantier boutique (2026-10-03) : l'aide disait que
+            // l'adresse « ne changera plus ». Faux depuis ce lot : après le SQL, elle se
+            // change une fois dans « Personnaliser ». Le texte est vrai avant comme après.
+            // (Renommer ne change toujours pas l'adresse : la première phrase reste juste.)
             <Field label="Nom de votre boutique" htmlFor="boutique" requis
               aide={boutiqueExiste
                 ? 'Modifiable plus tard. L’adresse de votre boutique ne change pas.'
-                : 'Il donne l’adresse de votre boutique, qui ne changera plus. Le nom, lui, reste modifiable.'}>
+                : 'Il donne l’adresse de votre boutique : choisissez-le bien. Le nom, lui, reste modifiable.'}>
               <Input id="boutique" value={nomBoutique} onChange={(e) => setNomBoutique(e.target.value)} maxLength={60}
                 placeholder="Ex. : Chez Awa — Électroménager" />
             </Field>

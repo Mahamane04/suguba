@@ -260,6 +260,16 @@ export function slugsCandidats(base: string, proprietaireId: string | null | und
  * Table absente (SQL pas exécuté) : ensemble vide, rien à écarter. null quand la
  * lecture échoue pour une autre raison : l'appelant ne crée rien — jamais « aucune
  * ancienne adresse » inventé sur une panne.
+ *
+ * Relecture du lot 8 (2026-10-03) : cette lecture ÉVITE d'essayer une ancienne
+ * adresse, elle ne la protège pas. Un changement d'adresse validé entre cette
+ * lecture et l'insertion passait : la nouvelle boutique recevait l'ancienne adresse
+ * d'une autre, captait ses liens et QR codes (boutiqueParSlug sert `stores` avant
+ * les anciennes adresses) et ne pouvait plus jamais changer d'adresse. La garantie
+ * est maintenant dans la BASE : le déclencheur stores_ancienne_adresse_reservee
+ * (supabase/A-EXECUTER-2026-10-03-vitrine-boutique.sql) refuse l'insertion avec le
+ * code 23505, celui d'une adresse déjà prise — les appelants passent à l'adresse
+ * suivante. Fichier pas relancé depuis cet ajout : la règle tient par le code seul.
  */
 export async function adressesDejaPortees(a: Admin, candidats: readonly string[]): Promise<Set<string> | null> {
   if (candidats.length === 0) return new Set();
@@ -331,7 +341,9 @@ export async function obtenirOuCreerBoutique(params: {
       console.error('[RESEAU] Création de boutique impossible:', error?.code);
       return null;
     }
-    // 23505 : le slug est pris (ou la boutique vient d'être créée en parallèle).
+    // 23505 : le slug est pris, la boutique vient d'être créée en parallèle, ou
+    // c'est l'ancienne adresse d'une boutique qui change d'adresse au même instant
+    // (déclencheur stores_ancienne_adresse_reservee, relecture du lot 8).
     const concurrente = await boutiqueDuProprietaire(params.typeProprietaire, params.proprietaireId);
     if (concurrente) return concurrente;
   }
@@ -538,8 +550,9 @@ export async function adresseLibre(adresse: string): Promise<boolean | null> {
  * Fonction ou table absente (PGRST202, 42883, 42P01, PGRST205) : 'indisponible',
  * l'option n'existe simplement pas encore. Toute autre erreur : 'erreur'. La
  * fonction est une seule transaction : jamais d'adresse changée sans son ancienne
- * adresse gardée. Si seule la réponse s'est perdue, l'essai suivant répond
- * 'deja_change' et la page relue affiche la nouvelle adresse.
+ * adresse gardée. Si seule la réponse s'est perdue, un nouvel essai répondrait
+ * 'deja_change' : l'écran relit donc l'état de l'adresse et affiche la nouvelle
+ * (AdresseBoutique, relecture du lot 8), sans attendre un rechargement.
  */
 export async function changerAdresse(boutiqueId: string, proprietaireId: string, nouveau: string): Promise<ResultatAdresse> {
   const adresse = adresseDepuis(nouveau);

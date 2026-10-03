@@ -134,7 +134,10 @@ export async function creerBoutiqueSupplementaire(params: {
     }
     if (error?.code === '42703') return { ok: false, erreur: 'Les boutiques supplémentaires seront disponibles après la mise à jour de la base par Suguba.', statut: 503 };
     if (error?.code !== '23505') return { ok: false, erreur: 'Création impossible pour le moment.', statut: 500 };
-    // 23505 : adresse déjà prise, ou ancienne contrainte « une boutique par compte ».
+    // 23505 : adresse déjà prise, ancienne contrainte « une boutique par compte »,
+    // ou ancienne adresse d'une boutique qui change d'adresse au même instant : la
+    // base la refuse elle-même (déclencheur stores_ancienne_adresse_reservee,
+    // relecture du lot 8, 2026-10-03) ; on passe à l'adresse suivante.
     if (/stores_owner_key/.test(error.message || '')) return { ok: false, erreur: 'Les boutiques supplémentaires seront disponibles après la mise à jour de la base par Suguba.', statut: 503 };
   }
   return { ok: false, erreur: 'Choisissez un autre nom de boutique.', statut: 409 };

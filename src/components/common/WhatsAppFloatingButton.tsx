@@ -1,8 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { MessageCircle, X, ShoppingBag, Users, Phone, HelpCircle } from 'lucide-react';
+import { MessageCircle, X, ShoppingBag, Users, HelpCircle } from 'lucide-react';
 import { usePathname } from 'next/navigation';
+import Button from '@/components/ui/Button';
 import { useClavierOuvert } from '@/lib/useClavierOuvert';
 import { useSugubaStore } from '@/lib/store';
 
@@ -20,6 +21,18 @@ import { useSugubaStore } from '@/lib/store';
 // Suguba). « /boutique/ » ne couvre pas l'annuaire « /boutiques ».
 const VISIBLE_SUR_EXACT = ['/rejoindre'];
 const VISIBLE_SUR_PREFIXE = ['/s/', '/r/', '/boutique/'];
+
+// Relecture du lot 8 (2026-10-03) : montrée sur une page de plus, la bulle est mise
+// à la charte (règle « un écran modifié pour autre chose est converti au passage »,
+// tailwind.config.js) — boutons par <Button> (variante `whatsapp`, réservée à ce qui
+// ouvre WhatsApp ; choix en `ghost`, 44 px au lieu de 38), fermeture de 44 px avec un
+// nom lisible par les lecteurs d'écran (24 px sans nom avant), texte vert en
+// `suguba-brand-dark` (lisible sur fond blanc) au lieu d'`emerald-600`. Le menu
+// s'élargit un peu (320 px, jamais plus que l'écran) pour que chaque choix tienne
+// sur une ligne.
+// Sur téléphone, la bulle reste une ICÔNE SEULE, volontairement : avec son libellé
+// elle recouvrirait les cartes d'articles (raison de son retrait de l'accueil). Le
+// libellé « Besoin d'aide ? » apparaît à partir de 640 px ; le guide le dit.
 
 // Profils dont la barre du bas reste affichée sur tablette et ordinateur : la même
 // liste que `navigationMetier` de BottomNav (un test vérifie qu'elles sont égales).
@@ -65,24 +78,27 @@ function BulleSupport() {
     // affichée (`barrePermanente`) : la bulle garde alors sa hauteur.
     <div hidden={clavierOuvert} className={`fixed bottom-[calc(6rem+env(safe-area-inset-bottom,0px))] ${barrePermanente ? '' : 'md:bottom-6'} right-4 z-50`}>
       
-      {/* Expanded Popup Menu */}
+      {/* Menu ouvert : trois sujets, chacun ouvre WhatsApp avec le support Suguba. */}
       {isOpen && (
-        <div className="mb-3 bg-white rounded-3xl p-4 shadow-2xl border border-slate-200 w-72 space-y-3 animate-in fade-in slide-in-from-bottom-3 duration-200 text-xs">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-            <div className="flex items-center space-x-2">
-              <div className="w-7 h-7 rounded-xl bg-suguba-wa text-suguba-profond flex items-center justify-center">
-                <MessageCircle className="w-4 h-4 fill-current" />
+        <div id="aide-suguba" className="mb-3 bg-white rounded-3xl p-4 shadow-2xl border border-slate-200 w-80 max-w-[calc(100vw-2rem)] space-y-3 animate-in fade-in slide-in-from-bottom-3 duration-200 text-xs">
+          <div className="flex items-start justify-between gap-2 border-b border-slate-100 pb-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-7 h-7 rounded-xl bg-suguba-wa text-suguba-profond flex items-center justify-center shrink-0">
+                <MessageCircle className="w-4 h-4 fill-current" aria-hidden="true" />
               </div>
-              <div>
+              <div className="min-w-0">
                 <h4 className="font-bold text-slate-900">Assistance Suguba</h4>
-                <p className="text-xs text-emerald-600 font-bold">Réponse sur WhatsApp</p>
+                <p className="text-xs text-suguba-brand-dark font-bold">Réponse sur WhatsApp</p>
               </div>
             </div>
-            <button 
+            {/* Même bouton de fermeture que les feuilles (src/components/ui/Sheet.tsx) : 44 px. */}
+            <button
+              type="button"
               onClick={() => setIsOpen(false)}
-              className="w-6 h-6 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500"
+              aria-label="Fermer"
+              className="w-11 h-11 -mr-2 -mt-2 rounded-full hover:bg-slate-100 flex items-center justify-center shrink-0"
             >
-              <X className="w-3.5 h-3.5" />
+              <X className="w-5 h-5 text-slate-600" aria-hidden="true" />
             </button>
           </div>
 
@@ -91,29 +107,18 @@ function BulleSupport() {
           </p>
 
           <div className="space-y-1.5">
-            <button
-              onClick={() => handleOpenWhatsApp('Aide pour passer une commande')}
-              className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold rounded-xl flex items-center space-x-2 text-left transition-colors"
-            >
-              <ShoppingBag className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Aide pour commander</span>
-            </button>
-
-            <button
-              onClick={() => handleOpenWhatsApp('Rejoindre le réseau des Revendeurs')}
-              className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold rounded-xl flex items-center space-x-2 text-left transition-colors"
-            >
-              <Users className="w-3.5 h-3.5 text-slate-600" />
-              <span>Devenir Revendeur rémunéré</span>
-            </button>
-
-            <button
-              onClick={() => handleOpenWhatsApp('Suivi de livraison / SAV')}
-              className="w-full p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-800 font-bold rounded-xl flex items-center space-x-2 text-left transition-colors"
-            >
-              <HelpCircle className="w-3.5 h-3.5 text-amber-600" />
-              <span>Suivre mon colis / SAV</span>
-            </button>
+            <Button type="button" variant="ghost" fullWidth onClick={() => handleOpenWhatsApp('Aide pour passer une commande')}>
+              <ShoppingBag className="w-4 h-4 shrink-0" aria-hidden="true" />
+              Aide pour commander
+            </Button>
+            <Button type="button" variant="ghost" fullWidth onClick={() => handleOpenWhatsApp('Rejoindre le réseau des Revendeurs')}>
+              <Users className="w-4 h-4 shrink-0" aria-hidden="true" />
+              Devenir Revendeur rémunéré
+            </Button>
+            <Button type="button" variant="ghost" fullWidth onClick={() => handleOpenWhatsApp('Suivi de livraison / SAV')}>
+              <HelpCircle className="w-4 h-4 shrink-0" aria-hidden="true" />
+              Suivre mon colis / SAV
+            </Button>
           </div>
 
           <div className="text-center pt-1 border-t border-slate-100 text-xs text-slate-500">
@@ -122,15 +127,19 @@ function BulleSupport() {
         </div>
       )}
 
-      {/* Floating Button Trigger */}
-      <button
+      {/* La bulle : icône seule sur téléphone, « Besoin d'aide ? » à partir de 640 px. */}
+      <Button
+        type="button"
+        variant="whatsapp"
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center space-x-2 px-4 py-3 bg-suguba-wa hover:bg-[#20bd5a] text-suguba-profond font-bold rounded-full shadow-2xl shadow-[#25D366]/40 active:scale-95 transition-transform"
+        className="shadow-2xl shadow-suguba-wa/40"
         aria-label="Contacter le support sur WhatsApp"
+        aria-expanded={isOpen}
+        aria-controls={isOpen ? 'aide-suguba' : undefined}
       >
-        <MessageCircle className="w-5 h-5 fill-current" />
+        <MessageCircle className="w-5 h-5 fill-current" aria-hidden="true" />
         <span className="text-xs hidden sm:inline">Besoin d&apos;aide ?</span>
-      </button>
+      </Button>
 
     </div>
   );

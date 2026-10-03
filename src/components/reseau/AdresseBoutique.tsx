@@ -8,6 +8,27 @@ import { Card, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
 import { ADRESSE_INDISPONIBLE, adresseDepuis, adresseProposee, refusAdresse } from '@/lib/adresse-boutique';
 
+/** Ce que GET /api/reseller/boutique/adresse dit de la boutique de la session. */
+type EtatServeur = { actuelle?: unknown; ancienne?: unknown };
+
+const ADRESSE_CHANGEE = 'Adresse changée. L’ancienne mène toujours à votre boutique.';
+
+/**
+ * L'état de l'adresse, relu au serveur (relecture du lot 8, 2026-10-03). Sans
+ * paramètre : la boutique est celle de la session. null si la lecture échoue : on
+ * ne sait pas, et l'écran le dit plutôt que d'annoncer un échec.
+ */
+async function relireEtat(): Promise<EtatServeur | null> {
+  try {
+    const reponse = await fetch('/api/reseller/boutique/adresse', { cache: 'no-store' });
+    if (!reponse.ok) return null;
+    const etat = await reponse.json().catch(() => null);
+    return etat && typeof etat === 'object' ? (etat as EtatServeur) : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * « Adresse de ma boutique » (lot 8 du chantier boutique, 2026-10-03) — section de
  * « Personnaliser ma boutique », rendue seulement quand la base le permet
@@ -28,6 +49,18 @@ import { ADRESSE_INDISPONIBLE, adresseDepuis, adresseProposee, refusAdresse } fr
  *    boutique et son propriétaire viennent de la session, jamais de cette page.
  *
  * Une fois le changement fait, la section le dit et ne propose plus rien.
+ *
+ * Relecture du lot 8 (2026-10-03) — le changement est unique et sans retour, l'écran
+ * ne doit jamais laisser croire qu'il est perdu :
+ *  - réponse du changement perdue (réseau mobile coupé au mauvais moment) alors que
+ *    le serveur l'a fait : l'écran affichait « Changement impossible », puis, à
+ *    l'essai suivant, « Vous avez déjà changé l'adresse » en gardant l'ancienne
+ *    adresse, le champ et le bouton. Désormais l'état est RELU au serveur (GET sans
+ *    ?adresse=) et, s'il dit que l'adresse a changé, la page suit (`suivre`) : lien,
+ *    QR code et section. Même règle quand la vérification du début l'apprend
+ *    (changement fait dans un autre onglet, ou essai précédent sans réponse) ;
+ *  - une adresse refusée par le serveur (« déjà prise ») n'est plus montrée dessous
+ *    comme celle que « vos clients ouvriront ».
  */
 export default function AdresseBoutique({
   origine,
@@ -77,14 +110,32 @@ export default function AdresseBoutique({
   const refus = saisie.trim() ? refusAdresse(apercu, actuelle) : null;
   const erreur = refus || erreurServeur || undefined;
 
+  /**
+   * Le serveur dit que le changement a DÉJÀ eu lieu (une ancienne adresse existe) :
+   * la page prend l'adresse qu'il annonce. Vrai si elle a suivi. Le message de succès
+   * n'est donné que si l'adresse obtenue est celle demandée ici ; sinon le changement
+   * vient d'ailleurs (autre onglet, autre téléphone) et on le dit tel quel.
+   */
+  const suivre = (etat: EtatServeur | null): boolean => {
+    if (!etat || typeof etat.actuelle !== 'string' || !etat.actuelle || typeof etat.ancienne !== 'string' || !etat.ancienne) return false;
+    if (etat.actuelle === apercu) toast(ADRESSE_CHANGEE, { ton: 'succes' });
+    else toast(`L’adresse de votre boutique a déjà été changée : ${hote}/boutique/${etat.actuelle}`, { ton: 'info' });
+    onChange(etat.actuelle, etat.ancienne);
+    return true;
+  };
+
   const changer = async () => {
     if (!apercu || refus || envoi) return;
     setEnvoi(true);
     setErreurServeur('');
+    // Le changement est-il parti ? Avant, une coupure ne change rien ; après, on ne sait plus.
+    let envoye = false;
     try {
       // 1. L'adresse est-elle libre ? Rien n'est réservé : le serveur revérifie au changement.
       const lecture = await fetch(`/api/reseller/boutique/adresse?adresse=${encodeURIComponent(apercu)}`, { cache: 'no-store' });
       const etat = await lecture.json().catch(() => ({}));
+      // Changement déjà fait (essai précédent resté sans réponse, autre onglet) : la page suit.
+      if (lecture.ok && suivre(etat)) return;
       if (!lecture.ok || !etat.demande) { setErreurServeur(etat.error || ADRESSE_INDISPONIBLE); return; }
       if (etat.demande.etat !== 'libre' || etat.demande.adresse !== apercu) {
         setErreurServeur(etat.demande.message || ADRESSE_INDISPONIBLE);
@@ -100,17 +151,32 @@ export default function AdresseBoutique({
       });
       if (!accord) return;
       // 3. Le changement. Seule l'adresse confirmée est envoyée.
+      envoye = true;
       const reponse = await fetch('/api/reseller/boutique/adresse', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ adresse: apercu }),
       });
       const data = await reponse.json().catch(() => ({}));
-      if (!reponse.ok || typeof data.adresse !== 'string') { setErreurServeur(data.error || ADRESSE_INDISPONIBLE); return; }
-      toast('Adresse changée. L’ancienne mène toujours à votre boutique.', { ton: 'succes' });
+      if (!reponse.ok || typeof data.adresse !== 'string') {
+        // Refus APRÈS l'envoi : avant de l'afficher, on demande au serveur si l'adresse
+        // a changé. Une demande arrivée deux fois répond « c'est déjà l'adresse de votre
+        // boutique » ou « déjà changée » ; un délai dépassé après l'écriture répond une
+        // erreur — alors que le changement est fait, définitivement.
+        if (suivre(await relireEtat())) return;
+        setErreurServeur(data.error || ADRESSE_INDISPONIBLE);
+        return;
+      }
+      toast(ADRESSE_CHANGEE, { ton: 'succes' });
       onChange(data.adresse, typeof data.ancienne === 'string' ? data.ancienne : actuelle);
     } catch {
-      setErreurServeur('Changement impossible. Vérifiez votre connexion.');
+      // Coupure avant l'envoi : rien n'a changé. Après l'envoi : le serveur a peut-être
+      // changé l'adresse sans que sa réponse arrive — on relit son état.
+      const etat = envoye ? await relireEtat() : null;
+      if (suivre(etat)) return;
+      setErreurServeur(envoye && !etat
+        ? 'Connexion coupée pendant le changement : votre adresse a peut-être changé. Vérifiez votre connexion, puis réessayez.'
+        : 'Changement impossible. Vérifiez votre connexion.');
     } finally {
       setEnvoi(false);
     }
@@ -132,7 +198,8 @@ export default function AdresseBoutique({
           onChange={(e) => { setSaisie(e.target.value); setErreurServeur(''); }} />
       </Field>
 
-      {apercu && !refus && (
+      {/* Jamais sous un refus, local ou venu du serveur (« déjà prise ») : relecture du lot 8. */}
+      {apercu && !erreur && (
         <p role="status" className="rounded-2xl bg-suguba-sauge px-3.5 py-2.5 text-xs text-slate-700">
           Vos clients ouvriront : <strong className="block text-sm text-suguba-profond break-all">{hote}/boutique/{apercu}</strong>
         </p>

@@ -198,6 +198,38 @@
  "journal": [
   {
    "date": "2026-10-03",
+   "titre": "Boutique revendeur, lot 8 : corrections de relecture",
+   "demande": "« “Ma boutique” doit montrer la boutique elle-même (logo, couverture, produits ajoutés) et non les réglages ; il veut des outils pour gérer sa boutique (personnalisation, catégories/rayons, produits mis en avant, et ce qui aide à vendre), pour un vrai sentiment d’appropriation. »",
+   "realise": [
+    "Changement d’adresse, connexion coupée au mauvais moment : quand le serveur a bien changé l’adresse mais que sa réponse n’arrive pas au téléphone, « Personnaliser » redemande l’état au serveur et suit — « Adresse changée. L’ancienne mène toujours à votre boutique. », lien, QR code et section à jour. Avant : « Changement impossible. Vérifiez votre connexion. », puis, au nouvel essai, « Vous avez déjà changé l’adresse de votre boutique : ce changement n’est possible qu’une fois. » alors que l’écran montrait toujours l’ancienne adresse, le champ et le bouton. Le revendeur pouvait croire avoir perdu son seul changement ; il fallait recharger la page. Aucune donnée n’était abîmée.",
+    "Si la connexion reste coupée, l’écran dit ce qu’il sait : « Connexion coupée pendant le changement : votre adresse a peut-être changé. Vérifiez votre connexion, puis réessayez. » Au nouvel essai, la page prend la nouvelle adresse sans redemander de confirmation ni rien renvoyer. Si l’adresse a été changée depuis un autre téléphone ou un autre onglet, la page l’affiche et le dit : « L’adresse de votre boutique a déjà été changée : … », sans annoncer comme réussie l’adresse tapée ici.",
+    "Adresse refusée par le serveur (« Cette adresse est déjà prise. Essayez-en une autre. ») : l’encadré « Vos clients ouvriront : … » ne reste plus affiché juste dessous avec cette même adresse. Il revient dès que le revendeur écrit une autre adresse.",
+    "Une ancienne adresse n’est jamais redonnée : c’est maintenant la base elle-même qui le refuse, plus seulement l’application. Avant, si un revendeur changeait d’adresse à l’instant précis où une autre boutique se créait sur le même nom, la nouvelle boutique pouvait recevoir son ancienne adresse : elle aurait capté ses anciens liens et QR codes, et n’aurait plus jamais pu changer d’adresse elle-même. Cas très peu probable (quelques millièmes de seconde), mais la règle était présentée comme absolue. La nouvelle boutique reçoit « -2 », comme pour toute adresse déjà prise.",
+    "Démarrage, étape « Nom de votre boutique » : l’aide disait que l’adresse « ne changera plus », ce qui devient faux après le SQL (un changement est permis). Elle dit maintenant : « Il donne l’adresse de votre boutique : choisissez-le bien. Le nom, lui, reste modifiable. » — vrai avant comme après le SQL.",
+    "Bulle du support (sur /boutique/, /r/, /s/ et /rejoindre) mise à la charte : la croix de fermeture passe de 24 à 44 px et porte un nom pour les lecteurs d’écran (« Fermer ») ; les trois choix font 44 px (38 avant) et sont les boutons de l’application ; « Réponse sur WhatsApp » est écrit dans le vert lisible sur fond blanc. Le menu fait 320 px au plus, jamais plus large que l’écran.",
+    "Guide : la bulle « Besoin d’aide ? » est décrite aussi sur les fiches de /s/<boutique> et de /rejoindre (elle ne l’était que sur /boutique/), avec sa place au-dessus de la barre du bas pour un revendeur, un fournisseur ou un livreur connecté. Les trois fiches disent qu’elle est une icône seule sur téléphone. L’entrée du lot 8 cite ces deux fiches.",
+    "Tests : tests/ma-boutique-lot8-relecture.test.cjs (13 tests, tous en échec sur le code du lot 8). Trois exécutent le vrai fichier SQL dans une base PostgreSQL locale ; l’un rejoue l’enchaînement du défaut (changement d’adresse validé entre la lecture des anciennes adresses et la création d’une boutique), avec puis sans la protection."
+   ],
+   "ecarts": [
+    "En local sur la branche ux/boutique-revendeur, non publié. 6 constats relus, tous fondés, tous corrigés : 5 dans l’application, 1 dans le guide.",
+    "SQL À RELANCER PAR LE FONDATEUR : supabase/A-EXECUTER-2026-10-03-vitrine-boutique.sql — toujours le seul fichier du chantier boutique — a reçu un bloc 3, la protection en base des anciennes adresses. Pas encore exécuté : rien de plus à faire, l’exécuter une fois (Supabase › SQL Editor, copie locale isolée puis production), suivi de ses 5 vérifications (4 avant). Déjà exécuté : le relancer une fois, sans risque (aucune donnée modifiée). Tant qu’il n’est pas relancé, tout fonctionne ; la règle « jamais redonnée » reste tenue par l’application seule, avec la faille de quelques millièmes de seconde décrite plus haut.",
+    "Choix fait sans vous, à valider : la relecture proposait soit cette protection en base, soit d’adoucir la phrase « jamais redonnée » dans le guide. La protection a été retenue. Elle refuse aussi qu’une boutique reprenne sa propre ancienne adresse (pas de retour, comme l’écran l’annonce). Elle ne corrige pas l’existant : la vérification 4 du fichier (attendu : 0) signale une boutique qui porterait déjà l’ancienne adresse d’une autre, à corriger à la main. Quand une boutique est supprimée, ses anciennes adresses redeviennent libres. Pour retirer la protection : les deux premières lignes du « Retour arrière », en bas du fichier.",
+    "Bulle du support sur téléphone : elle reste une icône seule ; le libellé « Besoin d’aide ? » s’affiche à partir de 640 px. Choix volontaire : avec son libellé, elle recouvrirait les cartes d’articles — la raison de son retrait de l’accueil. À rouvrir si vous préférez un libellé court (« Aide ») sur téléphone. Elle est aussi un peu plus large qu’avant (60 px au lieu de 52), et ses trois choix sont centrés, en boutons de l’application.",
+    "Limite restante : si la connexion coupe et que le serveur termine le changement APRÈS que l’écran a relu son état, l’écran affiche « Changement impossible. Vérifiez votre connexion. » ; l’essai suivant affiche la nouvelle adresse. Rien n’est perdu, rien n’est changé deux fois.",
+    "L’encadré « Vos clients ouvriront : … » est masqué sous tout message d’erreur, y compris une panne de connexion ; il revient quand le revendeur modifie le champ ou relance.",
+    "Captures et vérifications à faire sur la copie locale [QA], à 390 px puis 320 px : bulle ouverte sur /boutique/, /s/ et /rejoindre (croix, trois choix, rien ne dépasse de l’écran) ; section « Adresse de ma boutique » en coupant le réseau du téléphone juste après « Changer ». Aucun serveur n’a été lancé pour ces corrections : rien n’a été observé à l’écran."
+   ],
+   "pages": [
+    "rev-boutique",
+    "vitrine-boutique",
+    "vitrine-fournisseur",
+    "rejoindre",
+    "rev-demarrer"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-10-03",
    "titre": "Boutique revendeur, lot 8 : adresse à l’enseigne et contact",
    "demande": "« “Ma boutique” doit montrer la boutique elle-même (logo, couverture, produits ajoutés) et non les réglages ; il veut des outils pour gérer sa boutique (personnalisation, catégories/rayons, produits mis en avant, et ce qui aide à vendre), pour un vrai sentiment d’appropriation. »",
    "realise": [
@@ -212,7 +244,7 @@
     "Tests : tests/ma-boutique-lot8.test.cjs (27 tests, dont 18 en échec sans ce lot). Trois d’entre eux exécutent le vrai fichier SQL dans une base PostgreSQL locale : changement, second changement refusé, adresse prise refusée, nouvelle boutique sur une ancienne adresse, et base sans le fichier. 2 vérifications du lot 6 adaptées."
    ],
    "ecarts": [
-    "En local sur la branche ux/boutique-revendeur, non publié. Aucun nouveau fichier SQL : la liste des anciennes adresses et la fonction du changement sont dans supabase/A-EXECUTER-2026-10-03-vitrine-boutique.sql, livré au lot 6. Tant que vous ne l’avez pas exécuté (Supabase › SQL Editor, copie locale isolée puis production), la section « Adresse de ma boutique » n’apparaît pas. Si vous l’avez déjà exécuté, rien à relancer : ce lot n’y ajoute qu’un commentaire sur la colonne de l’adresse (le relancer reste sans risque).",
+    "En local sur la branche ux/boutique-revendeur, non publié. Aucun nouveau fichier SQL : la liste des anciennes adresses et la fonction du changement sont dans supabase/A-EXECUTER-2026-10-03-vitrine-boutique.sql, livré au lot 6. Tant que vous ne l’avez pas exécuté (Supabase › SQL Editor, copie locale isolée puis production), la section « Adresse de ma boutique » n’apparaît pas. Ce lot n’y ajoute qu’un commentaire sur la colonne de l’adresse ; sa relecture y ajoute une protection : si vous l’avez déjà exécuté, le relancer une fois (voir « Boutique revendeur, lot 8 : corrections de relecture », sans risque).",
     "WhatsApp du revendeur : PAS fait, selon votre décision (« pas tout de suite »). Ni champ « Mon numéro WhatsApp », ni bouton « Écrire à <enseigne> » ; le numéro d’un revendeur n’apparaît nulle part sur sa vitrine, et un numéro de téléphone est refusé dans l’adresse. À rouvrir si vous acceptez le risque de vente hors plateforme.",
     "Redirection « permanente » de l’ancienne adresse : à vérifier sur la copie locale [QA] avec un vrai téléphone. Next.js envoie cette page par morceaux : selon le moment, le navigateur reçoit une vraie redirection permanente (code 308) ou la même redirection exécutée dans la page (code 200, puis saut immédiat vers la nouvelle adresse). Dans les deux cas le client arrive à la nouvelle adresse. Aucun serveur n’a été lancé pour ce lot : ce point n’a pas pu être observé.",
     "Boutique masquée par Suguba : son ancienne adresse affiche « page introuvable », comme la nouvelle pour un client (pas de redirection permanente vers une page introuvable, que les navigateurs garderaient). La redirection reprend dès que la boutique est de nouveau en ligne. Le revendeur peut changer d’adresse même quand sa boutique est masquée. À valider par vous.",
@@ -227,7 +259,9 @@
     "rev-boutique",
     "vitrine-boutique",
     "mes-boutiques",
-    "rev-demarrer"
+    "rev-demarrer",
+    "vitrine-fournisseur",
+    "rejoindre"
    ],
    "statut": "en local"
   },
@@ -349,7 +383,7 @@
    ],
    "ecarts": [
     "En local sur la branche ux/boutique-revendeur, non publié.",
-    "SQL À LANCER PAR LE FONDATEUR : supabase/A-EXECUTER-2026-10-03-vitrine-boutique.sql, dans Supabase › SQL Editor — d’abord sur la copie locale isolée, puis en production —, suivi des 4 vérifications écrites en bas du fichier (attendu : 1 ligne ; store_slug_aliases ; false | false ; 0). Son effet : la tuile « Rayons », la page « Mes rayons » et le champ « Annonce sur ma boutique » apparaissent pour les revendeurs. Tant qu’il n’est pas exécuté, rien de cela n’est visible, et rien n’est en panne.",
+    "SQL À LANCER PAR LE FONDATEUR : supabase/A-EXECUTER-2026-10-03-vitrine-boutique.sql, dans Supabase › SQL Editor — d’abord sur la copie locale isolée, puis en production —, suivi des 5 vérifications écrites en bas du fichier (attendu : 1 ligne ; store_slug_aliases ; false | false ; 0 ; 1 ligne — la 5e vient de la relecture du lot 8). Son effet : la tuile « Rayons », la page « Mes rayons » et le champ « Annonce sur ma boutique » apparaissent pour les revendeurs. Tant qu’il n’est pas exécuté, rien de cela n’est visible, et rien n’est en panne.",
     "Changement d’adresse : le fichier crée la liste des anciennes adresses et la fonction qui fait le changement (décision du fondateur : oui, une seule fois, l’ancienne adresse redirige), mais aucun écran ne s’en servait à ce lot : il est livré au lot 8 (section « Adresse de ma boutique » de « Personnaliser »). Si le fondateur revenait sur cette décision, le bloc 2 du fichier se retire sans rien changer au reste.",
     "Le lien d’un rayon (?rayon=…) est tiré de son nom, par la même règle que les rayons automatiques du lot 4 (le plan disait « slugifier », réservé au serveur). Renommer un rayon change donc son lien : un ancien lien ouvre alors la boutique en haut de page. La feuille « Modifier le rayon » le dit.",
     "Un rayon qui porte le nom d’une catégorie (un rayon « Mode » alors que des articles sont de catégorie « Mode ») réunit ses articles cochés ET les autres articles de cette catégorie : la vitrine n’affiche jamais deux rayons du même nom. Choix non prévu au plan, à valider par le fondateur.",
@@ -3172,6 +3206,10 @@
     {
      "nom": "Devenir revendeur",
      "role": "Pour vendre les produits de cette boutique."
+    },
+    {
+     "nom": "Besoin d’aide ? (support Suguba)",
+     "role": "Bulle verte en bas à droite : une icône seule sur téléphone, avec le libellé « Besoin d’aide ? » à partir de 640 px. Elle ouvre un petit menu — « Aide pour commander », « Devenir Revendeur rémunéré », « Suivre mon colis / SAV » (44 px chacun) et une croix « Fermer » de 44 px — dont chaque choix ouvre WhatsApp avec le support Suguba (+223 89 46 00 00). Jamais le numéro du fournisseur. Pour un revendeur, un fournisseur ou un livreur connecté, elle reste au-dessus de la barre du bas, sur tablette et ordinateur aussi (depuis le lot 8 du chantier boutique)."
     }
    ],
    "suite": [
@@ -3385,6 +3423,10 @@
     {
      "nom": "Se connecter",
      "role": "Pour ceux qui ont déjà un compte ; masqué quand on est connecté."
+    },
+    {
+     "nom": "Besoin d’aide ? (support Suguba)",
+     "role": "Bulle verte en bas à droite : une icône seule sur téléphone, avec le libellé « Besoin d’aide ? » à partir de 640 px. Elle ouvre un petit menu — « Aide pour commander », « Devenir Revendeur rémunéré », « Suivre mon colis / SAV » (44 px chacun) et une croix « Fermer » de 44 px — dont chaque choix ouvre WhatsApp avec le support Suguba (+223 89 46 00 00). Pour un revendeur, un fournisseur ou un livreur connecté, elle reste au-dessus de la barre du bas, sur tablette et ordinateur aussi (depuis le lot 8 du chantier boutique)."
     }
    ],
    "suite": [
@@ -3724,7 +3766,7 @@
     },
     {
      "nom": "Nom de votre boutique",
-     "role": "Crée la boutique avec ce nom, dont l’adresse est tirée (/boutique/awa-mode) ; si elle existe déjà, la renomme sans changer l’adresse. Rien n’est créé avant cette étape. Sans enseigne choisie, le champ part vide (« Revendeur Suguba » compris). Un nom réservé à Suguba est refusé avec un message ; son propre nom est enregistré en « Awa D. ». Une adresse déjà portée par une autre boutique, aujourd’hui ou avant un changement d’adresse, n’est jamais donnée : la nouvelle reçoit « -2 ». L’adresse se change ensuite une seule fois, dans « Personnaliser » (après le SQL du lot 6)."
+     "role": "Crée la boutique avec ce nom, dont l’adresse est tirée (/boutique/awa-mode) ; si elle existe déjà, la renomme sans changer l’adresse. Rien n’est créé avant cette étape. Sans enseigne choisie, le champ part vide (« Revendeur Suguba » compris). Un nom réservé à Suguba est refusé avec un message ; son propre nom est enregistré en « Awa D. ». Une adresse déjà portée par une autre boutique, aujourd’hui ou avant un changement d’adresse, n’est jamais donnée : la nouvelle reçoit « -2 ». L’adresse se change ensuite une seule fois, dans « Personnaliser » (après le SQL du lot 6). Sous le champ : « Il donne l’adresse de votre boutique : choisissez-le bien. Le nom, lui, reste modifiable. » ; boutique déjà créée : « Modifiable plus tard. L’adresse de votre boutique ne change pas. »"
     },
     {
      "nom": "Dernière étape",
@@ -4206,7 +4248,7 @@
     },
     {
      "nom": "Besoin d’aide ? (support Suguba)",
-     "role": "Bulle verte en bas à droite, comme sur /r/ et /s/. Elle propose « Aide pour commander », « Devenir Revendeur rémunéré » et « Suivre mon colis / SAV », qui ouvrent WhatsApp avec le support Suguba (+223 89 46 00 00). Jamais le numéro du revendeur : il n’apparaît nulle part sur la vitrine. Le propriétaire la voit aussi, toujours au-dessus de sa barre du bas (téléphone, tablette et ordinateur)."
+     "role": "Bulle verte en bas à droite, comme sur /r/ et /s/ : une icône seule sur téléphone, avec le libellé « Besoin d’aide ? » à partir de 640 px. Elle ouvre un petit menu — « Aide pour commander », « Devenir Revendeur rémunéré », « Suivre mon colis / SAV » (44 px chacun) et une croix « Fermer » de 44 px — dont chaque choix ouvre WhatsApp avec le support Suguba (+223 89 46 00 00). Jamais le numéro du revendeur : il n’apparaît nulle part sur la vitrine. Le propriétaire la voit aussi, toujours au-dessus de sa barre du bas (téléphone, tablette et ordinateur)."
     }
    ],
    "suite": [
@@ -4294,7 +4336,7 @@
     },
     {
      "nom": "Adresse de ma boutique",
-     "role": "Après le SQL du lot 6 seulement. Donner à la boutique une adresse à son enseigne (…/boutique/awa-mode), une seule fois. Le champ accepte ce qu’on tape (« Awa Mode ») ; « Vos clients ouvriront : … » montre l’adresse exacte ; avec un nom d’enseigne, son adresse est déjà proposée. Encadré ambre : « Une seule fois. Vous ne pourrez plus changer d’adresse ensuite, ni revenir à l’ancienne. Votre ancienne adresse et vos QR codes déjà partagés continuent d’ouvrir votre boutique. » « Changer mon adresse » vérifie qu’elle est libre, puis demande confirmation (Changer / Garder l’actuelle). Refusés, avec la raison sous le champ : adresse déjà prise (même l’ancienne adresse d’une autre boutique), moins de 3 caractères, sans lettre, réservée à Suguba, numéro de téléphone. Ensuite : « Adresse changée », avec le rappel de l’ancienne adresse, et plus rien à faire ; le lien et le QR de la page portent la nouvelle adresse."
+     "role": "Après le SQL du lot 6 seulement. Donner à la boutique une adresse à son enseigne (…/boutique/awa-mode), une seule fois. Le champ accepte ce qu’on tape (« Awa Mode ») ; « Vos clients ouvriront : … » montre l’adresse exacte ; avec un nom d’enseigne, son adresse est déjà proposée. Encadré ambre : « Une seule fois. Vous ne pourrez plus changer d’adresse ensuite, ni revenir à l’ancienne. Votre ancienne adresse et vos QR codes déjà partagés continuent d’ouvrir votre boutique. » « Changer mon adresse » vérifie qu’elle est libre, puis demande confirmation (Changer / Garder l’actuelle). Refusés, avec la raison sous le champ : adresse déjà prise (même l’ancienne adresse d’une autre boutique), moins de 3 caractères, sans lettre, réservée à Suguba, numéro de téléphone. Ensuite : « Adresse changée », avec le rappel de l’ancienne adresse, et plus rien à faire ; le lien et le QR de la page portent la nouvelle adresse. Une adresse refusée n’est jamais montrée sous « Vos clients ouvriront ». Si la connexion coupe pendant le changement, la page redemande l’état au serveur : changement fait, elle affiche la nouvelle adresse ; pas fait, « Changement impossible. Vérifiez votre connexion. » ; impossible à savoir, « Connexion coupée pendant le changement : votre adresse a peut-être changé. Vérifiez votre connexion, puis réessayez. » — l’essai suivant affiche alors la nouvelle adresse, sans rien renvoyer."
     },
     {
      "nom": "Barre d’enregistrement",
