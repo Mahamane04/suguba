@@ -29,11 +29,16 @@ import { CATALOGUE_DEPUIS_BOUTIQUE, PORTE_MA_BOUTIQUE } from '@/lib/reseau/porte
  * premier dans sa boutique ; les articles qu'il n'a pas rangés restent dans les
  * rayons automatiques, rappelés en dessous.
  *
- * Rien n'est écrit avant « Enregistrer mes rayons » : une seule requête (PATCH
+ * Rien n'est écrit avant « Enregistrer » : une seule requête (PATCH
  * /api/reseller/boutique {reglages: {rayons}}), validée par le serveur
  * (src/lib/boutique-reglages.ts). Ranger en rayons ne touche JAMAIS à la sélection
  * d'articles (reseller_shop_items, qui porte les offres du revendeur) : supprimer
  * un rayon ne retire aucun article.
+ *
+ * Relecture du lot 6 (2026-10-03) : le bouton s'appelait « Enregistrer mes
+ * rayons ». À 390 px, avec « Annuler », il occupait toute la barre : « Non
+ * enregistré » n'avait plus de place et passait sous « Annuler ». Le titre de la
+ * page dit déjà « Mes rayons » : « Enregistrer » suffit, comme dans « Personnaliser ».
  *
  * Avant le SQL (colonne stores.reglages absente) : aucune tuile ne mène ici, et
  * la page, ouverte par son adresse, dit simplement que les rayons arrivent.
@@ -289,7 +294,7 @@ export default function MesRayonsPage() {
             envoi={envoi}
             onEnregistrer={enregistrer}
             onAnnuler={() => { setRayons(enregistres); setErreurs([]); }}
-            libelle="Enregistrer mes rayons"
+            libelle="Enregistrer"
             erreurs={erreurs}
             message={message}
             note={modifie ? 'Vos clients voient ces rayons dès l’enregistrement. Aucun article n’est retiré de votre boutique.' : undefined}

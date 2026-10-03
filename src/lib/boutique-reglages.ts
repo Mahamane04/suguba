@@ -23,6 +23,15 @@
  *
  * stores.categories n'est PAS réutilisé : il porte les familles de l'annuaire
  * /boutiques (« Ce que je vends »), pas les rayons de la vitrine.
+ *
+ * Relecture du lot 6 (2026-10-03) :
+ *  - un texte est BORNÉ avant d'être nettoyé (TEXTE_BRUT_MAX) : le nettoyage d'un
+ *    nom ou d'une annonce de 80 000 « < » occupait le serveur plus de 3 secondes ;
+ *  - le nom d'un rayon refuse aussi un prix écrit d'un seul tenant (« Tout à 5000 »),
+ *    comme l'annonce : c'est un titre public de la vitrine ;
+ *  - « ni numéro ni lien » reconnaît un lien écrit comme on le tape
+ *    (« facebook.com/awamode », « wa.link/… »), une adresse e-mail et un numéro
+ *    séparé par « / », « _ » ou « , ».
  */
 import { FORMAT_DATE } from './montant';
 import { promesseChiffree, type PromesseChiffree } from './message-affiche';
@@ -90,44 +99,94 @@ export function jourLisible(fin: string | null | undefined): string {
 }
 
 /**
+ * Longueur BRUTE au-delà de laquelle un texte n'est pas examiné (relecture du lot 6,
+ * 2026-10-03). Les vraies limites (24 et 90 caractères) se mesurent APRÈS le
+ * nettoyage ; or nettoyer un texte de 80 000 « < » prenait plus de 3 secondes (4 fois
+ * plus à chaque doublement), et rien ne limite la taille d'une requête : un seul
+ * envoi d'un revendeur connecté bloquait le serveur. Aucun nom de rayon ni aucune
+ * annonce légitime n'approche cette longueur, balises comprises : au-delà, le texte
+ * est refusé à l'écriture, et coupé à la lecture, AVANT tout remplacement.
+ */
+export const TEXTE_BRUT_MAX = 200;
+
+const tropLong = (brut: unknown): boolean => typeof brut === 'string' && brut.length > TEXTE_BRUT_MAX;
+
+/**
  * Texte court, propre : sans balise (un nom de rayon ou une annonce n'est jamais
  * du HTML), sans caractère de contrôle, espaces réduits, emoji jamais coupé.
+ *
+ * Coupé à TEXTE_BRUT_MAX avant le premier remplacement, et balise cherchée sans
+ * « < » à l'intérieur (/<[^<>]*>/) : chaque caractère n'est lu qu'une fois, quelle
+ * que soit l'entrée (l'ancienne /<[^>]*>/ relisait toute la suite à chaque « < »).
  */
 function textePropre(brut: unknown): string {
   if (typeof brut !== 'string') return '';
-  return texteBienForme(brut)
-    .replace(/<[^>]*>/g, ' ')
+  return texteBienForme(brut.slice(0, TEXTE_BRUT_MAX))
+    .replace(/<[^<>]*>/g, ' ')
     .replace(/[\u0000-\u001f\u007f<>]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
 // Un numéro de téléphone : 8 chiffres ou plus, collés ou séparés (même règle que
-// le titre de l'annonce aux abonnés, lot 5).
-const NUMERO = /(?:\d[\s.\-]?){8,}/;
-const LIEN = /https?:\/\/|www\.|wa\.me/i;
+// le titre de l'annonce aux abonnés, lot 5). Relecture du lot 6 (2026-10-03) :
+// « 76/12/34/56 », « 76_12_34_56 » et « 76,12,34,56 » passaient ; ces trois
+// séparateurs sont reconnus. UN séparateur au plus entre deux chiffres : une liste
+// (« Tailles 38, 40, 42, 44 ») n'est pas un numéro.
+const NUMERO = /(?:\d[\s.\-\/_,]?){8,}/;
+// Une date complète (« 10/10/2026 ») compte 8 chiffres sans être un numéro : elle
+// est retirée avant de chercher un numéro (une annonce datée en porte souvent une).
+const DATE = /\b(?:0?[1-9]|[12]\d|3[01])[\/.\-](?:0?[1-9]|1[0-2])[\/.\-]20[2-4]\d\b/g;
+// Un lien. Relecture du lot 6 (2026-10-03) : seuls « http(s):// », « www. » et
+// « wa.me » étaient reconnus ; un lien écrit comme on le tape s'affichait donc sur
+// la vitrine publique, alors que la commande doit rester sur Suguba (décision du
+// fondateur : pas de WhatsApp du revendeur pour l'instant). Sont reconnus :
+//  - un nom de site (« facebook.com/awamode », « wa.link/… », « bit.ly/… »), par
+//    ses terminaisons courantes, non suivies d'une lettre (« Bonjour.Merci », une
+//    phrase sans espace après le point, n'est pas un lien) ;
+//  - les liens courts en « .me » de WhatsApp, Telegram et Facebook, nommés un par
+//    un : « .me » seul refuserait « Merci.Me voici » ;
+//  - tout « nom.xx/ » suivi d'un chemin, quelle que soit la terminaison ;
+//  - une adresse e-mail (« awa@gmail.com »).
+const LIEN = /https?:\/\/|www\.|\b(?:wa|t|m|fb)\.me\b|\b[a-z0-9-]+\.(?:com|net|org|info|biz|ml|sn|ci|bf|fr|ly|link|app|io|co|ee|cc|gg|to|be|tv|shop|store|site|page|online|africa|xyz)(?![\p{L}\p{N}-])|\b[a-z0-9-]+\.[a-z]{2,}\/|@[a-z0-9-]+\.[a-z]{2,}/iu;
 // Une année (« Tabaski 2027 ») n'est pas un prix ; tout autre nombre de 3 chiffres
 // ou plus en est un sur une vitrine (« Tout à 5000 »).
 const ANNEE = /\b20[2-4]\d\b/g;
 
+/** Un numéro de téléphone, un lien ou une adresse e-mail (texte déjà nettoyé). */
+const contact = (texte: string): boolean => NUMERO.test(texte.replace(DATE, ' ')) || LIEN.test(texte);
+/** Un nombre de 3 chiffres ou plus qui n'est pas une année : un prix, sur une vitrine. */
+const prixSeul = (texte: string): boolean => /\d{3,}/.test(texte.replace(ANNEE, ''));
+
 /** Clés que la vitrine réserve : la section « Coups de cœur », et l'intitulé de l'emplacement sponsorisé. */
 const CLES_RESERVEES: ReadonlySet<string> = new Set(['coups-de-coeur-rayon', 'coup-de-coeur', 'a-la-une']);
 
+const NOM_TROP_LONG = `Le nom d’un rayon fait ${RAYON_NOM_MAX} caractères au plus.`;
+const PRIX_DANS_LE_NOM = 'Pas de prix ni de remise dans le nom d’un rayon.';
+
 /**
  * Pourquoi ce nom de rayon est refusé, ou null s'il convient. Le nom s'affiche en
- * titre sur la vitrine publique : ni prix, ni remise, ni numéro de téléphone
- * (Suguba n'applique pas de remise, et la vente reste sur Suguba).
+ * titre sur la vitrine publique : ni prix, ni remise, ni numéro de téléphone, ni
+ * lien (Suguba n'applique pas de remise, et la vente reste sur Suguba).
+ *
+ * Relecture du lot 6 (2026-10-03) : « Tout à 5000 » ou « Pagnes à 2500 » passaient
+ * (seuls « 5 000 » et « 5000 F » étaient refusés). Même règle que l'annonce : un
+ * nombre de 3 chiffres ou plus est un prix, sauf une année (« Pagnes 2026 »).
  */
 export function refusNomRayon(brut: string | null | undefined): string | null {
+  if (tropLong(brut)) return NOM_TROP_LONG;
   const nom = textePropre(brut ?? '');
   if (nom.length < RAYON_NOM_MIN) return `Le nom d’un rayon fait au moins ${RAYON_NOM_MIN} caractères.`;
-  if (nom.length > RAYON_NOM_MAX) return `Le nom d’un rayon fait ${RAYON_NOM_MAX} caractères au plus.`;
+  if (nom.length > RAYON_NOM_MAX) return NOM_TROP_LONG;
   if (!/[\p{L}\p{N}]/u.test(nom)) return 'Le nom d’un rayon doit contenir des lettres.';
   if (CLES_RESERVEES.has(cleRayon(nom))) return 'Ce nom est réservé. Choisissez-en un autre.';
-  if (promesseChiffree(nom, { nombreSeul: false }) !== null) return 'Pas de prix ni de remise dans le nom d’un rayon.';
-  if (NUMERO.test(nom) || LIEN.test(nom)) return 'Pas de numéro de téléphone ni de lien dans le nom d’un rayon.';
+  if (promesseChiffree(nom, { nombreSeul: false }) !== null) return PRIX_DANS_LE_NOM;
+  if (contact(nom)) return 'Pas de numéro de téléphone ni de lien dans le nom d’un rayon.';
+  if (prixSeul(nom)) return PRIX_DANS_LE_NOM;
   return null;
 }
+
+const ANNONCE_TROP_LONGUE = `${ANNONCE_TEXTE_MAX} caractères au plus.`;
 
 const REFUS_ANNONCE: Record<PromesseChiffree, string> = {
   pourcentage: 'Pas de pourcentage : Suguba n’applique pas de remise.',
@@ -141,13 +200,14 @@ const REFUS_ANNONCE: Record<PromesseChiffree, string> = {
  * affiches (lot 3) et le titre de l'annonce aux abonnés (lot 5).
  */
 export function refusAnnonce(brut: string | null | undefined): string | null {
+  if (tropLong(brut)) return ANNONCE_TROP_LONGUE;
   const texte = textePropre(brut ?? '');
   if (!texte) return null;
-  if (texte.length > ANNONCE_TEXTE_MAX) return `${ANNONCE_TEXTE_MAX} caractères au plus.`;
+  if (texte.length > ANNONCE_TEXTE_MAX) return ANNONCE_TROP_LONGUE;
   const promesse = promesseChiffree(texte, { nombreSeul: false });
   if (promesse) return REFUS_ANNONCE[promesse];
-  if (NUMERO.test(texte) || LIEN.test(texte)) return 'Pas de numéro de téléphone ni de lien : la commande se passe sur Suguba.';
-  if (/\d{3,}/.test(texte.replace(ANNEE, ''))) return REFUS_ANNONCE.montant;
+  if (contact(texte)) return 'Pas de numéro de téléphone ni de lien : la commande se passe sur Suguba.';
+  if (prixSeul(texte)) return REFUS_ANNONCE.montant;
   return null;
 }
 
@@ -181,6 +241,9 @@ function rayonsPropres(brut: unknown, selection: ReadonlySet<string> | null, str
   for (const element of brut.slice(0, RAYONS_MAX)) {
     const rayon = objet(element);
     if (!rayon) { if (strict) return { erreur: 'Rayons illisibles.' }; continue; }
+    // Écriture : un nom démesuré est refusé sans être nettoyé (relecture du lot 6).
+    // Lecture : textePropre le coupe avant tout remplacement.
+    if (strict && tropLong(rayon.nom)) return { erreur: NOM_TROP_LONG };
     const complet = textePropre(rayon.nom);
     const nom = strict ? complet : couperTexte(complet, RAYON_NOM_MAX).trim();
     const refus = refusNomRayon(nom);
@@ -207,6 +270,9 @@ function annoncePropre(brut: unknown, maintenant: number, strict: boolean): Anno
   if (brut == null) return { annonce: null };
   const source = objet(brut);
   if (!source) return strict ? { erreur: 'Annonce illisible.' } : { annonce: null };
+  // Écriture : un texte démesuré est refusé sans être nettoyé (relecture du lot 6) —
+  // avant, 80 000 « < » étaient nettoyés en 3 secondes, puis pris pour « pas d'annonce ».
+  if (strict && tropLong(source.texte)) return { erreur: ANNONCE_TROP_LONGUE };
   const texte = textePropre(source.texte);
   if (!texte) return { annonce: null };
   const refus = refusAnnonce(texte);
@@ -243,10 +309,12 @@ export function lireReglages(brut: unknown): ReglagesBoutique {
  * rayons. Une seule valeur refusée = rien n'est écrit.
  *
  *  - rayons : 8 au plus ; nom de 2 à 24 caractères, sans balise, ni prix, ni
- *    numéro ; clé tirée du nom (cleRayon) et unique ; un article dans un seul
- *    rayon maison ; les identifiants hors de la sélection réelle sont retirés ;
- *  - annonce : 90 caractères au plus, sans « % » ni montant, fin dans 14 jours au
- *    plus ; `null` ou un texte vide la retire.
+ *    numéro, ni lien ; clé tirée du nom (cleRayon) et unique ; un article dans un
+ *    seul rayon maison ; les identifiants hors de la sélection réelle sont retirés ;
+ *  - annonce : 90 caractères au plus, sans « % » ni montant, ni numéro, ni lien,
+ *    fin dans 14 jours au plus ; `null` ou un texte vide la retire ;
+ *  - un nom ou un texte de plus de TEXTE_BRUT_MAX caractères bruts est refusé sans
+ *    être examiné.
  */
 export function normaliserReglages(
   brut: unknown,

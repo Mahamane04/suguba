@@ -198,11 +198,44 @@
  "journal": [
   {
    "date": "2026-10-03",
+   "titre": "Boutique revendeur, lot 6 : corrections de relecture",
+   "demande": "« “Ma boutique” doit montrer la boutique elle-même (logo, couverture, produits ajoutés) et non les réglages ; il veut des outils pour gérer sa boutique (personnalisation, catégories/rayons, produits mis en avant, et ce qui aide à vendre), pour un vrai sentiment d’appropriation. »",
+   "realise": [
+    "Un nom de rayon ou une annonce démesurés ne peuvent plus bloquer le serveur. Avant, un seul envoi d’un revendeur connecté — un nom ou un message fait de 80 000 « < » — occupait le serveur plus de 3 secondes (4 fois plus à chaque doublement : environ 7 minutes pour 1 Mo), pendant lesquelles personne d’autre n’était servi. Un texte de plus de 200 caractères est maintenant refusé tout de suite, sans être examiné. Ce défaut n’était atteignable qu’après le SQL du lot 6 : il n’a jamais été en ligne.",
+    "Nom d’un rayon : un prix écrit d’un seul tenant (« Tout à 5000 », « Pagnes à 2500 », « Prix 1000 ») est refusé, comme dans l’annonce. Avant, seuls « 5 000 » et « 5000 F » l’étaient, alors que ce nom est un titre de la vitrine publique et que le guide disait les prix refusés. Une année reste permise (« Pagnes 2026 »), ainsi que « Taille 44 » ou « Lot de 12 ».",
+    "Annonce et nom de rayon, « ni numéro ni lien » : sont maintenant refusés un lien écrit comme on le tape (« facebook.com/awamode », « wa.link/… », « bit.ly/… », « tiktok.com/@… »), une adresse e-mail, et un numéro séparé par « / », « _ » ou « , » (« 76/12/34/56 »). Avant, seuls « http… », « www. » et « wa.me » étaient reconnus. Une date (« Arrivage le 10/10/2026 ») et une liste (« Tailles 38, 40, 42, 44 ») restent permises.",
+    "Rayons en arabe, en n’ko ou en bambara : deux rayons aux noms différents sont acceptés. Avant, tout nom sans lettre de a à z recevait le même lien (« rayon »), et « Fɛrɛ » et « Fɔrɔ » aussi : le deuxième rayon était refusé par « Vous avez déjà un rayon de ce nom », à tort. Le lien de ces rayons se termine maintenant par une courte empreinte du nom ; les liens des noms écrits de a à z (accents compris) ne changent pas.",
+    "« Partager » un rayon depuis « Mes rayons » ne prépare plus que le lien de ce rayon. Avant, un lien suivi de toute la boutique était d’abord créé : une ligne « Ma boutique » apparaissait dans « Mes partages » et un partage était compté, pour un partage qui n’avait pas eu lieu.",
+    "Mes rayons, à 390 px : le bouton de la barre s’appelle « Enregistrer » (avant : « Enregistrer mes rayons »). Avec « Annuler », l’ancien libellé occupait toute la barre : « Non enregistré » n’avait plus de place et passait sous « Annuler ».",
+    "Feuille « Nouveau rayon » / « Modifier le rayon » : sous chaque article, la précision (« Dans « Pour la fête de Tabaski » », « Coup de cœur, affiché en tête ») a sa propre ligne, sous le prix, et n’est plus coupée. Avant, « prix · précision » tenait sur une seule ligne coupée par « … » dès 10 000 F, ou dès que le nom du rayon était long. La même liste sert à « Mes boutiques ».",
+    "Tests : tests/ma-boutique-lot6-relecture.test.cjs (11 tests), dont la vraie route attaquée avec 80 000 « < » (refus immédiat, rien d’écrit) et la feuille de partage jouée comme l’application la joue (un seul lien créé)."
+   ],
+   "ecarts": [
+    "En local sur la branche ux/boutique-revendeur, non publié. 8 constats de relecture vérifiés, tous fondés (deux d’entre eux décrivent le même défaut : le prix dans un nom de rayon).",
+    "Le SQL du lot 6 reste à lancer par le fondateur (supabase/A-EXECUTER-2026-10-03-vitrine-boutique.sql, dans Supabase › SQL Editor) : ces corrections ne le changent pas.",
+    "Le même manque de place, plus léger, existe sur « Mes articles » (bouton « Enregistrer l’ordre », lot 3) : à 390 px, « Non enregistré » y est à l’étroit. Non corrigé ici (hors lot 6, et la feuille d’un article cite ce bouton par son nom) : à traiter.",
+    "En dessous de 390 px (375, 360), « Non enregistré » manque encore un peu de place à côté de « Annuler » et « Enregistrer », ici comme dans « Personnaliser » : la barre d’enregistrement est commune à toutes les pages de réglages et n’a pas été modifiée. À vérifier sur un petit téléphone.",
+    "« Ni numéro ni lien » ne peut pas tout reconnaître : un identifiant de réseau social sans adresse (« @awamode »), un numéro écrit en lettres ou séparé autrement (« 76 - 12 - 34 - 56 ») passent encore. À l’inverse, 8 chiffres séparés par « / » (« Tailles 38/40/42/44 ») sont pris pour un numéro, comme l’était déjà « 38-40-42-44 » ; « Tailles 38, 40, 42, 44 » passe. À valider par le fondateur.",
+    "Une date écrite avec des points (« 12.10.2026 ») reste refusée dans l’annonce, prise pour un montant (règle du lot 3, inchangée) ; « 12/10/2026 » et « 12 octobre » passent.",
+    "Un rayon nommé en arabe, en n’ko ou en bambara a un lien qui finit par 7 lettres et chiffres (« ?rayon=rayon-157fkh2 ») au lieu d’un mot lisible. Les catégories des fournisseurs suivent la même règle ; aucun lien déjà partagé n’est concerné (le partage par rayon du lot 4 n’est pas en ligne).",
+    "Un nom de rayon ou une annonce de plus de 200 caractères, balises et espaces compris, est refusé sans autre examen, avec le message de longueur habituel. Les écrans limitent déjà la saisie à 24 et 90 caractères.",
+    "Captures et vérifications à refaire sur la copie locale [QA], à 390 px : « Mes rayons » avec une modification en attente (« Non enregistré », « Annuler », « Enregistrer » sur une ligne) ; feuille « Modifier le rayon » avec un article déjà rangé dans un rayon au nom long. Aucun serveur n’a été lancé : les largeurs viennent des mesures de la relecture, recoupées avec la police de l’application."
+   ],
+   "pages": [
+    "rev-boutique-rayons",
+    "rev-boutique",
+    "vitrine-boutique",
+    "mes-boutiques"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-10-03",
    "titre": "Boutique revendeur, lot 6 : rayons personnalisés et annonce datée",
    "demande": "« “Ma boutique” doit montrer la boutique elle-même (logo, couverture, produits ajoutés) et non les réglages ; il veut des outils pour gérer sa boutique (personnalisation, catégories/rayons, produits mis en avant, et ce qui aide à vendre), pour un vrai sentiment d’appropriation. »",
    "realise": [
     "Le seul fichier SQL du chantier boutique est livré : supabase/A-EXECUTER-2026-10-03-vitrine-boutique.sql. Il ajoute à chaque boutique ses « réglages de vitrine » (rayons et annonce) et prépare le changement d’adresse unique (anciennes adresses gardées ; l’écran viendra au lot 8). Il ne modifie aucune boutique existante, ne touche à aucun article, et peut être relancé sans effet.",
-    "Nouvelle page « Mes rayons » : le revendeur crée ses propres rayons (« Pagnes », « Pour la fête »… 8 au plus, noms de 2 à 24 caractères), coche les articles de sa boutique à y ranger (un article dans un seul rayon), les monte ou les descend par ▲▼, les renomme ou les supprime. Rien ne change dans la boutique avant « Enregistrer mes rayons ». Supprimer un rayon ne retire aucun article de la boutique ni de la vente.",
+    "Nouvelle page « Mes rayons » : le revendeur crée ses propres rayons (« Pagnes », « Pour la fête »… 8 au plus, noms de 2 à 24 caractères), coche les articles de sa boutique à y ranger (un article dans un seul rayon), les monte ou les descend par ▲▼, les renomme ou les supprime. Rien ne change dans la boutique avant « Enregistrer ». Supprimer un rayon ne retire aucun article de la boutique ni de la vente.",
     "Vitrine : les rayons du revendeur s’affichent en premier, dans l’ordre qu’il a choisi, puis les rayons automatiques (par catégorie) pour les articles qu’il n’a pas rangés. Les coups de cœur restent en tête. Les pastilles de rayons, la recherche (le nom d’un rayon se cherche) et les liens ?rayon= suivent.",
     "« Partager » sur chaque rayon de « Mes rayons » : ouvre la feuille « Partager ma boutique » directement sur ce rayon, avec son lien suivi (/boutique/<adresse>?rayon=…). Partout, la feuille de partage propose les rayons du revendeur en premier ; « Mes partages » affiche « Ma boutique · Pagnes ».",
     "Annonce sur ma boutique : dans « Personnaliser », un message (90 caractères) et une date de fin (14 jours au plus, une date à 7 jours est proposée). Il s’affiche en haut de la vitrine jusqu’au soir de cette date, puis disparaît tout seul. Un pourcentage, un prix, une remise chiffrée, un numéro de téléphone ou un lien sont refusés, avec la raison écrite sous le champ.",
@@ -219,7 +252,7 @@
     "Un rayon qui porte le nom d’une catégorie (un rayon « Mode » alors que des articles sont de catégorie « Mode ») réunit ses articles cochés ET les autres articles de cette catégorie : la vitrine n’affiche jamais deux rayons du même nom. Choix non prévu au plan, à valider par le fondateur.",
     "Un article en coup de cœur reste affiché dans « Coups de cœur », pas dans son rayon (règle du lot 3). Un rayon dont tous les articles sont en coups de cœur ou ne s’affichent plus n’apparaît pas sur la vitrine ; « Mes rayons » le signale (« Pas affiché »).",
     "Seuls les rayons du revendeur s’ordonnent par ▲▼. Les rayons automatiques gardent l’ordre de leur premier article (réglé dans « Mes articles ») et passent toujours après.",
-    "Nom d’un rayon : en plus des limites du plan, sont refusés un prix ou une remise (« Promo -20 % »), un numéro de téléphone, le nom « Coups de cœur » et le nom de l’emplacement sponsorisé de l’accueil. À valider par le fondateur.",
+    "Nom d’un rayon : en plus des limites du plan, sont refusés un prix ou une remise (« Promo -20 % », « Tout à 5000 » ; une année comme « Pagnes 2026 » reste permise), un numéro de téléphone, un lien, le nom « Coups de cœur » et le nom de l’emplacement sponsorisé de l’accueil. À valider par le fondateur.",
     "Annonce : une année est permise (« Tabaski 2027 ») ; tout autre nombre de 3 chiffres ou plus est refusé comme un prix (« Tout à 5000 »). Un numéro de téléphone et un lien sont refusés aussi (non prévus au plan : la commande doit rester sur Suguba). La date de fin est un jour entier, à l’heure de Bamako.",
     "Les rayons du revendeur et l’annonce ne s’affichent que sur /boutique/<adresse>. L’ancienne adresse /r/<code> garde ses rayons automatiques, sans annonce.",
     "Boutiques supplémentaires (formules Pro) : la colonne existe pour elles aussi, mais « Mes rayons » et l’annonce ne gèrent que la boutique principale ; elles viendront au lot 7.",
@@ -4018,7 +4051,7 @@
     },
     {
      "nom": "Annonce de la boutique",
-     "role": "Le message écrit par le revendeur dans « Personnaliser », affiché sous l’en-tête jusqu’à sa date de fin (14 jours au plus), sans prix ni pourcentage. Le propriétaire a « Modifier » à côté, masqué en vue client."
+     "role": "Le message écrit par le revendeur dans « Personnaliser », affiché sous l’en-tête jusqu’à sa date de fin (14 jours au plus), sans prix ni pourcentage, sans numéro de téléphone ni lien. Le propriétaire a « Modifier » à côté, masqué en vue client."
     },
     {
      "nom": "Coups de cœur",
@@ -4046,7 +4079,7 @@
     },
     {
      "nom": "Lien d’un rayon (?rayon=)",
-     "role": "Ouvre la boutique et fait défiler jusqu’au rayon ou aux coups de cœur. L’aperçu WhatsApp annonce le rayon ; une clé inconnue ouvre la boutique en haut."
+     "role": "Ouvre la boutique et fait défiler jusqu’au rayon ou aux coups de cœur. L’aperçu WhatsApp annonce le rayon ; une clé inconnue ouvre la boutique en haut. Le lien d’un rayon nommé en arabe, en n’ko ou en bambara se termine par une courte empreinte de son nom."
     },
     {
      "nom": "N livraisons réussies",
@@ -4134,7 +4167,7 @@
     },
     {
      "nom": "Annonce sur ma boutique",
-     "role": "Après le SQL du lot 6 seulement. Un message (90 caractères) affiché en haut de la vitrine jusqu’à la date choisie, 14 jours au plus ; le lendemain, il disparaît tout seul. Une date à 7 jours est proposée. Refusés, avec la raison sous le champ : pourcentage, prix, remise chiffrée, numéro de téléphone, lien. « Affichée jusqu’au … » ou « Terminée le … » rappelle son état ; « Retirer l’annonce » vide le champ. Enregistrée par la barre, avec les autres textes."
+     "role": "Après le SQL du lot 6 seulement. Un message (90 caractères) affiché en haut de la vitrine jusqu’à la date choisie, 14 jours au plus ; le lendemain, il disparaît tout seul. Une date à 7 jours est proposée. Refusés, avec la raison sous le champ : pourcentage, prix, remise chiffrée, numéro de téléphone (même séparé par « / »), lien (même tapé sans « http » : « facebook.com/… », « wa.link/… ») ou adresse e-mail. « Affichée jusqu’au … » ou « Terminée le … » rappelle son état ; « Retirer l’annonce » vide le champ. Enregistrée par la barre, avec les autres textes."
     },
     {
      "nom": "Mes rayons",
@@ -4321,7 +4354,7 @@
     },
     {
      "nom": "Créer un rayon",
-     "role": "Action principale. Ouvre la feuille « Nouveau rayon » : un nom de 2 à 24 caractères et les articles à cocher (au moins un), puis « Ajouter ce rayon ». Refusés, avec la raison sous le champ : un nom déjà pris, un prix ou une remise, un numéro de téléphone, « Coups de cœur ». Absent à 8 rayons."
+     "role": "Action principale. Ouvre la feuille « Nouveau rayon » : un nom de 2 à 24 caractères et les articles à cocher (au moins un), puis « Ajouter ce rayon ». Refusés, avec la raison sous le champ : un nom déjà pris, un prix ou une remise (« Promo -20 % », « Tout à 5000 » ; une année comme « Pagnes 2026 » est permise), un numéro de téléphone, un lien ou une adresse e-mail, « Coups de cœur ». Un nom en arabe, en n’ko ou en bambara est accepté. Absent à 8 rayons."
     },
     {
      "nom": "Ligne d’un rayon",
@@ -4337,7 +4370,7 @@
     },
     {
      "nom": "Articles de ce rayon (feuille)",
-     "role": "Les articles de sa boutique, avec une recherche. Sous chaque article : son prix et, s’il y a lieu, « Dans « Fête » » (le cocher ici le déplace : un article n’est rangé que dans un seul rayon), « Coup de cœur, affiché en tête », « Épuisé » ou « Plus en vente »."
+     "role": "Les articles de sa boutique, avec une recherche. Sous chaque article : son prix puis, sur sa propre ligne s’il y a lieu, « Dans « Fête » » (le cocher ici le déplace : un article n’est rangé que dans un seul rayon), « Coup de cœur, affiché en tête », « Épuisé » ou « Plus en vente »."
     },
     {
      "nom": "Supprimer ce rayon",
@@ -4345,15 +4378,15 @@
     },
     {
      "nom": "Partager",
-     "role": "Sur chaque rayon affiché, quand la boutique est en ligne, a au moins 2 rayons et que rien n’attend d’être enregistré : ouvre la feuille « Partager ma boutique » sur ce rayon, avec son lien suivi."
+     "role": "Sur chaque rayon affiché, quand la boutique est en ligne, a au moins 2 rayons et que rien n’attend d’être enregistré : ouvre la feuille « Partager ma boutique » sur ce rayon, avec son lien suivi (seul le lien de ce rayon est préparé)."
     },
     {
      "nom": "Rayons automatiques",
      "role": "Les articles non rangés, regroupés par catégorie : affichés après ses rayons. Non modifiables ici ; leur ordre suit celui de « Mes articles »."
     },
     {
-     "nom": "Enregistrer mes rayons",
-     "role": "Barre collante : rien ne change dans la boutique avant ce bouton (« Annuler » possible). Une seule demande à la fois. Les clients voient les rayons dès l’enregistrement ; aucun article n’est retiré de la boutique."
+     "nom": "Enregistrer",
+     "role": "Barre collante (« Non enregistré », « Annuler », « Enregistrer ») : rien ne change dans la boutique avant ce bouton. Une seule demande à la fois. Les clients voient les rayons dès l’enregistrement ; aucun article n’est retiré de la boutique."
     },
     {
      "nom": "Écrans d’attente",

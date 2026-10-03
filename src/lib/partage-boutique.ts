@@ -68,23 +68,55 @@ export interface ChoixPartage {
   nombre: number;
 }
 
+/** Longueur d'une clé de rayon (estCleRayon, src/lib/reseau/codes.ts). */
+const CLE_MAX = 40;
+
+/**
+ * Empreinte courte et stable d'un texte : FNV-1a sur 32 bits, écrite en base 36
+ * (7 caractères [a-z0-9]). Calcul pur, identique sur le serveur et dans le navigateur.
+ */
+function empreinte(texte: string): string {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < texte.length; i += 1) {
+    h ^= texte.charCodeAt(i);
+    h = Math.imul(h, 0x01000193);
+  }
+  return (h >>> 0).toString(36).padStart(7, '0');
+}
+
 /**
  * Clé d'un rayon à partir de son nom (« Électroménager » → « electromenager »),
  * 40 caractères au plus. Jamais la clé réservée des coups de cœur.
+ *
+ * Relecture du lot 6 (2026-10-03) : la clé ne garde que a-z et 0-9. Un nom écrit
+ * en arabe ou en n'ko retombait donc sur « rayon », quel qu'il soit, et deux noms
+ * bambara comme « Fɛrɛ » et « Fɔrɔ » sur « f-r » : le revendeur ne pouvait créer
+ * qu'UN rayon dans ces écritures (« Vous avez déjà un rayon de ce nom », à tort),
+ * et la vitrine aurait fondu deux catégories en une. Dès qu'une lettre ou un
+ * chiffre du nom ne peut pas s'écrire dans la clé, elle se termine par une
+ * empreinte du nom entier : deux noms différents ont deux clés différentes, et le
+ * même nom a toujours la même. Les noms qui s'écrivent en a-z et 0-9 (accents
+ * compris) gardent exactement leur clé d'avant.
  */
 export function cleRayon(categorie: string | null | undefined): string {
   const nom = String(categorie || '').trim() || RAYON_SANS_CATEGORIE;
-  const cle = nom
+  const plat = nom
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     // « œ » et « æ » ne se décomposent pas : « cœur » donnerait « c-ur ».
     .replace(/œ/g, 'oe')
-    .replace(/æ/g, 'ae')
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 40)
-    .replace(/-+$/, '') || 'rayon';
+    .replace(/æ/g, 'ae');
+  const lisible = plat.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  // Les mots du nom, sans ponctuation ni emoji (comme la clé, qui les ignore déjà).
+  const mots = plat.replace(/[^\p{L}\p{N}\p{M}]+/gu, ' ').trim();
+  let cle: string;
+  if (/(?![a-z0-9])[\p{L}\p{N}]/u.test(mots)) {
+    const marque = empreinte(mots);
+    cle = `${lisible.slice(0, CLE_MAX - marque.length - 1).replace(/-+$/, '') || 'rayon'}-${marque}`;
+  } else {
+    cle = lisible.slice(0, CLE_MAX).replace(/-+$/, '') || 'rayon';
+  }
   return cle === RAYON_COUPS_DE_COEUR ? `${cle.slice(0, 34)}-rayon` : cle;
 }
 

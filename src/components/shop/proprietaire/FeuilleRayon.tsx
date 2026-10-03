@@ -14,8 +14,8 @@ import { RAYON_NOM_MAX, RAYON_NOM_MIN } from '@/lib/boutique-reglages';
  *
  * Un nom court (2 à 24 caractères) et les articles à y ranger, cochés dans la
  * liste des articles de SA boutique. Rien n'est écrit ici : la feuille pose le
- * rayon dans la liste à l'écran, et « Enregistrer mes rayons » envoie le tout en
- * une seule requête (même modèle que « Mes articles »).
+ * rayon dans la liste à l'écran, et « Enregistrer » (la barre de « Mes rayons »)
+ * envoie le tout en une seule requête (même modèle que « Mes articles »).
  *
  * Ranger un article dans un rayon ne touche jamais à la sélection de la
  * boutique : supprimer un rayon ne retire aucun article, ni aucune offre.

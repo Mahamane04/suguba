@@ -820,7 +820,9 @@ test('Partage : les rayons maison sont proposés en premier ; « Partager ce ray
   const feuille = sansCommentaires(lire('src/components/shop/proprietaire/PartageBoutique.tsx'));
   assert.match(feuille, /choixDePartage\(articles \|\| \[\], rayons\)/);
   assert.match(feuille, /articlesAAnnoncer\(articles \|\| \[\], cle, undefined, rayons\)/);
-  assert.match(feuille, /if \(ouvert && choixInitial\) setChoix\(choixInitial\);/);
+  // Relecture du lot 6 : appliqué pendant le rendu, plus dans un effet (voir ma-boutique-lot6-relecture.test.cjs).
+  assert.match(feuille, /const demande = ouvert \? choixInitial : null;/);
+  assert.match(feuille, /if \(demande\) setChoix\(demande\);/);
   assert.match(feuille, /rayons: lireReglages\(b\.reglages\)\.rayons/, 'rayons lus par la règle commune, jamais bruts');
 });
 
@@ -859,7 +861,8 @@ test('SelecteurArticles (extrait de Mes boutiques) : avec bouton « Enregistrer 
   assert.match(html, /max-h-80 overflow-y-auto/);
   assert.equal((html.match(/type="checkbox"/g) || []).length, 2);
   assert.equal((html.match(/checked=""/g) || []).length, 1);
-  assert.ok(html.includes(`${formatF(12500)} · Dans « Fête »`), 'prix en formatF, puis la note');
+  // Relecture du lot 6 : la note a sa propre ligne sous le prix (elle était coupée à 390 px).
+  assert.ok(html.includes(`>${formatF(12500)}</span><span class="block text-slate-500 break-words">Dans « Fête »</span>`), 'prix en formatF, puis la note');
   assert.match(html, />—<\/span>/, 'prix inconnu : « — », jamais 0');
   assert.match(html, /aria-label="Rechercher un article"/);
   assert.match(html, /min-h-\[60px\]/, 'ligne de 60 px pour le pouce');
@@ -1033,7 +1036,7 @@ test('Page « Mes rayons », AVANT le SQL : « Les rayons arrivent bientôt », 
   } finally { global.fetch = RESEAU_INTERDIT; }
 });
 
-test('Page « Mes rayons », APRÈS : créer, ranger, ordonner, supprimer — tout reste à l’écran jusqu’à « Enregistrer mes rayons », une seule requête, les articles ne bougent pas', async () => {
+test('Page « Mes rayons », APRÈS : créer, ranger, ordonner, supprimer — tout reste à l’écran jusqu’à « Enregistrer », une seule requête, les articles ne bougent pas', async () => {
   const appels = [];
   brancherRoutes(appels);
   try {
@@ -1059,8 +1062,9 @@ test('Page « Mes rayons », APRÈS : créer, ranger, ordonner, supprimer — to
     assert.equal(page.du(arbre, 'FeuilleRayon').length, 0, 'la feuille se ferme');
     let barre = page.du(arbre, 'BarreEnregistrement')[0];
     assert.equal(barre.props.modifie, true);
-    assert.equal(barre.props.libelle, 'Enregistrer mes rayons');
-    assert.deepEqual(ecritures(), [], 'rien n’est écrit avant « Enregistrer mes rayons »');
+    // Relecture du lot 6 : « Enregistrer mes rayons » ne laissait pas de place à « Non enregistré » à 390 px.
+    assert.equal(barre.props.libelle, 'Enregistrer');
+    assert.deepEqual(ecritures(), [], 'rien n’est écrit avant « Enregistrer »');
     assert.equal(page.boutons(arbre, 'Partager le rayon Pagnes').length, 0, 'un rayon pas encore enregistré ne se partage pas');
     assert.match(texteDe(React.createElement('ul', null, trouver(arbre, (e) => e.type === 'li'))), /Pagnes 3 articles dans ma boutique/);
 
@@ -1161,7 +1165,7 @@ test('Page « Mes rayons » : une seule requête PATCH {reglages: {rayons}} par 
   assert.match(page, /fetch\('\/api\/reseller\/boutique', \{\s*method: 'PATCH',[\s\S]*?body: JSON\.stringify\(\{ reglages: \{ rayons: envoye\.map\(\(\{ nom, ids \}\) => \(\{ nom, ids \}\)\) \} \}\),/);
   assert.doesNotMatch(page, /\/api\/reseller\/shop|method: 'DELETE'|method: 'POST'/, 'jamais la route des articles');
   assert.match(page, /if \(verrou\.current\) return;/);
-  assert.match(page, /<BarreEnregistrement[\s\S]*?libelle="Enregistrer mes rayons"[\s\S]*?barreDuBasPermanente/);
+  assert.match(page, /<BarreEnregistrement[\s\S]*?libelle="Enregistrer"[\s\S]*?barreDuBasPermanente/);
   // ▲▼ de 40 px avec un nom lisible ; créer, modifier, supprimer (confirmé) ; partager un rayon enregistré.
   assert.match(page, /const BOUTON_ORDRE = 'w-10 h-10 /);
   assert.match(page, /aria-label=\{`Monter le rayon \$\{r\.nom\}`\}/);
@@ -1319,7 +1323,7 @@ test('Guide : lot 6 en tête du journal, avec le SQL à lancer dans les écarts 
   assert.ok(fiche.elements.length >= 5);
   const texte = (id) => JSON.stringify(guide.pages.find((p) => p.id === id));
   assert.match(texte('rev-boutique-rayons'), /Créer un rayon/);
-  assert.match(texte('rev-boutique-rayons'), /Enregistrer mes rayons/);
+  assert.match(texte('rev-boutique-rayons'), /"nom":"Enregistrer"/);
   assert.match(texte('rev-boutique'), /Annonce sur ma boutique/);
   assert.match(texte('vitrine-boutique'), /Rayons/);
   assert.match(texte('vitrine-boutique'), /annonce/i);

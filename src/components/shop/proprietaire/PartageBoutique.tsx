@@ -43,7 +43,8 @@ const QrCode = dynamic(() => import('@/components/common/QrCode'), { ssr: false 
  *
  * Lot 6 (2026-10-03) : les rayons MAISON du revendeur sont proposés en premier,
  * dans son ordre (fournis avec la boutique, ou lus avec elle). `choixInitial`
- * ouvre la feuille sur un rayon : « Partager ce rayon » de « Mes rayons ».
+ * ouvre la feuille sur un rayon : « Partager ce rayon » de « Mes rayons » — seul
+ * le lien de ce rayon est alors préparé (relecture du lot 6).
  */
 
 export interface BoutiqueAPartager {
@@ -129,7 +130,18 @@ export default function PartageBoutique({
 
   // « Partager ce rayon » : chaque ouverture repart du rayon demandé. Sans rayon
   // demandé, le dernier choix est gardé comme avant.
-  useEffect(() => { if (ouvert && choixInitial) setChoix(choixInitial); }, [ouvert, choixInitial]);
+  // Relecture du lot 6 (2026-10-03) : appliqué PENDANT le rendu (React rejoue alors
+  // le rendu avant tout effet), plus dans un effet. « Mes rayons » monte la feuille
+  // fermée, sans rayon ; à l'ouverture, l'effet arrivait après celui qui prépare le
+  // lien, parti avec l'ancien choix : un lien suivi de TOUTE la boutique était créé
+  // (une ligne « Ma boutique » dans « Mes partages » et un partage journalisé) pour
+  // un revendeur qui ne partageait qu'un rayon.
+  const demande = ouvert ? choixInitial : null;
+  const [applique, setApplique] = useState<string | null>(demande);
+  if (demande !== applique) {
+    setApplique(demande);
+    if (demande) setChoix(demande);
+  }
 
   const rayons = boutique?.rayons;
   const listeChoix: ChoixPartage[] = useMemo(() => choixDePartage(articles || [], rayons), [articles, rayons]);

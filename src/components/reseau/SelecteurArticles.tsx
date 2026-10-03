@@ -23,6 +23,12 @@ import { normaliserRecherche } from '@/lib/recherche-texte';
  * `note` dit où se trouve déjà un article (« Dans « Pagnes » ») : le cocher ici le
  * déplace, un article n'est rangé que dans un seul rayon maison. La recherche
  * ignore les accents, comme celle de la vitrine.
+ *
+ * Relecture du lot 6 (2026-10-03) : la précision était écrite après le prix, sur
+ * une seule ligne coupée par « … ». À 390 px, « 12 500 F · Coup de cœur, affiché en
+ * tête » et « Dans « <rayon de 24 caractères> » » ne tenaient pas : le revendeur
+ * ne lisait pas où était rangé l'article qu'il allait déplacer. Elle a maintenant
+ * sa propre ligne, sous le prix, et passe à la ligne plutôt que d'être coupée.
  */
 
 export interface ArticleACocher {
@@ -76,9 +82,8 @@ export default function SelecteurArticles({
                 <span className="relative w-10 h-10 rounded-xl overflow-hidden bg-slate-100 shrink-0"><ProductImage src={a.image || ''} alt="" fill className="object-cover" /></span>
                 <span className="min-w-0 flex-1 text-xs">
                   <span className="block font-semibold text-slate-900 truncate">{a.nom}</span>
-                  <span className="block text-slate-500 truncate">
-                    {formatF(a.prix)}{a.note ? <> · {a.note}</> : null}
-                  </span>
+                  <span className="block text-slate-500 tabular-nums">{formatF(a.prix)}</span>
+                  {a.note ? <span className="block text-slate-500 break-words">{a.note}</span> : null}
                 </span>
               </label>
             </li>
