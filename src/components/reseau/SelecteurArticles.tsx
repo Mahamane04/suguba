@@ -29,6 +29,12 @@ import { normaliserRecherche } from '@/lib/recherche-texte';
  * tête » et « Dans « <rayon de 24 caractères> » » ne tenaient pas : le revendeur
  * ne lisait pas où était rangé l'article qu'il allait déplacer. Elle a maintenant
  * sa propre ligne, sous le prix, et passe à la ligne plutôt que d'être coupée.
+ *
+ * Relecture du lot 7 (2026-10-03) : la vignette de 40 px dit sa taille (`sizes`).
+ * Sans elle, une image en `fill` est supposée large comme l'écran : chaque ligne
+ * demandait une photo de 828 à 1 200 px, jusqu'à 300 fois dans « Choisir les
+ * articles » d'une boutique Pro, sur un réseau mobile. Sans photo : l'icône seule
+ * (`compact`), le texte « Photo indisponible » ne tient pas dans 40 px.
  */
 
 export interface ArticleACocher {
@@ -79,7 +85,7 @@ export default function SelecteurArticles({
               {/* Toute la ligne coche l'article : une cible de 60 px pour le pouce. */}
               <label className="flex items-center gap-3 p-2.5 min-h-[60px] cursor-pointer">
                 <input type="checkbox" className="w-5 h-5 shrink-0 accent-suguba-profond" checked={coche} onChange={() => basculer(a.id)} />
-                <span className="relative w-10 h-10 rounded-xl overflow-hidden bg-slate-100 shrink-0"><ProductImage src={a.image || ''} alt="" fill className="object-cover" /></span>
+                <span className="relative w-10 h-10 rounded-xl overflow-hidden bg-slate-100 shrink-0"><ProductImage src={a.image || ''} alt="" fill sizes="40px" className="object-cover" compact /></span>
                 <span className="min-w-0 flex-1 text-xs">
                   <span className="block font-semibold text-slate-900 truncate">{a.nom}</span>
                   <span className="block text-slate-500 tabular-nums">{formatF(a.prix)}</span>

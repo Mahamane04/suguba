@@ -23,13 +23,17 @@
  *
  * La boutique visée appartient TOUJOURS à la session : la principale par
  * l'identifiant du compte, une boutique Pro après vérification par
- * boutiqueDuCompte (sinon null, que les routes traduisent en 404).
+ * lireBoutiqueDuCompte (sinon null, que les routes traduisent en 404).
+ *
+ * Relecture du lot 7 (2026-10-03) : une lecture de `stores` en panne n'est plus
+ * prise pour une boutique absente. cibleArticles renvoie alors BOUTIQUE_ILLISIBLE,
+ * que les routes traduisent en 503 : l'écran propose « Réessayer » au lieu de dire
+ * à son propriétaire que sa boutique « n'existe pas, ou n'est pas à vous ».
  */
 import type { getSupabaseAdmin } from '../supabase-admin';
 import { partageable } from '../shop';
 import { ARTICLES_MAX, controlerEnsemble, positionAjout, positionsAEcrire, positionsPourOrdre, trierSelection, type LigneSelection } from '../boutique-ordre';
-import type { BoutiqueReseau } from './boutiques';
-import { boutiqueDuCompte } from './boutiques-multiples';
+import { lireBoutiqueDuCompte, type BoutiqueReseau } from './boutiques';
 
 type Admin = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
 
@@ -37,6 +41,9 @@ type Admin = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
 export type CibleArticles =
   | { table: 'reseller_shop_items'; colonne: 'reseller_id'; valeur: string; pro: false; boutique: BoutiqueReseau | null }
   | { table: 'store_products'; colonne: 'store_id'; valeur: string; pro: true; boutique: BoutiqueReseau };
+
+/** La base n'a pas répondu : on ne sait pas si la boutique visée est à la session. */
+export const BOUTIQUE_ILLISIBLE = 'illisible' as const;
 
 /** Réponse d'une écriture, prête pour NextResponse.json(corps, { status: statut }). */
 export interface ReponseArticles {
@@ -50,19 +57,23 @@ const refus = (statut: number, error: string): ReponseArticles => ({ statut, cor
  * Boutique dont on gère les articles.
  *  - `boutiqueId` absent (undefined ou null) : la principale du compte, sans
  *    aucune lecture, comme avant ;
- *  - fourni : la boutique doit appartenir au compte (boutiqueDuCompte), sinon
- *    null. Une valeur vide ou illisible donne null elle aussi, JAMAIS la
- *    principale : un écran qui viserait une boutique Pro avec un identifiant
- *    perdu écrirait sinon dans la table qui porte les offres du revendeur ;
+ *  - fourni : la boutique doit appartenir au compte (lireBoutiqueDuCompte : une
+ *    seule lecture de `stores`, propriétaire compris), sinon null. Une valeur vide
+ *    ou illisible donne null elle aussi, JAMAIS la principale : un écran qui
+ *    viserait une boutique Pro avec un identifiant perdu écrirait sinon dans la
+ *    table qui porte les offres du revendeur ;
+ *  - lecture en panne : BOUTIQUE_ILLISIBLE (503), jamais null (404) — et jamais la
+ *    principale non plus ;
  *  - l'identifiant de la principale mène à reseller_shop_items : ses articles
  *    n'ont jamais été dans store_products.
  */
-export async function cibleArticles(uid: string, boutiqueId?: unknown): Promise<CibleArticles | null> {
+export async function cibleArticles(uid: string, boutiqueId?: unknown): Promise<CibleArticles | typeof BOUTIQUE_ILLISIBLE | null> {
   if (boutiqueId === undefined || boutiqueId === null) {
     return { table: 'reseller_shop_items', colonne: 'reseller_id', valeur: uid, pro: false, boutique: null };
   }
   if (typeof boutiqueId !== 'string' || boutiqueId.length === 0 || boutiqueId.length > 100) return null;
-  const boutique = await boutiqueDuCompte('reseller', uid, boutiqueId);
+  const { boutique, illisible } = await lireBoutiqueDuCompte('reseller', uid, boutiqueId);
+  if (illisible) return BOUTIQUE_ILLISIBLE;
   if (!boutique) return null;
   if (boutique.principale) return { table: 'reseller_shop_items', colonne: 'reseller_id', valeur: uid, pro: false, boutique };
   return { table: 'store_products', colonne: 'store_id', valeur: boutique.id, pro: true, boutique };

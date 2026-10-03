@@ -34,6 +34,11 @@ import { pageMesArticles } from '@/lib/reseau/porte-boutique';
  *  - FOURNISSEUR : la liste à cocher reste ici (le mode propriétaire côté
  *    fournisseur n'est pas dans ce chantier). Elle n'efface plus la sélection
  *    avant de la réécrire : une panne ne vide plus la boutique.
+ *
+ * Relecture du lot 7 (2026-10-03) : pour un fournisseur, « N article(s) choisis »
+ * et le bouton « Enregistrer N article(s) » ne comptent plus un produit qui n'est
+ * plus en vente (refusé, archivé) : la liste ne le montrait pas, il ne pouvait donc
+ * pas être décoché. La route ne le renvoie plus, et l'enregistrement le retire.
  */
 
 interface Boutique { id: string; slug: string; nom: string; quartier: string | null; principale: boolean; abonnes: number; statut: string }

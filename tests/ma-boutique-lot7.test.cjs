@@ -1025,7 +1025,8 @@ test('Source : store_products n’est écrit que par la couche commune et defini
   assert.match(multiples, /const suite = positionAjout\(/);
   assert.ok(multiples.indexOf('.insert(acceptes.map') < multiples.indexOf('.delete().eq('), 'les nouveaux sont insérés AVANT toute suppression');
   const couche = sansCommentaires(lire('src/lib/reseau/articles-boutique.ts'));
-  assert.match(couche, /boutiqueDuCompte\('reseller', uid, boutiqueId\)/);
+  // Relecture du lot 7 : la vérification lit la boutique elle-même (lireBoutiqueDuCompte), pour distinguer une panne d'une absence.
+  assert.match(couche, /lireBoutiqueDuCompte\('reseller', uid, boutiqueId\)/);
   assert.equal((couche.match(/\.delete\(\)/g) || []).length, 1, 'une seule suppression : celle d’UN article nommé');
   assert.match(couche, /\.delete\(\)\.eq\(cible\.colonne, cible\.valeur\)\.eq\('product_id', productId\)/);
   assert.doesNotMatch(couche, /\.upsert\(/);
@@ -1038,12 +1039,15 @@ test('Source : store_products n’est écrit que par la couche commune et defini
   for (const f of ['src/app/boutique/[slug]/page.tsx', 'src/components/shop/ShopView.tsx']) assert.doesNotMatch(lire(f), /reseller_commission|\bgains?\b/i, f);
 });
 
-test('Guide : le journal ouvre sur le lot 7, les fiches « Mes articles », « Mes boutiques » et la vitrine décrivent les boutiques Pro', () => {
+test('Guide : le lot 7 au journal, juste avant la relecture du lot 6 ; les fiches « Mes articles », « Mes boutiques » et la vitrine décrivent les boutiques Pro', () => {
   const guide = JSON.parse(lire('docs/guide/guide.json'));
   assert.equal(guide.majLe, '2026-10-03');
-  const entree = guide.journal[0];
+  // Relecture du lot 7 : son entrée passe devant celle-ci, qui n'est plus la première.
+  const rang = guide.journal.findIndex((j) => j.titre === 'Boutique revendeur, lot 7 : boutiques Pro au même niveau');
+  assert.ok(rang >= 0, 'entrée du lot 7');
+  const entree = guide.journal[rang];
+  assert.equal(guide.journal[rang + 1].titre, 'Boutique revendeur, lot 6 : corrections de relecture', 'juste avant la relecture du lot 6');
   assert.equal(entree.date, '2026-10-03');
-  assert.match(entree.titre, /^Boutique revendeur, lot 7 : /);
   assert.equal(entree.statut, 'en local');
   assert.match(entree.demande, /^« .*Ma boutique.*doit montrer la boutique elle-même/);
   assert.ok(entree.realise.length >= 5 && entree.ecarts.length >= 3);
@@ -1055,5 +1059,5 @@ test('Guide : le journal ouvre sur le lot 7, les fiches « Mes articles », « M
   assert.ok(fiche('mes-boutiques').suite.some((s) => s.id === 'rev-boutique-articles'));
   assert.ok(fiche('vitrine-boutique').elements.some((e) => /Boutique supplémentaire|formule Pro/i.test(e.nom)));
   assert.doesNotMatch(JSON.stringify([entree, fiche('rev-boutique-articles'), fiche('mes-boutiques')]), /À la une/);
-  assert.match(lire('REPRISE.md').split('\n').find((l) => l.startsWith('> **')), /boutique revendeur, lot 7/);
+  assert.ok(lire('REPRISE.md').split('\n').some((l) => l.startsWith('> **') && /boutique revendeur, lot 7 « Boutiques Pro au même niveau »/.test(l)));
 });

@@ -2,7 +2,7 @@ import { verifyActiveSession } from '@/lib/active-session';
 import { NextRequest, NextResponse } from 'next/server';
 import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { ajouterArticle, cibleArticles, ordonnerArticles, retirerArticle } from '@/lib/reseau/articles-boutique';
+import { BOUTIQUE_ILLISIBLE, ajouterArticle, cibleArticles, ordonnerArticles, retirerArticle } from '@/lib/reseau/articles-boutique';
 
 /**
  * Sélection d'articles de la boutique d'un revendeur (/boutique/<adresse>, et
@@ -27,8 +27,12 @@ import { ajouterArticle, cibleArticles, ordonnerArticles, retirerArticle } from 
  * écrites dans la couche commune src/lib/reseau/articles-boutique.ts, qui vise
  * reseller_shop_items (boutique principale, comme avant) ou store_products
  * (boutique supplémentaire). `boutique: <id>` dans le corps désigne une boutique
- * Pro : elle doit appartenir à la session (boutiqueDuCompte), sinon 404 et rien
+ * Pro : elle doit appartenir à la session (lireBoutiqueDuCompte), sinon 404 et rien
  * n'est écrit. Sans ce champ, rien ne change : la boutique principale.
+ *
+ * Relecture du lot 7 (2026-10-03) : base en panne pendant cette vérification →
+ * 503 « illisible pour le moment », rien n'est écrit ; plus « Boutique
+ * introuvable » (404) pour le vrai propriétaire.
  */
 
 async function revendeurConnecte(req: NextRequest) {
@@ -70,6 +74,7 @@ export async function POST(req: NextRequest) {
   // Boutique visée : la principale de la session, ou une boutique Pro qui lui
   // appartient (`boutique`). Celle d'un autre compte est « introuvable ».
   const cible = await cibleArticles(session.uid, corps?.boutique);
+  if (cible === BOUTIQUE_ILLISIBLE) return NextResponse.json({ error: 'Votre boutique est illisible pour le moment. Réessayez.' }, { status: 503 });
   if (!cible) return NextResponse.json({ error: 'Boutique introuvable.' }, { status: 404 });
 
   const reponse = estOrdre ? await ordonnerArticles(admin, cible, corps?.ordre, corps?.coupsDeCoeur ?? [])

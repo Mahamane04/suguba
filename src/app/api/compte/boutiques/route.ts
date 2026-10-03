@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sessionDeLaRequete } from '@/lib/reseau/route-session';
 import { exigerDroitFournisseur } from '@/lib/reseau/contexte-fournisseur';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { boutiqueParSlug, majBoutique } from '@/lib/reseau/boutiques';
+import { boutiqueParSlug, lireBoutiqueDuCompte, majBoutique } from '@/lib/reseau/boutiques';
 import { champsBoutiqueRevendeur } from '@/lib/reseau/champs-boutique-revendeur';
 import { estEnseigne, nomPublicBoutique, nomReserve } from '@/lib/enseigne';
 import { partageable } from '@/lib/shop';
 import {
-  articlesDeLaBoutique, boutiqueDuCompte, boutiquesDuCompte, creerBoutiqueSupplementaire,
-  definirArticlesDeLaBoutique, demanderFormule, formulesBoutiques, situationFormule,
+  articlesDeLaBoutique, boutiquesDuCompte, creerBoutiqueSupplementaire,
+  definirArticlesDeLaBoutique, demanderFormule, formulesBoutiques, produitsEnVenteDuFournisseur, situationFormule,
   type TypeCompteBoutique,
 } from '@/lib/reseau/boutiques-multiples';
 
@@ -30,6 +30,14 @@ import {
  *    `boutique` et `vitrine` {nom, enseigne} — le nom que voient les clients,
  *    calculé ICI — et son propre nom est enregistré en « Prénom I. », comme le
  *    fait PATCH /api/reseller/boutique pour la boutique principale.
+ *
+ * Relecture du lot 7 (2026-10-03) :
+ *  - FOURNISSEUR : `articles` ne contient plus un produit qui n'est plus approuvé
+ *    ou plus à lui. Sa liste à cocher ne le montre pas : il était pourtant compté
+ *    dans « N article(s) choisis » et « Enregistrer N article(s) », et renvoyé à
+ *    chaque enregistrement (definirArticlesDeLaBoutique le retire désormais) ;
+ *  - 'articles' et 'modifier' : base en panne pendant la vérification de la
+ *    boutique → 503, plus « Boutique introuvable » (404).
  */
 
 /** Numéro Mobile Money de Suguba affiché pour payer une formule. */
@@ -57,9 +65,17 @@ export async function GET(req: NextRequest) {
     situationFormule(c.type, c.proprietaireId),
     formulesBoutiques(),
   ]);
-  const articles = Object.fromEntries(await Promise.all(
+  const articles: Record<string, string[]> = Object.fromEntries(await Promise.all(
     boutiques.filter((b) => !b.principale).map(async (b) => [b.id, await articlesDeLaBoutique(b.id)] as const),
   ));
+  // Fournisseur (relecture du lot 7) : seulement ses produits encore en vente, en une
+  // lecture pour toutes ses boutiques. Lecture en échec : la liste reste entière (on
+  // n'invente pas un retrait) ; l'enregistrement, lui, revalide de toute façon.
+  if (c.type === 'supplier') {
+    const tous = Array.from(new Set(Object.values(articles).flat()));
+    const enVente = tous.length ? await produitsEnVenteDuFournisseur(c.proprietaireId, tous) : null;
+    if (enVente) for (const id of Object.keys(articles)) articles[id] = articles[id].filter((p) => enVente.has(p));
+  }
 
   // Articles sélectionnables : ses produits pour un fournisseur ; pour un revendeur,
   // le catalogue en vente QUI LUI RAPPORTE quelque chose (lot 7) — la commission et
@@ -106,7 +122,12 @@ export async function POST(req: NextRequest) {
   }
 
   // Les actions suivantes portent sur une boutique qui doit appartenir au compte.
-  const boutique = typeof corps.boutiqueId === 'string' ? await boutiqueDuCompte(c.type, c.proprietaireId, corps.boutiqueId) : null;
+  // Relecture du lot 7 : une lecture en panne n'est pas une boutique absente (503, pas 404).
+  const lue = typeof corps.boutiqueId === 'string' && corps.boutiqueId.length > 0 && corps.boutiqueId.length <= 100
+    ? await lireBoutiqueDuCompte(c.type, c.proprietaireId, corps.boutiqueId)
+    : { boutique: null, illisible: false };
+  if (lue.illisible) return NextResponse.json({ error: 'Vos boutiques sont indisponibles pour le moment. Réessayez.' }, { status: 503 });
+  const boutique = lue.boutique;
   if (!boutique) return NextResponse.json({ error: 'Boutique introuvable.' }, { status: 404 });
 
   if (corps.action === 'articles') {

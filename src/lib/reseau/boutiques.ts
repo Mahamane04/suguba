@@ -155,6 +155,38 @@ export async function boutiqueDuProprietaire(
 }
 
 /**
+ * UNE boutique d'un compte, par son identifiant (relecture du lot 7 du chantier
+ * boutique, 2026-10-03).
+ *
+ * Distingue la PANNE de l'absence. Avant, la vérification « cette boutique est-elle
+ * à ce compte ? » relisait toutes les boutiques du compte (1 + N lectures) par une
+ * fonction qui avale les erreurs : une lecture de `stores` en panne donnait « aucune
+ * boutique », donc « Boutique introuvable » (404) au vrai propriétaire, sans
+ * « Réessayer ».
+ *  - `illisible: true` : la base n'a pas répondu — les routes répondent 503 ;
+ *  - `boutique: null` et `illisible: false` : elle n'existe pas, ou elle est à un
+ *    autre compte (le propriétaire fait partie de la requête) — 404.
+ * Une seule lecture, par la clé primaire.
+ */
+export async function lireBoutiqueDuCompte(
+  typeProprietaire: Exclude<TypeProprietaire, 'suguba'>,
+  proprietaireId: string,
+  boutiqueId: string,
+): Promise<{ boutique: BoutiqueReseau | null; illisible: boolean }> {
+  const a = getSupabaseAdmin();
+  if (!a) return { boutique: null, illisible: true };
+  const { data, error } = await a
+    .from('stores')
+    .select('*')
+    .eq('id', boutiqueId)
+    .eq('owner_type', typeProprietaire)
+    .eq('owner_id', proprietaireId)
+    .maybeSingle();
+  if (error) return { boutique: null, illisible: true };
+  return { boutique: data ? versBoutique(data) : null, illisible: false };
+}
+
+/**
  * Adresses essayées, dans l'ordre, pour une nouvelle boutique (relecture du
  * lot 1 du chantier boutique, 2026-10-03).
  *

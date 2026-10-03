@@ -198,6 +198,36 @@
  "journal": [
   {
    "date": "2026-10-03",
+   "titre": "Boutique revendeur, lot 7 : corrections de relecture",
+   "demande": "« “Ma boutique” doit montrer la boutique elle-même (logo, couverture, produits ajoutés) et non les réglages ; il veut des outils pour gérer sa boutique (personnalisation, catégories/rayons, produits mis en avant, et ce qui aide à vendre), pour un vrai sentiment d’appropriation. »",
+   "realise": [
+    "Mes boutiques, côté fournisseur : un produit refusé ou archivé par Suguba après avoir été mis dans une boutique supplémentaire en sort de nouveau. Depuis le lot 7, il y restait pour toujours : il n’apparaissait plus dans la liste à cocher, donc impossible à décocher, mais il était compté dans « N article(s) choisis », dans « Enregistrer N article(s) » et dans la limite de 60 articles (60 cochés dont 3 invisibles : un 61e était refusé, pour 58 affichables). Maintenant il n’est plus compté, et le premier enregistrement le retire ; la place des autres articles ne change pas. Avant le lot 7, chaque enregistrement faisait déjà ce ménage.",
+    "Une panne n’est plus prise pour une boutique qui n’existe pas. Quand la base ne répond pas au moment de vérifier qu’une boutique Pro est bien à vous, « Mes articles » affiche « Vos articles n’ont pas pu être lus » avec le bouton « Réessayer », au lieu de « Boutique introuvable — Cette boutique n’existe pas, ou elle n’est pas à vous » avec le seul bouton « Mes boutiques ». Ranger, ajouter, retirer, « Choisir les articles » et les crayons répondent de même « … pour le moment. Réessayez. » ; rien n’est écrit pendant la panne.",
+    "Vérifier qu’une boutique est à vous demande une seule lecture, au lieu de relire toutes vos boutiques une par une (3 lectures pour 2 boutiques, 6 pour 5) : chaque geste dans « Mes articles » d’une boutique Pro est plus rapide sur un réseau lent.",
+    "Listes d’articles à cocher (« Choisir les articles » d’une boutique Pro, « Mes rayons », « Mes boutiques ») : chaque vignette de 40 px demande une photo à sa taille. Avant, le téléphone téléchargeait pour chacune une photo large comme l’écran (828 à 1 200 px), jusqu’à 300 fois dans « Choisir les articles ». Un article sans photo montre une icône, au lieu de « Photo indisponible » coupé dans une case de 40 px.",
+    "Guide : l’écart du lot 7 sur les outils qui ne sont pas ouverts aux boutiques Pro n’est plus présenté comme une question à trancher. Il dit que votre décision est prise et qu’elle n’est appliquée qu’en partie (voir les écarts ci-dessous). Les entrées des lots 5 et 6, qui annonçaient ces outils « au lot 7 », le disent aussi.",
+    "Tests : tests/ma-boutique-lot7-relecture.test.cjs (11 tests, dont 10 en échec sur le code du lot 7 ; le onzième vérifie que la règle du revendeur n’a pas bougé) ; 2 vérifications du lot 7 adaptées."
+   ],
+   "ecarts": [
+    "En local sur la branche ux/boutique-revendeur, non publié. Aucun SQL. 4 constats relus, tous fondés : 3 corrigés dans l’application, 1 seulement dans le guide (le suivant).",
+    "ÉCART AVEC VOTRE DÉCISION, non corrigé dans l’application. Vous avez décidé que les outils de la boutique « s’appliquent aussi à chaque boutique Pro (lot 7) ». Une boutique Pro a reçu le bandeau, les crayons, « Mes articles », les coups de cœur et le partage par son adresse. Elle n’a pas encore : « Personnaliser » (présentation, quartier, photos, familles de l’annuaire), les Statistiques, « Mes rayons », l’annonce datée, « Prévenir mes abonnés », le lien suivi de partage ni la carte « prête à X % ». Le plan du lot 7 ne les listait pas, alors que les lots 5 et 6 les annonçaient pour ce lot. Les ouvrir demande un lot à part (4 adresses du serveur et 3 pages à faire répondre pour une boutique précise, avec leurs tests) : trop pour des corrections qui ne sont pas relues ensuite. À faire : lancer ce lot complémentaire, ou confirmer que ces outils restent ceux de la boutique principale.",
+    "Deux points que ce lot complémentaire vous demandera de trancher : (1) « une annonce aux abonnés par 24 h » — par boutique, ou pour tout le compte (aujourd’hui : par revendeur) ; (2) Statistiques d’une boutique Pro — les visites et les abonnés sont comptés par boutique, mais les commandes et les gains par revendeur, tous liens confondus : chaque boutique afficherait les mêmes commandes.",
+    "Fournisseur : le produit qui n’est plus en vente est retiré de la boutique supplémentaire sans message, au premier enregistrement de ses articles. Tant qu’il n’enregistre pas, il reste noté dans la boutique, sans être affiché nulle part (ni vitrine, ni liste, ni compteur). Si Suguba approuve de nouveau ce produit après ce ménage, le fournisseur doit le recocher. Un produit repassé « en attente de validation » (après un changement de prix, par exemple) est traité de même : si le fournisseur enregistre ses articles pendant cette attente, il sort de la boutique supplémentaire et doit être recoché une fois validé — comme avant le lot 7. À valider par vous.",
+    "Fournisseur : si la vérification de ses produits échoue (panne), l’enregistrement est refusé — « Enregistrement impossible. Réessayez. » — même pour un simple retrait : rien n’est écrit plutôt que de retirer à tort. Tout décocher reste possible.",
+    "Revendeur : règle inchangée. Un article qui n’est plus en vente ou ne rapporte plus rien reste dans sa boutique Pro, signalé dans « Mes articles » (« Plus en vente », « Sans gain »), où il le retire lui-même.",
+    "Non traité, antérieur à ce chantier : à l’ouverture de « Mes boutiques », si la base ne répond pas, la page affiche une liste vide (« 0 / 1 boutique utilisée ») au lieu d’une erreur. À corriger à part.",
+    "Captures et vérifications à faire sur la copie locale [QA], à 390 px : fenêtre « Choisir les articles » d’une boutique Pro (vignettes nettes, icône pour un article sans photo) ; compte fournisseur [QA] avec une boutique supplémentaire dont un produit est refusé (« N article(s) choisis » ne le compte plus, il disparaît après « Enregistrer »). Aucun serveur n’a été lancé et aucune base réelle n’a été touchée."
+   ],
+   "pages": [
+    "mes-boutiques",
+    "rev-boutique-articles",
+    "vitrine-boutique",
+    "rev-boutique-rayons"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-10-03",
    "titre": "Boutique revendeur, lot 7 : boutiques Pro au même niveau",
    "demande": "« “Ma boutique” doit montrer la boutique elle-même (logo, couverture, produits ajoutés) et non les réglages ; il veut des outils pour gérer sa boutique (personnalisation, catégories/rayons, produits mis en avant, et ce qui aide à vendre), pour un vrai sentiment d’appropriation. »",
    "realise": [
@@ -216,8 +246,8 @@
    "ecarts": [
     "En local sur la branche ux/boutique-revendeur, non publié. Aucun SQL pour ce lot.",
     "Vérification prévue par le plan, à faire par le fondateur sur la copie QA avec un compte [QA] doté d’une formule Pro : changer le logo de la boutique secondaire par le crayon, ranger 3 articles et mettre 1 coup de cœur, recharger — tout doit être gardé. Les captures de « Mes boutiques » et de « Mes articles » sont à refaire.",
-    "Restent propres à la boutique principale, et ne sont donc pas proposés sur une boutique Pro : « Personnaliser » (présentation, quartier, photos, familles de l’annuaire), les Statistiques, « Mes rayons » et l’annonce datée, « Prévenir mes abonnés », la carte « prête à X % ». À décider : les ouvrir aussi aux boutiques Pro.",
-    "Le partage d’une boutique Pro envoie son adresse directe, sans lien suivi /go/ : les liens suivis, « Mes partages » et les Statistiques ne connaissent que la boutique principale. Les visites d’une boutique Pro sont mesurées mais affichées nulle part.",
+    "ÉCART AVEC VOTRE DÉCISION (« ces outils s’appliquent aussi à chaque boutique Pro (lot 7) ») : ne sont pas encore proposés sur une boutique Pro « Personnaliser » (présentation, quartier, photos, familles de l’annuaire), les Statistiques, « Mes rayons » et l’annonce datée, « Prévenir mes abonnés », la carte « prête à X % ». Ils ne règlent pour l’instant que la boutique principale. Ce n’est pas une question ouverte : il reste à les livrer dans un lot complémentaire, ou à confirmer qu’ils restent propres à la boutique principale (voir « lot 7 : corrections de relecture »).",
+    "Le partage d’une boutique Pro envoie son adresse directe, sans lien suivi /go/ : les liens suivis, « Mes partages » et les Statistiques ne connaissent que la boutique principale. Les visites d’une boutique Pro sont mesurées mais affichées nulle part. Même écart avec votre décision que le précédent.",
     "Le filtre « qui rapporte quelque chose » ne vaut que pour les boutiques des revendeurs. Les boutiques supplémentaires des fournisseurs gardent tous leurs produits approuvés (comme leur boutique principale), leur liste à cocher dans « Mes boutiques », et n’ont pas de mode propriétaire : hors de ce chantier, par décision du fondateur.",
     "Les articles d’une boutique Pro ne sont pas des offres sur la fiche produit : seuls ceux de la boutique principale le sont (les deux listes d’articles restent séparées, par décision du fondateur). La confirmation de retrait d’une boutique Pro n’annonce donc pas la perte d’une offre.",
     "« Ajouter des articles » d’une boutique Pro ne passe pas par le catalogue (dont le bouton « Boutique » compose la boutique principale) mais par la liste à cocher, limitée aux 300 articles les plus récents.",
@@ -293,7 +323,7 @@
     "Nom d’un rayon : en plus des limites du plan, sont refusés un prix ou une remise (« Promo -20 % », « Tout à 5000 » ; une année comme « Pagnes 2026 » reste permise), un numéro de téléphone, un lien, le nom « Coups de cœur » et le nom de l’emplacement sponsorisé de l’accueil. À valider par le fondateur.",
     "Annonce : une année est permise (« Tabaski 2027 ») ; tout autre nombre de 3 chiffres ou plus est refusé comme un prix (« Tout à 5000 »). Un numéro de téléphone et un lien sont refusés aussi (non prévus au plan : la commande doit rester sur Suguba). La date de fin est un jour entier, à l’heure de Bamako.",
     "Les rayons du revendeur et l’annonce ne s’affichent que sur /boutique/<adresse>. L’ancienne adresse /r/<code> garde ses rayons automatiques, sans annonce.",
-    "Boutiques supplémentaires (formules Pro) : la colonne existe pour elles aussi, mais « Mes rayons » et l’annonce ne gèrent que la boutique principale ; elles viendront au lot 7.",
+    "Boutiques supplémentaires (formules Pro) : la colonne existe pour elles aussi, mais « Mes rayons » et l’annonce ne gèrent que la boutique principale. Annoncés ici pour le lot 7, ils n’y ont pas encore été ouverts aux boutiques Pro (voir « lot 7 : corrections de relecture »).",
     "L’annonce s’enregistre avec les autres textes de « Personnaliser » (barre d’enregistrement) : si elle est refusée, rien n’est enregistré et le message dit pourquoi.",
     "Captures et vérifications à faire sur la copie locale [QA], à 390 px. AVANT le SQL : l’application est identique au lot 5, aucune tuile « Rayons ». APRÈS le SQL sur la copie : un rayon « Pagnes » de 3 articles apparaît en tête de vitrine ; /boutique/<adresse>?rayon=pagnes l’ouvre ; une annonce datée du jour disparaît le lendemain. Aucun serveur n’a été lancé et aucune base réelle n’a été touchée : le SQL n’a tourné que dans une base de test en mémoire."
    ],
@@ -361,7 +391,7 @@
     "Un abonné inscrit par téléphone ne reçoit rien dans l’application, même s’il crée ensuite un compte avec ce numéro : son abonnement reste rattaché au téléphone tant qu’il ne suit pas de nouveau la boutique en étant connecté. Or la phrase « Vous serez prévenu des nouveautés de cette boutique » s’affiche aussi pour lui (texte du plan) : pour lui, la promesse ne tient que par le statut WhatsApp du revendeur. À trancher par le fondateur : lui proposer de se connecter, ou changer la phrase quand il n’a pas de compte.",
     "Un revendeur abonné à sa propre boutique (possible avant le lot 2) est compté parmi les prévenus : il reçoit sa propre notification.",
     "« Publier sur mon statut WhatsApp » ouvre WhatsApp avec le message prêt ; aucun lien ne peut ouvrir directement le statut, le revendeur choisit « Mon statut » dans WhatsApp. Le lien du message est le lien suivi WhatsApp de la boutique (le même que « Partager ma boutique ») : s’il n’existait pas, il est créé quand la feuille propose le statut, ce qui coche l’étape « Partager ma boutique ».",
-    "La limite d’une annonce par 24 h est tenue par revendeur, pour sa boutique principale ; les boutiques Pro viendront au lot 7.",
+    "La limite d’une annonce par 24 h est tenue par revendeur, pour sa boutique principale. Annoncé ici pour le lot 7, « Prévenir mes abonnés » n’a pas encore été ouvert aux boutiques Pro (voir « lot 7 : corrections de relecture »).",
     "Fournisseur à plusieurs boutiques : seuls les abonnés de la boutique principale sont prévenus d’un nouveau produit ou d’une baisse de prix (comme prévu au plan) ; ceux d’une boutique supplémentaire ne le sont pas.",
     "Le sous-titre de la page « Boutiques suivies » a été corrigé aussi (il n’était pas dans la liste du plan) : il portait la même promesse de promotions.",
     "Captures et vérifications à faire sur la copie locale [QA] (capture de la feuille sans toucher « Prévenir ») : un client [QA] suit la boutique ; le revendeur [QA] ajoute 2 articles puis annonce ; la notification arrive dans /notifications du client et son lien ouvre la vitrine ; une seconde annonce le même jour est refusée avec un message clair ; un abonné inscrit par téléphone seul est compté dans « ne reçoivent rien ». Aucun serveur n’a été lancé."
@@ -4073,7 +4103,7 @@
     },
     {
      "nom": "Boutique supplémentaire (formule Pro, propriétaire)",
-     "role": "Même bandeau, mêmes trois crayons et même « Voir comme un client » que la boutique principale. Outils : Articles (« Mes articles » de cette boutique), Mes boutiques, Outils. Couverture, logo, nom et mot d’accueil sont enregistrés pour CETTE boutique. « Partager » envoie son adresse (WhatsApp, lien, QR), sans lien suivi. Pas de Personnaliser, de Stats, de Rayons ni de « prête à X % » : ils règlent la boutique principale. Sans article : « Cette boutique n’a pas encore d’articles : vos clients la voient vide » et « Choisir ses articles »."
+     "role": "Même bandeau, mêmes trois crayons et même « Voir comme un client » que la boutique principale. Outils : Articles (« Mes articles » de cette boutique), Mes boutiques, Outils. Couverture, logo, nom et mot d’accueil sont enregistrés pour CETTE boutique. « Partager » envoie son adresse (WhatsApp, lien, QR), sans lien suivi. Pas encore de Personnaliser, de Stats, de Rayons ni de « prête à X % » : ils ne règlent pour l’instant que la boutique principale (écart avec la décision du fondateur, noté au journal du lot 7). Sans article : « Cette boutique n’a pas encore d’articles : vos clients la voient vide » et « Choisir ses articles »."
     },
     {
      "nom": "Pastille d’état (propriétaire)",
@@ -4252,7 +4282,7 @@
    "elements": [
     {
      "nom": "Boutique supplémentaire (formule Pro)",
-     "role": "Adresse /reseller/boutique/articles?boutique=<id>. Le sous-titre nomme la boutique (« Boutique « Awa Maison » : son ordre et ses coups de cœur »), et le retour mène à sa vitrine. Même rangement, mêmes 6 coups de cœur, même gain par article que la boutique principale. La boutique doit appartenir au compte connecté : sinon « Boutique introuvable » et « Mes boutiques ». « Prévenir mes abonnés » n’y figure pas (annonce de la boutique principale), et « Partager » envoie l’adresse de cette boutique."
+     "role": "Adresse /reseller/boutique/articles?boutique=<id>. Le sous-titre nomme la boutique (« Boutique « Awa Maison » : son ordre et ses coups de cœur »), et le retour mène à sa vitrine. Même rangement, mêmes 6 coups de cœur, même gain par article que la boutique principale. La boutique doit appartenir au compte connecté : sinon « Boutique introuvable » et « Mes boutiques ». Si la base ne répond pas, ce n’est pas « Boutique introuvable » : « Vos articles n’ont pas pu être lus » et « Réessayer ». « Prévenir mes abonnés » n’y figure pas (annonce de la boutique principale), et « Partager » envoie l’adresse de cette boutique."
     },
     {
      "nom": "12/60 articles · 2/6 coups de cœur",
@@ -4308,7 +4338,7 @@
     },
     {
      "nom": "Choisir les articles (fenêtre, boutique Pro)",
-     "role": "Liste à cocher avec recherche (accents ignorés) : seuls les articles qui rapportent quelque chose au revendeur sont proposés. « N/60 cochés », et un seul bouton en bas, « Enregistrer N articles ». Seuls les articles décochés sont retirés ; les nouveaux s’ajoutent à la suite ; l’ordre et les coups de cœur des autres sont gardés. Si un rangement n’est pas encore enregistré : « Enregistrez d’abord l’ordre, ou annulez-le ». Plus de 60 cochés : bouton inactif, « 60 articles au plus : décochez-en ». En cas de panne : « Rien n’a changé dans cette boutique »."
+     "role": "Liste à cocher avec recherche (accents ignorés) : seuls les articles qui rapportent quelque chose au revendeur sont proposés. « N/60 cochés », et un seul bouton en bas, « Enregistrer N articles ». Seuls les articles décochés sont retirés ; les nouveaux s’ajoutent à la suite ; l’ordre et les coups de cœur des autres sont gardés. Si un rangement n’est pas encore enregistré : « Enregistrez d’abord l’ordre, ou annulez-le ». Plus de 60 cochés : bouton inactif, « 60 articles au plus : décochez-en ». En cas de panne : « Rien n’a changé dans cette boutique ». Chaque ligne : vignette de 40 px (une icône si l’article n’a pas de photo), nom et prix."
     }
    ],
    "suite": [
@@ -4428,7 +4458,7 @@
     },
     {
      "nom": "Articles de ce rayon (feuille)",
-     "role": "Les articles de sa boutique, avec une recherche. Sous chaque article : son prix puis, sur sa propre ligne s’il y a lieu, « Dans « Fête » » (le cocher ici le déplace : un article n’est rangé que dans un seul rayon), « Coup de cœur, affiché en tête », « Épuisé » ou « Plus en vente »."
+     "role": "Les articles de sa boutique, avec une recherche. Sous chaque article : son prix puis, sur sa propre ligne s’il y a lieu, « Dans « Fête » » (le cocher ici le déplace : un article n’est rangé que dans un seul rayon), « Coup de cœur, affiché en tête », « Épuisé » ou « Plus en vente ». Vignette de 40 px ; une icône si l’article n’a pas de photo."
     },
     {
      "nom": "Supprimer ce rayon",
@@ -4531,7 +4561,7 @@
     },
     {
      "nom": "Choisir les articles",
-     "role": "Chaque boutique supplémentaire a sa propre sélection. Revendeur : ouvre « Mes articles » de cette boutique (ajouter, ranger, coups de cœur, retirer) ; seuls les articles qui lui rapportent quelque chose y sont proposés. Fournisseur : liste à cocher sur place, avec recherche (les accents sont ignorés), lignes de 60 px, puis « Enregistrer N article(s) ». Dans les deux cas, enregistrer ne vide plus la boutique : seuls les articles décochés sont retirés, l’ordre des autres est gardé. La principale se gère dans « Ma boutique »."
+     "role": "Chaque boutique supplémentaire a sa propre sélection. Revendeur : ouvre « Mes articles » de cette boutique (ajouter, ranger, coups de cœur, retirer) ; seuls les articles qui lui rapportent quelque chose y sont proposés. Fournisseur : liste à cocher sur place, avec recherche (les accents sont ignorés), lignes de 60 px, puis « Enregistrer N article(s) ». Dans les deux cas, enregistrer ne vide plus la boutique : seuls les articles décochés sont retirés, l’ordre des autres est gardé. La principale se gère dans « Ma boutique ». Fournisseur : un produit que Suguba a refusé ou archivé depuis (plus en vente) n’est plus compté dans « N article(s) choisis » et sort de la boutique au premier enregistrement ; il ne compte pas dans la limite de 60. Si la base ne répond pas : « … pour le moment. Réessayez. », et rien n’est modifié."
     },
     {
      "nom": "Voir · Gérer",

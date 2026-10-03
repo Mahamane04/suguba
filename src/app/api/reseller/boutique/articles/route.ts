@@ -7,7 +7,7 @@ import { calculerTarifGros, prixMinimalGros } from '@/lib/pricing';
 import { prixEnregistres } from '@/lib/prix-revendeur';
 import { partageable } from '@/lib/shop';
 import { ARTICLES_MAX, COUPS_DE_COEUR_MAX, estCoupDeCoeur, type ArticleBoutique, type EtatArticle } from '@/lib/boutique-ordre';
-import { cibleArticles, lireSelection } from '@/lib/reseau/articles-boutique';
+import { BOUTIQUE_ILLISIBLE, cibleArticles, lireSelection } from '@/lib/reseau/articles-boutique';
 import { estEnseigne, nomPublicBoutique } from '@/lib/enseigne';
 
 /**
@@ -31,12 +31,17 @@ import { estEnseigne, nomPublicBoutique } from '@/lib/enseigne';
  * Lot 7 (2026-10-03) : ?boutique=<id> lit les articles d'une boutique
  * supplémentaire (formule Pro, store_products) par la couche commune
  * src/lib/reseau/articles-boutique.ts. La boutique doit appartenir à la SESSION
- * (boutiqueDuCompte) : celle d'un autre compte, ou un identifiant inconnu, donne
+ * (lireBoutiqueDuCompte) : celle d'un autre compte, ou un identifiant inconnu, donne
  * 404 sans rien lire de ses articles. La réponse porte alors `boutique` {id, slug,
  * nom, enseigne, statut} — le nom que voient les clients (l'enseigne, ou
  * « Awa D. »), jamais le nom complet. Sans ce paramètre : la boutique principale,
  * réponse inchangée. Avec l'identifiant de SA boutique principale : ses articles
  * habituels, et `principale: true`.
+ *
+ * Relecture du lot 7 (2026-10-03) : si la base ne répond pas quand on vérifie la
+ * boutique, la réponse est 503 « Vos articles sont indisponibles. Réessayez. »,
+ * comme pour un profil ou une sélection illisibles — plus « Boutique introuvable »
+ * (404), qui privait son propriétaire du bouton « Réessayer ».
  */
 
 async function revendeurConnecte(req: NextRequest) {
@@ -54,6 +59,7 @@ export async function GET(req: NextRequest) {
   // Boutique visée : la principale de la session, ou une boutique Pro qui lui appartient.
   const demandee = req.nextUrl.searchParams.get('boutique');
   const cible = await cibleArticles(session.uid, demandee);
+  if (cible === BOUTIQUE_ILLISIBLE) return NextResponse.json({ error: 'Vos articles sont indisponibles. Réessayez.' }, { status: 503 });
   if (!cible) return NextResponse.json({ error: 'Boutique introuvable.' }, { status: 404 });
 
   const limites: Record<string, unknown> = { max: ARTICLES_MAX, coupsDeCoeurMax: COUPS_DE_COEUR_MAX };

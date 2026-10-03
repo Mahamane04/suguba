@@ -18,7 +18,7 @@ import { positionAjout, trierSelection, type LigneSelection } from '../boutique-
 import { adresseReservee } from '../enseigne';
 import { chargerReglages } from '../platform-settings';
 import { FORMULES_BOUTIQUES_PAR_DEFAUT, type FormuleBoutique } from '../pricing';
-import { boutiqueParSlug, type BoutiqueReseau } from './boutiques';
+import { boutiqueParSlug, lireBoutiqueDuCompte, type BoutiqueReseau } from './boutiques';
 import { quartierReconnu } from './proximite';
 
 export type TypeCompteBoutique = 'reseller' | 'supplier';
@@ -133,10 +133,31 @@ export async function creerBoutiqueSupplementaire(params: {
   return { ok: false, erreur: 'Choisissez un autre nom de boutique.', statut: 409 };
 }
 
-/** Vérifie qu'une boutique appartient bien au compte. */
+/**
+ * Vérifie qu'une boutique appartient bien au compte. null aussi quand la base ne
+ * répond pas : à réserver aux appelants qui ont un repli (la porte « Ma boutique »
+ * ouvre alors la boutique principale). Une route qui répondrait « Boutique
+ * introuvable » doit appeler lireBoutiqueDuCompte, qui distingue la panne (503) de
+ * l'absence (404) — relecture du lot 7 (2026-10-03). Une seule lecture, au lieu de
+ * relire toutes les boutiques du compte.
+ */
 export async function boutiqueDuCompte(type: TypeCompteBoutique, proprietaireId: string, boutiqueId: string): Promise<BoutiqueReseau | null> {
-  const toutes = await boutiquesDuCompte(type, proprietaireId);
-  return toutes.find((b) => b.id === boutiqueId) || null;
+  return (await lireBoutiqueDuCompte(type, proprietaireId, boutiqueId)).boutique;
+}
+
+/**
+ * Parmi `ids`, les produits qu'un fournisseur peut encore avoir dans une boutique
+ * supplémentaire : approuvés, et à lui (relecture du lot 7, 2026-10-03). null si la
+ * lecture échoue : jamais « plus aucun produit en vente » inventé, qui ferait
+ * retirer des articles.
+ */
+export async function produitsEnVenteDuFournisseur(fournisseurId: string, ids: string[]): Promise<Set<string> | null> {
+  const a = getSupabaseAdmin();
+  if (!a) return null;
+  if (ids.length === 0) return new Set();
+  const { data, error } = await a.from('products').select('id').in('id', ids).eq('status', 'approved').eq('supplier_id', fournisseurId);
+  if (error || !Array.isArray(data)) return null;
+  return new Set(data.map((p: any) => String(p.id)));
 }
 
 /** Articles d'une boutique supplémentaire, dans l'ordre de sa vitrine (même tri que « Mes articles »). */
@@ -166,11 +187,23 @@ export async function articlesDeLaBoutique(boutiqueId: string): Promise<string[]
  *  4. les articles gardés ne sont pas réécrits : leur place et leur coup de cœur
  *     restent (position négative, voir src/lib/boutique-ordre.ts).
  *
- * Un article déjà dans la boutique y reste même s'il ne rapporte plus rien : la
- * vitrine ne l'affiche plus, « Mes articles » le signale et permet de le retirer
- * (même règle que la boutique principale). `refuses` : nouveaux articles écartés
- * (plus en vente, sans gain, ou produit d'un autre fournisseur). Plus de 60
- * articles, ou une liste illisible : rien n'est écrit.
+ * REVENDEUR : un article déjà dans la boutique y reste même s'il ne rapporte plus
+ * rien : la vitrine ne l'affiche plus, « Mes articles » le signale et permet de
+ * le retirer (même règle que la boutique principale).
+ *
+ * FOURNISSEUR (relecture du lot 7, 2026-10-03) : il n'a pas « Mes articles ». Sa
+ * liste à cocher ne montre que ses produits approuvés, mais repart de TOUTE la
+ * sélection : un produit refusé ou archivé après coup, invisible dans la liste,
+ * revenait à chaque enregistrement et n'était donc plus jamais retiré (avant le
+ * lot 7, chaque enregistrement revalidait toute la liste). Pour lui, les articles
+ * gardés sont revalidés : celui qui n'est plus approuvé, ou plus à lui, est retiré
+ * avec les décochés, et ne compte pas dans la limite de 60. La place des autres
+ * ne change pas. « Plus approuvé » comprend un produit repassé en attente de
+ * validation (prix modifié) : comme avant le lot 7, il sort de la boutique s'il
+ * est enregistré pendant cette attente, et se recoche une fois validé.
+ *
+ * `refuses` : nouveaux articles écartés (plus en vente, sans gain, ou produit d'un
+ * autre fournisseur). Plus de 60 articles, ou une liste illisible : rien n'est écrit.
  */
 export async function definirArticlesDeLaBoutique(params: {
   type: TypeCompteBoutique; proprietaireId: string; boutiqueId: string; produits: string[];
@@ -183,9 +216,15 @@ export async function definirArticlesDeLaBoutique(params: {
     return { ok: false, erreur: 'Liste d’articles illisible. Rien n’a changé dans cette boutique.', statut: 400 };
   }
   const voulus = Array.from(new Set(params.produits));
+  const fournisseur = params.type === 'supplier';
   // Plus de 60 : refus net. Couper la liste (comme avant) traitait les articles
   // coupés comme « retirés » : des articles gardés par le propriétaire disparaissaient.
-  if (voulus.length > MAX_ARTICLES_BOUTIQUE) return { ok: false, erreur: `${MAX_ARTICLES_BOUTIQUE} articles au plus dans une boutique.`, statut: 400 };
+  // Fournisseur : ses articles qui ne sont plus en vente reviennent dans la liste
+  // sans qu'il puisse les décocher ; ils sont décomptés plus bas, une fois connus.
+  // Une boutique ne contient jamais plus de 60 lignes : au-delà du double, la liste
+  // est refusée sans rien lire.
+  const trop = { ok: false, erreur: `${MAX_ARTICLES_BOUTIQUE} articles au plus dans une boutique.`, statut: 400 };
+  if (voulus.length > (fournisseur ? 2 * MAX_ARTICLES_BOUTIQUE : MAX_ARTICLES_BOUTIQUE)) return trop;
 
   const { data: lignes, error: lecture } = await a.from('store_products').select('product_id, position').eq('store_id', params.boutiqueId);
   if (lecture || !Array.isArray(lignes)) return { ok: false, erreur: 'Enregistrement impossible (mise à jour de la base à faire ?).', statut: 503 };
@@ -195,12 +234,18 @@ export async function definirArticlesDeLaBoutique(params: {
   const retires = Array.from(actuels).filter((id) => !garde.has(id));
 
   let acceptes: string[] = [];
-  if (nouveaux.length) {
-    let requete = a.from('products').select('id, reseller_commission, pricing_status').in('id', nouveaux).eq('status', 'approved');
-    if (params.type === 'supplier') requete = requete.eq('supplier_id', params.proprietaireId);
-    const { data, error } = await requete;
+  if (fournisseur) {
+    // Toute la liste voulue est revalidée, articles gardés compris : une seule lecture.
+    const enVente = await produitsEnVenteDuFournisseur(params.proprietaireId, voulus);
+    if (!enVente) return { ok: false, erreur: 'Enregistrement impossible. Réessayez.', statut: 503 };
+    const horsVente = voulus.filter((id) => actuels.has(id) && !enVente.has(id));
+    if (voulus.length - horsVente.length > MAX_ARTICLES_BOUTIQUE) return trop;
+    acceptes = nouveaux.filter((id) => enVente.has(id));
+    retires.push(...horsVente);
+  } else if (nouveaux.length) {
+    const { data, error } = await a.from('products').select('id, reseller_commission, pricing_status').in('id', nouveaux).eq('status', 'approved');
     if (error || !Array.isArray(data)) return { ok: false, erreur: 'Enregistrement impossible. Réessayez.', statut: 503 };
-    const ok = new Set(data.filter((p: any) => params.type !== 'reseller' || partageable(p)).map((p: any) => p.id));
+    const ok = new Set(data.filter((p: any) => partageable(p)).map((p: any) => p.id));
     acceptes = nouveaux.filter((id) => ok.has(id));
   }
 
