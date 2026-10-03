@@ -163,9 +163,12 @@ export default function MesArticlesPage() {
           )}
           meta={(
             <>
-              <span className="flex items-center gap-1.5 min-w-0">
+              {/* Relecture du lot 3 (2026-10-03) : à 390 px, « Plus en vente » laissait
+                  ~45 px au prix, coupé en « 12 5… ». Le prix ne se coupe plus : il passe
+                  sous la pastille quand la ligne est trop courte. */}
+              <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1 min-w-0">
                 {pastille && <StatusPill ton={a.etat === 'epuise' ? 'attente' : 'neutre'}>{pastille}</StatusPill>}
-                <span className="truncate tabular-nums">{a.prixVitrine != null ? formatF(a.prixVitrine) : '—'}</span>
+                <span className="whitespace-nowrap tabular-nums">{a.prixVitrine != null ? formatF(a.prixVitrine) : '—'}</span>
               </span>
               <span className="block truncate font-semibold text-suguba-brand-dark">Vous gagnez {formatF(a.gain)}</span>
             </>
@@ -224,7 +227,7 @@ export default function MesArticlesPage() {
           {masques > 0 && (
             <p role="status" className="rounded-2xl bg-amber-50 border border-amber-200 p-3 text-sm text-amber-950">
               <strong className="tabular-nums">{masques}</strong> article{masques > 1 ? 's' : ''} ne s’affiche{masques > 1 ? 'nt' : ''} plus dans votre boutique
-              (plus en vente, ou sans gain pour le moment). Touchez-le pour le retirer.
+              (plus en vente, ou sans gain pour le moment). {masques > 1 ? 'Touchez un article pour le retirer.' : 'Touchez-le pour le retirer.'}
             </p>
           )}
 

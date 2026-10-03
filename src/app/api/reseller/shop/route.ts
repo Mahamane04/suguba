@@ -2,7 +2,7 @@ import { verifyActiveSession } from '@/lib/active-session';
 import { NextRequest, NextResponse } from 'next/server';
 import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
-import { ARTICLES_MAX, controlerEnsemble, positionAjout, positionsPourOrdre } from '@/lib/boutique-ordre';
+import { ARTICLES_MAX, controlerEnsemble, positionAjout, positionsAEcrire, positionsPourOrdre } from '@/lib/boutique-ordre';
 
 /**
  * Sélection d'articles de la boutique d'un revendeur (/boutique/<adresse>, et
@@ -64,7 +64,11 @@ export async function POST(req: NextRequest) {
   }
 
   if (action === 'retirer') {
-    await admin.from('reseller_shop_items').delete().eq('reseller_id', session.uid).eq('product_id', productId);
+    // Relecture du lot 3 (2026-10-03) : l'erreur était ignorée. « Mes articles »
+    // et le catalogue annonçaient « retiré » alors que la ligne restait, avec
+    // l'offre du revendeur toujours visible sur la fiche produit.
+    const { error: retrait } = await admin.from('reseller_shop_items').delete().eq('reseller_id', session.uid).eq('product_id', productId);
+    if (retrait) return NextResponse.json({ error: 'Retrait impossible. Réessayez.' }, { status: 503 });
     return NextResponse.json({ success: true });
   }
 
@@ -126,9 +130,11 @@ async function ordonner(admin: NonNullable<ReturnType<typeof getSupabaseAdmin>>,
     return NextResponse.json({ error: 'Votre boutique a changé, rechargez.' }, { status: 409 });
   }
 
-  // Seules les lignes dont la place change sont écrites (60 au plus).
-  const actuelles = new Map(lignes.map((l: any) => [l.product_id, Number(l.position)]));
-  const aEcrire = calcul.positions.filter((p) => actuelles.get(p.id) !== p.position).slice(0, MAX_ARTICLES);
+  // Seules les lignes dont la place change sont écrites (60 au plus), d'abord
+  // celles qui deviennent ≥ 0 : une écriture interrompue ne laisse jamais plus de
+  // 6 coups de cœur (relecture du lot 3, voir positionsAEcrire).
+  const actuelles = new Map<string, number>(lignes.map((l: any) => [l.product_id, Number(l.position)]));
+  const aEcrire = positionsAEcrire(calcul.positions, actuelles).slice(0, MAX_ARTICLES);
   for (const p of aEcrire) {
     const { error } = await admin
       .from('reseller_shop_items')

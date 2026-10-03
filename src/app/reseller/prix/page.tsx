@@ -2,11 +2,13 @@
 
 import SugubaLoader from '@/components/ui/SugubaLoader';
 
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Tag, RotateCcw } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import { Card, EmptyState, Skeleton } from '@/components/ui/Surface';
 import ProductImage from '@/components/common/ProductImage';
+import ChargementPage from '@/components/common/ChargementPage';
 import { useToast } from '@/components/ui/Toast';
 import { formatF } from '@/lib/montant';
 import Button from '@/components/ui/Button';
@@ -23,9 +25,13 @@ import { PAGE_MES_ARTICLES } from '@/lib/reseau/porte-boutique';
  * Lot 3 du chantier boutique (2026-10-03) : ?boutique=1 ne montre que les
  * articles de SA boutique, ?produit=<id> un seul (« Mon prix » de la feuille
  * « Cet article » de Mes articles, qui y ramène).
+ *
+ * Relecture du lot 3 (2026-10-03) : le filtre était lu une seule fois, au
+ * montage. Or Next.js garde la page et son état quand seuls les paramètres de
+ * l'adresse changent : « Tous mes prix » (/reseller/prix) laissait la liste
+ * filtrée sur l'article choisi, et l'écran vide renvoyait sur lui-même. Le
+ * filtre est maintenant déduit de l'adresse à chaque rendu (useSearchParams).
  */
-
-interface Filtre { boutique: boolean; produit: string | null }
 
 interface Article {
   id: string; nom: string; slug: string; image: string | null;
@@ -36,40 +42,41 @@ interface Article {
 const enF = formatF;
 
 export default function MesPrixPage() {
+  // useSearchParams exige une frontière Suspense pour le build de production.
+  return <Suspense fallback={<ChargementPage libelle="Ouverture de vos prix…" />}><MesPrix /></Suspense>;
+}
+
+function MesPrix() {
   const { toast } = useToast();
   const [articles, setArticles] = useState<Article[]>([]);
   const [chargement, setChargement] = useState(true);
-  // Lu au montage (sans useSearchParams) : la liste attend le filtre.
-  const [filtre, setFiltre] = useState<Filtre | null>(null);
+  // Filtre déduit de l'adresse à CHAQUE rendu : « Tous mes prix » le vide vraiment.
+  const q = useSearchParams();
+  const boutique = q.get('boutique') === '1';
+  const produit = q.get('produit') || null;
+
   useEffect(() => {
-    try {
-      const q = new URLSearchParams(window.location.search);
-      setFiltre({ boutique: q.get('boutique') === '1', produit: q.get('produit') || null });
-    } catch {
-      setFiltre({ boutique: false, produit: null });
-    }
-  }, []);
-
-  const charger = React.useCallback(() => {
-    if (!filtre) return;
-    const q = new URLSearchParams();
-    if (filtre.boutique) q.set('boutique', '1');
-    if (filtre.produit) q.set('produit', filtre.produit);
-    const suite = q.toString();
+    // Réponse d'un filtre précédent arrivée trop tard : ignorée.
+    let actif = true;
+    setChargement(true);
+    const requete = new URLSearchParams();
+    if (boutique) requete.set('boutique', '1');
+    if (produit) requete.set('produit', produit);
+    const suite = requete.toString();
     fetch(`/api/reseller/prix${suite ? `?${suite}` : ''}`, { cache: 'no-store' })
-      .then((r) => r.json()).then((d) => setArticles(d.articles || []))
-      .catch(() => toast('Connexion impossible.', { ton: 'erreur' }))
-      .finally(() => setChargement(false));
-  }, [toast, filtre]);
-  useEffect(() => { charger(); }, [charger]);
+      .then((r) => r.json()).then((d) => { if (actif) setArticles(d.articles || []); })
+      .catch(() => { if (actif) toast('Connexion impossible.', { ton: 'erreur' }); })
+      .finally(() => { if (actif) setChargement(false); });
+    return () => { actif = false; };
+  }, [toast, boutique, produit]);
 
-  const depuisBoutique = Boolean(filtre?.boutique || filtre?.produit);
+  const depuisBoutique = boutique || Boolean(produit);
 
   return (
     <PageReseau titre="Mes prix"
-      sousTitre={filtre?.boutique ? 'Articles au prix de gros de votre boutique : c’est vous qui fixez le prix.' : 'Articles au prix de gros : c’est vous qui fixez le prix.'}
+      sousTitre={boutique ? 'Articles au prix de gros de votre boutique : c’est vous qui fixez le prix.' : 'Articles au prix de gros : c’est vous qui fixez le prix.'}
       retour={depuisBoutique ? { href: PAGE_MES_ARTICLES, libelle: 'Mes articles' } : { href: '/reseller', libelle: 'Mon espace' }}
-      action={filtre?.produit ? <Button href="/reseller/prix" variant="ghost" size="sm">Tous mes prix</Button> : undefined}>
+      action={produit ? <Button href="/reseller/prix" variant="ghost" size="sm">Tous mes prix</Button> : undefined}>
       <Card className="bg-suguba-sauge border-transparent text-xs text-slate-700 space-y-1">
         <p><strong>Votre prix</strong> s’affiche dans votre boutique et sur les liens que vous partagez.</p>
         <p>Pour un client qui négocie, changez le prix au moment d’enregistrer la vente dans « + Vente ».</p>

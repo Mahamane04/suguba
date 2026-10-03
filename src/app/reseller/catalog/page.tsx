@@ -1,7 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import ChargementPage from '@/components/common/ChargementPage';
 import PageReseau from '@/components/reseau/PageReseau';
 import CreateOrderModal from '@/components/reseller/CreateOrderModal';
 import ProductCard, { carteDepuisProduit } from '@/components/product/ProductCard';
@@ -30,6 +32,11 @@ import { useToast } from '@/components/ui/Toast';
  *    (son offre disparaît aussi de la fiche produit).
  */
 export default function ResellerCatalogPage() {
+  // useSearchParams exige une frontière Suspense pour le build de production.
+  return <Suspense fallback={<ChargementPage libelle="Ouverture du catalogue…" />}><Catalogue /></Suspense>;
+}
+
+function Catalogue() {
   const state = useSugubaStore();
   const catalogueCharge = useCatalogueCharge();
   const [searchTerm, setSearchTerm] = useState('');
@@ -55,11 +62,12 @@ export default function ResellerCatalogPage() {
   const [erreurBoutique, setErreurBoutique] = useState('');
   const { confirmer } = useToast();
   const [seulementBoutique, setSeulementBoutique] = useState(false);
-  // Arrivée depuis sa boutique (?depuis=boutique) : lu au montage, sans useSearchParams.
-  const [depuisBoutique, setDepuisBoutique] = useState(false);
-  useEffect(() => {
-    try { setDepuisBoutique(new URLSearchParams(window.location.search).get('depuis') === 'boutique'); } catch { /* adresse illisible : catalogue normal */ }
-  }, []);
+  // Arrivée depuis sa boutique (?depuis=boutique). Relecture du lot 3 (2026-10-03) :
+  // déduit de l'adresse à chaque rendu. Lu au montage seulement, il restait vrai après
+  // « Produits » dans la barre du bas (/reseller/catalog) : Next.js garde la page et
+  // son état quand seuls les paramètres changent, et le bandeau « Revenir à ma
+  // boutique » restait collé sur le catalogue normal.
+  const depuisBoutique = useSearchParams().get('depuis') === 'boutique';
   // « Ajouté à ma boutique · Voir ma boutique », quelques secondes après un ajout.
   const [ajoutRecent, setAjoutRecent] = useState(0);
   useEffect(() => {

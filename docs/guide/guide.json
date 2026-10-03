@@ -198,6 +198,39 @@
  "journal": [
   {
    "date": "2026-10-03",
+   "titre": "Boutique revendeur, lot 3 : corrections de relecture",
+   "demande": "« “Ma boutique” doit montrer la boutique elle-même (logo, couverture, produits ajoutés) et non les réglages ; il veut des outils pour gérer sa boutique (personnalisation, catégories/rayons, produits mis en avant, et ce qui aide à vendre), pour un vrai sentiment d’appropriation. »",
+   "realise": [
+    "« Tous mes prix » revient vraiment à la liste complète. Depuis « Mon prix », la liste restait filtrée sur l’article choisi, et l’écran vide « Aucun article au prix de gros dans votre boutique » renvoyait sur lui-même. La page relit maintenant son adresse à chaque changement.",
+    "Catalogue : arrivé depuis « Mes articles », un appui sur « Produits » dans la barre du bas ramène au catalogue normal (« Voir ma boutique ») ; le bandeau collant « Revenir à ma boutique » restait affiché.",
+    "Coups de cœur : si l’enregistrement de l’ordre s’interrompt (réseau, base), la boutique ne peut plus se retrouver avec 7 coups de cœur. Les articles qui sortent des coups de cœur sont rangés en premier ; un nouvel appui sur « Enregistrer l’ordre » termine le rangement (message « Rangement interrompu : réessayez pour terminer. »).",
+    "Retirer un article (feuille « Cet article » ou catalogue) : si la boutique refuse le retrait, « Retrait impossible. Réessayez. » s’affiche et l’article reste. Avant, l’écran annonçait « retiré » alors que l’article et l’offre du revendeur sur la fiche produit étaient toujours là.",
+    "Créer un visuel, carte « Ma boutique » : si tous les articles sont épuisés, la carte les montre, comme la vitrine, au lieu de 3 articles du catalogue au prix public. Si les articles ne peuvent pas être lus, la carte n’est pas créée et le revendeur le voit (« Vos articles n’ont pas pu être lus : la carte n’est pas créée. Réessayez. ») ; le prochain essai relit les articles.",
+    "« Message » des affiches : « Télé 4K » ou « Écran 8K » ne sont plus refusés ; « Promo 30 ce week-end », « Remise 20 », « Soldes 50 », « 1 acheté 1 offert » et « 2 pour 1 » le sont (« Pas de remise chiffrée »).",
+    "Vitrine (revendeur et fournisseur) : sur téléphone, « Lire la suite » affiche la présentation en entier (elle restait coupée à 2 lignes), et « Réduire » la replie. Le bouton n’apparaît que si le texte est coupé.",
+    "Mes articles : « Touchez un article pour le retirer » quand plusieurs articles ne s’affichent plus ; le prix d’un article « Plus en vente » n’est plus coupé à côté de la pastille, il passe dessous.",
+    "Guide : « Nouveau » est affiché PENDANT les 14 jours qui suivent l’ajout (la fiche disait « posée 14 jours après ») ; la fiche de la vitrine d’un fournisseur décrit la recherche sans accents, les rayons et « Lire la suite », et l’entrée du lot 3 la cite.",
+    "Tests : tests/ma-boutique-lot3-relecture.test.cjs (10 tests, tous en échec sur le code du lot 3)."
+   ],
+   "ecarts": [
+    "En local sur la branche ux/boutique-revendeur, non publié. Aucune migration.",
+    "13 constats relus, tous fondés ; deux étaient en double (« Tous mes prix » et le bandeau du catalogue, signalés deux fois).",
+    "Le « Message » refuse tout nombre écrit avec « promo », « remise », « soldes », « réduction », « rabais » ou « offert » : en 40 caractères, le nombre est toujours près du mot. « Soldes » ou « Promo du jour », sans nombre, restent permis.",
+    "Quand la carte « Ma boutique » montre des articles épuisés, elle ne les marque pas « Épuisé » : elle montre ce que montre la vitrine, à son prix.",
+    "Captures et vérifications manuelles à faire sur la copie locale [QA], à 390 px : « Mon prix » puis « Tous mes prix » ; « Ajouter des articles » puis « Produits » ; un article « Plus en vente » à 125 000 F dans « Mes articles » ; une présentation longue sur la vitrine (« Lire la suite »). Les fiches touchées gardent leurs captures d’avant le lot 3. Aucun serveur n’a été lancé."
+   ],
+   "pages": [
+    "rev-prix",
+    "rev-catalogue",
+    "rev-boutique-articles",
+    "rev-createur",
+    "vitrine-boutique",
+    "vitrine-fournisseur"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-10-03",
    "titre": "Boutique revendeur, lot 3 : Mes articles, coups de cœur, gain visible",
    "demande": "« “Ma boutique” doit montrer la boutique elle-même (logo, couverture, produits ajoutés) et non les réglages ; il veut des outils pour gérer sa boutique (personnalisation, catégories/rayons, produits mis en avant, et ce qui aide à vendre), pour un vrai sentiment d’appropriation. »",
    "realise": [
@@ -225,6 +258,7 @@
    "pages": [
     "rev-boutique-articles",
     "vitrine-boutique",
+    "vitrine-fournisseur",
     "rev-catalogue",
     "rev-prix",
     "rev-createur",
@@ -2793,8 +2827,16 @@
      "role": "Diffuser la boutique (WhatsApp, Facebook)."
     },
     {
+     "nom": "Présentation · Lire la suite",
+     "role": "Sur téléphone, la présentation de la boutique tient sur 2 lignes ; « Lire la suite » (40 px) l’affiche en entier, « Réduire » la replie. Le bouton n’apparaît que si le texte est vraiment coupé ; sur tablette et ordinateur, la présentation est entière."
+    },
+    {
      "nom": "Produits",
      "role": "Même carte que le catalogue : unité (« / kg »), minimum, « Sur devis », « Remis par le vendeur », et le même bouton (« Ajouter », « Choisir » ou « Acheter »). Chaque carte ouvre la fiche produit."
+    },
+    {
+     "nom": "Recherche · rayons",
+     "role": "La recherche ignore les accents (« theiere » trouve « Théière »). Dès 2 rayons, des pastilles mènent à chaque rayon. Dans un rayon, les articles épuisés passent à la fin. Le bouton « Effacer la recherche » fait 40 px."
     },
     {
      "nom": "Devenir revendeur",
@@ -2811,7 +2853,7 @@
      "libelle": "Rejoindre"
     }
    ],
-   "note": "Les boutiques du réseau (/boutique/) ajoutent le bouton **Suivre**, la galerie, la couverture et le lien « Boutiques voisines ».",
+   "note": "Les boutiques du réseau (/boutique/) ajoutent le bouton **Suivre**, la galerie, la couverture et le lien « Boutiques voisines ». Capture d’avant le lot 3 du chantier boutique (recherche sans accents, pastilles de rayons et « Lire la suite » absents).",
    "capture": {
     "chemin": "/s/micro-office"
    }
@@ -3482,7 +3524,7 @@
    "elements": [
     {
      "nom": "Ma boutique · N articles",
-     "role": "Une ligne au-dessus de la recherche, toujours affichée (même sans code revendeur), avec « Voir ma boutique » : la vraie vitrine, dans le même onglet. Le nombre compte les articles choisis dans ce catalogue. Arrivé depuis « Mes articles », la ligne reste collée en haut et devient « Revenir à ma boutique »."
+     "role": "Une ligne au-dessus de la recherche, toujours affichée (même sans code revendeur), avec « Voir ma boutique » : la vraie vitrine, dans le même onglet. Le nombre compte les articles choisis dans ce catalogue. Arrivé depuis « Mes articles », la ligne reste collée en haut et devient « Revenir à ma boutique » ; « Produits » dans la barre du bas ramène au catalogue normal."
     },
     {
      "nom": "Dans ma boutique (N)",
@@ -3490,7 +3532,7 @@
     },
     {
      "nom": "Boutique · En boutique",
-     "role": "« Boutique » ajoute l’article à sa boutique, puis « Ajouté à ma boutique · Voir ma boutique » s’affiche quelques secondes au-dessus de la barre du bas. « En boutique » le retire, après la confirmation « Votre offre disparaîtra aussi de la fiche produit de cet article »."
+     "role": "« Boutique » ajoute l’article à sa boutique, puis « Ajouté à ma boutique · Voir ma boutique » s’affiche quelques secondes au-dessus de la barre du bas. « En boutique » le retire, après la confirmation « Votre offre disparaîtra aussi de la fiche produit de cet article » ; si le retrait échoue, « Retrait impossible. Réessayez. » et l’article reste en boutique."
     },
     {
      "nom": "Recommandés · Tous les fournisseurs",
@@ -3722,6 +3764,10 @@
      "role": "L’enseigne seule dès que le revendeur a choisi un nom de boutique, sinon « La sélection de Awa D. ». Jamais le nom complet, même pour une boutique créée à son nom. Jamais non plus « Revendeur Suguba » (nom par défaut) ni un nom réservé à Suguba seul en titre. Même nom public dans l’annuaire des boutiques, la recherche et les boutiques suivies."
     },
     {
+     "nom": "Présentation · Lire la suite",
+     "role": "Sur téléphone, la présentation de la boutique tient sur 2 lignes ; « Lire la suite » (40 px) l’affiche en entier, « Réduire » la replie. Le bouton n’apparaît que si le texte est vraiment coupé ; sur tablette et ordinateur, la présentation est entière."
+    },
+    {
      "nom": "Bandeau « Ma boutique » (propriétaire)",
      "role": "Collé sous l’en-tête : logo, « En ligne » ou « Masquée par Suguba », et « Partager » (WhatsApp, absent si la boutique est masquée). Dessous : Personnaliser (réglages), Articles (« Mes articles » : ranger, coups de cœur, retirer) et Outils (« Tous mes outils »)."
     },
@@ -3763,7 +3809,7 @@
     },
     {
      "nom": "Nouveau",
-     "role": "Étiquette posée 14 jours après l’ajout de l’article à la boutique, sauf s’il porte déjà « Sur devis », « Service »…"
+     "role": "Étiquette affichée pendant les 14 jours qui suivent l’ajout de l’article à la boutique, sauf s’il porte déjà « Sur devis », « Service »…"
     },
     {
      "nom": "C’est votre boutique · Gérer",
@@ -3874,7 +3920,7 @@
     },
     {
      "nom": "N articles ne s’affichent plus",
-     "role": "Avertissement quand des articles ne sont plus en vente ou ne rapportent plus rien : ils restent dans la liste, on peut les retirer."
+     "role": "Avertissement quand des articles ne sont plus en vente ou ne rapportent plus rien : ils restent dans la liste ; « Touchez-le pour le retirer » (un article) ou « Touchez un article pour le retirer » (plusieurs)."
     },
     {
      "nom": "Coups de cœur",
@@ -3886,7 +3932,7 @@
     },
     {
      "nom": "Ligne d’article",
-     "role": "Photo, prix affiché dans la boutique, « Vous gagnez X F ». « Épuisé » : affiché en fin de rayon. « Plus en vente » ou « Sans gain » : n’apparaît plus dans la vitrine. Toucher la ligne ouvre « Cet article »."
+     "role": "Photo, prix affiché dans la boutique, « Vous gagnez X F ». « Épuisé » : affiché en fin de rayon. « Plus en vente » ou « Sans gain » : n’apparaît plus dans la vitrine. Le prix n’est jamais coupé : sur un petit écran, il passe sous la pastille. Toucher la ligne ouvre « Cet article »."
     },
     {
      "nom": "Cœur",
@@ -3898,7 +3944,7 @@
     },
     {
      "nom": "Cet article (feuille)",
-     "role": "Coup de cœur ; Mettre en premier ; Mon prix (articles au prix de gros) ; Partager cet article (WhatsApp, avec son lien) ; Voir dans ma boutique ; Retirer de ma boutique, après la confirmation « Votre offre disparaîtra aussi de la fiche produit de cet article »."
+     "role": "Coup de cœur ; Mettre en premier ; Mon prix (articles au prix de gros) ; Partager cet article (WhatsApp, avec son lien) ; Voir dans ma boutique ; Retirer de ma boutique, après la confirmation « Votre offre disparaîtra aussi de la fiche produit de cet article ». Si le retrait échoue : « Retrait impossible. Réessayez. », et l’article reste dans la liste."
     },
     {
      "nom": "Enregistrer l’ordre",
@@ -3950,7 +3996,7 @@
     },
     {
      "nom": "Depuis « Mon prix » (Mes articles)",
-     "role": "N’affiche que l’article choisi (ou les articles au prix de gros de sa boutique, dans l’ordre de la vitrine). Le retour mène à « Mes articles » ; « Tous mes prix » revient à la liste complète."
+     "role": "N’affiche que l’article choisi (ou les articles au prix de gros de sa boutique, dans l’ordre de la vitrine). Le retour mène à « Mes articles » ; « Tous mes prix » revient à la liste complète, avec le retour vers « Mon espace »."
     }
    ],
    "suite": [
@@ -4231,7 +4277,7 @@
     },
     {
      "nom": "Ma boutique",
-     "role": "Carte de la boutique (logo, couverture, nom public) avec trois articles : les coups de cœur, puis la suite de la sélection, aux prix affichés dans la boutique (le catalogue si la sélection est vide). « Configurer ma boutique » et « Compléter le logo et la couverture » ouvrent le panneau du logo, ou de la couverture, directement sur la vitrine. Si le nom public ne peut pas être lu : « Boutique indisponible », jamais le nom enregistré."
+     "role": "Carte de la boutique (logo, couverture, nom public) avec trois articles : les coups de cœur, puis la suite de la sélection, aux prix affichés dans la boutique. Si tous les articles sont épuisés, la carte les montre, comme la vitrine ; le catalogue seulement quand la vitrine le montre elle-même (sélection vide, ou aucun article encore en vente). Si les articles ne peuvent pas être lus : « Vos articles n’ont pas pu être lus : la carte n’est pas créée. Réessayez. » « Configurer ma boutique » et « Compléter le logo et la couverture » ouvrent le panneau du logo, ou de la couverture, directement sur la vitrine. Si le nom public ne peut pas être lu : « Boutique indisponible », jamais le nom enregistré."
     },
     {
      "nom": "Format",
@@ -4243,7 +4289,7 @@
     },
     {
      "nom": "Message · options",
-     "role": "Message court (« Nouveau », « Stock limité »), refusé s’il contient un pourcentage, un prix ou un montant (« Pas de pourcentage… », « Pas de prix ni de montant… ») : Suguba n’applique pas de remise. Affichage du lien ou du QR code."
+     "role": "Message court (« Nouveau », « Stock limité », « Télé 4K »), refusé s’il contient un pourcentage, un prix ou un montant (« 5 000 F », « 10k ») ou une remise chiffrée (« Promo 30 », « Remise 20 », « Soldes 50 », « 1 acheté 1 offert », « 2 pour 1 ») : Suguba n’applique pas de remise. Affichage du lien ou du QR code."
     },
     {
      "nom": "Télécharger / Partager",

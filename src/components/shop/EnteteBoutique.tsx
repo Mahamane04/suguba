@@ -1,5 +1,6 @@
 import React from 'react';
 import { initiale } from '@/lib/initiale';
+import DescriptionBoutique from '@/components/shop/DescriptionBoutique';
 
 /**
  * En-tête d'une vitrine : couverture, logo qui la chevauche, identité.
@@ -12,6 +13,10 @@ import { initiale } from '@/lib/initiale';
  *
  * Sans couverture, un fond aux couleurs de Suguba la remplace : la page ne paraît
  * jamais vide (en-tête refait le 2026-09-24).
+ *
+ * Seule exception à « purement visuel » : la présentation, dont le « Lire la
+ * suite » sur téléphone vit dans le petit composant client DescriptionBoutique
+ * (relecture du lot 3, 2026-10-03). L'en-tête lui-même reste sans état.
  */
 export default function EnteteBoutique({
   couverture,
@@ -104,9 +109,8 @@ export default function EnteteBoutique({
           {apresTitre}
           {accroche && <p className="text-sm text-slate-600">{accroche}</p>}
           {infos}
-          {description && (
-            <p className="text-sm text-slate-600 leading-relaxed max-w-2xl line-clamp-2 sm:line-clamp-none">{description}</p>
-          )}
+          {/* « Lire la suite » sur téléphone (relecture du lot 3, 2026-10-03). */}
+          {description && <DescriptionBoutique texte={description} />}
         </div>
 
         {children}

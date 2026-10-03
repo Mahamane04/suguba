@@ -121,6 +121,26 @@ export function positionsPourOrdre(
 }
 
 /**
+ * Lignes à écrire pour passer des positions actuelles aux positions voulues :
+ * seulement celles dont la place change, et d'abord celles qui deviennent ≥ 0.
+ *
+ * Relecture du lot 3 (2026-10-03) : les écritures se font une par une et
+ * s'arrêtent à la première erreur. Coups de cœur écrits d'abord, un article
+ * sortant des coups de cœur, écrit en dernier, gardait sa position négative
+ * si son écriture échouait : la vitrine montrait 7 coups de cœur et tout
+ * nouvel enregistrement était refusé (« 6 coups de cœur au plus »). En
+ * écrivant d'abord les positions ≥ 0, les seules positions négatives restantes
+ * appartiennent aux nouveaux coups de cœur : 6 au plus, à tout moment.
+ */
+export function positionsAEcrire(
+  positions: readonly PositionArticle[],
+  actuelles: ReadonlyMap<string, number>,
+): PositionArticle[] {
+  const changent = positions.filter((p) => actuelles.get(p.id) !== p.position);
+  return [...changent.filter((p) => p.position >= 0), ...changent.filter((p) => p.position < 0)];
+}
+
+/**
  * Position d'un article qu'on ajoute : après le dernier, jamais négative (un
  * ajout n'est pas un coup de cœur). Remplace « le nombre d'articles » (count),
  * qui donnait deux fois la même position après un retrait.
@@ -223,17 +243,32 @@ export function sansArticle(r: Rangement, id: string): Rangement {
 }
 
 /**
+ * La vitrine montre-t-elle la sélection du revendeur ? Elle sert les articles
+ * affichés ET les épuisés (en fin de rayon) ; elle ne montre le catalogue
+ * Suguba que si aucun ne l'est (lib/shop.ts, chargerBoutiqueRevendeur).
+ */
+export function vitrineMontreSelection(articles: readonly Pick<ArticleBoutique, 'etat'>[]): boolean {
+  return articles.some((a) => a.etat === 'affiche' || a.etat === 'epuise');
+}
+
+/**
  * Trois offres de la carte « Ma boutique » du créateur de visuels : d'abord les
  * coups de cœur, puis la suite de la sélection, aux prix affichés dans la
- * vitrine. Seulement des articles affichés et en stock : la carte ne promet
- * rien que la boutique ne montre. Vide : la carte reprend le catalogue, comme
- * la vitrine d'une sélection vide.
+ * vitrine. Les articles en stock d'abord ; la carte ne promet rien que la
+ * boutique ne montre.
+ *
+ * Relecture du lot 3 (2026-10-03) : quand tous les articles sont épuisés, la
+ * vitrine les montre quand même (en fin de rayon) ; la carte reprenait alors le
+ * catalogue Suguba, au prix public. Elle prend maintenant ces épuisés en repli.
+ * Le catalogue n'est repris (par l'écran) que si vitrineMontreSelection est faux.
  */
 export function selectionPourCarte(
   articles: readonly Pick<ArticleBoutique, 'nom' | 'image' | 'prixVitrine' | 'coupDeCoeur' | 'etat'>[],
   nombre = 3,
 ): { nom: string; prix: number; image: string | null }[] {
-  const montres = articles.filter((a) => a.etat === 'affiche' && typeof a.prixVitrine === 'number' && a.prixVitrine > 0);
+  const avecPrix = articles.filter((a) => typeof a.prixVitrine === 'number' && a.prixVitrine > 0);
+  const enStock = avecPrix.filter((a) => a.etat === 'affiche');
+  const montres = enStock.length > 0 ? enStock : avecPrix.filter((a) => a.etat === 'epuise');
   return [...montres.filter((a) => a.coupDeCoeur), ...montres.filter((a) => !a.coupDeCoeur)]
     .slice(0, nombre)
     .map((a) => ({ nom: a.nom, prix: a.prixVitrine as number, image: a.image }));

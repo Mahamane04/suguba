@@ -502,7 +502,8 @@ test('Message des affiches : ni pourcentage ni montant ; « Nouveau », « Stock
   assert.doesNotMatch(createur, /Bandeau promo/);
   assert.match(createur, /erreur=\{refusMessage \|\| undefined\}/);
   assert.match(createur, /fetch\('\/api\/reseller\/boutique\/articles'/);
-  assert.match(createur, /selectionPourCarte\(await lireArticlesBoutique\(\)\)/);
+  // Relecture du lot 3 : la lecture est vérifiée avant de composer la carte.
+  assert.match(createur, /const articles = await lireArticlesBoutique\(\);[\s\S]*?selectionPourCarte\(articles\)/);
   assert.doesNotMatch(createur, /genererCarteBoutique\(boutique, produits\.slice\(0, 3\)/, 'plus le catalogue en premier');
   const affiche = lire('src/lib/affiche.ts');
   assert.match(affiche, /const refus = refusMessageAffiche\(promo\);\s*if \(refus\) throw new Error\(refus\);/);

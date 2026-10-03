@@ -18,7 +18,7 @@ import { lienProduit, prechargerLienPartage, texteProduit, useCodeRevendeur } fr
 import { genererAffiche, genererCarteBoutique, partagerAffiche, telechargerAffiche, type FormatAffiche, type IdentiteBoutique, type ThemeAffiche } from '@/lib/affiche';
 import { formatF } from '@/lib/montant';
 import { PORTE_MA_BOUTIQUE } from '@/lib/reseau/porte-boutique';
-import { selectionPourCarte, type ArticleBoutique } from '@/lib/boutique-ordre';
+import { selectionPourCarte, vitrineMontreSelection, type ArticleBoutique } from '@/lib/boutique-ordre';
 import { MESSAGE_AFFICHE_MAX, refusMessageAffiche } from '@/lib/message-affiche';
 
 // Lot 2 du chantier boutique (2026-10-03) : « Configurer » et « Compléter le logo
@@ -72,12 +72,22 @@ export default function CreateurContenusPage() {
   const resultat = useRef<HTMLElement>(null);
   const verrouGeneration = useRef(false);
   const refusMessage = refusMessageAffiche(promo);
-  // Articles de SA boutique (coups de cœur d'abord), lus une fois, seulement pour la carte boutique.
-  const articlesBoutique = useRef<Promise<ArticleBoutique[]> | null>(null);
-  const lireArticlesBoutique = () => (articlesBoutique.current ??= fetch('/api/reseller/boutique/articles', { cache: 'no-store' })
-    .then((r) => (r.ok ? r.json() : null))
-    .then((d) => (Array.isArray(d?.articles) ? d.articles as ArticleBoutique[] : []))
-    .catch(() => []));
+  // Articles de SA boutique (coups de cœur d'abord), lus seulement pour la carte boutique.
+  // Relecture du lot 3 (2026-10-03) : une lecture en échec était gardée comme une
+  // sélection vide jusqu'au rechargement, et la carte basculait sans rien dire sur le
+  // catalogue. null = lecture impossible, jamais gardée : le prochain « Créer » relit.
+  const articlesBoutique = useRef<Promise<ArticleBoutique[] | null> | null>(null);
+  const lireArticlesBoutique = () => {
+    if (!articlesBoutique.current) {
+      const lecture = fetch('/api/reseller/boutique/articles', { cache: 'no-store' })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => (Array.isArray(d?.articles) ? d.articles as ArticleBoutique[] : null))
+        .catch(() => null);
+      articlesBoutique.current = lecture;
+      lecture.then((articles) => { if (articles === null && articlesBoutique.current === lecture) articlesBoutique.current = null; });
+    }
+    return articlesBoutique.current;
+  };
   useEffect(() => { if (typeVisuel === 'boutique') lireArticlesBoutique(); }, [typeVisuel]);
 
   useEffect(() => {
@@ -130,9 +140,17 @@ export default function CreateurContenusPage() {
       let lien: string;
       if (typeVisuel === 'boutique' && boutique) {
         lien = `${window.location.origin}/boutique/${boutique.slug}`;
-        const selection = selectionPourCarte(await lireArticlesBoutique());
-        // Sélection vide ou illisible : la vitrine montre alors le catalogue Suguba, la carte aussi.
-        const offres = selection.length > 0 ? selection : produits.slice(0, 3).map((p) => ({ nom: p.name, prix: p.publicPrice, image: p.images[0] }));
+        const articles = await lireArticlesBoutique();
+        if (!articles) {
+          toast('Vos articles n’ont pas pu être lus : la carte n’est pas créée. Réessayez.', { ton: 'erreur' });
+          return;
+        }
+        const selection = selectionPourCarte(articles);
+        // Le catalogue Suguba seulement quand la vitrine le montre elle-même : aucun
+        // article de la sélection servi (ni affiché, ni épuisé).
+        const offres = selection.length > 0 || vitrineMontreSelection(articles)
+          ? selection
+          : produits.slice(0, 3).map((p) => ({ nom: p.name, prix: p.publicPrice, image: p.images[0] }));
         image = await genererCarteBoutique(boutique, offres, { format, lien, qr: avecQr });
       } else if (produit) {
         const partage = { nom: produit.name, prix: produit.publicPrice, slug: produit.slug, images: produit.images };
