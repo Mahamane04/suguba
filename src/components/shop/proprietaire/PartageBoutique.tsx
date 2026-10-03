@@ -10,8 +10,9 @@ import { Skeleton } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
 import {
   RAYON_COUPS_DE_COEUR, adresseBoutique, articlesAAnnoncer, choixDePartage, texteBoutique, versArticlesPartage,
-  type ArticlePartage, type ChoixPartage,
+  type ArticlePartage, type ChoixPartage, type RayonChoisi,
 } from '@/lib/partage-boutique';
+import { lireReglages } from '@/lib/boutique-reglages';
 
 export { versArticlesPartage };
 
@@ -39,6 +40,10 @@ const QrCode = dynamic(() => import('@/components/common/QrCode'), { ssr: false 
  * ou lus à l'ouverture. Rien de privé n'y figure : ni gain, ni prix de gros. Le
  * cache des liens vit avec la feuille (jamais gardé dans le navigateur : sur un
  * téléphone partagé, ce serait le lien d'un autre compte).
+ *
+ * Lot 6 (2026-10-03) : les rayons MAISON du revendeur sont proposés en premier,
+ * dans son ordre (fournis avec la boutique, ou lus avec elle). `choixInitial`
+ * ouvre la feuille sur un rayon : « Partager ce rayon » de « Mes rayons ».
  */
 
 export interface BoutiqueAPartager {
@@ -48,6 +53,8 @@ export interface BoutiqueAPartager {
   slug: string;
   /** 'active', ou 'hidden' / 'suspended' quand Suguba l'a masquée. */
   statut?: string;
+  /** Rayons maison de la vitrine, dans l'ordre choisi (lot 6) ; absents : rayons automatiques. */
+  rayons?: readonly RayonChoisi[];
 }
 
 type CanalBoutique = 'whatsapp' | 'qr';
@@ -61,6 +68,7 @@ export default function PartageBoutique({
   boutique: boutiqueFournie,
   articles: articlesFournis,
   onLienPret,
+  choixInitial = null,
 }: {
   ouvert: boolean;
   onFermer: () => void;
@@ -70,12 +78,14 @@ export default function PartageBoutique({
   articles?: ArticlePartage[] | null;
   /** Un lien suivi de la boutique existe : l'étape « Partager ma boutique » est faite. */
   onLienPret?: () => void;
+  /** Clé du rayon proposé à l'ouverture (« Partager ce rayon », lot 6) ; null : toute la boutique. */
+  choixInitial?: string | null;
 }) {
   const { toast } = useToast();
   const [boutiqueLue, setBoutiqueLue] = useState<BoutiqueAPartager | null>(null);
   const [lectureBoutique, setLectureBoutique] = useState<Lecture>('chargement');
   const [articlesLus, setArticlesLus] = useState<ArticlePartage[] | null>(null);
-  const [choix, setChoix] = useState<string | null>(null);
+  const [choix, setChoix] = useState<string | null>(choixInitial);
   const [qr, setQr] = useState(false);
   const [urls, setUrls] = useState<Record<string, string>>({});
   // Lien par choix et par canal : en cours, prêt, ou en échec (l'adresse brute est
@@ -97,7 +107,8 @@ export default function PartageBoutique({
         if (annule) return;
         const b = d?.boutique;
         if (b?.slug && d?.vitrine?.nom) {
-          setBoutiqueLue({ nom: d.vitrine.nom, enseigne: Boolean(d.vitrine.enseigne), slug: b.slug, statut: b.statut || 'active' });
+          // Rayons maison relus par la même règle que la vitrine (lireReglages) : jamais un contenu brut.
+          setBoutiqueLue({ nom: d.vitrine.nom, enseigne: Boolean(d.vitrine.enseigne), slug: b.slug, statut: b.statut || 'active', rayons: lireReglages(b.reglages).rayons });
           setLectureBoutique('pret');
         } else setLectureBoutique('erreur');
       })
@@ -116,7 +127,12 @@ export default function PartageBoutique({
     return () => { annule = true; };
   }, [ouvert, articlesFournis, articlesLus]);
 
-  const listeChoix: ChoixPartage[] = useMemo(() => choixDePartage(articles || []), [articles]);
+  // « Partager ce rayon » : chaque ouverture repart du rayon demandé. Sans rayon
+  // demandé, le dernier choix est gardé comme avant.
+  useEffect(() => { if (ouvert && choixInitial) setChoix(choixInitial); }, [ouvert, choixInitial]);
+
+  const rayons = boutique?.rayons;
+  const listeChoix: ChoixPartage[] = useMemo(() => choixDePartage(articles || [], rayons), [articles, rayons]);
   const choisi = listeChoix.find((c) => c.cle === choix) || listeChoix[0];
   // Adresse brute (repli) : origine lue seulement dans le navigateur (rendu serveur : feuille fermée).
   const brute = (cle: string | null) => (boutique && typeof window !== 'undefined' ? adresseBoutique(window.location.origin, boutique.slug, cle) : '');
@@ -163,7 +179,7 @@ export default function PartageBoutique({
   const cle = choisi?.cle ?? null;
   const url = ouvert ? urls[`whatsapp:${cle ?? ''}`] || brute(cle) : '';
   const urlQr = urls[`qr:${cle ?? ''}`] || null;
-  const texte = ouvert && boutique ? texteBoutique({ identite: boutique, choix: choisi, articles: articlesAAnnoncer(articles || [], cle), url }) : '';
+  const texte = ouvert && boutique ? texteBoutique({ identite: boutique, choix: choisi, articles: articlesAAnnoncer(articles || [], cle, undefined, rayons), url }) : '';
   // « ma boutique », « mes coups de cœur » ou « le rayon « Pagnes » » (lecteurs d'écran, QR).
   const objet = !cle ? 'ma boutique' : cle === RAYON_COUPS_DE_COEUR ? 'mes coups de cœur' : `le rayon « ${choisi?.libelle} »`;
 

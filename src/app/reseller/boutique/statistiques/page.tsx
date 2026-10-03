@@ -9,6 +9,7 @@ import BoutonPartageWhatsApp from '@/components/ui/BoutonPartageWhatsApp';
 import WhatsAppIcon from '@/components/ui/WhatsAppIcon';
 import { Card, EmptyState, Skeleton, StatCard, StatusPill } from '@/components/ui/Surface';
 import PartageBoutique from '@/components/shop/proprietaire/PartageBoutique';
+import type { RayonChoisi } from '@/lib/partage-boutique';
 import BoutonAnnonce from '@/components/shop/proprietaire/BoutonAnnonce';
 import { formatF, formatNombre, formatDate } from '@/lib/montant';
 import { PORTE_MA_BOUTIQUE } from '@/lib/reseau/porte-boutique';
@@ -36,7 +37,8 @@ import { PERIODES_STATS, statsDeLaPeriode, type OrigineVisite, type PointJour } 
 
 interface Stats {
   jours: number;
-  boutique: { slug: string; nom: string; enseigne: boolean; statut: string } | null;
+  /** `rayons` (lot 6) : rayons maison, proposés par la feuille de partage. */
+  boutique: { slug: string; nom: string; enseigne: boolean; statut: string; rayons?: RayonChoisi[] } | null;
   visites: number | null;
   visiteurs: number | null;
   serie: PointJour[] | null;
@@ -233,7 +235,7 @@ export default function StatistiquesBoutiquePage() {
         <PartageBoutique
           ouvert={partage}
           onFermer={() => setPartage(false)}
-          boutique={{ nom: boutique.nom, enseigne: boutique.enseigne, slug: boutique.slug, statut: boutique.statut }}
+          boutique={{ nom: boutique.nom, enseigne: boutique.enseigne, slug: boutique.slug, statut: boutique.statut, rayons: boutique.rayons }}
         />
       )}
     </PageReseau>

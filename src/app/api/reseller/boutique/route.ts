@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { boutiqueDuProprietaire, majBoutique, obtenirOuCreerBoutique, MAX_GALERIE, type BoutiqueReseau } from '@/lib/reseau/boutiques';
 import { estEnseigne, nomPublic, nomPublicBoutique, nomReserve } from '@/lib/enseigne';
 import { champsBoutiqueRevendeur, NOM_BOUTIQUE_MAX } from '@/lib/reseau/champs-boutique-revendeur';
+import { OPTION_ABSENTE } from '@/lib/boutique-reglages';
 
 /**
  * Boutique du revendeur (§ 6) — /boutique/<adresse>.
@@ -29,6 +30,17 @@ import { champsBoutiqueRevendeur, NOM_BOUTIQUE_MAX } from '@/lib/reseau/champs-b
  *
  * Chaque réponse porte `vitrine` {nom, enseigne} : le nom que voient les clients,
  * calculé ICI à partir du nom du compte, qui ne quitte jamais le serveur.
+ *
+ * Lot 6 (2026-10-03) :
+ *  - GET renvoie `options` {reglages, adresse} : ce que la base permet déjà.
+ *    `reglages` est vrai quand la colonne stores.reglages existe (fichier
+ *    supabase/A-EXECUTER-2026-10-03-vitrine-boutique.sql exécuté) : les écrans
+ *    ne proposent « Mes rayons » et l'annonce datée que dans ce cas. `adresse`
+ *    (changement d'adresse, lot 8) reste faux tant que ce lot n'est pas livré ;
+ *  - PATCH accepte `reglages` {rayons?, annonce?} : validés et fusionnés par
+ *    majBoutique (src/lib/boutique-reglages.ts). Les articles d'un rayon sont
+ *    filtrés par la sélection de la SESSION, lue ici. Option absente : 409
+ *    « Option pas encore activée », jamais 500.
  */
 
 type Admin = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
@@ -73,6 +85,7 @@ export async function GET(req: NextRequest) {
     codeRevendeur: profil?.reseller_code || null,
     vitrine: illisible ? null : vitrineDe(boutique, profil?.full_name),
     maxGalerie: MAX_GALERIE,
+    options: { reglages: Boolean(boutique?.options.reglages), adresse: false },
   });
 }
 
@@ -141,10 +154,36 @@ export async function PATCH(req: NextRequest) {
     champs.nom = nomPublicBoutique(champs.nom.trim().replace(/\s+/g, ' '), avant.profil.full_name);
   }
 
-  const resultat = await majBoutique(boutique.id, session.uid, champs);
-  if (!resultat.ok) return NextResponse.json({ error: resultat.erreur }, { status: 400 });
+  // Réglages de vitrine (lot 6) : rayons maison et annonce datée. Ils ne passent
+  // pas par la liste blanche des champs : majBoutique les valide à part.
+  let vitrine: { reglages: unknown; selection?: string[] } | undefined;
+  const demandes = corps && typeof corps === 'object' && !Array.isArray(corps) ? (corps as Record<string, unknown>).reglages : undefined;
+  if (demandes !== undefined) {
+    // Base pas encore migrée : la réponse est connue sans rien lire de plus.
+    if (!boutique.options.reglages) return NextResponse.json({ error: OPTION_ABSENTE }, { status: 409 });
+    vitrine = { reglages: demandes };
+    // Les articles d'un rayon ne peuvent être que ceux de SA boutique : la
+    // sélection vient de la session, jamais de la requête. Lecture seule : ranger
+    // en rayons n'écrit jamais dans reseller_shop_items (effet commercial intact).
+    if (demandes && typeof demandes === 'object' && 'rayons' in demandes) {
+      const { data: selection, error } = admin
+        ? await admin.from('reseller_shop_items').select('product_id').eq('reseller_id', session.uid)
+        : { data: null, error: { code: 'indisponible' } };
+      if (error || !Array.isArray(selection)) {
+        return NextResponse.json({ error: 'Vos articles sont indisponibles. Réessayez.' }, { status: 503 });
+      }
+      vitrine.selection = selection.map((l: { product_id: string }) => l.product_id).filter(Boolean);
+    }
+  }
+
+  const resultat = await majBoutique(boutique.id, session.uid, champs, vitrine);
+  if (!resultat.ok) return NextResponse.json({ error: resultat.erreur }, { status: resultat.statut || 400 });
 
   const apres = await boutiqueDuProprietaire('reseller', session.uid);
   const { profil, illisible } = await lireProfil(admin, session.uid);
-  return NextResponse.json({ boutique: apres, vitrine: illisible ? null : vitrineDe(apres, profil?.full_name) });
+  return NextResponse.json({
+    boutique: apres,
+    vitrine: illisible ? null : vitrineDe(apres, profil?.full_name),
+    options: { reglages: Boolean(apres?.options.reglages), adresse: false },
+  });
 }

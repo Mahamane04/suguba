@@ -9,6 +9,7 @@ import { slugifier } from '../shop';
 import { adresseReservee, nomPublicBoutique } from '../enseigne';
 import { cleClient } from './attribution';
 import { classerParProximite, quartierReconnu, type NiveauProximite } from './proximite';
+import { OPTION_ABSENTE, lireReglages, normaliserReglages, type ReglagesBoutique } from '../boutique-reglages';
 
 type Admin = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
 
@@ -44,6 +45,19 @@ export interface BoutiqueReseau {
    * Toujours vrai tant que la base n'a pas la colonne.
    */
   principale: boolean;
+  /**
+   * Réglages de vitrine choisis par le propriétaire (lot 6 du chantier boutique,
+   * 2026-10-03) : rayons maison et annonce datée, lus dans stores.reglages et
+   * toujours validés (lireReglages). Vides tant que la colonne n'existe pas.
+   */
+  reglages: ReglagesBoutique;
+  /**
+   * Ce que la base permet DÉJÀ. `reglages` : la colonne stores.reglages existe
+   * (supabase/A-EXECUTER-2026-10-03-vitrine-boutique.sql exécuté). Faux : ni la
+   * tuile « Rayons », ni le champ « Annonce » ne sont proposés — ce n'est pas un
+   * écran en panne, l'option n'existe simplement pas encore.
+   */
+  options: { reglages: boolean };
 }
 
 function versBoutique(r: any): BoutiqueReseau {
@@ -65,6 +79,10 @@ function versBoutique(r: any): BoutiqueReseau {
     statut: r.status || 'active',
     quartier: r.neighborhood || null,
     principale: r.principale !== false,
+    // stores est lu en select('*') : aucune requête de plus. Colonne absente
+    // (base pas encore migrée) : pas de clé `reglages` dans la ligne.
+    reglages: lireReglages(r.reglages),
+    options: { reglages: 'reglages' in r },
   };
 }
 
@@ -236,17 +254,38 @@ function adresseImageValide(url: string): boolean {
   return url.length <= 600 && /^https:\/\/[^\s"'<>]+$/.test(url);
 }
 
+/** La base ne connaît pas cette colonne : pas encore créée (42703), ou cache de l'API pas rechargé (PGRST204). */
+function colonneAbsente(error: { code?: string } | null): boolean {
+  return !!error && (error.code === '42703' || error.code === 'PGRST204');
+}
+
 /**
  * Met à jour une boutique. Liste blanche stricte : ni le slug, ni le
  * propriétaire, ni le nombre d'abonnés ne sont modifiables par cette route —
  * un revendeur pourrait sinon s'attribuer 10 000 abonnés.
+ *
+ * Lot 6 du chantier boutique (2026-10-03) : `vitrine` porte les réglages de
+ * vitrine (rayons maison, annonce datée). Ils ne passent JAMAIS par `champs` :
+ * les routes qui transmettent le corps de la requête tel quel (fournisseur,
+ * boutique Suguba) ne peuvent donc pas les écrire. Seul l'appelant qui a lu la
+ * sélection réelle d'articles les fournit. Ils sont validés et fusionnés avec
+ * ceux déjà enregistrés (normaliserReglages) ; si la colonne stores.reglages
+ * n'existe pas encore, la réponse est `statut: 409` « Option pas encore
+ * activée », et rien n'est écrit — jamais une erreur 500.
  */
 export async function majBoutique(
   boutiqueId: string,
   /** null = boutique Suguba, qui n'a pas de propriétaire individuel. */
   proprietaireId: string | null,
   champs: Record<string, unknown>,
-): Promise<{ ok: boolean; erreur?: string }> {
+  vitrine?: {
+    /** Ce que le navigateur envoie : { rayons?, annonce? }. */
+    reglages: unknown;
+    /** Articles de la sélection réelle de la boutique ; exigée pour écrire des rayons. */
+    selection?: readonly string[] | null;
+    maintenant?: number;
+  },
+): Promise<{ ok: boolean; erreur?: string; statut?: number }> {
   const a = getSupabaseAdmin();
   if (!a) return { ok: false, erreur: 'Base indisponible.' };
 
@@ -298,6 +337,25 @@ export async function majBoutique(
     else return { ok: false, erreur: 'Choisissez un quartier de la liste.' };
   }
 
+  // Réglages de vitrine (lot 6) : la ligne est relue pour savoir si l'option
+  // existe (colonne `reglages`) et pour fusionner avec ce qui est enregistré.
+  if (vitrine) {
+    const lecture = a.from('stores').select('*').eq('id', boutiqueId);
+    const { data: actuelle, error: erreurLecture } = await (proprietaireId
+      ? lecture.eq('owner_id', proprietaireId)
+      : lecture.is('owner_id', null).eq('owner_type', 'suguba')
+    ).maybeSingle();
+    if (erreurLecture || !actuelle) return { ok: false, erreur: 'Boutique introuvable.', statut: 404 };
+    if (!('reglages' in actuelle)) return { ok: false, erreur: OPTION_ABSENTE, statut: 409 };
+    const resultat = normaliserReglages(vitrine.reglages, {
+      selection: vitrine.selection,
+      maintenant: vitrine.maintenant,
+      actuels: lireReglages(actuelle.reglages),
+    });
+    if (!resultat.ok) return { ok: false, erreur: resultat.erreur };
+    ligne.reglages = resultat.reglages;
+  }
+
   const ecrire = (valeurs: Record<string, unknown>) => {
     const requete = a.from('stores').update(valeurs).eq('id', boutiqueId);
     return proprietaireId ? requete.eq('owner_id', proprietaireId) : requete.is('owner_id', null).eq('owner_type', 'suguba');
@@ -311,6 +369,13 @@ export async function majBoutique(
     }
     delete ligne.neighborhood;
     ({ error } = await ecrire(ligne));
+  }
+  if (error && 'reglages' in ligne) {
+    // Colonne disparue entre la lecture et l'écriture, ou cache de l'API pas encore
+    // rechargé après le SQL : même réponse que si l'option n'existait pas.
+    if (colonneAbsente(error)) return { ok: false, erreur: OPTION_ABSENTE, statut: 409 };
+    // Contrainte stores_reglages_objet (16 Ko) : hors d'atteinte avec 8 rayons et 60 articles.
+    if (error.code === '23514') return { ok: false, erreur: 'Vos rayons prennent trop de place. Retirez-en un.' };
   }
   if (error) return { ok: false, erreur: error.message };
   return { ok: true };

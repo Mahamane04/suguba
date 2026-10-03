@@ -10,7 +10,7 @@ import { Card, Skeleton, StatusPill } from '@/components/ui/Surface';
 import Button from '@/components/ui/Button';
 import { Field, Input } from '@/components/ui/Field';
 import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
-import ProductImage from '@/components/common/ProductImage';
+import SelecteurArticles from '@/components/reseau/SelecteurArticles';
 import { useToast } from '@/components/ui/Toast';
 import { formatF } from '@/lib/montant';
 
@@ -21,6 +21,9 @@ import { formatF } from '@/lib/montant';
  * en débloquent d'autres, chacune avec sa propre sélection d'articles, pour
  * viser des clients différents (ex. une boutique mode, une boutique maison).
  * La formule se paie par Mobile Money avec une référence ; Suguba l'active.
+ *
+ * Lot 6 du chantier boutique (2026-10-03) : la liste d'articles à cocher est
+ * devenue src/components/reseau/SelecteurArticles.tsx, partagée avec « Mes rayons ».
  */
 
 interface Boutique { id: string; slug: string; nom: string; quartier: string | null; principale: boolean; abonnes: number; statut: string }
@@ -200,36 +203,5 @@ export default function MesBoutiquesPage() {
         Besoin d’aide ? <Link href="https://wa.me/22389460000" className="underline">Écrivez à Suguba sur WhatsApp</Link>.
       </p>
     </PageReseau>
-  );
-}
-
-function SelecteurArticles({ catalogue, choisis, onEnregistrer }: { catalogue: Article[]; choisis: string[]; onEnregistrer: (ids: string[]) => Promise<void> }) {
-  const [ids, setIds] = useState<string[]>(choisis);
-  const [filtre, setFiltre] = useState('');
-  const [envoi, setEnvoi] = useState(false);
-  const visibles = catalogue.filter((a) => !filtre || a.nom.toLowerCase().includes(filtre.toLowerCase()));
-  const basculer = (id: string) => setIds((l) => (l.includes(id) ? l.filter((x) => x !== id) : [...l, id]));
-  return (
-    <div className="space-y-2 border-t border-slate-100 pt-3">
-      <Input value={filtre} onChange={(e) => setFiltre(e.target.value)} placeholder="Rechercher un article" aria-label="Rechercher un article" />
-      <ul className="max-h-80 overflow-y-auto divide-y divide-slate-100 rounded-2xl border border-slate-200">
-        {visibles.length === 0 && <li className="p-3 text-xs text-slate-500">Aucun article.</li>}
-        {visibles.map((a) => {
-          const coche = ids.includes(a.id);
-          return (
-            <li key={a.id}>
-              <label className="flex items-center gap-3 p-2.5 cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 accent-suguba-profond" checked={coche} onChange={() => basculer(a.id)} />
-                <span className="relative w-10 h-10 rounded-xl overflow-hidden bg-slate-100 shrink-0"><ProductImage src={a.image || ''} alt="" fill className="object-cover" /></span>
-                <span className="min-w-0 flex-1 text-xs"><span className="block font-semibold text-slate-900 truncate">{a.nom}</span><span className="text-slate-500">{enF(a.prix)}</span></span>
-              </label>
-            </li>
-          );
-        })}
-      </ul>
-      <Button onClick={async () => { setEnvoi(true); await onEnregistrer(ids); setEnvoi(false); }} disabled={envoi} fullWidth>
-        {envoi ? <SugubaLoader className="w-4 h-4" /> : <Check className="w-4 h-4" />}Enregistrer {ids.length} article(s)
-      </Button>
-    </div>
   );
 }

@@ -2,7 +2,7 @@
 
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { Store, Users, Eye } from 'lucide-react';
+import { Store, Users, Eye, Megaphone, Rows3 } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import CarteLien from '@/components/reseau/CarteLien';
 import LogoUploader from '@/components/common/LogoUploader';
@@ -14,7 +14,11 @@ import { Field, Input, Textarea } from '@/components/ui/Field';
 import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
 import { Card, EmptyState, Skeleton, StatCard, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
-import { PORTE_MA_BOUTIQUE } from '@/lib/reseau/porte-boutique';
+import { PAGE_RAYONS, PORTE_MA_BOUTIQUE } from '@/lib/reseau/porte-boutique';
+import {
+  ANNONCE_JOURS_MAX, ANNONCE_TEXTE_MAX, annonceEnCours, finMaximale, jourDe, jourLisible, lireReglages,
+  refusAnnonce, refusFinAnnonce, type AnnonceDatee,
+} from '@/lib/boutique-reglages';
 import { whatsappHelper } from '@/lib/whatsapp-helper';
 import { FAMILLES_CATEGORIES } from '@/lib/product-categories';
 
@@ -45,6 +49,13 @@ import { FAMILLES_CATEGORIES } from '@/lib/product-categories';
  *  - sans nom public (profil illisible), jamais de repli sur le nom enregistré,
  *    qui peut être le nom complet du compte : le message WhatsApp n'a pas de nom.
  *
+ * Lot 6 (2026-10-03), seulement quand la base le permet (`options.reglages`,
+ * colonne stores.reglages) — avant le SQL, la page est exactement celle du lot 5 :
+ *  - « Annonce sur ma boutique » : un message affiché en haut de la vitrine
+ *    jusqu'à la date choisie (14 jours au plus), sans prix ni pourcentage (Suguba
+ *    n'applique pas de remise). Enregistrée avec les textes, par la même barre ;
+ *  - « Mes rayons » : lien vers la page où créer et ordonner ses rayons.
+ *
  * Elle est créée automatiquement au premier accès : un revendeur ne doit pas
  * avoir à « créer une boutique » avant de pouvoir partager son premier
  * produit. Son adresse (/boutique/<slug>) n'est attribuée qu'une fois et n'est
@@ -65,23 +76,36 @@ interface Boutique {
   quartier?: string | null;
   galerie?: string[];
   categories?: string[];
+  /** Réglages de vitrine (lot 6) : relus par lireReglages, jamais utilisés bruts. */
+  reglages?: unknown;
 }
 
 /** Nom que voient les clients (calculé par le serveur) : l'enseigne, ou « Awa D. ». */
 interface Vitrine { nom: string; enseigne: boolean }
 
-interface Textes { nom: string; accroche: string; description: string; quartier: string; categories: string[] }
+interface Textes {
+  nom: string; accroche: string; description: string; quartier: string; categories: string[];
+  /** Annonce datée (lot 6) : texte et dernier jour d'affichage (« AAAA-MM-JJ »). */
+  annonce: string; annonceFin: string;
+}
 
+const annonceDe = (b: Boutique): AnnonceDatee | null => lireReglages(b.reglages).annonce;
 const textesDe = (b: Boutique): Textes => ({
   nom: b.nom || '',
   accroche: b.accroche || '',
   description: b.description || '',
   quartier: b.quartier || '',
   categories: (b.categories || []).filter((c) => FAMILLES_CATEGORIES.some((f) => f.famille === c)),
+  annonce: annonceDe(b)?.texte || '',
+  annonceFin: annonceDe(b)?.fin || '',
 });
+/** Sans texte, la date ne compte pas : il n'y a pas d'annonce. */
+const memeAnnonce = (a: Textes, b: Textes) =>
+  a.annonce.trim() === b.annonce.trim() && (!a.annonce.trim() || a.annonceFin === b.annonceFin);
 const memesTextes = (a: Textes, b: Textes) =>
   a.nom.trim() === b.nom.trim() && a.accroche.trim() === b.accroche.trim() && a.description.trim() === b.description.trim()
-  && a.quartier === b.quartier && [...a.categories].sort().join('|') === [...b.categories].sort().join('|');
+  && a.quartier === b.quartier && [...a.categories].sort().join('|') === [...b.categories].sort().join('|')
+  && memeAnnonce(a, b);
 
 export default function MaBoutiqueRevendeurPage() {
   const { toast } = useToast();
@@ -96,7 +120,10 @@ export default function MaBoutiqueRevendeurPage() {
   // Remonte les éditeurs d'image après un refus : l'aperçu revient à l'image enregistrée.
   const [essaiImage, setEssaiImage] = useState(0);
 
-  const [textes, setTextes] = useState<Textes>({ nom: '', accroche: '', description: '', quartier: '', categories: [] });
+  // La base permet les rayons maison et l'annonce datée (colonne stores.reglages).
+  const [optionReglages, setOptionReglages] = useState(false);
+
+  const [textes, setTextes] = useState<Textes>({ nom: '', accroche: '', description: '', quartier: '', categories: [], annonce: '', annonceFin: '' });
   const [message, setMessage] = useState('');
   const [erreurs, setErreurs] = useState<string[]>([]);
 
@@ -117,11 +144,19 @@ export default function MaBoutiqueRevendeurPage() {
         setVitrine(data.vitrine || null);
         setTextes(textesDe(data.boutique));
         if (data.maxGalerie) setMaxGalerie(data.maxGalerie);
+        setOptionReglages(Boolean(data.options?.reglages));
       })
       .catch(() => { if (!annule) setIndisponible(true); })
       .finally(() => { if (!annule) setChargement(false); });
     return () => { annule = true; };
   }, []);
+
+  // « Modifier » de l'annonce sur la vitrine mène à /reseller/boutique#annonce : la
+  // carte n'existe qu'après la lecture, le navigateur ne peut pas y défiler seul.
+  useEffect(() => {
+    if (chargement || !optionReglages || window.location.hash !== '#annonce') return;
+    document.getElementById('annonce')?.scrollIntoView({ block: 'start' });
+  }, [chargement, optionReglages]);
 
   /** PATCH commun : renvoie la boutique enregistrée, ou null (message déjà affiché). */
   const patcher = async (champs: Record<string, unknown>): Promise<Boutique | null> => {
@@ -154,6 +189,18 @@ export default function MaBoutiqueRevendeurPage() {
     toast(confirmation, { ton: 'succes' });
   };
 
+  // Annonce datée (lot 6). Les refus sont ceux du serveur (mêmes règles pures) :
+  // dits sous le champ avant l'envoi, jamais découverts après.
+  const annonceModifiee = Boolean(enregistres && !memeAnnonce(textes, enregistres));
+  const refusTexteAnnonce = refusAnnonce(textes.annonce);
+  const refusDateAnnonce = textes.annonce.trim() && annonceModifiee ? refusFinAnnonce(textes.annonceFin) : null;
+  const annonceEnregistree = boutique ? annonceDe(boutique) : null;
+  const ecrireAnnonce = (texte: string) => {
+    // Première lettre : une date est proposée (7 jours), le revendeur n'a qu'à la changer.
+    setTextes((t) => ({ ...t, annonce: texte, annonceFin: texte.trim() && !t.annonceFin ? jourDe(Date.now() + 7 * 24 * 3600 * 1000) : t.annonceFin }));
+    setMessage('');
+  };
+
   const enregistrerTextes = async () => {
     setEnregistrement(true);
     setErreurs([]);
@@ -163,6 +210,11 @@ export default function MaBoutiqueRevendeurPage() {
       description: textes.description,
       quartier: textes.quartier || null,
       categories: textes.categories,
+      // L'annonce n'est envoyée que si elle a changé : une annonce terminée, laissée
+      // telle quelle, ne doit pas faire refuser le reste (« date déjà passée »).
+      ...(optionReglages && annonceModifiee
+        ? { reglages: { annonce: textes.annonce.trim() ? { texte: textes.annonce, fin: textes.annonceFin } : null } }
+        : {}),
     });
     setEnregistrement(false);
     if (!apres) { setErreurs(['Rien n’a été enregistré. Vérifiez les champs, puis réessayez.']); return; }
@@ -295,6 +347,54 @@ export default function MaBoutiqueRevendeurPage() {
               onChange={(nouvelles) => enregistrerImage({ galerie: nouvelles }, 'Photos enregistrées.')} />
           </Card>
 
+          {/* Lot 6 : seulement quand la base le permet. Avant le SQL, rien de ce bloc n'existe. */}
+          {optionReglages && (
+            <Card className="space-y-4">
+              <div id="annonce" className="scroll-mt-24">
+                <p className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                  <Megaphone className="w-4 h-4 text-suguba-brand-dark" aria-hidden="true" />Annonce sur ma boutique
+                </p>
+                <p className="text-xs text-slate-600 mt-0.5">
+                  Un message affiché en haut de votre boutique jusqu’à la date choisie ({ANNONCE_JOURS_MAX} jours au plus). Sans prix ni pourcentage.
+                </p>
+              </div>
+              {annonceEnregistree && !annonceModifiee && (
+                annonceEnCours(annonceEnregistree)
+                  ? <StatusPill ton="succes">Affichée jusqu’au {jourLisible(annonceEnregistree.fin)}</StatusPill>
+                  : <StatusPill ton="neutre">Terminée le {jourLisible(annonceEnregistree.fin)} : plus affichée</StatusPill>
+              )}
+              <Field label="Message" htmlFor="annonce-texte" erreur={refusTexteAnnonce || undefined}
+                aide="Ex. : Nouveaux pagnes arrivés cette semaine. Laissez vide pour ne rien afficher.">
+                <Input id="annonce-texte" value={textes.annonce} onChange={(e) => ecrireAnnonce(e.target.value)} maxLength={ANNONCE_TEXTE_MAX}
+                  placeholder="Nouveaux pagnes arrivés cette semaine" />
+              </Field>
+              {textes.annonce.trim() && (
+                <Field label="Afficher jusqu’au" htmlFor="annonce-fin" requis erreur={refusDateAnnonce || undefined}
+                  aide="Le lendemain de cette date, l’annonce disparaît toute seule.">
+                  <Input id="annonce-fin" type="date" value={textes.annonceFin} min={jourDe()} max={finMaximale()}
+                    onChange={(e) => champ('annonceFin', e.target.value)} />
+                </Field>
+              )}
+              {textes.annonce.trim() && (
+                <Button type="button" variant="ghost" size="sm" onClick={() => { setTextes((t) => ({ ...t, annonce: '', annonceFin: '' })); setMessage(''); }}>
+                  Retirer l’annonce
+                </Button>
+              )}
+            </Card>
+          )}
+
+          {optionReglages && (
+            <Card className="space-y-2">
+              <p className="text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                <Rows3 className="w-4 h-4 text-suguba-brand-dark" aria-hidden="true" />Mes rayons
+              </p>
+              <p className="text-xs text-slate-600">
+                Créez vos rayons (« Pagnes », « Pour la fête »…) : ils s’affichent en premier dans votre boutique, dans l’ordre que vous choisissez.
+              </p>
+              <Button href={PAGE_RAYONS} variant="ghost" fullWidth>Gérer mes rayons</Button>
+            </Card>
+          )}
+
           <Card className="space-y-2">
             <p className="text-sm font-bold text-slate-900">Les articles de ma boutique</p>
             <p className="text-xs text-slate-500">
@@ -312,7 +412,7 @@ export default function MaBoutiqueRevendeurPage() {
             libelle="Enregistrer"
             erreurs={erreurs}
             message={message}
-            bloque={textes.nom.trim().length < 2}
+            bloque={textes.nom.trim().length < 2 || (optionReglages && annonceModifiee && Boolean(refusTexteAnnonce || refusDateAnnonce))}
             barreDuBasPermanente
           />
         </>

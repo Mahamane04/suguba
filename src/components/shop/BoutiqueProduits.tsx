@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import ProductCard from '@/components/product/ProductCard';
 import type { ProduitVitrine } from '@/lib/shop';
 import { normaliserRecherche } from '@/lib/recherche-texte';
-import { RAYON_COUPS_DE_COEUR, RAYON_SANS_CATEGORIE, cleRayon } from '@/lib/partage-boutique';
+import { RAYON_COUPS_DE_COEUR, RAYON_SANS_CATEGORIE, cleRayon, rayonMaisonDe, type RayonChoisi } from '@/lib/partage-boutique';
 import { Search, ChevronDown, X, Heart } from 'lucide-react';
 
 /**
@@ -33,9 +33,16 @@ import { Search, ChevronDown, X, Heart } from 'lucide-react';
  * Lot 4 (2026-10-03) : ?rayon=<cle> (lien « Partager ce rayon » ou « Mes coups de
  * cœur ») ouvre ce rayon et y fait défiler la page. La clé d'un rayon est tirée
  * de son nom (cleRayon, src/lib/partage-boutique.ts) ; une clé inconnue ne fait rien.
+ *
+ * Lot 6 (2026-10-03) : les rayons MAISON du revendeur (« Pagnes », « Pour la
+ * fête »…) passent en premier, dans l'ordre qu'il a choisi, puis les rayons
+ * automatiques (catégories). Sans rayon maison — base pas encore migrée, ou aucun
+ * rayon créé — le rendu est exactement celui d'avant.
  */
 
 const ID_COUPS_DE_COEUR = RAYON_COUPS_DE_COEUR;
+/** Même tableau à chaque rendu : la vitrine sans rayon maison ne recalcule rien. */
+const SANS_RAYON_MAISON: readonly RayonChoisi[] = [];
 
 /** Ancre du rayon visé par ?rayon=<cle> ; null si la vitrine n'a pas ce rayon. */
 export function ancreDuRayon(cle: string | null | undefined, coups: ProduitVitrine[], groupes: [string, ProduitVitrine[]][]): string | null {
@@ -52,24 +59,38 @@ function enStockDAbord(liste: ProduitVitrine[]): ProduitVitrine[] {
 
 /**
  * Ce que montre la vitrine pour une recherche : les coups de cœur trouvés,
- * puis les autres articles trouvés, groupés par catégorie dans l'ordre de leur
- * premier article. Règle PURE (exportée pour les tests).
+ * puis les autres articles trouvés, groupés par rayon. Règle PURE (exportée pour
+ * les tests).
+ *
+ * Rayons maison (lot 6) d'abord, dans l'ordre choisi par le revendeur ; puis les
+ * catégories, dans l'ordre de leur premier article. Un rayon maison sans article
+ * trouvé n'apparaît pas. Le nom d'un rayon maison est cherché comme une catégorie.
  */
-export function organiserVitrine(produits: ProduitVitrine[], recherche: string): { coups: ProduitVitrine[]; groupes: [string, ProduitVitrine[]][] } {
+export function organiserVitrine(
+  produits: ProduitVitrine[],
+  recherche: string,
+  rayonsMaison: readonly RayonChoisi[] = [],
+): { coups: ProduitVitrine[]; groupes: [string, ProduitVitrine[]][] } {
   const requete = normaliserRecherche(recherche);
+  const maisonDe = rayonMaisonDe(rayonsMaison);
   const trouves = requete
-    ? produits.filter((p) => normaliserRecherche(p.nom).includes(requete) || normaliserRecherche(p.categorie).includes(requete))
+    ? produits.filter((p) => normaliserRecherche(p.nom).includes(requete) || normaliserRecherche(p.categorie).includes(requete)
+      || normaliserRecherche(maisonDe(p) || '').includes(requete))
     : produits;
   const parCategorie = new Map<string, ProduitVitrine[]>();
+  // Les rayons maison prennent leur place avant tout article : l'ordre choisi.
+  for (const r of rayonsMaison) if (!parCategorie.has(r.nom)) parCategorie.set(r.nom, []);
   for (const p of trouves) {
     if (p.coupDeCoeur) continue;
-    const cle = p.categorie || RAYON_SANS_CATEGORIE;
+    const cle = maisonDe(p) || p.categorie || RAYON_SANS_CATEGORIE;
     if (!parCategorie.has(cle)) parCategorie.set(cle, []);
     parCategorie.get(cle)!.push(p);
   }
   return {
     coups: enStockDAbord(trouves.filter((p) => p.coupDeCoeur)),
-    groupes: Array.from(parCategorie.entries()).map(([categorie, items]): [string, ProduitVitrine[]] => [categorie, enStockDAbord(items)]),
+    groupes: Array.from(parCategorie.entries())
+      .filter(([, items]) => items.length > 0)
+      .map(([categorie, items]): [string, ProduitVitrine[]] => [categorie, enStockDAbord(items)]),
   };
 }
 
@@ -79,6 +100,7 @@ export default function BoutiqueProduits({
   codePartage = null,
   presentation = false,
   rayon = null,
+  rayonsMaison = SANS_RAYON_MAISON,
 }: {
   produits: ProduitVitrine[];
   /** Code porté par les liens d'achat (?ref=) : null pour le propriétaire sur sa vitrine. */
@@ -89,6 +111,8 @@ export default function BoutiqueProduits({
   presentation?: boolean;
   /** ?rayon=<cle> reçu par la vitrine (lot 4) : rayon à ouvrir à l'arrivée. */
   rayon?: string | null;
+  /** Rayons maison du revendeur, dans l'ordre choisi (lot 6). Absents : rayons automatiques seuls. */
+  rayonsMaison?: readonly RayonChoisi[];
 }) {
   const [recherche, setRecherche] = useState('');
   // Catégories repliées manuellement — vides par défaut : tout est déplié
@@ -96,12 +120,12 @@ export default function BoutiqueProduits({
   // besoin qu'on lui demande de tout déplier soi-même.
   const [replieesManuel, setReplieesManuel] = useState<Set<string>>(new Set());
 
-  const { coups, groupes } = useMemo(() => organiserVitrine(produits, recherche), [produits, recherche]);
+  const { coups, groupes } = useMemo(() => organiserVitrine(produits, recherche, rayonsMaison), [produits, recherche, rayonsMaison]);
 
   // ?rayon=<cle> : une seule fois à l'arrivée, sur la vitrine complète (sans recherche).
   useEffect(() => {
     if (!rayon) return;
-    const complete = organiserVitrine(produits, '');
+    const complete = organiserVitrine(produits, '', rayonsMaison);
     const ancre = ancreDuRayon(rayon, complete.coups, complete.groupes);
     if (!ancre) return;
     const visee = complete.groupes.find(([categorie]) => cleRayon(categorie) === rayon)?.[0];

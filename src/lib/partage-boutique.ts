@@ -12,8 +12,12 @@
  * toute la boutique, ses coups de cœur ou un rayon.
  *
  * Les rayons sont ceux qu'affiche la vitrine : les catégories des articles (hors
- * coups de cœur, qui ont leur section), dans l'ordre de leur premier article. Les
- * rayons maison viendront avec la migration du lot 6, sous la même forme de clé.
+ * coups de cœur, qui ont leur section), dans l'ordre de leur premier article.
+ *
+ * Lot 6 (2026-10-03) : les rayons MAISON du revendeur (stores.reglages, validés par
+ * src/lib/boutique-reglages.ts) passent devant, dans l'ordre qu'il a choisi, sous la
+ * même forme de clé. Sans rayon maison (base pas encore migrée, ou aucun rayon
+ * créé), tout se comporte comme avant.
  */
 import { formatF } from './montant';
 import { titreVitrine } from './enseigne';
@@ -30,6 +34,8 @@ export const ARTICLES_DANS_LE_MESSAGE = 3;
 
 /** Article tel que le montre la vitrine (aucune donnée privée : ni gain ni prix de gros). */
 export interface ArticlePartage {
+  /** Identifiant de l'article (déjà public sur la vitrine) : retrouve son rayon maison (lot 6). */
+  id?: string;
   nom: string;
   /** Prix affiché dans la boutique ; sans prix, l'article n'est pas cité. */
   prix: number | null;
@@ -45,11 +51,14 @@ export interface ArticlePartage {
  * minimal) : le message est public.
  */
 export function versArticlesPartage(
-  articles: readonly Pick<ArticleBoutique, 'nom' | 'prixVitrine' | 'categorie' | 'coupDeCoeur' | 'etat'>[],
+  articles: readonly (Pick<ArticleBoutique, 'nom' | 'prixVitrine' | 'categorie' | 'coupDeCoeur' | 'etat'> & { id?: string })[],
 ): ArticlePartage[] {
   return articles
     .filter((a) => a.etat === 'affiche' || a.etat === 'epuise')
-    .map((a) => ({ nom: a.nom, prix: a.prixVitrine, categorie: a.categorie ?? null, coupDeCoeur: a.coupDeCoeur, enStock: a.etat === 'affiche' }));
+    .map((a) => ({
+      ...(a.id ? { id: a.id } : {}),
+      nom: a.nom, prix: a.prixVitrine, categorie: a.categorie ?? null, coupDeCoeur: a.coupDeCoeur, enStock: a.etat === 'affiche',
+    }));
 }
 
 /** Ce qu'on partage : toute la boutique (cle null), les coups de cœur ou un rayon. */
@@ -79,20 +88,59 @@ export function cleRayon(categorie: string | null | undefined): string {
   return cle === RAYON_COUPS_DE_COEUR ? `${cle.slice(0, 34)}-rayon` : cle;
 }
 
+/**
+ * Rayon maison tel que le lit la vitrine (lot 6 du chantier boutique, 2026-10-03) :
+ * un nom choisi par le revendeur, sa clé (toujours cleRayon(nom)) et ses articles.
+ * Validé et borné par src/lib/boutique-reglages.ts (8 rayons, 24 caractères, un
+ * article dans un seul rayon maison).
+ */
+export interface RayonChoisi {
+  cle: string;
+  nom: string;
+  ids: readonly string[];
+}
+
+/**
+ * Rayon MAISON d'un article, ou null s'il reste dans le rayon de sa catégorie.
+ *
+ * Un article est dans le rayon maison qui le contient. S'il n'est dans aucun, mais
+ * que sa catégorie porte le nom d'un rayon maison (même clé : un rayon « Mode »
+ * créé alors que des articles sont déjà de catégorie « Mode »), il le rejoint : la
+ * vitrine n'affiche jamais deux rayons du même nom, et ?rayon=<cle> n'en désigne qu'un.
+ */
+export function rayonMaisonDe(
+  rayonsMaison: readonly RayonChoisi[] | null | undefined,
+): (article: { id?: string | null; categorie?: string | null }) => string | null {
+  if (!rayonsMaison || rayonsMaison.length === 0) return () => null;
+  const parArticle = new Map<string, string>();
+  const parCle = new Map<string, string>();
+  for (const r of rayonsMaison) {
+    if (!parCle.has(r.cle)) parCle.set(r.cle, r.nom);
+    for (const id of r.ids) if (!parArticle.has(id)) parArticle.set(id, r.nom);
+  }
+  return (article) => (article.id ? parArticle.get(article.id) : undefined) ?? parCle.get(cleRayon(article.categorie)) ?? null;
+}
+
 const nomDuRayon = (a: ArticlePartage) => String(a.categorie || '').trim() || RAYON_SANS_CATEGORIE;
 
-/** Rayons de la vitrine (hors coups de cœur), dans l'ordre de leur premier article. */
-export function rayonsDeLaVitrine(articles: readonly ArticlePartage[]): ChoixPartage[] {
+/**
+ * Rayons de la vitrine (hors coups de cœur) : les rayons maison d'abord, dans
+ * l'ordre choisi (lot 6), puis les catégories dans l'ordre de leur premier article.
+ * Un rayon maison sans article affiché n'apparaît pas.
+ */
+export function rayonsDeLaVitrine(articles: readonly ArticlePartage[], rayonsMaison: readonly RayonChoisi[] = []): ChoixPartage[] {
+  const maisonDe = rayonMaisonDe(rayonsMaison);
   const rayons = new Map<string, ChoixPartage>();
+  for (const r of rayonsMaison) if (!rayons.has(r.cle)) rayons.set(r.cle, { cle: r.cle, libelle: r.nom, nombre: 0 });
   for (const a of articles) {
     if (a.coupDeCoeur) continue;
-    const nom = nomDuRayon(a);
+    const nom = maisonDe(a) ?? nomDuRayon(a);
     const cle = cleRayon(nom);
     const rayon = rayons.get(cle);
     if (rayon) rayon.nombre += 1;
     else rayons.set(cle, { cle, libelle: nom, nombre: 1 });
   }
-  return Array.from(rayons.values());
+  return Array.from(rayons.values()).filter((r) => r.nombre > 0);
 }
 
 /**
@@ -100,9 +148,9 @@ export function rayonsDeLaVitrine(articles: readonly ArticlePartage[]): ChoixPar
  * puis chaque rayon dès 2 rayons (avec un seul, il serait la boutique entière ;
  * même règle que les pastilles de la vitrine).
  */
-export function choixDePartage(articles: readonly ArticlePartage[]): ChoixPartage[] {
+export function choixDePartage(articles: readonly ArticlePartage[], rayonsMaison: readonly RayonChoisi[] = []): ChoixPartage[] {
   const coups = articles.filter((a) => a.coupDeCoeur).length;
-  const rayons = rayonsDeLaVitrine(articles);
+  const rayons = rayonsDeLaVitrine(articles, rayonsMaison);
   return [
     { cle: null, libelle: 'Toute ma boutique', nombre: articles.length },
     ...(coups > 0 ? [{ cle: RAYON_COUPS_DE_COEUR, libelle: 'Mes coups de cœur', nombre: coups }] : []),
@@ -111,12 +159,13 @@ export function choixDePartage(articles: readonly ArticlePartage[]): ChoixPartag
 }
 
 /** Articles d'un choix, dans l'ordre de la vitrine (coups de cœur d'abord). */
-export function articlesDuChoix(articles: readonly ArticlePartage[], cle: string | null): ArticlePartage[] {
+export function articlesDuChoix(articles: readonly ArticlePartage[], cle: string | null, rayonsMaison: readonly RayonChoisi[] = []): ArticlePartage[] {
   const coups = articles.filter((a) => a.coupDeCoeur);
   const autres = articles.filter((a) => !a.coupDeCoeur);
   if (!cle) return [...coups, ...autres];
   if (cle === RAYON_COUPS_DE_COEUR) return coups;
-  return autres.filter((a) => cleRayon(nomDuRayon(a)) === cle);
+  const maisonDe = rayonMaisonDe(rayonsMaison);
+  return autres.filter((a) => cleRayon(maisonDe(a) ?? nomDuRayon(a)) === cle);
 }
 
 /**
@@ -124,8 +173,13 @@ export function articlesDuChoix(articles: readonly ArticlePartage[], cle: string
  * la vitrine. Un article épuisé n'est jamais cité : le client ne pourrait pas
  * l'acheter.
  */
-export function articlesAAnnoncer(articles: readonly ArticlePartage[], cle: string | null, nombre = ARTICLES_DANS_LE_MESSAGE): ArticlePartage[] {
-  return articlesDuChoix(articles, cle)
+export function articlesAAnnoncer(
+  articles: readonly ArticlePartage[],
+  cle: string | null,
+  nombre = ARTICLES_DANS_LE_MESSAGE,
+  rayonsMaison: readonly RayonChoisi[] = [],
+): ArticlePartage[] {
+  return articlesDuChoix(articles, cle, rayonsMaison)
     .filter((a) => a.enStock !== false && typeof a.prix === 'number' && a.prix > 0)
     .slice(0, nombre);
 }

@@ -15,12 +15,12 @@ import { quartierReconnu } from '@/lib/reseau/proximite';
 import AncrageRevendeur from '@/components/common/AncrageRevendeur';
 import Button from '@/components/ui/Button';
 import { StatusPill } from '@/components/ui/Surface';
-import { ShieldCheck, Truck, KeyRound, Store, Users, MapPin, Pencil, ImagePlus, ArrowDown, ChevronRight, PackagePlus } from 'lucide-react';
+import { ShieldCheck, Truck, KeyRound, Store, Users, MapPin, Pencil, ImagePlus, ArrowDown, ChevronRight, PackagePlus, Megaphone } from 'lucide-react';
 import { initiale } from '@/lib/initiale';
 import { PAGE_MES_ARTICLES, PORTE_MA_BOUTIQUE } from '@/lib/reseau/porte-boutique';
 import { whatsappHelper } from '@/lib/whatsapp-helper';
 import VisiteBoutique from '@/components/shop/VisiteBoutique';
-import type { ArticlePartage } from '@/lib/partage-boutique';
+import type { ArticlePartage, RayonChoisi } from '@/lib/partage-boutique';
 
 // Outils du propriétaire (lot 2 du chantier boutique, 2026-10-03) : chargés à la
 // demande, seulement quand le propriétaire gère sa vitrine. Leur code n'est
@@ -59,6 +59,21 @@ export interface SuiviProprietaire {
 }
 
 /**
+ * Réglages de vitrine choisis par le propriétaire (lot 6 du chantier boutique,
+ * 2026-10-03), passés par /boutique/<adresse> pour une boutique revendeur. Tout
+ * y est public (c'est ce que le client lit) : rayons maison et texte de l'annonce.
+ * Absents sur /r/ et /s/, et tant que la base n'a pas la colonne stores.reglages.
+ */
+export interface ReglagesVitrine {
+  /** Rayons maison, dans l'ordre choisi : affichés avant les rayons automatiques. */
+  rayons: RayonChoisi[];
+  /** Annonce EN COURS (sa date de fin n'est pas passée), ou null : calculé par le serveur. */
+  annonce: string | null;
+  /** La base permet les rayons maison et l'annonce : tuile « Rayons » du propriétaire. */
+  option: boolean;
+}
+
+/**
  * Vitrine commune aux boutiques fournisseur (/s/), revendeur (/r/) et réseau
  * (/boutique/).
  *
@@ -89,6 +104,7 @@ export default function ShopView({
   rayon = null,
   visite = null,
   suiviProprietaire = null,
+  reglages = null,
 }: {
   boutique: Boutique;
   urlPartage: string;
@@ -120,6 +136,8 @@ export default function ShopView({
   visite?: { slug: string; via: string | null } | null;
   /** Visites et premier partage, pour le propriétaire seul (lot 4). */
   suiviProprietaire?: SuiviProprietaire | null;
+  /** Rayons maison et annonce datée (lot 6) ; absents : vitrine d'avant, rayons automatiques. */
+  reglages?: ReglagesVitrine | null;
 }) {
   const estRevendeur = boutique.type === 'revendeur';
   // Lot 2 (2026-10-03) : l'enseigne seule, ou « La sélection de Awa D. » ; jamais le nom complet.
@@ -147,8 +165,12 @@ export default function ShopView({
   // publiques déjà dans la page (nom, prix affiché, rayon). Rien quand la vitrine
   // montre le catalogue Suguba en attendant la sélection.
   const articlesPartage: ArticlePartage[] = gestion && !boutique.selectionVide
-    ? boutique.produits.map((p) => ({ nom: p.nom, prix: p.prix, categorie: p.categorie, coupDeCoeur: Boolean(p.coupDeCoeur), enStock: p.enStock !== false }))
+    ? boutique.produits.map((p) => ({ id: p.id, nom: p.nom, prix: p.prix, categorie: p.categorie, coupDeCoeur: Boolean(p.coupDeCoeur), enStock: p.enStock !== false }))
     : [];
+  // Rayons maison (lot 6) : seulement sur la sélection du revendeur. Le catalogue
+  // Suguba montré à la place d'une sélection vide garde ses rayons automatiques.
+  const rayonsMaison = reglages && !boutique.selectionVide ? reglages.rayons : undefined;
+  const annonce = reglages?.annonce?.trim() || null;
 
   const surtitre = estRevendeur ? 'Revendeur partenaire Suguba' : boutique.presentation ? 'Fournisseur partenaire Suguba' : 'Boutique sur Suguba';
 
@@ -313,6 +335,8 @@ export default function ShopView({
           urlPartage={urlPartage}
           articles={articlesPartage}
           visites7j={suiviProprietaire?.visites7j ?? null}
+          rayons={rayonsMaison}
+          optionRayons={Boolean(reglages?.option)}
         />
       )}
 
@@ -358,6 +382,21 @@ export default function ShopView({
         </EnteteBoutique>
       )}
 
+      {/* Annonce datée (lot 6, 2026-10-03) : le message du revendeur, jusqu'à sa date
+          de fin (calculée par le serveur). Ni prix ni pourcentage : validé à
+          l'enregistrement (src/lib/boutique-reglages.ts). */}
+      {annonce && (
+        <div role="note" aria-label="Annonce de la boutique" className="flex items-start gap-3 rounded-2xl bg-suguba-menthe border border-suguba-profond/10 px-4 py-3">
+          <Megaphone className="w-5 h-5 mt-0.5 shrink-0 text-suguba-brand-dark" aria-hidden="true" />
+          <p className="min-w-0 flex-1 text-sm font-semibold text-suguba-profond break-words">{annonce}</p>
+          {gestion && (
+            <Link href="/reseller/boutique#annonce" className="shrink-0 inline-flex items-center min-h-10 -my-2 px-1 text-sm font-semibold text-suguba-brand-dark underline underline-offset-2 group-data-[vue=client]:hidden">
+              Modifier
+            </Link>
+          )}
+        </div>
+      )}
+
       {galerie}
 
       {/* Lot 3 (2026-10-03) : alerte réelle, pour le propriétaire seulement. La vitrine
@@ -398,6 +437,7 @@ export default function ShopView({
           codePartage={proprietaire ? refCode : null}
           presentation={Boolean(boutique.presentation)}
           rayon={rayon}
+          rayonsMaison={rayonsMaison}
         />
       )}
 

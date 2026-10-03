@@ -30,6 +30,13 @@ export const PAGE_MES_ARTICLES = '/reseller/boutique/articles';
 export const PAGE_STATISTIQUES = '/reseller/boutique/statistiques';
 
 /**
+ * « Mes rayons » (lot 6, 2026-10-03) : créer ses rayons (« Pagnes », « Pour la
+ * fête »…), y ranger ses articles, les ordonner. Proposée seulement quand la base
+ * a la colonne stores.reglages (voir options.reglages, lib/reseau/boutiques.ts).
+ */
+export const PAGE_RAYONS = '/reseller/boutique/rayons';
+
+/**
  * Catalogue ouvert pour ajouter des articles depuis sa boutique (lot 3) : un
  * bandeau collant « Revenir à ma boutique » y ramène.
  */

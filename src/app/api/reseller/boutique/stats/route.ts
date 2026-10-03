@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { boutiqueDuProprietaire } from '@/lib/reseau/boutiques';
+import type { RayonMaison } from '@/lib/boutique-reglages';
 import { compterVitrine } from '@/lib/shop';
 import { estEnseigne, nomPublic } from '@/lib/enseigne';
 import { conseilBoutique, debutPeriode, plusVus, resumeVisites, PERIODES_STATS, type OrigineVisite, type PointJour } from '@/lib/reseau/stats';
@@ -52,12 +53,16 @@ export async function GET(req: NextRequest) {
   const boutique = await boutiqueDuProprietaire('reseller', uid).catch(() => null);
 
   // ── Identité affichée (nom public, jamais le nom complet) ─────────────────
-  let identite: { slug: string; nom: string; enseigne: boolean; statut: string } | null = null;
+  // `rayons` (lot 6) : rayons maison, pour la feuille de partage ; présents seulement s'il y en a.
+  let identite: { slug: string; nom: string; enseigne: boolean; statut: string; rayons?: RayonMaison[] } | null = null;
   if (boutique) {
     const { data: profil, error } = await admin.from('profiles').select('full_name').eq('id', uid).maybeSingle();
     const nomComplet = error ? null : (profil?.full_name ?? null);
     const enseigne = !error && estEnseigne(boutique.nom, nomComplet);
-    identite = { slug: boutique.slug, nom: enseigne ? boutique.nom : nomPublic(nomComplet), enseigne, statut: boutique.statut };
+    identite = {
+      slug: boutique.slug, nom: enseigne ? boutique.nom : nomPublic(nomComplet), enseigne, statut: boutique.statut,
+      ...(boutique.reglages.rayons.length > 0 ? { rayons: boutique.reglages.rayons } : {}),
+    };
   }
 
   // ── Visites de la boutique ────────────────────────────────────────────────

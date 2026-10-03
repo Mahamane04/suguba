@@ -69,6 +69,8 @@ interface ApercuBoutique {
   articles: number | null; abonnes: number; statut: string;
   /** « Ma boutique est prête à X % » (lot 2, 2026-10-03). Absent d'une réponse plus ancienne. */
   etapes?: EtapeBoutique[];
+  /** Rayons maison (lot 6, 2026-10-03), proposés par la feuille de partage ; absents s'il n'y en a pas. */
+  rayons?: { cle: string; nom: string; ids: string[] }[];
 }
 
 export default function ResellerDashboardPage() {
@@ -537,7 +539,7 @@ function CarteMaBoutique({ boutique, charge }: { boutique: ApercuBoutique | null
         <PartageBoutique
           ouvert={partage}
           onFermer={() => setPartage(false)}
-          boutique={{ nom: boutique.nom, enseigne: Boolean(boutique.enseigne), slug: boutique.slug, statut: boutique.statut }}
+          boutique={{ nom: boutique.nom, enseigne: Boolean(boutique.enseigne), slug: boutique.slug, statut: boutique.statut, rayons: boutique.rayons }}
         />
       )}
     </section>

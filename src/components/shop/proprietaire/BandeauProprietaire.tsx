@@ -2,13 +2,13 @@
 
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { BarChart3, Eye, LayoutGrid, PackagePlus, SlidersHorizontal } from 'lucide-react';
+import { BarChart3, Eye, LayoutGrid, PackagePlus, Rows3, SlidersHorizontal } from 'lucide-react';
 import BoutonPartageWhatsApp from '@/components/ui/BoutonPartageWhatsApp';
 import { StatusPill } from '@/components/ui/Surface';
 import { initiale } from '@/lib/initiale';
 import { formatNombre } from '@/lib/montant';
-import { PAGE_MES_ARTICLES, PAGE_STATISTIQUES } from '@/lib/reseau/porte-boutique';
-import type { ArticlePartage } from '@/lib/partage-boutique';
+import { PAGE_MES_ARTICLES, PAGE_RAYONS, PAGE_STATISTIQUES } from '@/lib/reseau/porte-boutique';
+import type { ArticlePartage, RayonChoisi } from '@/lib/partage-boutique';
 import { useProprietaire, type IdentiteVitrine } from './ModeProprietaire';
 import PartageBoutique from './PartageBoutique';
 
@@ -32,6 +32,11 @@ import PartageBoutique from './PartageBoutique';
  *    visites », compté par le serveur pour le propriétaire seul (« — » si la
  *    mesure manque, jamais un 0 inventé).
  *
+ * Lot 6 (2026-10-03) : tuile « Rayons » (« Mes rayons » : créer ses rayons, les
+ * ordonner), seulement quand la base le permet (`optionRayons`, colonne
+ * stores.reglages). Avant le SQL, le bandeau est exactement celui du lot 5. La
+ * feuille de partage reçoit les rayons maison : « Partager ce rayon » les propose.
+ *
  * Aucune donnée privée ici (ni gain, ni commission, ni prix de gros) : le
  * bandeau est rendu dans le HTML de la vitrine du propriétaire.
  */
@@ -42,6 +47,8 @@ export default function BandeauProprietaire({
   slug,
   articles = [],
   visites7j = null,
+  rayons,
+  optionRayons = false,
 }: {
   identite: IdentiteVitrine;
   /** 'active', ou 'hidden' / 'suspended' quand Suguba l'a masquée. */
@@ -53,6 +60,10 @@ export default function BandeauProprietaire({
   articles?: ArticlePartage[];
   /** Visites des 7 derniers jours ; null quand la mesure manque. */
   visites7j?: number | null;
+  /** Rayons maison de la vitrine, dans l'ordre choisi (lot 6). */
+  rayons?: readonly RayonChoisi[];
+  /** La base permet les rayons maison : la tuile « Rayons » est proposée. */
+  optionRayons?: boolean;
 }) {
   const proprietaire = useProprietaire();
   const identite = proprietaire?.identite ?? identiteInitiale;
@@ -64,8 +75,8 @@ export default function BandeauProprietaire({
   const fermerPartage = () => (proprietaire ? proprietaire.fermerPartage() : setPartageLocal(false));
   const adresse = slug || adresseDe(urlPartage);
   const boutique = useMemo(
-    () => ({ nom: identite.nom, enseigne: identite.enseigne, slug: adresse, statut }),
-    [identite.nom, identite.enseigne, adresse, statut],
+    () => ({ nom: identite.nom, enseigne: identite.enseigne, slug: adresse, statut, rayons }),
+    [identite.nom, identite.enseigne, adresse, statut, rayons],
   );
 
   return (
@@ -100,17 +111,23 @@ export default function BandeauProprietaire({
       </div>
 
       <div className="group-data-[vue=client]:hidden space-y-2">
-        <nav aria-label="Gérer ma boutique" className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-          <Outil href="/reseller/boutique" icone={SlidersHorizontal} libelle="Personnaliser" />
-          <Outil href={PAGE_MES_ARTICLES} icone={PackagePlus} libelle="Articles" />
+        {/* Classes écrites en entier (Tailwind ne génère que ce qu'il lit tel quel).
+            Avec « Rayons », 5 tuiles : 3 puis 2 sur téléphone (grille de 6 colonnes),
+            une ligne au-delà. Les deux du bas sont plus larges : « 7 j : 1 250 visites »
+            ne s'y coupe pas. Sans l'option, le bandeau est exactement celui du lot 5. */}
+        <nav aria-label="Gérer ma boutique" className={optionRayons ? 'grid grid-cols-6 sm:grid-cols-5 gap-2' : 'grid grid-cols-2 sm:grid-cols-4 gap-2'}>
+          <Outil href="/reseller/boutique" icone={SlidersHorizontal} libelle="Personnaliser" largeur={optionRayons ? TIERS : undefined} />
+          <Outil href={PAGE_MES_ARTICLES} icone={PackagePlus} libelle="Articles" largeur={optionRayons ? TIERS : undefined} />
+          {optionRayons && <Outil href={PAGE_RAYONS} icone={Rows3} libelle="Rayons" largeur={TIERS} />}
           <Outil
             href={PAGE_STATISTIQUES}
             icone={BarChart3}
             libelle="Stats"
             // formatNombre (relecture du lot 4) : « 1 250 visites », comme la page Statistiques.
             detail={`7 j : ${visites7j == null ? '—' : `${formatNombre(visites7j)} visite${visites7j > 1 ? 's' : ''}`}`}
+            largeur={optionRayons ? MOITIE : undefined}
           />
-          <Outil href="/reseller/outils" icone={LayoutGrid} libelle="Outils" />
+          <Outil href="/reseller/outils" icone={LayoutGrid} libelle="Outils" largeur={optionRayons ? MOITIE : undefined} />
         </nav>
         <div className="flex justify-end">
           <button
@@ -145,11 +162,15 @@ function adresseDe(url: string): string {
   }
 }
 
-function Outil({ href, icone: Icone, libelle, detail }: { href: string; icone: React.ElementType; libelle: string; detail?: string }) {
+// Largeur d'une tuile dans la grille de 6 colonnes (téléphone) ; une colonne au-delà.
+const TIERS = 'col-span-2 sm:col-span-1';
+const MOITIE = 'col-span-3 sm:col-span-1';
+
+function Outil({ href, icone: Icone, libelle, detail, largeur }: { href: string; icone: React.ElementType; libelle: string; detail?: string; largeur?: string }) {
   return (
     <Link
       href={href}
-      className="flex flex-col items-center justify-center gap-0.5 min-h-14 rounded-2xl border border-slate-200 bg-white px-1 py-1.5 text-xs font-semibold text-suguba-profond hover:bg-suguba-sauge active:scale-[0.98] transition-all"
+      className={`flex flex-col items-center justify-center gap-0.5 min-h-14 rounded-2xl border border-slate-200 bg-white px-1 py-1.5 text-xs font-semibold text-suguba-profond hover:bg-suguba-sauge active:scale-[0.98] transition-all${largeur ? ` ${largeur}` : ''}`}
     >
       <Icone className="w-5 h-5" aria-hidden="true" />
       <span className="truncate max-w-full">{libelle}</span>

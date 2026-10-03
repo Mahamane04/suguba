@@ -4,6 +4,7 @@ import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { libererCommissionsEchues } from '@/lib/commissions';
 import { boutiqueDuProprietaire } from '@/lib/reseau/boutiques';
+import type { RayonMaison } from '@/lib/boutique-reglages';
 import { compterVitrine } from '@/lib/shop';
 import { estEnseigne, nomPublic } from '@/lib/enseigne';
 import { etapesBoutique, type EtapeBoutique } from '@/lib/reseau/etapes-boutique';
@@ -41,6 +42,12 @@ interface ApercuBoutique {
   abonnes: number; statut: string;
   /** « Ma boutique est prête à X % » (lot 2 du chantier boutique, 2026-10-03). */
   etapes: EtapeBoutique[];
+  /**
+   * Rayons maison (lot 6, 2026-10-03) : proposés par la feuille « Partager ma
+   * boutique ». Présents seulement s'il y en a : avant le SQL, l'aperçu est
+   * exactement celui du lot 5.
+   */
+  rayons?: RayonMaison[];
 }
 
 // Mêmes seuils que la règle appliquée jusqu'ici côté client.
@@ -108,6 +115,7 @@ export async function GET(req: NextRequest) {
           articles,
           abonnes: b.abonnes, statut: b.statut,
           etapes: etapesBoutique({ enseigne, logo: b.logo, couverture: b.couverture, accueil: b.accroche, articles, coupsDeCoeur, partage }),
+          ...(b.reglages.rayons.length > 0 ? { rayons: b.reglages.rayons } : {}),
         };
       }
     } catch {

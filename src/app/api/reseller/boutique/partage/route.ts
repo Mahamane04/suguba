@@ -34,6 +34,9 @@ import { RAYON_SANS_CATEGORIE, adresseBoutique, cleRayon, nomDeRayonPropre } fro
  *  - le libellé du rayon n'est plus lu dans la requête : il est recalculé ici, à
  *    partir des catégories réelles des articles de la boutique (cleRayon), et
  *    seulement à la création du lien.
+ *
+ * Lot 6 (2026-10-03) : un rayon MAISON (stores.reglages, lu avec la boutique de la
+ * session) donne son nom au lien avant toute catégorie : « Ma boutique · Pagnes ».
  */
 
 const CANAUX_BOUTIQUE: readonly CanalPartage[] = ['whatsapp', 'qr'];
@@ -103,7 +106,13 @@ export async function POST(req: NextRequest) {
     ref: refBoutique(boutique.slug, rayon),
     canal,
     // Coups de cœur : libellé fixe (« Ma boutique · Coups de cœur »), rien à lire.
-    libelle: rayon && rayon !== RAYON_COUPS_DE_COEUR ? () => nomDuRayon(session.uid, rayon) : null,
+    // Rayon maison (lot 6) : son nom, déjà lu avec la boutique ; sinon la catégorie.
+    libelle: rayon && rayon !== RAYON_COUPS_DE_COEUR
+      ? async () => {
+        const maison = boutique.reglages.rayons.find((r) => r.cle === rayon);
+        return maison ? nomDeRayonPropre(maison.nom) : nomDuRayon(session.uid, rayon);
+      }
+      : null,
   }).catch(() => null);
 
   return NextResponse.json(

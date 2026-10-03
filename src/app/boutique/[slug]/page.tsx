@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { cache } from 'react';
 import { notFound } from 'next/navigation';
-import ShopView, { type ProprietaireVitrine, type SuiviProprietaire } from '@/components/shop/ShopView';
+import ShopView, { type ProprietaireVitrine, type ReglagesVitrine, type SuiviProprietaire } from '@/components/shop/ShopView';
 import BoutonSuivre from '@/components/shop/BoutonSuivre';
 import GalerieBoutique from '@/components/shop/GalerieBoutique';
 import { chargerBoutiqueFournisseur, chargerBoutiqueRevendeur, chargerProduitsDeLaBoutique, chargerProduitsSuguba, compterArticlesNonServis, URL_APP, type Boutique } from '@/lib/shop';
@@ -16,7 +16,8 @@ import { estEnseigne, nomPublic, titreVitrine } from '@/lib/enseigne';
 import { PANNEAUX_EDITION } from '@/lib/reseau/porte-boutique';
 import type { PanneauBoutique } from '@/lib/reseau/etapes-boutique';
 import { RAYON_COUPS_DE_COEUR, estCleRayon, normaliserCodeLien } from '@/lib/reseau/codes';
-import { cleRayon, RAYON_SANS_CATEGORIE } from '@/lib/partage-boutique';
+import { cleRayon, rayonMaisonDe, RAYON_SANS_CATEGORIE, type RayonChoisi } from '@/lib/partage-boutique';
+import { annonceEnCours, type ReglagesBoutique } from '@/lib/boutique-reglages';
 import { aUnLienDeBoutique, compterVisitesBoutique } from '@/lib/reseau/db';
 import { debutPeriode } from '@/lib/reseau/stats';
 
@@ -46,12 +47,17 @@ const rayonDemande = (v: string | string[] | undefined) => {
   return cle && estCleRayon(cle) ? cle : null;
 };
 
-/** Nom du rayon visé par ?rayon=, s'il existe sur la vitrine : titre d'aperçu propre au rayon. */
-function nomDuRayon(vitrine: Boutique, cle: string | null): string | null {
+/**
+ * Nom du rayon visé par ?rayon=, s'il existe sur la vitrine : titre d'aperçu propre
+ * au rayon. Lot 6 (2026-10-03) : un rayon maison l'emporte sur la catégorie.
+ */
+function nomDuRayon(vitrine: Boutique, cle: string | null, rayonsMaison: readonly RayonChoisi[] = []): string | null {
   if (!cle || vitrine.selectionVide) return null;
   if (cle === RAYON_COUPS_DE_COEUR) return vitrine.produits.some((p) => p.coupDeCoeur) ? 'Coups de cœur' : null;
-  const produit = vitrine.produits.find((p) => !p.coupDeCoeur && cleRayon(p.categorie || RAYON_SANS_CATEGORIE) === cle);
-  return produit ? (produit.categorie || RAYON_SANS_CATEGORIE) : null;
+  const maisonDe = rayonMaisonDe(rayonsMaison);
+  const rayonDe = (p: { id: string; categorie: string }) => maisonDe(p) || p.categorie || RAYON_SANS_CATEGORIE;
+  const produit = vitrine.produits.find((p) => !p.coupDeCoeur && cleRayon(rayonDe(p)) === cle);
+  return produit ? rayonDe(produit) : null;
 }
 
 type Charge = {
@@ -61,6 +67,12 @@ type Charge = {
   accroche: string | null; proprietaireId: string | null; typeProprietaire: string; principale: boolean;
   /** 'active', ou 'hidden' / 'suspended' quand Suguba l'a masquée (décidé dans la page). */
   statut: string;
+  /**
+   * Réglages de vitrine (lot 6, 2026-10-03) : rayons maison et annonce datée d'une
+   * boutique revendeur, déjà lus avec la boutique (aucune requête de plus). null
+   * pour les autres boutiques. `option` : la colonne stores.reglages existe.
+   */
+  reglages: (ReglagesBoutique & { option: boolean }) | null;
 };
 
 /**
@@ -86,6 +98,9 @@ const charger = cache(async (slug: string): Promise<Charge | null> => {
     typeProprietaire: boutique.typeProprietaire,
     principale: boutique.principale !== false,
     statut: boutique.statut,
+    // Boutiques revendeur seulement : le mode propriétaire côté fournisseur n'est
+    // pas dans ce chantier, et rien n'écrit de réglages pour les autres boutiques.
+    reglages: boutique.typeProprietaire === 'reseller' ? { ...boutique.reglages, option: boutique.options.reglages } : null,
   };
   const enPlus = {
     couverture: boutique.couverture,
@@ -177,7 +192,7 @@ export async function generateMetadata({ params, searchParams }: Params): Promis
   // Même titre que la vitrine : l'enseigne, ou « La sélection de Awa D. » (lot 2).
   // Lot 4 (2026-10-03) : un lien de rayon (?rayon=) annonce son rayon dans l'aperçu
   // WhatsApp (« Pagnes · Awa Mode — Suguba »).
-  const rayon = nomDuRayon(vitrine, rayonDemande((await searchParams)?.rayon));
+  const rayon = nomDuRayon(vitrine, rayonDemande((await searchParams)?.rayon), charge.reglages?.rayons);
   const titre = `${rayon ? `${rayon} · ` : ''}${titreVitrine(vitrine)} — Suguba`;
   // Description de partage = le mot d'accueil choisi par le propriétaire (lot 4),
   // sinon le nombre d'articles.
@@ -264,6 +279,16 @@ export default async function BoutiqueReseauPage({ params, searchParams }: Param
   const visite = !estProprietaire && charge.statut === 'active'
     ? { slug: charge.slugBoutique, via: normaliserCodeLien(seul(recherche.via)) }
     : null;
+  // Lot 6 (2026-10-03) : rayons maison et annonce. L'annonce n'est transmise que
+  // jusqu'à sa date de fin : passé ce jour, son texte ne figure plus dans la page.
+  // Le propriétaire qui gère voit la tuile « Rayons » quand la base le permet.
+  const reglages: ReglagesVitrine | null = charge.reglages
+    ? {
+      rayons: charge.reglages.rayons,
+      annonce: annonceEnCours(charge.reglages.annonce)?.texte ?? null,
+      option: charge.reglages.option && Boolean(proprietaire?.gestion),
+    }
+    : null;
   const lienModifier = !estProprietaire ? null
     : !charge.principale ? '/compte/boutiques'
       : charge.typeProprietaire === 'supplier' ? '/supplier/boutique'
@@ -284,6 +309,7 @@ export default async function BoutiqueReseauPage({ params, searchParams }: Param
       rayon={rayon}
       visite={visite}
       suiviProprietaire={suiviProprietaire}
+      reglages={reglages}
       suivre={<BoutonSuivre slug={charge.slugBoutique} abonnesInitial={charge.abonnes} />}
       galerie={charge.galerie.length > 0 ? (
         <section className="bg-white rounded-3xl border border-slate-200 p-4 sm:p-5 space-y-3">

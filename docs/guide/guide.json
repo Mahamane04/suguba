@@ -198,6 +198,44 @@
  "journal": [
   {
    "date": "2026-10-03",
+   "titre": "Boutique revendeur, lot 6 : rayons personnalisés et annonce datée",
+   "demande": "« “Ma boutique” doit montrer la boutique elle-même (logo, couverture, produits ajoutés) et non les réglages ; il veut des outils pour gérer sa boutique (personnalisation, catégories/rayons, produits mis en avant, et ce qui aide à vendre), pour un vrai sentiment d’appropriation. »",
+   "realise": [
+    "Le seul fichier SQL du chantier boutique est livré : supabase/A-EXECUTER-2026-10-03-vitrine-boutique.sql. Il ajoute à chaque boutique ses « réglages de vitrine » (rayons et annonce) et prépare le changement d’adresse unique (anciennes adresses gardées ; l’écran viendra au lot 8). Il ne modifie aucune boutique existante, ne touche à aucun article, et peut être relancé sans effet.",
+    "Nouvelle page « Mes rayons » : le revendeur crée ses propres rayons (« Pagnes », « Pour la fête »… 8 au plus, noms de 2 à 24 caractères), coche les articles de sa boutique à y ranger (un article dans un seul rayon), les monte ou les descend par ▲▼, les renomme ou les supprime. Rien ne change dans la boutique avant « Enregistrer mes rayons ». Supprimer un rayon ne retire aucun article de la boutique ni de la vente.",
+    "Vitrine : les rayons du revendeur s’affichent en premier, dans l’ordre qu’il a choisi, puis les rayons automatiques (par catégorie) pour les articles qu’il n’a pas rangés. Les coups de cœur restent en tête. Les pastilles de rayons, la recherche (le nom d’un rayon se cherche) et les liens ?rayon= suivent.",
+    "« Partager » sur chaque rayon de « Mes rayons » : ouvre la feuille « Partager ma boutique » directement sur ce rayon, avec son lien suivi (/boutique/<adresse>?rayon=…). Partout, la feuille de partage propose les rayons du revendeur en premier ; « Mes partages » affiche « Ma boutique · Pagnes ».",
+    "Annonce sur ma boutique : dans « Personnaliser », un message (90 caractères) et une date de fin (14 jours au plus, une date à 7 jours est proposée). Il s’affiche en haut de la vitrine jusqu’au soir de cette date, puis disparaît tout seul. Un pourcentage, un prix, une remise chiffrée, un numéro de téléphone ou un lien sont refusés, avec la raison écrite sous le champ.",
+    "Accès : tuile « Rayons » dans le bandeau de la vitrine (propriétaire) et carte « Mes rayons » dans « Personnaliser ». Sur la vitrine, « Modifier » à côté de l’annonce mène au champ.",
+    "Tant que le SQL n’est pas exécuté : aucune tuile, aucun champ ; la page « Mes rayons », ouverte par son adresse, dit « Les rayons arrivent bientôt ». La vitrine, le bandeau et « Personnaliser » sont exactement ceux du lot 5.",
+    "Mes boutiques : la liste d’articles à cocher d’une boutique supplémentaire est maintenant la même que celle de « Mes rayons » (lignes de 60 px, recherche qui ignore les accents).",
+    "Tests : tests/ma-boutique-lot6.test.cjs (31 tests), dont le fichier SQL exécuté deux fois de suite dans une base de test en mémoire, et les pages « Mes rayons » et « Personnaliser » jouées de bout en bout sur une base simulée."
+   ],
+   "ecarts": [
+    "En local sur la branche ux/boutique-revendeur, non publié.",
+    "SQL À LANCER PAR LE FONDATEUR : supabase/A-EXECUTER-2026-10-03-vitrine-boutique.sql, dans Supabase › SQL Editor — d’abord sur la copie locale isolée, puis en production —, suivi des 4 vérifications écrites en bas du fichier (attendu : 1 ligne ; store_slug_aliases ; false | false ; 0). Son effet : la tuile « Rayons », la page « Mes rayons » et le champ « Annonce sur ma boutique » apparaissent pour les revendeurs. Tant qu’il n’est pas exécuté, rien de cela n’est visible, et rien n’est en panne.",
+    "Changement d’adresse : le fichier crée la liste des anciennes adresses et la fonction qui fait le changement (décision du fondateur : oui, une seule fois, l’ancienne adresse redirige), mais aucun écran ne s’en sert encore — c’est le lot 8. Si le fondateur revenait sur cette décision, le bloc 2 du fichier se retire sans rien changer au reste.",
+    "Le lien d’un rayon (?rayon=…) est tiré de son nom, par la même règle que les rayons automatiques du lot 4 (le plan disait « slugifier », réservé au serveur). Renommer un rayon change donc son lien : un ancien lien ouvre alors la boutique en haut de page. La feuille « Modifier le rayon » le dit.",
+    "Un rayon qui porte le nom d’une catégorie (un rayon « Mode » alors que des articles sont de catégorie « Mode ») réunit ses articles cochés ET les autres articles de cette catégorie : la vitrine n’affiche jamais deux rayons du même nom. Choix non prévu au plan, à valider par le fondateur.",
+    "Un article en coup de cœur reste affiché dans « Coups de cœur », pas dans son rayon (règle du lot 3). Un rayon dont tous les articles sont en coups de cœur ou ne s’affichent plus n’apparaît pas sur la vitrine ; « Mes rayons » le signale (« Pas affiché »).",
+    "Seuls les rayons du revendeur s’ordonnent par ▲▼. Les rayons automatiques gardent l’ordre de leur premier article (réglé dans « Mes articles ») et passent toujours après.",
+    "Nom d’un rayon : en plus des limites du plan, sont refusés un prix ou une remise (« Promo -20 % »), un numéro de téléphone, le nom « Coups de cœur » et le nom de l’emplacement sponsorisé de l’accueil. À valider par le fondateur.",
+    "Annonce : une année est permise (« Tabaski 2027 ») ; tout autre nombre de 3 chiffres ou plus est refusé comme un prix (« Tout à 5000 »). Un numéro de téléphone et un lien sont refusés aussi (non prévus au plan : la commande doit rester sur Suguba). La date de fin est un jour entier, à l’heure de Bamako.",
+    "Les rayons du revendeur et l’annonce ne s’affichent que sur /boutique/<adresse>. L’ancienne adresse /r/<code> garde ses rayons automatiques, sans annonce.",
+    "Boutiques supplémentaires (formules Pro) : la colonne existe pour elles aussi, mais « Mes rayons » et l’annonce ne gèrent que la boutique principale ; elles viendront au lot 7.",
+    "L’annonce s’enregistre avec les autres textes de « Personnaliser » (barre d’enregistrement) : si elle est refusée, rien n’est enregistré et le message dit pourquoi.",
+    "Captures et vérifications à faire sur la copie locale [QA], à 390 px. AVANT le SQL : l’application est identique au lot 5, aucune tuile « Rayons ». APRÈS le SQL sur la copie : un rayon « Pagnes » de 3 articles apparaît en tête de vitrine ; /boutique/<adresse>?rayon=pagnes l’ouvre ; une annonce datée du jour disparaît le lendemain. Aucun serveur n’a été lancé et aucune base réelle n’a été touchée : le SQL n’a tourné que dans une base de test en mémoire."
+   ],
+   "pages": [
+    "rev-boutique-rayons",
+    "rev-boutique",
+    "vitrine-boutique",
+    "mes-boutiques"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-10-03",
    "titre": "Boutique revendeur, lot 5 : corrections de relecture",
    "demande": "« “Ma boutique” doit montrer la boutique elle-même (logo, couverture, produits ajoutés) et non les réglages ; il veut des outils pour gérer sa boutique (personnalisation, catégories/rayons, produits mis en avant, et ce qui aide à vendre), pour un vrai sentiment d’appropriation. »",
    "realise": [
@@ -3944,11 +3982,11 @@
     },
     {
      "nom": "Bandeau « Ma boutique » (propriétaire)",
-     "role": "Collé sous l’en-tête : logo, « En ligne » ou « Masquée par Suguba », et « Partager » (absent si la boutique est masquée), qui ouvre la feuille « Partager ma boutique ». Dessous : Personnaliser (réglages), Articles (« Mes articles » : ranger, coups de cœur, retirer), Stats (« 7 j : 1 250 visites », « — » si la mesure manque) et Outils (« Tous mes outils »)."
+     "role": "Collé sous l’en-tête : logo, « En ligne » ou « Masquée par Suguba », et « Partager » (absent si la boutique est masquée), qui ouvre la feuille « Partager ma boutique ». Dessous : Personnaliser (réglages), Articles (« Mes articles » : ranger, coups de cœur, retirer), Stats (« 7 j : 1 250 visites », « — » si la mesure manque) et Outils (« Tous mes outils »). Après le SQL du lot 6 : une cinquième tuile, Rayons (« Mes rayons »)."
     },
     {
      "nom": "Partager ma boutique (feuille, propriétaire)",
-     "role": "De gros boutons : toute ma boutique, mes coups de cœur, ou un rayon (avec son nombre d’articles, dès 2 rayons). Message déjà écrit (aperçu « Votre message ») : nom de la boutique, 3 articles avec leur vrai prix, « Vous payez à la livraison », et un lien suivi /go/<code>, toujours le même pour un même choix et un même canal, préparé dès qu’on touche un choix (sinon l’adresse de la boutique). WhatsApp, Copier le lien, QR. Ouverte aussi par ?partager=1 (Mes clients, porte « Ma boutique »)."
+     "role": "De gros boutons : toute ma boutique, mes coups de cœur, ou un rayon (avec son nombre d’articles, dès 2 rayons). Message déjà écrit (aperçu « Votre message ») : nom de la boutique, 3 articles avec leur vrai prix, « Vous payez à la livraison », et un lien suivi /go/<code>, toujours le même pour un même choix et un même canal, préparé dès qu’on touche un choix (sinon l’adresse de la boutique). WhatsApp, Copier le lien, QR. Ouverte aussi par ?partager=1 (Mes clients, porte « Ma boutique »). Les rayons créés par le revendeur y sont proposés en premier."
     },
     {
      "nom": "Voir comme un client",
@@ -3979,12 +4017,16 @@
      "role": "« N articles de votre sélection ne s’affichent plus · Voir » : articles retirés de la vente, refusés ou sans commission. Calculé pour le propriétaire seulement ; « Voir » ouvre « Mes articles ». Masqué en vue client."
     },
     {
+     "nom": "Annonce de la boutique",
+     "role": "Le message écrit par le revendeur dans « Personnaliser », affiché sous l’en-tête jusqu’à sa date de fin (14 jours au plus), sans prix ni pourcentage. Le propriétaire a « Modifier » à côté, masqué en vue client."
+    },
+    {
      "nom": "Coups de cœur",
      "role": "Les articles choisis par le revendeur (6 au plus), en tête des articles, avec une icône cœur ; ils ne sont pas répétés dans les rayons."
     },
     {
      "nom": "Recherche · rayons",
-     "role": "La recherche ignore les accents (« theiere » trouve « Théière »). Dès 2 rayons, des pastilles mènent à chaque rayon. Dans un rayon, les articles épuisés passent à la fin."
+     "role": "La recherche ignore les accents (« theiere » trouve « Théière »). Dès 2 rayons, des pastilles mènent à chaque rayon. Dans un rayon, les articles épuisés passent à la fin. Les rayons créés par le revendeur passent en premier, dans son ordre ; puis les rayons automatiques (catégories) pour les articles qu’il n’a pas rangés. Le nom d’un rayon se cherche aussi."
     },
     {
      "nom": "Nouveau",
@@ -4031,6 +4073,10 @@
     {
      "id": "rev-boutique-stats",
      "libelle": "Stats"
+    },
+    {
+     "id": "rev-boutique-rayons",
+     "libelle": "Rayons"
     },
     {
      "id": "rev-catalogue",
@@ -4087,6 +4133,14 @@
      "role": "10 au plus, « mettre en premier », retrait : enregistrées tout de suite, affichées en diaporama sur la vitrine. Boutons de 40 px ; retirer une photo demande d’abord « Retirer cette photo ? » (Retirer / Garder)."
     },
     {
+     "nom": "Annonce sur ma boutique",
+     "role": "Après le SQL du lot 6 seulement. Un message (90 caractères) affiché en haut de la vitrine jusqu’à la date choisie, 14 jours au plus ; le lendemain, il disparaît tout seul. Une date à 7 jours est proposée. Refusés, avec la raison sous le champ : pourcentage, prix, remise chiffrée, numéro de téléphone, lien. « Affichée jusqu’au … » ou « Terminée le … » rappelle son état ; « Retirer l’annonce » vide le champ. Enregistrée par la barre, avec les autres textes."
+    },
+    {
+     "nom": "Mes rayons",
+     "role": "Après le SQL du lot 6 seulement : « Gérer mes rayons » ouvre la page où créer ses rayons et choisir leur ordre."
+    },
+    {
      "nom": "Barre d’enregistrement",
      "role": "Apparaît dès qu’un texte ou une famille change : « Non enregistré », Annuler, Enregistrer ; puis « Boutique mise à jour ». Reste au-dessus de la barre du bas, aussi sur tablette et ordinateur."
     }
@@ -4099,6 +4153,10 @@
     {
      "id": "boutiques-quartier",
      "libelle": "Boutiques proches"
+    },
+    {
+     "id": "rev-boutique-rayons",
+     "libelle": "Gérer mes rayons"
     }
    ],
    "note": "Le compte démo n’a pas de vrai profil : la capture montre « Boutique pas encore disponible ». Avec un vrai compte, la boutique se crée à la première ouverture, au nom « Prénom I. ». Capture d’avant le lot 2 (photos, familles et barre d’enregistrement absentes).",
@@ -4251,6 +4309,74 @@
    "note": "Capture à refaire sur la copie locale. Ces chiffres viennent d’une adresse réservée au revendeur connecté : ils n’apparaissent jamais dans la vitrine publique."
   },
   {
+   "id": "rev-boutique-rayons",
+   "role": "revendeur",
+   "titre": "Mes rayons",
+   "chemin": "/reseller/boutique/rayons",
+   "but": "Ranger sa boutique en rayons à soi (« Pagnes », « Pour la fête »…) au lieu des seules catégories des fournisseurs, et choisir leur ordre : ils s’affichent en premier sur la vitrine. On y arrive par « Rayons » dans le bandeau de sa vitrine, ou par « Gérer mes rayons » dans « Personnaliser ».",
+   "elements": [
+    {
+     "nom": "N/8 rayons",
+     "role": "8 rayons au plus. Ils s’affichent en premier dans la boutique, dans l’ordre de la liste."
+    },
+    {
+     "nom": "Créer un rayon",
+     "role": "Action principale. Ouvre la feuille « Nouveau rayon » : un nom de 2 à 24 caractères et les articles à cocher (au moins un), puis « Ajouter ce rayon ». Refusés, avec la raison sous le champ : un nom déjà pris, un prix ou une remise, un numéro de téléphone, « Coups de cœur ». Absent à 8 rayons."
+    },
+    {
+     "nom": "Ligne d’un rayon",
+     "role": "Nom et « N articles dans ma boutique » : ceux que le client verra dans ce rayon. « Pas affiché » quand il n’a aucun article visible (vide, ou tous ses articles sont en coups de cœur ou ne s’affichent plus)."
+    },
+    {
+     "nom": "▲ ▼",
+     "role": "Montent ou descendent le rayon d’un cran (40 px, sans glisser-déposer)."
+    },
+    {
+     "nom": "Modifier",
+     "role": "Ouvre la feuille « Modifier le rayon » : renommer (cela change le lien de partage du rayon), cocher ou décocher des articles, « Valider », ou « Supprimer ce rayon »."
+    },
+    {
+     "nom": "Articles de ce rayon (feuille)",
+     "role": "Les articles de sa boutique, avec une recherche. Sous chaque article : son prix et, s’il y a lieu, « Dans « Fête » » (le cocher ici le déplace : un article n’est rangé que dans un seul rayon), « Coup de cœur, affiché en tête », « Épuisé » ou « Plus en vente »."
+    },
+    {
+     "nom": "Supprimer ce rayon",
+     "role": "Après la confirmation « Ses articles restent dans votre boutique, rangés par catégorie. Rien n’est retiré de la vente. »"
+    },
+    {
+     "nom": "Partager",
+     "role": "Sur chaque rayon affiché, quand la boutique est en ligne, a au moins 2 rayons et que rien n’attend d’être enregistré : ouvre la feuille « Partager ma boutique » sur ce rayon, avec son lien suivi."
+    },
+    {
+     "nom": "Rayons automatiques",
+     "role": "Les articles non rangés, regroupés par catégorie : affichés après ses rayons. Non modifiables ici ; leur ordre suit celui de « Mes articles »."
+    },
+    {
+     "nom": "Enregistrer mes rayons",
+     "role": "Barre collante : rien ne change dans la boutique avant ce bouton (« Annuler » possible). Une seule demande à la fois. Les clients voient les rayons dès l’enregistrement ; aucun article n’est retiré de la boutique."
+    },
+    {
+     "nom": "Écrans d’attente",
+     "role": "Boutique sans article : « Aucun article à ranger » et « Ajouter des articles ». Avant la mise à jour de la base : « Les rayons arrivent bientôt » (aucun bouton n’y mène alors)."
+    }
+   ],
+   "suite": [
+    {
+     "id": "vitrine-boutique",
+     "libelle": "Ma boutique"
+    },
+    {
+     "id": "rev-boutique",
+     "libelle": "Personnaliser"
+    },
+    {
+     "id": "rev-catalogue",
+     "libelle": "Ajouter des articles"
+    }
+   ],
+   "note": "Capture à refaire sur la copie locale. Page utile seulement après le SQL du lot 6 (supabase/A-EXECUTER-2026-10-03-vitrine-boutique.sql) ; avant, elle affiche « Les rayons arrivent bientôt »."
+  },
+  {
    "id": "rev-prix",
    "role": "revendeur",
    "titre": "Mes prix",
@@ -4314,7 +4440,7 @@
     },
     {
      "nom": "Choisir les articles",
-     "role": "Chaque boutique supplémentaire a sa propre sélection. La principale se gère dans « Ma boutique »."
+     "role": "Chaque boutique supplémentaire a sa propre sélection. La principale se gère dans « Ma boutique ». Liste à cocher avec recherche (les accents sont ignorés), lignes de 60 px, puis « Enregistrer N article(s) »."
     },
     {
      "nom": "Voir · Gérer",
