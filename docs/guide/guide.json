@@ -209,6 +209,7 @@
     "Même pilule sur la page des boutiques. Les champs « Quartier » des formulaires ne changent pas."
    ],
    "ecarts": [
+    "Publié le 3 octobre par fusion directe dans main (branche ux/selecteur-quartier).",
     "Sur un téléphone de 375 px, un nom très long (« Boulkassoumbougou ») est coupé dans la pilule ; il reste lisible en entier juste en dessous (« Boulkassoumbougou et alentours ») et sur la page des boutiques.",
     "Vérifié dans le navigateur à 375 px et sur ordinateur (accueil et page des boutiques, liste ouverte, quartier choisi). Aucune migration."
    ],
@@ -216,7 +217,7 @@
     "accueil",
     "boutiques-quartier"
    ],
-   "statut": "en local"
+   "statut": "en ligne"
   },
   {
    "date": "2026-10-02",
