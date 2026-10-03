@@ -24,6 +24,13 @@ import { PORTE_MA_BOUTIQUE } from '@/lib/reseau/porte-boutique';
  * revendeur peut quitter à tout moment pour vendre — le cahier des charges
  * demande que le compte soit utilisable dès les étapes minimales, la
  * vérification avancée ne conditionnant que certaines fonctions.
+ *
+ * Lot 2 du chantier boutique (2026-10-03) : la boutique n'est plus créée à
+ * l'ouverture de l'assistant. Le GET de /api/reseller/boutique la créait au nom
+ * du compte AVANT l'étape « Nom de votre boutique », et son adresse ne changeait
+ * plus : /boutique/prenom-nom. Au montage, lecture seule (?creer=non) ; à
+ * l'étape « Boutique », création avec le nom choisi (POST), ou renommage
+ * (PATCH) si elle existe déjà. L'adresse vient ainsi de l'enseigne.
  */
 
 const ETAPES = ['Vous', 'Téléphone', 'Ville', 'Adresse', 'Localisation', 'Boutique', 'Catégories', 'C’est parti'];
@@ -44,6 +51,8 @@ export default function DemarrerPage() {
   const [localisationEnvoyee, setLocalisationEnvoyee] = useState(false);
   const [nomBoutique, setNomBoutique] = useState('');
   const [slugBoutique, setSlugBoutique] = useState<string | null>(null);
+  /** Boutique déjà créée (porte « Ma boutique », réglages, étape déjà franchie) : renommage, pas création. */
+  const [boutiqueExiste, setBoutiqueExiste] = useState(false);
   const [categories, setCategories] = useState<string[]>([]);
 
   useEffect(() => {
@@ -58,8 +67,13 @@ export default function DemarrerPage() {
       setAdresse(r.address || '');
       setCategories(r.categories || []);
     }).catch(() => undefined);
-    fetch('/api/reseller/boutique').then((r) => r.json()).then((d) => {
-      if (d.boutique) { setNomBoutique(d.boutique.nom || ''); setSlugBoutique(d.boutique.slug); }
+    // Lecture seule : rien n'est créé avant que le revendeur ait choisi son nom.
+    // Sans enseigne choisie, le champ part vide (« Awa D. » n'a jamais été choisi).
+    fetch('/api/reseller/boutique?creer=non').then((r) => r.json()).then((d) => {
+      if (!d.boutique) return;
+      setBoutiqueExiste(true);
+      setSlugBoutique(d.boutique.slug);
+      if (d.vitrine?.enseigne) setNomBoutique(d.boutique.nom || '');
     }).catch(() => undefined);
   }, []);
 
@@ -79,14 +93,7 @@ export default function DemarrerPage() {
       if (etape === 0) await enregistrerProfil({ fullName: nom });
       if (etape === 2) await enregistrerProfil({ city: ville });
       if (etape === 3) await enregistrerProfil({ neighborhood: quartier, address: adresse });
-      if (etape === 5 && nomBoutique.trim()) {
-        const r = await fetch('/api/reseller/boutique', {
-          method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ nom: nomBoutique }),
-        });
-        const d = await r.json();
-        if (r.ok && d.boutique) setSlugBoutique(d.boutique.slug);
-      }
+      if (etape === 5 && nomBoutique.trim()) await enregistrerBoutique(nomBoutique.trim());
       if (etape === 6) {
         await enregistrerProfil({ categories });
         await fetch('/api/reseller/boutique', {
@@ -100,6 +107,25 @@ export default function DemarrerPage() {
     } finally {
       setEnvoi(false);
     }
+  };
+
+  /**
+   * Étape « Boutique » : création avec ce nom (POST, l'adresse en est tirée), ou
+   * renommage (PATCH) d'une boutique existante — 409 du POST compris (créée entre-
+   * temps ailleurs). Un échec bloque l'étape : on ne promet pas « Votre boutique
+   * est créée » à tort.
+   */
+  const enregistrerBoutique = async (nom: string) => {
+    const envoyer = (methode: 'POST' | 'PATCH') => fetch('/api/reseller/boutique', {
+      method: methode, headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nom }),
+    });
+    let r = await envoyer(boutiqueExiste ? 'PATCH' : 'POST');
+    if (r.status === 409) r = await envoyer('PATCH');
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok || !d.boutique) throw new Error(d.error || 'Boutique indisponible pour le moment. Réessayez.');
+    setBoutiqueExiste(true);
+    setSlugBoutique(d.boutique.slug);
   };
 
   /**
@@ -217,8 +243,12 @@ export default function DemarrerPage() {
           )}
 
           {etape === 5 && (
-            <Field label="Nom de votre boutique" htmlFor="boutique" aide="Ex. : « Chez Awa — Électroménager ». Modifiable plus tard." requis>
-              <Input id="boutique" value={nomBoutique} onChange={(e) => setNomBoutique(e.target.value)} maxLength={60} />
+            <Field label="Nom de votre boutique" htmlFor="boutique" requis
+              aide={boutiqueExiste
+                ? 'Modifiable plus tard. L’adresse de votre boutique ne change pas.'
+                : 'Il donne l’adresse de votre boutique, qui ne changera plus. Le nom, lui, reste modifiable.'}>
+              <Input id="boutique" value={nomBoutique} onChange={(e) => setNomBoutique(e.target.value)} maxLength={60}
+                placeholder="Ex. : Chez Awa — Électroménager" />
             </Field>
           )}
 

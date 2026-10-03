@@ -5,6 +5,8 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { libererCommissionsEchues } from '@/lib/commissions';
 import { boutiqueDuProprietaire } from '@/lib/reseau/boutiques';
 import { compterArticlesEnVitrine } from '@/lib/shop';
+import { estEnseigne, nomPublic } from '@/lib/enseigne';
+import { etapesBoutique, type EtapeBoutique } from '@/lib/reseau/etapes-boutique';
 
 /**
  * Fiche revendeur réelle du compte connecté.
@@ -34,6 +36,8 @@ interface ApercuBoutique {
    */
   articles: number | null;
   abonnes: number; statut: string;
+  /** « Ma boutique est prête à X % » (lot 2 du chantier boutique, 2026-10-03). */
+  etapes: EtapeBoutique[];
 }
 
 // Mêmes seuils que la règle appliquée jusqu'ici côté client.
@@ -89,10 +93,15 @@ export async function GET(req: NextRequest) {
       if (b) {
         // Même filtre que la vitrine (relecture du lot 1, 2026-10-03) : un article
         // retiré ou refusé n'y apparaît pas, il ne doit pas compter ici.
+        const articles = await compterArticlesEnVitrine(admin, session.uid);
+        // Lot 2 (2026-10-03) : le nom que voient les clients (l'enseigne, ou
+        // « Awa D. »), comme sur la vitrine ; le nom complet reste ici.
+        const enseigne = estEnseigne(b.nom, profil?.full_name);
         boutique = {
-          slug: b.slug, nom: b.nom, logo: b.logo, couverture: b.couverture,
-          articles: await compterArticlesEnVitrine(admin, session.uid),
+          slug: b.slug, nom: enseigne ? b.nom : nomPublic(profil?.full_name || null), logo: b.logo, couverture: b.couverture,
+          articles,
           abonnes: b.abonnes, statut: b.statut,
+          etapes: etapesBoutique({ enseigne, logo: b.logo, couverture: b.couverture, accueil: b.accroche, articles }),
         };
       }
     } catch {

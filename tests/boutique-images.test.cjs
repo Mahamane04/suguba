@@ -25,6 +25,30 @@ test('logo et couverture : adresse complète, jamais tronquée', async () => {
   assert.equal((await majBoutique('b1', 'u1', { logo: null })).ok, true);
 });
 
+// TEST-BOUTIQUE-LOT2-001 (chantier boutique, lot 2, 2026-10-03) : la galerie, ouverte
+// aux revendeurs, passe par le même contrôle que le logo. Une seule adresse invalide
+// refuse tout l'enregistrement, sans rien écrire.
+test('galerie : une adresse http://, javascript: ou trop longue refuse tout, sans écriture', async () => {
+  const valide = URL_LONGUE;
+  for (const mauvaise of ['http://exemple.com/photo.webp', 'javascript:alert(1)', `https://x.example/${'a'.repeat(600)}.webp`, '', 42, null, 'https://x.example/a b.webp']) {
+    ecrites.length = 0;
+    const r = await majBoutique('b1', 'u1', { nom: 'Ma boutique', galerie: [valide, mauvaise] });
+    assert.equal(r.ok, false, `refusée : ${String(mauvaise).slice(0, 40)}`);
+    assert.match(r.erreur, /galerie/);
+    assert.deepEqual(ecrites, [], 'rien n’est écrit, pas même le nom');
+  }
+});
+
+test('galerie : des adresses valides sont gardées telles quelles, dans l’ordre', async () => {
+  ecrites.length = 0;
+  const galerie = [URL_LONGUE, 'https://ok.example/2.webp'];
+  assert.deepEqual(await majBoutique('b1', 'u1', { galerie }), { ok: true });
+  assert.deepEqual(ecrites[0].gallery, galerie);
+  ecrites.length = 0;
+  assert.deepEqual(await majBoutique('b1', 'u1', { galerie: [] }), { ok: true }, 'galerie vidée');
+  assert.deepEqual(ecrites[0].gallery, []);
+});
+
 test('SQL : répare une adresse tronquée à partir du stockage', async () => {
   const { PGlite } = require('@electric-sql/pglite');
   const { readFileSync } = require('node:fs');

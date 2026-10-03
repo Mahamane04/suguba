@@ -9,8 +9,18 @@ import { compresserImage } from '@/lib/compression-image';
 /**
  * Bannière de boutique (§ 6 et § 7 : « bannière », « couverture »).
  * Format paysage : affichée en haut de la page publique de la boutique.
+ *
+ * Lot 2 du chantier boutique (2026-10-03) : `hauteur` permet au panneau de la
+ * vitrine de montrer l'aperçu à la hauteur publique (h-28 sur téléphone) ;
+ * `onChange` n'est appelé qu'une fois l'envoi terminé, d'où l'enregistrement
+ * immédiat par l'appelant. Un seul indicateur pendant l'envoi (il y en avait deux).
  */
-export default function CouvertureEditeur({ valeur, onChange }: { valeur: string | null; onChange: (url: string | null) => void }) {
+export default function CouvertureEditeur({ valeur, onChange, hauteur = 'h-32' }: {
+  valeur: string | null;
+  onChange: (url: string | null) => void;
+  /** Classe de hauteur de l'aperçu (h-32 par défaut). */
+  hauteur?: string;
+}) {
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
@@ -35,14 +45,14 @@ export default function CouvertureEditeur({ valeur, onChange }: { valeur: string
       <div className="relative">
         {valeur ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={valeur} alt="Bannière de la boutique" className="w-full h-32 object-cover rounded-2xl border border-slate-200" />
+          <img src={valeur} alt="Bannière de la boutique" className={`w-full ${hauteur} object-cover rounded-2xl border border-slate-200`} />
         ) : (
-          <div className="w-full h-32 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50" />
+          <div className={`w-full ${hauteur} rounded-2xl border-2 border-dashed border-slate-300 bg-slate-50`} />
         )}
         <div className="absolute inset-0 flex items-center justify-center gap-2">
           <label className="inline-flex items-center gap-2 h-10 px-4 rounded-2xl bg-white/95 border border-slate-200 text-xs font-bold text-slate-800 cursor-pointer shadow-sm">
             {envoi ? <SugubaLoader className="w-4 h-4" /> : <ImagePlus className="w-4 h-4" />}
-            {envoi ? <><SugubaLoader className="mr-2 h-4 w-4" />Envoi…</> : valeur ? 'Changer la bannière' : 'Ajouter une bannière'}
+            {envoi ? 'Envoi…' : valeur ? 'Changer la bannière' : 'Ajouter une bannière'}
             <input type="file" accept="image/*" className="hidden" disabled={envoi} onChange={(e) => { envoyer(e.target.files?.[0]); e.target.value = ''; }} />
           </label>
           {valeur && (

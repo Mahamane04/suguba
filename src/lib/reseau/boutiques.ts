@@ -133,6 +133,12 @@ export async function obtenirOuCreerBoutique(params: {
   typeProprietaire: TypeProprietaire;
   proprietaireId: string;
   nom: string;
+  /**
+   * Texte dont l'adresse est tirée, quand ce n'est pas le nom (lot 2 du chantier
+   * boutique, 2026-10-03) : un revendeur qui tape son nom complet comme nom de
+   * boutique au démarrage ne doit pas recevoir /boutique/prenom-nom pour toujours.
+   */
+  adresseDepuis?: string;
   logo?: string | null;
   description?: string | null;
 }): Promise<BoutiqueReseau | null> {
@@ -142,7 +148,7 @@ export async function obtenirOuCreerBoutique(params: {
   const a = getSupabaseAdmin();
   if (!a) return null;
 
-  for (const candidat of slugsCandidats(slugifier(params.nom), params.proprietaireId)) {
+  for (const candidat of slugsCandidats(slugifier(params.adresseDepuis || params.nom), params.proprietaireId)) {
     const { data, error } = await a
       .from('stores')
       .insert({
@@ -181,6 +187,14 @@ const CHAMPS_MODIFIABLES: Record<string, string> = {
 };
 
 /**
+ * Adresse d'image acceptable : https, 600 caractères au plus, sans espace ni
+ * guillemet. Gardée ENTIÈRE ou refusée, jamais tronquée (voir majBoutique).
+ */
+function adresseImageValide(url: string): boolean {
+  return url.length <= 600 && /^https:\/\/[^\s"'<>]+$/.test(url);
+}
+
+/**
  * Met à jour une boutique. Liste blanche stricte : ni le slug, ni le
  * propriétaire, ni le nombre d'abonnés ne sont modifiables par cette route —
  * un revendeur pourrait sinon s'attribuer 10 000 abonnés.
@@ -206,7 +220,7 @@ export async function majBoutique(
     // n'est pas une image en https est refusée, jamais tronquée.
     if (cle === 'logo' || cle === 'couverture') {
       const url = valeur.trim();
-      if (url && (url.length > 600 || !/^https:\/\/[^\s"'<>]+$/.test(url))) {
+      if (url && !adresseImageValide(url)) {
         return { ok: false, erreur: 'Image invalide. Envoyez-la à nouveau.' };
       }
       ligne[colonne] = url || null;
@@ -216,8 +230,18 @@ export async function majBoutique(
     if (cle === 'nom' && propre.length < 2) return { ok: false, erreur: 'Le nom de la boutique est trop court.' };
     ligne[colonne] = propre || null;
   }
+  // Galerie : même règle que le logo (lot 2 du chantier boutique, 2026-10-03).
+  // Elle acceptait n'importe quelle chaîne (javascript:, http://, adresse
+  // tronquée) avant d'être ouverte aux revendeurs. Une seule adresse invalide
+  // refuse TOUT l'enregistrement : rien n'est écrit, la galerie reste intacte.
   if (Array.isArray(champs.galerie)) {
-    ligne.gallery = (champs.galerie as unknown[]).filter((u) => typeof u === 'string').slice(0, MAX_GALERIE);
+    const galerie: string[] = [];
+    for (const u of champs.galerie as unknown[]) {
+      const url = typeof u === 'string' ? u.trim() : '';
+      if (!url || !adresseImageValide(url)) return { ok: false, erreur: 'Une photo de la galerie est invalide. Envoyez-la à nouveau.' };
+      galerie.push(url);
+    }
+    ligne.gallery = galerie.slice(0, MAX_GALERIE);
   }
   if (Array.isArray(champs.categories)) {
     ligne.categories = (champs.categories as unknown[]).filter((c) => typeof c === 'string').slice(0, 12);

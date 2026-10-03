@@ -198,6 +198,40 @@
  "journal": [
   {
    "date": "2026-10-03",
+   "titre": "Boutique revendeur, lot 2 : je gère là où le client regarde",
+   "demande": "« “Ma boutique” doit montrer la boutique elle-même (logo, couverture, produits ajoutés) et non les réglages ; il veut des outils pour gérer sa boutique (personnalisation, catégories/rayons, produits mis en avant, et ce qui aide à vendre), pour un vrai sentiment d’appropriation. »",
+   "realise": [
+    "Sur sa vitrine, le revendeur a un bandeau « Ma boutique » collé sous l’en-tête : son logo, l’état (« En ligne » ou « Masquée par Suguba ») et « Partager » sur WhatsApp. Juste dessous, trois boutons : Personnaliser, Articles (le catalogue, en attendant « Mes articles ») et Outils (« Tous mes outils »).",
+    "« Voir comme un client » : la vitrine devient exactement celle d’un client (Suivre, partage, « Devenir revendeur »), sans recharger la page. Ces boutons restent sans effet pour lui : il ne peut pas s’abonner à sa propre boutique par erreur. La pastille « Vue client · Revenir », au-dessus de la barre du bas, ramène aux outils. Le choix est gardé tant que l’onglet reste ouvert.",
+    "Trois crayons sur la vitrine : couverture, logo, nom et mot d’accueil. Chacun ouvre un panneau à un seul sujet. Couverture et logo sont enregistrés dès la fin de l’envoi : plus de logo perdu en quittant la page sans toucher « Enregistrer ». Nom et mot d’accueil : un bouton Enregistrer. La vitrine se met à jour aussitôt, avec un message.",
+    "Carte « Ma boutique est prête à X % » sur la vitrine du propriétaire, en 6 étapes : boutique créée, nom de la boutique, logo, couverture, mot d’accueil, 5 articles. Chaque étape ouvre son outil ; la carte disparaît à 100 %. Sur l’accueil, la carte « Ma boutique » montre la même progression et un lien vers la prochaine étape.",
+    "Titre public : l’enseigne seule dès qu’elle est choisie, sinon « La sélection de Awa D. ». Une boutique nommée au nom complet du compte affiche « Awa D. » : le nom complet n’apparaît plus sur la vitrine, sur l’ancienne adresse /r/, dans les aperçus de lien, sur la carte de l’accueil ni sur la carte boutique du créateur de visuels.",
+    "Démarrage : la boutique n’est plus créée à l’ouverture de l’assistant, mais à l’étape « Nom de votre boutique », avec ce nom. L’adresse vient donc de l’enseigne (par exemple /boutique/awa-mode). Si le nom tapé est celui de la personne, l’adresse prend « Prénom I. ».",
+    "Personnaliser ma boutique : couverture et logo enregistrés dès l’envoi ; photos de la boutique (10 au plus, « mettre en premier », enregistrées tout de suite) ; « Ce que je vends » (les familles de l’annuaire des boutiques) ; les textes s’enregistrent par la barre collante « Non enregistré · Annuler · Enregistrer », à la place du bouton en bas de page.",
+    "Sécurité : la boutique d’un revendeur n’accepte plus que les images envoyées depuis son propre compte, ou celles déjà en place. Le recrutement et le WhatsApp envoyés par le navigateur sont ignorés, et les familles sont limitées à la liste de l’annuaire. Pour toutes les boutiques, chaque photo de galerie est vérifiée comme le logo : une seule adresse invalide refuse tout l’enregistrement.",
+    "Créateur de visuels : « Configurer ma boutique » et « Compléter le logo et la couverture » ouvrent directement le bon panneau sur la vitrine.",
+    "Tests : tests/ma-boutique-lot2.test.cjs (15 tests, dont 14 échouent sur le code d’avant ce lot) et 2 tests de plus dans tests/boutique-images.test.cjs. tests/ma-boutique-lot1.test.cjs est adapté à la vue client. 533 tests réussis, compilation de types réussie."
+   ],
+   "ecarts": [
+    "En local sur la branche ux/boutique-revendeur, non publié. Aucune migration.",
+    "Les adresses déjà attribuées ne changent pas, car elles circulent dans des liens et des QR codes. Une boutique créée au nom complet garde /boutique/prenom-nom jusqu’au lot 8 (changement d’adresse permis une seule fois, après le SQL). Son titre affiche déjà « Awa D. ».",
+    "Règle ajoutée par prudence, à valider : un nom de boutique fait seulement de mots du nom de la personne (« Awa Traoré », « Traoré Awa ») n’est pas traité comme une enseigne, même s’il diffère du nom complet. Le titre affiche alors « La sélection de Awa D. ».",
+    "« Articles » ouvre encore le catalogue (« Mes articles » arrive au lot 3). Le bouton « Stats » viendra au lot 4. « Partager » envoie l’adresse de la boutique, sans lien suivi (lot 4). L’adresse ?partager=1 (bouton « Partager ma boutique » de Mes clients) ouvre la vitrine sans rien de plus jusqu’au lot 4.",
+    "Les étapes « 1 coup de cœur » (lot 3) et « premier partage » (lot 4) ne sont pas encore dans « prête à X % ».",
+    "Les fiches « Personnaliser ma boutique », « Démarrage », « Créer un visuel » et « Accueil revendeur » ont des captures d’avant ce lot. Captures et vérifications manuelles à faire sur la copie locale [QA], à 390 px : changer le logo au crayon, quitter puis revenir ; vue client sans requête réseau ; nouveau compte passé par le démarrage ; rien ne déborde. Aucun serveur n’a été lancé pour ce lot.",
+    "Outils du propriétaire chargés à la demande (next/dynamic) : comportement à confirmer par une compilation de production, qui n’a pas été lancée ici."
+   ],
+   "pages": [
+    "vitrine-boutique",
+    "rev-boutique",
+    "rev-demarrer",
+    "rev-createur",
+    "rev-accueil"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-10-03",
    "titre": "Boutique revendeur, lot 1 : corrections de relecture",
    "demande": "« “Ma boutique” doit montrer la boutique elle-même (logo, couverture, produits ajoutés) et non les réglages ; il veut des outils pour gérer sa boutique (personnalisation, catégories/rayons, produits mis en avant, et ce qui aide à vendre), pour un vrai sentiment d’appropriation. »",
    "realise": [
@@ -3227,6 +3261,10 @@
      "role": "Reprise possible depuis l’accueil revendeur."
     },
     {
+     "nom": "Nom de votre boutique",
+     "role": "Crée la boutique avec ce nom, dont l’adresse est tirée (/boutique/awa-mode) ; si elle existe déjà, la renomme sans changer l’adresse. Rien n’est créé avant cette étape. Sans enseigne choisie, le champ part vide."
+    },
+    {
      "nom": "Dernière étape",
      "role": "« Votre boutique est créée. Il reste à choisir vos articles. » ; « Ouvrir ma boutique » (action principale, enregistre la fin du démarrage) ou « Choisir mes articles ». La carte du lien sert à copier ou partager l’adresse."
     }
@@ -3247,7 +3285,8 @@
    ],
    "capture": {
     "chemin": "/reseller/demarrer"
-   }
+   },
+   "note": "Capture d’avant le lot 2 (étape « Nom de votre boutique » inchangée à l’écran, sauf l’aide sur l’adresse)."
   },
   {
    "id": "rev-accueil",
@@ -3270,7 +3309,7 @@
     },
     {
      "nom": "Carte « Ma boutique »",
-     "role": "Sous le solde : couverture, logo, nom, « N articles · N abonnés », « Masquée par Suguba » le cas échéant. « N articles » compte les articles que la vitrine affiche (approuvés, avec une commission) ; « — » si le nombre est illisible. « Voir ma boutique » ouvre la vitrine dans le même onglet ; « Partager » l’envoie sur WhatsApp (absent si la boutique est masquée)."
+     "role": "Sous le solde : couverture, logo, nom public (l’enseigne, ou « Awa D. »), « N articles · N abonnés », « Masquée par Suguba » le cas échéant. Tant qu’elle n’est pas complète : « Ma boutique est prête à X % », sa barre et la prochaine étape (logo, couverture, nom…), qui ouvre le bon panneau sur la vitrine. « N articles » compte les articles que la vitrine affiche ; « — » si le nombre est illisible. « Voir ma boutique » ouvre la vitrine dans le même onglet ; « Partager » l’envoie sur WhatsApp (absent si la boutique est masquée)."
     },
     {
      "nom": "Raccourcis",
@@ -3329,7 +3368,8 @@
    ],
    "capture": {
     "chemin": "/reseller"
-   }
+   },
+   "note": "Capture d’avant le lot 2 (barre « prête à X % » absente)."
   },
   {
    "id": "rev-menu",
@@ -3587,19 +3627,35 @@
    "role": "revendeur",
    "titre": "Ma boutique (la vitrine)",
    "chemin": "/boutique/<adresse>",
-   "but": "La vraie vitrine du revendeur — couverture, logo, nom, articles — telle que ses clients la voient. « Ma boutique » y mène en 1 toucher depuis l’accueil et l’onglet Boutique, et aussi depuis Outils, Mes clients, le catalogue, la carte professionnelle et la fin du démarrage.",
+   "but": "La vraie vitrine du revendeur (couverture, logo, nom, articles), telle que ses clients la voient. C’est aussi là qu’il la gère : bandeau « Ma boutique », crayons, « prête à X % », et « Voir comme un client ». « Ma boutique » y mène en 1 toucher depuis l’accueil et l’onglet Boutique, et aussi depuis Outils, Mes clients, le catalogue, la carte professionnelle et la fin du démarrage.",
    "elements": [
     {
      "nom": "Porte « Ma boutique »",
-     "role": "L’adresse /reseller/ma-boutique trouve la boutique du compte connecté et l’ouvre dans le même onglet, y compris dans l’application installée. Sans boutique, elle la crée avec « Prénom I. » (jamais le nom complet)."
+     "role": "L’adresse /reseller/ma-boutique trouve la boutique du compte connecté et l’ouvre dans le même onglet, y compris dans l’application installée. Sans boutique, elle la crée avec « Prénom I. » (jamais le nom complet). ?editer=logo, couverture ou nom ouvre directement le panneau voulu."
+    },
+    {
+     "nom": "Titre",
+     "role": "L’enseigne seule dès que le revendeur a choisi un nom de boutique, sinon « La sélection de Awa D. ». Jamais le nom complet, même pour une boutique créée à son nom."
+    },
+    {
+     "nom": "Bandeau « Ma boutique » (propriétaire)",
+     "role": "Collé sous l’en-tête : logo, « En ligne » ou « Masquée par Suguba », et « Partager » (WhatsApp, absent si la boutique est masquée). Dessous : Personnaliser (réglages), Articles (catalogue) et Outils (« Tous mes outils »)."
+    },
+    {
+     "nom": "Voir comme un client",
+     "role": "Cache tous les outils et montre la vitrine exacte du client, sans recharger. Suivre, partage et « Devenir revendeur » s’affichent, sans effet pour le propriétaire. La pastille « Vue client · Revenir », au-dessus de la barre du bas, ramène aux outils."
+    },
+    {
+     "nom": "Crayons (propriétaire)",
+     "role": "Trois crayons : couverture, logo, nom et mot d’accueil. Chacun ouvre un panneau à un seul sujet. Couverture et logo s’enregistrent dès la fin de l’envoi ; nom et mot d’accueil par « Enregistrer ». La vitrine se met à jour sur place."
+    },
+    {
+     "nom": "Ma boutique est prête à X % (propriétaire)",
+     "role": "6 étapes : boutique créée, nom de la boutique, logo, couverture, mot d’accueil, 5 articles. Chaque étape ouvre son panneau ou le catalogue. La carte disparaît à 100 %."
     },
     {
      "nom": "Pastille d’état (propriétaire)",
-     "role": "« En ligne », ou « Masquée par Suguba » avec « Cette adresse affiche « page introuvable » à vos clients : vous seul la voyez ici. » et « Écrire au support Suguba ». Une boutique masquée reste visible pour son propriétaire ; un client obtient la page introuvable à cette adresse."
-    },
-    {
-     "nom": "Personnaliser (propriétaire)",
-     "role": "Bouton posé sur la couverture : ouvre « Personnaliser ma boutique » (photos, nom, présentation, quartier)."
+     "role": "« Masquée par Suguba » avec « Cette adresse affiche « page introuvable » à vos clients : vous seul la voyez ici. » et « Écrire au support Suguba ». Une boutique masquée reste visible pour son propriétaire ; un client obtient la page introuvable à cette adresse."
     },
     {
      "nom": "N abonnés (propriétaire)",
@@ -3611,11 +3667,11 @@
     },
     {
      "nom": "C’est votre boutique · Gérer",
-     "role": "Seulement quand le propriétaire navigue avec un autre profil (client, fournisseur) : repasse en profil revendeur et rouvre la boutique."
+     "role": "Seulement quand le propriétaire navigue avec un autre profil (client, fournisseur) : repasse en profil revendeur et rouvre la boutique avec ses outils. Dans ce cas, « Personnaliser » reste posé sur la couverture."
     },
     {
      "nom": "Suivre · Copier le lien · Partager · Devenir revendeur",
-     "role": "Ce que voit un client. Le propriétaire garde « Copier le lien » et « Partager » (sauf si la boutique est masquée), mais ne voit ni « Suivre » ni « Devenir revendeur ». Ses liens d’achat ne portent pas son code : sa visite ne fait pas de lui son propre revendeur d’origine. Quand il partage un article, le lien garde son code."
+     "role": "Ce que voit un client. Le propriétaire ne les voit qu’en vue client, sans effet. Ses liens d’achat ne portent pas son code : sa visite ne fait pas de lui son propre revendeur d’origine. Quand il partage un article, le lien garde son code."
     },
     {
      "nom": "Onglet Boutique",
@@ -3625,11 +3681,15 @@
    "suite": [
     {
      "id": "rev-boutique",
-     "libelle": "Personnaliser ma boutique"
+     "libelle": "Personnaliser"
     },
     {
      "id": "rev-catalogue",
-     "libelle": "Choisir mes articles"
+     "libelle": "Articles"
+    },
+    {
+     "id": "reseller-outils",
+     "libelle": "Outils"
     },
     {
      "id": "fiche-produit",
@@ -3643,7 +3703,7 @@
    "role": "revendeur",
    "titre": "Personnaliser ma boutique",
    "chemin": "/reseller/boutique",
-   "but": "Les réglages de la vitrine /boutique/ : logo, couverture, nom, accroche, quartier, présentation, avec le lien et le QR code à partager. « Ma boutique » ouvre maintenant la vitrine elle-même ; on arrive ici par « Personnaliser ».",
+   "but": "Les réglages de la vitrine /boutique/ : couverture, logo, photos de la boutique, nom, mot d’accueil, présentation, quartier et familles vendues, avec le lien et le QR code à partager. « Ma boutique » ouvre la vitrine elle-même ; on arrive ici par « Personnaliser ».",
    "elements": [
     {
      "nom": "Voir ma boutique",
@@ -3658,24 +3718,28 @@
      "role": "L’adresse complète (app.sugubaml.com/boutique/…), qui ne change jamais."
     },
     {
-     "nom": "Logo · Couverture",
-     "role": "Photos de la vitrine."
-    },
-    {
-     "nom": "Nom · Accroche · Présentation",
-     "role": "Textes affichés sur la vitrine."
-    },
-    {
-     "nom": "Quartier de la boutique",
-     "role": "Facultatif : la rend visible dans « Boutiques près de chez vous ». « Ne plus afficher de quartier » le retire."
-    },
-    {
-     "nom": "Enregistrer",
-     "role": "Met la vitrine à jour."
-    },
-    {
      "nom": "Lien / QR",
      "role": "Carte à copier ou partager ; « Ouvrir » affiche la vitrine dans le même onglet. Absente quand Suguba a masqué la boutique : pas de partage vers une page introuvable."
+    },
+    {
+     "nom": "Couverture et logo",
+     "role": "Enregistrés dès la fin de l’envoi, avec un message. Le logo est carré, comme sur la vitrine."
+    },
+    {
+     "nom": "Nom · Mot d’accueil · Quartier · Présentation",
+     "role": "Textes affichés sur la vitrine. Tant que le nom reprend celui du revendeur, l’aide rappelle que les clients lisent « La sélection de Awa D. ». Quartier facultatif : il rend la boutique visible dans « Boutiques près de chez vous »."
+    },
+    {
+     "nom": "Ce que je vends",
+     "role": "Familles d’articles (Mode & Beauté, Électronique…) : elles servent à trouver la boutique dans l’annuaire des boutiques."
+    },
+    {
+     "nom": "Photos de la boutique",
+     "role": "10 au plus, « mettre en premier », retrait : enregistrées tout de suite, affichées en diaporama sur la vitrine."
+    },
+    {
+     "nom": "Barre d’enregistrement",
+     "role": "Apparaît dès qu’un texte ou une famille change : « Non enregistré », Annuler, Enregistrer ; puis « Boutique mise à jour »."
     }
    ],
    "suite": [
@@ -3688,7 +3752,7 @@
      "libelle": "Boutiques proches"
     }
    ],
-   "note": "Le compte démo n’a pas de vrai profil : la capture montre « Boutique pas encore disponible ». Avec un vrai compte, la boutique se crée à la première ouverture, au nom « Prénom I. ».",
+   "note": "Le compte démo n’a pas de vrai profil : la capture montre « Boutique pas encore disponible ». Avec un vrai compte, la boutique se crée à la première ouverture, au nom « Prénom I. ». Capture d’avant le lot 2 (photos, familles et barre d’enregistrement absentes).",
    "capture": {
     "chemin": "/reseller/boutique"
    }
@@ -3989,6 +4053,10 @@
      "role": "Rechercher et choisir l’article."
     },
     {
+     "nom": "Ma boutique",
+     "role": "Carte de la boutique (logo, couverture, nom public). « Configurer ma boutique » et « Compléter le logo et la couverture » ouvrent le panneau du logo, ou de la couverture, directement sur la vitrine."
+    },
+    {
      "nom": "Format",
      "role": "Statut WhatsApp (vertical) ou Publication (carré)."
     },
@@ -4009,11 +4077,16 @@
     {
      "id": "rev-calendrier",
      "libelle": "Calendrier"
+    },
+    {
+     "id": "vitrine-boutique",
+     "libelle": "Ma boutique"
     }
    ],
    "capture": {
     "chemin": "/reseller/createur"
-   }
+   },
+   "note": "Capture d’avant le lot 2 du chantier boutique."
   },
   {
    "id": "rev-canaux",

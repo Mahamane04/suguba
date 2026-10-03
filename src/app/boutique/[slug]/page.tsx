@@ -12,6 +12,9 @@ import { lireReglagesReseau } from '@/lib/reseau/recompenses';
 import { appliquerPrioriteReseau } from '@/lib/presentation-fournisseur';
 import { cookies } from 'next/headers';
 import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
+import { estEnseigne, nomPublic, titreVitrine } from '@/lib/enseigne';
+import { PANNEAUX_EDITION } from '@/lib/reseau/porte-boutique';
+import type { PanneauBoutique } from '@/lib/reseau/etapes-boutique';
 
 /**
  * Boutique du réseau — /boutique/<adresse>.
@@ -24,6 +27,7 @@ import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
 export const dynamic = 'force-dynamic';
 
 type Params = { params: Promise<{ slug: string }> };
+type ParamsPage = Params & { searchParams: Promise<{ editer?: string | string[] }> };
 
 type Charge = {
   vitrine: Boutique; slugBoutique: string; abonnes: number; galerie: string[]; quartier: string | null;
@@ -62,7 +66,7 @@ const charger = cache(async (slug: string): Promise<Charge | null> => {
 
   if (boutique.typeProprietaire === 'reseller' && boutique.proprietaireId) {
     const admin = getSupabaseAdmin();
-    const { data } = (await admin?.from('profiles').select('reseller_code').eq('id', boutique.proprietaireId).maybeSingle()) || { data: null };
+    const { data } = (await admin?.from('profiles').select('reseller_code, full_name').eq('id', boutique.proprietaireId).maybeSingle()) || { data: null };
     if (!data?.reseller_code) return null;
     const vitrine = await chargerBoutiqueRevendeur(data.reseller_code);
     if (!vitrine) return null;
@@ -73,8 +77,16 @@ const charger = cache(async (slug: string): Promise<Charge | null> => {
     }
     // Le nom et le logo choisis dans « Ma boutique » l'emportent sur le nom
     // du compte : c'est bien l'enseigne que le revendeur a décidé d'afficher.
+    // Lot 2 du chantier boutique (2026-10-03) : seulement si c'est une vraie
+    // enseigne. Un nom de boutique égal au nom du compte (premières boutiques,
+    // créées au nom complet) donne « Awa D. » : le nom complet ne quitte pas le serveur.
+    const enseigne = estEnseigne(boutique.nom, data.full_name);
     return {
-      vitrine: { ...vitrine, ...enPlus, nom: boutique.nom || vitrine.nom, logo: boutique.logo, description: boutique.description },
+      vitrine: {
+        ...vitrine, ...enPlus,
+        nom: enseigne ? boutique.nom : nomPublic(data.full_name || null), enseigne,
+        logo: boutique.logo, description: boutique.description,
+      },
       slugBoutique: boutique.slug,
       abonnes: boutique.abonnes,
       galerie: boutique.galerie,
@@ -134,7 +146,8 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   if (charge.statut !== 'active') return { title: 'Boutique — Suguba', robots: { index: false, follow: false } };
 
   const { vitrine } = charge;
-  const titre = `${vitrine.nom} — Suguba`;
+  // Même titre que la vitrine : l'enseigne, ou « La sélection de Awa D. » (lot 2).
+  const titre = `${titreVitrine(vitrine)} — Suguba`;
   const description = `${vitrine.produits.length} article${vitrine.produits.length > 1 ? 's' : ''} livrés à Bamako. Vous payez à la livraison.`;
   // Aperçu WhatsApp/Facebook : la couverture, puis le logo de la boutique ;
   // une photo d'article seulement si le revendeur n'a rien personnalisé.
@@ -152,7 +165,7 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   };
 }
 
-export default async function BoutiqueReseauPage({ params }: Params) {
+export default async function BoutiqueReseauPage({ params, searchParams }: ParamsPage) {
   const { slug } = await params;
   const charge = await charger(slug);
   if (!charge) notFound();
@@ -173,6 +186,12 @@ export default async function BoutiqueReseauPage({ params }: Params) {
       : null;
   // Boutique masquée par Suguba : page introuvable pour tout autre visiteur.
   if (charge.statut !== 'active' && !proprietaire) notFound();
+  // ?editer=logo|couverture|nom (porte « Ma boutique », lot 2) : ouvre le panneau,
+  // seulement pour le propriétaire qui gère sa vitrine. Toute autre valeur est ignorée.
+  const demande = (await searchParams)?.editer;
+  const editer = proprietaire?.gestion && typeof demande === 'string' && (PANNEAUX_EDITION as readonly string[]).includes(demande)
+    ? demande as PanneauBoutique
+    : null;
   const lienModifier = !estProprietaire ? null
     : !charge.principale ? '/compte/boutiques'
       : charge.typeProprietaire === 'supplier' ? '/supplier/boutique'
@@ -188,6 +207,7 @@ export default async function BoutiqueReseauPage({ params }: Params) {
       accroche={charge.accroche}
       lienModifier={lienModifier}
       proprietaire={proprietaire}
+      editer={editer}
       suivre={<BoutonSuivre slug={charge.slugBoutique} abonnesInitial={charge.abonnes} />}
       galerie={charge.galerie.length > 0 ? (
         <section className="bg-white rounded-3xl border border-slate-200 p-4 sm:p-5 space-y-3">

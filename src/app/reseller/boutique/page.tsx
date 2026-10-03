@@ -1,19 +1,22 @@
 'use client';
 
 
-import React, { useEffect, useState } from 'react';
-import { Store, Users, Save, Eye } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Store, Users, Eye } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import CarteLien from '@/components/reseau/CarteLien';
 import LogoUploader from '@/components/common/LogoUploader';
 import CouvertureEditeur from '@/components/reseau/CouvertureEditeur';
+import GalerieEditeur from '@/components/reseau/GalerieEditeur';
 import Button from '@/components/ui/Button';
+import BarreEnregistrement from '@/components/ui/BarreEnregistrement';
 import { Field, Input, Textarea } from '@/components/ui/Field';
 import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
 import { Card, EmptyState, Skeleton, StatCard, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
 import { PORTE_MA_BOUTIQUE } from '@/lib/reseau/porte-boutique';
 import { whatsappHelper } from '@/lib/whatsapp-helper';
+import { FAMILLES_CATEGORIES } from '@/lib/product-categories';
 
 /**
  * Personnaliser ma boutique (§ 7 des écrans) — les réglages de la vitrine.
@@ -23,6 +26,16 @@ import { whatsappHelper } from '@/lib/whatsapp-helper';
  * sous le titre « Personnaliser ma boutique », avec « Voir ma boutique » en
  * haut et l'état décidé par Suguba (une boutique masquée n'était signalée
  * nulle part).
+ *
+ * Lot 2 (2026-10-03) :
+ *  - couverture, logo et photos de la boutique sont ENREGISTRÉS dès la fin de
+ *    l'envoi (une image choisie puis abandonnée en quittant la page était perdue) ;
+ *  - photos de la boutique (GalerieEditeur, 10 au plus, « mettre en premier »),
+ *    comme côté fournisseur ;
+ *  - « Ce que je vends » : les familles de l'annuaire /boutiques (stores.categories),
+ *    choisies au démarrage et jusqu'ici impossibles à changer ;
+ *  - les textes s'enregistrent par la barre collante (BarreEnregistrement), qui
+ *    dit ce qui attend, au lieu d'un bouton en bas de page.
  *
  * Elle est créée automatiquement au premier accès : un revendeur ne doit pas
  * avoir à « créer une boutique » avant de pouvoir partager son premier
@@ -41,22 +54,47 @@ interface Boutique {
   abonnes: number;
   /** 'active', ou 'hidden' / 'suspended' quand Suguba l'a masquée. */
   statut: string;
+  quartier?: string | null;
+  galerie?: string[];
+  categories?: string[];
 }
+
+/** Nom que voient les clients (calculé par le serveur) : l'enseigne, ou « Awa D. ». */
+interface Vitrine { nom: string; enseigne: boolean }
+
+interface Textes { nom: string; accroche: string; description: string; quartier: string; categories: string[] }
+
+const textesDe = (b: Boutique): Textes => ({
+  nom: b.nom || '',
+  accroche: b.accroche || '',
+  description: b.description || '',
+  quartier: b.quartier || '',
+  categories: (b.categories || []).filter((c) => FAMILLES_CATEGORIES.some((f) => f.famille === c)),
+});
+const memesTextes = (a: Textes, b: Textes) =>
+  a.nom.trim() === b.nom.trim() && a.accroche.trim() === b.accroche.trim() && a.description.trim() === b.description.trim()
+  && a.quartier === b.quartier && [...a.categories].sort().join('|') === [...b.categories].sort().join('|');
 
 export default function MaBoutiqueRevendeurPage() {
   const { toast } = useToast();
   const [boutique, setBoutique] = useState<Boutique | null>(null);
+  const [vitrine, setVitrine] = useState<Vitrine | null>(null);
   const [chargement, setChargement] = useState(true);
   const [enregistrement, setEnregistrement] = useState(false);
+  const [envoiImage, setEnvoiImage] = useState(false);
   const [indisponible, setIndisponible] = useState(false);
   const [origine, setOrigine] = useState('https://app.sugubaml.com');
+  const [maxGalerie, setMaxGalerie] = useState(10);
+  // Remonte les éditeurs d'image après un refus : l'aperçu revient à l'image enregistrée.
+  const [essaiImage, setEssaiImage] = useState(0);
 
-  const [nom, setNom] = useState('');
-  const [accroche, setAccroche] = useState('');
-  const [description, setDescription] = useState('');
-  const [logo, setLogo] = useState<string | null>(null);
-  const [couverture, setCouverture] = useState<string | null>(null);
-  const [quartier, setQuartier] = useState('');
+  const [textes, setTextes] = useState<Textes>({ nom: '', accroche: '', description: '', quartier: '', categories: [] });
+  const [message, setMessage] = useState('');
+  const [erreurs, setErreurs] = useState<string[]>([]);
+
+  const enregistres = useMemo(() => (boutique ? textesDe(boutique) : null), [boutique]);
+  const modifie = Boolean(enregistres && !memesTextes(textes, enregistres));
+  const champ = <K extends keyof Textes>(cle: K, valeur: Textes[K]) => { setTextes((t) => ({ ...t, [cle]: valeur })); setMessage(''); };
 
   useEffect(() => { setOrigine(window.location.origin); }, []);
 
@@ -68,35 +106,61 @@ export default function MaBoutiqueRevendeurPage() {
         if (annule) return;
         if (!data.boutique) { setIndisponible(true); return; }
         setBoutique(data.boutique);
-        setNom(data.boutique.nom || '');
-        setAccroche(data.boutique.accroche || '');
-        setDescription(data.boutique.description || '');
-        setLogo(data.boutique.logo || null);
-        setCouverture(data.boutique.couverture || null);
-        setQuartier(data.boutique.quartier || '');
+        setVitrine(data.vitrine || null);
+        setTextes(textesDe(data.boutique));
+        if (data.maxGalerie) setMaxGalerie(data.maxGalerie);
       })
       .catch(() => { if (!annule) setIndisponible(true); })
       .finally(() => { if (!annule) setChargement(false); });
     return () => { annule = true; };
   }, []);
 
-  const enregistrer = async () => {
-    setEnregistrement(true);
+  /** PATCH commun : renvoie la boutique enregistrée, ou null (message déjà affiché). */
+  const patcher = async (champs: Record<string, unknown>): Promise<Boutique | null> => {
     try {
       const reponse = await fetch('/api/reseller/boutique', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ nom, accroche, description, logo, couverture, quartier: quartier || null }),
+        body: JSON.stringify(champs),
       });
-      const data = await reponse.json();
-      if (!reponse.ok) { toast(data.error || 'Enregistrement impossible.', { ton: 'erreur' }); return; }
-      setBoutique(data.boutique);
-      toast('Boutique mise à jour.', { ton: 'succes' });
+      const data = await reponse.json().catch(() => ({}));
+      if (!reponse.ok || !data.boutique) {
+        toast(data.error || 'Enregistrement impossible.', { ton: 'erreur' });
+        return null;
+      }
+      if (data.vitrine) setVitrine(data.vitrine);
+      return data.boutique as Boutique;
     } catch {
       toast('Enregistrement impossible. Vérifiez votre connexion.', { ton: 'erreur' });
-    } finally {
-      setEnregistrement(false);
+      return null;
     }
+  };
+
+  /** Couverture, logo et photos : enregistrés dès la fin de l'envoi. Les textes en cours restent intacts. */
+  const enregistrerImage = async (champs: { logo?: string | null; couverture?: string | null; galerie?: string[] }, confirmation: string) => {
+    setEnvoiImage(true);
+    const apres = await patcher(champs);
+    setEnvoiImage(false);
+    if (!apres) { setEssaiImage((n) => n + 1); return; }
+    setBoutique((b) => (b ? { ...b, logo: apres.logo, couverture: apres.couverture, galerie: apres.galerie || [] } : apres));
+    toast(confirmation, { ton: 'succes' });
+  };
+
+  const enregistrerTextes = async () => {
+    setEnregistrement(true);
+    setErreurs([]);
+    const apres = await patcher({
+      nom: textes.nom,
+      accroche: textes.accroche,
+      description: textes.description,
+      quartier: textes.quartier || null,
+      categories: textes.categories,
+    });
+    setEnregistrement(false);
+    if (!apres) { setErreurs(['Rien n’a été enregistré. Vérifiez les champs, puis réessayez.']); return; }
+    setBoutique(apres);
+    setTextes(textesDe(apres));
+    setMessage('Boutique mise à jour.');
   };
 
   return (
@@ -145,47 +209,82 @@ export default function MaBoutiqueRevendeurPage() {
               url={`${origine}/boutique/${boutique.slug}`}
               lienOuvrir={`/boutique/${boutique.slug}`}
               aide="Vos articles, à votre nom. Chaque vente passée par ce lien vous revient."
-              texteWhatsApp={`🛍️ Ma boutique Suguba — ${nom}\n\nCommandez, vous payez à la livraison à Bamako.\n👉 ${origine}/boutique/${boutique.slug}`}
+              texteWhatsApp={`🛍️ Ma boutique Suguba — ${vitrine?.nom || boutique.nom}\n\nCommandez, vous payez à la livraison à Bamako.\n👉 ${origine}/boutique/${boutique.slug}`}
             />
           )}
 
-          <Card className="space-y-4">
-            <p className="text-sm font-bold text-slate-900">Personnaliser</p>
-
-            <CouvertureEditeur valeur={couverture} onChange={setCouverture} />
-
-            <div className="flex items-center gap-4">
-              <LogoUploader value={logo} onChange={setLogo} nomPourInitiale={nom} />
-              <p className="text-xs text-slate-500">
-                Une photo de vous ou votre logo. C’est ce que vos clients verront en premier.
-              </p>
+          <Card className="space-y-4" aria-busy={envoiImage || undefined}>
+            <div>
+              <p className="text-sm font-bold text-slate-900">Couverture et logo</p>
+              <p className="text-xs text-slate-600 mt-0.5">Enregistrés dès la fin de l’envoi.</p>
             </div>
+            <CouvertureEditeur key={`couverture-${essaiImage}`} valeur={boutique.couverture}
+              onChange={(url) => enregistrerImage({ couverture: url }, url ? 'Couverture enregistrée.' : 'Couverture retirée.')} />
+            <div className="flex items-center gap-4">
+              <LogoUploader key={`logo-${essaiImage}`} value={boutique.logo} forme="carre" nomPourInitiale={vitrine?.nom || boutique.nom}
+                onChange={(url) => enregistrerImage({ logo: url }, url ? 'Logo enregistré.' : 'Logo retiré.')} />
+            </div>
+            <p className="text-xs text-slate-500">
+              Une photo de vous ou votre logo. C’est ce que vos clients verront en premier.
+            </p>
+          </Card>
 
-            <Field label="Nom de la boutique" htmlFor="nom-boutique" requis>
-              <Input id="nom-boutique" value={nom} onChange={(e) => setNom(e.target.value)} maxLength={60} />
+          <Card className="space-y-4">
+            <p className="text-sm font-bold text-slate-900">Nom et présentation</p>
+
+            <Field label="Nom de la boutique" htmlFor="nom-boutique" requis
+              aide={vitrine && !vitrine.enseigne
+                ? `Tant que ce nom reprend le vôtre, vos clients lisent « La sélection de ${vitrine.nom} ». L’adresse ne change pas.`
+                : 'Affiché en haut de votre boutique. L’adresse ne change pas.'}>
+              <Input id="nom-boutique" value={textes.nom} onChange={(e) => champ('nom', e.target.value)} maxLength={60}
+                placeholder="Ex. : Chez Awa — Mode et beauté" />
             </Field>
 
-            <Field label="Accroche" htmlFor="accroche" aide="Une phrase courte, affichée sous le nom.">
-              <Input id="accroche" value={accroche} onChange={(e) => setAccroche(e.target.value)} maxLength={90}
+            <Field label="Mot d’accueil" htmlFor="accroche" aide="Une phrase courte, affichée sous le nom.">
+              <Input id="accroche" value={textes.accroche} onChange={(e) => champ('accroche', e.target.value)} maxLength={90}
                 placeholder="Électroménager et mode livrés à Bamako" />
             </Field>
 
             <Field label="Quartier de la boutique" htmlFor="quartier-boutique" aide="Facultatif. Les clients du quartier et des alentours trouveront votre boutique. Indiquez-le seulement si vous recevez des clients.">
-              <NeighborhoodPicker id="quartier-boutique" value={quartier} onChange={(q) => setQuartier(q === 'Autre quartier' ? '' : q)} placeholder="Choisir le quartier" />
-              {quartier && (
-                <button type="button" onClick={() => setQuartier('')} className="mt-1 text-xs font-semibold text-slate-500 underline underline-offset-2 min-h-[32px]">
+              <NeighborhoodPicker id="quartier-boutique" value={textes.quartier} onChange={(q) => champ('quartier', q === 'Autre quartier' ? '' : q)} placeholder="Choisir le quartier" />
+              {textes.quartier && (
+                <button type="button" onClick={() => champ('quartier', '')} className="mt-1 text-xs font-semibold text-slate-500 underline underline-offset-2 min-h-[32px]">
                   Ne plus afficher de quartier
                 </button>
               )}
             </Field>
 
             <Field label="Présentation" htmlFor="presentation" aide="Qui vous êtes, ce que vous vendez, comment vous livrez.">
-              <Textarea id="presentation" rows={4} value={description} onChange={(e) => setDescription(e.target.value)} maxLength={1200} />
+              <Textarea id="presentation" rows={4} value={textes.description} onChange={(e) => champ('description', e.target.value)} maxLength={1200} />
             </Field>
+          </Card>
 
-            <Button onClick={enregistrer} loading={enregistrement} fullWidth>
-              <Save className="w-4 h-4" />Enregistrer ma boutique
-            </Button>
+          <Card className="space-y-3">
+            <div>
+              <p className="text-sm font-bold text-slate-900">Ce que je vends</p>
+              <p className="text-xs text-slate-600 mt-0.5">Les clients trouvent votre boutique par ces familles dans « Boutiques près de chez vous ».</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {FAMILLES_CATEGORIES.map((f) => {
+                const actif = textes.categories.includes(f.famille);
+                return (
+                  <button key={f.famille} type="button" aria-pressed={actif}
+                    onClick={() => champ('categories', actif ? textes.categories.filter((c) => c !== f.famille) : [...textes.categories, f.famille])}
+                    className={`px-3.5 min-h-[40px] rounded-full text-xs font-bold border ${actif ? 'bg-suguba-profond text-white border-suguba-profond' : 'bg-white text-slate-700 border-slate-200'}`}>
+                    {f.famille}
+                  </button>
+                );
+              })}
+            </div>
+          </Card>
+
+          <Card className="space-y-3">
+            <div>
+              <p className="text-sm font-bold text-slate-900">Photos de la boutique</p>
+              <p className="text-xs text-slate-600 mt-0.5">Votre étal, vos articles, votre quartier. Affichées en diaporama sur votre boutique, enregistrées tout de suite.</p>
+            </div>
+            <GalerieEditeur images={boutique.galerie || []} max={maxGalerie}
+              onChange={(nouvelles) => enregistrerImage({ galerie: nouvelles }, 'Photos enregistrées.')} />
           </Card>
 
           <Card className="space-y-2">
@@ -196,6 +295,17 @@ export default function MaBoutiqueRevendeurPage() {
             </p>
             <Button href="/reseller/catalog" variant="ghost" fullWidth>Choisir mes articles</Button>
           </Card>
+
+          <BarreEnregistrement
+            modifie={modifie}
+            envoi={enregistrement}
+            onEnregistrer={enregistrerTextes}
+            onAnnuler={() => { if (enregistres) setTextes(enregistres); setErreurs([]); }}
+            libelle="Enregistrer"
+            erreurs={erreurs}
+            message={message}
+            bloque={textes.nom.trim().length < 2}
+          />
         </>
       )}
     </PageReseau>

@@ -82,6 +82,14 @@ require.cache[require.resolve('../src/components/shop/BoutiqueProduits.tsx')] = 
 require.cache[require.resolve('next/link')] = {
   exports: { __esModule: true, default: ({ href, prefetch, children, ...reste }) => React.createElement('a', { href, 'data-prefetch': String(prefetch), ...reste }, children) },
 };
+// Lot 2 (2026-10-03) : les outils du propriétaire sont chargés par next/dynamic. Ici,
+// le module visé par import() est chargé tout de suite, pour lire leur rendu.
+require.cache[require.resolve('next/dynamic')] = {
+  exports: { __esModule: true, default: (charger) => {
+    const chemin = String(charger).match(/require\(['"]([^'"]+)['"]\)/)[1].replace(/^@\//, `${path.join(RACINE, 'src')}/`);
+    return (p) => React.createElement(require(chemin).default, p);
+  } },
+};
 
 const { NextRequest } = require('next/server');
 const requete = (url) => new NextRequest(`http://localhost${url}`, { headers: { cookie: 'suguba_session=simule' } });
@@ -238,7 +246,10 @@ test('/api/reseller/me?avec=boutique : aperçu de la boutique ; boutique illisib
   let r = await GET(requete('/api/reseller/me?avec=boutique'));
   assert.equal(r.status, 200);
   let json = await r.json();
-  assert.deepEqual(json.boutique, { slug: 'awa-mode', nom: 'Awa Mode', logo: 'https://x/logo.webp', couverture: null, articles: 2, abonnes: 4, statut: 'active' });
+  // Lot 2 (2026-10-03) : + étapes de « Ma boutique est prête à X % » (vérifiées dans ma-boutique-lot2).
+  const { etapes, ...apercu } = json.boutique;
+  assert.deepEqual(apercu, { slug: 'awa-mode', nom: 'Awa Mode', logo: 'https://x/logo.webp', couverture: null, articles: 2, abonnes: 4, statut: 'active' });
+  assert.ok(Array.isArray(etapes));
   assert.equal(json.reseller.referralCode, 'AWA1');
   // Tous les articles choisis retirés ou refusés : 0, comme la vitrine qui montre le
   // catalogue Suguba (l'étape « Choisir mes articles » n'est pas cochée).
@@ -281,20 +292,25 @@ const rendreVitrine = (props) => renderToStaticMarkup(React.createElement(ShopVi
   suivre: React.createElement('b', { 'data-marqueur': 'suivre' }), ...props,
 }));
 
-test('ShopView, propriétaire en gestion : ni ancrage, ni Suivre, ni « Devenir revendeur » ; abonnés, état, action', () => {
+test('ShopView, propriétaire en gestion : ni ancrage ; Suivre et « Devenir revendeur » seulement en vue client, inertes (lot 2) ; abonnés, état, action', () => {
   const html = rendreVitrine({ lienModifier: '/reseller/boutique', proprietaire: { statut: 'active', abonnes: 3, gestion: true } });
   assert.doesNotMatch(html, /data-marqueur="ancrage"/, 'le propriétaire ne devient pas son propre revendeur d’origine');
   // Relecture du lot 1 : ses liens d'achat ne portent pas ?ref=<son code> (l'ancrage
   // global du layout l'aurait rattaché à lui-même au premier article touché) ; ses
   // partages d'article gardent son code.
   assert.match(html, /data-marqueur="articles" data-ref="null" data-code-partage="AWA1"/);
-  assert.doesNotMatch(html, /data-marqueur="suivre"/);
-  assert.doesNotMatch(html, /Devenir revendeur/);
+  // Lot 2 (2026-10-03) : « Voir comme un client » montre exactement la vitrine du
+  // client. Suivre, « Devenir revendeur » et l'avis « Sélection en préparation » sont
+  // donc rendus, mais inertes et cachés tant que la vue client n'est pas choisie.
+  const inerte = '<div inert="" class="hidden group-data-\\[vue=client\\]:block">';
+  assert.match(html, new RegExp(`${inerte}<div class="flex-none"><b data-marqueur="suivre">`));
+  assert.match(html, new RegExp(`${inerte}<div class="bg-white rounded-3xl[^"]*">[\\s\\S]*?Devenir revendeur`));
+  assert.match(html, new RegExp(`${inerte}<p[^>]*>Sélection en préparation`));
+  assert.equal((html.match(/data-marqueur="suivre"/g) || []).length, 1);
   assert.match(html, /<strong[^>]*>3<\/strong> abonnés/);
   assert.match(html, /En ligne/);
   assert.match(html, /Personnaliser/);
   assert.doesNotMatch(html, /Modifier la boutique/);
-  assert.doesNotMatch(html, /Sélection en préparation/);
   assert.match(html, /Vos clients voient le catalogue Suguba en attendant vos articles/);
   assert.match(html, /href="\/reseller\/catalog"[^>]*>[\s\S]*?Choisir mes articles/);
   assert.match(html, /data-marqueur="barre" data-actif="\/reseller\/ma-boutique"/, 'l’onglet Boutique reste allumé');

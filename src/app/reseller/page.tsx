@@ -20,7 +20,9 @@ import { statutVente } from '@/lib/libelles-vente';
 import { StatusPill } from '@/components/ui/Surface';
 import BoutonPartageWhatsApp from '@/components/ui/BoutonPartageWhatsApp';
 import { initiale } from '@/lib/initiale';
-import { PORTE_MA_BOUTIQUE } from '@/lib/reseau/porte-boutique';
+import { PORTE_MA_BOUTIQUE, sansPrechargement } from '@/lib/reseau/porte-boutique';
+import ListeEtapes from '@/components/reseau/ListeEtapes';
+import { progressionBoutique, type EtapeBoutique } from '@/lib/reseau/etapes-boutique';
 
 /**
  * Tableau de bord revendeur — converti au design system (2026-09-10).
@@ -58,6 +60,8 @@ interface ApercuBoutique {
   slug: string; nom: string; logo: string | null; couverture: string | null;
   /** Articles que la vitrine affiche (approuvés et partageables), pas toutes les lignes choisies. */
   articles: number | null; abonnes: number; statut: string;
+  /** « Ma boutique est prête à X % » (lot 2, 2026-10-03). Absent d'une réponse plus ancienne. */
+  etapes?: EtapeBoutique[];
 }
 
 export default function ResellerDashboardPage() {
@@ -447,6 +451,11 @@ function CarteMaBoutique({ boutique, charge, origine }: { boutique: ApercuBoutiq
   // Pas de partage d'une boutique masquée : le client tomberait sur une page introuvable.
   const adresse = boutique && boutique.statut === 'active' ? `${origine}/boutique/${boutique.slug}` : null;
   const pluriel = (n: number) => (n > 1 ? 's' : '');
+  // « Prête à X % » (lot 2, 2026-10-03) : masquée à 100 % ; la prochaine étape
+  // ouvre directement son outil (panneau de la vitrine ou catalogue).
+  const etapes = boutique?.etapes || [];
+  const prete = etapes.length ? progressionBoutique(etapes) : null;
+  const prochaine = etapes.find((e) => !e.fait);
   return (
     <section aria-labelledby="ma-boutique-titre" className="bg-white rounded-3xl border border-slate-200 overflow-hidden">
       <div className="relative h-16 bg-suguba-profond" aria-hidden="true">
@@ -480,6 +489,23 @@ function CarteMaBoutique({ boutique, charge, origine }: { boutique: ApercuBoutiq
             {boutique && boutique.statut !== 'active' && <StatusPill ton="attente">Masquée par Suguba</StatusPill>}
           </div>
         </div>
+        {prete && prete.pourcentage < 100 && (
+          <div className="space-y-1.5">
+            <div className="flex items-baseline justify-between gap-3 text-sm">
+              <p className="font-semibold text-slate-900">Ma boutique est prête à <span className="tabular-nums">{prete.pourcentage} %</span></p>
+              <span className="text-slate-600 tabular-nums shrink-0">{prete.faites} sur {prete.total}</span>
+            </div>
+            <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden" aria-hidden="true">
+              <div className="h-full rounded-full bg-suguba-brand" style={{ width: `${prete.pourcentage}%` }} />
+            </div>
+            {prochaine && (
+              <Link href={prochaine.href} prefetch={sansPrechargement(prochaine.href) ? false : undefined}
+                className="inline-flex items-center gap-1 min-h-10 text-sm font-semibold text-suguba-brand-dark hover:underline">
+                {prochaine.libelle}<ChevronRight className="w-4 h-4" />
+              </Link>
+            )}
+          </div>
+        )}
         <div className="flex gap-2">
           <Button href={PORTE_MA_BOUTIQUE} className="flex-1">
             <Store className="w-4 h-4" />
@@ -505,32 +531,11 @@ function StatutVente({ status }: { status: string }) {
   return <StatusPill ton={s.ton}>{s.libelle}</StatusPill>;
 }
 
-/** Liste de démarrage (REV-13) : trois étapes vers la première vente, cochées au fil de l'eau. */
+/**
+ * Liste de démarrage (REV-13) : étapes vers la première vente, cochées au fil de
+ * l'eau. Le rendu vit dans ListeEtapes depuis le lot 2 du chantier boutique
+ * (2026-10-03), partagé avec « Ma boutique est prête à X % » de la vitrine.
+ */
 function ListeDemarrage({ etapes }: { etapes: { libelle: string; fait: boolean; href: string }[] }) {
-  const faites = etapes.filter((e) => e.fait).length;
-  const suivante = etapes.find((e) => !e.fait);
-  return (
-    <section aria-labelledby="demarrage-titre" className="bg-white rounded-3xl border border-slate-200 p-5 space-y-3">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 id="demarrage-titre" className="font-bold text-base text-slate-900">Vers votre première vente</h2>
-        <span className="text-sm text-slate-600 tabular-nums">{faites} sur {etapes.length}</span>
-      </div>
-      <div className="h-1.5 rounded-full bg-slate-100 overflow-hidden" aria-hidden="true">
-        <div className="h-full rounded-full bg-suguba-brand" style={{ width: `${(faites / etapes.length) * 100}%` }} />
-      </div>
-      <ol className="space-y-2">
-        {etapes.map((e) => (
-          <li key={e.libelle}>
-            <Link href={e.href} className={`flex items-center gap-3 min-h-11 rounded-2xl px-2 ${e === suivante ? 'bg-suguba-sauge font-semibold text-slate-900' : 'text-slate-600'}`}>
-              <span className={`w-6 h-6 shrink-0 rounded-full flex items-center justify-center ${e.fait ? 'bg-suguba-brand text-white' : 'border-2 border-slate-300'}`} aria-hidden="true">
-                {e.fait && <Check className="w-3.5 h-3.5" />}
-              </span>
-              <span className={e.fait ? 'line-through' : ''}>{e.libelle}</span>
-              <span className="sr-only">{e.fait ? ' (fait)' : ' (à faire)'}</span>
-            </Link>
-          </li>
-        ))}
-      </ol>
-    </section>
-  );
+  return <ListeEtapes id="demarrage-titre" titre="Vers votre première vente" etapes={etapes} />;
 }

@@ -13,6 +13,7 @@ import { identiteFournisseur } from './identite-fournisseur';
 import { prixEnregistres } from './prix-revendeur';
 import { ajoutDirectPossible, lireMesure, lireUniteVente, suffixeUnite, texteMinimum } from './unite-vente';
 import { libelleTypeOffre, normaliserTypeOffre } from './offre';
+import { estEnseigne, nomPublic } from './enseigne';
 
 type ClientAdmin = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
 
@@ -44,7 +45,17 @@ export interface ProduitVitrine {
 
 export interface Boutique {
   type: 'fournisseur' | 'revendeur';
+  /**
+   * Boutique revendeur : l'enseigne choisie, ou « Awa D. » (jamais le nom
+   * complet, lot 2 du chantier boutique, 2026-10-03).
+   */
   nom: string;
+  /**
+   * Boutique revendeur : vrai quand `nom` est une enseigne choisie par le
+   * revendeur. Le titre est alors l'enseigne seule, sinon « La sélection de
+   * Awa D. » (voir titreVitrine, src/lib/enseigne.ts).
+   */
+  enseigne?: boolean;
   categorie: string | null;
   /** Logo choisi dans "Réglages de ma boutique". null = avatar par défaut. */
   logo: string | null;
@@ -246,13 +257,10 @@ export async function chargerBoutiqueFournisseur(slug: string, identiteChoisie?:
   };
 }
 
-/** « Awa Traoré Diallo » → « Awa D. » : un prénom suffit pour une vitrine publique. */
-export function nomPublic(nomComplet: string | null): string {
-  const mots = String(nomComplet || '').trim().split(/\s+/).filter(Boolean);
-  if (mots.length === 0) return 'Revendeur Suguba';
-  if (mots.length === 1) return mots[0];
-  return `${mots[0]} ${mots[mots.length - 1].charAt(0).toUpperCase()}.`;
-}
+// « Awa Traoré Diallo » → « Awa D. ». Déplacée dans lib/enseigne (lot 2 du chantier
+// boutique, 2026-10-03), module pur que les composants client peuvent importer ;
+// réexportée ici pour ses appelants historiques.
+export { nomPublic };
 
 /**
  * Nom public (« Awa D. ») du revendeur ACTIF derrière un code, pour le
@@ -357,10 +365,16 @@ export async function chargerBoutiqueRevendeur(codeBrut: string): Promise<Boutiq
     .limit(10);
   const magasin = (magasins || []).find((b: any) => b.principale !== false) || (magasins || [])[0] || null;
   const actif = magasin && (magasin.status || 'active') === 'active';
+  // Titre public (lot 2 du chantier boutique, 2026-10-03) : l'enseigne seulement
+  // si le revendeur en a choisi une. Les boutiques créées au nom complet du compte
+  // affichaient « La sélection de Awa Traoré Diallo » ; elles affichent désormais
+  // « Awa D. ». La comparaison se fait ICI, le nom complet ne quitte pas le serveur.
+  const enseigne = Boolean(actif && estEnseigne(magasin.name, profil.full_name));
 
   return {
     type: 'revendeur',
-    nom: (actif && magasin.name) || nomPublic(profil.full_name),
+    nom: enseigne ? String(magasin.name).trim() : nomPublic(profil.full_name),
+    enseigne,
     categorie: null,
     logo: (actif && magasin.logo_url) || null,
     couverture: (actif && magasin.cover_url) || null,

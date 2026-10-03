@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import ShopView from '@/components/shop/ShopView';
 import { chargerBoutiqueRevendeur, URL_APP } from '@/lib/shop';
+import { titreVitrine } from '@/lib/enseigne';
 
 /**
  * Boutique publique d'un revendeur — /r/<code revendeur>.
@@ -23,7 +24,9 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const boutique = await chargerBoutiqueRevendeur(code);
   if (!boutique) return { title: 'Boutique introuvable — Suguba' };
 
-  const titre = `La sélection de ${boutique.nom} — Suguba`;
+  // Même titre que la vitrine (lot 2 du chantier boutique, 2026-10-03) : l'enseigne
+  // seule, ou « La sélection de Awa D. » ; jamais le nom complet.
+  const titre = `${titreVitrine(boutique)} — Suguba`;
   const description = `${boutique.produits.length} article${boutique.produits.length > 1 ? 's' : ''} livrés à Bamako. Vous payez à la livraison.`;
   // Aperçu WhatsApp/Facebook : la couverture, puis le logo de la boutique ;
   // une photo d'article seulement si le revendeur n'a rien personnalisé.
