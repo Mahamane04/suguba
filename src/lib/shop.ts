@@ -171,6 +171,28 @@ function partageable(p: any): boolean {
   return Number(p.reseller_commission) > 0 && (!p.pricing_status || p.pricing_status === 'ok');
 }
 
+/**
+ * Nombre d'articles choisis par un revendeur que sa vitrine AFFICHE vraiment
+ * (relecture du lot 1 du chantier boutique, 2026-10-03) : approuvés et
+ * partageables, même filtre que chargerBoutiqueRevendeur. Compter toutes les
+ * lignes de reseller_shop_items disait « 3 articles » et cochait « Choisir mes
+ * articles » alors que la vitrine, ces articles retirés ou refusés, montrait le
+ * catalogue Suguba. null si l'une des lectures échoue : « — », jamais un 0 inventé.
+ */
+export async function compterArticlesEnVitrine(admin: ClientAdmin, revendeurId: string): Promise<number | null> {
+  const { data: selection, error } = await admin.from('reseller_shop_items').select('product_id').eq('reseller_id', revendeurId);
+  if (error || !Array.isArray(selection)) return null;
+  const ids = selection.map((s: any) => s.product_id).filter(Boolean);
+  if (ids.length === 0) return 0;
+  const { data: produits, error: erreurProduits } = await admin
+    .from('products')
+    .select('id, reseller_commission, pricing_status')
+    .in('id', ids)
+    .eq('status', 'approved');
+  if (erreurProduits || !Array.isArray(produits)) return null;
+  return produits.filter(partageable).length;
+}
+
 async function compterLivraisons(admin: ClientAdmin, productIds: string[]): Promise<number> {
   if (productIds.length === 0) return 0;
   const { count } = await admin

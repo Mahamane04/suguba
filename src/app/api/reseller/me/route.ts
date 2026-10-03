@@ -4,6 +4,7 @@ import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { libererCommissionsEchues } from '@/lib/commissions';
 import { boutiqueDuProprietaire } from '@/lib/reseau/boutiques';
+import { compterArticlesEnVitrine } from '@/lib/shop';
 
 /**
  * Fiche revendeur réelle du compte connecté.
@@ -27,7 +28,10 @@ import { boutiqueDuProprietaire } from '@/lib/reseau/boutiques';
 /** Aperçu de la boutique pour la carte « Ma boutique » de l'accueil (?avec=boutique). */
 interface ApercuBoutique {
   slug: string; nom: string; logo: string | null; couverture: string | null;
-  /** Articles choisis (reseller_shop_items) ; null si le compte est illisible : « — », jamais 0. */
+  /**
+   * Articles choisis que la vitrine affiche (approuvés et partageables, même
+   * filtre qu'elle) ; null si le compte est illisible : « — », jamais 0.
+   */
   articles: number | null;
   abonnes: number; statut: string;
 }
@@ -83,11 +87,11 @@ export async function GET(req: NextRequest) {
     try {
       const b = await boutiqueDuProprietaire('reseller', session.uid);
       if (b) {
-        const { count, error } = await admin.from('reseller_shop_items')
-          .select('product_id', { count: 'exact', head: true }).eq('reseller_id', session.uid);
+        // Même filtre que la vitrine (relecture du lot 1, 2026-10-03) : un article
+        // retiré ou refusé n'y apparaît pas, il ne doit pas compter ici.
         boutique = {
           slug: b.slug, nom: b.nom, logo: b.logo, couverture: b.couverture,
-          articles: error || count == null ? null : count,
+          articles: await compterArticlesEnVitrine(admin, session.uid),
           abonnes: b.abonnes, statut: b.statut,
         };
       }

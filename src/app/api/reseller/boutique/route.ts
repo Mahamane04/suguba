@@ -2,12 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sessionAvecRole } from '@/lib/reseau/route-session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { boutiqueDuProprietaire, majBoutique, obtenirOuCreerBoutique } from '@/lib/reseau/boutiques';
+import { nomPublic } from '@/lib/shop';
 
 /**
  * Boutique du revendeur (§ 6) — /boutique/<adresse>.
  *
- * Créée au premier accès à partir du nom du compte : un revendeur ne doit pas
- * avoir à « créer une boutique » avant de pouvoir partager quoi que ce soit.
+ * Créée au premier accès à partir du prénom et de l'initiale du compte : un
+ * revendeur ne doit pas avoir à « créer une boutique » avant de pouvoir
+ * partager quoi que ce soit.
  */
 
 export async function GET(req: NextRequest) {
@@ -15,15 +17,23 @@ export async function GET(req: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Session revendeur requise.' }, { status: 401 });
 
   const admin = getSupabaseAdmin();
-  const { data: profil } = (await admin?.from('profiles').select('full_name, reseller_code').eq('id', session.uid).maybeSingle()) || { data: null };
+  const { data: profil, error: erreurProfil } =
+    (await admin?.from('profiles').select('full_name, reseller_code').eq('id', session.uid).maybeSingle()) || { data: null, error: null };
 
+  // Relecture du lot 1 du chantier boutique (2026-10-03) : création avec
+  // « Prénom I. » (nomPublic), comme la porte /reseller/ma-boutique qui renvoie
+  // ici en cas d'échec — jamais le nom complet, dont l'adresse était tirée pour
+  // toujours. Profil illisible : rien n'est créé (une boutique « Revendeur
+  // Suguba » garderait cette adresse) ; la page affiche son écran d'attente.
   const boutique =
     (await boutiqueDuProprietaire('reseller', session.uid)) ||
-    (await obtenirOuCreerBoutique({
-      typeProprietaire: 'reseller',
-      proprietaireId: session.uid,
-      nom: profil?.full_name || 'Ma boutique',
-    }));
+    (!erreurProfil && profil
+      ? await obtenirOuCreerBoutique({
+        typeProprietaire: 'reseller',
+        proprietaireId: session.uid,
+        nom: nomPublic(profil.full_name || null),
+      })
+      : null);
 
   return NextResponse.json({ boutique, codeRevendeur: profil?.reseller_code || null });
 }

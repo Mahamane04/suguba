@@ -12,8 +12,9 @@ import CouvertureEditeur from '@/components/reseau/CouvertureEditeur';
 import Button from '@/components/ui/Button';
 import { Field, Input, Textarea } from '@/components/ui/Field';
 import NeighborhoodPicker from '@/components/common/NeighborhoodPicker';
-import { Card, EmptyState, Skeleton, StatCard } from '@/components/ui/Surface';
+import { Card, EmptyState, Skeleton, StatCard, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
+import { whatsappHelper } from '@/lib/whatsapp-helper';
 
 /**
  * Page commerciale du fournisseur (§ 19 des écrans) : logo, couverture,
@@ -32,6 +33,8 @@ interface Boutique {
   abonnes: number;
   recrute: boolean;
   galerie: string[];
+  /** 'active', ou 'hidden' / 'suspended' quand Suguba l'a masquée (2026-10-03). */
+  statut?: string;
 }
 
 export default function BoutiqueFournisseurPage() {
@@ -134,13 +137,28 @@ export default function BoutiqueFournisseurPage() {
             <StatCard label="Abonnés" valeur={boutique.abonnes} aide="Suivent votre boutique" />
           </div>
 
-          <CarteLien
-            titre="Le lien de ma boutique"
-            url={`${origine}/boutique/${boutique.slug}`}
-            lienOuvrir={`/boutique/${boutique.slug}`}
-            aide="À mettre sur vos affiches, vos cartes et vos publications."
-            texteWhatsApp={`🏪 ${nom} sur Suguba\n\nNotre catalogue, livré à Bamako.\n👉 ${origine}/boutique/${boutique.slug}`}
-          />
+          {/* Relecture du lot 1 (2026-10-03) : « Ouvrir » menait une boutique masquée
+              vers une page introuvable, sans explication (la vue du propriétaire est
+              réservée aux revendeurs dans ce chantier). Masquée : un avertissement, et
+              ni lien, ni QR, ni partage vers une page que le client ne peut pas ouvrir. */}
+          {boutique.statut && boutique.statut !== 'active' ? (
+            <div role="status" className="rounded-2xl bg-amber-50 border border-amber-200 p-4 space-y-2">
+              <StatusPill ton="attente">Masquée par Suguba</StatusPill>
+              <p className="text-sm text-amber-950">L’adresse de votre boutique affiche « page introuvable » à vos clients. Écrivez au support pour savoir pourquoi.</p>
+              <a href={whatsappHelper.getSupportChatLink()} target="_blank" rel="noopener noreferrer"
+                className="inline-flex items-center min-h-10 text-sm font-semibold text-suguba-brand-dark underline underline-offset-2">
+                Écrire au support Suguba
+              </a>
+            </div>
+          ) : (
+            <CarteLien
+              titre="Le lien de ma boutique"
+              url={`${origine}/boutique/${boutique.slug}`}
+              lienOuvrir={`/boutique/${boutique.slug}`}
+              aide="À mettre sur vos affiches, vos cartes et vos publications."
+              texteWhatsApp={`🏪 ${nom} sur Suguba\n\nNotre catalogue, livré à Bamako.\n👉 ${origine}/boutique/${boutique.slug}`}
+            />
+          )}
 
           <Card id="recrutement" className="space-y-3 scroll-mt-24">
             <div className="flex items-start gap-3">

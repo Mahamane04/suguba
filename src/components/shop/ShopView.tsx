@@ -157,7 +157,11 @@ export default function ShopView({
                 ) : (
                   <div className="rounded-2xl bg-amber-50 border border-amber-200 p-3 space-y-1">
                     <StatusPill ton="attente">Masquée par Suguba</StatusPill>
-                    <p className="text-sm text-amber-950">Vos clients ne la voient pas pour le moment : vous seul la voyez.</p>
+                    {/* Relecture du lot 1 (2026-10-03) : « vos clients ne la voient pas » était
+                        faux. Seule CETTE adresse devient introuvable ; l'ancien lien /r/<code>
+                        montre encore la sélection (sans logo, couverture ni enseigne), comme
+                        prévu tant que la redirection de /r/ n'est pas décidée. */}
+                    <p className="text-sm text-amber-950">Cette adresse affiche « page introuvable » à vos clients : vous seul la voyez ici.</p>
                     <a href={whatsappHelper.getSupportChatLink()} target="_blank" rel="noopener noreferrer"
                       className="inline-flex items-center min-h-10 text-sm font-semibold text-suguba-brand-dark underline underline-offset-2">
                       Écrire au support Suguba
@@ -262,7 +266,16 @@ export default function ShopView({
             <p className="text-xs text-slate-500">Revenez bientôt, la boutique se remplit.</p>
           </div>
         ) : (
-          <BoutiqueProduits produits={boutique.produits} refCode={refCode} presentation={Boolean(boutique.presentation)} />
+          // Propriétaire : liens d'achat SANS ?ref= (relecture du lot 1, 2026-10-03). Avec son
+          // code, l'ancrage global du layout (AncrageRevendeur) faisait de lui, au premier
+          // article touché, son propre revendeur d'origine pour 30 jours. Ses partages
+          // d'article gardent son code (codePartage).
+          <BoutiqueProduits
+            produits={boutique.produits}
+            refCode={proprietaire ? null : refCode}
+            codePartage={proprietaire ? refCode : null}
+            presentation={Boolean(boutique.presentation)}
+          />
         )}
 
         {/* Présentation du fournisseur (lot C) : on achète chez un revendeur partenaire. */}

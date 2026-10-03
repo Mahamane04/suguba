@@ -198,6 +198,39 @@
  "journal": [
   {
    "date": "2026-10-03",
+   "titre": "Boutique revendeur, lot 1 : corrections de relecture",
+   "demande": "« “Ma boutique” doit montrer la boutique elle-même (logo, couverture, produits ajoutés) et non les réglages ; il veut des outils pour gérer sa boutique (personnalisation, catégories/rayons, produits mis en avant, et ce qui aide à vendre), pour un vrai sentiment d’appropriation. »",
+   "realise": [
+    "Vitrine du propriétaire : ses liens d’achat ne portent plus son code. En touchant un de ses propres articles, il devenait pour 30 jours son propre revendeur d’origine. Quand il partage un article, le lien garde son code.",
+    "Boutique masquée : le message dit maintenant ce qui se passe vraiment. Sur la vitrine : « Cette adresse affiche « page introuvable » à vos clients : vous seul la voyez ici. » Même idée dans « Personnaliser ma boutique ». L’ancien message « Vos clients ne la voient pas » était faux, car l’ancien lien /r/<code> montre encore la sélection.",
+    "« Personnaliser ma boutique » : la carte du lien (copier, QR, Partager sur WhatsApp, Ouvrir) disparaît quand Suguba a masqué la boutique, comme sur l’accueil et la vitrine. « Voir ma boutique » reste en haut.",
+    "Ma boutique du fournisseur : quand la boutique est masquée, un avertissement « Masquée par Suguba » avec « Écrire au support Suguba » remplace la carte du lien. Son bouton « Ouvrir » menait à une page introuvable, sans explication.",
+    "Carte « Ma boutique » de l’accueil : « N articles » et l’étape « Choisir mes articles » ne comptent plus que les articles que la vitrine affiche (approuvés, avec une commission, au prix validé). Un article retiré ou refusé ne compte plus.",
+    "Démarrage, dernière étape : « Ouvrir » retiré de la carte du lien. Il quittait le parcours sans l’enregistrer, et l’étape « Compléter mon profil » restait décochée sur l’accueil. « Ouvrir ma boutique » enregistre la fin du démarrage.",
+    "Catalogue : le bandeau « Ma boutique · N articles » et « Voir ma boutique » s’affichent toujours, même sans code revendeur (compte démo, lecture en échec). Le nombre s’affiche une fois la sélection lue.",
+    "Création de la boutique : toujours au nom « Prénom I. », y compris depuis « Personnaliser ma boutique » et le démarrage, qui utilisaient encore le nom complet. Pour les homonymes : 4 numéros lisibles, puis un suffixe court tiré du compte, 10 essais au plus. Avant, 30 essais puis abandon. Si le profil est illisible, aucune boutique n’est créée (elle serait née « Revendeur Suguba », à une adresse définitive).",
+    "Tests : tests/ma-boutique-lot1-vitrine.test.cjs exécute vraiment la page /boutique/<adresse> (visiteur, autre compte, aperçu admin, propriétaire, boutique Pro, fournisseur, métadonnées). tests/ma-boutique-lot1.test.cjs passe de 11 à 15 tests, dont 9 échouent sur le code d’avant ces corrections. 516 tests réussis, compilation de types réussie."
+   ],
+   "ecarts": [
+    "En local sur la branche ux/boutique-revendeur, non publié. Aucune migration.",
+    "À décider par vous : l’ancien lien /r/<code> d’une boutique masquée montre toujours la sélection du revendeur, sous « Prénom I. », sans logo ni couverture. Gardé tel quel, comme prévu par le plan (« garder l’ancien rendu si la boutique est masquée »). Le faire respecter le masquage changerait une page publique très partagée.",
+    "SQL à lancer par vous dans Supabase › SQL Editor (lecture seule, décidé avant le lot 1, jamais lancé : les agents ne touchent pas à la production) : 1) SELECT owner_type, status, count(*) FROM stores GROUP BY 1,2; 2) SELECT count(*) FROM stores s JOIN profiles p ON p.id = s.owner_id WHERE s.owner_type = 'reseller' AND s.name = p.full_name; 3) SELECT column_name FROM information_schema.columns WHERE table_name = 'stores' AND column_name IN ('principale','neighborhood'); 4) SELECT to_regclass('public.store_products'), to_regclass('public.visites_mesurees'), to_regclass('public.analytics_events');",
+    "Les boutiques déjà créées au nom complet le gardent (la requête 2 les compte). Le titre public reste « La sélection de … » jusqu’au lot 2 (enseigne).",
+    "« Ma boutique · N articles » du catalogue compte encore tous les articles choisis : c’est la sélection qu’on y modifie, pas ce que la vitrine affiche.",
+    "Captures et vérifications manuelles toujours à faire sur la copie locale : 390 et 1440 px, vrai iPhone, boutique masquée."
+   ],
+   "pages": [
+    "vitrine-boutique",
+    "rev-accueil",
+    "rev-boutique",
+    "rev-catalogue",
+    "rev-demarrer",
+    "fou-boutique"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-10-03",
    "titre": "Boutique revendeur, lot 1 : « Ma boutique » ouvre ma boutique",
    "demande": "« “Ma boutique” doit montrer la boutique elle-même (logo, couverture, produits ajoutés) et non les réglages ; il veut des outils pour gérer sa boutique (personnalisation, catégories/rayons, produits mis en avant, et ce qui aide à vendre), pour un vrai sentiment d’appropriation. »",
    "realise": [
@@ -218,7 +251,8 @@
     "Le bandeau propriétaire (Partager, Personnaliser, Articles, Stats), « Voir comme un client » et les crayons arrivent au lot 2 : ?editer= et ?partager=1 sont déjà transmis par la porte, mais la vitrine ne les ouvre pas encore.",
     "Titre public inchangé (« La sélection de … ») et boutique encore créée à l’ouverture du démarrage avec le nom du compte : corrigés au lot 2 (enseigne).",
     "Vue du propriétaire réservée à la boutique revendeur principale : les boutiques supplémentaires (formules Pro, lot 7) et les vitrines fournisseur (hors chantier) gardent leur rendu actuel.",
-    "La carte de l’accueil n’a pas encore la barre « Ma boutique est prête à X % » (lot 2) ; « Partager » envoie l’adresse brute (lien suivi au lot 4)."
+    "La carte de l’accueil n’a pas encore la barre « Ma boutique est prête à X % » (lot 2) ; « Partager » envoie l’adresse brute (lien suivi au lot 4).",
+    "Les 4 requêtes de lecture sur la production décidées avant ce lot n’ont pas été lancées (les agents ne touchent pas à la production) : à lancer par vous dans Supabase › SQL Editor. Texte exact dans l’entrée « corrections de relecture » ci-dessus."
    ],
    "pages": [
     "vitrine-boutique",
@@ -3194,7 +3228,7 @@
     },
     {
      "nom": "Dernière étape",
-     "role": "« Votre boutique est créée. Il reste à choisir vos articles. » ; « Ouvrir ma boutique » (action principale) ou « Choisir mes articles ». La carte du lien a aussi « Ouvrir »."
+     "role": "« Votre boutique est créée. Il reste à choisir vos articles. » ; « Ouvrir ma boutique » (action principale, enregistre la fin du démarrage) ou « Choisir mes articles ». La carte du lien sert à copier ou partager l’adresse."
     }
    ],
    "suite": [
@@ -3224,7 +3258,7 @@
    "elements": [
     {
      "nom": "Vers votre première vente",
-     "role": "Liste cochée tant qu’aucune vente n’est livrée : compléter mon profil · choisir mes articles · partager un produit et recevoir une commande · première vente livrée."
+     "role": "Liste cochée tant qu’aucune vente n’est livrée : compléter mon profil · choisir mes articles (cochée dès qu’un article choisi apparaît sur la vitrine) · partager un produit et recevoir une commande · première vente livrée."
     },
     {
      "nom": "Carte argent",
@@ -3236,7 +3270,7 @@
     },
     {
      "nom": "Carte « Ma boutique »",
-     "role": "Sous le solde : couverture, logo, nom, « N articles · N abonnés » (« — » si le nombre est illisible), « Masquée par Suguba » le cas échéant. « Voir ma boutique » ouvre la vitrine dans le même onglet ; « Partager » l’envoie sur WhatsApp."
+     "role": "Sous le solde : couverture, logo, nom, « N articles · N abonnés », « Masquée par Suguba » le cas échéant. « N articles » compte les articles que la vitrine affiche (approuvés, avec une commission) ; « — » si le nombre est illisible. « Voir ma boutique » ouvre la vitrine dans le même onglet ; « Partager » l’envoie sur WhatsApp (absent si la boutique est masquée)."
     },
     {
      "nom": "Raccourcis",
@@ -3337,7 +3371,7 @@
    "elements": [
     {
      "nom": "Ma boutique · N articles",
-     "role": "Une ligne au-dessus de la recherche, avec « Voir ma boutique » : la vraie vitrine, dans le même onglet (l’ancienne /r/ s’ouvrait dans un nouvel onglet)."
+     "role": "Une ligne au-dessus de la recherche, toujours affichée (même sans code revendeur), avec « Voir ma boutique » : la vraie vitrine, dans le même onglet (l’ancienne /r/ s’ouvrait dans un nouvel onglet). Le nombre compte les articles choisis dans ce catalogue."
     },
     {
      "nom": "Recommandés · Tous les fournisseurs",
@@ -3561,7 +3595,7 @@
     },
     {
      "nom": "Pastille d’état (propriétaire)",
-     "role": "« En ligne », ou « Masquée par Suguba » avec « Écrire au support Suguba ». Une boutique masquée reste visible pour son propriétaire ; un client obtient la page introuvable."
+     "role": "« En ligne », ou « Masquée par Suguba » avec « Cette adresse affiche « page introuvable » à vos clients : vous seul la voyez ici. » et « Écrire au support Suguba ». Une boutique masquée reste visible pour son propriétaire ; un client obtient la page introuvable à cette adresse."
     },
     {
      "nom": "Personnaliser (propriétaire)",
@@ -3581,7 +3615,7 @@
     },
     {
      "nom": "Suivre · Copier le lien · Partager · Devenir revendeur",
-     "role": "Ce que voit un client. Le propriétaire garde « Copier le lien » et « Partager », mais ne voit ni « Suivre » ni « Devenir revendeur » ; sa visite ne fait pas de lui son propre revendeur d’origine."
+     "role": "Ce que voit un client. Le propriétaire garde « Copier le lien » et « Partager » (sauf si la boutique est masquée), mais ne voit ni « Suivre » ni « Devenir revendeur ». Ses liens d’achat ne portent pas son code : sa visite ne fait pas de lui son propre revendeur d’origine. Quand il partage un article, le lien garde son code."
     },
     {
      "nom": "Onglet Boutique",
@@ -3602,7 +3636,7 @@
      "libelle": "Fiche produit"
     }
    ],
-   "note": "Capture à refaire sur la copie locale. L’ancienne adresse /r/<code> affiche la même vitrine, sans les éléments du propriétaire."
+   "note": "Capture à refaire sur la copie locale. L’ancienne adresse /r/<code> affiche la même vitrine, sans les éléments du propriétaire. Elle reste ouverte quand Suguba a masqué la boutique : sélection sous « Prénom I. », sans logo ni couverture."
   },
   {
    "id": "rev-boutique",
@@ -3617,7 +3651,7 @@
     },
     {
      "nom": "Masquée par Suguba",
-     "role": "Pastille ambre avec « Écrire au support Suguba », seulement quand Suguba a masqué la boutique."
+     "role": "Pastille ambre, seulement quand Suguba a masqué la boutique : « L’adresse de votre boutique affiche « page introuvable » à vos clients », avec « Écrire au support Suguba »."
     },
     {
      "nom": "Abonnés · Adresse",
@@ -3641,7 +3675,7 @@
     },
     {
      "nom": "Lien / QR",
-     "role": "Carte à copier ou partager ; « Ouvrir » affiche la vitrine dans le même onglet."
+     "role": "Carte à copier ou partager ; « Ouvrir » affiche la vitrine dans le même onglet. Absente quand Suguba a masqué la boutique : pas de partage vers une page introuvable."
     }
    ],
    "suite": [
@@ -3654,7 +3688,7 @@
      "libelle": "Boutiques proches"
     }
    ],
-   "note": "Le compte démo n’a pas de vrai profil : la capture montre « Boutique pas encore disponible ». Avec un vrai compte, la boutique se crée à la première ouverture.",
+   "note": "Le compte démo n’a pas de vrai profil : la capture montre « Boutique pas encore disponible ». Avec un vrai compte, la boutique se crée à la première ouverture, au nom « Prénom I. ».",
    "capture": {
     "chemin": "/reseller/boutique"
    }
@@ -4551,7 +4585,11 @@
     },
     {
      "nom": "Le lien de ma boutique",
-     "role": "Copier, QR, WhatsApp, et « Ouvrir » : la vitrine /boutique/ dans le même onglet."
+     "role": "Copier, QR, WhatsApp, et « Ouvrir » : la vitrine /boutique/ dans le même onglet. Remplacé par l’avertissement ci-dessous quand Suguba a masqué la boutique."
+    },
+    {
+     "nom": "Masquée par Suguba",
+     "role": "Avertissement ambre avec « Écrire au support Suguba », seulement quand Suguba a masqué la boutique : son adresse affiche « page introuvable » aux clients."
     }
    ],
    "suite": [

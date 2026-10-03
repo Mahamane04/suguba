@@ -120,7 +120,9 @@ export default function MaBoutiqueRevendeurPage() {
           {boutique.statut && boutique.statut !== 'active' && (
             <div role="status" className="rounded-2xl bg-amber-50 border border-amber-200 p-4 space-y-2">
               <StatusPill ton="attente">Masquée par Suguba</StatusPill>
-              <p className="text-sm text-amber-950">Vos clients ne voient pas votre boutique pour le moment. Écrivez au support pour savoir pourquoi.</p>
+              {/* Relecture du lot 1 (2026-10-03) : « vos clients ne voient pas votre
+                  boutique » était faux, l'ancien lien /r/<code> montre encore la sélection. */}
+              <p className="text-sm text-amber-950">L’adresse de votre boutique affiche « page introuvable » à vos clients. Écrivez au support pour savoir pourquoi.</p>
               <a href={whatsappHelper.getSupportChatLink()} target="_blank" rel="noopener noreferrer"
                 className="inline-flex items-center min-h-10 text-sm font-semibold text-suguba-brand-dark underline underline-offset-2">
                 Écrire au support Suguba
@@ -134,13 +136,18 @@ export default function MaBoutiqueRevendeurPage() {
             <StatCard label="Adresse" valeur={<span className="text-sm break-all">{origine.replace(/^https?:\/\//, '')}/boutique/{boutique.slug}</span>} aide="Ne change jamais" />
           </div>
 
-          <CarteLien
-            titre="Le lien de ma boutique"
-            url={`${origine}/boutique/${boutique.slug}`}
-            lienOuvrir={`/boutique/${boutique.slug}`}
-            aide="Vos articles, à votre nom. Chaque vente passée par ce lien vous revient."
-            texteWhatsApp={`🛍️ Ma boutique Suguba — ${nom}\n\nCommandez, vous payez à la livraison à Bamako.\n👉 ${origine}/boutique/${boutique.slug}`}
-          />
+          {/* Même règle que l'accueil et la vitrine (relecture du lot 1, 2026-10-03) :
+              pas de lien, de QR ni de partage d'une boutique masquée, le client
+              tomberait sur une page introuvable. « Voir ma boutique » reste en haut. */}
+          {(!boutique.statut || boutique.statut === 'active') && (
+            <CarteLien
+              titre="Le lien de ma boutique"
+              url={`${origine}/boutique/${boutique.slug}`}
+              lienOuvrir={`/boutique/${boutique.slug}`}
+              aide="Vos articles, à votre nom. Chaque vente passée par ce lien vous revient."
+              texteWhatsApp={`🛍️ Ma boutique Suguba — ${nom}\n\nCommandez, vous payez à la livraison à Bamako.\n👉 ${origine}/boutique/${boutique.slug}`}
+            />
+          )}
 
           <Card className="space-y-4">
             <p className="text-sm font-bold text-slate-900">Personnaliser</p>

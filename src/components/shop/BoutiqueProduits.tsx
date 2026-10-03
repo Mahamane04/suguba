@@ -21,10 +21,14 @@ import { Search, ChevronDown, X } from 'lucide-react';
 export default function BoutiqueProduits({
   produits,
   refCode,
+  codePartage = null,
   presentation = false,
 }: {
   produits: ProduitVitrine[];
+  /** Code porté par les liens d'achat (?ref=) : null pour le propriétaire sur sa vitrine. */
   refCode: string | null;
+  /** Code porté par le partage d'un article quand les liens d'achat n'en portent pas (2026-10-03). */
+  codePartage?: string | null;
   /** Boutique fournisseur en présentation (lot C) : ni prix ni achat. */
   presentation?: boolean;
 }) {
@@ -112,6 +116,7 @@ export default function BoutiqueProduits({
                         quantiteAjout: p.quantiteAjout, ajoutDirect: p.ajoutDirect, aChoisir: p.aChoisir,
                       }}
                       refCode={refCode}
+                      codePartage={codePartage}
                       priority={i < 4}
                       presentation={presentation}
                     />

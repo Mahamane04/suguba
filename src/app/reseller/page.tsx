@@ -56,6 +56,7 @@ type Palier = keyof typeof PALIERS;
 /** Aperçu de la boutique renvoyé par /api/reseller/me?avec=boutique (lot 1 du chantier boutique). */
 interface ApercuBoutique {
   slug: string; nom: string; logo: string | null; couverture: string | null;
+  /** Articles que la vitrine affiche (approuvés et partageables), pas toutes les lignes choisies. */
   articles: number | null; abonnes: number; statut: string;
 }
 

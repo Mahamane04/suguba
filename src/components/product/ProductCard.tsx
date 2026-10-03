@@ -88,6 +88,7 @@ export function carteDepuisProduit(p: Product): ProduitCarte {
 export default function ProductCard({
   produit,
   refCode = null,
+  codePartage = null,
   afficherCommission = false,
   partageEnAvant = false,
   priority = false,
@@ -99,6 +100,12 @@ export default function ProductCard({
   produit: ProduitCarte;
   /** Code de la visite en cours (boutique /r/ ou lien ?ref=) : porté par le lien d'achat. */
   refCode?: string | null;
+  /**
+   * Code du partage quand le lien d'achat n'en porte pas (2026-10-03) : le
+   * propriétaire sur sa vitrine n'a pas de ?ref= (il deviendrait son propre
+   * revendeur d'origine), mais l'article qu'il partage garde son code.
+   */
+  codePartage?: string | null;
   afficherCommission?: boolean;
   /** Catalogue revendeur : le partage devient l'action principale. */
   partageEnAvant?: boolean;
@@ -139,7 +146,7 @@ export default function ProductCard({
     try {
       await partagerProduit(
         { nom: produit.nom, prix: produit.prix, slug: produit.slug, images: produit.images },
-        monCode || refCode,
+        monCode || codePartage || refCode,
       );
     } finally {
       setPreparation(false);

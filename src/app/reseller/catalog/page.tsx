@@ -35,11 +35,13 @@ export default function ResellerCatalogPage() {
   }, [tri, popularite]);
   const [selectedProductForOrder, setSelectedProductForOrder] = useState<Product | null>(null);
 
-  // Code revendeur et sélection de la boutique /r/<code>.
-  // undefined = en cours de chargement : la carte « Ma boutique » garde sa place
-  // (sinon elle apparaît après coup et pousse tout le catalogue — CLS, audit 2026-10-01).
+  // Code revendeur (bouton « Boutique » de chaque article) et sélection de la boutique.
+  // Relecture du lot 1 (2026-10-03) : le bandeau « Ma boutique » ne dépend plus du
+  // code (il ne servait qu'à l'ancienne adresse /r/<code>) ; il est toujours affiché,
+  // donc ne pousse plus le catalogue, et son nombre d'articles attend la sélection.
   const [codeRevendeur, setCodeRevendeur] = useState<string | null | undefined>(undefined);
   const [maSelection, setMaSelection] = useState<Set<string>>(new Set());
+  const [selectionLue, setSelectionLue] = useState(false);
   const [enCours, setEnCours] = useState<string | null>(null);
   const [erreurBoutique, setErreurBoutique] = useState('');
 
@@ -51,7 +53,8 @@ export default function ResellerCatalogPage() {
     fetch('/api/reseller/shop')
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => j?.articles && setMaSelection(new Set(j.articles)))
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => setSelectionLue(true));
   }, []);
 
   const basculerBoutique = async (productId: string) => {
@@ -119,34 +122,32 @@ export default function ResellerCatalogPage() {
       retour={{ href: '/reseller', libelle: 'Espace revendeur' }}
       action={<Button href="/reseller/createur" variant="ghost" size="sm"><Sparkles className="w-4 h-4" /><span>Créer un visuel</span></Button>}>
         {/* Ma boutique : la vitrine publique composée depuis ce catalogue. */}
-        {codeRevendeur !== null && (
-          // REV-11 (lot 7 de l'audit UI/UX du 2026-10-02) : sur une ligne, pour que le
-          // premier produit remonte (il apparaissait vers 605 px sur téléphone).
-          <div className="bg-white border border-slate-200 rounded-2xl px-3 py-2 flex items-center justify-between gap-3" aria-busy={codeRevendeur === undefined}>
-            <div className="flex items-center gap-2.5 min-w-0">
-              <Store className="w-5 h-5 text-suguba-profond shrink-0" />
-              <div className="min-w-0">
-                {/* Sur téléphone, le libellé passe à la ligne plutôt que de couper le nombre
-                    d'articles : « Voir ma boutique » est maintenant écrit en entier (2026-10-03). */}
+        {/* REV-11 (lot 7 de l'audit UI/UX du 2026-10-02) : sur une ligne, pour que le
+            premier produit remonte (il apparaissait vers 605 px sur téléphone). */}
+        <div className="bg-white border border-slate-200 rounded-2xl px-3 py-2 flex items-center justify-between gap-3" aria-busy={!selectionLue}>
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Store className="w-5 h-5 text-suguba-profond shrink-0" />
+            <div className="min-w-0">
+              {/* Sur téléphone, le libellé passe à la ligne plutôt que de couper le nombre
+                  d'articles : « Voir ma boutique » est maintenant écrit en entier (2026-10-03). */}
+              {selectionLue ? (
                 <p className="text-sm font-semibold text-slate-900 leading-tight sm:truncate">Ma boutique · {maSelection.size} article{maSelection.size > 1 ? 's' : ''}</p>
-                <p className="hidden sm:block text-xs text-slate-600">
-                  Ajoutez des articles ci-dessous, puis partagez votre boutique : chaque vente vous est attribuée.
-                </p>
-              </div>
+              ) : (
+                <p className="text-sm font-semibold text-slate-900 leading-tight">Ma boutique</p>
+              )}
+              <p className="hidden sm:block text-xs text-slate-600">
+                Ajoutez des articles ci-dessous, puis partagez votre boutique : chaque vente vous est attribuée.
+              </p>
             </div>
-            {/* La vraie vitrine /boutique/<adresse>, dans le même onglet (2026-10-03) :
-                l'ancienne /r/<code>, appauvrie, s'ouvrait dans un nouvel onglet et
-                faisait sortir de l'application installée. */}
-            {codeRevendeur ? (
-              <Button href={PORTE_MA_BOUTIQUE} variant="secondary" size="sm" className="shrink-0">
-                <Eye className="w-4 h-4" />
-                <span>Voir ma boutique</span>
-              </Button>
-            ) : (
-              <span className="inline-block h-10 w-40 rounded-full bg-slate-200 animate-pulse" role="status" aria-label="Chargement de votre boutique" />
-            )}
           </div>
-        )}
+          {/* La vraie vitrine /boutique/<adresse>, dans le même onglet (2026-10-03) :
+              l'ancienne /r/<code>, appauvrie, s'ouvrait dans un nouvel onglet et
+              faisait sortir de l'application installée. La porte n'a pas besoin du code. */}
+          <Button href={PORTE_MA_BOUTIQUE} variant="secondary" size="sm" className="shrink-0">
+            <Eye className="w-4 h-4" />
+            <span>Voir ma boutique</span>
+          </Button>
+        </div>
         {erreurBoutique && (
           <p role="alert" className="text-sm text-rose-800 bg-rose-50 border border-rose-200 rounded-2xl p-3">{erreurBoutique}</p>
         )}

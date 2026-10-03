@@ -39,11 +39,16 @@ export async function GET(req: NextRequest) {
     let boutique = await boutiqueDuProprietaire('reseller', session.uid);
     if (!boutique) {
       const admin = getSupabaseAdmin();
-      const { data: profil } = (await admin?.from('profiles').select('full_name').eq('id', session.uid).maybeSingle()) || { data: null };
+      if (!admin) return vers('/reseller/boutique');
+      const { data: profil, error } = await admin.from('profiles').select('full_name').eq('id', session.uid).maybeSingle();
+      // Relecture du lot 1 (2026-10-03) : profil illisible = rien n'est créé.
+      // L'erreur était ignorée et la boutique naissait « Revendeur Suguba », sous
+      // une adresse revendeur-suguba-N qui ne change plus.
+      if (error || !profil) return vers('/reseller/boutique');
       boutique = await obtenirOuCreerBoutique({
         typeProprietaire: 'reseller',
         proprietaireId: session.uid,
-        nom: nomPublic(profil?.full_name || null),
+        nom: nomPublic(profil.full_name || null),
       });
     }
     // Base ou table indisponible : la page de réglages garde son écran d'attente.

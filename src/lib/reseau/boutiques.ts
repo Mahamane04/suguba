@@ -100,6 +100,29 @@ export async function boutiqueDuProprietaire(
 }
 
 /**
+ * Adresses essayées, dans l'ordre, pour une nouvelle boutique (relecture du
+ * lot 1 du chantier boutique, 2026-10-03).
+ *
+ * Les boutiques revendeur sont créées avec « Prénom I. » : « moussa-t »,
+ * « fatoumata-d »… se répètent bien plus que le nom complet. L'ancienne suite
+ * « -2 » à « -30 » faisait jusqu'à 30 insertions en série, puis abandonnait :
+ * le 31e homonyme n'avait pas de boutique. Désormais : l'adresse simple,
+ * 4 numéros lisibles, puis un suffixe tiré de l'identifiant du compte (propre à lui,
+ * et stable d'un essai à l'autre), enfin un suffixe aléatoire. 10 essais au plus.
+ */
+export function slugsCandidats(base: string, proprietaireId: string | null | undefined): string[] {
+  const propre = String(proprietaireId || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  const hasard = (globalThis.crypto?.randomUUID?.() || `${Date.now()}${Math.random()}`).toLowerCase().replace(/[^a-z0-9]/g, '');
+  const candidats = [
+    base,
+    ...[2, 3, 4, 5].map((n) => `${base}-${n}`),
+    ...[4, 6, 8, 12].filter((n) => propre.length >= n).map((n) => `${base}-${propre.slice(0, n)}`),
+    `${base}-${hasard.slice(0, 8)}`,
+  ];
+  return Array.from(new Set(candidats));
+}
+
+/**
  * Récupère la boutique d'un compte, ou la crée au premier accès.
  *
  * L'adresse (slug) n'est attribuée qu'UNE fois : la renommer casserait tous
@@ -119,9 +142,7 @@ export async function obtenirOuCreerBoutique(params: {
   const a = getSupabaseAdmin();
   if (!a) return null;
 
-  const base = slugifier(params.nom);
-  for (let i = 0; i < 30; i++) {
-    const candidat = i === 0 ? base : `${base}-${i + 1}`;
+  for (const candidat of slugsCandidats(slugifier(params.nom), params.proprietaireId)) {
     const { data, error } = await a
       .from('stores')
       .insert({

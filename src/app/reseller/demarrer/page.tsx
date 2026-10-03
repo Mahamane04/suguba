@@ -248,9 +248,11 @@ export default function DemarrerPage() {
           )}
         </Card>
 
+        {/* Pas de « Ouvrir » ici (relecture du lot 1, 2026-10-03) : il quittait le
+            parcours sans terminer(), le démarrage restait « à faire » sur l'accueil,
+            et doublait le bouton « Ouvrir ma boutique » juste en dessous. */}
         {etape === 7 && slugBoutique && (
           <CarteLien titre="Ma boutique" url={`${origine}/boutique/${slugBoutique}`}
-            lienOuvrir={`/boutique/${slugBoutique}`}
             texteWhatsApp={`🛍️ Ma boutique Suguba — ${nomBoutique}\nCommandez, vous payez à la livraison.\n👉 ${origine}/boutique/${slugBoutique}`} />
         )}
 

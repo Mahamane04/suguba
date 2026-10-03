@@ -15,7 +15,11 @@ import TableauAdmin from '@/components/admin/TableauAdmin';
 import { formatF, FORMAT_DATE } from '@/lib/montant';
 
 /**
- * Toutes les boutiques (§ page 44). Une boutique masquée ou suspendue n'est plus publique.
+ * Toutes les boutiques (§ page 44). Une boutique masquée ou suspendue n'a plus
+ * d'adresse /boutique/ publique (page introuvable ; son propriétaire revendeur la
+ * voit encore). Précision du 2026-10-03 : l'ancien lien /r/<code> d'un revendeur
+ * montre toujours sa sélection, sans logo, couverture ni enseigne (décision en
+ * attente sur la redirection de /r/, voir le chantier boutique).
  *
  * Ajouts du 2026-09-24 : demandes de formules Pro (activer après paiement
  * Mobile Money, ou refuser) et création d'une boutique pour un revendeur ou
