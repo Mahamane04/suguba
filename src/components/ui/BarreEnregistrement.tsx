@@ -16,6 +16,11 @@ import Button from '@/components/ui/Button';
  * visible pendant le défilement (au-dessus de la barre du bas sur téléphone),
  * dit « Non enregistré » ou « Tout est enregistré », propose « Annuler », et
  * son bouton n'est actif que quand une modification attend.
+ *
+ * `barreDuBasPermanente` (relecture du lot 2 du chantier boutique, 2026-10-03) :
+ * pour les pages des rôles métier (revendeur, fournisseur, livreur), dont la
+ * barre du bas reste affichée sur tablette et ordinateur. Sans elle, la barre
+ * redescendait à 12 px du bas à partir de 768 px et passait dessous.
  */
 export default function BarreEnregistrement({
   modifie,
@@ -28,6 +33,7 @@ export default function BarreEnregistrement({
   actionDisponible,
   bloque = false,
   note,
+  barreDuBasPermanente = false,
 }: {
   modifie: boolean;
   envoi?: boolean;
@@ -43,10 +49,15 @@ export default function BarreEnregistrement({
   bloque?: boolean;
   /** Rappel sous la barre (« Ne modifie jamais une commande déjà passée »). */
   note?: string;
+  /** La barre du bas reste affichée à toutes les largeurs (rôles métier) : on reste au-dessus. */
+  barreDuBasPermanente?: boolean;
 }) {
   if (!modifie && !erreurs.length && !message && !actionDisponible) return null;
+  const position = barreDuBasPermanente
+    ? 'bottom-[calc(5.75rem+env(safe-area-inset-bottom,0px))]'
+    : 'bottom-[calc(5.75rem+env(safe-area-inset-bottom,0px))] md:bottom-3';
   return (
-    <div className="sticky bottom-[calc(5.75rem+env(safe-area-inset-bottom,0px))] md:bottom-3 z-30 rounded-3xl bg-white/95 backdrop-blur border border-slate-200 shadow-float p-3 space-y-2">
+    <div className={`sticky ${position} z-30 rounded-3xl bg-white/95 backdrop-blur border border-slate-200 shadow-float p-3 space-y-2`}>
       {erreurs.length > 0 && (
         <div role="alert" className="bg-rose-50 border border-rose-200 rounded-2xl p-2.5 text-sm text-rose-800 space-y-0.5">
           {erreurs.map((e) => <p key={e}>• {e}</p>)}

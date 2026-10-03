@@ -37,6 +37,14 @@ import { FAMILLES_CATEGORIES } from '@/lib/product-categories';
  *  - les textes s'enregistrent par la barre collante (BarreEnregistrement), qui
  *    dit ce qui attend, au lieu d'un bouton en bas de page.
  *
+ * Relecture du lot 2 (2026-10-03) :
+ *  - un retrait de couverture, de logo ou de photo, enregistré aussitôt, est
+ *    d'abord confirmé ;
+ *  - la barre d'enregistrement reste au-dessus de la barre du bas, qui ne
+ *    disparaît pas sur tablette et ordinateur pour un revendeur ;
+ *  - sans nom public (profil illisible), jamais de repli sur le nom enregistré,
+ *    qui peut être le nom complet du compte : le message WhatsApp n'a pas de nom.
+ *
  * Elle est créée automatiquement au premier accès : un revendeur ne doit pas
  * avoir à « créer une boutique » avant de pouvoir partager son premier
  * produit. Son adresse (/boutique/<slug>) n'est attribuée qu'une fois et n'est
@@ -209,7 +217,7 @@ export default function MaBoutiqueRevendeurPage() {
               url={`${origine}/boutique/${boutique.slug}`}
               lienOuvrir={`/boutique/${boutique.slug}`}
               aide="Vos articles, à votre nom. Chaque vente passée par ce lien vous revient."
-              texteWhatsApp={`🛍️ Ma boutique Suguba — ${vitrine?.nom || boutique.nom}\n\nCommandez, vous payez à la livraison à Bamako.\n👉 ${origine}/boutique/${boutique.slug}`}
+              texteWhatsApp={`🛍️ Ma boutique Suguba${vitrine ? ` — ${vitrine.nom}` : ''}\n\nCommandez, vous payez à la livraison à Bamako.\n👉 ${origine}/boutique/${boutique.slug}`}
             />
           )}
 
@@ -218,10 +226,10 @@ export default function MaBoutiqueRevendeurPage() {
               <p className="text-sm font-bold text-slate-900">Couverture et logo</p>
               <p className="text-xs text-slate-600 mt-0.5">Enregistrés dès la fin de l’envoi.</p>
             </div>
-            <CouvertureEditeur key={`couverture-${essaiImage}`} valeur={boutique.couverture}
+            <CouvertureEditeur key={`couverture-${essaiImage}`} valeur={boutique.couverture} confirmerRetrait
               onChange={(url) => enregistrerImage({ couverture: url }, url ? 'Couverture enregistrée.' : 'Couverture retirée.')} />
             <div className="flex items-center gap-4">
-              <LogoUploader key={`logo-${essaiImage}`} value={boutique.logo} forme="carre" nomPourInitiale={vitrine?.nom || boutique.nom}
+              <LogoUploader key={`logo-${essaiImage}`} value={boutique.logo} forme="carre" nomPourInitiale={vitrine?.nom || 'Ma boutique'} confirmerRetrait
                 onChange={(url) => enregistrerImage({ logo: url }, url ? 'Logo enregistré.' : 'Logo retiré.')} />
             </div>
             <p className="text-xs text-slate-500">
@@ -283,7 +291,7 @@ export default function MaBoutiqueRevendeurPage() {
               <p className="text-sm font-bold text-slate-900">Photos de la boutique</p>
               <p className="text-xs text-slate-600 mt-0.5">Votre étal, vos articles, votre quartier. Affichées en diaporama sur votre boutique, enregistrées tout de suite.</p>
             </div>
-            <GalerieEditeur images={boutique.galerie || []} max={maxGalerie}
+            <GalerieEditeur images={boutique.galerie || []} max={maxGalerie} confirmerRetrait
               onChange={(nouvelles) => enregistrerImage({ galerie: nouvelles }, 'Photos enregistrées.')} />
           </Card>
 
@@ -305,6 +313,7 @@ export default function MaBoutiqueRevendeurPage() {
             erreurs={erreurs}
             message={message}
             bloque={textes.nom.trim().length < 2}
+            barreDuBasPermanente
           />
         </>
       )}

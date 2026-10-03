@@ -19,6 +19,13 @@ import { Eye } from 'lucide-react';
  * dans un try : navigation privée, stockage bloqué). Une pilule « Vue client ·
  * Revenir » reste au-dessus de la barre du bas.
  *
+ * Relecture du lot 2 (2026-10-03) : la pilule ne redescend plus à 24 px du bas
+ * à partir de 768 px (`md:bottom-6`). La barre du bas d'un revendeur reste
+ * affichée sur tablette et ordinateur (BottomNav, rôles métier) et se peignait
+ * par-dessus : en vue client, plus aucune sortie, et le choix gardé pour
+ * l'onglet y ramenait encore après rechargement. Même hauteur à toutes les
+ * largeurs, au-dessus de la barre (z-50).
+ *
  * Chargé avec next/dynamic par ShopView, seulement pour le propriétaire : ce code
  * n'est jamais envoyé aux visiteurs.
  *
@@ -90,7 +97,7 @@ export default function ModeProprietaire({ identite: initiale, children }: { ide
         <button
           type="button"
           onClick={() => changerVue('gestion')}
-          className="hidden group-data-[vue=client]:inline-flex fixed left-1/2 -translate-x-1/2 bottom-[calc(5.75rem+env(safe-area-inset-bottom,0px))] md:bottom-6 z-40 items-center gap-2 min-h-11 px-4 rounded-full bg-suguba-profond text-white text-sm shadow-float"
+          className="hidden group-data-[vue=client]:inline-flex fixed left-1/2 -translate-x-1/2 bottom-[calc(5.75rem+env(safe-area-inset-bottom,0px))] z-50 items-center gap-2 min-h-11 px-4 rounded-full bg-suguba-profond text-white text-sm shadow-float"
         >
           <Eye className="w-4 h-4" />
           <span>Vue client ·</span>

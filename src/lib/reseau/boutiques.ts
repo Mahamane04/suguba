@@ -6,6 +6,7 @@
  */
 import { getSupabaseAdmin } from '../supabase-admin';
 import { slugifier } from '../shop';
+import { adresseReservee, nomPublicBoutique } from '../enseigne';
 import { cleClient } from './attribution';
 import { classerParProximite, quartierReconnu, type NiveauProximite } from './proximite';
 
@@ -69,6 +70,42 @@ function versBoutique(r: any): BoutiqueReseau {
 
 /** Limite de la galerie, § 7 : « jusqu'à environ 10 images ». */
 export const MAX_GALERIE = 10;
+
+/**
+ * Noms publics des boutiques revendeur d'une liste PUBLIQUE (relecture du lot 2
+ * du chantier boutique, 2026-10-03) : annuaire « Boutiques près de chez vous »,
+ * boutiques suivies, recherche (« Boutiques qui recrutent » n'en liste plus).
+ *
+ * Ces listes renvoyaient stores.name brut. Or les premières boutiques revendeur
+ * ont été créées au nom complet du compte (« Awa Traoré Diallo ») : il s'affichait
+ * en titre à n'importe quel visiteur, alors que la vitrine affiche « Awa D. ».
+ * Même règle que la vitrine (nomPublicBoutique) : l'enseigne, sinon « Prénom I. ».
+ *
+ * Les noms complets sont lus en UNE requête. Profil illisible ou absent : la
+ * boutique revendeur est RETIRÉE de la liste plutôt que publiée sous un nom
+ * qu'on ne sait pas vérifier. Les boutiques fournisseur et Suguba sont inchangées.
+ */
+export async function nomsPublicsRevendeurs<T>(
+  a: Admin,
+  elements: T[],
+  boutiqueDe: (element: T) => { typeProprietaire: string; proprietaireId: string | null; nom: string },
+): Promise<T[]> {
+  const ids = Array.from(new Set(elements.map(boutiqueDe)
+    .filter((b) => b.typeProprietaire === 'reseller' && b.proprietaireId)
+    .map((b) => b.proprietaireId as string)));
+  if (ids.length === 0) return elements;
+  const { data, error } = await a.from('profiles').select('id, full_name').in('id', ids);
+  const nomsComplets = new Map<string, string | null>(
+    error || !Array.isArray(data) ? [] : data.map((p: any) => [String(p.id), p.full_name ?? null]),
+  );
+  return elements.filter((e) => {
+    const b = boutiqueDe(e);
+    if (b.typeProprietaire !== 'reseller') return true;
+    if (!b.proprietaireId || !nomsComplets.has(b.proprietaireId)) return false;
+    b.nom = nomPublicBoutique(b.nom, nomsComplets.get(b.proprietaireId));
+    return true;
+  });
+}
 
 export async function boutiqueParSlug(slug: string): Promise<BoutiqueReseau | null> {
   const a = getSupabaseAdmin();
@@ -148,7 +185,12 @@ export async function obtenirOuCreerBoutique(params: {
   const a = getSupabaseAdmin();
   if (!a) return null;
 
-  for (const candidat of slugsCandidats(slugifier(params.adresseDepuis || params.nom), params.proprietaireId)) {
+  // Adresse réservée à Suguba (relecture du lot 2, 2026-10-03) : « suguba »,
+  // « suguba-officiel », « admin »… ne sont jamais données à une autre boutique,
+  // même tirées du nom d'un compte. Elle part alors d'une adresse neutre.
+  const adresse = slugifier(params.adresseDepuis || params.nom);
+  const base = params.typeProprietaire !== 'suguba' && adresseReservee(adresse) ? 'ma-boutique' : adresse;
+  for (const candidat of slugsCandidats(base, params.proprietaireId)) {
     const { data, error } = await a
       .from('stores')
       .insert({
@@ -335,10 +377,17 @@ export async function boutiquesSuivies(cle: string): Promise<BoutiqueReseau[]> {
   const { data, error } = await a.from('store_follows').select('store_id').eq('follower_key', cle);
   if (error || !data || data.length === 0) return [];
   const { data: boutiques } = await a.from('stores').select('*').in('id', data.map((f) => f.store_id));
-  return (boutiques || []).map(versBoutique);
+  // Liste affichée au client : noms publics (relecture du lot 2, 2026-10-03).
+  return nomsPublicsRevendeurs(a, (boutiques || []).map(versBoutique), (b) => b);
 }
 
-/** Boutiques qui recrutent des revendeurs — bannière § 18. */
+/**
+ * Boutiques qui recrutent des revendeurs — bannière § 18.
+ *
+ * Relecture du lot 2 (2026-10-03) : boutiques fournisseur et Suguba seulement.
+ * Recruter est une notion fournisseur ; une boutique revendeur passée à
+ * is_recruiting par l'ancienne route de modification n'y figure plus.
+ */
 export async function boutiquesQuiRecrutent(limite = 12): Promise<BoutiqueReseau[]> {
   const a = getSupabaseAdmin();
   if (!a) return [];
@@ -347,6 +396,7 @@ export async function boutiquesQuiRecrutent(limite = 12): Promise<BoutiqueReseau
     .select('*')
     .eq('is_recruiting', true)
     .eq('status', 'active')
+    .neq('owner_type', 'reseller')
     .order('followers_count', { ascending: false })
     .limit(limite);
   if (error) return [];
@@ -379,7 +429,11 @@ export async function boutiquesParQuartier(
   if (error || !data) return [];
 
   const boutiques = data.map(versBoutique).filter((b) => avecFournisseurs || b.typeProprietaire !== 'supplier');
-  if (!avecFournisseurs) return classerParProximite(quartier, boutiques).slice(0, limite);
+  // Noms publics des boutiques revendeur, lus seulement pour celles retenues
+  // (relecture du lot 2, 2026-10-03 : stores.name brut publiait le nom complet).
+  const publier = (liste: { boutique: BoutiqueReseau; niveau: NiveauProximite; distanceKm: number }[]) =>
+    nomsPublicsRevendeurs(a, liste, (r) => r.boutique);
+  if (!avecFournisseurs) return publier(classerParProximite(quartier, boutiques).slice(0, limite));
   const fournisseursSansQuartier = boutiques
     .filter((b) => !b.quartier && b.typeProprietaire === 'supplier' && b.proprietaireId)
     .map((b) => b.proprietaireId as string);
@@ -417,7 +471,7 @@ export async function boutiquesParQuartier(
       });
     }
   }
-  return classerParProximite(quartier, boutiques).slice(0, limite);
+  return publier(classerParProximite(quartier, boutiques).slice(0, limite));
 }
 
 /**

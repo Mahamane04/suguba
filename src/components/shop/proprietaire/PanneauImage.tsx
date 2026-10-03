@@ -16,6 +16,8 @@ import { useToast } from '@/components/ui/Toast';
  * revendeur qui quittait la page après avoir choisi son logo le perdait.
  * Enregistrement refusé : l'aperçu revient à l'image enregistrée (`key`), pour
  * ne jamais montrer comme acquise une image qui ne l'est pas.
+ * Relecture du lot 2 (2026-10-03) : retrait confirmé d'abord, puisqu'il est
+ * enregistré aussitôt (bouton « Retirer » de 40 px dans LogoUploader).
  */
 export type SujetImage = 'logo' | 'couverture';
 
@@ -76,9 +78,9 @@ export default function PanneauImage({
     >
       <div className="space-y-3" aria-busy={envoi || undefined}>
         {logo ? (
-          <LogoUploader key={essai} value={valeur} onChange={enregistrer} nomPourInitiale={nom} forme="carre" />
+          <LogoUploader key={essai} value={valeur} onChange={enregistrer} nomPourInitiale={nom} forme="carre" confirmerRetrait />
         ) : (
-          <CouvertureEditeur key={essai} valeur={valeur} onChange={enregistrer} hauteur="h-28" />
+          <CouvertureEditeur key={essai} valeur={valeur} onChange={enregistrer} hauteur="h-28" confirmerRetrait />
         )}
         {envoi && (
           <p role="status" className="flex items-center gap-2 text-sm text-slate-600">

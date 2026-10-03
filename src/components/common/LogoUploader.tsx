@@ -6,6 +6,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Camera, X } from 'lucide-react';
 import { compresserImage } from '@/lib/compression-image';
 import { initiale as lettreInitiale } from '@/lib/initiale';
+import Button from '@/components/ui/Button';
+import { useToast } from '@/components/ui/Toast';
 
 /**
  * Logo de boutique — avatar circulaire, un seul fichier (2026-09-11).
@@ -28,6 +30,12 @@ import { initiale as lettreInitiale } from '@/lib/initiale';
  *    et son message d'erreur ; compresserImage convertit en JPEG ce que le
  *    navigateur sait lire ;
  *  - initiale aux couleurs de la vitrine (menthe et vert profond).
+ *
+ * Relecture du lot 2 (2026-10-03) : « Retirer le logo » était une pastille de
+ * 24 px, et l'appareil photo un second bouton de 28 px. L'appareil photo n'est
+ * plus qu'un repère sur l'aperçu (lui-même un bouton de 80 px) ; « Retirer » est
+ * un bouton de 40 px sous le texte, comme sur la couverture. `confirmerRetrait` :
+ * confirmation d'abord, quand le retrait est enregistré aussitôt.
  */
 export default function LogoUploader({
   value,
@@ -35,6 +43,7 @@ export default function LogoUploader({
   onUploadingChange,
   nomPourInitiale,
   forme = 'rond',
+  confirmerRetrait = false,
 }: {
   value: string | null;
   onChange: (url: string | null) => void;
@@ -43,7 +52,10 @@ export default function LogoUploader({
   nomPourInitiale?: string;
   /** 'carre' : carré arrondi, comme le logo affiché sur la vitrine. */
   forme?: 'rond' | 'carre';
+  /** Demander confirmation avant de retirer le logo (enregistré tout de suite par l'appelant). */
+  confirmerRetrait?: boolean;
 }) {
+  const { confirmer } = useToast();
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
   const [apercu, setApercu] = useState<string | null>(value);
@@ -89,7 +101,14 @@ export default function LogoUploader({
     }
   };
 
-  const retirer = () => {
+  const retirer = async () => {
+    if (confirmerRetrait && !(await confirmer({
+      titre: 'Retirer le logo ?',
+      message: 'Il disparaît tout de suite de votre boutique.',
+      confirmer: 'Retirer',
+      annuler: 'Garder',
+      danger: true,
+    }))) return;
     setApercu(null);
     setErreur(null);
     onChange(null);
@@ -118,29 +137,25 @@ export default function LogoUploader({
             </div>
           )}
         </button>
-        <button
-          type="button"
-          onClick={() => input.current?.click()}
-          aria-label="Changer le logo"
-          className="absolute -bottom-0.5 -right-0.5 w-7 h-7 rounded-full bg-slate-900 hover:bg-black text-white flex items-center justify-center border-2 border-white"
+        {/* Repère seulement : l'aperçu de 80 px est le bouton. */}
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute -bottom-0.5 -right-0.5 w-7 h-7 rounded-full bg-slate-900 text-white flex items-center justify-center border-2 border-white"
         >
           <Camera className="w-3.5 h-3.5" />
-        </button>
-        {apercu && !envoiEnCours && (
-          <button
-            type="button"
-            onClick={retirer}
-            aria-label="Retirer le logo"
-            className="absolute -top-0.5 -right-0.5 w-6 h-6 rounded-full bg-rose-600 hover:bg-rose-700 text-white flex items-center justify-center border-2 border-white"
-          >
-            <X className="w-3 h-3" />
-          </button>
-        )}
+        </span>
       </div>
-      <div className="min-w-0">
-        <p className="text-xs font-bold text-slate-700">{apercu ? 'Logo de la boutique' : 'Aucun logo'}</p>
-        <p className="text-xs text-slate-500">JPEG, PNG ou WebP — allégé automatiquement.</p>
-        {erreur && <p className="text-xs text-rose-600 font-bold mt-0.5">{erreur}</p>}
+      <div className="min-w-0 space-y-1.5">
+        <div>
+          <p className="text-xs font-bold text-slate-700">{apercu ? 'Logo de la boutique' : 'Aucun logo'}</p>
+          <p className="text-xs text-slate-500">JPEG, PNG ou WebP — allégé automatiquement.</p>
+        </div>
+        {apercu && !envoiEnCours && (
+          <Button type="button" variant="danger" size="sm" onClick={retirer} aria-label="Retirer le logo">
+            <X className="w-4 h-4" />Retirer
+          </Button>
+        )}
+        {erreur && <p className="text-xs text-rose-600 font-bold">{erreur}</p>}
       </div>
       <input
         ref={input}

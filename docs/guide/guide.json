@@ -198,6 +198,41 @@
  "journal": [
   {
    "date": "2026-10-03",
+   "titre": "Boutique revendeur, lot 2 : corrections de relecture",
+   "demande": "« “Ma boutique” doit montrer la boutique elle-même (logo, couverture, produits ajoutés) et non les réglages ; il veut des outils pour gérer sa boutique (personnalisation, catégories/rayons, produits mis en avant, et ce qui aide à vendre), pour un vrai sentiment d’appropriation. »",
+   "realise": [
+    "Sécurité : la route « Mes boutiques » (action « modifier ») appliquait encore les champs bruts à la boutique d’un revendeur, principale comprise : logo pris n’importe où sur Internet, recrutement, nom ou mot d’accueil de 160 caractères. Elle applique maintenant les mêmes règles que « Personnaliser » : images envoyées depuis son compte ou déjà en place, ni recrutement ni WhatsApp, familles de l’annuaire, nom de 60 et mot d’accueil de 90 caractères au plus. Les règles du fournisseur ne changent pas.",
+    "« Boutiques qui recrutent » ne montre plus que des boutiques de fournisseurs (et celle de Suguba) : une boutique revendeur passée « qui recrute » par l’ancienne route n’y figure plus.",
+    "Noms réservés : un revendeur ne peut plus appeler sa boutique « Suguba », « Suguba Officiel », « Boutique Suguba », « Admin », « Support »… (message « Ce nom est réservé à Suguba »), au démarrage, sur la vitrine, dans « Personnaliser » ou en créant une boutique supplémentaire. Un tel nom n’est jamais affiché seul en titre : « La sélection de Awa D. ». Les adresses /boutique/suguba, /boutique/suguba-officiel, /boutique/admin… ne sont plus jamais données à une boutique de revendeur ou de fournisseur. « Sugu Bamako » reste permis.",
+    "Le nom donné par défaut, « Revendeur Suguba », n’est plus pris pour un nom choisi une fois le nom du compte rempli : l’étape « Nom de la boutique » reste à faire, le démarrage ne pré-remplit plus le champ avec lui, et le titre reste « La sélection de Awa D. ». Une boutique qui le porte peut toujours enregistrer son mot d’accueil ; le nom devient alors « Awa D. ».",
+    "Nom complet : il n’apparaît plus non plus dans « Boutiques près de chez vous », la recherche ni les boutiques suivies. Ces listes montraient le nom enregistré, qui est le nom complet pour les premières boutiques. Elles montrent maintenant le nom public : l’enseigne, sinon « Awa D. ». La recherche ne trouve une boutique de revendeur que par ce nom public : chercher « Traoré » ne fait plus apparaître « Awa D. ». Une boutique de revendeur dont le profil est illisible n’est pas listée.",
+    "Un revendeur qui tape son propre nom comme nom de boutique (au démarrage, sur la vitrine ou dans « Personnaliser ») le voit enregistré en « Awa D. » : le nom complet n’est plus écrit dans la fiche de la boutique.",
+    "Vue client : la pastille « Vue client · Revenir » reste au-dessus de la barre du bas sur tablette et ordinateur. Elle passait dessous à partir de 768 px, et le propriétaire ne pouvait plus revenir à la gestion. Même correction pour la barre « Non enregistré · Enregistrer » de « Personnaliser ».",
+    "Créateur de visuels et « Personnaliser » : si le nom public ne peut pas être lu, plus de repli sur le nom enregistré. Le créateur affiche « Boutique indisponible » au lieu de la carte ; le message WhatsApp de « Personnaliser » part sans nom.",
+    "Photos de la boutique : boutons « Retirer » et « Mettre en premier » de 40 px (28 px avant), un seul indicateur pendant l’envoi. Logo : « Retirer » est un bouton de 40 px sous l’aperçu (pastille de 24 px avant), l’aperçu entier ouvre le choix de photo. Sur la vitrine et dans « Personnaliser », retirer une photo, le logo ou la couverture demande d’abord « Retirer … ? » (Retirer / Garder), puisque c’est enregistré aussitôt.",
+    "Guide : la fiche de la vitrine précise ce que voit le propriétaire sous un autre profil.",
+    "Tests : tests/ma-boutique-lot2-relecture.test.cjs (14 tests, tous en échec sur le code du lot 2)."
+   ],
+   "ecarts": [
+    "En local sur la branche ux/boutique-revendeur, non publié. Aucune migration.",
+    "Les boutiques déjà enregistrées au nom complet gardent ce nom dans la base tant que le revendeur ne le change pas. Il n’est plus affiché nulle part côté client ; l’adresse reste /boutique/prenom-nom jusqu’au lot 8.",
+    "Les noms de boutique des fournisseurs ne sont pas filtrés (hors chantier) ; seules les adresses réservées leur sont refusées. Une boutique de revendeur déjà nommée « Suguba … » garde ce nom dans la base, mais son titre affiche « La sélection de Awa D. ».",
+    "Les fiches touchées ont des captures d’avant ce lot. Captures et vérifications manuelles à faire sur la copie locale [QA], à 390 px puis à 1 024 px : vue client puis « Revenir » ; retrait d’une photo, du logo et de la couverture (confirmation) ; recherche « Traoré » sans boutique de revendeur. Aucun serveur n’a été lancé."
+   ],
+   "pages": [
+    "vitrine-boutique",
+    "rev-boutique",
+    "rev-demarrer",
+    "rev-createur",
+    "mes-boutiques",
+    "boutiques-quartier",
+    "recherche",
+    "boutiques-suivies"
+   ],
+   "statut": "en local"
+  },
+  {
+   "date": "2026-10-03",
    "titre": "Boutique revendeur, lot 2 : je gère là où le client regarde",
    "demande": "« “Ma boutique” doit montrer la boutique elle-même (logo, couverture, produits ajoutés) et non les réglages ; il veut des outils pour gérer sa boutique (personnalisation, catégories/rayons, produits mis en avant, et ce qui aide à vendre), pour un vrai sentiment d’appropriation. »",
    "realise": [
@@ -2101,7 +2136,7 @@
     },
     {
      "nom": "Boutiques / Fournisseurs",
-     "role": "Apparaissent sous les produits quand le mot correspond à une boutique."
+     "role": "Apparaissent sous les produits quand le mot correspond à une boutique. Boutique de revendeur : affichée et trouvée seulement par son nom public (l’enseigne, sinon « Awa D. ») ; chercher son nom de famille ne la fait pas apparaître."
     },
     {
      "nom": "Connexion coupée",
@@ -2685,7 +2720,7 @@
     },
     {
      "nom": "Carte boutique",
-     "role": "Nom, spécialité, badge « Votre quartier » ou distance. Ouvre la vitrine."
+     "role": "Nom, spécialité, badge « Votre quartier » ou distance. Ouvre la vitrine. Boutique de revendeur : son enseigne, sinon « Awa D. », jamais son nom complet."
     },
     {
      "nom": "Explorer un quartier voisin",
@@ -2754,7 +2789,7 @@
    "elements": [
     {
      "nom": "Liste des boutiques",
-     "role": "Chaque ligne ouvre la boutique."
+     "role": "Chaque ligne ouvre la boutique. Boutique de revendeur : son enseigne, sinon « Awa D. », jamais son nom complet."
     },
     {
      "nom": "Découvrir les produits",
@@ -3262,7 +3297,7 @@
     },
     {
      "nom": "Nom de votre boutique",
-     "role": "Crée la boutique avec ce nom, dont l’adresse est tirée (/boutique/awa-mode) ; si elle existe déjà, la renomme sans changer l’adresse. Rien n’est créé avant cette étape. Sans enseigne choisie, le champ part vide."
+     "role": "Crée la boutique avec ce nom, dont l’adresse est tirée (/boutique/awa-mode) ; si elle existe déjà, la renomme sans changer l’adresse. Rien n’est créé avant cette étape. Sans enseigne choisie, le champ part vide (« Revendeur Suguba » compris). Un nom réservé à Suguba est refusé avec un message ; son propre nom est enregistré en « Awa D. »."
     },
     {
      "nom": "Dernière étape",
@@ -3635,7 +3670,7 @@
     },
     {
      "nom": "Titre",
-     "role": "L’enseigne seule dès que le revendeur a choisi un nom de boutique, sinon « La sélection de Awa D. ». Jamais le nom complet, même pour une boutique créée à son nom."
+     "role": "L’enseigne seule dès que le revendeur a choisi un nom de boutique, sinon « La sélection de Awa D. ». Jamais le nom complet, même pour une boutique créée à son nom. Jamais non plus « Revendeur Suguba » (nom par défaut) ni un nom réservé à Suguba seul en titre. Même nom public dans l’annuaire des boutiques, la recherche et les boutiques suivies."
     },
     {
      "nom": "Bandeau « Ma boutique » (propriétaire)",
@@ -3643,11 +3678,11 @@
     },
     {
      "nom": "Voir comme un client",
-     "role": "Cache tous les outils et montre la vitrine exacte du client, sans recharger. Suivre, partage et « Devenir revendeur » s’affichent, sans effet pour le propriétaire. La pastille « Vue client · Revenir », au-dessus de la barre du bas, ramène aux outils."
+     "role": "Cache tous les outils et montre la vitrine exacte du client, sans recharger. Suivre, partage et « Devenir revendeur » s’affichent, sans effet pour le propriétaire. La pastille « Vue client · Revenir », toujours au-dessus de la barre du bas (téléphone, tablette et ordinateur), ramène aux outils."
     },
     {
      "nom": "Crayons (propriétaire)",
-     "role": "Trois crayons : couverture, logo, nom et mot d’accueil. Chacun ouvre un panneau à un seul sujet. Couverture et logo s’enregistrent dès la fin de l’envoi ; nom et mot d’accueil par « Enregistrer ». La vitrine se met à jour sur place."
+     "role": "Trois crayons : couverture, logo, nom et mot d’accueil. Chacun ouvre un panneau à un seul sujet. Couverture et logo s’enregistrent dès la fin de l’envoi ; « Retirer » (40 px) demande d’abord confirmation. Nom et mot d’accueil par « Enregistrer » : un nom réservé à Suguba (« Suguba Officiel », « Admin »…) est refusé, et son propre nom est enregistré en « Awa D. ». La vitrine se met à jour sur place."
     },
     {
      "nom": "Ma boutique est prête à X % (propriétaire)",
@@ -3671,7 +3706,7 @@
     },
     {
      "nom": "Suivre · Copier le lien · Partager · Devenir revendeur",
-     "role": "Ce que voit un client. Le propriétaire ne les voit qu’en vue client, sans effet. Ses liens d’achat ne portent pas son code : sa visite ne fait pas de lui son propre revendeur d’origine. Quand il partage un article, le lien garde son code."
+     "role": "Ce que voit un client. En gestion, le propriétaire ne les voit qu’en vue client, sans effet. Sous un autre profil, il garde Copier le lien et Partager (sauf boutique masquée), sans Suivre ni Devenir revendeur. Ses liens d’achat ne portent pas son code : sa visite ne fait pas de lui son propre revendeur d’origine. Quand il partage un article, le lien garde son code."
     },
     {
      "nom": "Onglet Boutique",
@@ -3719,15 +3754,15 @@
     },
     {
      "nom": "Lien / QR",
-     "role": "Carte à copier ou partager ; « Ouvrir » affiche la vitrine dans le même onglet. Absente quand Suguba a masqué la boutique : pas de partage vers une page introuvable."
+     "role": "Carte à copier ou partager ; « Ouvrir » affiche la vitrine dans le même onglet. Le message WhatsApp porte le nom public (l’enseigne ou « Awa D. »), jamais le nom complet. Absente quand Suguba a masqué la boutique : pas de partage vers une page introuvable."
     },
     {
      "nom": "Couverture et logo",
-     "role": "Enregistrés dès la fin de l’envoi, avec un message. Le logo est carré, comme sur la vitrine."
+     "role": "Enregistrés dès la fin de l’envoi, avec un message. Le logo est carré, comme sur la vitrine ; « Retirer » (bouton de 40 px sous le logo, ou la croix de la couverture) demande d’abord « Retirer … ? »."
     },
     {
      "nom": "Nom · Mot d’accueil · Quartier · Présentation",
-     "role": "Textes affichés sur la vitrine. Tant que le nom reprend celui du revendeur, l’aide rappelle que les clients lisent « La sélection de Awa D. ». Quartier facultatif : il rend la boutique visible dans « Boutiques près de chez vous »."
+     "role": "Textes affichés sur la vitrine. Tant que le nom reprend celui du revendeur, l’aide rappelle que les clients lisent « La sélection de Awa D. » ; son propre nom est enregistré en « Awa D. ». Un nom réservé à Suguba (« Suguba Officiel », « Admin »…) est refusé. Quartier facultatif : il rend la boutique visible dans « Boutiques près de chez vous »."
     },
     {
      "nom": "Ce que je vends",
@@ -3735,11 +3770,11 @@
     },
     {
      "nom": "Photos de la boutique",
-     "role": "10 au plus, « mettre en premier », retrait : enregistrées tout de suite, affichées en diaporama sur la vitrine."
+     "role": "10 au plus, « mettre en premier », retrait : enregistrées tout de suite, affichées en diaporama sur la vitrine. Boutons de 40 px ; retirer une photo demande d’abord « Retirer cette photo ? » (Retirer / Garder)."
     },
     {
      "nom": "Barre d’enregistrement",
-     "role": "Apparaît dès qu’un texte ou une famille change : « Non enregistré », Annuler, Enregistrer ; puis « Boutique mise à jour »."
+     "role": "Apparaît dès qu’un texte ou une famille change : « Non enregistré », Annuler, Enregistrer ; puis « Boutique mise à jour ». Reste au-dessus de la barre du bas, aussi sur tablette et ordinateur."
     }
    ],
    "suite": [
@@ -3808,7 +3843,7 @@
     },
     {
      "nom": "Créer une boutique",
-     "role": "Nom et quartier, dans la limite de la formule."
+     "role": "Nom et quartier, dans la limite de la formule. Pour un revendeur, un nom réservé à Suguba (« Suguba », « Admin »…) est refusé ; aucune boutique ne reçoit une adresse réservée (/boutique/suguba…)."
     },
     {
      "nom": "Choisir les articles",
@@ -4054,7 +4089,7 @@
     },
     {
      "nom": "Ma boutique",
-     "role": "Carte de la boutique (logo, couverture, nom public). « Configurer ma boutique » et « Compléter le logo et la couverture » ouvrent le panneau du logo, ou de la couverture, directement sur la vitrine."
+     "role": "Carte de la boutique (logo, couverture, nom public). « Configurer ma boutique » et « Compléter le logo et la couverture » ouvrent le panneau du logo, ou de la couverture, directement sur la vitrine. Si le nom public ne peut pas être lu : « Boutique indisponible », jamais le nom enregistré."
     },
     {
      "nom": "Format",

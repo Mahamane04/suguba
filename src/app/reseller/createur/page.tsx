@@ -45,6 +45,8 @@ export default function CreateurContenusPage() {
   const [typeVisuel, setTypeVisuel] = useState<TypeVisuel>('produit');
   const [boutique, setBoutique] = useState<Boutique | null>(null);
   const [boutiqueChargee, setBoutiqueChargee] = useState(false);
+  // Boutique lue sans nom public (profil illisible) : ni carte ni identité sur les affiches.
+  const [nomIndisponible, setNomIndisponible] = useState(false);
   const [recherche, setRecherche] = useState('');
   const [produitId, setProduitId] = useState<string | null>(null);
   useEffect(() => { setProduitId(new URLSearchParams(window.location.search).get('produit')); }, []);
@@ -81,7 +83,14 @@ export default function CreateurContenusPage() {
       .then(async (r) => r.ok ? await r.json() as { boutique?: Boutique | null; vitrine?: { nom: string } | null } : null)
       // Nom que voient les clients (lot 2, 2026-10-03) : l'enseigne, ou « Awa D. ».
       // Une boutique créée au nom complet l'aurait peint sur la carte partagée.
-      .then((r) => { if (actif) setBoutique(r?.boutique ? { ...r.boutique, nom: r.vitrine?.nom || r.boutique.nom } : null); })
+      // Relecture du lot 2 : sans `vitrine` (profil illisible), plus de repli sur
+      // le nom enregistré, qui peut être ce nom complet. La carte est alors
+      // indisponible et les affiches de produit partent sans identité de boutique.
+      .then((r) => {
+        if (!actif) return;
+        setBoutique(r?.boutique && r.vitrine?.nom ? { ...r.boutique, nom: r.vitrine.nom } : null);
+        setNomIndisponible(Boolean(r?.boutique && !r.vitrine?.nom));
+      })
       .catch(() => undefined)
       .finally(() => { if (actif) setBoutiqueChargee(true); });
     return () => { actif = false; };
@@ -152,7 +161,7 @@ export default function CreateurContenusPage() {
       {!boutiqueChargee ? <Skeleton className="h-32" /> : boutique ? <div className="overflow-hidden rounded-2xl border border-slate-200">
         <div className="h-24 bg-gradient-to-br from-emerald-700 to-emerald-950 bg-cover bg-center" style={boutique.couverture ? { backgroundImage: `url(${boutique.couverture})` } : undefined} />
         <div className="flex gap-3 px-4 pb-4 -mt-7 items-end"><div className="w-16 h-16 shrink-0 rounded-2xl border-4 border-white bg-white shadow-sm overflow-hidden flex items-center justify-center">{/* eslint-disable-next-line @next/next/no-img-element */}{boutique.logo ? <img src={boutique.logo} alt="" className="w-full h-full object-cover" /> : <Store className="w-7 h-7 text-suguba-brand-dark" />}</div><div className="min-w-0 pb-1"><p className="font-black text-slate-900 truncate">{boutique.nom}</p><p className="text-xs text-slate-500 truncate">{boutique.accroche || 'Votre boutique sur Suguba'}</p></div></div>
-      </div> : <EmptyState icone={Store} titre="Boutique à configurer" texte="Ajoutez un nom, un logo et une couverture avant de créer sa carte." action={<Link href={EDITER_LOGO} prefetch={false} className="font-bold text-suguba-brand-dark">Configurer ma boutique</Link>} />}
+      </div> : nomIndisponible ? <EmptyState icone={Store} titre="Boutique indisponible" texte="Votre boutique n’a pas pu être lue. Réessayez dans un instant." /> : <EmptyState icone={Store} titre="Boutique à configurer" texte="Ajoutez un nom, un logo et une couverture avant de créer sa carte." action={<Link href={EDITER_LOGO} prefetch={false} className="font-bold text-suguba-brand-dark">Configurer ma boutique</Link>} />}
       {boutique && (!boutique.logo || !boutique.couverture) && <Link href={boutique.logo ? `${PORTE_MA_BOUTIQUE}?editer=couverture` : EDITER_LOGO} prefetch={false} className="flex items-center gap-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-bold text-amber-900"><ImageIcon className="w-4 h-4" />Compléter le logo et la couverture</Link>}
     </Card>}
 

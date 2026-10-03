@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { lireReglagesReseau } from '@/lib/reseau/recompenses';
 import { idsRecherche, produitsRecherche } from '@/lib/recherche-produits';
 import { normaliserCodeRevendeur } from '@/lib/ancrage-revendeur';
+import { nomsPublicsRevendeurs } from '@/lib/reseau/boutiques';
 
 /**
  * Recherche globale (§ Z) : produits, boutiques, fournisseurs, catégories.
@@ -16,7 +17,18 @@ import { normaliserCodeRevendeur } from '@/lib/ancrage-revendeur';
  * revendeur d'origine. `?format=ids` renvoie seulement les identifiants
  * classés, pour la barre de recherche de l'accueil. Une panne répond 503 :
  * le client affiche « Réessayer », jamais un faux « Aucun résultat ».
+ *
+ * Relecture du lot 2 du chantier boutique (2026-10-03) : une boutique revendeur
+ * s'affiche sous son nom PUBLIC (l'enseigne, ou « Awa D. »), jamais stores.name
+ * brut, qui vaut le nom complet du compte pour les premières boutiques. Elle
+ * n'est gardée que si ce nom public contient le texte cherché : chercher
+ * « Traoré » ne doit pas faire apparaître « Awa D. », et révéler ainsi son nom.
  */
+
+/** Comparaison sans accents ni majuscules. */
+function simplifier(texte: string): string {
+  return texte.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
 
 const PRIVE = { 'Cache-Control': 'private, no-store', Vary: 'Cookie' };
 
@@ -48,7 +60,7 @@ export async function GET(req: NextRequest) {
   const [produits, parCategorie, boutiquesBrutes, fournisseursBruts] = await Promise.all([
     produitsRecherche(admin, q, code, 24).catch(() => null),
     admin.from('products').select('category').eq('status', 'approved').ilike('category', m).limit(200),
-    admin.from('stores').select('slug, name, tagline, logo_url, owner_type, followers_count')
+    admin.from('stores').select('slug, name, tagline, logo_url, owner_type, owner_id, followers_count')
       .eq('status', 'active').ilike('name', m).limit(12),
     admin.from('suppliers').select('profile_id, company_name, shop_display_name, logo_url, slug')
       .or(`company_name.ilike.${m.replace(/[,()]/g, ' ')},shop_display_name.ilike.${m.replace(/[,()]/g, ' ')}`).limit(12),
@@ -56,14 +68,21 @@ export async function GET(req: NextRequest) {
 
   if (!produits) return NextResponse.json({ error: 'Recherche indisponible.' }, { status: 503 });
 
-  const boutiques = { data: (boutiquesBrutes.data || []).filter((b: any) => annuaireFournisseurs || b.owner_type !== 'supplier') };
+  const candidates = (boutiquesBrutes.data || [])
+    .filter((b: any) => annuaireFournisseurs || b.owner_type !== 'supplier')
+    .map((b: any) => ({ ...b, typeProprietaire: String(b.owner_type), proprietaireId: b.owner_id || null, nom: String(b.name || '') }));
+  const cherche = simplifier(q);
+  const boutiques = {
+    data: (await nomsPublicsRevendeurs(admin, candidates, (b) => b))
+      .filter((b) => b.typeProprietaire !== 'reseller' || simplifier(b.nom).includes(cherche)),
+  };
   const fournisseurs = { data: annuaireFournisseurs ? fournisseursBruts.data || [] : [] };
   const categories = Array.from(new Set([...(parCategorie.data || []).map((p: any) => p.category), ...produits.map((p) => p.categorie)].filter(Boolean))).slice(0, 8);
 
   return NextResponse.json({
     produits,
     boutiques: (boutiques.data || []).map((b: any) => ({
-      lien: `/boutique/${b.slug}`, nom: b.name, accroche: b.tagline || null, logo: b.logo_url || null,
+      lien: `/boutique/${b.slug}`, nom: b.nom, accroche: b.tagline || null, logo: b.logo_url || null,
       type: b.owner_type, abonnes: Number(b.followers_count) || 0,
     })),
     fournisseurs: (fournisseurs.data || []).filter((f: any) => f.slug).map((f: any) => ({

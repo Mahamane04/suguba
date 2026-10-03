@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { sessionAvecRole } from '@/lib/reseau/route-session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { boutiqueDuProprietaire, majBoutique, obtenirOuCreerBoutique, MAX_GALERIE, type BoutiqueReseau } from '@/lib/reseau/boutiques';
-import { estEnseigne, nomPublic } from '@/lib/enseigne';
-import { imageAutorisee } from '@/lib/reseau/images-boutique';
-import { FAMILLES_CATEGORIES } from '@/lib/product-categories';
+import { estEnseigne, nomPublic, nomPublicBoutique, nomReserve } from '@/lib/enseigne';
+import { champsBoutiqueRevendeur, NOM_BOUTIQUE_MAX } from '@/lib/reseau/champs-boutique-revendeur';
 
 /**
  * Boutique du revendeur (§ 6) — /boutique/<adresse>.
@@ -20,17 +19,19 @@ import { FAMILLES_CATEGORIES } from '@/lib/product-categories';
  *
  * PATCH : identité de la vitrine, durcie au lot 2 (images de son dossier
  * seulement, ni recrutement ni WhatsApp, familles de l'annuaire seulement).
+ * La liste blanche est partagée avec POST /api/compte/boutiques « modifier »
+ * (src/lib/reseau/champs-boutique-revendeur.ts, relecture du lot 2).
+ *
+ * Relecture du lot 2 (2026-10-03) : un nom réservé à Suguba (« Suguba
+ * Officiel », « Admin »…) est refusé, et un nom qui n'est pas une enseigne (le
+ * nom complet tapé au démarrage) est enregistré en « Prénom I. » : le nom
+ * complet n'est plus écrit dans stores.name, que lisent l'annuaire et la recherche.
  *
  * Chaque réponse porte `vitrine` {nom, enseigne} : le nom que voient les clients,
  * calculé ICI à partir du nom du compte, qui ne quitte jamais le serveur.
  */
 
 type Admin = NonNullable<ReturnType<typeof getSupabaseAdmin>>;
-
-const FAMILLES = new Set(FAMILLES_CATEGORIES.map((f) => f.famille));
-/** Mêmes limites que les écrans (nom 60, mot d'accueil 90). */
-const NOM_MAX = 60;
-const ACCUEIL_MAX = 90;
 
 async function lireProfil(admin: Admin | null, uid: string) {
   if (!admin) return { profil: null, illisible: true };
@@ -41,8 +42,7 @@ async function lireProfil(admin: Admin | null, uid: string) {
 /** Nom affiché aux clients : l'enseigne, ou « Awa D. » (jamais le nom complet). */
 function vitrineDe(boutique: BoutiqueReseau | null, nomComplet: string | null | undefined) {
   if (!boutique) return null;
-  const enseigne = estEnseigne(boutique.nom, nomComplet);
-  return { nom: enseigne ? boutique.nom : nomPublic(nomComplet || null), enseigne };
+  return { nom: nomPublicBoutique(boutique.nom, nomComplet), enseigne: estEnseigne(boutique.nom, nomComplet) };
 }
 
 export async function GET(req: NextRequest) {
@@ -89,8 +89,11 @@ export async function POST(req: NextRequest) {
 
   const corps = await req.json().catch(() => ({}));
   const nom = typeof corps.nom === 'string' ? corps.nom.trim().replace(/\s+/g, ' ') : '';
-  if (nom.length < 2 || nom.length > NOM_MAX) {
+  if (nom.length < 2 || nom.length > NOM_BOUTIQUE_MAX) {
     return NextResponse.json({ error: 'Le nom de la boutique doit faire entre 2 et 60 caractères.' }, { status: 400 });
+  }
+  if (nomReserve(nom)) {
+    return NextResponse.json({ error: 'Ce nom est réservé à Suguba. Choisissez le nom de votre boutique.' }, { status: 400 });
   }
 
   const existante = await boutiqueDuProprietaire('reseller', session.uid);
@@ -100,12 +103,14 @@ export async function POST(req: NextRequest) {
   const { profil, illisible } = await lireProfil(admin, session.uid);
   if (illisible || !profil) return NextResponse.json({ error: 'Votre profil est indisponible. Réessayez.' }, { status: 503 });
 
-  const enseigne = estEnseigne(nom, profil.full_name);
+  // Nom qui n'est pas une enseigne (son propre nom) : « Prénom I. » pour le nom
+  // ET pour l'adresse. Le nom complet tapé n'est jamais enregistré.
+  const nomEnregistre = nomPublicBoutique(nom, profil.full_name);
   const boutique = await obtenirOuCreerBoutique({
     typeProprietaire: 'reseller',
     proprietaireId: session.uid,
-    nom,
-    adresseDepuis: enseigne ? nom : nomPublic(profil.full_name || null),
+    nom: nomEnregistre,
+    adresseDepuis: nomEnregistre,
   });
   if (!boutique) return NextResponse.json({ error: 'Boutique indisponible pour le moment. Réessayez.' }, { status: 503 });
   return NextResponse.json({ boutique, vitrine: vitrineDe(boutique, profil.full_name) }, { status: 201 });
@@ -119,51 +124,27 @@ export async function PATCH(req: NextRequest) {
   if (!boutique) return NextResponse.json({ error: 'Boutique introuvable.' }, { status: 404 });
 
   const corps = await req.json().catch(() => ({}));
-  const source = corps && typeof corps === 'object' ? corps as Record<string, unknown> : {};
 
   // Liste blanche (lot 2, 2026-10-03). `recrute` est une notion fournisseur
   // (« je recherche des revendeurs ») et `whatsapp` attend la décision du
   // fondateur (pas de WhatsApp du revendeur sur sa vitrine pour l'instant) :
   // tous deux sont ignorés, même envoyés.
-  const champs: Record<string, unknown> = {};
-  for (const cle of ['nom', 'accroche', 'description', 'quartier'] as const) {
-    if (cle in source) champs[cle] = source[cle];
-  }
-  if (typeof champs.nom === 'string' && champs.nom.trim().length > NOM_MAX) {
-    return NextResponse.json({ error: 'Le nom de la boutique fait 60 caractères au plus.' }, { status: 400 });
-  }
-  if (typeof champs.accroche === 'string' && champs.accroche.trim().length > ACCUEIL_MAX) {
-    return NextResponse.json({ error: 'Le mot d’accueil fait 90 caractères au plus.' }, { status: 400 });
-  }
+  const filtre = champsBoutiqueRevendeur(corps, { uid: session.uid, baseSupabase: process.env.NEXT_PUBLIC_SUPABASE_URL, boutique });
+  if (!filtre.ok) return NextResponse.json({ error: filtre.erreur }, { status: 400 });
+  const champs = filtre.champs;
 
-  // Images : seulement celles envoyées par CE compte (dossier boutiques/<uid>/),
-  // ou celles déjà enregistrées. Une seule image refusée = rien n'est écrit.
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  for (const cle of ['logo', 'couverture'] as const) {
-    if (!(cle in source)) continue;
-    const valeur = source[cle];
-    if (valeur === null || valeur === '') { champs[cle] = null; continue; }
-    if (!imageAutorisee(valeur, session.uid, base, [boutique[cle]])) {
-      return NextResponse.json({ error: 'Image refusée : envoyez-la depuis votre téléphone.' }, { status: 400 });
-    }
-    champs[cle] = valeur;
-  }
-  if ('galerie' in source) {
-    if (!Array.isArray(source.galerie) || !source.galerie.every((u) => imageAutorisee(u, session.uid, base, boutique.galerie))) {
-      return NextResponse.json({ error: 'Photo refusée : envoyez-la depuis votre téléphone.' }, { status: 400 });
-    }
-    champs.galerie = source.galerie;
-  }
-
-  // « Ce que je vends » : familles de l'annuaire /boutiques seulement.
-  if (Array.isArray(source.categories)) {
-    champs.categories = Array.from(new Set(source.categories.filter((c): c is string => typeof c === 'string' && FAMILLES.has(c))));
+  const admin = getSupabaseAdmin();
+  const avant = await lireProfil(admin, session.uid);
+  // Son propre nom (complet, ou « Awa Traoré ») n'est pas une enseigne : il est
+  // enregistré en « Prénom I. », comme le voient les clients (relecture du lot 2).
+  if (typeof champs.nom === 'string' && champs.nom.trim() && !avant.illisible && avant.profil) {
+    champs.nom = nomPublicBoutique(champs.nom.trim().replace(/\s+/g, ' '), avant.profil.full_name);
   }
 
   const resultat = await majBoutique(boutique.id, session.uid, champs);
   if (!resultat.ok) return NextResponse.json({ error: resultat.erreur }, { status: 400 });
 
   const apres = await boutiqueDuProprietaire('reseller', session.uid);
-  const { profil, illisible } = await lireProfil(getSupabaseAdmin(), session.uid);
+  const { profil, illisible } = await lireProfil(admin, session.uid);
   return NextResponse.json({ boutique: apres, vitrine: illisible ? null : vitrineDe(apres, profil?.full_name) });
 }

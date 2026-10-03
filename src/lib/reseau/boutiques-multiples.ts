@@ -14,6 +14,7 @@
 import { randomBytes } from 'node:crypto';
 import { getSupabaseAdmin } from '../supabase-admin';
 import { slugifier } from '../shop';
+import { adresseReservee } from '../enseigne';
 import { chargerReglages } from '../platform-settings';
 import { FORMULES_BOUTIQUES_PAR_DEFAUT, type FormuleBoutique } from '../pricing';
 import { boutiqueParSlug, type BoutiqueReseau } from './boutiques';
@@ -106,7 +107,10 @@ export async function creerBoutiqueSupplementaire(params: {
     }
   }
 
-  const base = slugifier(nom);
+  // Jamais une adresse réservée à Suguba (« suguba-officiel », « admin »…),
+  // relecture du lot 2 du chantier boutique (2026-10-03).
+  const adresse = slugifier(nom);
+  const base = adresseReservee(adresse) ? 'ma-boutique' : adresse;
   for (let i = 0; i < 30; i++) {
     const candidat = i === 0 ? base : `${base}-${i + 1}`;
     const ligne: Record<string, unknown> = {

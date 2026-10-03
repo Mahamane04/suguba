@@ -3,6 +3,8 @@ import { sessionDeLaRequete } from '@/lib/reseau/route-session';
 import { exigerDroitFournisseur } from '@/lib/reseau/contexte-fournisseur';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { majBoutique } from '@/lib/reseau/boutiques';
+import { champsBoutiqueRevendeur } from '@/lib/reseau/champs-boutique-revendeur';
+import { nomReserve } from '@/lib/enseigne';
 import {
   articlesDeLaBoutique, boutiqueDuCompte, boutiquesDuCompte, creerBoutiqueSupplementaire,
   definirArticlesDeLaBoutique, demanderFormule, formulesBoutiques, situationFormule,
@@ -71,6 +73,11 @@ export async function POST(req: NextRequest) {
   const corps = await req.json().catch(() => ({}));
 
   if (corps.action === 'creer') {
+    // Relecture du lot 2 (2026-10-03) : même règle que la boutique principale,
+    // un revendeur ne prend pas le nom de Suguba (son titre public est l'enseigne seule).
+    if (c.type === 'reseller' && nomReserve(typeof corps.nom === 'string' ? corps.nom : '')) {
+      return NextResponse.json({ error: 'Ce nom est réservé à Suguba. Choisissez le nom de votre boutique.' }, { status: 400 });
+    }
     const r = await creerBoutiqueSupplementaire({
       type: c.type, proprietaireId: c.proprietaireId,
       nom: typeof corps.nom === 'string' ? corps.nom : '', quartier: typeof corps.quartier === 'string' && corps.quartier ? corps.quartier : null,
@@ -97,7 +104,19 @@ export async function POST(req: NextRequest) {
   }
 
   if (corps.action === 'modifier') {
-    const r = await majBoutique(boutique.id, c.proprietaireId, typeof corps.champs === 'object' && corps.champs ? corps.champs : {});
+    const brut = typeof corps.champs === 'object' && corps.champs ? corps.champs : {};
+    // Relecture du lot 2 (2026-10-03) : pour un revendeur, la liste blanche de
+    // PATCH /api/reseller/boutique (images de son dossier, ni recrutement ni
+    // WhatsApp, familles de l'annuaire, nom 60 et accueil 90, noms réservés).
+    // Les champs bruts passaient ici, principale comprise : le durcissement du
+    // lot 2 se contournait par cette action.
+    let champs: Record<string, unknown> = brut;
+    if (c.type === 'reseller') {
+      const filtre = champsBoutiqueRevendeur(brut, { uid: c.proprietaireId, baseSupabase: process.env.NEXT_PUBLIC_SUPABASE_URL, boutique });
+      if (!filtre.ok) return NextResponse.json({ error: filtre.erreur }, { status: 400 });
+      champs = filtre.champs;
+    }
+    const r = await majBoutique(boutique.id, c.proprietaireId, champs);
     return r.ok ? NextResponse.json({ success: true }) : NextResponse.json({ error: r.erreur }, { status: 400 });
   }
 

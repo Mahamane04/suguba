@@ -5,6 +5,7 @@ import SugubaLoader from '@/components/ui/SugubaLoader';
 import React, { useState } from 'react';
 import { ImagePlus, X } from 'lucide-react';
 import { compresserImage } from '@/lib/compression-image';
+import { useToast } from '@/components/ui/Toast';
 
 /**
  * Bannière de boutique (§ 6 et § 7 : « bannière », « couverture »).
@@ -14,13 +15,18 @@ import { compresserImage } from '@/lib/compression-image';
  * vitrine de montrer l'aperçu à la hauteur publique (h-28 sur téléphone) ;
  * `onChange` n'est appelé qu'une fois l'envoi terminé, d'où l'enregistrement
  * immédiat par l'appelant. Un seul indicateur pendant l'envoi (il y en avait deux).
+ * Relecture du lot 2 : `confirmerRetrait`, comme le logo et les photos, quand le
+ * retrait est enregistré aussitôt.
  */
-export default function CouvertureEditeur({ valeur, onChange, hauteur = 'h-32' }: {
+export default function CouvertureEditeur({ valeur, onChange, hauteur = 'h-32', confirmerRetrait = false }: {
   valeur: string | null;
   onChange: (url: string | null) => void;
   /** Classe de hauteur de l'aperçu (h-32 par défaut). */
   hauteur?: string;
+  /** Demander confirmation avant de retirer la couverture (enregistrée tout de suite par l'appelant). */
+  confirmerRetrait?: boolean;
 }) {
+  const { confirmer } = useToast();
   const [envoi, setEnvoi] = useState(false);
   const [erreur, setErreur] = useState<string | null>(null);
 
@@ -40,6 +46,17 @@ export default function CouvertureEditeur({ valeur, onChange, hauteur = 'h-32' }
     } finally { setEnvoi(false); }
   };
 
+  const retirer = async () => {
+    if (confirmerRetrait && !(await confirmer({
+      titre: 'Retirer la couverture ?',
+      message: 'Elle disparaît tout de suite de votre boutique.',
+      confirmer: 'Retirer',
+      annuler: 'Garder',
+      danger: true,
+    }))) return;
+    onChange(null);
+  };
+
   return (
     <div className="space-y-1.5">
       <div className="relative">
@@ -56,7 +73,7 @@ export default function CouvertureEditeur({ valeur, onChange, hauteur = 'h-32' }
             <input type="file" accept="image/*" className="hidden" disabled={envoi} onChange={(e) => { envoyer(e.target.files?.[0]); e.target.value = ''; }} />
           </label>
           {valeur && (
-            <button type="button" onClick={() => onChange(null)} aria-label="Retirer la bannière"
+            <button type="button" onClick={retirer} aria-label="Retirer la bannière"
               className="w-10 h-10 rounded-2xl bg-white/95 border border-slate-200 text-slate-700 flex items-center justify-center shadow-sm">
               <X className="w-4 h-4" />
             </button>
