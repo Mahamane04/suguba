@@ -276,7 +276,11 @@ test('Guide : « Nouveau » pendant 14 jours, vitrine fournisseur à jour, journ
   assert.match(JSON.stringify(fournisseur), /Lire la suite/);
   assert.match(fournisseur.note, /Capture d’avant le lot 3/);
   assert.match(JSON.stringify(page('vitrine-boutique')), /Lire la suite/);
-  const [tete, lot3] = guide.journal;
+  // Lot 4 (2026-10-03) : une entrée plus récente passe en tête ; la relecture du lot 3
+  // reste juste avant l'entrée du lot 3.
+  const rang = guide.journal.findIndex((j) => j.titre === 'Boutique revendeur, lot 3 : corrections de relecture');
+  assert.ok(rang >= 0);
+  const [tete, lot3] = guide.journal.slice(rang);
   assert.equal(tete.titre, 'Boutique revendeur, lot 3 : corrections de relecture');
   assert.equal(tete.date, '2026-10-03');
   assert.equal(tete.statut, 'en local');

@@ -424,13 +424,13 @@ test('/boutique/<adresse> : « N articles ne s’affichent plus » calculé pour
   assert.match(html, /<div role="status" class="[^"]*group-data-\[vue=client\]:hidden">[\s\S]*?2<\/strong> articles de votre sélection ne s’affichent plus\.[\s\S]*?href="\/reseller\/boutique\/articles"/);
   assert.doesNotMatch(rendre({ statut: 'active', abonnes: 1, gestion: true }), /ne s’affiche/);
   assert.doesNotMatch(renderToStaticMarkup(React.createElement(ShopView, { boutique: vitrine, urlPartage: 'u', refCode: 'AWA1' })), /ne s’affiche|reseller\/boutique\/articles/);
-  // Étape « Choisir un coup de cœur » cochée par le coup de cœur affiché : 3 étapes sur 7
-  // (créée, nom, coup de cœur) au lieu de 2.
-  assert.match(html, /Ma boutique est prête à <span[^>]*>43 %<\/span>/);
+  // Étape « Choisir un coup de cœur » cochée par le coup de cœur affiché : 3 étapes sur 8
+  // (créée, nom, coup de cœur) au lieu de 2 (lot 4 : + « Partager ma boutique »).
+  assert.match(html, /Ma boutique est prête à <span[^>]*>38 %<\/span>/);
   const sansCoup = renderToStaticMarkup(React.createElement(ShopView, {
     boutique: { ...vitrine, produits: [vitrineProduit('Robe')] }, urlPartage: 'u', refCode: 'AWA1', proprietaire: { statut: 'active', abonnes: 1, gestion: true },
   }));
-  assert.match(sansCoup, /Ma boutique est prête à <span[^>]*>29 %<\/span>/);
+  assert.match(sansCoup, /Ma boutique est prête à <span[^>]*>25 %<\/span>/);
 });
 
 test('Bandeau « Articles » → Mes articles ; étape « Choisir un coup de cœur » ; /api/reseller/me la compte', async () => {

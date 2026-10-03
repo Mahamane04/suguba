@@ -36,6 +36,11 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   return {
     title: titre,
     description,
+    // Lot 4 du chantier boutique (2026-10-03), décision du fondateur : l'ancienne
+    // adresse désigne /boutique/<slug> comme adresse de référence (balise
+    // canonical), SANS redirection. Seulement quand la boutique principale est en
+    // ligne ; sinon /r/ reste la seule vitrine et n'a pas de canonical.
+    ...(boutique.slugBoutique ? { alternates: { canonical: `${URL_APP}/boutique/${boutique.slugBoutique}` } } : {}),
     openGraph: {
       title: titre,
       description,

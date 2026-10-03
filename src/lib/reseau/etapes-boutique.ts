@@ -8,16 +8,18 @@
  * envie d'acheter, et le revendeur ne savait pas quoi faire pour l'améliorer.
  * Chaque étape mène à son outil (crayon de la vitrine ou catalogue).
  *
- * « Boutique créée » est offerte d'emblée : une boutique neuve part à 1 étape sur 7,
+ * « Boutique créée » est offerte d’emblée : une boutique neuve part à 1 étape sur 8,
  * jamais de 0 %. Lot 3 (2026-10-03) : + « Choisir un coup de cœur », qui mène à
- * « Mes articles ». L'étape « premier partage » (lot 4) s'ajoutera ici.
+ * « Mes articles ». Lot 4 (2026-10-03) : + « Partager ma boutique » (premier
+ * partage = un lien suivi de cible boutique existe), qui ouvre la feuille de
+ * partage sur la vitrine (?partager=1).
  */
 import { PAGE_MES_ARTICLES, PORTE_MA_BOUTIQUE } from './porte-boutique';
 
 /** Articles choisis à partir desquels la vitrine a l'air d'une vraie boutique. */
 export const ARTICLES_POUR_ETRE_PRETE = 5;
 
-export type CleEtapeBoutique = 'creee' | 'enseigne' | 'logo' | 'couverture' | 'accueil' | 'articles' | 'coupDeCoeur';
+export type CleEtapeBoutique = 'creee' | 'enseigne' | 'logo' | 'couverture' | 'accueil' | 'articles' | 'coupDeCoeur' | 'partage';
 export type PanneauBoutique = 'logo' | 'couverture' | 'nom';
 
 export interface EtapeBoutique {
@@ -41,6 +43,11 @@ export interface EtatBoutique {
   articles: number | null | undefined;
   /** Coups de cœur parmi les articles affichés ; null ou absent = illisible (l'étape reste à faire). */
   coupsDeCoeur?: number | null;
+  /**
+   * Un lien suivi de la boutique existe (lot 4) ; null ou absent = illisible
+   * (l'étape reste à faire, jamais cochée par défaut).
+   */
+  partage?: boolean | null;
 }
 
 const rempli = (v: string | null | undefined) => Boolean(v && String(v).trim());
@@ -65,6 +72,7 @@ export function etapesBoutique(etat: EtatBoutique): EtapeBoutique[] {
       fait: typeof etat.coupsDeCoeur === 'number' && etat.coupsDeCoeur >= 1,
       href: PAGE_MES_ARTICLES,
     },
+    { cle: 'partage', libelle: 'Partager ma boutique', fait: etat.partage === true, href: `${PORTE_MA_BOUTIQUE}?partager=1` },
   ];
 }
 

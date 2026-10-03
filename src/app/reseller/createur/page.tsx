@@ -89,6 +89,17 @@ export default function CreateurContenusPage() {
     return articlesBoutique.current;
   };
   useEffect(() => { if (typeVisuel === 'boutique') lireArticlesBoutique(); }, [typeVisuel]);
+  // Lien suivi de la boutique (lot 4, 2026-10-03), préparé dès le choix « Ma boutique ».
+  const lienBoutique = useRef<Promise<string | null> | null>(null);
+  const lienSuiviBoutique = () => {
+    lienBoutique.current ??= fetch('/api/reseller/boutique/partage?canal=whatsapp', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => (d?.suivi && typeof d.url === 'string' ? d.url as string : null))
+      .catch(() => null)
+      .then((url) => { if (!url) lienBoutique.current = null; return url; });
+    return lienBoutique.current;
+  };
+  useEffect(() => { if (typeVisuel === 'boutique') lienSuiviBoutique(); }, [typeVisuel]);
 
   useEffect(() => {
     if (!apercu || generation) return;
@@ -139,7 +150,10 @@ export default function CreateurContenusPage() {
       let image: File;
       let lien: string;
       if (typeVisuel === 'boutique' && boutique) {
-        lien = `${window.location.origin}/boutique/${boutique.slug}`;
+        // Lot 4 du chantier boutique (2026-10-03) : lien SUIVI de la boutique
+        // (/go/<code>, réutilisé), compté dans « Mes partages » ; l'adresse brute
+        // si le suivi est indisponible.
+        lien = await lienSuiviBoutique() || `${window.location.origin}/boutique/${boutique.slug}`;
         const articles = await lireArticlesBoutique();
         if (!articles) {
           toast('Vos articles n’ont pas pu être lus : la carte n’est pas créée. Réessayez.', { ton: 'erreur' });

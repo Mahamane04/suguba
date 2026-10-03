@@ -3,6 +3,7 @@
 import { suffixeUnite, texteMinimum } from '@/lib/unite-vente';
 import React, { useState, use, useEffect, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import Header from '@/components/common/Header';
 import BottomNav from '@/components/common/BottomNav';
 import Carrousel from '@/components/product/Carrousel';
@@ -79,12 +80,18 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
   }, [product?.slug, router]);
 
   // « Recommandé par … » : le vrai revendeur derrière le code du lien.
-  const [nomRecommandeur, setNomRecommandeur] = useState<string | null>(null);
+  // Lot 4 du chantier boutique (2026-10-03) : + l'adresse de sa boutique principale
+  // active et son enseigne, pour « Boutique de <enseigne> · Voir sa boutique ».
+  const [recommandeur, setRecommandeur] = useState<{ nom: string; enseigne: string | null; slug: string | null } | null>(null);
   useEffect(() => {
     if (!refCode) return;
     fetch(`/api/shop/revendeur?code=${encodeURIComponent(refCode)}`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((j) => j?.nom && setNomRecommandeur(j.nom))
+      .then((j) => j?.nom && setRecommandeur({
+        nom: String(j.nom),
+        enseigne: typeof j.enseigne === 'string' && j.enseigne ? j.enseigne : null,
+        slug: typeof j.slug === 'string' && j.slug ? j.slug : null,
+      }))
       .catch(() => {});
   }, [refCode]);
 
@@ -268,24 +275,37 @@ export default function ProductDetailPage({ params }: { params: Promise<{ slug: 
       </div>
 
       <main className="flex-1 max-w-4xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
-        {nomRecommandeur && (
-          <div className="bg-emerald-50 border border-emerald-300 rounded-2xl p-3.5 flex items-center justify-between">
-            <div className="flex items-center space-x-2.5">
-              <div className="w-8 h-8 rounded-full bg-suguba-profond text-white flex items-center justify-center font-bold text-xs">
-                {initiale(nomRecommandeur)}
+        {/* Lot 4 du chantier boutique (2026-10-03) : le client revient vers la boutique
+            d'où il vient (« Boutique de <enseigne> · Voir sa boutique »), seulement si
+            elle est en ligne ; sinon « Recommandé par Awa D. ». Jetons de la charte
+            (plus de classes emerald). */}
+        {recommandeur && (
+          <div className="bg-suguba-sauge border border-suguba-menthe rounded-2xl px-3.5 py-2.5 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div aria-hidden="true" className="w-8 h-8 shrink-0 rounded-full bg-suguba-profond text-white flex items-center justify-center font-bold text-xs">
+                {initiale(recommandeur.enseigne || recommandeur.nom)}
               </div>
-              <div>
-                <p className="text-xs font-bold text-emerald-950">
-                  Recommandé par {nomRecommandeur}
+              <div className="min-w-0">
+                <p className="text-xs font-bold text-suguba-profond truncate">
+                  {recommandeur.slug ? `Boutique de ${recommandeur.enseigne || recommandeur.nom}` : `Recommandé par ${recommandeur.nom}`}
                 </p>
-                <p className="text-xs text-emerald-700">
+                <p className="text-xs text-slate-600">
                   Partenaire revendeur officiel Suguba
                 </p>
               </div>
             </div>
-            <span className="px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-bold">
-              Code : {refCode}
-            </span>
+            {recommandeur.slug ? (
+              <Link
+                href={`/boutique/${encodeURIComponent(recommandeur.slug)}`}
+                className="shrink-0 inline-flex items-center gap-1 min-h-10 px-1 text-sm font-semibold text-suguba-brand-dark underline underline-offset-2"
+              >
+                <Store className="w-4 h-4" aria-hidden="true" />Voir sa boutique
+              </Link>
+            ) : (
+              <span className="shrink-0 px-2.5 py-1 rounded-full bg-white text-suguba-profond text-xs font-semibold ring-1 ring-inset ring-suguba-menthe">
+                Code : {refCode}
+              </span>
+            )}
           </div>
         )}
 

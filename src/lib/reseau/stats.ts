@@ -50,3 +50,90 @@ export function evolution(actuel: number, precedent: number): number | null {
   if (!precedent) return null;
   return Math.round(((actuel - precedent) / precedent) * 100);
 }
+
+// ── Statistiques de ma boutique (lot 4 du chantier boutique, 2026-10-03) ──────
+//
+// Une visite de boutique (STORE_VIEW, voir /api/reseau/visite-boutique) porte
+// l'empreinte salée du visiteur (meta.v) et son origine (meta.canal). Tout ce qui
+// suit est calculé sur ces événements réels ; une source qui manque donne null,
+// affiché « — », jamais 0.
+
+export type OrigineVisite = 'whatsapp' | 'qr' | 'autre' | 'direct';
+
+/** Origine d'une visite : le canal du lien suivi de la boutique, sinon « direct ». */
+export function origineDeVisite(canal: string | null | undefined): OrigineVisite {
+  if (!canal) return 'direct';
+  if (canal === 'whatsapp' || canal === 'qr') return canal;
+  return 'autre';
+}
+
+/** Périodes proposées par « Statistiques de ma boutique ». */
+export const PERIODES_STATS = [7, 30] as const;
+
+/** Début (minuit UTC) d'une période de `jours` jours qui finit aujourd'hui, comme serieParJour. */
+export function debutPeriode(jours: number, maintenant: Date): Date {
+  const minuit = Date.UTC(maintenant.getUTCFullYear(), maintenant.getUTCMonth(), maintenant.getUTCDate());
+  return new Date(minuit - (Math.max(1, jours) - 1) * 86400000);
+}
+
+export interface ResumeVisites {
+  visites: number;
+  visiteurs: number;
+  serie: PointJour[];
+  origine: Record<OrigineVisite, number>;
+}
+
+/** Visites, visiteurs distincts, série par jour et origine, sur les événements STORE_VIEW lus. */
+export function resumeVisites(
+  evenements: { occurred_at: string; meta?: Record<string, unknown> | null }[],
+  jours: number,
+  maintenant: Date,
+): ResumeVisites {
+  const origine: Record<OrigineVisite, number> = { whatsapp: 0, qr: 0, autre: 0, direct: 0 };
+  const visiteurs = new Set<string>();
+  for (const e of evenements) {
+    const meta = e.meta || {};
+    if (typeof meta.v === 'string' && meta.v) visiteurs.add(meta.v);
+    const canal = meta.canal;
+    origine[canal === 'whatsapp' || canal === 'qr' || canal === 'autre' ? canal : 'direct'] += 1;
+  }
+  return {
+    visites: evenements.length,
+    visiteurs: visiteurs.size,
+    serie: serieParJour(evenements.map((e) => ({ date: e.occurred_at })), jours, maintenant),
+    origine,
+  };
+}
+
+/** Les `nombre` articles les plus vus (visites mesurées par produit), du plus vu au moins vu. */
+export function plusVus(lignes: { product_id: string | null }[], nombre = 3): { id: string; vues: number }[] {
+  const compte = new Map<string, number>();
+  for (const l of lignes) if (l.product_id) compte.set(l.product_id, (compte.get(l.product_id) || 0) + 1);
+  return Array.from(compte.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, nombre)
+    .map(([id, vues]) => ({ id, vues }));
+}
+
+/**
+ * Une phrase de conseil, à règles FIXES, calculée sur les chiffres affichés.
+ * Jamais de conseil quand les visites ne sont pas mesurées (null).
+ */
+export function conseilBoutique(s: {
+  visites: number | null;
+  commandes: number | null;
+  coupsDeCoeur?: number | null;
+  origine?: Record<OrigineVisite, number> | null;
+}): string | null {
+  if (s.visites === null) return null;
+  if (s.visites === 0) return 'Partagez votre boutique sur WhatsApp : chaque visite sera comptée ici.';
+  if (s.commandes === 0) {
+    return s.coupsDeCoeur === 0
+      ? 'Des clients visitent votre boutique : choisissez vos coups de cœur pour les aider à choisir.'
+      : 'Des clients visitent votre boutique : partagez un rayon ou vos coups de cœur pour les aider à choisir.';
+  }
+  if (s.origine && s.origine.qr === 0 && s.visites >= 10) {
+    return 'Vos liens WhatsApp marchent : imprimez aussi votre carte avec son QR pour vos clients du quartier.';
+  }
+  return 'Continuez : partagez votre boutique chaque semaine pour garder vos clients.';
+}

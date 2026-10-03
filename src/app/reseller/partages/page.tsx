@@ -9,6 +9,7 @@ import Button from '@/components/ui/Button';
 import { Card, EmptyState, Skeleton, StatCard, StatusPill } from '@/components/ui/Surface';
 import { CANAUX } from '@/lib/reseau/codes';
 import { formatF, formatNombre, FORMAT_DATE } from '@/lib/montant';
+import { libellePartageBoutique } from '@/lib/partage-boutique';
 
 /**
  * Historique de partage (§ 12 des écrans) — la page qui répond à « est-ce que
@@ -44,6 +45,16 @@ const LIBELLE_CIBLE: Record<string, string> = {
 
 function nomCanal(valeur: string): string {
   return CANAUX.find((c) => c.valeur === valeur)?.libelle || 'Autre';
+}
+
+/**
+ * Titre d'une ligne. Lien de boutique (lot 4 du chantier boutique, 2026-10-03) :
+ * « Ma boutique », « Ma boutique · Coups de cœur » ou « Ma boutique · Pagnes » ;
+ * la ligne affichait l'adresse brute (« awa-mode »).
+ */
+function titreDuLien(l: Lien): string {
+  if (l.cible === 'store') return libellePartageBoutique(l.ref, l.libelle);
+  return l.libelle || l.ref || LIBELLE_CIBLE[l.cible] || 'Partage';
 }
 
 export default function PartagesPage() {
@@ -100,7 +111,7 @@ export default function PartagesPage() {
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-sm font-bold text-slate-900 truncate">
-                    {l.libelle || l.ref || LIBELLE_CIBLE[l.cible] || 'Partage'}
+                    {titreDuLien(l)}
                   </p>
                   <p className="text-xs text-slate-500 mt-0.5">
                     {LIBELLE_CIBLE[l.cible] || l.cible} · {nomCanal(l.canal)} ·{' '}

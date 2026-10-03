@@ -74,8 +74,18 @@ export interface Boutique {
   /** Badges du propriétaire (clés, voir src/lib/reseau/badges.ts). */
   badges?: string[];
   produits: ProduitVitrine[];
-  /** Livraisons réussies des produits présentés. Affichée seulement si > 0. */
+  /**
+   * Livraisons réussies. Fournisseur : commandes livrées des produits présentés.
+   * Revendeur (lot 4 du chantier boutique, 2026-10-03, décision du fondateur) :
+   * commandes livrées À SON NOM (orders.reseller_id). Affichée dès 1, jamais
+   * sinon ; une lecture en échec donne 0, donc rien d'affiché.
+   */
   livraisons: number;
+  /**
+   * Adresse /boutique/<slug> de la boutique principale ACTIVE du revendeur (lot 4) :
+   * balise canonical de l'ancienne adresse /r/<code>. null sinon.
+   */
+  slugBoutique?: string | null;
   /** Revendeur sans sélection : on montre le catalogue partageable à la place. */
   selectionVide: boolean;
   code: string | null;
@@ -241,6 +251,21 @@ export async function compterArticlesNonServis(revendeurId: string, servis: read
   if (error || !Array.isArray(data)) return 0;
   const affiches = new Set(servis);
   return data.filter((l: any) => l.product_id && !affiches.has(l.product_id)).length;
+}
+
+/**
+ * Preuve sociale « N livraisons réussies » d'une boutique revendeur (lot 4 du
+ * chantier boutique, 2026-10-03, décision du fondateur) : le VRAI compte des
+ * commandes livrées à son nom. Le chiffre était fixé à 0 dans le code. Une
+ * lecture en échec donne 0 : la vitrine n'affiche alors rien, jamais un chiffre inventé.
+ */
+async function compterLivraisonsRevendeur(admin: ClientAdmin, revendeurId: string): Promise<number> {
+  const { count, error } = await admin
+    .from('orders')
+    .select('id', { count: 'exact', head: true })
+    .eq('reseller_id', revendeurId)
+    .eq('status', 'delivered');
+  return !error && typeof count === 'number' && count > 0 ? count : 0;
 }
 
 async function compterLivraisons(admin: ClientAdmin, productIds: string[]): Promise<number> {
@@ -428,10 +453,43 @@ export async function chargerBoutiqueRevendeur(codeBrut: string): Promise<Boutiq
     couverture: (actif && magasin.cover_url) || null,
     description: (actif && magasin.description) || null,
     produits: liste,
-    livraisons: 0,
+    livraisons: await compterLivraisonsRevendeur(admin, profil.id),
     selectionVide,
     code,
+    slugBoutique: actif && magasin.slug ? String(magasin.slug) : null,
   };
+}
+
+/**
+ * Bandeau de la fiche produit ouverte par le lien d'un revendeur (lot 4 du
+ * chantier boutique, 2026-10-03) : « Boutique de <enseigne> · Voir sa boutique ».
+ *  - nom : « Awa D. », jamais le nom complet ;
+ *  - enseigne : le nom de sa boutique s'il en a choisi un, sinon null ;
+ *  - slug : adresse de sa boutique principale, seulement si elle est ACTIVE (une
+ *    boutique masquée par Suguba mènerait le client à une page introuvable).
+ * null si le code n'est pas celui d'un revendeur actif (voir nomRevendeurPublic).
+ */
+export async function boutiqueRevendeurPublique(codeBrut: string): Promise<{ nom: string; enseigne: string | null; slug: string | null } | null> {
+  const admin = getSupabaseAdmin();
+  if (!admin) return null;
+  const code = codeBrut.trim().toUpperCase();
+  if (!/^[A-Z0-9-]{3,40}$/.test(code)) return null;
+  const { data: profil } = await admin.from('profiles').select('id, full_name').eq('reseller_code', code).maybeSingle();
+  if (!profil) return null;
+  const { data: role } = await admin.from('profile_roles').select('status').eq('profile_id', profil.id).eq('role', 'reseller').maybeSingle();
+  if (!role || role.status !== 'active') return null;
+
+  const nom = nomPublic(profil.full_name);
+  const { data: magasins, error } = await admin
+    .from('stores')
+    .select('*')
+    .eq('owner_type', 'reseller')
+    .eq('owner_id', profil.id)
+    .order('created_at', { ascending: true })
+    .limit(10);
+  const magasin = error ? null : (magasins || []).find((b: any) => b.principale !== false) || (magasins || [])[0] || null;
+  if (!magasin || (magasin.status || 'active') !== 'active' || !magasin.slug) return { nom, enseigne: null, slug: null };
+  return { nom, enseigne: estEnseigne(magasin.name, profil.full_name) ? String(magasin.name).trim() : null, slug: String(magasin.slug) };
 }
 
 export interface ProduitPublic {

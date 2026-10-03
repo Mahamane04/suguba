@@ -24,6 +24,12 @@ export const PORTE_MA_BOUTIQUE = '/reseller/ma-boutique';
 export const PAGE_MES_ARTICLES = '/reseller/boutique/articles';
 
 /**
+ * « Statistiques de ma boutique » (lot 4, 2026-10-03) : visites mesurées,
+ * commandes à son nom, gains des ventes livrées, abonnés.
+ */
+export const PAGE_STATISTIQUES = '/reseller/boutique/statistiques';
+
+/**
  * Catalogue ouvert pour ajouter des articles depuis sa boutique (lot 3) : un
  * bandeau collant « Revenir à ma boutique » y ramène.
  */

@@ -36,6 +36,8 @@ export default function EnteteEditable({
   description,
   articles,
   coupsDeCoeur = 0,
+  dejaPartage = false,
+  enLigne = true,
   panneauInitial,
   children,
   pied,
@@ -49,6 +51,10 @@ export default function EnteteEditable({
   articles: number;
   /** Coups de cœur parmi eux : étape « Choisir un coup de cœur » (lot 3, 2026-10-03). */
   coupsDeCoeur?: number;
+  /** Un lien suivi de la boutique existe : étape « Partager ma boutique » (lot 4, 2026-10-03). */
+  dejaPartage?: boolean;
+  /** Boutique en ligne : masquée par Suguba, elle ne se partage pas (l'étape n'ouvre rien). */
+  enLigne?: boolean;
   /** ?editer= reçu à l'ouverture. */
   panneauInitial?: PanneauBoutique | null;
   children?: React.ReactNode;
@@ -94,6 +100,8 @@ export default function EnteteEditable({
     accueil: identite.accroche,
     articles,
     coupsDeCoeur,
+    // Lot 4 : cochée sur place dès qu'un lien est préparé dans la feuille de partage.
+    partage: proprietaire ? proprietaire.aPartage : dejaPartage,
   });
   const prete = progressionBoutique(etapes);
 
@@ -125,8 +133,12 @@ export default function EnteteEditable({
           etapes={etapes.map((e) => ({
             libelle: e.libelle,
             fait: e.fait,
-            // « Boutique créée » est offerte : rien à ouvrir.
-            ...(e.cle === 'creee' ? {} : e.editer ? { onClick: () => setPanneau(e.editer as PanneauBoutique) } : { href: e.href }),
+            // « Boutique créée » est offerte : rien à ouvrir. « Partager ma boutique »
+            // ouvre la feuille de partage sur place (lot 4).
+            ...(e.cle === 'creee' || (e.cle === 'partage' && !enLigne) ? {}
+              : e.editer ? { onClick: () => setPanneau(e.editer as PanneauBoutique) }
+                : e.cle === 'partage' && proprietaire ? { onClick: proprietaire.ouvrirPartage }
+                  : { href: e.href }),
           }))}
         />
       )}

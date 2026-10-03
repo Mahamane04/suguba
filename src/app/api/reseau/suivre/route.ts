@@ -50,9 +50,14 @@ export async function POST(req: NextRequest) {
   }
 
   if (resultat.suit) {
+    // Lot 4 du chantier boutique (2026-10-03) : l'abonnement est rattaché au
+    // propriétaire (index reseller_id / supplier_id du journal), comme les visites,
+    // pour les statistiques de sa boutique. Jamais tiré de la requête.
     await journaliser({
       evenement: 'FOLLOW',
       acteurId: session?.uid || null,
+      resellerId: boutique.typeProprietaire === 'reseller' ? boutique.proprietaireId : null,
+      supplierId: boutique.typeProprietaire === 'supplier' ? boutique.proprietaireId : null,
       sujetType: 'store',
       sujetRef: boutique.slug,
     });

@@ -55,6 +55,38 @@ export function normaliserCodeLien(brut: unknown): string | null {
 }
 
 /**
+ * Lien d'un rayon de boutique (lot 4 du chantier boutique, 2026-10-03).
+ *
+ * La ref d'un lien de cible 'store' vaut « slug » (toute la boutique) ou
+ * « slug~cle » (un rayon, ou les coups de cœur) : la colonne target_ref existe
+ * déjà, aucune migration. La clé est contrôlée à la LECTURE (destinationDuLien)
+ * comme à l'écriture : 1 à 40 caractères [a-z0-9-]. Une clé invalide est
+ * ignorée, le lien ouvre alors toute la boutique — jamais une page d'erreur au
+ * bout d'un lien partagé.
+ */
+export const SEPARATEUR_RAYON = '~';
+/** Clé réservée : la section « Coups de cœur » de la vitrine (jamais un rayon maison). */
+export const RAYON_COUPS_DE_COEUR = 'coups-de-coeur';
+
+export function estCleRayon(valeur: unknown): valeur is string {
+  return typeof valeur === 'string' && /^[a-z0-9-]{1,40}$/.test(valeur);
+}
+
+/** « awa-mode » ou « awa-mode~pagnes ». */
+export function refBoutique(slug: string, rayon?: string | null): string {
+  return rayon && estCleRayon(rayon) ? `${slug}${SEPARATEUR_RAYON}${rayon}` : slug;
+}
+
+/** Adresse et rayon d'une ref de boutique ; rayon null si absent ou invalide. */
+export function lireRefBoutique(ref: string | null | undefined): { slug: string; rayon: string | null } {
+  const brute = String(ref || '');
+  const i = brute.indexOf(SEPARATEUR_RAYON);
+  if (i < 0) return { slug: brute, rayon: null };
+  const cle = brute.slice(i + 1);
+  return { slug: brute.slice(0, i), rayon: estCleRayon(cle) ? cle : null };
+}
+
+/**
  * Destination réelle d'un code, avec le code revendeur porté en paramètre.
  * Toujours un chemin interne : rediriger vers une URL fournie par la base
  * ouvrirait une redirection ouverte (un lien Suguba menant ailleurs).
@@ -73,8 +105,15 @@ export function destinationDuLien(
   switch (cible) {
     case 'product':
       return ref ? `/p/${encodeURIComponent(ref)}${q}` : `/${q}`;
-    case 'store':
-      return ref ? `/boutique/${encodeURIComponent(ref)}${q}` : `/${q}`;
+    case 'store': {
+      // Lot 4 (2026-10-03) : « slug~cle » ouvre le rayon (?rayon=cle) en tête.
+      const { slug, rayon } = lireRefBoutique(ref);
+      if (!slug) return `/${q}`;
+      const avecRayon = new URLSearchParams();
+      if (rayon) avecRayon.set('rayon', rayon);
+      parametres.forEach((valeur, cle) => avecRayon.set(cle, valeur));
+      return `/boutique/${encodeURIComponent(slug)}?${avecRayon.toString()}`;
+    }
     case 'referral':
       return `/rejoindre${q}`;
     case 'campaign':

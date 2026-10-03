@@ -126,24 +126,24 @@ test('Enseigne : un nom qui reprend celui de la personne n’en est pas une ; ti
   assert.equal(titreVitrine({ type: 'fournisseur', nom: 'Kadi Shop' }), 'Kadi Shop');
 });
 
-test('Ma boutique est prête à X % : une boutique neuve part à 1 étape sur 7, une boutique complète à 100 %', () => {
+test('Ma boutique est prête à X % : une boutique neuve part à 1 étape sur 8, une boutique complète à 100 %', () => {
   const { etapesBoutique, progressionBoutique, ARTICLES_POUR_ETRE_PRETE } = require('../src/lib/reseau/etapes-boutique.ts');
   assert.equal(ARTICLES_POUR_ETRE_PRETE, 5);
   const neuve = etapesBoutique({ enseigne: false, logo: null, couverture: null, accueil: null, articles: 0 });
-  // Lot 3 (2026-10-03) : + « Choisir un coup de cœur » (7 étapes au lieu de 6).
-  assert.deepEqual(neuve.map((e) => e.cle), ['creee', 'enseigne', 'logo', 'couverture', 'accueil', 'articles', 'coupDeCoeur']);
-  assert.deepEqual(progressionBoutique(neuve), { faites: 1, total: 7, pourcentage: 14 });
+  // Lot 3 (2026-10-03) : + « Choisir un coup de cœur » ; lot 4 : + « Partager ma boutique » (8 étapes).
+  assert.deepEqual(neuve.map((e) => e.cle), ['creee', 'enseigne', 'logo', 'couverture', 'accueil', 'articles', 'coupDeCoeur', 'partage']);
+  assert.deepEqual(progressionBoutique(neuve), { faites: 1, total: 8, pourcentage: 13 });
   // Chaque étape mène à son outil : panneau de la vitrine par la porte, ou catalogue.
   assert.deepEqual(neuve.filter((e) => e.editer).map((e) => [e.cle, e.editer, e.href]), [
     ['enseigne', 'nom', '/reseller/ma-boutique?editer=nom'], ['logo', 'logo', '/reseller/ma-boutique?editer=logo'],
     ['couverture', 'couverture', '/reseller/ma-boutique?editer=couverture'], ['accueil', 'nom', '/reseller/ma-boutique?editer=nom'],
   ]);
   assert.equal(neuve.find((e) => e.cle === 'articles').href, '/reseller/catalog');
-  const complete = etapesBoutique({ enseigne: true, logo: 'https://x/l.webp', couverture: 'https://x/c.webp', accueil: 'Bienvenue', articles: 5, coupsDeCoeur: 1 });
-  assert.deepEqual(progressionBoutique(complete), { faites: 7, total: 7, pourcentage: 100 });
-  assert.equal(progressionBoutique(etapesBoutique({ enseigne: true, logo: 'l', couverture: 'c', accueil: 'a', articles: 4, coupsDeCoeur: 1 })).pourcentage, 86);
-  // Compte d'articles (ou de coups de cœur) illisible : l'étape reste à faire, jamais cochée par défaut.
-  assert.equal(etapesBoutique({ enseigne: true, logo: 'l', couverture: 'c', accueil: '  ', articles: null, coupsDeCoeur: null }).filter((e) => !e.fait).length, 3);
+  const complete = etapesBoutique({ enseigne: true, logo: 'https://x/l.webp', couverture: 'https://x/c.webp', accueil: 'Bienvenue', articles: 5, coupsDeCoeur: 1, partage: true });
+  assert.deepEqual(progressionBoutique(complete), { faites: 8, total: 8, pourcentage: 100 });
+  assert.equal(progressionBoutique(etapesBoutique({ enseigne: true, logo: 'l', couverture: 'c', accueil: 'a', articles: 4, coupsDeCoeur: 1, partage: true })).pourcentage, 88);
+  // Compte d'articles (ou de coups de cœur, ou de liens) illisible : l'étape reste à faire, jamais cochée par défaut.
+  assert.equal(etapesBoutique({ enseigne: true, logo: 'l', couverture: 'c', accueil: '  ', articles: null, coupsDeCoeur: null, partage: null }).filter((e) => !e.fait).length, 4);
 });
 
 test('Images de la boutique : seulement le dossier boutiques/<uid de la session>/, ou l’image déjà enregistrée', () => {
@@ -359,8 +359,8 @@ test('/api/reseller/me?avec=boutique : nom public et étapes de « prête à X %
   assert.equal(json.boutique.nom, 'Awa D.');
   assert.doesNotMatch(JSON.stringify(json.boutique), /Traoré|Diallo/);
   const fait = Object.fromEntries(json.boutique.etapes.map((e) => [e.cle, e.fait]));
-  assert.deepEqual(fait, { creee: true, enseigne: false, logo: true, couverture: false, accueil: true, articles: false, coupDeCoeur: false });
-  assert.equal(progressionBoutique(json.boutique.etapes).pourcentage, 43, '3 étapes sur 7 (lot 3 : + coup de cœur)');
+  assert.deepEqual(fait, { creee: true, enseigne: false, logo: true, couverture: false, accueil: true, articles: false, coupDeCoeur: false, partage: false });
+  assert.equal(progressionBoutique(json.boutique.etapes).pourcentage, 38, '3 étapes sur 8 (lot 3 : + coup de cœur ; lot 4 : + partage)');
   assert.ok(ecritures.every((e) => e.table !== 'stores'), 'lecture seule');
 });
 
@@ -371,8 +371,9 @@ const identite = (enPlus = {}) => ({ nom: 'Awa Mode', enseigne: true, accroche: 
 test('BandeauProprietaire : Partager, Personnaliser, Articles, Outils et « Voir comme un client » ; ni gain ni commission', () => {
   const Bandeau = require('../src/components/shop/proprietaire/BandeauProprietaire.tsx').default;
   const html = renderToStaticMarkup(React.createElement(Bandeau, { identite: identite(), statut: 'active', urlPartage: 'https://app.sugubaml.com/boutique/awa-mode' }));
-  assert.match(html, /aria-label="Partager ma boutique sur WhatsApp"[^>]*>[\s\S]*?Partager<\/a>/);
-  assert.match(html, /href="https:\/\/api\.whatsapp\.com\/send\?text=[^"]*Awa%20Mode[^"]*app\.sugubaml\.com%2Fboutique%2Fawa-mode"/);
+  // Lot 4 (2026-10-03) : « Partager » ouvre la feuille « Partager ma boutique » (lien
+  // suivi, message avec articles) au lieu d'un lien WhatsApp à l'adresse brute.
+  assert.match(html, /<button[^>]*type="button" aria-label="Partager ma boutique sur WhatsApp" aria-haspopup="dialog"[^>]*>[\s\S]*?Partager<\/button>/);
   assert.match(html, /<a href="\/reseller\/boutique"[^>]*>[\s\S]*?Personnaliser<\/span>/);
   // Lot 3 (2026-10-03) : « Articles » ouvre « Mes articles » (il menait au catalogue).
   assert.match(html, /<a href="\/reseller\/boutique\/articles"[^>]*>[\s\S]*?Articles<\/span>/);
@@ -402,7 +403,7 @@ test('Vitrine du propriétaire en gestion : outils, 3 crayons, « prête à X % 
   for (const libelle of ['Changer la photo de couverture', 'Changer le logo', 'Modifier le nom et le mot d’accueil']) {
     assert.match(html, new RegExp(`<button type="button" aria-label="${libelle}" class="group-data-\\[vue=client\\]:hidden w-10 h-10`), libelle);
   }
-  assert.match(html, /<section aria-labelledby="boutique-prete-titre" class="[^"]*group-data-\[vue=client\]:hidden">[\s\S]*?Ma boutique est prête à <span[^>]*>14 %<\/span>/);
+  assert.match(html, /<section aria-labelledby="boutique-prete-titre" class="[^"]*group-data-\[vue=client\]:hidden">[\s\S]*?Ma boutique est prête à <span[^>]*>13 %<\/span>/);
   assert.match(html, /<h1[^>]*>La sélection de Awa D\.<\/h1>/);
   assert.match(html, /Vue client ·[\s\S]*?Revenir/);
   assert.doesNotMatch(html, /Modifier la boutique/);
@@ -413,6 +414,8 @@ test('Vitrine du propriétaire en gestion : outils, 3 crayons, « prête à X % 
   const complete = rendre({
     boutique: vitrine({ nom: 'Awa Mode', enseigne: true, logo: 'https://x/l.webp', couverture: 'https://x/c.webp', produits: Array.from({ length: 5 }, (_, i) => ({ id: `p${i}`, coupDeCoeur: i === 0 })) }),
     accroche: 'Bienvenue', proprietaire: { statut: 'active', abonnes: 2, gestion: true },
+    // Lot 4 (2026-10-03) : + premier partage (un lien suivi existe).
+    suiviProprietaire: { visites7j: 3, dejaPartage: true },
   });
   assert.doesNotMatch(complete, /Ma boutique est prête à/);
   assert.match(complete, /<h1[^>]*>Awa Mode<\/h1>/);

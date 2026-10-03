@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import ProductCard from '@/components/product/ProductCard';
 import type { ProduitVitrine } from '@/lib/shop';
 import { normaliserRecherche } from '@/lib/recherche-texte';
+import { RAYON_COUPS_DE_COEUR, RAYON_SANS_CATEGORIE, cleRayon } from '@/lib/partage-boutique';
 import { Search, ChevronDown, X, Heart } from 'lucide-react';
 
 /**
@@ -28,10 +29,21 @@ import { Search, ChevronDown, X, Heart } from 'lucide-react';
  *  - pastilles de rayons qui mènent au rayon, dès 2 rayons ;
  *  - « Nouveau » les 14 jours qui suivent l'ajout, seulement sans autre étiquette
  *    (« Sur devis », « Service »…).
+ *
+ * Lot 4 (2026-10-03) : ?rayon=<cle> (lien « Partager ce rayon » ou « Mes coups de
+ * cœur ») ouvre ce rayon et y fait défiler la page. La clé d'un rayon est tirée
+ * de son nom (cleRayon, src/lib/partage-boutique.ts) ; une clé inconnue ne fait rien.
  */
 
-const RAYON_SANS_CATEGORIE = 'Autres articles';
-const ID_COUPS_DE_COEUR = 'coups-de-coeur';
+const ID_COUPS_DE_COEUR = RAYON_COUPS_DE_COEUR;
+
+/** Ancre du rayon visé par ?rayon=<cle> ; null si la vitrine n'a pas ce rayon. */
+export function ancreDuRayon(cle: string | null | undefined, coups: ProduitVitrine[], groupes: [string, ProduitVitrine[]][]): string | null {
+  if (!cle) return null;
+  if (cle === RAYON_COUPS_DE_COEUR) return coups.length > 0 ? ID_COUPS_DE_COEUR : null;
+  const rang = groupes.findIndex(([categorie]) => cleRayon(categorie) === cle);
+  return rang >= 0 ? `rayon-${rang + 1}` : null;
+}
 
 /** Épuisés en fin de liste ; l'ordre choisi par le revendeur est gardé pour le reste (tri stable). */
 function enStockDAbord(liste: ProduitVitrine[]): ProduitVitrine[] {
@@ -66,6 +78,7 @@ export default function BoutiqueProduits({
   refCode,
   codePartage = null,
   presentation = false,
+  rayon = null,
 }: {
   produits: ProduitVitrine[];
   /** Code porté par les liens d'achat (?ref=) : null pour le propriétaire sur sa vitrine. */
@@ -74,6 +87,8 @@ export default function BoutiqueProduits({
   codePartage?: string | null;
   /** Boutique fournisseur en présentation (lot C) : ni prix ni achat. */
   presentation?: boolean;
+  /** ?rayon=<cle> reçu par la vitrine (lot 4) : rayon à ouvrir à l'arrivée. */
+  rayon?: string | null;
 }) {
   const [recherche, setRecherche] = useState('');
   // Catégories repliées manuellement — vides par défaut : tout est déplié
@@ -82,6 +97,23 @@ export default function BoutiqueProduits({
   const [replieesManuel, setReplieesManuel] = useState<Set<string>>(new Set());
 
   const { coups, groupes } = useMemo(() => organiserVitrine(produits, recherche), [produits, recherche]);
+
+  // ?rayon=<cle> : une seule fois à l'arrivée, sur la vitrine complète (sans recherche).
+  useEffect(() => {
+    if (!rayon) return;
+    const complete = organiserVitrine(produits, '');
+    const ancre = ancreDuRayon(rayon, complete.coups, complete.groupes);
+    if (!ancre) return;
+    const visee = complete.groupes.find(([categorie]) => cleRayon(categorie) === rayon)?.[0];
+    if (visee) setReplieesManuel((prev) => { const suivant = new Set(prev); suivant.delete(visee); return suivant; });
+    const image = window.requestAnimationFrame(() => {
+      const reduit = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      document.getElementById(ancre)?.scrollIntoView({ behavior: reduit ? 'auto' : 'smooth', block: 'start' });
+    });
+    return () => window.cancelAnimationFrame(image);
+    // Une seule fois à l'arrivée : la recherche ou un repli ne doivent pas y ramener.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rayon]);
 
   const basculer = (categorie: string) => {
     setReplieesManuel((prev) => {

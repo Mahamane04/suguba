@@ -56,6 +56,8 @@ export interface ArticleBoutique {
   coupDeCoeur: boolean;
   ajouteLe: string | null;
   etat: EtatArticle;
+  /** Rayon de la vitrine (catégorie du produit) : « Partager ce rayon » (lot 4, 2026-10-03). */
+  categorie?: string | null;
 }
 
 /** Pastille des articles que la vitrine montre autrement (null : rien à signaler). */

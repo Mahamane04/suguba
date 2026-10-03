@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import ProductImage from '@/components/common/ProductImage';
 import OrdersSyncNotice from '@/components/common/OrdersSyncNotice';
 import Header from '@/components/common/Header';
@@ -23,6 +24,10 @@ import { initiale } from '@/lib/initiale';
 import { PORTE_MA_BOUTIQUE, sansPrechargement } from '@/lib/reseau/porte-boutique';
 import ListeEtapes from '@/components/reseau/ListeEtapes';
 import { progressionBoutique, type EtapeBoutique } from '@/lib/reseau/etapes-boutique';
+
+// « Partager ma boutique » (lot 4 du chantier boutique, 2026-10-03) : feuille
+// chargée à la demande, au premier « Partager » (elle embarque le QR).
+const PartageBoutique = dynamic(() => import('@/components/shop/proprietaire/PartageBoutique'), { ssr: false });
 
 /**
  * Tableau de bord revendeur — converti au design system (2026-09-10).
@@ -58,6 +63,8 @@ type Palier = keyof typeof PALIERS;
 /** Aperçu de la boutique renvoyé par /api/reseller/me?avec=boutique (lot 1 du chantier boutique). */
 interface ApercuBoutique {
   slug: string; nom: string; logo: string | null; couverture: string | null;
+  /** `nom` est une enseigne choisie (lot 4) ; absent d'une réponse plus ancienne. */
+  enseigne?: boolean;
   /** Articles que la vitrine affiche (approuvés et partageables), pas toutes les lignes choisies. */
   articles: number | null; abonnes: number; statut: string;
   /** « Ma boutique est prête à X % » (lot 2, 2026-10-03). Absent d'une réponse plus ancienne. */
@@ -86,8 +93,6 @@ export default function ResellerDashboardPage() {
   } | null>(null);
   // Carte « Ma boutique » (2026-10-03) : lue dans la même requête que le solde.
   const [boutique, setBoutique] = useState<ApercuBoutique | null>(null);
-  const [origine, setOrigine] = useState('https://app.sugubaml.com');
-  useEffect(() => { setOrigine(window.location.origin); }, []);
 
   useEffect(() => {
     let annule = false;
@@ -222,7 +227,7 @@ export default function ResellerDashboardPage() {
 
         {/* 2. Ma boutique (lot 1 du chantier boutique, 2026-10-03) : la vitrine elle-même,
             en 1 toucher, à la place du raccourci qui ouvrait les réglages. */}
-        <CarteMaBoutique boutique={boutique} charge={charge} origine={origine} />
+        <CarteMaBoutique boutique={boutique} charge={charge} />
 
         {/* 3. Palier : ce qui change concrètement, c'est le délai de déblocage */}
         <div className="bg-white rounded-3xl p-5 border border-slate-200 space-y-3">
@@ -446,10 +451,14 @@ function Raccourci({ href, onClick, disabled, icone, titre, sousTitre, empile }:
  * boutique » (porte unique, même onglet) ; secondaire « Partager ». Boutique
  * illisible ou pas encore créée : la carte garde son bouton, jamais d'erreur.
  */
-function CarteMaBoutique({ boutique, charge, origine }: { boutique: ApercuBoutique | null; charge: boolean; origine: string }) {
+function CarteMaBoutique({ boutique, charge }: { boutique: ApercuBoutique | null; charge: boolean }) {
   const nom = boutique?.nom || 'Ma boutique';
   // Pas de partage d'une boutique masquée : le client tomberait sur une page introuvable.
-  const adresse = boutique && boutique.statut === 'active' ? `${origine}/boutique/${boutique.slug}` : null;
+  const partageable = Boolean(boutique && boutique.statut === 'active');
+  // Lot 4 (2026-10-03) : « Partager » ouvre la feuille « Partager ma boutique »
+  // (toute la boutique, coups de cœur ou un rayon ; lien suivi réutilisé).
+  const [partage, setPartage] = useState(false);
+  const [feuilleChargee, setFeuilleChargee] = useState(false);
   const pluriel = (n: number) => (n > 1 ? 's' : '');
   // « Prête à X % » (lot 2, 2026-10-03) : masquée à 100 % ; la prochaine étape
   // ouvre directement son outil (panneau de la vitrine ou catalogue).
@@ -511,15 +520,25 @@ function CarteMaBoutique({ boutique, charge, origine }: { boutique: ApercuBoutiq
             <Store className="w-4 h-4" />
             <span>Voir ma boutique</span>
           </Button>
-          {adresse && (
+          {partageable && (
             <BoutonPartageWhatsApp
+              type="button"
               libelle="Partager"
               aria-label="Partager ma boutique sur WhatsApp"
-              href={`https://api.whatsapp.com/send?text=${encodeURIComponent(`🛍️ Ma boutique Suguba — ${nom}\n\nCommandez, vous payez à la livraison à Bamako.\n👉 ${adresse}`)}`}
+              aria-haspopup="dialog"
+              onPointerDown={() => setFeuilleChargee(true)}
+              onClick={() => { setFeuilleChargee(true); setPartage(true); }}
             />
           )}
         </div>
       </div>
+      {boutique && partageable && feuilleChargee && (
+        <PartageBoutique
+          ouvert={partage}
+          onFermer={() => setPartage(false)}
+          boutique={{ nom: boutique.nom, enseigne: Boolean(boutique.enseigne), slug: boutique.slug, statut: boutique.statut }}
+        />
+      )}
     </section>
   );
 }

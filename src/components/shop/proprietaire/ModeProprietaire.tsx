@@ -31,6 +31,12 @@ import { Eye } from 'lucide-react';
  *
  * Le contexte partage aussi l'identité affichée (nom, logo…) : un logo changé par
  * le crayon apparaît aussitôt dans le bandeau, sans recharger la vitrine.
+ *
+ * Lot 4 (2026-10-03) : il porte aussi la feuille « Partager ma boutique », ouverte
+ * par le bandeau, par l'étape « Partager ma boutique » de « prête à X % » ou à
+ * l'arrivée par ?partager=1 (porte « Ma boutique », Mes clients) ; le paramètre
+ * est alors retiré de l'adresse pour qu'un rechargement ne la rouvre pas. Une fois
+ * un lien préparé, l'étape est cochée sur place.
  */
 
 export type VueVitrine = 'gestion' | 'client';
@@ -51,6 +57,13 @@ interface ContexteProprietaire {
   changerVue: (vue: VueVitrine) => void;
   identite: IdentiteVitrine;
   majIdentite: (changements: Partial<IdentiteVitrine>) => void;
+  /** Feuille « Partager ma boutique » (lot 4). */
+  partage: boolean;
+  ouvrirPartage: () => void;
+  fermerPartage: () => void;
+  /** Un lien suivi de la boutique existe : étape « Partager ma boutique » faite. */
+  aPartage: boolean;
+  marquerPartage: () => void;
 }
 
 const Contexte = createContext<ContexteProprietaire | null>(null);
@@ -62,9 +75,35 @@ export function useProprietaire(): ContexteProprietaire | null {
 
 export const CLE_VUE = 'suguba:vitrine:vue';
 
-export default function ModeProprietaire({ identite: initiale, children }: { identite: IdentiteVitrine; children: React.ReactNode }) {
+export default function ModeProprietaire({
+  identite: initiale,
+  partageInitial = false,
+  dejaPartage = false,
+  children,
+}: {
+  identite: IdentiteVitrine;
+  /** ?partager=1 reçu par la vitrine (boutique en ligne seulement). */
+  partageInitial?: boolean;
+  /** Un lien suivi de la boutique existe déjà (calculé par le serveur). */
+  dejaPartage?: boolean;
+  children: React.ReactNode;
+}) {
   const [vue, setVue] = useState<VueVitrine>('gestion');
   const [identite, setIdentite] = useState<IdentiteVitrine>(initiale);
+  const [partage, setPartage] = useState(false);
+  const [aPartage, setAPartage] = useState(dejaPartage);
+
+  useEffect(() => {
+    if (!partageInitial) return;
+    setPartage(true);
+    try {
+      const adresse = new URL(window.location.href);
+      adresse.searchParams.delete('partager');
+      window.history.replaceState(window.history.state, '', `${adresse.pathname}${adresse.search}${adresse.hash}`);
+    } catch {
+      // Adresse non modifiable : la feuille s'ouvre quand même.
+    }
+  }, [partageInitial]);
 
   useEffect(() => {
     try {
@@ -88,7 +127,14 @@ export default function ModeProprietaire({ identite: initiale, children }: { ide
     setIdentite((actuelle) => ({ ...actuelle, ...changements }));
   }, []);
 
-  const valeur = useMemo(() => ({ vue, changerVue, identite, majIdentite }), [vue, changerVue, identite, majIdentite]);
+  const ouvrirPartage = useCallback(() => setPartage(true), []);
+  const fermerPartage = useCallback(() => setPartage(false), []);
+  const marquerPartage = useCallback(() => setAPartage(true), []);
+
+  const valeur = useMemo(
+    () => ({ vue, changerVue, identite, majIdentite, partage, ouvrirPartage, fermerPartage, aPartage, marquerPartage }),
+    [vue, changerVue, identite, majIdentite, partage, ouvrirPartage, fermerPartage, aPartage, marquerPartage],
+  );
 
   return (
     <Contexte.Provider value={valeur}>

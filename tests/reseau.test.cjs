@@ -58,6 +58,17 @@ test('la destination d’un lien reste toujours interne au site', () => {
   }
 });
 
+// Lot 4 du chantier boutique (2026-10-03) : lien d'un rayon, ref « slug~cle ».
+test('un lien de rayon ouvre la boutique sur ce rayon ; une clé invalide est ignorée ; les autres cas sont inchangés', () => {
+  assert.equal(codes.destinationDuLien('store', 'awa-mode~pagnes', 'SG-1', 'AB78X2'), '/boutique/awa-mode?rayon=pagnes&ref=SG-1&via=AB78X2');
+  assert.equal(codes.destinationDuLien('store', 'awa-mode~PAGNES', 'SG-1', 'AB78X2'), '/boutique/awa-mode?ref=SG-1&via=AB78X2');
+  assert.equal(codes.destinationDuLien('store', 'awa-mode~../../admin', 'SG-1', 'AB78X2'), '/boutique/awa-mode?ref=SG-1&via=AB78X2');
+  assert.equal(codes.destinationDuLien('store', 'boutique-awa', 'SG-1', 'AB78X2'), '/boutique/boutique-awa?ref=SG-1&via=AB78X2');
+  assert.equal(codes.destinationDuLien('store', null, 'SG-1', 'AB78X2'), '/?ref=SG-1&via=AB78X2');
+  assert.equal(codes.destinationDuLien('product', 'tv', null, 'AB78X2'), '/p/tv?via=AB78X2');
+  assert.equal(codes.destinationDuLien('referral', null, 'SG-1', 'AB78X2'), '/rejoindre?ref=SG-1&via=AB78X2');
+});
+
 test('la destination porte le code revendeur, et rien quand il n’y en a pas', () => {
   assert.match(codes.destinationDuLien('product', 'tv', 'SG-107092', 'AB78X2'), /ref=SG-107092/);
   assert.doesNotMatch(codes.destinationDuLien('product', 'tv', null, 'AB78X2'), /ref=/);

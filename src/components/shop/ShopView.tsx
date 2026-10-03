@@ -19,6 +19,8 @@ import { ShieldCheck, Truck, KeyRound, Store, Users, MapPin, Pencil, ImagePlus, 
 import { initiale } from '@/lib/initiale';
 import { PAGE_MES_ARTICLES, PORTE_MA_BOUTIQUE } from '@/lib/reseau/porte-boutique';
 import { whatsappHelper } from '@/lib/whatsapp-helper';
+import VisiteBoutique from '@/components/shop/VisiteBoutique';
+import type { ArticlePartage } from '@/lib/partage-boutique';
 
 // Outils du propriétaire (lot 2 du chantier boutique, 2026-10-03) : chargés à la
 // demande, seulement quand le propriétaire gère sa vitrine. Leur code n'est
@@ -43,6 +45,17 @@ export interface ProprietaireVitrine {
    * refusés…), calculé côté serveur pour lui seul (lot 3, 2026-10-03).
    */
   articlesMasques?: number;
+}
+
+/**
+ * Mesures du propriétaire sur sa vitrine (lot 4 du chantier boutique, 2026-10-03),
+ * calculées par le serveur pour lui seul : jamais dans le HTML d'un visiteur.
+ */
+export interface SuiviProprietaire {
+  /** Visites des 7 derniers jours (bouton « Stats ») ; null quand la mesure manque. */
+  visites7j: number | null;
+  /** Un lien suivi de la boutique existe : étape « Partager ma boutique » faite. */
+  dejaPartage: boolean;
 }
 
 /**
@@ -72,6 +85,10 @@ export default function ShopView({
   lienModifier,
   proprietaire,
   editer,
+  partager = false,
+  rayon = null,
+  visite = null,
+  suiviProprietaire = null,
 }: {
   boutique: Boutique;
   urlPartage: string;
@@ -92,6 +109,17 @@ export default function ShopView({
   proprietaire?: ProprietaireVitrine | null;
   /** ?editer= reçu par la vitrine du propriétaire : panneau d'édition à ouvrir (lot 2). */
   editer?: PanneauBoutique | null;
+  /** ?partager=1 reçu par la vitrine du propriétaire : feuille « Partager ma boutique » (lot 4). */
+  partager?: boolean;
+  /** ?rayon=<cle> : rayon (ou coups de cœur) à ouvrir à l'arrivée (lot 4). */
+  rayon?: string | null;
+  /**
+   * Mesure de la visite (lot 4) : passée par /boutique/<adresse> pour un visiteur
+   * d'une boutique en ligne, jamais pour son propriétaire. Absente sur /r/ et /s/.
+   */
+  visite?: { slug: string; via: string | null } | null;
+  /** Visites et premier partage, pour le propriétaire seul (lot 4). */
+  suiviProprietaire?: SuiviProprietaire | null;
 }) {
   const estRevendeur = boutique.type === 'revendeur';
   // Lot 2 (2026-10-03) : l'enseigne seule, ou « La sélection de Awa D. » ; jamais le nom complet.
@@ -115,6 +143,12 @@ export default function ShopView({
   const vueClient = (contenu: React.ReactNode) => (
     <div inert className="hidden group-data-[vue=client]:block">{contenu}</div>
   );
+  // Message de partage (lot 4) : les articles que la vitrine affiche, données
+  // publiques déjà dans la page (nom, prix affiché, rayon). Rien quand la vitrine
+  // montre le catalogue Suguba en attendant la sélection.
+  const articlesPartage: ArticlePartage[] = gestion && !boutique.selectionVide
+    ? boutique.produits.map((p) => ({ nom: p.nom, prix: p.prix, categorie: p.categorie, coupDeCoeur: Boolean(p.coupDeCoeur), enStock: p.enStock !== false }))
+    : [];
 
   const surtitre = estRevendeur ? 'Revendeur partenaire Suguba' : boutique.presentation ? 'Fournisseur partenaire Suguba' : 'Boutique sur Suguba';
 
@@ -273,7 +307,13 @@ export default function ShopView({
       )}
 
       {gestion && proprietaire && (
-        <BandeauProprietaire identite={identite} statut={proprietaire.statut} urlPartage={urlPartage} />
+        <BandeauProprietaire
+          identite={identite}
+          statut={proprietaire.statut}
+          urlPartage={urlPartage}
+          articles={articlesPartage}
+          visites7j={suiviProprietaire?.visites7j ?? null}
+        />
       )}
 
       {gestion ? (
@@ -286,6 +326,8 @@ export default function ShopView({
           description={boutique.description}
           articles={boutique.selectionVide ? 0 : nbArticles}
           coupsDeCoeur={boutique.selectionVide ? 0 : boutique.produits.filter((p) => p.coupDeCoeur).length}
+          dejaPartage={Boolean(suiviProprietaire?.dejaPartage)}
+          enLigne={enLigne}
           panneauInitial={editer || null}
           pied={garanties}
         >
@@ -355,6 +397,7 @@ export default function ShopView({
           refCode={proprietaire ? null : refCode}
           codePartage={proprietaire ? refCode : null}
           presentation={Boolean(boutique.presentation)}
+          rayon={rayon}
         />
       )}
 
@@ -404,9 +447,15 @@ export default function ShopView({
           Jamais pour son propriétaire, même en vue client : il deviendrait pour 30 jours
           son propre revendeur d'origine (2026-10-03). */}
       {estRevendeur && refCode && !proprietaire && <AncrageRevendeur code={refCode} />}
+      {/* Visite mesurée (lot 4) : un visiteur, jamais le propriétaire (même en vue client). */}
+      {visite && !proprietaire && <VisiteBoutique slug={visite.slug} via={visite.via} />}
 
       <main className="flex-1 max-w-6xl mx-auto px-4 sm:px-6 py-6 w-full space-y-6">
-        {gestion ? <ModeProprietaire identite={identite}>{contenu}</ModeProprietaire> : contenu}
+        {gestion ? (
+          <ModeProprietaire identite={identite} partageInitial={partager && enLigne} dejaPartage={Boolean(suiviProprietaire?.dejaPartage)}>
+            {contenu}
+          </ModeProprietaire>
+        ) : contenu}
       </main>
 
       <Footer />

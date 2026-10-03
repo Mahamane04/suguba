@@ -37,6 +37,21 @@ export default function ResellerBadgePage() {
     return () => controller.abort();
   }, []);
   const personalCatalogUrl = boutique ? `${origine}/boutique/${encodeURIComponent(boutique.slug)}` : null;
+  // Lot 4 du chantier boutique (2026-10-03) : le QR des nouvelles cartes est un lien
+  // SUIVI de canal « qr » (/go/<code>, toujours le même pour ce compte) : les scans
+  // sont comptés dans « Mes partages » et « Statistiques ». Lien indisponible :
+  // l'adresse de la boutique, comme avant. Les cartes déjà imprimées restent valables.
+  const [lienQr, setLienQr] = useState<string | null>(null);
+  useEffect(() => {
+    if (!boutique) return;
+    let annule = false;
+    fetch('/api/reseller/boutique/partage?canal=qr', { cache: 'no-store' })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (!annule && typeof d?.url === 'string' && d.url) setLienQr(d.url); })
+      .catch(() => undefined);
+    return () => { annule = true; };
+  }, [boutique]);
+  const valeurQr = lienQr || personalCatalogUrl;
 
   const handlePrint = () => {
     if (typeof window !== 'undefined') {
@@ -147,7 +162,7 @@ export default function ResellerBadgePage() {
                 remplace un appel à quickchart.io qui envoyait le lien du
                 revendeur à un service tiers pour chaque affichage. */}
             <div className="bg-white p-3 rounded-2xl shadow-lg text-center space-y-1.5 shrink-0">
-              {personalCatalogUrl ? <QrCode value={personalCatalogUrl} size={128} /> : <p role="status" className="max-w-32 text-slate-700">Boutique indisponible. <Link href={PORTE_MA_BOUTIQUE} prefetch={false} className="inline-flex items-center min-h-10 font-bold text-suguba-brand-dark underline underline-offset-2">Ouvrir Ma boutique</Link></p>}
+              {valeurQr ? <QrCode value={valeurQr} size={128} /> : <p role="status" className="max-w-32 text-slate-700">Boutique indisponible. <Link href={PORTE_MA_BOUTIQUE} prefetch={false} className="inline-flex items-center min-h-10 font-bold text-suguba-brand-dark underline underline-offset-2">Ouvrir Ma boutique</Link></p>}
               <span className="text-xs font-semibold text-slate-900 block">
                 Scanner pour Commander
               </span>

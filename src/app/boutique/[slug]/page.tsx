@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { cache } from 'react';
 import { notFound } from 'next/navigation';
-import ShopView, { type ProprietaireVitrine } from '@/components/shop/ShopView';
+import ShopView, { type ProprietaireVitrine, type SuiviProprietaire } from '@/components/shop/ShopView';
 import BoutonSuivre from '@/components/shop/BoutonSuivre';
 import GalerieBoutique from '@/components/shop/GalerieBoutique';
 import { chargerBoutiqueFournisseur, chargerBoutiqueRevendeur, chargerProduitsDeLaBoutique, chargerProduitsSuguba, compterArticlesNonServis, URL_APP, type Boutique } from '@/lib/shop';
@@ -15,6 +15,10 @@ import { verifySessionToken, SESSION_COOKIE_NAME } from '@/lib/session';
 import { estEnseigne, nomPublic, titreVitrine } from '@/lib/enseigne';
 import { PANNEAUX_EDITION } from '@/lib/reseau/porte-boutique';
 import type { PanneauBoutique } from '@/lib/reseau/etapes-boutique';
+import { RAYON_COUPS_DE_COEUR, estCleRayon, normaliserCodeLien } from '@/lib/reseau/codes';
+import { cleRayon, RAYON_SANS_CATEGORIE } from '@/lib/partage-boutique';
+import { aUnLienDeBoutique, compterVisitesBoutique } from '@/lib/reseau/db';
+import { debutPeriode } from '@/lib/reseau/stats';
 
 /**
  * Boutique du réseau — /boutique/<adresse>.
@@ -26,11 +30,34 @@ import type { PanneauBoutique } from '@/lib/reseau/etapes-boutique';
  */
 export const dynamic = 'force-dynamic';
 
-type Params = { params: Promise<{ slug: string }> };
-type ParamsPage = Params & { searchParams: Promise<{ editer?: string | string[] }> };
+type Recherche = { editer?: string | string[]; partager?: string | string[]; rayon?: string | string[]; via?: string | string[] };
+type Params = { params: Promise<{ slug: string }>; searchParams?: Promise<Recherche> };
+type ParamsPage = Params;
+
+/** Un paramètre d'adresse seul (une valeur répétée est ignorée). */
+const seul = (v: string | string[] | undefined) => (typeof v === 'string' ? v : null);
+
+/**
+ * ?rayon=<cle> (lot 4 du chantier boutique, 2026-10-03) : clé valide seulement
+ * ([a-z0-9-], 40 caractères au plus) ; toute autre valeur est ignorée.
+ */
+const rayonDemande = (v: string | string[] | undefined) => {
+  const cle = seul(v);
+  return cle && estCleRayon(cle) ? cle : null;
+};
+
+/** Nom du rayon visé par ?rayon=, s'il existe sur la vitrine : titre d'aperçu propre au rayon. */
+function nomDuRayon(vitrine: Boutique, cle: string | null): string | null {
+  if (!cle || vitrine.selectionVide) return null;
+  if (cle === RAYON_COUPS_DE_COEUR) return vitrine.produits.some((p) => p.coupDeCoeur) ? 'Coups de cœur' : null;
+  const produit = vitrine.produits.find((p) => !p.coupDeCoeur && cleRayon(p.categorie || RAYON_SANS_CATEGORIE) === cle);
+  return produit ? (produit.categorie || RAYON_SANS_CATEGORIE) : null;
+}
 
 type Charge = {
   vitrine: Boutique; slugBoutique: string; abonnes: number; galerie: string[]; quartier: string | null;
+  /** Identifiant de la boutique : sujet des visites mesurées (lot 4), stable si l'adresse change. */
+  storeId: string;
   accroche: string | null; proprietaireId: string | null; typeProprietaire: string; principale: boolean;
   /** 'active', ou 'hidden' / 'suspended' quand Suguba l'a masquée (décidé dans la page). */
   statut: string;
@@ -53,6 +80,7 @@ const charger = cache(async (slug: string): Promise<Charge | null> => {
   // propriétaire) : les autres gardent la page introuvable, sans autre requête.
   if (boutique.statut !== 'active' && !(boutique.typeProprietaire === 'reseller' && boutique.principale !== false)) return null;
   const commun = {
+    storeId: boutique.id,
     accroche: boutique.accroche,
     proprietaireId: boutique.proprietaireId,
     typeProprietaire: boutique.typeProprietaire,
@@ -137,7 +165,7 @@ const charger = cache(async (slug: string): Promise<Charge | null> => {
   return null;
 });
 
-export async function generateMetadata({ params }: Params): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: Params): Promise<Metadata> {
   const { slug } = await params;
   const charge = await charger(slug);
   if (!charge) return { title: 'Boutique introuvable — Suguba' };
@@ -147,22 +175,45 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 
   const { vitrine } = charge;
   // Même titre que la vitrine : l'enseigne, ou « La sélection de Awa D. » (lot 2).
-  const titre = `${titreVitrine(vitrine)} — Suguba`;
-  const description = `${vitrine.produits.length} article${vitrine.produits.length > 1 ? 's' : ''} livrés à Bamako. Vous payez à la livraison.`;
+  // Lot 4 (2026-10-03) : un lien de rayon (?rayon=) annonce son rayon dans l'aperçu
+  // WhatsApp (« Pagnes · Awa Mode — Suguba »).
+  const rayon = nomDuRayon(vitrine, rayonDemande((await searchParams)?.rayon));
+  const titre = `${rayon ? `${rayon} · ` : ''}${titreVitrine(vitrine)} — Suguba`;
+  // Description de partage = le mot d'accueil choisi par le propriétaire (lot 4),
+  // sinon le nombre d'articles.
+  const description = charge.accroche?.trim()
+    || `${vitrine.produits.length} article${vitrine.produits.length > 1 ? 's' : ''} livrés à Bamako. Vous payez à la livraison.`;
   // Aperçu WhatsApp/Facebook : la couverture, puis le logo de la boutique ;
   // une photo d'article seulement si le revendeur n'a rien personnalisé.
   const image = vitrine.couverture || vitrine.logo || vitrine.produits.find((p) => p.image)?.image;
+  // Adresse de référence (lot 4) : la boutique elle-même, sans ?ref, ?via ni ?rayon.
+  const canonique = `${URL_APP}/boutique/${charge.slugBoutique}`;
 
   return {
     title: titre,
     description,
+    alternates: { canonical: canonique },
     openGraph: {
-      title: titre, description, url: `${URL_APP}/boutique/${slug}`,
+      title: titre, description, url: canonique,
       siteName: 'Suguba', locale: 'fr_FR', type: 'website',
       ...(image ? { images: [{ url: image }] } : {}),
     },
     twitter: { card: image ? 'summary_large_image' : 'summary', title: titre, description },
   };
+}
+
+/**
+ * Mesures du propriétaire (lot 4, 2026-10-03) : visites des 7 derniers jours
+ * (bouton « Stats » du bandeau) et premier partage (étape « Partager ma
+ * boutique »). Calculées ici, pour lui seul : deux requêtes de plus pour lui,
+ * aucune pour un visiteur. Une lecture en échec donne « — » et une étape à faire.
+ */
+async function suiviDuProprietaire(storeId: string, proprietaireId: string): Promise<SuiviProprietaire> {
+  const [visites7j, dejaPartage] = await Promise.all([
+    compterVisitesBoutique(storeId, debutPeriode(7, new Date()).toISOString()).catch(() => null),
+    aUnLienDeBoutique(proprietaireId).catch(() => null),
+  ]);
+  return { visites7j, dejaPartage: dejaPartage === true };
 }
 
 export default async function BoutiqueReseauPage({ params, searchParams }: ParamsPage) {
@@ -196,9 +247,22 @@ export default async function BoutiqueReseauPage({ params, searchParams }: Param
   if (charge.statut !== 'active' && !proprietaire) notFound();
   // ?editer=logo|couverture|nom (porte « Ma boutique », lot 2) : ouvre le panneau,
   // seulement pour le propriétaire qui gère sa vitrine. Toute autre valeur est ignorée.
-  const demande = (await searchParams)?.editer;
+  const recherche = (await searchParams) || {};
+  const demande = recherche.editer;
   const editer = proprietaire?.gestion && typeof demande === 'string' && (PANNEAUX_EDITION as readonly string[]).includes(demande)
     ? demande as PanneauBoutique
+    : null;
+  // Lot 4 (2026-10-03) : ?partager=1 (porte « Ma boutique », Mes clients) ouvre la
+  // feuille de partage du propriétaire qui gère ; ?rayon=<cle> ouvre ce rayon.
+  const partager = Boolean(proprietaire?.gestion) && seul(recherche.partager) === '1';
+  const rayon = rayonDemande(recherche.rayon);
+  const suiviProprietaire = proprietaire?.gestion && charge.proprietaireId
+    ? await suiviDuProprietaire(charge.storeId, charge.proprietaireId)
+    : null;
+  // Visite mesurée (lot 4) : seulement un visiteur d'une boutique en ligne. Le
+  // propriétaire n'est jamais compté, même sous un autre profil ou en vue client.
+  const visite = !estProprietaire && charge.statut === 'active'
+    ? { slug: charge.slugBoutique, via: normaliserCodeLien(seul(recherche.via)) }
     : null;
   const lienModifier = !estProprietaire ? null
     : !charge.principale ? '/compte/boutiques'
@@ -216,6 +280,10 @@ export default async function BoutiqueReseauPage({ params, searchParams }: Param
       lienModifier={lienModifier}
       proprietaire={proprietaire}
       editer={editer}
+      partager={partager}
+      rayon={rayon}
+      visite={visite}
+      suiviProprietaire={suiviProprietaire}
       suivre={<BoutonSuivre slug={charge.slugBoutique} abonnesInitial={charge.abonnes} />}
       galerie={charge.galerie.length > 0 ? (
         <section className="bg-white rounded-3xl border border-slate-200 p-4 sm:p-5 space-y-3">

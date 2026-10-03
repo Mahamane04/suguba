@@ -71,7 +71,7 @@ export async function GET(req: NextRequest) {
     const ajouteLe = l.added_at || null;
     if (!p) {
       return { id: l.product_id, slug: null, nom: 'Article indisponible', image: null, prixVitrine: null, gain: null,
-        modePrix: 'fixe', monPrix: null, prixMinimal: null, coupDeCoeur, ajouteLe, etat: 'retire' };
+        modePrix: 'fixe', monPrix: null, prixMinimal: null, coupDeCoeur, ajouteLe, etat: 'retire', categorie: null };
     }
     const gros = p.mode_prix === 'gros' && reglages !== null;
     const monPrix = gros ? sesPrix.get(p.id) ?? null : null;
@@ -97,6 +97,8 @@ export async function GET(req: NextRequest) {
       coupDeCoeur,
       ajouteLe,
       etat,
+      // Lot 4 (2026-10-03) : rayon de la vitrine, pour « Partager ce rayon ».
+      categorie: p.category || null,
     };
   });
 

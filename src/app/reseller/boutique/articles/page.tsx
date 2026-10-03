@@ -10,6 +10,8 @@ import ProductImage from '@/components/common/ProductImage';
 import { Card, EmptyState, Skeleton, StatusPill } from '@/components/ui/Surface';
 import { useToast } from '@/components/ui/Toast';
 import FeuilleArticle from '@/components/shop/proprietaire/FeuilleArticle';
+import BoutonPartageWhatsApp from '@/components/ui/BoutonPartageWhatsApp';
+import PartageBoutique, { versArticlesPartage } from '@/components/shop/proprietaire/PartageBoutique';
 import { formatF } from '@/lib/montant';
 import {
   ARTICLES_MAX, COUPS_DE_COEUR_MAX, PASTILLE_ETAT, basculerCoupDeCoeur, memeRangement, mettreEnPremier, monterArticle,
@@ -35,6 +37,9 @@ import { CATALOGUE_DEPUIS_BOUTIQUE, PORTE_MA_BOUTIQUE } from '@/lib/reseau/porte
  * des UPDATE de position seulement (voir src/lib/boutique-ordre.ts). Si la
  * boutique a changé ailleurs (catalogue, autre onglet), le serveur refuse et la
  * page le dit : « Votre boutique a changé, rechargez ».
+ *
+ * Lot 4 (2026-10-03) : « Partager » ouvre « Partager ma boutique » (toute la
+ * boutique, coups de cœur ou un rayon), avec les articles enregistrés de la page.
  */
 
 const VIDE: Rangement = { coups: [], autres: [] };
@@ -52,6 +57,7 @@ export default function MesArticlesPage() {
   const [message, setMessage] = useState('');
   const [conflit, setConflit] = useState(false);
   const [ouvert, setOuvert] = useState<string | null>(null);
+  const [partage, setPartage] = useState(false);
 
   const charger = useCallback(async () => {
     setChargement(true);
@@ -76,6 +82,7 @@ export default function MesArticlesPage() {
   useEffect(() => { charger(); }, [charger]);
 
   const parId = useMemo(() => new Map(articles.map((a) => [a.id, a])), [articles]);
+  const articlesPartage = useMemo(() => versArticlesPartage(articles), [articles]);
   const modifie = !memeRangement(rangement, enregistre);
   const masques = articles.filter((a) => a.etat === 'retire' || a.etat === 'sans_gain').length;
 
@@ -216,12 +223,14 @@ export default function MesArticlesPage() {
         />
       ) : (
         <>
-          <Card padding="px-4 py-3" className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-700">
+          <Card padding="px-4 py-3" className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-slate-700">
             <span><strong className="text-slate-900 tabular-nums">{articles.length}/{ARTICLES_MAX}</strong> articles</span>
             <span className="inline-flex items-center gap-1.5">
               <Heart className="w-4 h-4 text-suguba-brand-dark" fill="currentColor" aria-hidden="true" />
               <strong className="text-slate-900 tabular-nums">{rangement.coups.length}/{COUPS_DE_COEUR_MAX}</strong> coups de cœur
             </span>
+            <BoutonPartageWhatsApp type="button" size="sm" className="ml-auto" libelle="Partager"
+              aria-label="Partager ma boutique sur WhatsApp" aria-haspopup="dialog" onClick={() => setPartage(true)} />
           </Card>
 
           {masques > 0 && (
@@ -277,6 +286,9 @@ export default function MesArticlesPage() {
           />
         </>
       )}
+
+      {/* Articles ENREGISTRÉS (ceux que montre la vitrine), pas le rangement en cours. */}
+      <PartageBoutique ouvert={partage} onFermer={() => setPartage(false)} articles={articlesPartage} />
 
       <FeuilleArticle
         article={articleOuvert}

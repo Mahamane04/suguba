@@ -111,6 +111,101 @@ export async function creerLienTracke(params: {
   return null;
 }
 
+/**
+ * Lien suivi PERMANENT d'une boutique (lot 4 du chantier boutique, 2026-10-03).
+ *
+ * prechargerLienPartage (src/lib/partage.ts) crée un lien à chaque session : pour
+ * une boutique, « Mes partages » se remplirait de doublons et les clics de la
+ * boutique seraient éparpillés sur des dizaines de codes. Ici, on relit d'abord
+ * le PREMIER lien qui correspond (même propriétaire, cible 'store', même ref
+ * « slug » ou « slug~cle », même canal) et on ne le crée qu'à défaut. SHARE n'est
+ * journalisé qu'à la création : rouvrir la feuille de partage n'est pas un partage.
+ *
+ * Lecture en échec : null, sans rien créer (un doublon vaut mieux pas que
+ * deux) ; l'appelant partage alors l'adresse brute.
+ */
+export async function lienPermanent(params: {
+  ownerId: string;
+  ownerRole?: string | null;
+  cible: 'store';
+  ref: string;
+  canal: CanalPartage;
+  libelle?: string | null;
+}): Promise<{ lien: LienTracke; cree: boolean } | null> {
+  const a = admin();
+  if (!a || !params.ownerId || !params.ref) return null;
+  const { data, error } = await a
+    .from('tracking_links')
+    .select('*')
+    .eq('owner_id', params.ownerId)
+    .eq('target_type', params.cible)
+    .eq('target_ref', params.ref)
+    .eq('channel', params.canal)
+    .order('created_at', { ascending: true })
+    .limit(1);
+  if (error) {
+    if (schemaIncomplet(error)) signalerMigrationManquante('tracking_links');
+    else console.error('[RESEAU] Lecture du lien de boutique impossible:', error.code);
+    return null;
+  }
+  if (Array.isArray(data) && data[0]) return { lien: versLien(data[0]), cree: false };
+
+  const lien = await creerLienTracke({
+    ownerId: params.ownerId,
+    ownerRole: params.ownerRole ?? null,
+    cible: params.cible,
+    ref: params.ref,
+    canal: params.canal,
+    libelle: params.libelle ?? null,
+  });
+  if (!lien) return null;
+  await journaliser({
+    evenement: 'SHARE',
+    acteurId: params.ownerId,
+    resellerId: params.ownerRole === 'reseller' ? params.ownerId : null,
+    sujetType: lien.cible,
+    sujetRef: lien.ref,
+    linkCode: lien.code,
+  });
+  return { lien, cree: true };
+}
+
+/**
+ * La boutique a-t-elle déjà un lien suivi (étape « Premier partage » de « Ma
+ * boutique est prête à X % », lot 4) ? null si la lecture échoue : l'étape reste
+ * à faire, jamais cochée par défaut.
+ */
+export async function aUnLienDeBoutique(ownerId: string): Promise<boolean | null> {
+  const a = admin();
+  if (!a) return null;
+  const { data, error } = await a
+    .from('tracking_links')
+    .select('code')
+    .eq('owner_id', ownerId)
+    .eq('target_type', 'store')
+    .limit(1);
+  if (error || !Array.isArray(data)) return null;
+  return data.length > 0;
+}
+
+/**
+ * Visites mesurées d'une boutique depuis une date (STORE_VIEW, sujet = id de la
+ * boutique, voir /api/reseau/visite-boutique). null si la lecture échoue : « — »,
+ * jamais un 0 inventé.
+ */
+export async function compterVisitesBoutique(storeId: string, depuis: string): Promise<number | null> {
+  const a = admin();
+  if (!a) return null;
+  const { count, error } = await a
+    .from('analytics_events')
+    .select('id', { count: 'exact', head: true })
+    .eq('event', 'STORE_VIEW')
+    .eq('subject_ref', storeId)
+    .gte('occurred_at', depuis);
+  if (error || typeof count !== 'number') return null;
+  return count;
+}
+
 export async function lienParCode(codeBrut: string): Promise<LienTracke | null> {
   const a = admin();
   const code = normaliserCodeLien(codeBrut);

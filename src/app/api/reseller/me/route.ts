@@ -7,6 +7,7 @@ import { boutiqueDuProprietaire } from '@/lib/reseau/boutiques';
 import { compterVitrine } from '@/lib/shop';
 import { estEnseigne, nomPublic } from '@/lib/enseigne';
 import { etapesBoutique, type EtapeBoutique } from '@/lib/reseau/etapes-boutique';
+import { aUnLienDeBoutique } from '@/lib/reseau/db';
 
 /**
  * Fiche revendeur réelle du compte connecté.
@@ -30,6 +31,8 @@ import { etapesBoutique, type EtapeBoutique } from '@/lib/reseau/etapes-boutique
 /** Aperçu de la boutique pour la carte « Ma boutique » de l'accueil (?avec=boutique). */
 interface ApercuBoutique {
   slug: string; nom: string; logo: string | null; couverture: string | null;
+  /** `nom` est une enseigne choisie (sinon « Awa D. ») : titre du message de partage (lot 4). */
+  enseigne: boolean;
   /**
    * Articles choisis que la vitrine affiche (approuvés et partageables, même
    * filtre qu'elle) ; null si le compte est illisible : « — », jamais 0.
@@ -98,11 +101,13 @@ export async function GET(req: NextRequest) {
         // Lot 2 (2026-10-03) : le nom que voient les clients (l'enseigne, ou
         // « Awa D. »), comme sur la vitrine ; le nom complet reste ici.
         const enseigne = estEnseigne(b.nom, profil?.full_name);
+        // Lot 4 (2026-10-03) : étape « Partager ma boutique » (un lien suivi existe).
+        const partage = await aUnLienDeBoutique(session.uid);
         boutique = {
-          slug: b.slug, nom: enseigne ? b.nom : nomPublic(profil?.full_name || null), logo: b.logo, couverture: b.couverture,
+          slug: b.slug, nom: enseigne ? b.nom : nomPublic(profil?.full_name || null), enseigne, logo: b.logo, couverture: b.couverture,
           articles,
           abonnes: b.abonnes, statut: b.statut,
-          etapes: etapesBoutique({ enseigne, logo: b.logo, couverture: b.couverture, accueil: b.accroche, articles, coupsDeCoeur }),
+          etapes: etapesBoutique({ enseigne, logo: b.logo, couverture: b.couverture, accueil: b.accroche, articles, coupsDeCoeur, partage }),
         };
       }
     } catch {

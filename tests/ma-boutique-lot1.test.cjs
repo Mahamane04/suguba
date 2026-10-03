@@ -247,8 +247,9 @@ test('/api/reseller/me?avec=boutique : aperçu de la boutique ; boutique illisib
   assert.equal(r.status, 200);
   let json = await r.json();
   // Lot 2 (2026-10-03) : + étapes de « Ma boutique est prête à X % » (vérifiées dans ma-boutique-lot2).
+  // Lot 4 (2026-10-03) : + enseigne (titre du message de partage de la carte).
   const { etapes, ...apercu } = json.boutique;
-  assert.deepEqual(apercu, { slug: 'awa-mode', nom: 'Awa Mode', logo: 'https://x/logo.webp', couverture: null, articles: 2, abonnes: 4, statut: 'active' });
+  assert.deepEqual(apercu, { slug: 'awa-mode', nom: 'Awa Mode', enseigne: true, logo: 'https://x/logo.webp', couverture: null, articles: 2, abonnes: 4, statut: 'active' });
   assert.ok(Array.isArray(etapes));
   assert.equal(json.reseller.referralCode, 'AWA1');
   // Tous les articles choisis retirés ou refusés : 0, comme la vitrine qui montre le
