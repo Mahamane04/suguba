@@ -11,6 +11,9 @@
 //     appel possible depuis un autre site ;
 //  F. sélection illisible prise pour une sélection vide : l'enregistrement du
 //     fournisseur retirait tous les articles de sa boutique supplémentaire.
+// Contre-relecture du correctif (même jour) :
+//  G. aperçu administrateur (« Se connecter en tant que revendeur ») : le 403 ajouté
+//     à PATCH /api/reseller/me bloquait le démarrage dès la première étape.
 // Supabase, la session et les cookies sont SIMULÉS (require.cache) : aucune base réelle.
 require('../scripts/test-typescript.cjs');
 const { test } = require('node:test');
@@ -103,8 +106,9 @@ require.cache[require.resolve('../src/lib/session.ts')] = { exports: { ...vraieS
 require.cache[require.resolve('next/headers')] = {
   exports: { cookies: async () => ({ get: (nom) => (nom === vraieSession.SESSION_COOKIE_NAME ? { value: 'jeton-simule' } : undefined) }) },
 };
+let navigations = [];
 require.cache[require.resolve('next/navigation')] = {
-  exports: { notFound: () => { throw new Error('page introuvable'); }, usePathname: () => '/', useRouter: () => ({ push() {}, replace() {}, refresh() {} }), useSearchParams: () => new URLSearchParams('') },
+  exports: { notFound: () => { throw new Error('page introuvable'); }, usePathname: () => '/', useRouter: () => ({ push(url) { navigations.push(url); }, replace() {}, refresh() {} }), useSearchParams: () => new URLSearchParams('') },
 };
 require.cache[require.resolve('../src/lib/reseau/contexte-fournisseur.ts')] = {
   exports: { exigerDroitFournisseur: async () => ({ ok: true, contexte: { fournisseurId: 'fou-1' } }) },
@@ -126,6 +130,7 @@ const requete = (url, init = {}) => new NextRequest(`http://localhost${url}`, {
 });
 const ROUTES = {
   '/api/reseller/me': '../src/app/api/reseller/me/route.ts',
+  '/api/reseller/boutique': '../src/app/api/reseller/boutique/route.ts',
   '/api/auth/complete-profile': '../src/app/api/auth/complete-profile/route.ts',
   '/api/admin/boutiques': '../src/app/api/admin/boutiques/route.ts',
   '/api/compte/boutiques': '../src/app/api/compte/boutiques/route.ts',
@@ -715,7 +720,10 @@ test('F — articlesDeLaBoutique : null quand la lecture échoue, [] seulement p
 
 // Pas de DOM dans node:test : l'écran est appelé comme une fonction, avec des
 // crochets React SIMULÉS pour lui seul (même montage que tests/ma-boutique-lot7).
+// Deux écrans sont montés ainsi : « Mes boutiques » (F) et le démarrage du revendeur (G).
 const PAGE_BOUTIQUES = path.join(RACINE, 'src/app/compte/boutiques/page.tsx');
+const PAGE_DEMARRER = path.join(RACINE, 'src/app/reseller/demarrer/page.tsx');
+const PAGES_SIMULEES = new Set([PAGE_BOUTIQUES, PAGE_DEMARRER]);
 let crochets = null;
 const fauxReact = {
   ...React, __esModule: true, default: React,
@@ -725,7 +733,7 @@ const fauxReact = {
 };
 const chargerOriginal = Module._load;
 Module._load = function (demande, parent, ...reste) {
-  if (demande === 'react' && parent && parent.filename === PAGE_BOUTIQUES) return fauxReact;
+  if (demande === 'react' && parent && PAGES_SIMULEES.has(parent.filename)) return fauxReact;
   return chargerOriginal.call(this, demande, parent, ...reste);
 };
 function trouver(noeud, critere, resultats = []) {
@@ -736,8 +744,9 @@ function trouver(noeud, critere, resultats = []) {
   return resultats;
 }
 const texteDe = (noeud) => (Array.isArray(noeud) ? noeud.map(texteDe).join('') : noeud == null || noeud === false ? '' : typeof noeud === 'object' ? texteDe(noeud.props && noeud.props.children) : String(noeud));
-function monterMesBoutiques() {
-  const Page = require(PAGE_BOUTIQUES).default;
+const monterMesBoutiques = () => monterPage(PAGE_BOUTIQUES);
+function monterPage(fichier) {
+  const Page = require(fichier).default;
   const valeurs = []; const setters = []; let curseur = 0; let effets = [];
   const miens = {
     useState(init) {
@@ -754,6 +763,7 @@ function monterMesBoutiques() {
     rendre, attendre,
     boutons: (arbre, libelle) => trouver(arbre, (e) => typeof e.type === 'function' && e.type.name === 'Button' && texteDe(e.props.children) === libelle),
     selecteurs: (arbre) => trouver(arbre, (e) => typeof e.type === 'function' && e.type.name === 'SelecteurArticles'),
+    champs: (arbre, id) => trouver(arbre, (e) => e.props.id === id),
     async monter() { rendre(); effets.forEach((f) => f()); await attendre(); return rendre(); },
   };
 }
@@ -816,6 +826,163 @@ test('F — Mes boutiques (fournisseur) : sélection illisible → « Articles i
   assert.match(page, /\{selection === b\.id && Array\.isArray\(choisis\) && \(\s*<SelecteurArticles\s+catalogue=\{d\.catalogue\}\s+choisis=\{choisis\}/);
 });
 
+// ══ G. Aperçu administrateur : le démarrage reste parcourable ════════════════
+
+/**
+ * « Se connecter en tant que revendeur » (/api/admin/preview-role) : identité
+ * fictive `apercu-reseller`, absente de profiles. Le 403 ajouté par le correctif
+ * à PATCH /api/reseller/me arrêtait le démarrage à sa première étape ; avant lui,
+ * la route répondait « enregistré » sans rien toucher (0 ligne mise à jour).
+ */
+const apercuRevendeur = () => ({ ...session('apercu-reseller', 'reseller'), phone: '+22300000092', apercu: { depuis: { uid: 'adm-1', phone: '+22370000099' } } });
+/** Le navigateur simulé appelle les VRAIES routes. */
+const versLesRoutes = (appels) => async (url, init = {}) => {
+  const methode = init.method || 'GET';
+  appels.push([methode, String(url), init.body ? JSON.parse(init.body) : undefined]);
+  const r = await require(ROUTES[String(url).split('?')[0]])[methode](requete(String(url), { method: methode, ...(init.body ? { body: init.body } : {}) }));
+  return { ok: r.status >= 200 && r.status < 300, status: r.status, json: () => r.json() };
+};
+
+test('G — aperçu administrateur : PATCH /api/reseller/me répond « enregistré » sans rien lire ni écrire ; mêmes refus de nom qu’un vrai compte', async () => {
+  baseNoms();
+  sessionCourante = apercuRevendeur();
+  // Tout ce qu'envoient le démarrage (Vous, Ville, Adresse, Catégories, fin) et « Mon profil vérifié » (quartier).
+  for (const corps of [{ fullName: 'Awa Traoré Diallo' }, { city: 'Ségou' }, { neighborhood: 'Hamdallaye', address: 'Près de la mosquée' }, { categories: ['Mode'] }, { onboardingDone: true }, { neighborhood: 'Hamdallaye' }]) {
+    const r = await renommer(corps);
+    assert.equal(r.status, 200, JSON.stringify(corps));
+    assert.deepEqual(await r.json(), { success: true, apercu: true });
+  }
+  assert.deepEqual(operations, [], 'identité fictive : ni lecture ni écriture');
+
+  // Base en panne : l'aperçu n'en dépend pas (un profil illisible → 503 aurait bloqué le démarrage pareil).
+  fautes['profiles:select'] = '57014';
+  fautes['profiles:update'] = '57014';
+  assert.equal((await renommer({ city: 'Ségou' })).status, 200);
+  fautes = {};
+
+  // L'administrateur voit les mêmes refus qu'un revendeur : la règle du nom réservé se vérifie en aperçu.
+  let r = await renommer({ fullName: 'Suguba Officiel', city: 'Ségou' });
+  assert.equal(r.status, 400);
+  assert.match((await r.json()).error, /réservé à Suguba/);
+  r = await renommer({ fullName: ' A ' });
+  assert.equal(r.status, 400);
+  assert.match((await r.json()).error, /Nom trop court/);
+  assert.deepEqual(operations, []);
+  assert.deepEqual([profil('rev-1').full_name, profil('rev-1').city, nomDe('s1')], ['Awa Traore Dialo', 'Bamako', 'Awa Traore Dialo']);
+
+  // Un vrai revendeur : rien ne change (réponse sans `apercu`, écriture faite, refus identiques).
+  sessionCourante = revendeur('rev-1');
+  r = await renommer({ city: 'Ségou' });
+  assert.deepEqual([r.status, await r.json()], [200, { success: true }]);
+  assert.equal(profil('rev-1').city, 'Ségou');
+  assert.equal((await renommer({ fullName: 'Admin' })).status, 400);
+  // Profil illisible ET nom refusé : le refus du nom, sans rien lire (avant : 503).
+  operations = [];
+  fautes['profiles:select'] = '57014';
+  assert.equal((await renommer({ fullName: 'Admin' })).status, 400);
+  assert.deepEqual(operations, []);
+  assert.equal((await renommer({ fullName: 'Awa Traoré Diallo' })).status, 503, 'nom valide, profil illisible : toujours 503');
+  assert.deepEqual(ecritures(), []);
+  fautes = {};
+
+  // L'aperçu d'un autre rôle n'ouvre pas la route ; sans session non plus.
+  sessionCourante = { ...apercuRevendeur(), uid: 'apercu-supplier', role: 'supplier', roles: { supplier: 'active' } };
+  assert.equal((await renommer({ city: 'Ségou' })).status, 401);
+  sessionCourante = null;
+  assert.equal((await renommer({ city: 'Ségou' })).status, 401);
+});
+
+test('G — aperçu administrateur : le démarrage avance d’étape en étape (il restait bloqué à « Vous ») et se termine ; aucun profil n’est écrit', async () => {
+  const appels = [];
+  global.fetch = versLesRoutes(appels);
+  global.window = { location: { origin: 'http://localhost' } };
+  try {
+    const demarrer = async () => {
+      const ecran = monterPage(PAGE_DEMARRER);
+      let arbre = await ecran.monter();
+      return {
+        etape: () => texteDe(trouver(arbre, (e) => e.type === 'h1')),
+        saisir(id, valeur) { ecran.champs(arbre, id)[0].props.onChange(valeur); arbre = ecran.rendre(); },
+        async toucher(libelle) {
+          const [bouton] = ecran.boutons(arbre, libelle);
+          assert.ok(bouton && !bouton.props.disabled, `« ${libelle} » actif à l’étape « ${texteDe(trouver(arbre, (e) => e.type === 'h1'))} »`);
+          bouton.props.onClick();
+          await ecran.attendre();
+          arbre = ecran.rendre();
+        },
+        texte: () => texteDe(arbre),
+      };
+    };
+    /** Les cinq premières étapes : Vous, Téléphone, Ville, Adresse, Localisation. */
+    const jusquALaBoutique = async (ecran) => {
+      assert.equal(ecran.etape(), 'Vous');
+      ecran.saisir('nom', { target: { value: 'Awa Test' } });
+      await ecran.toucher('Continuer');
+      assert.equal(ecran.etape(), 'Téléphone', 'le défaut relevé : « Aperçu : rien n’est enregistré. », étape inchangée');
+      await ecran.toucher('Continuer');
+      assert.equal(ecran.etape(), 'Ville');
+      await ecran.toucher('Continuer');
+      assert.equal(ecran.etape(), 'Adresse');
+      ecran.saisir('quartier', 'Hamdallaye');
+      await ecran.toucher('Continuer');
+      assert.equal(ecran.etape(), 'Localisation');
+      await ecran.toucher('Continuer');
+      assert.equal(ecran.etape(), 'Boutique');
+      assert.deepEqual(messages, [], 'aucun message d’erreur');
+    };
+    const enregistrements = () => appels.filter((a) => a[0] !== 'GET');
+
+    // 1. Le compte d'aperçu n'a pas de boutique : cinq étapes passent, puis la création est
+    //    refusée avec sa raison (règle du lot 2, inchangée). Rien n'est écrit nulle part.
+    baseNoms();
+    sessionCourante = apercuRevendeur();
+    messages = [];
+    let ecran = await demarrer();
+    await jusquALaBoutique(ecran);
+    assert.deepEqual(enregistrements(), [
+      ['PATCH', '/api/reseller/me', { fullName: 'Awa Test' }],
+      ['PATCH', '/api/reseller/me', { city: 'Bamako' }],
+      ['PATCH', '/api/reseller/me', { neighborhood: 'Hamdallaye', address: '' }],
+    ]);
+    ecran.saisir('boutique', { target: { value: 'Chez Test' } });
+    await ecran.toucher('Continuer');
+    assert.equal(ecran.etape(), 'Boutique');
+    assert.deepEqual(messages, [['Aperçu : rien n’est enregistré.', { ton: 'erreur' }]]);
+    assert.deepEqual(ecritures(), []);
+    assert.equal(sur('profiles', 'update').length, 0);
+
+    // 2. Le compte d'aperçu a déjà une boutique (ouverte par une version précédente) : les 8 étapes
+    //    passent, « Ouvrir ma boutique » termine. Seule la boutique d'aperçu est écrite, comme avant.
+    baseNoms();
+    etat.stores.push({ id: 'ap1', owner_type: 'reseller', owner_id: 'apercu-reseller', slug: 'revendeur-suguba', name: 'Revendeur Suguba', status: 'active', principale: true, created_at: '2026-09-12T00:00:00Z' });
+    sessionCourante = apercuRevendeur();
+    messages = []; navigations = []; appels.length = 0;
+    ecran = await demarrer();
+    await jusquALaBoutique(ecran);
+    ecran.saisir('boutique', { target: { value: 'Chez Test' } });
+    await ecran.toucher('Continuer');
+    assert.equal(ecran.etape(), 'Catégories');
+    await ecran.toucher('Continuer');
+    assert.equal(ecran.etape(), 'C’est parti');
+    await ecran.toucher('Ouvrir ma boutique');
+    assert.deepEqual(messages, []);
+    assert.deepEqual(navigations, [require('../src/lib/reseau/porte-boutique.ts').PORTE_MA_BOUTIQUE]);
+    assert.deepEqual(enregistrements().filter((a) => a[1] === '/api/reseller/me').map((a) => a[2]), [
+      { fullName: 'Awa Test' }, { city: 'Bamako' }, { neighborhood: 'Hamdallaye', address: '' }, { categories: [] }, { onboardingDone: true },
+    ]);
+    assert.equal(sur('profiles', 'update').length, 0, 'aucun profil écrit');
+    assert.equal(nomDe('ap1'), 'Chez Test');
+    assert.ok(ecritures().length > 0 && ecritures().every((o) => o.table === 'stores' && o.egalites.id === 'ap1'), 'seule la boutique du compte d’aperçu');
+    assert.deepEqual([profil('rev-1').full_name, nomDe('s1')], ['Awa Traore Dialo', 'Awa Traore Dialo']);
+  } finally { global.fetch = RESEAU_INTERDIT; delete global.window; }
+
+  // « Mon profil vérifié », étape du quartier : même appel, jugé sur la seule réussite de la réponse.
+  const verification = sansCommentaires(lire('src/app/reseller/verification/page.tsx'));
+  assert.match(verification, /fetch\('\/api\/reseller\/me', \{ method: 'PATCH',[^;]*body: JSON\.stringify\(\{ neighborhood: quartier \}\) \}\); if \(!r\.ok\) throw new Error\(\);/);
+  // Le démarrage juge pareil : une réponse réussie fait avancer, sans autre condition.
+  assert.match(sansCommentaires(lire('src/app/reseller/demarrer/page.tsx')), /if \(!reponse\.ok\) throw new Error\(\(await reponse\.json\(\)\)\.error \|\| 'Enregistrement impossible\.'\);/);
+});
+
 // ══ Guide et reprise ═════════════════════════════════════════════════════════
 
 test('Guide : l’entrée de la relecture finale est en tête, en ligne, avec ses écarts ; fiches à jour ; REPRISE', () => {
@@ -845,4 +1012,15 @@ test('Guide : l’entrée de la relecture finale est en tête, en ligne, avec se
   assert.match(ecarts, /A-EXECUTER-2026-10-03-vitrine-boutique\.sql/);
   assert.match(ecarts, /même adresse/);
   assert.ok(lire('REPRISE.md').split('\n').some((l) => l.startsWith('> **4 octobre 2026') && /corrections de la relecture finale/.test(l)));
+
+  // Contre-relecture (G) : l'aperçu administrateur est dit, là où le fondateur le cherche.
+  assert.ok(entree.realise.some((l) => /Contre-relecture/.test(l) && /aperçu administrateur/.test(l) && /Continuer/.test(l)));
+  assert.match(ecarts, /En aperçu administrateur, le démarrage revendeur n’enregistre rien/);
+  assert.match(ecarts, /Nom de votre boutique » y reste refusée/);
+  assert.ok(entree.pages.includes('adm-parametres'));
+  assert.match(guide.pages.find((p) => p.id === 'rev-demarrer').elements.find((e) => e.nom === 'Continuer').role, /En aperçu administrateur[^.]*sans rien enregistrer/);
+  assert.match(guide.pages.find((p) => p.id === 'adm-parametres').elements.find((e) => e.nom === 'Tester un profil').role, /le démarrage du revendeur n’y enregistre rien/);
+  const reprise = lire('REPRISE.md').split('\n').find((l) => l.startsWith('> **4 octobre 2026') && /corrections de la relecture finale/.test(l));
+  assert.match(reprise, /\{ success: true, apercu: true \}/);
+  assert.doesNotMatch(reprise, /refuse l'aperçu admin \(403\)/, 'ce n’est plus vrai');
 });

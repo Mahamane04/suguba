@@ -209,7 +209,8 @@
     "Visites de boutique : une seule machine pouvait gonfler les visites d’une boutique à volonté (le « visiteur » se reconnaissait aussi au navigateur déclaré, que l’appelant choisit), et un autre site pouvait faire compter ses propres visiteurs. Désormais : un appel venu d’un autre site n’est pas compté ; depuis une même adresse internet, 30 visites au plus par jour pour une même boutique et 200 toutes boutiques confondues. Rien de plus n’est gardé sur le visiteur : une empreinte de son adresse, illisible et différente chaque jour — jamais l’adresse elle-même, rien sur l’appareil.",
     "Mes boutiques (fournisseur), boutique supplémentaire : quand la liste de ses articles ne pouvait pas être lue, la page affichait « 0 article(s) choisis » et ouvrait la liste à cocher sans aucune coche ; « Enregistrer » retirait alors TOUS les articles de la boutique. La page dit maintenant « Articles indisponibles pour le moment », n’ouvre pas la liste et propose « Réessayer ». Une boutique vraiment vide affiche toujours « 0 article(s) choisis ».",
     "Changement de nom au démarrage : si le profil ne peut pas être lu, rien n’est enregistré (« Votre profil est indisponible. Réessayez. »). Avant, les réglages du profil repartaient de zéro sur une lecture ratée, numéro Mobile Money de versement compris.",
-    "Tests : tests/ma-boutique-relecture-finale.test.cjs (14 tests, tous en échec sur le code d’avant) ; suite complète réussie. Aucun nouveau SQL, aucune nouvelle dépendance."
+    "Contre-relecture de ces corrections, le même jour : un défaut trouvé, corrigé. En aperçu administrateur (Paramètres › Tester un profil › Revendeur), le démarrage restait bloqué à sa première étape avec « Aperçu : rien n’est enregistré. », et « Mon profil vérifié » répondait « Quartier non enregistré. Réessayez. » à l’étape du quartier. C’était un effet de la correction du nom du compte, ci-dessus. « Continuer » fait de nouveau avancer d’étape en étape, comme avant ces corrections. Un nom trop court ou réservé à Suguba y est refusé comme pour un vrai revendeur : la règle se vérifie donc en aperçu. Aucun vrai revendeur, client, fournisseur ou livreur n’était touché.",
+    "Tests : tests/ma-boutique-relecture-finale.test.cjs (16 tests : 14 en échec sur le code d’avant la relecture, 2 en échec sur le code d’avant la contre-relecture, dont le démarrage parcouru en aperçu de la première à la dernière étape) ; suite complète réussie. Aucun nouveau SQL, aucune nouvelle dépendance."
    ],
    "ecarts": [
     "Publié le 4 octobre, à la suite. Le fichier supabase/A-EXECUTER-2026-10-03-vitrine-boutique.sql reste à exécuter en production par le fondateur : aucune de ces corrections n’en dépend, et rien ne s’y ajoute.",
@@ -218,7 +219,8 @@
     "Comptes déjà nommés « Suguba », « Admin »… : ils ne sont pas renommés. Leur vitrine affiche « La sélection de Revendeur partenaire » jusqu’à ce que la personne indique son nom au démarrage.",
     "Visites : des visiteurs qui partagent la même adresse internet (même opérateur mobile, même Wi-Fi) partagent le plafond de 30 visites par boutique et par jour ; une boutique très visitée depuis un même réseau peut donc être sous-comptée. Ces chiffres ne servent à aucun paiement ni à aucune mission. Les plafonds (30 et 200) sont fixés dans le code : à ajuster si les statistiques paraissent trop basses.",
     "Mes boutiques (fournisseur) : enregistrer depuis une page restée ouverte pendant qu’un article était ajouté depuis un autre téléphone retire encore cet article (la liste envoyée est celle de la page). Défaut plus ancien, non traité ici.",
-    "Écrans du fournisseur « Mon réseau de revendeurs » et « Mon équipe » : ils abrègent les noms eux-mêmes (« Awa D. ») et n’appliquent pas le nom neutre « Revendeur partenaire ». Ils ne sont pas publics."
+    "Écrans du fournisseur « Mon réseau de revendeurs » et « Mon équipe » : ils abrègent les noms eux-mêmes (« Awa D. ») et n’appliquent pas le nom neutre « Revendeur partenaire ». Ils ne sont pas publics.",
+    "En aperçu administrateur, le démarrage revendeur n’enregistre rien : nom, ville, quartier, repère, catégories et fin du démarrage ne sont pas gardés (le compte de test n’a pas de fiche), et aucun message ne le dit à l’écran — seul le bandeau « Aperçu admin » le rappelle. Rouvert, le démarrage repart de champs vides. L’étape « Nom de votre boutique » y reste refusée (« Aperçu : rien n’est enregistré. », règle du lot 2), sauf si le compte de test possède déjà une boutique : elle est alors renommée pour de vrai. Pour essayer le démarrage jusqu’au bout avec enregistrement : un compte fictif [QA] sur la copie locale. Non regardé à l’écran (aucun serveur lancé) : vérifié par les tests."
    ],
    "pages": [
     "rev-catalogue",
@@ -227,7 +229,8 @@
     "inscription-fin",
     "mes-boutiques",
     "adm-boutiques",
-    "rev-boutique-stats"
+    "rev-boutique-stats",
+    "adm-parametres"
    ],
    "statut": "en ligne"
   },
@@ -3840,7 +3843,7 @@
     },
     {
      "nom": "Continuer",
-     "role": "Enregistre l’étape et passe à la suivante."
+     "role": "Enregistre l’étape et passe à la suivante. En aperçu administrateur (Paramètres › Tester un profil), passe à la suivante sans rien enregistrer ; les refus restent les mêmes (nom trop court ou réservé à Suguba, création de boutique)."
     },
     {
      "nom": "Votre nom complet",
@@ -6042,7 +6045,7 @@
     },
     {
      "nom": "Tester un profil",
-     "role": "Ouvre l’espace Client, Revendeur, Fournisseur ou Diaspora avec un compte de test (bandeau « Aperçu admin », « Quitter l’aperçu » ramène ici). Les actions faites en aperçu sont réelles."
+     "role": "Ouvre l’espace Client, Revendeur, Fournisseur ou Diaspora avec un compte de test (bandeau « Aperçu admin », « Quitter l’aperçu » ramène ici). Les actions faites en aperçu sont réelles. Exception : le démarrage du revendeur n’y enregistre rien (le compte de test n’a pas de fiche). « Continuer » y fait quand même avancer, sauf à l’étape « Nom de votre boutique » tant que le compte de test n’a pas de boutique."
     },
     {
      "nom": "Affichage de cet appareil",

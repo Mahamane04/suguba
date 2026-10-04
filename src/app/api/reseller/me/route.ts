@@ -180,29 +180,43 @@ export async function GET(req: NextRequest) {
  *    (« Awa Traore Dialo ») passait pour une enseigne dès que le compte était
  *    corrigé en « Awa Traoré Diallo », et s'affichait en clair. Réalignement
  *    impossible : le nom n'est pas changé, rien d'autre n'est écrit.
+ *
+ * Contre-relecture du même jour (2026-10-04), aperçu d'un administrateur (« Se
+ * connecter en tant que revendeur ») : la route répond « enregistré » sans rien
+ * lire ni écrire. Le 403 posé par la relecture finale arrêtait le démarrage à sa
+ * première étape, et « Mon profil vérifié » à l'étape du quartier ; avant elle,
+ * la mise à jour touchait 0 ligne (identité fictive) et la route répondait déjà
+ * « enregistré ». Le nom est contrôlé AVANT : l'administrateur reçoit les mêmes
+ * refus qu'un revendeur, la règle du nom réservé se vérifie donc en aperçu.
  */
 export async function PATCH(req: NextRequest) {
   const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value);
   if (!session || session.role !== 'reseller') {
     return NextResponse.json({ error: 'Session revendeur requise.' }, { status: 401 });
   }
-  // Aperçu d'un administrateur : identité fictive, aucun profil à lire ni à écrire.
-  if (session.apercu) return NextResponse.json({ error: 'Aperçu : rien n’est enregistré.' }, { status: 403 });
-  const admin = getSupabaseAdmin();
-  if (!admin) return NextResponse.json({ error: 'Base indisponible.' }, { status: 503 });
 
+  // Le nom d'abord, sans rien lire : ses refus valent aussi pour l'aperçu, plus bas.
   const corps = await req.json().catch(() => ({}));
-  const { data: profil, error: lecture } = await admin.from('profiles').select('full_name, metadata').eq('id', session.uid).maybeSingle();
-  if (lecture || !profil) return NextResponse.json({ error: 'Votre profil est indisponible. Réessayez.' }, { status: 503 });
-  const metadata = { ...((profil.metadata || {}) as Record<string, unknown>) };
   const ligne: Record<string, unknown> = {};
-
   if (typeof corps.fullName === 'string') {
     const nom = corps.fullName.trim().replace(/\s+/g, ' ').slice(0, 80);
     if (nom.length < 2) return NextResponse.json({ error: 'Nom trop court.' }, { status: 400 });
     if (nomReserve(nom)) return NextResponse.json({ error: 'Ce nom est réservé à Suguba. Indiquez votre nom.' }, { status: 400 });
     ligne.full_name = nom;
   }
+
+  // Aperçu d'un administrateur (contre-relecture, 2026-10-04) : identité fictive,
+  // aucun profil à lire ni à écrire. « Enregistré » quand même, pour que le démarrage
+  // se parcoure ; `apercu` dit à l'appelant que rien n'est gardé. Jamais un 403 ici
+  // (voir plus haut).
+  if (session.apercu) return NextResponse.json({ success: true, apercu: true });
+
+  const admin = getSupabaseAdmin();
+  if (!admin) return NextResponse.json({ error: 'Base indisponible.' }, { status: 503 });
+  const { data: profil, error: lecture } = await admin.from('profiles').select('full_name, metadata').eq('id', session.uid).maybeSingle();
+  if (lecture || !profil) return NextResponse.json({ error: 'Votre profil est indisponible. Réessayez.' }, { status: 503 });
+  const metadata = { ...((profil.metadata || {}) as Record<string, unknown>) };
+
   if (typeof corps.city === 'string' && corps.city.trim()) ligne.city = corps.city.trim().slice(0, 60);
   if (typeof corps.neighborhood === 'string') metadata.neighborhood = corps.neighborhood.trim().slice(0, 80) || null;
   if (typeof corps.address === 'string') metadata.address = corps.address.trim().slice(0, 200) || null;
