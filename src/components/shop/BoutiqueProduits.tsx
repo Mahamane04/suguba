@@ -218,7 +218,7 @@ export default function BoutiqueProduits({
       ) : (
         <>
           {coups.length > 0 && (
-            <section id={ID_COUPS_DE_COEUR} aria-labelledby="coups-de-coeur-titre" className="bg-white rounded-3xl border border-slate-200 px-4 sm:px-5 pt-3.5 pb-5 space-y-3 scroll-mt-32">
+            <section id={ID_COUPS_DE_COEUR} aria-labelledby="coups-de-coeur-titre" className="bg-white rounded-3xl border border-slate-200 px-3 sm:px-5 pt-3.5 pb-5 space-y-3 scroll-mt-32">
               <h2 id="coups-de-coeur-titre" className="flex items-center gap-2 font-bold text-sm text-slate-900">
                 <Heart className="w-4 h-4 text-suguba-brand-dark" fill="currentColor" aria-hidden="true" />
                 <span>Coups de cœur <span className="text-slate-500 font-bold">({coups.length})</span></span>
@@ -238,7 +238,7 @@ export default function BoutiqueProduits({
                   type="button"
                   onClick={() => basculer(categorie)}
                   aria-expanded={!repliee}
-                  className="w-full flex items-center justify-between px-4 sm:px-5 py-3.5 text-left"
+                  className="w-full flex items-center justify-between px-3 sm:px-5 py-3.5 text-left"
                 >
                   <span className="font-bold text-sm text-slate-900">
                     {categorie} <span className="text-slate-500 font-bold">({items.length})</span>
@@ -246,7 +246,7 @@ export default function BoutiqueProduits({
                   <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${repliee ? '' : 'rotate-180'}`} />
                 </button>
                 {!repliee && (
-                  <div className="px-4 sm:px-5 pb-5 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
+                  <div className="px-3 sm:px-5 pb-5 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-5">
                     {/* Sans coups de cœur, les premières images du premier rayon passent en priorité. */}
                     {items.map((p, i) => carte(p, coups.length === 0 && rang === 0 && i < 4))}
                   </div>

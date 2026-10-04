@@ -535,13 +535,13 @@ test('Source : la vérification d’une boutique ne relit plus toutes les boutiq
 
 test('Guide : relecture du lot 7 en tête, juste avant le lot 7 ; l’écart sur les outils des boutiques Pro n’est plus une question ouverte ; REPRISE', () => {
   const guide = JSON.parse(lire('docs/guide/guide.json'));
-  assert.equal(guide.majLe, '2026-10-03');
+  assert.ok(guide.majLe >= '2026-10-03');
   const rang = guide.journal.findIndex((j) => j.titre === 'Boutique revendeur, lot 7 : corrections de relecture');
   assert.ok(rang >= 0, 'entrée de relecture');
   const relecture = guide.journal[rang];
   assert.equal(guide.journal[rang + 1].titre, 'Boutique revendeur, lot 7 : boutiques Pro au même niveau');
   assert.equal(relecture.date, '2026-10-03');
-  assert.equal(relecture.statut, 'en local');
+  assert.ok(['en local', 'en ligne'].includes(relecture.statut));
   assert.match(relecture.demande, /^« “Ma boutique” doit montrer la boutique elle-même/);
   assert.ok(relecture.realise.length >= 4);
   for (const id of ['mes-boutiques', 'rev-boutique-articles', 'vitrine-boutique']) assert.ok(relecture.pages.includes(id), id);

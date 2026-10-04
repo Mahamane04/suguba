@@ -1,5 +1,5 @@
 {
- "majLe": "2026-10-03",
+ "majLe": "2026-10-04",
  "roles": [
   {
    "cle": "visiteur",
@@ -197,6 +197,37 @@
  ],
  "journal": [
   {
+   "date": "2026-10-04",
+   "titre": "Boutique revendeur : vérification à l’écran, captures et mise en ligne",
+   "demande": "« une fois finis tu lance le code sans t'arrêter ensuite tu met en ligne sans t'arrêter ni me poser de question »",
+   "realise": [
+    "Les 8 lots parcourus à l’écran sur la copie locale isolée, avec les comptes fictifs [QA], à 390 px puis 1 440 px : « Ma boutique » ouvre la boutique en 1 toucher depuis l’accueil et depuis l’onglet du bas ; 4 articles ajoutés depuis le catalogue ; 2 coups de cœur et l’ordre enregistrés, visibles en tête de la vitrine ; nom et mot d’accueil changés par le crayon ; « Voir comme un client » ; feuille de partage avec son lien suivi ; statistiques ; un client fictif s’abonne, la revendeuse annonce ses nouveautés, la notification arrive chez le client.",
+    "Fichier SQL exécuté deux fois de suite sur la base locale, sans erreur (il est rejouable), puis ses 5 vérifications : toutes conformes. Après lui : un rayon « Pour la maison » créé et affiché juste après les coups de cœur ; adresse de la boutique changée une fois, l’ancienne adresse redirige vers la nouvelle en gardant le rayon et le code du revendeur.",
+    "Visites : deux ouvertures le même jour par le même visiteur comptent pour une ; un navigateur robot n’est pas compté ; rien n’est gardé sur l’appareil ni l’adresse du visiteur (contrôlé dans la base locale).",
+    "Boutique masquée par Suguba : le visiteur voit « Cette page n’existe plus » ; la revendeuse voit sa boutique avec la mention, l’explication et le lien vers le support, sans bouton Partager.",
+    "Cinq défauts vus à l’écran, corrigés : le logo de la carte « Ma boutique » de l’accueil était à moitié caché par la couverture ; le rond de partage WhatsApp était rogné sur les cartes produit étroites (défaut plus ancien que ce chantier, visible sur chaque article d’une boutique) ; « Non enregistré » était rogné dans la barre d’enregistrement sur téléphone ; l’adresse se coupait en plein mot dans « Personnaliser » ; la date des notifications était en gris trop clair.",
+    "Contrôle automatique de 21 pages à 390 et 1 440 px : aucun débordement, aucune erreur de page.",
+    "Nouveau code essayé en lecture seule contre la base de production actuelle, donc sans le SQL : les boutiques réelles s’affichent sans erreur ; toute requête d’écriture était bloquée, comptage de visite compris.",
+    "74 captures du guide refaites : 48 pages pro sur la copie locale (dont les 4 nouvelles fiches : la boutique vue par son propriétaire, Mes articles, Statistiques, Mes rayons) et 26 pages publiques sur la vraie base."
+   ],
+   "ecarts": [
+    "Publié le 4 octobre par fusion dans main. Le fichier supabase/A-EXECUTER-2026-10-03-vitrine-boutique.sql reste à exécuter en production par le fondateur : d’ici là, « Mes rayons », l’annonce datée et le changement d’adresse restent masqués ; tout le reste fonctionne.",
+    "Non essayé à l’écran : l’envoi réel d’une image (logo, couverture) par le crayon, couvert seulement par les tests ; une boutique supplémentaire en formule Pro (aucun compte fictif en formule Pro) ; un vrai iPhone avec l’application installée.",
+    "Sur téléphone, les captures de « Mes rayons » et de l’adresse changée montrent l’état APRÈS le SQL (copie locale) : en production, ces éléments n’apparaissent qu’une fois le SQL exécuté.",
+    "Bandeau du propriétaire : les outils restent sur deux lignes sur téléphone. Titres du pied de page de l’accueil sur ordinateur : contraste insuffisant, plus ancien que ce chantier, non traité."
+   ],
+   "pages": [
+    "vitrine-boutique",
+    "rev-accueil",
+    "rev-boutique",
+    "rev-boutique-articles",
+    "rev-boutique-stats",
+    "rev-boutique-rayons",
+    "notifications"
+   ],
+   "statut": "en ligne"
+  },
+  {
    "date": "2026-10-03",
    "titre": "Boutique revendeur, lot 8 : corrections de relecture",
    "demande": "« “Ma boutique” doit montrer la boutique elle-même (logo, couverture, produits ajoutés) et non les réglages ; il veut des outils pour gérer sa boutique (personnalisation, catégories/rayons, produits mis en avant, et ce qui aide à vendre), pour un vrai sentiment d’appropriation. »",
@@ -211,6 +242,7 @@
     "Tests : tests/ma-boutique-lot8-relecture.test.cjs (13 tests, tous en échec sur le code du lot 8). Trois exécutent le vrai fichier SQL dans une base PostgreSQL locale ; l’un rejoue l’enchaînement du défaut (changement d’adresse validé entre la lecture des anciennes adresses et la création d’une boutique), avec puis sans la protection."
    ],
    "ecarts": [
+    "Publié le 4 octobre (branche ux/boutique-revendeur fusionnée dans main). Vérifié à l’écran sur la copie locale : voir l’entrée « Boutique revendeur : vérification à l’écran, captures et mise en ligne ».",
     "En local sur la branche ux/boutique-revendeur, non publié. 6 constats relus, tous fondés, tous corrigés : 5 dans l’application, 1 dans le guide.",
     "SQL À RELANCER PAR LE FONDATEUR : supabase/A-EXECUTER-2026-10-03-vitrine-boutique.sql — toujours le seul fichier du chantier boutique — a reçu un bloc 3, la protection en base des anciennes adresses. Pas encore exécuté : rien de plus à faire, l’exécuter une fois (Supabase › SQL Editor, copie locale isolée puis production), suivi de ses 5 vérifications (4 avant). Déjà exécuté : le relancer une fois, sans risque (aucune donnée modifiée). Tant qu’il n’est pas relancé, tout fonctionne ; la règle « jamais redonnée » reste tenue par l’application seule, avec la faille de quelques millièmes de seconde décrite plus haut.",
     "Choix fait sans vous, à valider : la relecture proposait soit cette protection en base, soit d’adoucir la phrase « jamais redonnée » dans le guide. La protection a été retenue. Elle refuse aussi qu’une boutique reprenne sa propre ancienne adresse (pas de retour, comme l’écran l’annonce). Elle ne corrige pas l’existant : la vérification 4 du fichier (attendu : 0) signale une boutique qui porterait déjà l’ancienne adresse d’une autre, à corriger à la main. Quand une boutique est supprimée, ses anciennes adresses redeviennent libres. Pour retirer la protection : les deux premières lignes du « Retour arrière », en bas du fichier.",
@@ -226,7 +258,7 @@
     "rejoindre",
     "rev-demarrer"
    ],
-   "statut": "en local"
+   "statut": "en ligne"
   },
   {
    "date": "2026-10-03",
@@ -244,6 +276,7 @@
     "Tests : tests/ma-boutique-lot8.test.cjs (27 tests, dont 18 en échec sans ce lot). Trois d’entre eux exécutent le vrai fichier SQL dans une base PostgreSQL locale : changement, second changement refusé, adresse prise refusée, nouvelle boutique sur une ancienne adresse, et base sans le fichier. 2 vérifications du lot 6 adaptées."
    ],
    "ecarts": [
+    "Publié le 4 octobre (branche ux/boutique-revendeur fusionnée dans main). Vérifié à l’écran sur la copie locale : voir l’entrée « Boutique revendeur : vérification à l’écran, captures et mise en ligne ».",
     "En local sur la branche ux/boutique-revendeur, non publié. Aucun nouveau fichier SQL : la liste des anciennes adresses et la fonction du changement sont dans supabase/A-EXECUTER-2026-10-03-vitrine-boutique.sql, livré au lot 6. Tant que vous ne l’avez pas exécuté (Supabase › SQL Editor, copie locale isolée puis production), la section « Adresse de ma boutique » n’apparaît pas. Ce lot n’y ajoute qu’un commentaire sur la colonne de l’adresse ; sa relecture y ajoute une protection : si vous l’avez déjà exécuté, le relancer une fois (voir « Boutique revendeur, lot 8 : corrections de relecture », sans risque).",
     "WhatsApp du revendeur : PAS fait, selon votre décision (« pas tout de suite »). Ni champ « Mon numéro WhatsApp », ni bouton « Écrire à <enseigne> » ; le numéro d’un revendeur n’apparaît nulle part sur sa vitrine, et un numéro de téléphone est refusé dans l’adresse. À rouvrir si vous acceptez le risque de vente hors plateforme.",
     "Redirection « permanente » de l’ancienne adresse : à vérifier sur la copie locale [QA] avec un vrai téléphone. Next.js envoie cette page par morceaux : selon le moment, le navigateur reçoit une vraie redirection permanente (code 308) ou la même redirection exécutée dans la page (code 200, puis saut immédiat vers la nouvelle adresse). Dans les deux cas le client arrive à la nouvelle adresse. Aucun serveur n’a été lancé pour ce lot : ce point n’a pas pu être observé.",
@@ -263,7 +296,7 @@
     "vitrine-fournisseur",
     "rejoindre"
    ],
-   "statut": "en local"
+   "statut": "en ligne"
   },
   {
    "date": "2026-10-03",
@@ -278,6 +311,7 @@
     "Tests : tests/ma-boutique-lot7-relecture.test.cjs (11 tests, dont 10 en échec sur le code du lot 7 ; le onzième vérifie que la règle du revendeur n’a pas bougé) ; 2 vérifications du lot 7 adaptées."
    ],
    "ecarts": [
+    "Publié le 4 octobre (branche ux/boutique-revendeur fusionnée dans main). Vérifié à l’écran sur la copie locale : voir l’entrée « Boutique revendeur : vérification à l’écran, captures et mise en ligne ».",
     "En local sur la branche ux/boutique-revendeur, non publié. Aucun SQL. 4 constats relus, tous fondés : 3 corrigés dans l’application, 1 seulement dans le guide (le suivant).",
     "ÉCART AVEC VOTRE DÉCISION, non corrigé dans l’application. Vous avez décidé que les outils de la boutique « s’appliquent aussi à chaque boutique Pro (lot 7) ». Une boutique Pro a reçu le bandeau, les crayons, « Mes articles », les coups de cœur et le partage par son adresse. Elle n’a pas encore : « Personnaliser » (présentation, quartier, photos, familles de l’annuaire), les Statistiques, « Mes rayons », l’annonce datée, « Prévenir mes abonnés », le lien suivi de partage ni la carte « prête à X % ». Le plan du lot 7 ne les listait pas, alors que les lots 5 et 6 les annonçaient pour ce lot. Les ouvrir demande un lot à part (4 adresses du serveur et 3 pages à faire répondre pour une boutique précise, avec leurs tests) : trop pour des corrections qui ne sont pas relues ensuite. À faire : lancer ce lot complémentaire, ou confirmer que ces outils restent ceux de la boutique principale.",
     "Deux points que ce lot complémentaire vous demandera de trancher : (1) « une annonce aux abonnés par 24 h » — par boutique, ou pour tout le compte (aujourd’hui : par revendeur) ; (2) Statistiques d’une boutique Pro — les visites et les abonnés sont comptés par boutique, mais les commandes et les gains par revendeur, tous liens confondus : chaque boutique afficherait les mêmes commandes.",
@@ -293,7 +327,7 @@
     "vitrine-boutique",
     "rev-boutique-rayons"
    ],
-   "statut": "en local"
+   "statut": "en ligne"
   },
   {
    "date": "2026-10-03",
@@ -313,6 +347,7 @@
     "Tests : tests/ma-boutique-lot7.test.cjs (25 tests), dont l’écran « Mes articles » joué sur une boutique Pro (ranger 3 articles, 1 coup de cœur, recharger : tout est gardé) et la panne d’enregistrement qui ne vide plus la boutique. Les 25 échouent sur le code d’avant."
    ],
    "ecarts": [
+    "Publié le 4 octobre (branche ux/boutique-revendeur fusionnée dans main). Vérifié à l’écran sur la copie locale : voir l’entrée « Boutique revendeur : vérification à l’écran, captures et mise en ligne ».",
     "En local sur la branche ux/boutique-revendeur, non publié. Aucun SQL pour ce lot.",
     "Vérification prévue par le plan, à faire par le fondateur sur la copie QA avec un compte [QA] doté d’une formule Pro : changer le logo de la boutique secondaire par le crayon, ranger 3 articles et mettre 1 coup de cœur, recharger — tout doit être gardé. Les captures de « Mes boutiques » et de « Mes articles » sont à refaire.",
     "ÉCART AVEC VOTRE DÉCISION (« ces outils s’appliquent aussi à chaque boutique Pro (lot 7) ») : ne sont pas encore proposés sur une boutique Pro « Personnaliser » (présentation, quartier, photos, familles de l’annuaire), les Statistiques, « Mes rayons » et l’annonce datée, « Prévenir mes abonnés », la carte « prête à X % ». Ils ne règlent pour l’instant que la boutique principale. Ce n’est pas une question ouverte : il reste à les livrer dans un lot complémentaire, ou à confirmer qu’ils restent propres à la boutique principale (voir « lot 7 : corrections de relecture »).",
@@ -331,7 +366,7 @@
     "mes-boutiques",
     "rev-prix"
    ],
-   "statut": "en local"
+   "statut": "en ligne"
   },
   {
    "date": "2026-10-03",
@@ -348,6 +383,7 @@
     "Tests : tests/ma-boutique-lot6-relecture.test.cjs (11 tests), dont la vraie route attaquée avec 80 000 « < » (refus immédiat, rien d’écrit) et la feuille de partage jouée comme l’application la joue (un seul lien créé)."
    ],
    "ecarts": [
+    "Publié le 4 octobre (branche ux/boutique-revendeur fusionnée dans main). Vérifié à l’écran sur la copie locale : voir l’entrée « Boutique revendeur : vérification à l’écran, captures et mise en ligne ».",
     "En local sur la branche ux/boutique-revendeur, non publié. 8 constats de relecture vérifiés, tous fondés (deux d’entre eux décrivent le même défaut : le prix dans un nom de rayon).",
     "Le SQL du lot 6 reste à lancer par le fondateur (supabase/A-EXECUTER-2026-10-03-vitrine-boutique.sql, dans Supabase › SQL Editor) : ces corrections ne le changent pas.",
     "Le même manque de place, plus léger, existe sur « Mes articles » (bouton « Enregistrer l’ordre », lot 3) : à 390 px, « Non enregistré » y est à l’étroit. Non corrigé ici (hors lot 6, et la feuille d’un article cite ce bouton par son nom) : à traiter.",
@@ -364,7 +400,7 @@
     "vitrine-boutique",
     "mes-boutiques"
    ],
-   "statut": "en local"
+   "statut": "en ligne"
   },
   {
    "date": "2026-10-03",
@@ -382,6 +418,7 @@
     "Tests : tests/ma-boutique-lot6.test.cjs (31 tests), dont le fichier SQL exécuté deux fois de suite dans une base de test en mémoire, et les pages « Mes rayons » et « Personnaliser » jouées de bout en bout sur une base simulée."
    ],
    "ecarts": [
+    "Publié le 4 octobre (branche ux/boutique-revendeur fusionnée dans main). Vérifié à l’écran sur la copie locale : voir l’entrée « Boutique revendeur : vérification à l’écran, captures et mise en ligne ».",
     "En local sur la branche ux/boutique-revendeur, non publié.",
     "SQL À LANCER PAR LE FONDATEUR : supabase/A-EXECUTER-2026-10-03-vitrine-boutique.sql, dans Supabase › SQL Editor — d’abord sur la copie locale isolée, puis en production —, suivi des 5 vérifications écrites en bas du fichier (attendu : 1 ligne ; store_slug_aliases ; false | false ; 0 ; 1 ligne — la 5e vient de la relecture du lot 8). Son effet : la tuile « Rayons », la page « Mes rayons » et le champ « Annonce sur ma boutique » apparaissent pour les revendeurs. Tant qu’il n’est pas exécuté, rien de cela n’est visible, et rien n’est en panne.",
     "Changement d’adresse : le fichier crée la liste des anciennes adresses et la fonction qui fait le changement (décision du fondateur : oui, une seule fois, l’ancienne adresse redirige), mais aucun écran ne s’en servait à ce lot : il est livré au lot 8 (section « Adresse de ma boutique » de « Personnaliser »). Si le fondateur revenait sur cette décision, le bloc 2 du fichier se retire sans rien changer au reste.",
@@ -402,7 +439,7 @@
     "vitrine-boutique",
     "mes-boutiques"
    ],
-   "statut": "en local"
+   "statut": "en ligne"
   },
   {
    "date": "2026-10-03",
@@ -419,6 +456,7 @@
     "Tests : tests/ma-boutique-lot5-relecture.test.cjs (9 tests, tous en échec sur le code du lot 5) ; ma-boutique-lot5 adapté (bouton après l’envoi, ligne de REPRISE)."
    ],
    "ecarts": [
+    "Publié le 4 octobre (branche ux/boutique-revendeur fusionnée dans main). Vérifié à l’écran sur la copie locale : voir l’entrée « Boutique revendeur : vérification à l’écran, captures et mise en ligne ».",
     "En local sur la branche ux/boutique-revendeur, non publié. Aucune migration.",
     "6 constats relus, tous fondés.",
     "Titre de l’annonce : le plan disait « Nouveautés chez <enseigne> », sans condition. Choix de la relecture, à valider par le fondateur : quand le nom de la boutique annonce un prix, une remise ou un numéro, le titre prend « Prénom I. » à la place. L’autre possibilité était de garder le nom tel quel et de ne plus promettre « ni prix, ni remise ». La feuille n’explique pas ce remplacement au revendeur : il le constate dans l’aperçu.",
@@ -434,7 +472,7 @@
     "rev-boutique-stats",
     "notifications"
    ],
-   "statut": "en local"
+   "statut": "en ligne"
   },
   {
    "date": "2026-10-03",
@@ -453,6 +491,7 @@
     "Tests : tests/ma-boutique-lot5.test.cjs (20 tests) ; ma-boutique-lot4-relecture adapté (une entrée plus récente en tête du journal)."
    ],
    "ecarts": [
+    "Publié le 4 octobre (branche ux/boutique-revendeur fusionnée dans main). Vérifié à l’écran sur la copie locale : voir l’entrée « Boutique revendeur : vérification à l’écran, captures et mise en ligne ».",
     "En local sur la branche ux/boutique-revendeur, non publié. Aucune migration.",
     "« Nouveautés » = articles ajoutés depuis la dernière annonce, mais jamais plus de 14 jours en arrière (la durée de l’étiquette « Nouveau »), et seulement ceux que la vitrine affiche et qui sont en stock. Le plan disait « depuis la dernière annonce » : sans cette limite, la toute première annonce aurait présenté toute la boutique comme nouvelle. À valider par le fondateur.",
     "Le bouton compte toutes les nouveautés (« 5 nouveautés ») ; la notification en nomme 3 et ajoute « et 2 autres articles » (le plan disait « 3 au maximum »).",
@@ -472,7 +511,7 @@
     "notifications",
     "boutiques-suivies"
    ],
-   "statut": "en local"
+   "statut": "en ligne"
   },
   {
    "date": "2026-10-03",
@@ -492,6 +531,7 @@
     "Tests : tests/ma-boutique-lot4-relecture.test.cjs (9 tests, tous en échec sur le code du lot 4) ; ma-boutique-lot4 et ma-boutique-lot2 adaptés (lien préparé en POST, bandeau de la fiche produit, nom du bouton « Partager »)."
    ],
    "ecarts": [
+    "Publié le 4 octobre (branche ux/boutique-revendeur fusionnée dans main). Vérifié à l’écran sur la copie locale : voir l’entrée « Boutique revendeur : vérification à l’écran, captures et mise en ligne ».",
     "En local sur la branche ux/boutique-revendeur, non publié. Aucune migration.",
     "13 constats relus, tous fondés ; deux étaient en double (chiffres de l’ancienne période dans Statistiques, conseil « Vos liens WhatsApp marchent »).",
     "Ouvrir « Ma carte & QR » ou choisir la carte « Ma boutique » dans « Créer un visuel » prépare toujours le lien suivi : l’étape « Partager ma boutique » est cochée et une ligne « Ma boutique » apparaît dans « Mes partages », même si rien n’est encore imprimé ni envoyé. Gardé tel quel (la carte et son QR doivent porter le lien) ; c’est maintenant écrit dans le guide.",
@@ -510,7 +550,7 @@
     "rev-badge",
     "rev-createur"
    ],
-   "statut": "en local"
+   "statut": "en ligne"
   },
   {
    "date": "2026-10-03",
@@ -530,6 +570,7 @@
     "Tests : tests/ma-boutique-lot4.test.cjs (19 tests) et tests/reseau.test.cjs (+1) ; ma-boutique-lot1, lot2 et lot3 adaptés (8 étapes, « Partager » du bandeau qui ouvre la feuille)."
    ],
    "ecarts": [
+    "Publié le 4 octobre (branche ux/boutique-revendeur fusionnée dans main). Vérifié à l’écran sur la copie locale : voir l’entrée « Boutique revendeur : vérification à l’écran, captures et mise en ligne ».",
     "En local sur la branche ux/boutique-revendeur, non publié. Aucune migration.",
     "Rayons : ce sont, pour l’instant, les catégories des articles (rayons automatiques) ; les rayons maison viendront avec la migration du lot 6, avec la même forme de lien. La clé d’un rayon vient de son nom : si la catégorie change, un ancien lien de rayon ouvre simplement la boutique en haut.",
     "« Commandes à votre nom » et « Gains des ventes livrées » comptent TOUS les liens du revendeur, pas seulement la boutique (le premier revendeur garde son client 30 jours) : ce sont les commandes passées pendant la période, hors annulées ; les gains sont la commission de celles qui sont livrées.",
@@ -555,7 +596,7 @@
     "rev-createur",
     "rev-clients"
    ],
-   "statut": "en local"
+   "statut": "en ligne"
   },
   {
    "date": "2026-10-03",
@@ -574,6 +615,7 @@
     "Tests : tests/ma-boutique-lot3-relecture.test.cjs (10 tests, tous en échec sur le code du lot 3)."
    ],
    "ecarts": [
+    "Publié le 4 octobre (branche ux/boutique-revendeur fusionnée dans main). Vérifié à l’écran sur la copie locale : voir l’entrée « Boutique revendeur : vérification à l’écran, captures et mise en ligne ».",
     "En local sur la branche ux/boutique-revendeur, non publié. Aucune migration.",
     "13 constats relus, tous fondés ; deux étaient en double (« Tous mes prix » et le bandeau du catalogue, signalés deux fois).",
     "Le « Message » refuse tout nombre écrit avec « promo », « remise », « soldes », « réduction », « rabais » ou « offert » : en 40 caractères, le nombre est toujours près du mot. « Soldes » ou « Promo du jour », sans nombre, restent permis.",
@@ -588,7 +630,7 @@
     "vitrine-boutique",
     "vitrine-fournisseur"
    ],
-   "statut": "en local"
+   "statut": "en ligne"
   },
   {
    "date": "2026-10-03",
@@ -607,6 +649,7 @@
     "Créer un visuel : la carte « Ma boutique » montre les coups de cœur, puis la suite de la sélection, aux prix affichés dans la boutique (elle montrait les 3 premiers articles du catalogue, au prix public). Décision du fondateur : « Bandeau promo » devient « Message », qui refuse les pourcentages, les prix et les montants (« -10 % », « 5 000 F », « moins 500 ») ; « Nouveau » ou « Stock limité » restent permis."
    ],
    "ecarts": [
+    "Publié le 4 octobre (branche ux/boutique-revendeur fusionnée dans main). Vérifié à l’écran sur la copie locale : voir l’entrée « Boutique revendeur : vérification à l’écran, captures et mise en ligne ».",
     "En local sur la branche ux/boutique-revendeur, non publié. Aucune migration.",
     "Le bouton de la ligne est un cœur (le plan disait « étoile ») : même signe que la section « Coups de cœur » de la vitrine.",
     "« Mettre en premier » place l’article en tête de son bloc. Comme la vitrine range par rayon, il remonte surtout son rayon ; la vraie mise en avant, ce sont les coups de cœur.",
@@ -625,7 +668,7 @@
     "rev-createur",
     "rev-accueil"
    ],
-   "statut": "en local"
+   "statut": "en ligne"
   },
   {
    "date": "2026-10-03",
@@ -645,6 +688,7 @@
     "Tests : tests/ma-boutique-lot2-relecture.test.cjs (14 tests, tous en échec sur le code du lot 2)."
    ],
    "ecarts": [
+    "Publié le 4 octobre (branche ux/boutique-revendeur fusionnée dans main). Vérifié à l’écran sur la copie locale : voir l’entrée « Boutique revendeur : vérification à l’écran, captures et mise en ligne ».",
     "En local sur la branche ux/boutique-revendeur, non publié. Aucune migration.",
     "Les boutiques déjà enregistrées au nom complet gardent ce nom dans la base tant que le revendeur ne le change pas. Il n’est plus affiché nulle part côté client ; l’adresse reste /boutique/prenom-nom jusqu’au lot 8.",
     "Les noms de boutique des fournisseurs ne sont pas filtrés (hors chantier) ; seules les adresses réservées leur sont refusées. Une boutique de revendeur déjà nommée « Suguba … » garde ce nom dans la base, mais son titre affiche « La sélection de Awa D. ».",
@@ -660,7 +704,7 @@
     "recherche",
     "boutiques-suivies"
    ],
-   "statut": "en local"
+   "statut": "en ligne"
   },
   {
    "date": "2026-10-03",
@@ -679,6 +723,7 @@
     "Tests : tests/ma-boutique-lot2.test.cjs (15 tests, dont 14 échouent sur le code d’avant ce lot) et 2 tests de plus dans tests/boutique-images.test.cjs. tests/ma-boutique-lot1.test.cjs est adapté à la vue client. 533 tests réussis, compilation de types réussie."
    ],
    "ecarts": [
+    "Publié le 4 octobre (branche ux/boutique-revendeur fusionnée dans main). Vérifié à l’écran sur la copie locale : voir l’entrée « Boutique revendeur : vérification à l’écran, captures et mise en ligne ».",
     "En local sur la branche ux/boutique-revendeur, non publié. Aucune migration.",
     "Les adresses déjà attribuées ne changent pas, car elles circulent dans des liens et des QR codes. Une boutique créée au nom complet garde /boutique/prenom-nom jusqu’au lot 8 (changement d’adresse permis une seule fois, après le SQL). Son titre affiche déjà « Awa D. ».",
     "Règle ajoutée par prudence, à valider : un nom de boutique fait seulement de mots du nom de la personne (« Awa Traoré », « Traoré Awa ») n’est pas traité comme une enseigne, même s’il diffère du nom complet. Le titre affiche alors « La sélection de Awa D. ».",
@@ -694,7 +739,7 @@
     "rev-createur",
     "rev-accueil"
    ],
-   "statut": "en local"
+   "statut": "en ligne"
   },
   {
    "date": "2026-10-03",
@@ -712,6 +757,7 @@
     "Tests : tests/ma-boutique-lot1-vitrine.test.cjs exécute vraiment la page /boutique/<adresse> (visiteur, autre compte, aperçu admin, propriétaire, boutique Pro, fournisseur, métadonnées). tests/ma-boutique-lot1.test.cjs passe de 11 à 15 tests, dont 9 échouent sur le code d’avant ces corrections. 516 tests réussis, compilation de types réussie."
    ],
    "ecarts": [
+    "Publié le 4 octobre (branche ux/boutique-revendeur fusionnée dans main). Vérifié à l’écran sur la copie locale : voir l’entrée « Boutique revendeur : vérification à l’écran, captures et mise en ligne ».",
     "En local sur la branche ux/boutique-revendeur, non publié. Aucune migration.",
     "À décider par vous : l’ancien lien /r/<code> d’une boutique masquée montre toujours la sélection du revendeur, sous « Prénom I. », sans logo ni couverture. Gardé tel quel, comme prévu par le plan (« garder l’ancien rendu si la boutique est masquée »). Le faire respecter le masquage changerait une page publique très partagée.",
     "SQL à lancer par vous dans Supabase › SQL Editor (lecture seule, décidé avant le lot 1, jamais lancé : les agents ne touchent pas à la production) : 1) SELECT owner_type, status, count(*) FROM stores GROUP BY 1,2; 2) SELECT count(*) FROM stores s JOIN profiles p ON p.id = s.owner_id WHERE s.owner_type = 'reseller' AND s.name = p.full_name; 3) SELECT column_name FROM information_schema.columns WHERE table_name = 'stores' AND column_name IN ('principale','neighborhood'); 4) SELECT to_regclass('public.store_products'), to_regclass('public.visites_mesurees'), to_regclass('public.analytics_events');",
@@ -727,7 +773,7 @@
     "rev-demarrer",
     "fou-boutique"
    ],
-   "statut": "en local"
+   "statut": "en ligne"
   },
   {
    "date": "2026-10-03",
@@ -745,6 +791,7 @@
     "Vitrine chargée une seule fois par affichage (elle l’était deux fois). Tests : tests/ma-boutique-lot1.test.cjs (11 tests, 10 échouent sur l’ancien code) ; REV-04 et le test du guide mis à jour."
    ],
    "ecarts": [
+    "Publié le 4 octobre (branche ux/boutique-revendeur fusionnée dans main). Vérifié à l’écran sur la copie locale : voir l’entrée « Boutique revendeur : vérification à l’écran, captures et mise en ligne ».",
     "En local sur la branche ux/boutique-revendeur, non publié. Aucune migration.",
     "Captures non refaites (aucun serveur lancé pour ce lot) : à refaire sur la copie locale avec les comptes [QA] pour vitrine-boutique, rev-accueil, rev-boutique, rev-catalogue, rev-clients, mes-boutiques, rev-demarrer, rev-badge et fou-boutique.",
     "Vérifications manuelles du plan non faites (390 px et 1440 px, vrai iPhone avec l’application installée, boutique masquée sur la copie locale) : seuls les tests automatiques et la compilation de types ont été passés.",
@@ -766,7 +813,7 @@
     "reseller-outils",
     "fou-boutique"
    ],
-   "statut": "en local"
+   "statut": "en ligne"
   },
   {
    "date": "2026-10-03",
@@ -4285,7 +4332,10 @@
      "libelle": "Mes boutiques"
     }
    ],
-   "note": "Capture à refaire sur la copie locale. L’ancien lien /r/<code> affiche la même vitrine, sans les éléments du propriétaire, et désigne /boutique/<adresse> comme adresse de référence (sans redirection) ; ses visites ne sont pas comptées dans les Statistiques. Elle reste ouverte quand Suguba a masqué la boutique : sélection sous « Prénom I. », sans logo ni couverture."
+   "note": "L’ancien lien /r/<code> affiche la même vitrine, sans les éléments du propriétaire, et désigne /boutique/<adresse> comme adresse de référence (sans redirection) ; ses visites ne sont pas comptées dans les Statistiques. Elle reste ouverte quand Suguba a masqué la boutique : sélection sous « Prénom I. », sans logo ni couverture.",
+   "capture": {
+    "chemin": "/boutique/qa-chez-fanta-mode"
+   }
   },
   {
    "id": "rev-boutique",
@@ -4448,7 +4498,10 @@
      "libelle": "Mes boutiques"
     }
    ],
-   "note": "Capture à refaire sur la copie locale. Le gain affiché vient d’une adresse réservée au revendeur connecté : il n’apparaît jamais dans la vitrine publique. Pour une boutique Pro, la capture demande un compte [QA] doté d’une formule Pro."
+   "note": "Le gain affiché vient d’une adresse réservée au revendeur connecté : il n’apparaît jamais dans la vitrine publique. Pour une boutique Pro, la capture demande un compte [QA] doté d’une formule Pro.",
+   "capture": {
+    "chemin": "/reseller/boutique/articles"
+   }
   },
   {
    "id": "rev-boutique-stats",
@@ -4516,7 +4569,10 @@
      "libelle": "Ma boutique"
     }
    ],
-   "note": "Capture à refaire sur la copie locale. Ces chiffres viennent d’une adresse réservée au revendeur connecté : ils n’apparaissent jamais dans la vitrine publique."
+   "note": "Ces chiffres viennent d’une adresse réservée au revendeur connecté : ils n’apparaissent jamais dans la vitrine publique.",
+   "capture": {
+    "chemin": "/reseller/boutique/statistiques"
+   }
   },
   {
    "id": "rev-boutique-rayons",
@@ -4584,7 +4640,10 @@
      "libelle": "Ajouter des articles"
     }
    ],
-   "note": "Capture à refaire sur la copie locale. Page utile seulement après le SQL du lot 6 (supabase/A-EXECUTER-2026-10-03-vitrine-boutique.sql) ; avant, elle affiche « Les rayons arrivent bientôt »."
+   "note": "Page utile seulement après le SQL du lot 6 (supabase/A-EXECUTER-2026-10-03-vitrine-boutique.sql) ; avant, elle affiche « Les rayons arrivent bientôt ».",
+   "capture": {
+    "chemin": "/reseller/boutique/rayons"
+   }
   },
   {
    "id": "rev-prix",

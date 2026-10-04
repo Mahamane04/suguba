@@ -1041,14 +1041,14 @@ test('Source : store_products n’est écrit que par la couche commune et defini
 
 test('Guide : le lot 7 au journal, juste avant la relecture du lot 6 ; les fiches « Mes articles », « Mes boutiques » et la vitrine décrivent les boutiques Pro', () => {
   const guide = JSON.parse(lire('docs/guide/guide.json'));
-  assert.equal(guide.majLe, '2026-10-03');
+  assert.ok(guide.majLe >= '2026-10-03');
   // Relecture du lot 7 : son entrée passe devant celle-ci, qui n'est plus la première.
   const rang = guide.journal.findIndex((j) => j.titre === 'Boutique revendeur, lot 7 : boutiques Pro au même niveau');
   assert.ok(rang >= 0, 'entrée du lot 7');
   const entree = guide.journal[rang];
   assert.equal(guide.journal[rang + 1].titre, 'Boutique revendeur, lot 6 : corrections de relecture', 'juste avant la relecture du lot 6');
   assert.equal(entree.date, '2026-10-03');
-  assert.equal(entree.statut, 'en local');
+  assert.ok(['en local', 'en ligne'].includes(entree.statut));
   assert.match(entree.demande, /^« .*Ma boutique.*doit montrer la boutique elle-même/);
   assert.ok(entree.realise.length >= 5 && entree.ecarts.length >= 3);
   for (const id of ['mes-boutiques', 'rev-boutique-articles', 'vitrine-boutique']) assert.ok(entree.pages.includes(id), id);

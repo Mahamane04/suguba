@@ -497,7 +497,9 @@ test('Mes rayons : la barre dit « Enregistrer » (avec « Annuler », « Enregi
   // Le bouton reste le seul bouton principal de la barre, et l'état reste écrit à côté.
   const barre = lire('src/components/ui/BarreEnregistrement.tsx');
   assert.match(barre, /Non enregistré/);
-  assert.match(barre, /<p className="flex-1 min-w-0 /);
+  // Vérifié à l'écran (2026-10-03) : sur téléphone l'état a sa propre ligne, il n'est plus rogné.
+  assert.match(barre, /<div className="flex flex-wrap items-center gap-2">/);
+  assert.match(barre, /<p className="basis-full sm:basis-0 sm:flex-1 min-w-0 /);
   // Même libellé que « Personnaliser » (le titre de la page dit déjà « Mes rayons »).
   assert.match(page, /<PageReseau\s+titre="Mes rayons"/);
 });
@@ -533,13 +535,13 @@ test('SelecteurArticles : la précision (« Dans « … » », « Coup de cœur,
 
 test('Guide : relecture du lot 6 en tête, juste avant le lot 6 ; la fiche « Mes rayons » et le journal disent ce que fait le code ; REPRISE', () => {
   const guide = JSON.parse(lire('docs/guide/guide.json'));
-  assert.equal(guide.majLe, '2026-10-03');
+  assert.ok(guide.majLe >= '2026-10-03');
   const rang = guide.journal.findIndex((j) => j.titre === 'Boutique revendeur, lot 6 : corrections de relecture');
   assert.ok(rang >= 0, 'entrée de relecture');
   const relecture = guide.journal[rang];
   assert.equal(guide.journal[rang + 1].titre, 'Boutique revendeur, lot 6 : rayons personnalisés et annonce datée');
   assert.equal(relecture.date, '2026-10-03');
-  assert.equal(relecture.statut, 'en local');
+  assert.ok(['en local', 'en ligne'].includes(relecture.statut));
   assert.match(relecture.demande, /^« “Ma boutique” doit montrer la boutique elle-même/);
   assert.ok(relecture.realise.length >= 6);
   assert.ok(relecture.ecarts.length > 0);

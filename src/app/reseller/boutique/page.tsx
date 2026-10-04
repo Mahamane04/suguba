@@ -268,11 +268,15 @@ export default function MaBoutiqueRevendeurPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <StatCard label="Abonnés" valeur={boutique.abonnes} icone={Users} accent />
-            {/* Adresse complète, telle que les clients la tapent (2026-10-03). */}
-            <StatCard label="Adresse" valeur={<span className="text-sm break-all">{origine.replace(/^https?:\/\//, '')}/boutique/{boutique.slug}</span>}
-              aide={!optionAdresse ? 'Ne change pas avec le nom' : ancienneAdresse ? 'Changée une fois : définitive' : 'Modifiable une fois, plus bas'} />
+            {/* Adresse complète, telle que les clients la tapent (2026-10-03). Tuile
+                sur deux tiers et coupure après chaque « / » : à moitié de largeur,
+                l'adresse se cassait en plein mot sur trois lignes. */}
+            <div className="col-span-2 grid">
+              <StatCard label="Adresse" valeur={<span className="text-sm break-words">{origine.replace(/^https?:\/\//, '')}/<wbr />boutique/<wbr />{boutique.slug}</span>}
+                aide={!optionAdresse ? 'Ne change pas avec le nom' : ancienneAdresse ? 'Changée une fois : définitive' : 'Modifiable une fois, plus bas'} />
+            </div>
           </div>
 
           {/* Même règle que l'accueil et la vitrine (relecture du lot 1, 2026-10-03) :

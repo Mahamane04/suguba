@@ -480,9 +480,9 @@ function CarteMaBoutique({ boutique, charge }: { boutique: ApercuBoutique | null
         <div className="flex items-start gap-3">
           {boutique?.logo ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={boutique.logo} alt="" className="-mt-7 w-14 h-14 shrink-0 rounded-2xl object-cover bg-white ring-4 ring-white" />
+            <img src={boutique.logo} alt="" className="relative -mt-7 w-14 h-14 shrink-0 rounded-2xl object-cover bg-white ring-4 ring-white" />
           ) : (
-            <span aria-hidden="true" className="-mt-7 w-14 h-14 shrink-0 rounded-2xl bg-suguba-menthe text-suguba-profond ring-4 ring-white flex items-center justify-center text-xl font-bold">
+            <span aria-hidden="true" className="relative -mt-7 w-14 h-14 shrink-0 rounded-2xl bg-suguba-menthe text-suguba-profond ring-4 ring-white flex items-center justify-center text-xl font-bold">
               {initiale(nom)}
             </span>
           )}

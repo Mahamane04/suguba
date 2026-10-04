@@ -377,3 +377,14 @@ h1, h2, h3, h4, h5, h6 {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }
+
+/* Carte produit étroite (2026-10-03). En 2 colonnes sur téléphone, « Ajouter » +
+   le rond de partage WhatsApp dépassaient de la carte (jusqu'à 22 px dans une
+   vitrine) et le rond était rogné. La carte se mesure elle-même (requête de
+   conteneur) : sous 176 px, l'icône du bouton s'efface et il se resserre. Un
+   navigateur qui ignore les requêtes de conteneur garde l'ancien rendu. */
+.carte-produit { container-type: inline-size; }
+@container (max-width: 175px) {
+  .carte-produit .icone-ajout { display: none; }
+  .carte-produit .bouton-ajout { padding-left: 0.625rem; padding-right: 0.625rem; }
+}

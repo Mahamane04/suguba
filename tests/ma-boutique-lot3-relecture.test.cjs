@@ -283,12 +283,12 @@ test('Guide : « Nouveau » pendant 14 jours, vitrine fournisseur à jour, journ
   const [tete, lot3] = guide.journal.slice(rang);
   assert.equal(tete.titre, 'Boutique revendeur, lot 3 : corrections de relecture');
   assert.equal(tete.date, '2026-10-03');
-  assert.equal(tete.statut, 'en local');
+  assert.ok(['en local', 'en ligne'].includes(tete.statut));
   assert.ok(tete.ecarts.length > 0);
   for (const id of ['rev-prix', 'rev-catalogue', 'rev-boutique-articles', 'rev-createur', 'vitrine-boutique', 'vitrine-fournisseur']) {
     assert.ok(tete.pages.includes(id), id);
   }
   assert.equal(lot3.titre, 'Boutique revendeur, lot 3 : Mes articles, coups de cœur, gain visible');
   assert.ok(lot3.pages.includes('vitrine-fournisseur'), 'la vitrine fournisseur change aussi au lot 3');
-  assert.equal(guide.majLe, '2026-10-03');
+  assert.ok(guide.majLe >= '2026-10-03');
 });

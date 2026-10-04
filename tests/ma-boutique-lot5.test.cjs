@@ -835,12 +835,12 @@ test('Mes articles et Statistiques : le bouton est posé ; les appels du composa
 
 test('Guide : lot 5 en tête du journal ; fiches Mes articles, Statistiques, vitrine et notifications à jour ; REPRISE', () => {
   const guide = JSON.parse(lire('docs/guide/guide.json'));
-  assert.equal(guide.majLe, '2026-10-03');
+  assert.ok(guide.majLe >= '2026-10-03');
   const rang = guide.journal.findIndex((j) => j.titre === 'Boutique revendeur, lot 5 : prévenir mes abonnés');
   assert.ok(rang >= 0, 'entrée du lot 5');
   const lot5 = guide.journal[rang];
   assert.equal(lot5.date, '2026-10-03');
-  assert.equal(lot5.statut, 'en local');
+  assert.ok(['en local', 'en ligne'].includes(lot5.statut));
   assert.match(lot5.demande, /^« “Ma boutique” doit montrer la boutique elle-même/);
   assert.ok(lot5.realise.length >= 5);
   assert.ok(lot5.ecarts.length > 0);

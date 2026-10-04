@@ -68,8 +68,11 @@ export default function BarreEnregistrement({
           <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" /><span>{message}</span>
         </div>
       )}
-      <div className="flex items-center gap-2">
-        <p className="flex-1 min-w-0 text-sm text-slate-600">
+      {/* Téléphone (2026-10-03) : l'état passe sur sa propre ligne, au-dessus des
+          boutons. Sur une seule ligne, « Non enregistré » était rogné par « Annuler »
+          dès que le bouton principal avait un libellé long (« Enregistrer l'ordre »). */}
+      <div className="flex flex-wrap items-center gap-2">
+        <p className="basis-full sm:basis-0 sm:flex-1 min-w-0 text-sm text-slate-600">
           {modifie ? <strong className="text-slate-900">Non enregistré<span className="hidden sm:inline"> : vos modifications attendent</span></strong> : 'Tout est enregistré'}
         </p>
         {modifie && onAnnuler && (
@@ -77,7 +80,7 @@ export default function BarreEnregistrement({
             <RotateCcw className="w-4 h-4" />Annuler
           </Button>
         )}
-        <Button type="button" onClick={onEnregistrer} loading={envoi} disabled={(!modifie && !actionDisponible) || bloque}>
+        <Button type="button" onClick={onEnregistrer} loading={envoi} disabled={(!modifie && !actionDisponible) || bloque} className="flex-1 sm:flex-none">
           {libelle}
         </Button>
       </div>

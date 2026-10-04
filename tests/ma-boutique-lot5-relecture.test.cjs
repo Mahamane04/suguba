@@ -422,13 +422,13 @@ test('annoncerBaissePrix : « 120 000 F au lieu de 150 000 F », avec formatF (e
 
 test('Guide : relecture du lot 5 juste avant le lot 5 ; les promotions ne sont plus dites « inexistantes » ; fiches et REPRISE à jour', () => {
   const guide = JSON.parse(lire('docs/guide/guide.json'));
-  assert.equal(guide.majLe, '2026-10-03');
+  assert.ok(guide.majLe >= '2026-10-03');
   const rang = guide.journal.findIndex((j) => j.titre === 'Boutique revendeur, lot 5 : corrections de relecture');
   assert.ok(rang >= 0, 'entrée de relecture');
   const relecture = guide.journal[rang];
   assert.equal(guide.journal[rang + 1].titre, 'Boutique revendeur, lot 5 : prévenir mes abonnés');
   assert.equal(relecture.date, '2026-10-03');
-  assert.equal(relecture.statut, 'en local');
+  assert.ok(['en local', 'en ligne'].includes(relecture.statut));
   assert.match(relecture.demande, /^« “Ma boutique” doit montrer la boutique elle-même/);
   assert.ok(relecture.realise.length >= 6);
   assert.ok(relecture.ecarts.length > 0);

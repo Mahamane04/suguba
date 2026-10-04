@@ -1125,7 +1125,7 @@ test('Personnaliser : la section n’existe qu’avec l’option ; après un cha
     let arbre = await ecran.monter();
     assert.ok(ecran.champ(arbre, 'nom-boutique'), 'la page est chargée');
     assert.equal(sections(arbre).length, 0);
-    assert.match(adresseAffichee(ecran, arbre), /app\.sugubaml\.com\/boutique\/awa-traore-diallo Ne change pas avec le nom/);
+    assert.match(adresseAffichee(ecran, arbre), /app\.sugubaml\.com\/ ?boutique\/ ?awa-traore-diallo Ne change pas avec le nom/);
     assert.deepEqual(appels.map((a) => a[1]), ['/api/reseller/boutique'], 'aucune requête de plus');
 
     // APRÈS le SQL : la section, avec l'adresse proposée par l'enseigne.
@@ -1147,7 +1147,7 @@ test('Personnaliser : la section n’existe qu’avec l’option ; après un cha
     assert.equal(ecran.du(arbre, 'CarteLien')[0].props.url, 'https://app.sugubaml.com/boutique/awa-mode');
     assert.equal(ecran.du(arbre, 'CarteLien')[0].props.lienOuvrir, '/boutique/awa-mode');
     assert.match(ecran.du(arbre, 'CarteLien')[0].props.texteWhatsApp, /app\.sugubaml\.com\/boutique\/awa-mode$/);
-    assert.match(adresseAffichee(ecran, arbre), /app\.sugubaml\.com\/boutique\/awa-mode Changée une fois : définitive/);
+    assert.match(adresseAffichee(ecran, arbre), /app\.sugubaml\.com\/ ?boutique\/ ?awa-mode Changée une fois : définitive/);
     assert.equal(ecran.du(arbre, 'BarreEnregistrement')[0].props.modifie, false);
 
     // Boutique encore au nom du compte : rien n'est proposé (le changement unique ne se gaspille pas sur « awa-d »).
@@ -1279,14 +1279,14 @@ test('Garde-fous : rien de privé ni « À la une » dans les nouveaux fichiers 
 
 test('Guide et fiche de reprise : le lot 8 au journal, juste avant la relecture du lot 7, avec la demande du fondateur et ses écarts ; fiches « Personnaliser » et vitrine à jour', () => {
   const guide = JSON.parse(lire('docs/guide/guide.json'));
-  assert.equal(guide.majLe, '2026-10-03');
+  assert.ok(guide.majLe >= '2026-10-03');
   // Une relecture de ce lot passera devant cette entrée : elle est cherchée par son titre.
   const rang = guide.journal.findIndex((j) => j.titre === 'Boutique revendeur, lot 8 : adresse à l’enseigne et contact');
   assert.ok(rang >= 0, 'entrée du lot 8');
   const entree = guide.journal[rang];
   assert.equal(guide.journal[rang + 1].titre, 'Boutique revendeur, lot 7 : corrections de relecture', 'juste avant la relecture du lot 7');
   assert.equal(entree.date, '2026-10-03');
-  assert.equal(entree.statut, 'en local');
+  assert.ok(['en local', 'en ligne'].includes(entree.statut));
   assert.match(entree.demande, /^« .*Ma boutique.*doit montrer la boutique elle-même.*sentiment d’appropriation\. »$/);
   assert.ok(entree.realise.length >= 5);
   assert.ok(entree.ecarts.length >= 4);

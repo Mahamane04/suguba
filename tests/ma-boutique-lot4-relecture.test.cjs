@@ -324,7 +324,7 @@ test('Guide : relecture du lot 4 en tête ; carte & QR et créateur cochent l’
   assert.ok(rang >= 0);
   const tete = guide.journal[rang];
   assert.equal(guide.journal[rang + 1].titre, 'Boutique revendeur, lot 4 : partager et mesurer');
-  assert.equal(tete.statut, 'en local');
+  assert.ok(['en local', 'en ligne'].includes(tete.statut));
   assert.match(tete.demande, /^« “Ma boutique” doit montrer la boutique elle-même/);
   assert.ok(tete.ecarts.length > 0);
   const lot4 = guide.journal.find((j) => j.titre === 'Boutique revendeur, lot 4 : partager et mesurer');

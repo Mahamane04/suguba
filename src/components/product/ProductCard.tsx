@@ -190,7 +190,7 @@ export default function ProductCard({
 
   return (
     <article
-      className="bg-white rounded-3xl overflow-hidden border border-slate-200 hover:border-slate-300 hover:shadow-card-hover transition-all flex flex-col"
+      className="carte-produit bg-white rounded-3xl overflow-hidden border border-slate-200 hover:border-slate-300 hover:shadow-card-hover transition-all flex flex-col"
       onClickCapture={sponsorisationId ? (e) => {
         if ((e.target as HTMLElement).closest('a')) compterClic(sponsorisationId);
       } : undefined}
@@ -266,12 +266,16 @@ export default function ProductCard({
               {produit.ajoutDirect ? (
                 // V2 (2026-09-27) : offre simple → ajout au panier sans quitter
                 // le catalogue ; le compteur de la barre du bas le confirme.
-                <Button type="button" onClick={ajouter} variant="primary" size="sm" className="flex-1"
+                // Carte étroite (2 colonnes sur téléphone, 2026-10-03) : le bouton + le
+                // partage dépassaient de 22 px et le rond WhatsApp était rogné. Sous
+                // 176 px de carte, l'icône du bouton s'efface et il se resserre
+                // (règle « carte-produit » de globals.css, requête de conteneur).
+                <Button type="button" onClick={ajouter} variant="primary" size="sm" className="bouton-ajout flex-1 min-w-0"
                   aria-label={`Ajouter ${produit.nom} au panier`}>
-                  {ajoute ? <><Check className="w-4 h-4" />Ajouté</> : <><ShoppingBag className="w-4 h-4" />Ajouter</>}
+                  {ajoute ? <><Check className="icone-ajout w-4 h-4" />Ajouté</> : <><ShoppingBag className="icone-ajout w-4 h-4" />Ajouter</>}
                 </Button>
               ) : (
-                <Button href={lien} variant={enRupture ? 'secondary' : 'primary'} size="sm" className="flex-1">
+                <Button href={lien} variant={enRupture ? 'secondary' : 'primary'} size="sm" className="bouton-ajout flex-1 min-w-0">
                   {enRupture ? 'Voir' : produit.aChoisir ? 'Choisir' : 'Acheter'}
                 </Button>
               )}

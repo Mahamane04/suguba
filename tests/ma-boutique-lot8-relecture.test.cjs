@@ -656,14 +656,14 @@ test('Bulle du support : boutons du design system, choix et fermeture de 44 px, 
 
 test('Guide : relecture du lot 8 en tête, juste avant le lot 8 ; la bulle est décrite sur /s/<boutique> et /rejoindre ; le SQL à relancer est dit ; REPRISE', () => {
   const guide = JSON.parse(lire('docs/guide/guide.json'));
-  assert.equal(guide.majLe, '2026-10-03');
+  assert.ok(guide.majLe >= '2026-10-03');
   const rang = guide.journal.findIndex((j) => j.titre === 'Boutique revendeur, lot 8 : corrections de relecture');
   assert.ok(rang >= 0, 'entrée de relecture');
   const relecture = guide.journal[rang];
   const lot8 = guide.journal[rang + 1];
   assert.equal(lot8.titre, 'Boutique revendeur, lot 8 : adresse à l’enseigne et contact');
   assert.equal(relecture.date, '2026-10-03');
-  assert.equal(relecture.statut, 'en local');
+  assert.ok(['en local', 'en ligne'].includes(relecture.statut));
   assert.match(relecture.demande, /^« “Ma boutique” doit montrer la boutique elle-même.*sentiment d’appropriation\. »$/);
   assert.ok(relecture.realise.length >= 6);
   assert.ok(relecture.ecarts.length >= 4);
