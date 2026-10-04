@@ -988,8 +988,11 @@ test('G — aperçu administrateur : le démarrage avance d’étape en étape (
 test('Guide : l’entrée de la relecture finale est en tête, en ligne, avec ses écarts ; fiches à jour ; REPRISE', () => {
   const guide = JSON.parse(lire('docs/guide/guide.json'));
   assert.ok(guide.majLe >= '2026-10-04');
-  const entree = guide.journal[0];
-  assert.equal(entree.titre, 'Boutique revendeur : corrections de la relecture finale');
+  // Le journal continue après elle (SQL exécuté en production, etc.) : on la cherche par son
+  // titre, et on vérifie seulement ce qui la suit.
+  const rang = guide.journal.findIndex((j) => j.titre === 'Boutique revendeur : corrections de la relecture finale');
+  assert.ok(rang >= 0, 'entrée de la relecture finale');
+  const entree = guide.journal[rang];
   assert.equal(entree.date, '2026-10-04');
   assert.equal(entree.statut, 'en ligne');
   assert.equal(entree.demande, '« une fois finis tu lance le code sans t\'arrêter ensuite tu met en ligne sans t\'arrêter ni me poser de question »');
@@ -997,7 +1000,7 @@ test('Guide : l’entrée de la relecture finale est en tête, en ligne, avec se
   assert.ok(entree.ecarts.length >= 2);
   for (const id of ['mes-boutiques', 'adm-boutiques', 'vitrine-boutique', 'rev-boutique-stats', 'rev-demarrer', 'inscription-fin']) assert.ok(entree.pages.includes(id), id);
   for (const id of entree.pages) assert.ok(guide.pages.some((p) => p.id === id), id);
-  assert.equal(guide.journal[1].titre, 'Boutique revendeur : vérification à l’écran, captures et mise en ligne');
+  assert.equal(guide.journal[rang + 1].titre, 'Boutique revendeur : vérification à l’écran, captures et mise en ligne');
 
   const fiche = (id) => JSON.stringify(guide.pages.find((p) => p.id === id));
   assert.match(fiche('mes-boutiques'), /Articles indisponibles pour le moment/);

@@ -198,6 +198,27 @@
  "journal": [
   {
    "date": "2026-10-04",
+   "titre": "Boutique revendeur : SQL de la vitrine exécuté en production",
+   "demande": "« c'est tout est ok » (après « donne moi les sql ici »)",
+   "realise": [
+    "Le fondateur a exécuté supabase/A-EXECUTER-2026-10-03-vitrine-boutique.sql dans Supabase, en production, et lancé les 5 vérifications du fichier : il les déclare toutes conformes.",
+    "Sont donc ouverts à chaque revendeur : la tuile « Rayons » sur sa boutique et la page « Mes rayons » ; le champ « Annonce sur ma boutique » dans « Personnaliser » ; la section « Adresse de ma boutique » (changement d’adresse une seule fois, l’ancienne adresse redirige).",
+    "Contrôle en lecture seule après l’exécution : les boutiques réelles et l’annuaire des boutiques s’affichent sans erreur ; toute requête d’écriture était bloquée."
+   ],
+   "ecarts": [
+    "L’exécution et les 5 vérifications sont celles du fondateur : elles n’ont pas été refaites ici (aucun accès en lecture à la base de production depuis cet outil).",
+    "Ces trois fonctions ne sont visibles que par un revendeur connecté : elles ont été vues sur la copie locale (même SQL), pas en production.",
+    "Aucun changement de code : seule la documentation est mise à jour."
+   ],
+   "pages": [
+    "rev-boutique-rayons",
+    "rev-boutique",
+    "vitrine-boutique"
+   ],
+   "statut": "en ligne"
+  },
+  {
+   "date": "2026-10-04",
    "titre": "Boutique revendeur : corrections de la relecture finale",
    "demande": "« une fois finis tu lance le code sans t'arrêter ensuite tu met en ligne sans t'arrêter ni me poser de question »",
    "realise": [
