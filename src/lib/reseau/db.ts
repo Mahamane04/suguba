@@ -242,6 +242,22 @@ export function empreinteVisiteur(ip: string | null, userAgent: string | null): 
   return createHash('sha256').update(`${sel}|${ip || ''}|${userAgent || ''}`).digest('hex').slice(0, 32);
 }
 
+/**
+ * Empreinte de l'adresse IP SEULE, pour un jour donné (relecture finale du chantier
+ * boutique, 2026-10-04) : elle sert aux plafonds des visites de boutique.
+ *
+ * empreinteVisiteur mêle l'IP et le navigateur déclaré, que l'appelant choisit :
+ * en changeant ce texte, une seule machine se faisait passer pour autant de
+ * visiteurs qu'elle voulait. Ici, rien d'autre que l'adresse — rien sur l'appareil.
+ * Salée par le secret du serveur ET par le jour (`jour` : « 2026-10-04 ») : elle
+ * change chaque jour, deux jours ne se relient pas, et l'adresse ne se retrouve
+ * pas sans le secret. L'IP en clair n'est jamais stockée.
+ */
+export function empreinteAdresseDuJour(ip: string | null, jour: string): string {
+  const sel = process.env.SESSION_SECRET || 'suguba';
+  return createHash('sha256').update(`${sel}|adresse-du-jour|${jour}|${ip || ''}`).digest('hex').slice(0, 32);
+}
+
 export async function enregistrerClic(params: {
   code: string;
   visiteur: string;

@@ -228,8 +228,13 @@ function CreerBoutique({ onFait }: { onFait: () => Promise<void> }) {
             ))}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="Nom de la boutique" htmlFor="cb-boutique" requis={mode === 'existant'}>
-              <Input id="cb-boutique" value={f.nomBoutique} onChange={(e) => setF({ ...f, nomBoutique: e.target.value })} placeholder={mode === 'nouveau' ? 'Par défaut : le nom de la personne' : ''} />
+            {/* Revendeur (relecture finale, 2026-10-04) : jamais le nom complet de la personne en nom de
+                boutique ni dans son adresse. L'indication annonçait « le nom de la personne » : sans
+                enseigne, le serveur enregistre « Awa D. » (creerBoutiqueSupplementaire). */}
+            <Field label="Nom de la boutique" htmlFor="cb-boutique" requis={mode === 'existant'}
+              aide={type === 'reseller' ? 'Le nom de la personne n’est jamais affiché en entier : sans enseigne, la boutique s’appelle « Awa D. » et son adresse en est tirée.' : undefined}>
+              <Input id="cb-boutique" value={f.nomBoutique} onChange={(e) => setF({ ...f, nomBoutique: e.target.value })}
+                placeholder={type === 'reseller' ? (mode === 'nouveau' ? 'Par défaut : prénom et initiale (Awa D.)' : 'Ex. : Awa Mode') : mode === 'nouveau' ? 'Par défaut : le nom de la personne' : ''} />
             </Field>
             <Field label="Quartier" htmlFor="cb-quartier">
               <NeighborhoodPicker id="cb-quartier" value={f.quartier} onChange={(q) => setF({ ...f, quartier: q === 'Autre quartier' ? '' : q })} placeholder="Choisir un quartier" />

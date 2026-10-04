@@ -710,7 +710,8 @@ test('Mes boutiques : « Choisir les articles » d’un revendeur mène à Mes a
   const src = sansCommentaires(lire('src/app/compte/boutiques/page.tsx'));
   assert.match(src, /\) : d\.type === 'reseller' \? \(\s*<Button href=\{pageMesArticles\(b\.id\)\} variant="secondary" size="sm">\s*<ListChecks className="w-4 h-4" \/>Choisir les articles/);
   assert.match(src, /<Button variant="secondary" size="sm" onClick=\{\(\) => setSelection\(selection === b\.id \? null : b\.id\)\}>/);
-  assert.match(src, /<SelecteurArticles\s+catalogue=\{d\.catalogue\}\s+choisis=\{d\.articles\[b\.id\] \|\| \[\]\}\s+onEnregistrer=/);
+  // Relecture finale (2026-10-04) : plus de « || [] » — une sélection illisible (null) n'ouvre pas la liste.
+  assert.match(src, /<SelecteurArticles\s+catalogue=\{d\.catalogue\}\s+choisis=\{choisis\}\s+onEnregistrer=/);
   assert.match(src, /Logo, couverture et nom : touchez « Voir », puis les crayons de la boutique\./);
   assert.doesNotMatch(src, /target="_blank"/);
 });

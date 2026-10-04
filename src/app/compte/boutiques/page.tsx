@@ -4,7 +4,7 @@ import SugubaLoader from '@/components/ui/SugubaLoader';
 
 import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Store, Plus, Eye, Check, Crown, Clock, ListChecks, Settings2 } from 'lucide-react';
+import { Store, Plus, Eye, Check, Crown, Clock, ListChecks, Settings2, RefreshCw } from 'lucide-react';
 import PageReseau from '@/components/reseau/PageReseau';
 import { Card, Skeleton, StatusPill } from '@/components/ui/Surface';
 import Button from '@/components/ui/Button';
@@ -39,6 +39,13 @@ import { pageMesArticles } from '@/lib/reseau/porte-boutique';
  * et le bouton « Enregistrer N article(s) » ne comptent plus un produit qui n'est
  * plus en vente (refusé, archivé) : la liste ne le montrait pas, il ne pouvait donc
  * pas être décoché. La route ne le renvoie plus, et l'enregistrement le retire.
+ *
+ * Relecture finale (2026-10-04) : la route renvoie `articles[<boutique>] = null`
+ * quand la sélection d'une boutique n'a pas pu être lue. L'écran le DIT (« Articles
+ * indisponibles pour le moment »), n'ouvre pas la liste à cocher et propose
+ * « Réessayer ». Avant, la panne passait pour « 0 article(s) choisis » : la liste
+ * du fournisseur s'ouvrait sans aucune coche, et « Enregistrer » retirait alors
+ * tous les articles de la boutique.
  */
 
 interface Boutique { id: string; slug: string; nom: string; quartier: string | null; principale: boolean; abonnes: number; statut: string }
@@ -46,7 +53,8 @@ interface Formule { id: string; nom: string; prixMensuel: number; boutiques: num
 interface Plan { id: string; formuleNom: string; boutiquesMax: number; prixMensuel: number; statut: string; reference: string; expireLe: string | null }
 interface Article { id: string; nom: string; image: string | null; prix: number }
 interface Donnees {
-  type: 'reseller' | 'supplier'; boutiques: Boutique[]; articles: Record<string, string[]>; catalogue: Article[];
+  /** `articles[id]` : null quand la sélection de cette boutique est illisible (jamais « vide »). */
+  type: 'reseller' | 'supplier'; boutiques: Boutique[]; articles: Record<string, string[] | null>; catalogue: Article[];
   limite: number; formule: Formule; planActif: Plan | null; demande: Plan | null; disponible: boolean;
   formules: Formule[]; numeroPaiement: string;
 }
@@ -128,7 +136,12 @@ export default function MesBoutiquesPage() {
 
       {/* Boutiques */}
       <div className="space-y-3">
-        {d.boutiques.map((b) => (
+        {d.boutiques.map((b) => {
+          // Sélection d'une boutique supplémentaire : une liste, ou rien de sûr
+          // (null, ou clé absente). Jamais « [] » par défaut : voir l'en-tête.
+          const choisis = d.articles[b.id];
+          const illisible = !b.principale && !Array.isArray(choisis);
+          return (
           <Card key={b.id} className="space-y-3">
             <div className="flex items-start gap-3">
               <span className="w-10 h-10 rounded-full bg-suguba-menthe text-suguba-profond flex items-center justify-center shrink-0"><Store className="w-5 h-5" /></span>
@@ -136,7 +149,7 @@ export default function MesBoutiquesPage() {
                 <p className="text-sm font-semibold text-slate-900 truncate">{b.nom}</p>
                 <p className="text-xs text-slate-500">/boutique/{b.slug}{b.quartier ? ` · ${b.quartier}` : ''}</p>
                 <p className="text-xs text-slate-600 mt-0.5">
-                  {b.principale ? 'Boutique principale' : `${(d.articles[b.id] || []).length} article(s) choisis`}
+                  {b.principale ? 'Boutique principale' : Array.isArray(choisis) ? `${choisis.length} article(s) choisis` : 'Articles indisponibles pour le moment'}
                 </p>
               </div>
               {b.principale && <StatusPill ton="info">Principale</StatusPill>}
@@ -150,19 +163,29 @@ export default function MesBoutiquesPage() {
                 <Button href={pageMesArticles(b.id)} variant="secondary" size="sm">
                   <ListChecks className="w-4 h-4" />Choisir les articles
                 </Button>
-              ) : (
+              ) : illisible ? null : (
                 <Button variant="secondary" size="sm" onClick={() => setSelection(selection === b.id ? null : b.id)}>
                   <ListChecks className="w-4 h-4" />Choisir les articles
                 </Button>
               )}
+              {illisible && (
+                <Button variant="secondary" size="sm" onClick={() => { charger(); }}>
+                  <RefreshCw className="w-4 h-4" />Réessayer
+                </Button>
+              )}
             </div>
+            {illisible && (
+              <p role="alert" className="text-xs text-amber-800">
+                Les articles de cette boutique n’ont pas pu être lus. Rien n’a changé : réessayez avant de les modifier.
+              </p>
+            )}
             {!b.principale && d.type === 'reseller' && (
               <p className="text-xs text-slate-600">Logo, couverture et nom : touchez « Voir », puis les crayons de la boutique.</p>
             )}
-            {selection === b.id && (
+            {selection === b.id && Array.isArray(choisis) && (
               <SelecteurArticles
                 catalogue={d.catalogue}
-                choisis={d.articles[b.id] || []}
+                choisis={choisis}
                 onEnregistrer={async (ids) => {
                   try { await poster({ action: 'articles', boutiqueId: b.id, produits: ids }); toast('Articles enregistrés.', { ton: 'succes' }); setSelection(null); await charger(); }
                   catch (e) { toast((e as Error).message, { ton: 'erreur' }); }
@@ -170,7 +193,8 @@ export default function MesBoutiquesPage() {
               />
             )}
           </Card>
-        ))}
+          );
+        })}
       </div>
 
       {/* Nouvelle boutique */}

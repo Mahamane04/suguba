@@ -198,6 +198,41 @@
  "journal": [
   {
    "date": "2026-10-04",
+   "titre": "Boutique revendeur : corrections de la relecture finale",
+   "demande": "« une fois finis tu lance le code sans t'arrêter ensuite tu met en ligne sans t'arrêter ni me poser de question »",
+   "realise": [
+    "Dernière relecture avant la mise en ligne : 6 constats, tous vérifiés dans le code, tous fondés, tous corrigés.",
+    "Affiche pour mon statut (catalogue revendeur) : sur les téléphones un peu anciens (Chrome d’avant fin 2024, iPhone sous iOS 16 ou 17), la fenêtre s’ouvrait enfermée dans la carte de l’article, donc inutilisable. Le défaut venait de la correction de la veille (rond de partage WhatsApp rogné sur les cartes étroites) : la carte entière se mesurait elle-même. C’est maintenant la seule rangée des deux boutons qui se mesure ; la fenêtre s’ouvre en plein écran sur tous les téléphones, et le rond de partage reste entier.",
+    "Nom du compte corrigé : une boutique créée au tout début porte le nom complet du revendeur (« Awa Traore Dialo »), que la vitrine cache en « Awa D. » tant que le compte porte ce nom. Si le revendeur corrigeait son nom (« Awa Traoré Diallo »), l’ancien nom n’était plus reconnu comme le sien : il s’affichait en entier, en titre, à tous les visiteurs. Désormais, quand le nom du compte change (démarrage, étape « Votre nom complet », ou fin d’inscription), ses boutiques sans enseigne prennent d’abord le nouveau « Prénom I. », puis le nom est enregistré. Si cette mise à jour échoue, le nom n’est pas changé : « Votre nom n’a pas pu être changé pour le moment. Réessayez. » Une enseigne choisie (« Awa Mode ») et l’adresse de la boutique ne sont pas touchées.",
+    "Nom de compte réservé à Suguba : un compte nommé « Suguba », « Suguba Officiel », « Admin », « Support »… s’affichait « La sélection de Suguba », « Nouveautés chez Suguba », « Recommandé par Suguba ». Ce nom est maintenant refusé pour un revendeur (« Ce nom est réservé à Suguba. Indiquez votre nom. ») au démarrage, à la fin de l’inscription et quand l’équipe crée le compte. Pour un compte qui le porte déjà, la vitrine, l’annuaire, la recherche, les boutiques suivies, les annonces aux abonnés et la fiche produit affichent « Revendeur partenaire ».",
+    "Boutique d’un revendeur créée par l’équipe (Boutiques › Créer une boutique › Nouveau compte ou compte existant) ou par « Mes boutiques › Créer une boutique » avant d’avoir ouvert « Ma boutique » : le nom tapé était enregistré tel quel, et l’adresse en était tirée — le nom complet de la personne en titre et dans /boutique/awa-traore-diallo. Sans enseigne, la boutique s’appelle maintenant « Awa D. » à l’adresse /boutique/awa-d, comme celle que le revendeur ouvre lui-même ; une enseigne (« Awa Mode ») est gardée. L’écran de l’équipe n’annonce plus « Par défaut : le nom de la personne » pour un revendeur, mais « Par défaut : prénom et initiale (Awa D.) », avec l’explication sous le champ.",
+    "Visites de boutique : une seule machine pouvait gonfler les visites d’une boutique à volonté (le « visiteur » se reconnaissait aussi au navigateur déclaré, que l’appelant choisit), et un autre site pouvait faire compter ses propres visiteurs. Désormais : un appel venu d’un autre site n’est pas compté ; depuis une même adresse internet, 30 visites au plus par jour pour une même boutique et 200 toutes boutiques confondues. Rien de plus n’est gardé sur le visiteur : une empreinte de son adresse, illisible et différente chaque jour — jamais l’adresse elle-même, rien sur l’appareil.",
+    "Mes boutiques (fournisseur), boutique supplémentaire : quand la liste de ses articles ne pouvait pas être lue, la page affichait « 0 article(s) choisis » et ouvrait la liste à cocher sans aucune coche ; « Enregistrer » retirait alors TOUS les articles de la boutique. La page dit maintenant « Articles indisponibles pour le moment », n’ouvre pas la liste et propose « Réessayer ». Une boutique vraiment vide affiche toujours « 0 article(s) choisis ».",
+    "Changement de nom au démarrage : si le profil ne peut pas être lu, rien n’est enregistré (« Votre profil est indisponible. Réessayez. »). Avant, les réglages du profil repartaient de zéro sur une lecture ratée, numéro Mobile Money de versement compris.",
+    "Tests : tests/ma-boutique-relecture-finale.test.cjs (14 tests, tous en échec sur le code d’avant) ; suite complète réussie. Aucun nouveau SQL, aucune nouvelle dépendance."
+   ],
+   "ecarts": [
+    "Publié le 4 octobre, à la suite. Le fichier supabase/A-EXECUTER-2026-10-03-vitrine-boutique.sql reste à exécuter en production par le fondateur : aucune de ces corrections n’en dépend, et rien ne s’y ajoute.",
+    "Rien n’a été regardé à l’écran pour ces corrections (aucun serveur lancé, production en lecture seule) : elles sont vérifiées par les tests. À regarder en priorité : « Affiche pour mon statut » depuis le catalogue revendeur sur un téléphone ancien, et le rond de partage WhatsApp d’une carte à 390 px. Captures du guide non refaites : les écrans ne changent que dans un cas de panne (« Mes boutiques ») ou sur l’écran de l’équipe, qui n’a pas de capture.",
+    "Boutiques DÉJÀ concernées : non corrigées. Si un revendeur a changé le nom de son compte avant cette correction, sa boutique peut encore afficher son ancien nom complet en titre. À vérifier par le fondateur dans Supabase › SQL Editor, en lecture seule : SELECT s.slug, s.name, p.full_name FROM stores s JOIN profiles p ON p.id = s.owner_id WHERE s.owner_type = 'reseller' ORDER BY s.created_at; — une boutique dont le nom ressemble à un nom de personne différent du nom du compte est à renommer (crayon de la vitrine, ou à la main).",
+    "Comptes déjà nommés « Suguba », « Admin »… : ils ne sont pas renommés. Leur vitrine affiche « La sélection de Revendeur partenaire » jusqu’à ce que la personne indique son nom au démarrage.",
+    "Visites : des visiteurs qui partagent la même adresse internet (même opérateur mobile, même Wi-Fi) partagent le plafond de 30 visites par boutique et par jour ; une boutique très visitée depuis un même réseau peut donc être sous-comptée. Ces chiffres ne servent à aucun paiement ni à aucune mission. Les plafonds (30 et 200) sont fixés dans le code : à ajuster si les statistiques paraissent trop basses.",
+    "Mes boutiques (fournisseur) : enregistrer depuis une page restée ouverte pendant qu’un article était ajouté depuis un autre téléphone retire encore cet article (la liste envoyée est celle de la page). Défaut plus ancien, non traité ici.",
+    "Écrans du fournisseur « Mon réseau de revendeurs » et « Mon équipe » : ils abrègent les noms eux-mêmes (« Awa D. ») et n’appliquent pas le nom neutre « Revendeur partenaire ». Ils ne sont pas publics."
+   ],
+   "pages": [
+    "rev-catalogue",
+    "vitrine-boutique",
+    "rev-demarrer",
+    "inscription-fin",
+    "mes-boutiques",
+    "adm-boutiques",
+    "rev-boutique-stats"
+   ],
+   "statut": "en ligne"
+  },
+  {
+   "date": "2026-10-04",
    "titre": "Boutique revendeur : vérification à l’écran, captures et mise en ligne",
    "demande": "« une fois finis tu lance le code sans t'arrêter ensuite tu met en ligne sans t'arrêter ni me poser de question »",
    "realise": [
@@ -3638,7 +3673,7 @@
    "elements": [
     {
      "nom": "Enregistrer",
-     "role": "Envoie le dossier. Revendeur : accès immédiat. Fournisseur et livreur : validation par Suguba."
+     "role": "Envoie le dossier. Revendeur : accès immédiat. Fournisseur et livreur : validation par Suguba. Revendeur : un nom réservé à Suguba (« Suguba », « Admin »…) est refusé — « Ce nom est réservé à Suguba. Indiquez votre nom. »"
     },
     {
      "nom": "Client",
@@ -3806,6 +3841,10 @@
     {
      "nom": "Continuer",
      "role": "Enregistre l’étape et passe à la suivante."
+    },
+    {
+     "nom": "Votre nom complet",
+     "role": "Première étape. Seuls le prénom et l’initiale apparaissent sur la boutique. Un nom réservé à Suguba (« Suguba », « Admin »…) est refusé : « Ce nom est réservé à Suguba. Indiquez votre nom. » Corriger son nom met d’abord à jour le « Prénom I. » de ses boutiques sans enseigne ; si cela échoue, le nom n’est pas changé (« Votre nom n’a pas pu être changé pour le moment. Réessayez. »)."
     },
     {
      "nom": "Terminer plus tard",
@@ -3990,7 +4029,7 @@
     },
     {
      "nom": "Icône image",
-     "role": "Crée une affiche du produit pour le statut WhatsApp."
+     "role": "Crée une affiche du produit pour le statut WhatsApp. La fenêtre s’ouvre en plein écran sur tous les téléphones (sur les plus anciens, elle restait enfermée dans la carte de l’article : corrigé le 4 octobre)."
     },
     {
      "nom": "+ Vente",
@@ -4199,7 +4238,7 @@
     },
     {
      "nom": "Titre",
-     "role": "L’enseigne seule dès que le revendeur a choisi un nom de boutique, sinon « La sélection de Awa D. ». Jamais le nom complet, même pour une boutique créée à son nom. Jamais non plus « Revendeur Suguba » (nom par défaut) ni un nom réservé à Suguba seul en titre. Même nom public dans l’annuaire des boutiques, la recherche et les boutiques suivies."
+     "role": "L’enseigne seule dès que le revendeur a choisi un nom de boutique, sinon « La sélection de Awa D. ». Jamais le nom complet, même pour une boutique créée à son nom. Jamais non plus « Revendeur Suguba » (nom par défaut) ni un nom réservé à Suguba seul en titre. Même nom public dans l’annuaire des boutiques, la recherche et les boutiques suivies. Un compte dont le nom est réservé à Suguba (« Suguba », « Admin »…) s’affiche « Revendeur partenaire ». Si le revendeur corrige le nom de son compte, une boutique qui portait son ancien nom prend le nouveau « Prénom I. » : l’ancien nom complet ne s’affiche jamais."
     },
     {
      "nom": "Présentation · Lire la suite",
@@ -4516,7 +4555,7 @@
     },
     {
      "nom": "Visites",
-     "role": "Clients restés au moins 2 secondes sur la boutique, chacun compté une fois par jour ; « N personnes différentes ». Ni le propriétaire ni les aperçus de liens WhatsApp ne comptent. Les visites de l’ancienne adresse /r/<code> ne sont pas comptées (rappelé en bas de page)."
+     "role": "Clients restés au moins 2 secondes sur la boutique, chacun compté une fois par jour ; « N personnes différentes ». Ni le propriétaire ni les aperçus de liens WhatsApp ne comptent. Les visites de l’ancienne adresse /r/<code> ne sont pas comptées (rappelé en bas de page). Depuis une même adresse internet : au plus 30 visites comptées par jour pour une boutique (200 toutes boutiques confondues) ; un appel venu d’un autre site n’est pas compté."
     },
     {
      "nom": "Commandes à votre nom",
@@ -4705,11 +4744,11 @@
     },
     {
      "nom": "Créer une boutique",
-     "role": "Nom et quartier, dans la limite de la formule. Pour un revendeur, un nom réservé à Suguba (« Suguba », « Admin »…) est refusé ; aucune boutique ne reçoit une adresse réservée (/boutique/suguba…). Elle ne reçoit jamais non plus l’ancienne adresse d’une boutique qui a changé d’adresse : son adresse porte alors « -2 »."
+     "role": "Nom et quartier, dans la limite de la formule. Pour un revendeur, un nom réservé à Suguba (« Suguba », « Admin »…) est refusé ; aucune boutique ne reçoit une adresse réservée (/boutique/suguba…). Elle ne reçoit jamais non plus l’ancienne adresse d’une boutique qui a changé d’adresse : son adresse porte alors « -2 ». Revendeur : son propre nom n’est jamais enregistré comme nom de boutique ni dans l’adresse — sans enseigne, la boutique s’appelle « Awa D. » à l’adresse /boutique/awa-d ; si son profil ne peut pas être lu, rien n’est créé."
     },
     {
      "nom": "Choisir les articles",
-     "role": "Chaque boutique supplémentaire a sa propre sélection. Revendeur : ouvre « Mes articles » de cette boutique (ajouter, ranger, coups de cœur, retirer) ; seuls les articles qui lui rapportent quelque chose y sont proposés. Fournisseur : liste à cocher sur place, avec recherche (les accents sont ignorés), lignes de 60 px, puis « Enregistrer N article(s) ». Dans les deux cas, enregistrer ne vide plus la boutique : seuls les articles décochés sont retirés, l’ordre des autres est gardé. La principale se gère dans « Ma boutique ». Fournisseur : un produit que Suguba a refusé ou archivé depuis (plus en vente) n’est plus compté dans « N article(s) choisis » et sort de la boutique au premier enregistrement ; il ne compte pas dans la limite de 60. Si la base ne répond pas : « … pour le moment. Réessayez. », et rien n’est modifié."
+     "role": "Chaque boutique supplémentaire a sa propre sélection. Revendeur : ouvre « Mes articles » de cette boutique (ajouter, ranger, coups de cœur, retirer) ; seuls les articles qui lui rapportent quelque chose y sont proposés. Fournisseur : liste à cocher sur place, avec recherche (les accents sont ignorés), lignes de 60 px, puis « Enregistrer N article(s) ». Dans les deux cas, enregistrer ne vide plus la boutique : seuls les articles décochés sont retirés, l’ordre des autres est gardé. La principale se gère dans « Ma boutique ». Fournisseur : un produit que Suguba a refusé ou archivé depuis (plus en vente) n’est plus compté dans « N article(s) choisis » et sort de la boutique au premier enregistrement ; il ne compte pas dans la limite de 60. Si la base ne répond pas : « … pour le moment. Réessayez. », et rien n’est modifié. Si les articles d’une boutique n’ont pas pu être lus : « Articles indisponibles pour le moment » (jamais « 0 article(s) choisis »), pas de liste à cocher, et « Réessayer »."
     },
     {
      "nom": "Voir · Gérer",
@@ -6621,7 +6660,7 @@
    "elements": [
     {
      "nom": "Créer une boutique",
-     "role": "Pour un compte existant (recherche par nom, e-mail ou téléphone) ou pour un nouveau compte : la personne se connecte ensuite avec l’e-mail saisi."
+     "role": "Pour un compte existant (recherche par nom, e-mail ou téléphone) ou pour un nouveau compte : la personne se connecte ensuite avec l’e-mail saisi. Boutique d’un revendeur : sans enseigne, elle s’appelle « Awa D. » (prénom et initiale) et son adresse en est tirée — jamais le nom complet de la personne ; l’indication du champ le dit. Un nom de personne réservé à Suguba (« Suguba », « Admin »…) est refusé pour un compte revendeur."
     },
     {
      "nom": "Formules Pro",

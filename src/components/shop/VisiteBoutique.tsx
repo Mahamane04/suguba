@@ -18,6 +18,11 @@ export const DELAI_VISITE_MS = 2000;
  * Le serveur (/api/reseau/visite-boutique) écarte encore le propriétaire et les
  * robots d'aperçu, et ne compte qu'une visite par visiteur et par jour. Rien ne
  * s'affiche, rien ne bloque la page si la mesure échoue.
+ *
+ * Relecture finale (2026-10-04) : l'appel doit rester un fetch vers la MÊME
+ * origine (adresse relative). Le serveur ne compte rien quand le navigateur
+ * annonce un appel venu d'un autre site (Sec-Fetch-Site), et plafonne les
+ * visites comptées par adresse IP et par jour.
  */
 export default function VisiteBoutique({ slug, via = null }: { slug: string; via?: string | null }) {
   useEffect(() => {

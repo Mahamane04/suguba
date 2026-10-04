@@ -6,7 +6,7 @@
  */
 import { getSupabaseAdmin } from '../supabase-admin';
 import { slugifier } from '../shop';
-import { adresseReservee, nomPublicBoutique } from '../enseigne';
+import { adresseReservee, estEnseigne, nomPublic, nomPublicBoutique } from '../enseigne';
 import { cleClient } from './attribution';
 import { classerParProximite, quartierReconnu, type NiveauProximite } from './proximite';
 import { OPTION_ABSENTE, lireReglages, normaliserReglages, type ReglagesBoutique } from '../boutique-reglages';
@@ -140,6 +140,68 @@ export async function nomsPublicsRevendeurs<T>(
     b.nom = nomPublicBoutique(b.nom, nomsComplets.get(b.proprietaireId));
     return true;
   });
+}
+
+/**
+ * Changement du nom du COMPTE (relecture finale du chantier boutique, 2026-10-04) :
+ * à appeler AVANT d'écrire profiles.full_name, par toute route qui l'écrit.
+ *
+ * estEnseigne compare le nom de la boutique au nom du compte. Une boutique créée
+ * avant le lot 2 porte le nom complet (« Awa Traore Dialo ») : tant que le compte
+ * porte ce nom, la vitrine affiche « Awa D. ». Le compte corrigé en « Awa Traoré
+ * Diallo », l'ancien nom complet n'était plus reconnu comme le sien : il passait
+ * pour une enseigne et s'affichait en clair, en titre, à n'importe quel visiteur.
+ *
+ * Les boutiques revendeur du compte dont le nom n'était PAS une enseigne avec
+ * l'ANCIEN nom reçoivent donc le « Prénom I. » du NOUVEAU nom, avant le profil :
+ * entre les deux écritures, la vitrine affiche l'ancien ou le nouveau « Prénom
+ * I. », jamais un nom complet. Une enseigne choisie (« Awa Mode ») n'est pas
+ * touchée, l'adresse de la boutique non plus.
+ *
+ *  - `ok: false` : boutiques illisibles ou écriture en échec. L'appelant REFUSE le
+ *    changement de nom ; les boutiques déjà réalignées sont remises comme avant.
+ *  - `annuler` : à appeler si l'écriture du profil échoue ensuite (au mieux : un
+ *    échec ici laisse « Prénom I. » du nom demandé, jamais un nom complet).
+ * Nom inchangé : aucune lecture. Table stores absente (42P01, PGRST205) : le compte
+ * n'a aucune boutique, rien à réaligner.
+ */
+export async function realignerBoutiquesAvantNouveauNom(
+  a: Admin,
+  proprietaireId: string,
+  ancienNom: string | null | undefined,
+  nouveauNom: string,
+): Promise<{ ok: true; annuler: () => Promise<void> } | { ok: false }> {
+  const rien = { ok: true as const, annuler: async () => undefined };
+  if (String(ancienNom || '').trim() === nouveauNom.trim()) return rien;
+
+  const nom = nomPublic(nouveauNom);
+  const faites: { id: string; name: string | null }[] = [];
+  // Identité : toujours le compte donné par l'appelant (la session), jamais un
+  // identifiant de boutique seul.
+  const ecrire = (id: string, name: string | null) => a.from('stores').update({ name, updated_at: new Date().toISOString() })
+    .eq('id', id).eq('owner_type', 'reseller').eq('owner_id', proprietaireId);
+  const annuler = async () => {
+    for (const b of faites.splice(0)) {
+      try { await ecrire(b.id, b.name); } catch { /* au mieux : « Prénom I. » reste, jamais un nom complet */ }
+    }
+  };
+  try {
+    const { data, error } = await a.from('stores').select('id, name').eq('owner_type', 'reseller').eq('owner_id', proprietaireId);
+    if (error) return error.code === '42P01' || error.code === 'PGRST205' ? rien : { ok: false };
+    for (const b of (Array.isArray(data) ? data : []) as { id: string; name: string | null }[]) {
+      if (estEnseigne(b.name, ancienNom) || b.name === nom) continue;
+      const { error: echec } = await ecrire(b.id, nom);
+      if (echec) {
+        await annuler();
+        return { ok: false };
+      }
+      faites.push({ id: b.id, name: b.name });
+    }
+  } catch {
+    await annuler();
+    return { ok: false };
+  }
+  return { ok: true, annuler };
 }
 
 /**

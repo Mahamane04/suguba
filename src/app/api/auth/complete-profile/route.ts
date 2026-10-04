@@ -1,10 +1,12 @@
 import { verifyActiveSession } from '@/lib/active-session';
 import { NextRequest, NextResponse } from 'next/server';
 import { parrainageAInscription } from '@/lib/reseau/parrainage';
-import { createSessionToken, SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS, SugubaRole } from '@/lib/session';
+import { createSessionToken, rolesDeLaSession, SESSION_COOKIE_NAME, SESSION_COOKIE_OPTIONS, SugubaRole } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { chargerRoles, choisirRoleActif } from '@/lib/profile-roles';
 import { attribuerSlugFournisseur } from '@/lib/shop';
+import { nomReserve } from '@/lib/enseigne';
+import { realignerBoutiquesAvantNouveauNom } from '@/lib/reseau/boutiques';
 
 // Rôles qu'une personne peut choisir elle-même en finalisant son inscription.
 const ROLES_INSCRIPTION: SugubaRole[] = ['customer', 'reseller', 'supplier', 'driver', 'diaspora'];
@@ -23,6 +25,14 @@ const ROLES_INSCRIPTION: SugubaRole[] = ['customer', 'reseller', 'supplier', 'dr
  *
  * Le numéro est désormais OBLIGATOIRE : c'est lui qui marque un profil comme
  * complet, et le middleware renvoie ici tout profil qui ne l'a pas.
+ *
+ * Relecture finale du chantier boutique (2026-10-04) — cette route écrit aussi
+ * profiles.full_name, et peut être rappelée par un compte déjà complété :
+ *  - compte revendeur : un nom réservé à Suguba (« Suguba », « Admin »…) est
+ *    refusé avant toute écriture (il s'affichait « La sélection de Suguba ») ;
+ *  - les boutiques revendeur du compte sont réalignées AVANT le profil, comme dans
+ *    PATCH /api/reseller/me (realignerBoutiquesAvantNouveauNom) : sinon l'ancien
+ *    nom complet d'une boutique passait pour une enseigne et s'affichait en clair.
  */
 export async function POST(req: NextRequest) {
   const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value, true);
@@ -54,11 +64,19 @@ export async function POST(req: NextRequest) {
 
     const { data: profil, error: lectureErr } = await admin
       .from('profiles')
-      .select('phone, role, reseller_code')
+      .select('phone, role, reseller_code, full_name')
       .eq('id', session.uid)
       .single();
     if (lectureErr || !profil) {
       return NextResponse.json({ error: 'Profil introuvable. Reconnectez-vous.' }, { status: 404 });
+    }
+
+    // Nom réservé à Suguba : refusé pour un compte revendeur (rôle demandé, actif
+    // ou déjà détenu), avant toute écriture — même règle que PATCH /api/reseller/me.
+    const nomComplet = fullName.trim();
+    const compteRevendeur = roleDemande === 'reseller' || session.role === 'reseller' || 'reseller' in rolesDeLaSession(session);
+    if (compteRevendeur && nomReserve(nomComplet)) {
+      return NextResponse.json({ error: 'Ce nom est réservé à Suguba. Indiquez votre nom.' }, { status: 400 });
     }
 
     // ── Choix (ou correction) du rôle ──────────────────────────────────────
@@ -97,12 +115,22 @@ export async function POST(req: NextRequest) {
     }
 
     // ── Profil commun ──────────────────────────────────────────────────────
-    const update: Record<string, unknown> = { full_name: fullName.trim(), phone };
+    const update: Record<string, unknown> = { full_name: nomComplet, phone };
     if (city) update.city = city;
     if (metadata && typeof metadata === 'object') update.metadata = metadata;
 
+    // Nom changé : les boutiques revendeur du compte d'abord (aucune pour un
+    // nouveau compte : une seule lecture). Réalignement impossible : le nom n'est
+    // pas changé — jamais un ancien nom complet rendu public.
+    const boutiques = await realignerBoutiquesAvantNouveauNom(admin, session.uid, profil.full_name ?? null, nomComplet);
+    if (!boutiques.ok) {
+      return NextResponse.json({ error: 'Votre nom n’a pas pu être enregistré pour le moment. Réessayez.' }, { status: 503 });
+    }
+
     const { error } = await admin.from('profiles').update(update).eq('id', session.uid);
     if (error) {
+      // Le nom n'a pas changé : les boutiques reprennent le leur.
+      await boutiques.annuler();
       // Colonne phone UNIQUE : un numéro déjà pris ne doit pas finir en 500
       // muet, ni en cul-de-sac. `dejaCompte` : le client (register/complete)
       // propose alors de se connecter plutôt que de réessayer un formulaire

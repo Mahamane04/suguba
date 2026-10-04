@@ -15,7 +15,7 @@ import { randomBytes } from 'node:crypto';
 import { getSupabaseAdmin } from '../supabase-admin';
 import { partageable, slugifier } from '../shop';
 import { positionAjout, trierSelection, type LigneSelection } from '../boutique-ordre';
-import { adresseReservee } from '../enseigne';
+import { adresseReservee, nomPublicBoutique } from '../enseigne';
 import { chargerReglages } from '../platform-settings';
 import { FORMULES_BOUTIQUES_PAR_DEFAUT, type FormuleBoutique } from '../pricing';
 import { adressesDejaPortees, boutiqueParSlug, lireBoutiqueDuCompte, type BoutiqueReseau } from './boutiques';
@@ -89,13 +89,24 @@ export async function situationFormule(type: TypeCompteBoutique, profileId: stri
 /**
  * Crée une boutique SUPPLÉMENTAIRE. `forcer` : création par l'admin, qui
  * peut dépasser la limite de la formule (décision commerciale de Suguba).
+ *
+ * Relecture finale du chantier boutique (2026-10-04) — REVENDEUR : jamais le nom
+ * complet du compte dans stores.name ni dans l'adresse, même règle que POST
+ * /api/reseller/boutique (nomPublicBoutique). Cette fonction crée aussi la boutique
+ * PRINCIPALE d'un compte qui n'en a pas : « admin › créer un compte » (le nom de
+ * la boutique vaut par défaut celui de la personne) et « Mes boutiques › Nouvelle
+ * boutique » avant d'avoir ouvert « Ma boutique ». Le nom tapé y était enregistré
+ * tel quel : « Awa Traoré Diallo » à l'adresse /boutique/awa-traore-diallo. Le nom
+ * du compte est lu ICI, pour les trois appelants : un nom qui n'est pas une
+ * enseigne (le sien, ou un nom réservé à Suguba) devient « Awa D. », et l'adresse
+ * en est tirée. Profil illisible : rien n'est créé.
  */
 export async function creerBoutiqueSupplementaire(params: {
   type: TypeCompteBoutique; proprietaireId: string; nom: string; quartier?: string | null; forcer?: boolean;
 }): Promise<{ ok: true; boutique: BoutiqueReseau } | { ok: false; erreur: string; statut: number }> {
   const a = getSupabaseAdmin();
   if (!a) return { ok: false, erreur: 'Base indisponible.', statut: 503 };
-  const nom = params.nom.trim().slice(0, 80);
+  let nom = params.nom.trim().replace(/\s+/g, ' ').slice(0, 80);
   if (nom.length < 2) return { ok: false, erreur: 'Donnez un nom à la boutique.', statut: 400 };
   if (params.quartier && !quartierReconnu(params.quartier)) return { ok: false, erreur: 'Choisissez un quartier de la liste.', statut: 400 };
 
@@ -106,6 +117,12 @@ export async function creerBoutiqueSupplementaire(params: {
     if (existantes.length >= limite) {
       return { ok: false, erreur: `Votre formule permet ${limite} boutique${limite > 1 ? 's' : ''}. Passez à une formule supérieure pour en ouvrir une autre.`, statut: 402 };
     }
+  }
+
+  if (params.type === 'reseller') {
+    const { data: profil, error } = await a.from('profiles').select('full_name').eq('id', params.proprietaireId).maybeSingle();
+    if (error || !profil) return { ok: false, erreur: 'Création impossible pour le moment.', statut: 503 };
+    nom = nomPublicBoutique(nom, (profil as { full_name?: string | null }).full_name ?? null);
   }
 
   // Jamais une adresse réservée à Suguba (« suguba-officiel », « admin »…),
@@ -170,13 +187,21 @@ export async function produitsEnVenteDuFournisseur(fournisseurId: string, ids: s
   return new Set(data.map((p: any) => String(p.id)));
 }
 
-/** Articles d'une boutique supplémentaire, dans l'ordre de sa vitrine (même tri que « Mes articles »). */
-export async function articlesDeLaBoutique(boutiqueId: string): Promise<string[]> {
+/**
+ * Articles d'une boutique supplémentaire, dans l'ordre de sa vitrine (même tri que « Mes articles »).
+ *
+ * null quand la lecture échoue (relecture finale du chantier boutique, 2026-10-04),
+ * jamais une liste vide : « aucun article » inventé sur une panne ouvrait la liste
+ * à cocher du fournisseur sans aucune coche, et son enregistrement retirait alors
+ * TOUS les articles de la boutique (ils passaient pour décochés). L'appelant
+ * signale la boutique illisible et ne propose pas la liste.
+ */
+export async function articlesDeLaBoutique(boutiqueId: string): Promise<string[] | null> {
   const a = getSupabaseAdmin();
-  if (!a) return [];
+  if (!a) return null;
   const { data, error } = await a.from('store_products').select('product_id, position, added_at')
     .eq('store_id', boutiqueId).order('position', { ascending: true });
-  if (error || !data) return [];
+  if (error || !Array.isArray(data)) return null;
   return trierSelection(data as LigneSelection[]).map((l) => l.product_id);
 }
 

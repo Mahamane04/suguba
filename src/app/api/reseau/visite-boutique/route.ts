@@ -3,7 +3,7 @@ import { ipClient } from '@/lib/ip-client';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { SESSION_COOKIE_NAME, verifySessionToken } from '@/lib/session';
 import { boutiqueParSlug } from '@/lib/reseau/boutiques';
-import { empreinteVisiteur, journaliser, lienParCode } from '@/lib/reseau/db';
+import { empreinteAdresseDuJour, empreinteVisiteur, journaliser, lienParCode } from '@/lib/reseau/db';
 import { estRobotApercu } from '@/lib/reseau/missions';
 import { normaliserCodeLien } from '@/lib/reseau/codes';
 import { origineDeVisite } from '@/lib/reseau/stats';
@@ -24,15 +24,38 @@ import { origineDeVisite } from '@/lib/reseau/stats';
  *
  * Journal : STORE_VIEW {reseller_id ou supplier_id, subject_type 'store',
  * subject_ref = id de la boutique (stable si son adresse change), link_code = via,
- * meta {v: empreinte salée du visiteur, canal}}. Ni IP ni navigateur en clair.
+ * meta {v: empreinte salée du visiteur, ipj: empreinte salée de l'adresse IP seule,
+ * qui change chaque jour, canal}}. Ni IP ni navigateur en clair.
  * Ces chiffres ne servent à aucun paiement ni à aucune mission.
+ *
+ * Relecture finale (2026-10-04) — limites d'abus. La route est publique et le
+ * « visiteur » se reconnaissait à son IP ET à son navigateur déclaré, que
+ * l'appelant choisit : une seule machine gonflait les visites d'une boutique à
+ * volonté, et une page d'un autre site pouvait faire émettre l'appel par ses
+ * propres visiteurs. Désormais :
+ *  - appel venu d'un autre site (Sec-Fetch-Site présent et différent de
+ *    « same-origin ») : rien n'est compté — même règle que les routes du partage,
+ *    de l'annonce et de l'adresse. En-tête absent (navigateur ancien) : accepté ;
+ *  - par adresse IP et par jour : 30 visites au plus pour une même boutique, 200
+ *    au plus toutes boutiques confondues. Comptées sur `meta.ipj`, en UNE lecture
+ *    sur l'index existant (event, occurred_at) : ni index ni migration. Lecture en
+ *    échec : rien n'est écrit. Des visiteurs qui partagent la même adresse (même
+ *    opérateur mobile, même Wi-Fi) partagent ces plafonds.
  */
 export const dynamic = 'force-dynamic';
+
+/** Visites comptées par adresse IP et par jour : pour une même boutique, puis toutes boutiques confondues. */
+const PLAFOND_PAR_BOUTIQUE = 30;
+const PLAFOND_PAR_ADRESSE = 200;
 
 const sansCorps = () => new NextResponse(null, { status: 204 });
 
 export async function POST(req: NextRequest) {
   try {
+    // Toujours 204 : un appel refusé n'apprend rien à celui qui l'émet.
+    const site = req.headers.get('sec-fetch-site');
+    if (site && site !== 'same-origin') return sansCorps();
+
     const corps = await req.json().catch(() => ({}));
     // Adresse de boutique seulement (lettres, chiffres, tirets) : la recherche par
     // adresse ne tolère pas les jokers (« % », « _ ») d'une valeur fabriquée.
@@ -50,9 +73,11 @@ export async function POST(req: NextRequest) {
     const admin = getSupabaseAdmin();
     if (!admin) return sansCorps();
 
-    const visiteur = empreinteVisiteur(ipClient(req), userAgent);
+    const ip = ipClient(req);
+    const visiteur = empreinteVisiteur(ip, userAgent);
     const debutDuJour = new Date();
     debutDuJour.setUTCHours(0, 0, 0, 0); // fuseau de Bamako = UTC
+    const adresseDuJour = empreinteAdresseDuJour(ip, debutDuJour.toISOString().slice(0, 10));
 
     // Une visite par visiteur, par boutique et par jour : lecture préalable sur
     // l'index (event, occurred_at). Lecture en échec : rien n'est écrit.
@@ -65,6 +90,18 @@ export async function POST(req: NextRequest) {
       .eq('meta->>v', visiteur)
       .limit(1);
     if (error || !Array.isArray(deja) || deja.length > 0) return sansCorps();
+
+    // Plafonds par adresse IP (relecture finale, 2026-10-04) : les visites déjà
+    // comptées aujourd'hui depuis cette adresse, en une lecture (200 lignes au plus).
+    const { data: duJour, error: erreurPlafond } = await admin
+      .from('analytics_events')
+      .select('subject_ref')
+      .eq('event', 'STORE_VIEW')
+      .gte('occurred_at', debutDuJour.toISOString())
+      .eq('meta->>ipj', adresseDuJour)
+      .limit(PLAFOND_PAR_ADRESSE);
+    if (erreurPlafond || !Array.isArray(duJour) || duJour.length >= PLAFOND_PAR_ADRESSE) return sansCorps();
+    if (duJour.filter((l: { subject_ref?: string | null }) => l.subject_ref === boutique.id).length >= PLAFOND_PAR_BOUTIQUE) return sansCorps();
 
     // Origine : le lien suivi de CETTE boutique qui a amené le visiteur (/go/<code>
     // ajoute ?via=), sinon « direct ».
@@ -79,7 +116,7 @@ export async function POST(req: NextRequest) {
       sujetType: 'store',
       sujetRef: boutique.id,
       linkCode: lienDeLaBoutique ? via : null,
-      meta: { v: visiteur, canal: origineDeVisite(lienDeLaBoutique ? lien?.canal : null) },
+      meta: { v: visiteur, ipj: adresseDuJour, canal: origineDeVisite(lienDeLaBoutique ? lien?.canal : null) },
     });
   } catch (erreur) {
     console.error('[VISITE BOUTIQUE]', (erreur as Error).message);

@@ -38,6 +38,14 @@ import {
  *    chaque enregistrement (definirArticlesDeLaBoutique le retire désormais) ;
  *  - 'articles' et 'modifier' : base en panne pendant la vérification de la
  *    boutique → 503, plus « Boutique introuvable » (404).
+ *
+ * Relecture finale (2026-10-04) :
+ *  - GET : `articles[<boutique>]` vaut null quand la sélection de cette boutique
+ *    n'a pas pu être lue — jamais [] (« aucun article »). La page n'ouvre alors
+ *    pas sa liste à cocher et propose « Réessayer » : enregistrer à partir d'une
+ *    liste vide inventée retirait tous les articles de la boutique ;
+ *  - 'creer', revendeur : son propre nom n'est jamais enregistré comme nom de
+ *    boutique ni dans l'adresse (« Awa D. », voir creerBoutiqueSupplementaire).
  */
 
 /** Numéro Mobile Money de Suguba affiché pour payer une formule. */
@@ -65,16 +73,18 @@ export async function GET(req: NextRequest) {
     situationFormule(c.type, c.proprietaireId),
     formulesBoutiques(),
   ]);
-  const articles: Record<string, string[]> = Object.fromEntries(await Promise.all(
+  // null : sélection illisible (relecture finale, 2026-10-04), à ne pas confondre
+  // avec une boutique sans article.
+  const articles: Record<string, string[] | null> = Object.fromEntries(await Promise.all(
     boutiques.filter((b) => !b.principale).map(async (b) => [b.id, await articlesDeLaBoutique(b.id)] as const),
   ));
   // Fournisseur (relecture du lot 7) : seulement ses produits encore en vente, en une
   // lecture pour toutes ses boutiques. Lecture en échec : la liste reste entière (on
   // n'invente pas un retrait) ; l'enregistrement, lui, revalide de toute façon.
   if (c.type === 'supplier') {
-    const tous = Array.from(new Set(Object.values(articles).flat()));
+    const tous = Array.from(new Set(Object.values(articles).flatMap((liste) => liste || [])));
     const enVente = tous.length ? await produitsEnVenteDuFournisseur(c.proprietaireId, tous) : null;
-    if (enVente) for (const id of Object.keys(articles)) articles[id] = articles[id].filter((p) => enVente.has(p));
+    if (enVente) for (const id of Object.keys(articles)) articles[id] = articles[id]?.filter((p) => enVente.has(p)) ?? null;
   }
 
   // Articles sélectionnables : ses produits pour un fournisseur ; pour un revendeur,

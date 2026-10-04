@@ -190,7 +190,7 @@ export default function ProductCard({
 
   return (
     <article
-      className="carte-produit bg-white rounded-3xl overflow-hidden border border-slate-200 hover:border-slate-300 hover:shadow-card-hover transition-all flex flex-col"
+      className="bg-white rounded-3xl overflow-hidden border border-slate-200 hover:border-slate-300 hover:shadow-card-hover transition-all flex flex-col"
       onClickCapture={sponsorisationId ? (e) => {
         if ((e.target as HTMLElement).closest('a')) compterClic(sponsorisationId);
       } : undefined}
@@ -262,13 +262,21 @@ export default function ProductCard({
               </button>}
             </div>
           ) : (
-            <div className="flex items-center gap-2">
+            // Rangée mesurée (relecture finale, 2026-10-04) : c'est ELLE qui porte
+            // « carte-produit » (container-type), plus l'<article>. Sur la carte
+            // entière, les navigateurs d'avant fin 2024 (Chrome ≤ 128, Safari iOS
+            // 16-17) en faisaient le bloc conteneur de ses descendants fixés : la
+            // fenêtre « Affiche pour mon statut » (AfficheModal, « fixed inset-0 »,
+            // rendue dans la carte) s'ouvrait enfermée dans la carte. Cette rangée ne
+            // contient que le bouton principal et le rond de partage : ne jamais y
+            // rendre un élément en position fixe (fenêtre, feuille, bulle).
+            <div className="carte-produit flex items-center gap-2">
               {produit.ajoutDirect ? (
                 // V2 (2026-09-27) : offre simple → ajout au panier sans quitter
                 // le catalogue ; le compteur de la barre du bas le confirme.
                 // Carte étroite (2 colonnes sur téléphone, 2026-10-03) : le bouton + le
                 // partage dépassaient de 22 px et le rond WhatsApp était rogné. Sous
-                // 176 px de carte, l'icône du bouton s'efface et il se resserre
+                // 152 px de rangée, l'icône du bouton s'efface et il se resserre
                 // (règle « carte-produit » de globals.css, requête de conteneur).
                 <Button type="button" onClick={ajouter} variant="primary" size="sm" className="bouton-ajout flex-1 min-w-0"
                   aria-label={`Ajouter ${produit.nom} au panier`}>

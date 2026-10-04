@@ -21,12 +21,30 @@
  */
 export const NOM_PAR_DEFAUT = 'Revendeur Suguba';
 
-/** « Awa Traoré Diallo » → « Awa D. » : un prénom suffit pour une vitrine publique. */
+/**
+ * Nom affiché à la place d'un nom de COMPTE réservé à Suguba (relecture finale du
+ * chantier boutique, 2026-10-04). nomReserve ne s'appliquait qu'au nom de la
+ * boutique : un compte nommé « Suguba » (nom du compte Google, saisie à
+ * l'inscription) s'affichait « La sélection de Suguba », « Nouveautés chez
+ * Suguba », « Recommandé par Suguba ». Jamais une enseigne choisie non plus.
+ */
+export const NOM_NEUTRE = 'Revendeur partenaire';
+
+/**
+ * « Awa Traoré Diallo » → « Awa D. » : un prénom suffit pour une vitrine publique.
+ *
+ * Relecture finale (2026-10-04) : un nom de compte réservé à Suguba (« Suguba »,
+ * « Suguba Officiel », « Admin », « Service Client »…) donne le nom neutre
+ * « Revendeur partenaire ». C'est ICI, et nulle part ailleurs, que la règle est
+ * appliquée à l'affichage : vitrine, annuaire, recherche, boutiques suivies,
+ * annonces aux abonnés et « Recommandé par » passent tous par cette fonction
+ * (directement, ou par nomPublicBoutique).
+ */
 export function nomPublic(nomComplet: string | null): string {
   const mots = String(nomComplet || '').trim().split(/\s+/).filter(Boolean);
   if (mots.length === 0) return NOM_PAR_DEFAUT;
-  if (mots.length === 1) return mots[0];
-  return `${mots[0]} ${mots[mots.length - 1].charAt(0).toUpperCase()}.`;
+  const nom = mots.length === 1 ? mots[0] : `${mots[0]} ${mots[mots.length - 1].charAt(0).toUpperCase()}.`;
+  return nomReserve(nomComplet) || nomReserve(nom) ? NOM_NEUTRE : nom;
 }
 
 /** Mots comparables : sans accents, sans ponctuation, en minuscules. */
@@ -47,6 +65,10 @@ function mots(texte: string | null | undefined): string[] {
 export const ADRESSES_RESERVEES: readonly string[] = [
   'suguba', 'suguba-officiel', 'boutique-suguba', 'admin', 'administrateur', 'administration',
   'support', 'service-client', 'officiel', 'boutique-officielle', 'equipe', 'moderation', 'aide',
+  // Nom neutre donné par Suguba (NOM_NEUTRE, relecture finale, 2026-10-04) : ni une
+  // enseigne à choisir, ni une adresse — la boutique d'un compte au nom réservé
+  // garde l'adresse neutre /boutique/ma-boutique, comme avant.
+  'revendeur-partenaire',
 ];
 
 /**
@@ -56,6 +78,10 @@ export const ADRESSES_RESERVEES: readonly string[] = [
  * officielle. Réservé : un mot qui contient « suguba » (« Suguba », « SugubaML »,
  * « Sugu Ba »), ou un nom dont l'adresse serait réservée (« Admin », « Support »).
  * « Sugu Bamako » reste libre : « sugu » (le marché) est un mot courant.
+ *
+ * Relecture finale (2026-10-04) : la même règle vaut pour le NOM DU COMPTE d'un
+ * revendeur. Refusé à l'écriture (/api/reseller/me, /api/auth/complete-profile,
+ * admin › créer un compte) ; à l'affichage, nomPublic donne le nom neutre.
  */
 export function nomReserve(nom: string | null | undefined): boolean {
   const liste = mots(nom);
@@ -79,6 +105,10 @@ export function adresseReservee(slug: string | null | undefined): boolean {
  * Non plus (relecture du lot 2, 2026-10-03) pour le nom par défaut « Revendeur
  * Suguba », quel que soit le nom du compte rempli depuis, ni pour un nom réservé
  * à Suguba : le titre public ne doit jamais se faire passer pour Suguba.
+ *
+ * Ni (relecture finale, 2026-10-04) pour le nom neutre « Revendeur partenaire »,
+ * donné à la boutique d'un compte au nom réservé : personne ne l'a choisi (il fait
+ * partie des noms réservés, voir ADRESSES_RESERVEES).
  */
 export function estEnseigne(nomBoutique: string | null | undefined, nomComplet: string | null | undefined): boolean {
   const boutique = mots(nomBoutique);

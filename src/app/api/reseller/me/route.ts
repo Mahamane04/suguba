@@ -3,10 +3,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { SESSION_COOKIE_NAME } from '@/lib/session';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { libererCommissionsEchues } from '@/lib/commissions';
-import { boutiqueDuProprietaire } from '@/lib/reseau/boutiques';
+import { boutiqueDuProprietaire, realignerBoutiquesAvantNouveauNom } from '@/lib/reseau/boutiques';
 import type { RayonMaison } from '@/lib/boutique-reglages';
 import { compterVitrine } from '@/lib/shop';
-import { estEnseigne, nomPublic } from '@/lib/enseigne';
+import { estEnseigne, nomPublic, nomReserve } from '@/lib/enseigne';
 import { etapesBoutique, type EtapeBoutique } from '@/lib/reseau/etapes-boutique';
 import { aUnLienDeBoutique } from '@/lib/reseau/db';
 
@@ -168,23 +168,39 @@ export async function GET(req: NextRequest) {
  * Liste blanche stricte. `metadata` est FUSIONNÉ, jamais remplacé : il porte
  * aussi le numéro Mobile Money de versement — l'écraser couperait les retraits
  * du revendeur sans qu'il s'en aperçoive.
+ *
+ * Relecture finale du chantier boutique (2026-10-04), changement du nom du compte :
+ *  - le profil est LU avant toute écriture, et un profil illisible arrête tout
+ *    (503) : l'ancien nom sert à réaligner les boutiques, et `metadata` fusionné
+ *    sur une lecture ratée perdait le numéro Mobile Money ;
+ *  - un nom réservé à Suguba (« Suguba », « Admin »…) est refusé : il s'affichait
+ *    « La sélection de Suguba », « Nouveautés chez Suguba » ;
+ *  - les boutiques du compte sont réalignées AVANT le profil
+ *    (realignerBoutiquesAvantNouveauNom) : une ancienne boutique au nom complet
+ *    (« Awa Traore Dialo ») passait pour une enseigne dès que le compte était
+ *    corrigé en « Awa Traoré Diallo », et s'affichait en clair. Réalignement
+ *    impossible : le nom n'est pas changé, rien d'autre n'est écrit.
  */
 export async function PATCH(req: NextRequest) {
   const session = await verifyActiveSession(req.cookies.get(SESSION_COOKIE_NAME)?.value);
   if (!session || session.role !== 'reseller') {
     return NextResponse.json({ error: 'Session revendeur requise.' }, { status: 401 });
   }
+  // Aperçu d'un administrateur : identité fictive, aucun profil à lire ni à écrire.
+  if (session.apercu) return NextResponse.json({ error: 'Aperçu : rien n’est enregistré.' }, { status: 403 });
   const admin = getSupabaseAdmin();
   if (!admin) return NextResponse.json({ error: 'Base indisponible.' }, { status: 503 });
 
   const corps = await req.json().catch(() => ({}));
-  const { data: profil } = await admin.from('profiles').select('metadata').eq('id', session.uid).maybeSingle();
-  const metadata = { ...((profil?.metadata || {}) as Record<string, unknown>) };
+  const { data: profil, error: lecture } = await admin.from('profiles').select('full_name, metadata').eq('id', session.uid).maybeSingle();
+  if (lecture || !profil) return NextResponse.json({ error: 'Votre profil est indisponible. Réessayez.' }, { status: 503 });
+  const metadata = { ...((profil.metadata || {}) as Record<string, unknown>) };
   const ligne: Record<string, unknown> = {};
 
   if (typeof corps.fullName === 'string') {
     const nom = corps.fullName.trim().replace(/\s+/g, ' ').slice(0, 80);
     if (nom.length < 2) return NextResponse.json({ error: 'Nom trop court.' }, { status: 400 });
+    if (nomReserve(nom)) return NextResponse.json({ error: 'Ce nom est réservé à Suguba. Indiquez votre nom.' }, { status: 400 });
     ligne.full_name = nom;
   }
   if (typeof corps.city === 'string' && corps.city.trim()) ligne.city = corps.city.trim().slice(0, 60);
@@ -196,7 +212,20 @@ export async function PATCH(req: NextRequest) {
   if (corps.onboardingDone === true) metadata.onboardingDone = true;
   ligne.metadata = metadata;
 
+  // Nom changé : les boutiques d'abord. Aucun état intermédiaire où l'ancien nom
+  // complet d'une boutique deviendrait public.
+  let annulerBoutiques: (() => Promise<void>) | null = null;
+  if (typeof ligne.full_name === 'string') {
+    const boutiques = await realignerBoutiquesAvantNouveauNom(admin, session.uid, profil.full_name ?? null, ligne.full_name);
+    if (!boutiques.ok) return NextResponse.json({ error: 'Votre nom n’a pas pu être changé pour le moment. Réessayez.' }, { status: 503 });
+    annulerBoutiques = boutiques.annuler;
+  }
+
   const { error } = await admin.from('profiles').update(ligne).eq('id', session.uid);
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+  if (error) {
+    // Le nom n'a pas changé : les boutiques reprennent le leur.
+    await annulerBoutiques?.();
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
   return NextResponse.json({ success: true });
 }

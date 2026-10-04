@@ -19,12 +19,24 @@ test('Accueil revendeur : le logo de la carte « Ma boutique » passe au-dessus 
 
 test('Carte produit étroite : le rond de partage n’est plus rogné (requête de conteneur)', () => {
   const carte = lire('src/components/product/ProductCard.tsx');
-  assert.match(carte, /className="carte-produit bg-white rounded-3xl overflow-hidden /);
+  // Relecture finale (2026-10-04) : la RANGÉE des deux boutons se mesure, plus la
+  // carte. container-type sur l'<article> enfermait dans la carte la fenêtre
+  // « Affiche pour mon statut » (fixed, sans portail) sur les navigateurs d'avant
+  // fin 2024 (Chrome ≤ 128, Safari iOS 16-17).
+  const article = carte.match(/<article\s+className="([^"]*)"/);
+  assert.ok(article, 'la carte reste un <article>');
+  assert.doesNotMatch(article[1], /carte-produit/, 'jamais sur la carte : elle contient une fenêtre en position fixe');
+  assert.match(article[1], /^bg-white rounded-3xl overflow-hidden /);
+  assert.equal((carte.match(/className="[^"]*\bcarte-produit\b[^"]*"/g) || []).length, 1, 'un seul élément mesuré');
+  assert.match(carte, /<div className="carte-produit flex items-center gap-2">\s*\{produit\.ajoutDirect \? \(/, 'la rangée « bouton principal + rond de partage »');
   assert.equal((carte.match(/className="bouton-ajout flex-1 min-w-0"/g) || []).length, 2, '« Ajouter » et « Acheter »');
   assert.equal((carte.match(/className="icone-ajout w-4 h-4"/g) || []).length, 2, 'les deux icônes du bouton');
   const css = lire('src/app/globals.css');
   assert.match(css, /\.carte-produit \{ container-type: inline-size; \}/);
-  assert.match(css, /@container \(max-width: 175px\) \{\s*\.carte-produit \.icone-ajout \{ display: none; \}/);
+  // La rangée mesure 26 px de moins que la carte : même seuil qu'avant (175 px de carte).
+  assert.match(css, /@container \(max-width: 151px\) \{\s*\.carte-produit \.icone-ajout \{ display: none; \}/);
+  assert.doesNotMatch(css, /@container \(max-width: 175px\)/);
+  assert.equal((css.match(/container-type\s*:/g) || []).length, 1, 'aucun autre élément mesuré dans la feuille de style');
   // Les rayons de la vitrine gagnent 8 px de large sur téléphone.
   const rayons = lire('src/components/shop/BoutiqueProduits.tsx');
   assert.doesNotMatch(rayons, /px-4 sm:px-5/);

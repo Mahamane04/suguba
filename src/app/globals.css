@@ -380,11 +380,22 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Carte produit étroite (2026-10-03). En 2 colonnes sur téléphone, « Ajouter » +
    le rond de partage WhatsApp dépassaient de la carte (jusqu'à 22 px dans une
-   vitrine) et le rond était rogné. La carte se mesure elle-même (requête de
-   conteneur) : sous 176 px, l'icône du bouton s'efface et il se resserre. Un
-   navigateur qui ignore les requêtes de conteneur garde l'ancien rendu. */
+   vitrine) et le rond était rogné. La rangée des deux boutons se mesure
+   elle-même (requête de conteneur) : sous 152 px, l'icône du bouton s'efface et
+   il se resserre. Un navigateur qui ignore les requêtes de conteneur garde
+   l'ancien rendu.
+
+   Relecture finale (2026-10-04) : « carte-produit » est portée par la RANGÉE des
+   deux boutons de ProductCard, plus par la carte. Sur les navigateurs d'avant
+   fin 2024 (Chrome ≤ 128, Safari iOS 16-17), container-type fait de l'élément
+   le bloc conteneur de ses descendants en position fixe : posée sur la carte,
+   elle enfermait dans la carte la fenêtre « Affiche pour mon statut »
+   (AfficheModal, « fixed inset-0 », sans portail). La rangée ne contient que le
+   bouton principal et le rond de partage, aucun élément fixé. Elle mesure 26 px
+   de moins que la carte (bordure 2 px + marges 24 px) ; le bouton avec son icône
+   et le rond demandent 152 px : même seuil qu'avant, mesuré sur la rangée. */
 .carte-produit { container-type: inline-size; }
-@container (max-width: 175px) {
+@container (max-width: 151px) {
   .carte-produit .icone-ajout { display: none; }
   .carte-produit .bouton-ajout { padding-left: 0.625rem; padding-right: 0.625rem; }
 }

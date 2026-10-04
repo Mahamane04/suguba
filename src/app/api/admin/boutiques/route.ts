@@ -6,6 +6,7 @@ import { adminPeut } from '@/lib/reseau/db';
 import { getSupabaseAdmin } from '@/lib/supabase-admin';
 import { attribuerSlugFournisseur } from '@/lib/shop';
 import { creerBoutiqueSupplementaire, deciderFormule, plansPourAdmin, type TypeCompteBoutique } from '@/lib/reseau/boutiques-multiples';
+import { nomReserve } from '@/lib/enseigne';
 
 /**
  * Toutes les boutiques (§ page 44) : lecture et modération (masquer, suspendre).
@@ -18,6 +19,14 @@ import { creerBoutiqueSupplementaire, deciderFormule, plansPourAdmin, type TypeC
  * - créer le compte ET la boutique d'une personne qui n'en a pas : elle se
  *   connecte ensuite avec l'e-mail saisi (la connexion relie un compte
  *   existant par son e-mail, voir /api/auth/supabase-exchange).
+ *
+ * Relecture finale du chantier boutique (2026-10-04), boutique d'un REVENDEUR :
+ * - le nom de la boutique vaut par défaut celui de la personne : il était écrit
+ *   tel quel dans stores.name et donnait l'adresse (/boutique/awa-traore-diallo).
+ *   creerBoutiqueSupplementaire l'enregistre désormais en « Awa D. », adresse
+ *   comprise, sauf enseigne choisie (« Awa Mode ») — pour les deux créations ;
+ * - un nom de PERSONNE réservé à Suguba (« Suguba », « Admin »…) est refusé pour
+ *   un compte revendeur : il s'afficherait sur sa vitrine.
  */
 
 export async function GET(req: NextRequest) {
@@ -68,6 +77,7 @@ async function creerCompteEtBoutique(corps: Record<string, any>): Promise<NextRe
   const nomBoutique = typeof corps.nomBoutique === 'string' && corps.nomBoutique.trim() ? corps.nomBoutique.trim() : nom;
   if (!type) return NextResponse.json({ error: 'Choisissez revendeur ou fournisseur.' }, { status: 400 });
   if (nom.length < 2) return NextResponse.json({ error: 'Indiquez le nom de la personne.' }, { status: 400 });
+  if (type === 'reseller' && nomReserve(nom)) return NextResponse.json({ error: 'Ce nom est réservé à Suguba. Indiquez le nom de la personne.' }, { status: 400 });
   // Sans e-mail, la personne ne pourrait jamais se connecter (pas de SMS).
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return NextResponse.json({ error: 'Un e-mail valide est obligatoire : c’est avec lui que la personne se connectera.' }, { status: 400 });
   if (!/^\+?\d{8,15}$/.test(telephone)) return NextResponse.json({ error: 'Numéro de téléphone invalide.' }, { status: 400 });

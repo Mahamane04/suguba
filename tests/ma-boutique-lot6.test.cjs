@@ -877,7 +877,8 @@ test('SelecteurArticles (extrait de Mes boutiques) : avec bouton « Enregistrer 
   const mesBoutiques = lire('src/app/compte/boutiques/page.tsx');
   assert.match(mesBoutiques, /import SelecteurArticles from '@\/components\/reseau\/SelecteurArticles';/);
   assert.doesNotMatch(mesBoutiques, /function SelecteurArticles/);
-  assert.match(mesBoutiques, /<SelecteurArticles\s+catalogue=\{d\.catalogue\}\s+choisis=\{d\.articles\[b\.id\] \|\| \[\]\}\s+onEnregistrer=/);
+  // Relecture finale (2026-10-04) : plus de « || [] » — une sélection illisible (null) n'ouvre pas la liste.
+  assert.match(mesBoutiques, /<SelecteurArticles\s+catalogue=\{d\.catalogue\}\s+choisis=\{choisis\}\s+onEnregistrer=/);
 });
 
 test('FeuilleRayon : création (nom, articles cochés, « Ajouter ce rayon ») ; modification (« Valider », « Supprimer ce rayon ») ; rien n’y est écrit', () => {
